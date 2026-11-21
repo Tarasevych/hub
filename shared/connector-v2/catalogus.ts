@@ -536,6 +536,13 @@ const DEFS: readonly Def[] = [
   { id: 'klimop_spiegel_controle', essentie: 'testen_klimop_spiegel', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
     uk: ['Виконувати дзеркальну перевірку служби', 'Проводить у пам’яті безризикову перевірку Сходинки 1 розділу 35 для однієї з одинадцяти служб: коди Ріда та Соломона після втрати двох смуг і злиття станів.', 'Лише перевірка на штучному зразку в пам’яті процесу. Робоча база даних і файли користувачів залишаються недоторканними.'],
     nl: ['Spiegelverificatie van dienst testen', 'Voert in het geheugen een risicoloze controle van Stap 1 uit voor een van de elf diensten: Reed-Solomon-herstel na uitval van twee stroken en statensamenvoeging.', 'Alleen een proef op een kunstmatig element in het geheugen. De productiedatabank en echte gegevens blijven onaangetast.'] },
+  // KLIMOP-015 (21.11.2026) — Сходинка 2 пасивного читання та збережуваний криптографічний журнал розбіжностей для 11 служб (§35).
+  { id: 'klimop_passieve_spiegel', essentie: 'lezen_klimop_spiegel', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Виконувати пасивну звірку читання служби', 'Проводить пасивну багатоелементну звірку Сходинки 2 розділу 35 із записом знеособлених відбитків у журнал та автоповерненням при розбіжності.', 'Лише перевірка читання без зміни бази даних чи особистих файлів.'],
+    nl: ['Passieve spiegelverificatie uitvoeren', 'Voert een meervoudige passieve leesproef van Stap 2 uit met geanonimiseerde vastlegging in het logboek en automatische terugval bij afwijking.', 'Alleen een leesproef zonder wijziging van de databank of persoonlijke bestanden.'] },
+  { id: 'klimop_spiegel_logboek', essentie: 'lezen_klimop_logboek', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Читати журнал розбіжностей та стан перемикачів', 'Читає стан одинадцяти перемикачів служб, перевіряє цілісність ланцюжка SHA-256 журналу звірки та повертає останні записи.', 'Лише читання знеособленого журналу. ШІ не має доступу до самого перемикача режимів.'],
+    nl: ['Spiegellogboek en schakelaars lezen', 'Leest de stand van de elf dienstschakelaars, controleert de SHA-256-keten van het spiegellogboek en geeft de recente regels terug.', 'Alleen lezen van geanonimiseerde regels. De AI kan de schakelaar niet zelfstandig bedienen.'] },
 
   // ---------------------------------------------------------------- ecosysteem: gedeelde context, taakoverdracht en ruimte-uitbreidingen
   { id: 'ecosysteem_context_list', essentie: 'tonen_werkcontext', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',

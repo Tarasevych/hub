@@ -47,6 +47,7 @@ import {
 } from '../shared/klimop/zaden';
 import {
   KLIMOP_TOOL_NAMEN,
+  KlimopFout,
   type KlimopArchitectuurToetsInvoer,
   type KlimopArchitectuurToetsUitkomst,
   type KlimopDienstBrugStatus,
@@ -54,19 +55,9 @@ import {
   type KlimopPlatformOverzicht,
   type KlimopSpiegelControleUitkomst,
 } from '../shared/klimop-overzicht-model';
+import { leesKlimopSpiegelLogboek } from './klimop-overdracht-opslag';
 
-export class KlimopFout extends Error {
-  readonly code: string;
-  readonly status: number;
-  readonly detail?: string;
-
-  constructor(code: string, status = 400, detail?: string) {
-    super(code);
-    this.code = code;
-    this.status = status;
-    this.detail = detail;
-  }
-}
+export { KlimopFout };
 
 export function klimopWortel(): string {
   const envPad = process.env.KLIMOP_WORTEL ?? process.env.ORCH_WORTEL;
@@ -89,7 +80,10 @@ const PIJLER_MODULE_KAART: Readonly<Record<(typeof KLIMOP_EINDVISIE_TWAALF_PIJLE
     toekomstige_ontwikkelaar_kan_voortzetten_uit_zaad: 'shared/klimop/zaden.ts',
   });
 
-function bouwDienstenStatusLijst(spiegelBeschikbaar: boolean): KlimopDienstBrugStatus[] {
+function bouwDienstenStatusLijst(
+  spiegelBeschikbaar: boolean,
+  leesModusKaart?: ReadonlyMap<KlimopDienstId, 'alleen_erfenis_postgres' | 'passief_spiegel_lezen'>,
+): KlimopDienstBrugStatus[] {
   return KLIMOP_ELF_DIENSTEN.map((dienstId) => {
     const profiel = STANDAARD_DIENST_ISOLATIE_PROFIELEN[dienstId];
     return {
@@ -98,15 +92,26 @@ function bouwDienstenStatusLijst(spiegelBeschikbaar: boolean): KlimopDienstBrugS
       eigenGeheugenRuimte: profiel.eigenGeheugenRuimte,
       vereistExterneVerbinderIsolatie: profiel.vereistExterneVerbinderIsolatie,
       huidigeProductieModus: 'alleen_erfenis_postgres',
+      passieveLeesModus: leesModusKaart?.get(dienstId) ?? 'alleen_erfenis_postgres',
       spiegelVerificatieBeschikbaar: spiegelBeschikbaar,
       productieDatabankActief: true,
     };
   });
 }
 
-/** Живий огляд 12 модулів ядра, кореня Меркла «Насіння», досьє та стану Сходинки 1 для всіх 11 служб (§35, §46). */
-export function klimopOverzicht(wortel = klimopWortel()): KlimopPlatformOverzicht {
+/** Живий огляд 12 модулів ядра, кореня Меркла «Насіння», досьє та стану Сходинок 1–2 для всіх 11 служб (§35, §46). */
+export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): KlimopPlatformOverzicht {
   const afhankelijkheden = valideerTechnischeAfhankelijkheden();
+  const logboekStaat = leesKlimopSpiegelLogboek({ staatMap, limiet: 1 });
+  const leesModusKaart = new Map(
+    logboekStaat.schakelaars.map((s) => [s.dienstId, s.leesModus] as const),
+  );
+  const overdrachtStaat = {
+    actievePassiefLezenDiensten: logboekStaat.samenvatting.actievePassiefLezenDiensten,
+    totaalLogboekRegels: logboekStaat.samenvatting.totaalLogboekRegels,
+    ketenIntegriteitOk: logboekStaat.ketenIntegriteit.ok,
+  };
+
   const kernPad = join(wortel, 'shared/klimop/kern.ts');
   if (!existsSync(kernPad)) {
     return {
@@ -116,7 +121,8 @@ export function klimopOverzicht(wortel = klimopWortel()): KlimopPlatformOverzich
       afhankelijkheden,
       eindvisie46: null,
       dossier: null,
-      diensten: bouwDienstenStatusLijst(true),
+      diensten: bouwDienstenStatusLijst(true, leesModusKaart),
+      overdrachtStaat,
       hulpmiddelen: KLIMOP_TOOL_NAMEN,
       productieOnaangetast: true,
     };
@@ -195,14 +201,15 @@ export function klimopOverzicht(wortel = klimopWortel()): KlimopPlatformOverzich
       voltooideDocumenten44,
     },
     dossier,
-    diensten: bouwDienstenStatusLijst(alleTwaalfAanwezig),
+    diensten: bouwDienstenStatusLijst(alleTwaalfAanwezig, leesModusKaart),
+    overdrachtStaat,
     hulpmiddelen: KLIMOP_TOOL_NAMEN,
     productieOnaangetast: true,
   };
 }
 
-export async function klimopOverzichtA(wortel = klimopWortel()): Promise<KlimopPlatformOverzicht> {
-  return klimopOverzicht(wortel);
+export async function klimopOverzichtA(wortel = klimopWortel(), staatMap?: string): Promise<KlimopPlatformOverzicht> {
+  return klimopOverzicht(wortel, staatMap);
 }
 
 /** Машинна оцінка пропозиції за 15 питаннями §42, 14 заборонами §43 та правилами ШІ-агентів §33–§34. */

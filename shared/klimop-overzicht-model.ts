@@ -1,7 +1,8 @@
-// KLIMOP-014 (21.11.2026, Етап 13 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
 // Спільна модель маршрутів власника (/api/owner/klimop/*), інструментів протоколу контексту моделі (klimop_*),
-// двомовних підписів 11 служб, станів Сходинки 1 безпечного перенесення (§35) та контекстних підказок «?».
-// Чистий модуль (без Node.js чи браузерного оточення): однаково імпортується сервером і клієнтською частиною.
+// двомовних підписів 11 служб, станів Сходинки 1 та Сходинки 2 безпечного перенесення (§35),
+// криптографічного журналу розбіжностей, перемикача миттєвого повернення та контекстних підказок «?».
+// Чистий модуль (без Node.js чи оглядачевого оточення): однаково імпортується сервером і клієнтською частиною.
 
 import type {
   KlimopControleVraagId,
@@ -13,11 +14,27 @@ import type { KlimopOntwikkelRichtingId } from './klimop/zaden';
 type Tekst = [string, string];
 const T = (uk: string, nl: string): Tekst => [uk, nl];
 
+export class KlimopFout extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly detail?: string;
+
+  constructor(code: string, status = 400, detail?: string) {
+    super(code);
+    this.code = code;
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
 /** Захищені маршрути власника (лише mcp.* та admin.*, роль owner + OWNER_EMAIL). Агенти користуються MCP-інструментами klimop_*. */
 export const KLIMOP_PADEN = Object.freeze({
   overzicht: '/api/owner/klimop/overzicht',
   architectuurToets: '/api/owner/klimop/architectuur-toets',
   spiegelControle: '/api/owner/klimop/spiegel-controle',
+  passieveSpiegel: '/api/owner/klimop/passieve-spiegel',
+  spiegelLogboek: '/api/owner/klimop/spiegel-logboek',
+  overdrachtSchakelaar: '/api/owner/klimop/overdracht-schakelaar',
 });
 
 /** Імена технічних інструментів MCP у З'єднувачі другої версії (kant 'beheer') для всіх 14 ШІ-агентів. */
@@ -25,8 +42,33 @@ export const KLIMOP_TOOL_NAMEN = Object.freeze([
   'klimop_overzicht',
   'klimop_architectuur_toets',
   'klimop_spiegel_controle',
+  'klimop_passieve_spiegel',
+  'klimop_spiegel_logboek',
 ] as const);
 export type KlimopToolNaam = (typeof KLIMOP_TOOL_NAMEN)[number];
+
+export type KlimopPassieveLeesModus = 'alleen_erfenis_postgres' | 'passief_spiegel_lezen';
+export type KlimopGesimuleerdeAfwijking = 'geen' | 'inhoud' | 'machtigingen' | 'ontbrekend_record';
+export type KlimopSchakelaarActie = 'activeer_passief_lezen' | 'terug_naar_erfenis' | 'nood_terug_alle_elf';
+
+export const KLIMOP_GESIMULEERDE_AFWIJKINGEN = Object.freeze([
+  'geen',
+  'inhoud',
+  'machtigingen',
+  'ontbrekend_record',
+] as const);
+
+export const KLIMOP_LEESMODUS_TEKST: Readonly<Record<KlimopPassieveLeesModus, { uk: string; nl: string }>> =
+  Object.freeze({
+    alleen_erfenis_postgres: {
+      uk: 'Чинна основа (без пасивного дзеркала)',
+      nl: 'Bestaande basis (zonder passieve spiegel)',
+    },
+    passief_spiegel_lezen: {
+      uk: 'Сходинка 2: пасивне дзеркальне читання з автоповерненням',
+      nl: 'Stap 2: passief spiegellezen met automatische terugval',
+    },
+  });
 
 export const KLIMOP_DIENST_TEKST: Readonly<Record<KlimopDienstId, { uk: string; nl: string }>> = Object.freeze({
   werkblad: { uk: 'Робочий простір (головна)', nl: 'Werkblad (startruimte)' },
@@ -74,6 +116,7 @@ export interface KlimopDienstBrugStatus {
   eigenGeheugenRuimte: boolean;
   vereistExterneVerbinderIsolatie: boolean;
   huidigeProductieModus: KlimopOverdrachtModus;
+  passieveLeesModus?: KlimopPassieveLeesModus;
   spiegelVerificatieBeschikbaar: boolean;
   productieDatabankActief: true;
 }
@@ -104,6 +147,11 @@ export interface KlimopPlatformOverzicht {
     verlorenMogelijkheden: number;
   } | null;
   diensten: KlimopDienstBrugStatus[];
+  overdrachtStaat?: {
+    actievePassiefLezenDiensten: number;
+    totaalLogboekRegels: number;
+    ketenIntegriteitOk: boolean;
+  };
   hulpmiddelen: readonly string[];
   productieOnaangetast: true;
 }
@@ -165,6 +213,101 @@ export interface KlimopSpiegelControleUitkomst {
   gecontroleerdOp: string;
 }
 
+// ---------------------------------------------------------------- Сходинка 2 (§35): пасивне читання, журнал розбіжностей і перемикач повернення
+export interface KlimopDienstSchakelaarStaat {
+  dienstId: KlimopDienstId;
+  primaireSchrijfBron: 'erfenis_postgres';
+  leesModus: KlimopPassieveLeesModus;
+  laatstePariteitOk: boolean | null;
+  opeenvolgendeGelijkeControles: number;
+  totaalUitgevoerdeControles: number;
+  totaalGevondenAfwijkingen: number;
+  automatischeTerugschakelingen: number;
+  handmatigeTerugschakelingen: number;
+  laatsteControleOp: string | null;
+  laatsteSchakelingOp: string | null;
+  laatsteReden: string;
+}
+
+export interface KlimopSpiegelLogboekRegel {
+  regelId: string;
+  volgnummer: number;
+  tijdstipIso: string;
+  soort: 'passieve_spiegel_proef' | 'handmatige_schakeling' | 'automatische_terugschakeling' | 'nood_terug_alle_elf';
+  dienstId: KlimopDienstId | 'alle_elf';
+  leesModusVoor: KlimopPassieveLeesModus;
+  leesModusNa: KlimopPassieveLeesModus;
+  aantalGecontroleerd: number;
+  afwijkingenAantal: number;
+  afwijkingSleutelHashes: {
+    ontbrekend: string[];
+    inhoud: string[];
+    machtigingen: string[];
+  };
+  reedSolomonHersteld: boolean;
+  crdtSamenvoegingOk: boolean;
+  automatischTeruggezet: boolean;
+  reden: string;
+  bevatGeheimenOfInhoud: false;
+  vorigeRegelSha256: string;
+  regelSha256: string;
+}
+
+export interface KlimopPassieveSpiegelUitkomst {
+  ok: boolean;
+  dienstId: KlimopDienstId;
+  subdomein: string;
+  geisoleerdeDienstPsid: string;
+  steekproefGrootte: number;
+  gesimuleerdeAfwijking: KlimopGesimuleerdeAfwijking;
+  reedSolomonAlleRecordsHersteld: boolean;
+  crdtSamenvoegingOk: boolean;
+  kruisDienstIsolatieAfgedwongen: boolean;
+  pariteit: {
+    volledigGelijk: boolean;
+    totaalGecontroleerd: number;
+    afwijkingen: number;
+    ontbrekendAantal: number;
+    inhoudAfwijkingAantal: number;
+    machtigingenAfwijkingAantal: number;
+  };
+  schakelaar: KlimopDienstSchakelaarStaat;
+  automatischTeruggezetNaarErfenis: boolean;
+  logboekRegel: KlimopSpiegelLogboekRegel;
+  productieDatabankGewijzigd: false;
+}
+
+export interface KlimopSpiegelLogboekOverzicht {
+  ketenIntegriteit: {
+    ok: boolean;
+    gecontroleerdeRegels: number;
+    laatsteSha256: string;
+    gebrokenBijVolgnummer: number | null;
+    fout: string | null;
+  };
+  samenvatting: {
+    actievePassiefLezenDiensten: number;
+    totaalDiensten: number;
+    totaalLogboekRegels: number;
+    totaalAutomatischeTerugschakelingen: number;
+    totaalHandmatigeTerugschakelingen: number;
+  };
+  schakelaars: KlimopDienstSchakelaarStaat[];
+  recenteRegels: KlimopSpiegelLogboekRegel[];
+  productieDatabankGewijzigd: false;
+}
+
+export interface KlimopOverdrachtSchakelaarUitkomst {
+  ok: true;
+  actie: KlimopSchakelaarActie;
+  dienstId: KlimopDienstId | 'alle_elf';
+  omgeschakeldeDienstenAantal: number;
+  schakelaar: KlimopDienstSchakelaarStaat | null;
+  actievePassiefLezenDiensten: number;
+  logboekRegel: KlimopSpiegelLogboekRegel;
+  productieDatabankGewijzigd: false;
+}
+
 export const KLIMOP_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   KLIMOP_GEEN_BRON: T(
     'На сервері не знайдено робочої копії джерел екосистеми Плющ. Перевірте змінну середовища з кореневою текою координації.',
@@ -177,6 +320,18 @@ export const KLIMOP_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   KLIMOP_INVOER_ONGELDIG: T(
     'Вхідні параметри перевірки неповні або мають недопустиму форму.',
     'De opgegeven invoer voor de controle is onvolledig of heeft een ongeldige vorm.',
+  ),
+  KLIMOP_SPIEGEL_EERST_VEREIST: T(
+    'Перед увімкненням пасивного дзеркального читання для служби потрібно виконати успішну безрозбіжну перевірку.',
+    'Voer eerst een geslaagde spiegelcontrole zonder afwijkingen uit voordat passief spiegellezen voor deze dienst wordt ingeschakeld.',
+  ),
+  KLIMOP_LOGBOEK_KETEN_ONGELDIG: T(
+    'Порушено криптографічну цілісність ланцюжка журналу дзеркальної звірки. Перемикання вперед заблоковано, повернення на чинну основу залишається доступним.',
+    'De cryptografische keten van het spiegellogboek is doorbroken. Opschakelen is geblokkeerd; terugschakelen naar de bestaande basis blijft direct beschikbaar.',
+  ),
+  KLIMOP_SCHAKELAAR_ACTIE_ONGELDIG: T(
+    'Вказано невідому дію перемикача перенесення служби.',
+    'Er is een onbekende schakelhandeling voor dienstoverdracht opgegeven.',
   ),
   RATE_LIMITED: T(
     'Перевищено допустиму кількість звернень до перевірок екосистеми Плющ за хвилину. Спробуйте трохи згодом.',
@@ -236,6 +391,44 @@ export const HELP_KLIMOP: Readonly<Record<string, HulpItem>> = Object.freeze({
     T(
       'POST /api/owner/klimop/spiegel-controle → klimopSpiegelControle() у backend/klimop-platform-brug.ts; через MCP — klimop_spiegel_controle.',
       'POST /api/owner/klimop/spiegel-controle → klimopSpiegelControle() in backend/klimop-platform-brug.ts; via MCP het hulpmiddel klimop_spiegel_controle.',
+    ),
+  ),
+  'klimop.passief': hulp(
+    'src/agenten/KlimopPaneel.tsx',
+    T(
+      'Пасивне дзеркальне читання Сходинки 2 із записом у криптографічно зв’язаний журнал розбіжностей для вибраної служби платформи.',
+      'Passief spiegellezen van Stap 2 met vastlegging in het cryptografisch gekoppelde afwijkingslogboek voor de gekozen platformdienst.',
+    ),
+    T(
+      'Перевіряє багатоелементну вибірку служби, фіксує лише знеособлені контрольні відбитки в журналі та при будь-якій розбіжності автоматично повертає службу на чинну основу.',
+      'Toetst een meervoudige steekproef van de dienst, legt alleen geanonimiseerde afdrukken in het logboek vast en schakelt bij elke afwijking direct terug naar de bestaande basis.',
+    ),
+    T(
+      'Низький ризик. Основним джерелом запису залишається чинна база даних; особистий вміст ніколи не потрапляє до журналу розбіжностей.',
+      'Laag risico. De bestaande databank blijft de enige schrijfbron; persoonlijke inhoud komt nooit in het afwijkingslogboek terecht.',
+    ),
+    T(
+      'POST /api/owner/klimop/passieve-spiegel та /spiegel-logboek → backend/klimop-overdracht-opslag.ts; через MCP — klimop_passieve_spiegel і klimop_spiegel_logboek.',
+      'POST /api/owner/klimop/passieve-spiegel en /spiegel-logboek → backend/klimop-overdracht-opslag.ts; via MCP klimop_passieve_spiegel en klimop_spiegel_logboek.',
+    ),
+  ),
+  'klimop.schakelaar': hulp(
+    'src/agenten/KlimopPaneel.tsx',
+    T(
+      'Керований перемикач режиму пасивного читання та миттєвого повернення однієї або всіх одинадцяти служб на чинну основу.',
+      'Beheerste schakelaar voor passief spiegellezen en onmiddellijke terugval van één of alle elf diensten naar de bestaande basis.',
+    ),
+    T(
+      'Вмикає пасивне читання лише після підтвердженої безрозбіжної звірки або миттєво повертає обрану службу чи всі одинадцять служб у вихідний стан.',
+      'Schakelt passief lezen uitsluitend in na een bewezen foutloze spiegelcontrole of zet één dienst of alle elf diensten onmiddellijk terug naar de beginstand.',
+    ),
+    T(
+      'Низький ризик. Перемикач доступний виключно власнику на службовій адресі й ніколи не вимикає основну базу даних платформи.',
+      'Laag risico. De schakelaar is uitsluitend voor de eigenaar beschikbaar en schakelt de onderliggende productiedatabank nooit uit.',
+    ),
+    T(
+      'POST /api/owner/klimop/overdracht-schakelaar → schakelKlimopDienstOverdracht() у backend/klimop-overdracht-opslag.ts (недоступний для самовільного виклику агентами).',
+      'POST /api/owner/klimop/overdracht-schakelaar → schakelKlimopDienstOverdracht() in backend/klimop-overdracht-opslag.ts (niet zelfstandig door agenten aanroepbaar).',
     ),
   ),
   'klimop.toets': hulp(

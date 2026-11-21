@@ -1,4 +1,4 @@
-// KLIMOP-014 (21.11.2026, Етап 13 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
 // Клієнт маршрутів /api/owner/klimop/* для вебпанелі «Координація» на mcp.*/agenten та admin.* (src/agenten/KlimopPaneel.tsx).
 
 import { api } from '../platform/client';
@@ -9,8 +9,13 @@ import {
   klimopCodeTekst,
   type KlimopArchitectuurToetsInvoer,
   type KlimopArchitectuurToetsUitkomst,
+  type KlimopGesimuleerdeAfwijking,
+  type KlimopOverdrachtSchakelaarUitkomst,
+  type KlimopPassieveSpiegelUitkomst,
   type KlimopPlatformOverzicht,
+  type KlimopSchakelaarActie,
   type KlimopSpiegelControleUitkomst,
+  type KlimopSpiegelLogboekOverzicht,
 } from '../../shared/klimop-overzicht-model';
 
 export type KlimopSessieContext = Record<string, unknown>;
@@ -31,6 +36,28 @@ export const klimopArchitectuurToetsen = async (
   invoer: KlimopArchitectuurToetsInvoer,
 ): Promise<KlimopArchitectuurToetsUitkomst> =>
   (await api.post(KLIMOP_PADEN.architectuurToets, { ...ctx, ...invoer })).data as KlimopArchitectuurToetsUitkomst;
+
+export const klimopPassieveSpiegelUitvoeren = async (
+  ctx: KlimopSessieContext,
+  invoer: {
+    dienstId: KlimopDienstId;
+    steekproefGrootte?: number;
+    simuleerAfwijking?: KlimopGesimuleerdeAfwijking;
+  },
+): Promise<KlimopPassieveSpiegelUitkomst> =>
+  (await api.post(KLIMOP_PADEN.passieveSpiegel, { ...ctx, ...invoer })).data as KlimopPassieveSpiegelUitkomst;
+
+export const klimopSpiegelLogboekOphalen = async (
+  ctx: KlimopSessieContext,
+  invoer?: { dienstId?: KlimopDienstId; limiet?: number },
+): Promise<KlimopSpiegelLogboekOverzicht> =>
+  (await api.post(KLIMOP_PADEN.spiegelLogboek, { ...ctx, ...(invoer ?? {}) })).data as KlimopSpiegelLogboekOverzicht;
+
+export const klimopOverdrachtSchakelen = async (
+  ctx: KlimopSessieContext,
+  invoer: { actie: KlimopSchakelaarActie; dienstId?: KlimopDienstId },
+): Promise<KlimopOverdrachtSchakelaarUitkomst> =>
+  (await api.post(KLIMOP_PADEN.overdrachtSchakelaar, { ...ctx, ...invoer })).data as KlimopOverdrachtSchakelaarUitkomst;
 
 export function klimopFoutTekst(e: unknown, lang: 'uk' | 'nl'): string {
   const code = foutCode(e);

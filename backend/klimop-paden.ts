@@ -1,17 +1,22 @@
-// KLIMOP-014 (21.11.2026, Етап 13 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
 // Захищені маршрути власника /api/owner/klimop/* (лише служби mcp.* та admin.*, роль owner + OWNER_EMAIL).
-// Тонкий шлюз над backend/klimop-platform-brug.ts без прямої залежності від бази даних, щоб маршрути працювали
-// однаково надійно і в живому серверному процесі, і в автономних випробуваннях.
+// Тонкий шлюз над backend/klimop-platform-brug.ts та backend/klimop-overdracht-opslag.ts без прямої залежності від бази даних.
 
 import { error, json } from '../server/platform/antwoord';
 import type { RouterMiddleware } from '../server/platform/router';
 import { KLIMOP_PADEN } from '../shared/klimop-overzicht-model';
+import type { KlimopDienstId } from '../shared/klimop/diensten';
 import {
   KlimopFout,
   klimopArchitectuurToets,
   klimopOverzichtA,
   klimopSpiegelControle,
 } from './klimop-platform-brug';
+import {
+  leesKlimopSpiegelLogboek,
+  schakelKlimopDienstOverdracht,
+  voerPassieveSpiegelLeesProefUit,
+} from './klimop-overdracht-opslag';
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
@@ -28,11 +33,13 @@ export type KlimopPadenDeps = {
     result: 'success' | 'denied' | 'failure',
     details: Record<string, unknown>,
   ) => Promise<void>;
+  staatMap?: string;
 };
 
 const DIENSTEN = ['mcp', 'admin'] as const;
 const LEZEN_PER_MINUUT = 120;
 const CONTROLES_PER_MINUUT = 60;
+const SCHAKEL_PER_MINUUT = 30;
 
 export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddleware[]> {
   const audit = (
@@ -70,7 +77,7 @@ export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddlew
     [`POST ${KLIMOP_PADEN.overzicht}`]: [
       eigenaar(async (_ctx, e) => {
         await limiet(e, 'lezen', LEZEN_PER_MINUUT);
-        return klimopOverzichtA();
+        return klimopOverzichtA(undefined, deps.staatMap);
       }),
     ],
     [`POST ${KLIMOP_PADEN.architectuurToets}`]: [
@@ -94,6 +101,46 @@ export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddlew
           dienstId: r.dienstId,
           ok: r.ok,
           afwijkingen: r.pariteit.afwijkingen,
+        });
+        return r;
+      }),
+    ],
+    [`POST ${KLIMOP_PADEN.passieveSpiegel}`]: [
+      eigenaar(async (ctx, e) => {
+        await limiet(e, 'passief', CONTROLES_PER_MINUUT);
+        const r = voerPassieveSpiegelLeesProefUit(ctx.body, { staatMap: deps.staatMap });
+        await audit(e, 'klimop_passieve_spiegel', r.ok ? 'success' : 'failure', {
+          dienstId: r.dienstId,
+          ok: r.ok,
+          steekproefGrootte: r.steekproefGrootte,
+          afwijkingen: r.pariteit.afwijkingen,
+          automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
+        });
+        return r;
+      }),
+    ],
+    [`POST ${KLIMOP_PADEN.spiegelLogboek}`]: [
+      eigenaar(async (ctx, e) => {
+        await limiet(e, 'lezen', LEZEN_PER_MINUUT);
+        const b = ctx.body && typeof ctx.body === 'object' && !Array.isArray(ctx.body)
+          ? (ctx.body as Record<string, unknown>)
+          : {};
+        return leesKlimopSpiegelLogboek({
+          staatMap: deps.staatMap,
+          limiet: typeof b.limiet === 'number' ? b.limiet : undefined,
+          dienstId: typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined,
+        });
+      }),
+    ],
+    [`POST ${KLIMOP_PADEN.overdrachtSchakelaar}`]: [
+      eigenaar(async (ctx, e) => {
+        await limiet(e, 'schakel', SCHAKEL_PER_MINUUT);
+        const r = schakelKlimopDienstOverdracht(ctx.body, { staatMap: deps.staatMap });
+        await audit(e, 'klimop_overdracht_schakelaar', 'success', {
+          actie: r.actie,
+          dienstId: r.dienstId,
+          omgeschakeldeDienstenAantal: r.omgeschakeldeDienstenAantal,
+          actievePassiefLezenDiensten: r.actievePassiefLezenDiensten,
         });
         return r;
       }),

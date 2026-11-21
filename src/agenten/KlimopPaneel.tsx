@@ -1,26 +1,34 @@
-// KLIMOP-014 (21.11.2026, Етап 13 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
 // Двомовна панель стану живої цифрової екосистеми «Плющ», цілісності пакета «Насіння»,
-// Сходинки 1 безризикової дзеркальної перевірки всіх 11 служб (§35) та 15-пунктової перевірки (§42–§43).
+// Сходинки 1 і Сходинки 2 безризикової дзеркальної перевірки всіх 11 служб (§35), збережуваного журналу розбіжностей,
+// перемикача миттєвого повернення та 15-пунктової перевірки (§42–§43).
 // Вбудована в розділ «Координація» (src/agenten/TabOrch.tsx) за спільним контрактом .ag-blok без власного <style>.
 
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Loader2, Network, RefreshCw, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, FileText, Loader2, Network, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
 import type { Tr } from '../mcp-ui';
 import HulpVraag from '../hulp/HulpVraag';
 import { besluitFoutCode } from '../besluit/besluit-client';
 import { KLIMOP_ELF_DIENSTEN, type KlimopDienstId } from '../../shared/klimop/diensten';
 import {
   KLIMOP_DIENST_TEKST,
+  KLIMOP_LEESMODUS_TEKST,
   KLIMOP_OVERDRACHT_TEKST,
   type KlimopArchitectuurToetsUitkomst,
+  type KlimopPassieveSpiegelUitkomst,
   type KlimopPlatformOverzicht,
+  type KlimopSchakelaarActie,
   type KlimopSpiegelControleUitkomst,
+  type KlimopSpiegelLogboekOverzicht,
 } from '../../shared/klimop-overzicht-model';
 import {
   klimopArchitectuurToetsen,
   klimopFoutTekst,
+  klimopOverdrachtSchakelen,
   klimopOverzichtOphalen,
+  klimopPassieveSpiegelUitvoeren,
   klimopSpiegelControleren,
+  klimopSpiegelLogboekOphalen,
 } from '../klimop/klimop-klant';
 import { Badge, Knop, Tech } from './ui';
 
@@ -36,12 +44,19 @@ export default function KlimopPaneel({
   ctx: Record<string, unknown>;
 }) {
   const [overzicht, setOverzicht] = useState<KlimopPlatformOverzicht | null>(null);
+  const [logboek, setLogboek] = useState<KlimopSpiegelLogboekOverzicht | null>(null);
   const [verborgenVoorNietEigenaar, setVerborgenVoorNietEigenaar] = useState(false);
   const [laadFout, setLaadFout] = useState('');
   const [gekozenDienst, setGekozenDienst] = useState<KlimopDienstId>('postvak');
   const [spiegelBezig, setSpiegelBezig] = useState(false);
   const [spiegelUit, setSpiegelUit] = useState<KlimopSpiegelControleUitkomst | null>(null);
   const [spiegelFout, setSpiegelFout] = useState('');
+
+  const [passiefBezig, setPassiefBezig] = useState(false);
+  const [passiefUit, setPassiefUit] = useState<KlimopPassieveSpiegelUitkomst | null>(null);
+  const [schakelBezig, setSchakelBezig] = useState(false);
+  const [passiefMelding, setPassiefMelding] = useState('');
+  const [passiefFout, setPassiefFout] = useState('');
 
   const [voorstelNaam, setVoorstelNaam] = useState('');
   const [toetsBezig, setToetsBezig] = useState(false);
@@ -51,7 +66,12 @@ export default function KlimopPaneel({
   const laden = useCallback(async () => {
     setLaadFout('');
     try {
-      setOverzicht(await klimopOverzichtOphalen(ctx));
+      const [ov, lb] = await Promise.all([
+        klimopOverzichtOphalen(ctx),
+        klimopSpiegelLogboekOphalen(ctx, { limiet: 8 }),
+      ]);
+      setOverzicht(ov);
+      setLogboek(lb);
     } catch (e) {
       const c = besluitFoutCode(e);
       if (c === 'OWNER_REQUIRED' || c === 'ADMIN_SERVICE_REQUIRED') {
@@ -81,6 +101,57 @@ export default function KlimopPaneel({
     }
   };
 
+  const startPassieveSpiegel = async () => {
+    setPassiefBezig(true);
+    setPassiefFout('');
+    setPassiefMelding('');
+    try {
+      const uitkomst = await klimopPassieveSpiegelUitvoeren(ctx, {
+        dienstId: gekozenDienst,
+        steekproefGrootte: 4,
+      });
+      setPassiefUit(uitkomst);
+      setLogboek(await klimopSpiegelLogboekOphalen(ctx, { limiet: 8 }));
+    } catch (e) {
+      setPassiefFout(klimopFoutTekst(e, lang));
+    } finally {
+      setPassiefBezig(false);
+    }
+  };
+
+  const bedienSchakelaar = async (actie: KlimopSchakelaarActie) => {
+    setSchakelBezig(true);
+    setPassiefFout('');
+    setPassiefMelding('');
+    try {
+      const r = await klimopOverdrachtSchakelen(ctx, {
+        actie,
+        ...(actie === 'nood_terug_alle_elf' ? {} : { dienstId: gekozenDienst }),
+      });
+      setPassiefMelding(
+        actie === 'activeer_passief_lezen'
+          ? tr(
+              `Пасивне дзеркальне читання Сходинки 2 увімкнено (${r.actievePassiefLezenDiensten}/11 активних).`,
+              `Passief spiegellezen van Stap 2 ingeschakeld (${r.actievePassiefLezenDiensten}/11 actief).`,
+            )
+          : actie === 'nood_terug_alle_elf'
+            ? tr(
+                'Усі одинадцять служб миттєво повернено на чинну основу.',
+                'Alle elf diensten zijn onmiddellijk teruggezet naar de bestaande basis.',
+              )
+            : tr(
+                'Вибрану службу повернено на чинну основу.',
+                'De gekozen dienst is teruggezet naar de bestaande basis.',
+              ),
+      );
+      await laden();
+    } catch (e) {
+      setPassiefFout(klimopFoutTekst(e, lang));
+    } finally {
+      setSchakelBezig(false);
+    }
+  };
+
   const startToets = async () => {
     setToetsBezig(true);
     setToetsFout('');
@@ -107,6 +178,7 @@ export default function KlimopPaneel({
   };
 
   const aanwezigeModules = overzicht?.kernModules.filter((m) => m.aanwezig).length ?? 0;
+  const gekozenSchakelaar = logboek?.schakelaars.find((s) => s.dienstId === gekozenDienst) ?? null;
 
   return (
     <section className='ag-blok' id='orch-klimop' aria-labelledby='orch-klimop-titel' data-klimop-paneel='1'>
@@ -131,8 +203,8 @@ export default function KlimopPaneel({
         </div>
         <p className='ag-blok-uitleg'>
           {tr(
-            'Жива готовність дванадцяти модулів ядра, корінь Меркла пакета відтворення «Насіння» та безризикова перевірка Сходинки 1 розділу 35 без втручання в робочу базу даних.',
-            'Actuele gereedheid van de twaalf kernmodules, de Merkle-wortel van het Zaadpakket en risicoloze Stap-1-verificatie van hoofdstuk 35 zonder ingreep in de draaiende databank.',
+            'Жива готовність дванадцяти модулів ядра, корінь Меркла пакета відтворення «Насіння» та безризикова перевірка Сходинок 1–2 розділу 35 із криптографічним журналом розбіжностей і миттєвим поверненням без зміни робочої бази даних.',
+            'Actuele gereedheid van de twaalf kernmodules, de Merkle-wortel van het Zaadpakket en risicoloze verificatie van Stappen 1–2 van hoofdstuk 35 met cryptografisch afwijkingslogboek en directe terugval zonder wijziging van de draaiende databank.',
           )}
         </p>
       </header>
@@ -190,14 +262,16 @@ export default function KlimopPaneel({
           </div>
 
           <div className='orch-kv'>
-            <small>{tr('Робоча база даних та 11 служб', 'Productiedatabank en 11 diensten')}</small>
+            <small>{tr('Сходинки 1–2 та журнал звірки', 'Stappen 1–2 en spiegellogboek')}</small>
             <b>
-              <Badge toon='ok'>{tr('недоторканна основа', 'onaangetaste basis')}</Badge>
+              <Badge toon={overzicht.overdrachtStaat?.ketenIntegriteitOk !== false ? 'ok' : 'warn'}>
+                {tr('недоторканна основа', 'onaangetaste basis')}
+              </Badge>
             </b>
             <small>
               {tr(
-                `${overzicht.diensten.length} служб готові до паралельної звірки Сходинки 1`,
-                `${overzicht.diensten.length} diensten gereed voor parallelle Stap-1-spiegelverificatie`,
+                `пасивне читання: ${overzicht.overdrachtStaat?.actievePassiefLezenDiensten ?? 0}/11 · записів журналу: ${overzicht.overdrachtStaat?.totaalLogboekRegels ?? 0}`,
+                `passief lezen: ${overzicht.overdrachtStaat?.actievePassiefLezenDiensten ?? 0}/11 · logboekregels: ${overzicht.overdrachtStaat?.totaalLogboekRegels ?? 0}`,
               )}
             </small>
           </div>
@@ -207,12 +281,12 @@ export default function KlimopPaneel({
       <div className='ag-formrij' data-klimop-spiegel='1'>
         <label className='bsl-veld bsl-groei'>
           <span>
-            {tr('Служба для дзеркальної перевірки (Сходинка 1, розділ 35)', 'Dienst voor spiegelverificatie (Stap 1, hoofdstuk 35)')}{' '}
+            {tr('Служба для дзеркальної перевірки та керування Сходинками 1–2 (розділ 35)', 'Dienst voor spiegelverificatie en beheer van Stappen 1–2 (hoofdstuk 35)')}{' '}
             <HulpVraag k='klimop.spiegel' lang={lang} />
           </span>
           <select
             value={gekozenDienst}
-            disabled={spiegelBezig}
+            disabled={spiegelBezig || passiefBezig || schakelBezig}
             data-hulp='klimop.spiegel'
             data-klimop-veld='dienst'
             onChange={(e) => setGekozenDienst(e.target.value as KlimopDienstId)}
@@ -284,6 +358,124 @@ export default function KlimopPaneel({
                   : KLIMOP_OVERDRACHT_TEKST[spiegelUit.overdrachtBesluit.gevalideerdeProefModus].nl,
               ],
             ]}
+          />
+        </div>
+      ) : null}
+
+      <div className='ag-formrij' data-klimop-passief='1'>
+        <div className='bsl-veld bsl-groei'>
+          <span>
+            {tr('Сходинка 2: пасивне читання, журнал розбіжностей та перемикач миттєвого повернення', 'Stap 2: passief lezen, afwijkingslogboek en directe terugvalsleutel')}{' '}
+            <HulpVraag k='klimop.passief' lang={lang} />{' '}
+            <HulpVraag k='klimop.schakelaar' lang={lang} />
+          </span>
+          <small data-hulp='klimop.schakelaar'>
+            {gekozenSchakelaar
+              ? lang === 'uk'
+                ? `${KLIMOP_LEESMODUS_TEKST[gekozenSchakelaar.leesModus].uk} · послідовних чистих звірок: ${gekozenSchakelaar.opeenvolgendeGelijkeControles}`
+                : `${KLIMOP_LEESMODUS_TEKST[gekozenSchakelaar.leesModus].nl} · opeenvolgende foutloze controles: ${gekozenSchakelaar.opeenvolgendeGelijkeControles}`
+              : tr(
+                  'Основним джерелом запису завжди залишається чинна база даних; за будь-якої розбіжності служба повертається миттєво.',
+                  'De bestaande databank blijft altijd de schrijfbron; bij elke afwijking valt de dienst direct terug.',
+                )}
+          </small>
+        </div>
+        <div className='ag-knoppen'>
+          <Knop
+            icoon={<FileText />}
+            bezig={passiefBezig}
+            disabled={schakelBezig}
+            onClick={() => void startPassieveSpiegel()}
+            data='klimop-passief-start'
+          >
+            {tr('Пасивна звірка Сходинки 2', 'Passieve proef Stap 2')}
+          </Knop>
+          <Knop
+            icoon={<ShieldCheck />}
+            bezig={schakelBezig}
+            disabled={passiefBezig}
+            onClick={() => void bedienSchakelaar('activeer_passief_lezen')}
+            data='klimop-passief-aan'
+          >
+            {tr('Увімкнути пасивне читання', 'Passief lezen activeren')}
+          </Knop>
+          <Knop
+            icoon={<RotateCcw />}
+            bezig={schakelBezig}
+            disabled={passiefBezig}
+            onClick={() => void bedienSchakelaar('terug_naar_erfenis')}
+            data='klimop-passief-terug'
+          >
+            {tr('Повернути службу', 'Dienst terugzetten')}
+          </Knop>
+          <Knop
+            icoon={<RotateCcw />}
+            bezig={schakelBezig}
+            disabled={passiefBezig}
+            onClick={() => void bedienSchakelaar('nood_terug_alle_elf')}
+            data='klimop-nood-alle-elf'
+          >
+            {tr('Повернути всі 11 служб', 'Alle 11 diensten terugzetten')}
+          </Knop>
+        </div>
+      </div>
+
+      {passiefFout ? (
+        <p className='ag-fout' role='alert'>
+          {passiefFout}
+        </p>
+      ) : null}
+
+      {passiefMelding ? (
+        <p className='ag-meta' data-klimop-schakel-melding='1'>
+          {passiefMelding}
+        </p>
+      ) : null}
+
+      {passiefUit ? (
+        <div className={`ag-kaart${passiefUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`} data-klimop-passief-uitkomst={passiefUit.ok ? 'ok' : 'fout'}>
+          <p>
+            <b>
+              {passiefUit.ok
+                ? tr('Пасивна багатоелементна звірка Сходинки 2 без розбіжностей', 'Meervoudige passieve proef van Stap 2 zonder afwijkingen')
+                : tr('Виявлено розбіжність — виконано захисне повернення', 'Afwijking vastgesteld — beschermende terugval uitgevoerd')}
+            </b>{' '}
+            · {kort(passiefUit.logboekRegel.regelSha256)}…
+          </p>
+          <Tech
+            rijen={[
+              [
+                tr('Перевірено елементів та розбіжності', 'Gecontroleerde elementen en afwijkingen'),
+                `${passiefUit.pariteit.totaalGecontroleerd} / ${passiefUit.pariteit.afwijkingen}`,
+              ],
+              [
+                tr('Режим читання після перевірки', 'Leesmodus na controle'),
+                lang === 'uk'
+                  ? KLIMOP_LEESMODUS_TEKST[passiefUit.schakelaar.leesModus].uk
+                  : KLIMOP_LEESMODUS_TEKST[passiefUit.schakelaar.leesModus].nl,
+              ],
+            ]}
+          />
+        </div>
+      ) : null}
+
+      {logboek && logboek.recenteRegels.length > 0 ? (
+        <div className='ag-kaart' data-klimop-logboek='1'>
+          <p>
+            <b>{tr('Останні записи криптографічного журналу звірки', 'Recente regels van het cryptografische spiegellogboek')}</b>{' '}
+            <Badge toon={logboek.ketenIntegriteit.ok ? 'ok' : 'warn'}>
+              {logboek.ketenIntegriteit.ok
+                ? tr('ланцюжок SHA-256 цілісний', 'SHA-256-keten sluitend')
+                : tr('ланцюжок пошкоджено', 'keten doorbroken')}
+            </Badge>
+          </p>
+          <Tech
+            rijen={logboek.recenteRegels.slice(0, 4).map((r) => [
+              `#${r.volgnummer} · ${r.dienstId}`,
+              <code key={r.regelId}>
+                {r.soort} · {r.afwijkingenAantal === 0 ? tr('0 розбіжностей', '0 afwijkingen') : `${r.afwijkingenAantal}`} · {kort(r.regelSha256, 12)}…
+              </code>,
+            ])}
           />
         </div>
       ) : null}

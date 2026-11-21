@@ -3572,6 +3572,16 @@
    "pad": "tests/eenheid/klimop-014-platformintegratie-spiegel-20261121.test.ts",
    "wat": "Integratietest voor de Klimop-platformbrug, Stap-1-spiegelverificatie van alle 11 diensten, eigenaarsroutes, MCP voor 14 agenten en het webpaneel.",
    "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "backend/klimop-overdracht-opslag.ts",
+   "wat": "Serveropslag van Stap 2 voor passief spiegellezen, het SHA-256-afwijkingslogboek en de atomaire terugvalsleutel voor alle 11 diensten.",
+   "sinds": "KLIMOP-015"
+  },
+  {
+   "pad": "tests/eenheid/klimop-015-passieve-spiegel-terugschakeling-20261121.test.ts",
+   "wat": "Eenheids- en integratietest voor Stap 2 passief spiegellezen, ketenintegriteit van het afwijkingslogboek, automatische en noodterugschakeling van 11 diensten en tweetalige weergave.",
+   "sinds": "KLIMOP-015"
   }
  ]
 }
