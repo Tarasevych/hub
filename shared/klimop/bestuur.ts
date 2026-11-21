@@ -194,6 +194,41 @@ export function maakBestuursGrondwet(opties: {
   };
 }
 
+/** KLIMOP-020: повторна перевірка форми, порога та незалежності хранителів конституції на вузлі одержувачі. */
+export function verifieerBestuursGrondwetVorm(
+  grondwet: KlimopBestuursGrondwet,
+): { ok: true } | { ok: false; fout: string; details?: string[] } {
+  if (
+    !grondwet
+    || grondwet.schema !== 1
+    || !grondwet.grondwetId
+    || !Number.isInteger(grondwet.versieVolgnummer)
+    || grondwet.versieVolgnummer < 1
+    || !Number.isInteger(grondwet.drempel)
+    || grondwet.drempel < 2
+    || !Array.isArray(grondwet.erkendeHoeders)
+    || grondwet.erkendeHoeders.length !== grondwet.totaalHoeders
+    || grondwet.erkendeHoeders.length < grondwet.drempel
+  ) {
+    return { ok: false, fout: 'GRONDWET_DREMPEL_VERBIEDT_EENPERSOONSMACHT' };
+  }
+  if (!/^[0-9a-f]{64}$/i.test(grondwet.frostGroepsPubliekeSleutelHex)) {
+    return { ok: false, fout: 'GRONDWET_ONGELDIGE_FROST_GROEPSSLEUTEL' };
+  }
+  if (
+    grondwet.erkendeHoeders.some(
+      (h) => h.type === 'tijdelijke_toetredingsknooppunten' || h.type === 'gespecialiseerde_knooppunten',
+    )
+  ) {
+    return { ok: false, fout: 'WILLEKEURIGE_MEERDERHEID_GEEN_GROND_VOOR_BESTUUR' };
+  }
+  const spreiding = controleerKnooppuntOnafhankelijkheid(grondwet.erkendeHoeders, grondwet.drempel);
+  if (!spreiding.ok) {
+    return { ok: false, fout: 'GRONDWET_HOEDERS_NIET_ONAFHANKELIJK', details: spreiding.fouten };
+  }
+  return { ok: true };
+}
+
 // =================================================================================================
 // 2. Пропозиції критичних рішень, захисні часові замки (§20), заборона самосхвалення (§32) і журнал
 // =================================================================================================
@@ -387,8 +422,14 @@ export function bekrachtigBestuursBesluitMetFrost(opties: {
   }
 
   const bekrachtigdOp = opties.bekrachtigdOp ?? new Date().toISOString();
-  const minVereistMs = Date.parse(voorstel.ingediendOp) + regel.minimaleWachttijdUren * 3600 * 1000;
-  if (Date.parse(bekrachtigdOp) < Math.max(Date.parse(voorstel.uitvoerbaarVanaf), minVereistMs)) {
+  const ingediendMs = Date.parse(voorstel.ingediendOp);
+  const vanafMs = Date.parse(voorstel.uitvoerbaarVanaf);
+  const bekrachtigdMs = Date.parse(bekrachtigdOp);
+  if (![ingediendMs, vanafMs, bekrachtigdMs].every(Number.isFinite)) {
+    return { ok: false, fout: 'BESTUUR_TIJD_ONGELDIG' };
+  }
+  const minVereistMs = ingediendMs + regel.minimaleWachttijdUren * 3600 * 1000;
+  if (bekrachtigdMs < Math.max(vanafMs, minVereistMs)) {
     return { ok: false, fout: 'BESTUUR_TIJDSLOT_NOG_NIET_VERSTREKEN' };
   }
 
@@ -550,7 +591,7 @@ export interface KlimopUitgaveTijdstempelMetadata {
   uitgaveVolgnummer: number;
   momentopnameSha256: string;
   uitgegevenOp: string;
-  verlooptOp: string; // Коротке вікно свіжості проти freeze-атаки (напр. 24–72 год)
+  verlooptOp: string; // Коротке вікно свіжості проти атаки заморожування старих метаданих (напр. 24–72 год)
   tijdstempelRolPubDerB64u: string;
   tijdstempelRolHandtekeningB64u: string;
 }
@@ -721,8 +762,8 @@ export function verifieerWebClientBundelIntegriteit(
 /**
  * Повна багатошарова перевірка пакета оновлення на вузлі перед встановленням (§24, §25):
  *   1. Розділення ролей: роль складання `doelenRol` != роль свіжості `tijdstempelRol`, а затвердження вимагає кворуму `FROST` (`drempel >= 2`);
- *   2. Свіжість `tijdstempel` (захист від freeze-атаки захопленим дзеркалом оновлень);
- *   3. Захист від відкочування до небезпечної старої версії (`uitgaveVolgnummer > huidigGeinstalleerdVolgnummer`);
+ *   2. Свіжість `tijdstempel` (захист від атаки заморожування захопленим дзеркалом оновлень);
+ *   3. Захист від повернення небезпечної старої версії (`uitgaveVolgnummer > huidigGeinstalleerdVolgnummer`);
  *   4. Перевірка порогового підпису `FROST` на знімку `momentopname`;
  *   5. Перевірка цілісності архіву пакета, походження `TRACE-001` та непідміненості вебклієнта.
  */
@@ -749,7 +790,7 @@ export function verifieerUitgaveBundel(opties: {
     return { ok: false, fout: 'UITGAVE_ONBEKENDE_TIJDSTEMPELROL' };
   }
 
-  // 1. Захист від повернення старої вразливої версії (rollback attack, §25)
+  // 1. Захист від повернення старої вразливої версії (§25)
   if (doelen.uitgaveVolgnummer <= opties.huidigGeinstalleerdVolgnummer) {
     return { ok: false, fout: 'UITGAVE_TERUGDRAAI_AANVAL_GEWEIGERD' };
   }
@@ -757,8 +798,10 @@ export function verifieerUitgaveBundel(opties: {
     return { ok: false, fout: 'ONOMKEERBARE_UITGAVE_MIST_HERSTELPROCEDURE' };
   }
 
-  // 2. Перевірка свіжості (freeze attack, §25)
+  // 2. Перевірка свіжості проти утримання старих метаданих (§25)
   const nuMs = Date.parse(opties.nuIso ?? new Date().toISOString());
+  const uitgegevenMs = Date.parse(tijdstempel.uitgegevenOp);
+  const verlooptMs = Date.parse(tijdstempel.verlooptOp);
   const { tijdstempelRolHandtekeningB64u, ...tsKern } = tijdstempel;
   if (
     !verifieerEd25519Der(
@@ -769,7 +812,7 @@ export function verifieerUitgaveBundel(opties: {
   ) {
     return { ok: false, fout: 'UITGAVE_TIJDSTEMPEL_HANDTEKENING_ONGELDIG' };
   }
-  if (nuMs < Date.parse(tijdstempel.uitgegevenOp) - 60_000 || nuMs > Date.parse(tijdstempel.verlooptOp)) {
+  if (![nuMs, uitgegevenMs, verlooptMs].every(Number.isFinite) || nuMs < uitgegevenMs - 60_000 || nuMs > verlooptMs) {
     return { ok: false, fout: 'UITGAVE_TIJDSTEMPEL_BEVROREN_OF_VERLOPEN' };
   }
 

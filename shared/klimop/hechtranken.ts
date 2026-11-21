@@ -203,7 +203,9 @@ export function verifieerHechtrankToetredingsBewijs(opties: {
     return { ok: false, fout: 'TOETREDING_ONBEKENDE_SPONSOR' };
   }
   const nuMs = Date.parse(opties.nuIso ?? new Date().toISOString());
-  if (nuMs < Date.parse(bewijs.uitgegevenOp) || nuMs > Date.parse(bewijs.verlooptOp)) {
+  const uitgegevenMs = Date.parse(bewijs.uitgegevenOp);
+  const verlooptMs = Date.parse(bewijs.verlooptOp);
+  if (![nuMs, uitgegevenMs, verlooptMs].every(Number.isFinite) || nuMs < uitgegevenMs || nuMs > verlooptMs) {
     return { ok: false, fout: 'TOETREDINGSBEWIJS_VERLOPEN' };
   }
   if (berekenKnooppuntId(bewijs.knooppuntIdentiteit.publiekeSleutelDerB64u) !== bewijs.knooppuntIdentiteit.knooppuntId) {
@@ -233,29 +235,52 @@ export interface SybilWeerstandVerslag {
   uniekeNetwerkVoorvoegsels: number;
   genegeerdeTijdelijkeKnopen: number;
   begrensdeDubbeleAanbiederOfSubnetKnopen: number;
+  /** KLIMOP-020: прострочені або відкликані приєднання, відсіяні на момент оцінки. */
+  verlopenOfIngetrokkenGenegeerd?: number;
+  /** KLIMOP-020: чи підтверджено фактичну незалежність операторів/мереж зовнішнім реєстром (самозаявлені паспорти = false). */
+  fysiekeOnafhankelijkheidExternBewezen?: boolean;
+  onafhankelijkheidsBewijsBron?: 'zelfverklaarde_paspoorten' | 'extern_geverifieerd_register';
   fouten: string[];
 }
 
 /**
  * Обчислює справжню порогову вагу мережі за §5.1 та §43 п. 2, 7:
- *   - відкидає тимчасові перехідні вузли з критичного кворуму;
- *   - згортає будь-яку кількість фальшивих вузлів одного постачальника чи однієї підмережі до щонайбільше 1 ефективного голосу
- *     (тому 50 вузлів Сивілли в одній хмарі дають лише 1 обмежений слот і НІКОЛИ не захоплюють кворум чи маршрутизацію!).
+ *   - відкидає прострочені, відкликані й тимчасові перехідні вузли з критичного кворуму;
+ *   - згортає будь-яку кількість фальшивих вузлів одного постачальника чи однієї підмережі до щонайбільше 1 ефективного голосу;
+ *   - окремо показує брак зовнішніх доказів фактичної незалежності, якщо перевірено лише самозаявлені паспорти.
  */
 export function beoordeelSybilEnSpreidingsWeerstand(opties: {
   toetredingen: readonly HechtrankToetredingsBewijs[];
   vereisteOnafhankelijkeDrempel: number;
+  nuIso?: string;
+  ingetrokkenToetredingIds?: ReadonlySet<string>;
+  externGeverifieerdeKnooppuntIds?: ReadonlySet<string>;
 }): SybilWeerstandVerslag {
   const fouten: string[] = [];
   const gezieneAanbieders = new Set<string>();
   const gezieneVoorvoegsels = new Set<string>();
   const effectieveRegios = new Set<string>();
+  const nuMs = opties.nuIso !== undefined ? Date.parse(opties.nuIso) : null;
 
   let effectieveOnafhankelijkeStemmen = 0;
+  let externBewezenStemmen = 0;
   let genegeerdeTijdelijkeKnopen = 0;
   let begrensdeDubbeleAanbiederOfSubnetKnopen = 0;
+  let verlopenOfIngetrokkenGenegeerd = 0;
 
   for (const t of opties.toetredingen) {
+    if (opties.ingetrokkenToetredingIds?.has(t.toetredingId)) {
+      verlopenOfIngetrokkenGenegeerd += 1;
+      continue;
+    }
+    if (nuMs !== null) {
+      const uitMs = Date.parse(t.uitgegevenOp);
+      const verMs = Date.parse(t.verlooptOp);
+      if (![nuMs, uitMs, verMs].every(Number.isFinite) || nuMs < uitMs || nuMs > verMs) {
+        verlopenOfIngetrokkenGenegeerd += 1;
+        continue;
+      }
+    }
     const kn = t.knooppuntIdentiteit;
     if (kn.type === 'tijdelijke_toetredingsknooppunten') {
       genegeerdeTijdelijkeKnopen += 1;
@@ -269,6 +294,9 @@ export function beoordeelSybilEnSpreidingsWeerstand(opties: {
     gezieneVoorvoegsels.add(t.netwerkVoorvoegsel);
     effectieveRegios.add(kn.juridischeRegio);
     effectieveOnafhankelijkeStemmen += 1;
+    if (opties.externGeverifieerdeKnooppuntIds?.has(kn.knooppuntId)) {
+      externBewezenStemmen += 1;
+    }
   }
 
   if (effectieveOnafhankelijkeStemmen < opties.vereisteOnafhankelijkeDrempel) {
@@ -277,6 +305,10 @@ export function beoordeelSybilEnSpreidingsWeerstand(opties: {
   if (effectieveRegios.size < 2) {
     fouten.push('MINSTENS_TWEE_JURISDICTIES_VEREIST_VOOR_SPREIDING');
   }
+
+  const fysiekeOnafhankelijkheidExternBewezen =
+    Boolean(opties.externGeverifieerdeKnooppuntIds)
+    && externBewezenStemmen >= opties.vereisteOnafhankelijkeDrempel;
 
   return {
     veiligTegenSybilOvername: fouten.length === 0,
@@ -287,6 +319,11 @@ export function beoordeelSybilEnSpreidingsWeerstand(opties: {
     uniekeNetwerkVoorvoegsels: gezieneVoorvoegsels.size,
     genegeerdeTijdelijkeKnopen,
     begrensdeDubbeleAanbiederOfSubnetKnopen,
+    verlopenOfIngetrokkenGenegeerd,
+    fysiekeOnafhankelijkheidExternBewezen,
+    onafhankelijkheidsBewijsBron: fysiekeOnafhankelijkheidExternBewezen
+      ? 'extern_geverifieerd_register'
+      : 'zelfverklaarde_paspoorten',
     fouten,
   };
 }

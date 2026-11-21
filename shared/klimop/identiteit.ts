@@ -5,8 +5,8 @@
 //   3. Сертифікати особистих пристроїв з чітко обмеженими делегованими повноваженнями, лімітами ресурсів і миттєвим відкликанням;
 //   4. Законне багатостороннє порогове відновлення доступу на основі приховувальних часток Педерсена з обов'язковим часовим
 //      вікном оскарження та захистом від незаконного спадкування чи захоплення процедури відновлення (§14, §17, §39);
-//   5. Групове узгодження ключів спільних просторів і оселі за принципами стандарту RFC 9420 (MLS / TreeKEM на X25519 + Ed25519 + HKDF)
-//      із прямою таємницею при додаванні учасників та посткомпрометаційною безпекою при вилученні пристроїв (§12).
+//   5. Спрощене групове епохове шифрування спільних просторів і оселі (на X25519 + Ed25519 + HKDF-SHA-256, за мотивами групових
+//      епох, але НЕ повна реалізація стандарту MLS RFC 9420 / TreeKEM) з підписом привітання, ключами повідомлень за відправником і захистом від повтору (§12).
 
 import {
   createCipheriv,
@@ -120,6 +120,7 @@ const HERSTEL_VERANKERING_DOMEIN = 'klimop-herstelbeleid-verankering-v1|';
 const MS_PER_UUR = 3600 * 1000;
 const HERSTEL_BETWIST_DOMEIN = 'klimop-herstel-eigenaar-betwisting-v1|';
 const MLS_PAKKET_DOMEIN = 'klimop-mls-sleutelpakket-v1|';
+const MLS_WELKOM_DOMEIN = 'klimop-mls-welkom-v1|';
 const MLS_COMMIT_DOMEIN = 'klimop-mls-commit-v1|';
 const MLS_BERICHT_DOMEIN = 'klimop-mls-bericht-v1|';
 
@@ -1136,8 +1137,12 @@ export function voltooiWettigHerstel(opties: {
 }
 
 // =================================================================================================
-// 4. Захист групових просторів та оселі за принципами стандарту RFC 9420 (MLS / TreeKEM):
-//    пряма таємниця при додаванні учасників та посткомпрометаційна безпека при вилученні пристроїв (§12).
+// 4. Спрощене групове епохове шифрування спільних просторів і оселі (§12):
+//    KLIMOP-020: це спрощений протокол групових епох (НЕ повна реалізація MLS RFC 9420 / TreeKEM і без
+//    міжпрограмної сумісності з RFC 9420). Забезпечує виключення нового учасника з минулих епох, виключення
+//    вилученого пристрою з нових епох, перевірку підпису пакета привітання, окремі ключі повідомлень за
+//    відправником і номером та захист від повторного прийняття повідомлень; відновлення таємності після
+//    компрометації листка учасника потребує явного виклику `verversEigenMlsBladSleutel`.
 // =================================================================================================
 
 export interface MlsBladSleutelPakket {
@@ -1145,7 +1150,7 @@ export interface MlsBladSleutelPakket {
   apparaatId: string;
   persoonsId: string;
   tekenPubDerB64u: string; // Ed25519
-  bladX25519PubDerB64u: string; // Одноразовий/оновлюваний листовий ключ X25519 учасника групи
+  bladX25519PubDerB64u: string; // Оновлюваний листовий ключ X25519 учасника групи
   aangemaaktOp: string;
   handtekeningB64u: string;
 }
@@ -1175,9 +1180,11 @@ export interface MlsWelkomPakket {
   schema: 1;
   groepId: string;
   epoche: number;
+  afzenderApparaatId: string;
   actieveLeden: readonly MlsBladSleutelPakket[];
   groepsContextSha256: string;
   ingepaktInitGeheim: MlsVersleuteldeDoos;
+  handtekeningB64u: string;
 }
 
 export interface MlsLidSessieStaat {
@@ -1188,9 +1195,11 @@ export interface MlsLidSessieStaat {
   epoche: number;
   actieveLeden: MlsBladSleutelPakket[];
   groepsContextSha256: string;
-  initGeheim: Buffer;       // Затирається й замінюється при кожному переході епохи (пряма таємниця!)
-  toepassingSleutel: Buffer; // Поточний AEAD-ключ повідомлень епохи
+  initGeheim: Buffer;       // Затирається й замінюється при кожному переході епохи
+  toepassingSleutel: Buffer; // Базовий секрет прикладного рівня епохи (з нього виводяться одноразові ключі повідомлень)
   volgendBerichtNummer: number;
+  /** KLIMOP-020: облік уже прийнятих номерів повідомлень за кожним відправником поточної епохи (проти повтору). */
+  ontvangenBerichtNummersPerAfzender: Record<string, Set<number>>;
 }
 
 export interface MlsGroepsBericht {
@@ -1210,7 +1219,9 @@ function berekenMlsGroepsContextSha256(
   epoche: number,
   leden: readonly MlsBladSleutelPakket[],
 ): string {
-  const gesorteerd = [...leden].sort((a, b) => a.apparaatId.localeCompare(b.apparaatId));
+  const gesorteerd = [...leden].sort((a, b) =>
+    Buffer.compare(Buffer.from(a.apparaatId, 'utf8'), Buffer.from(b.apparaatId, 'utf8')),
+  );
   return createHash('sha256')
     .update(canoniekeJson({ groepId, epoche, leden: gesorteerd }), 'utf8')
     .digest('hex');
@@ -1229,6 +1240,17 @@ function leidMlsEpocheSleutelsAf(
   return { toepassingSleutel, nieuwInitGeheim };
 }
 
+function leidMlsBerichtSleutelAf(
+  toepassingSleutel: Buffer,
+  groepsContextSha256: string,
+  afzenderApparaatId: string,
+  volgnummer: number,
+): Buffer {
+  const zout = Buffer.from(groepsContextSha256, 'hex');
+  const info = Buffer.from(`klimop-mls-sender-msg-key-v2|${afzenderApparaatId}|${volgnummer}`, 'utf8');
+  return Buffer.from(hkdfSync('sha256', toepassingSleutel, zout, info, 32));
+}
+
 function versleutelVoorMlsBlad(
   ontvanger: MlsBladSleutelPakket,
   geheim: Buffer,
@@ -1237,25 +1259,30 @@ function versleutelVoorMlsBlad(
   const ef = genereerX25519Sleutelpaar();
   const efPriv = createPrivateKey({ key: Buffer.from(ef.geheimPkcs8B64u, 'base64url'), format: 'der', type: 'pkcs8' });
   const peerPub = createPublicKey({ key: Buffer.from(ontvanger.bladX25519PubDerB64u, 'base64url'), format: 'der', type: 'spki' });
-  const dh = diffieHellman({ privateKey: efPriv, publicKey: peerPub });
-  const sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
-  dh.fill(0);
+  let dh: Buffer | null = null;
+  let sleutel: Buffer | null = null;
+  try {
+    dh = diffieHellman({ privateKey: efPriv, publicKey: peerPub });
+    sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
 
-  const iv = randomBytes(12);
-  const c = createCipheriv('chacha20-poly1305', sleutel, iv, { authTagLength: 16 });
-  const aad = Buffer.from(`${aadLabel}|${ontvanger.apparaatId}`, 'utf8');
-  c.setAAD(aad, { plaintextLength: geheim.length });
-  const ct = Buffer.concat([c.update(geheim), c.final()]);
-  const tag = c.getAuthTag();
-  sleutel.fill(0);
+    const iv = randomBytes(12);
+    const c = createCipheriv('chacha20-poly1305', sleutel, iv, { authTagLength: 16 });
+    const aad = Buffer.from(`${aadLabel}|${ontvanger.apparaatId}`, 'utf8');
+    c.setAAD(aad, { plaintextLength: geheim.length });
+    const ct = Buffer.concat([c.update(geheim), c.final()]);
+    const tag = c.getAuthTag();
 
-  return {
-    ontvangerApparaatId: ontvanger.apparaatId,
-    efemeerX25519PubDerB64u: ef.publiekDerB64u,
-    ivB64u: iv.toString('base64url'),
-    cijfertekstB64u: ct.toString('base64url'),
-    tagB64u: tag.toString('base64url'),
-  };
+    return {
+      ontvangerApparaatId: ontvanger.apparaatId,
+      efemeerX25519PubDerB64u: ef.publiekDerB64u,
+      ivB64u: iv.toString('base64url'),
+      cijfertekstB64u: ct.toString('base64url'),
+      tagB64u: tag.toString('base64url'),
+    };
+  } finally {
+    dh?.fill(0);
+    sleutel?.fill(0);
+  }
 }
 
 function ontsleutelVoorMlsBlad(
@@ -1264,27 +1291,30 @@ function ontsleutelVoorMlsBlad(
   eigenBladX25519GeheimPkcs8B64u: string,
   aadLabel: string,
 ): Buffer | null {
+  let dh: Buffer | null = null;
+  let sleutel: Buffer | null = null;
   try {
     const eigenPriv = createPrivateKey({ key: Buffer.from(eigenBladX25519GeheimPkcs8B64u, 'base64url'), format: 'der', type: 'pkcs8' });
     const efPub = createPublicKey({ key: Buffer.from(doos.efemeerX25519PubDerB64u, 'base64url'), format: 'der', type: 'spki' });
-    const dh = diffieHellman({ privateKey: eigenPriv, publicKey: efPub });
-    const sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
-    dh.fill(0);
+    dh = diffieHellman({ privateKey: eigenPriv, publicKey: efPub });
+    sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
 
     const ct = Buffer.from(doos.cijfertekstB64u, 'base64url');
     const d = createDecipheriv('chacha20-poly1305', sleutel, Buffer.from(doos.ivB64u, 'base64url'), { authTagLength: 16 });
     const aad = Buffer.from(`${aadLabel}|${eigenApparaatId}`, 'utf8');
     d.setAAD(aad, { plaintextLength: ct.length });
     d.setAuthTag(Buffer.from(doos.tagB64u, 'base64url'));
-    const klaar = Buffer.concat([d.update(ct), d.final()]);
-    sleutel.fill(0);
-    return klaar;
+    return Buffer.concat([d.update(ct), d.final()]);
   } catch {
     return null;
+  } finally {
+    // KLIMOP-020: спільний секрет і похідний ключ гарантовано затираються також у разі помилки автентифікації
+    dh?.fill(0);
+    sleutel?.fill(0);
   }
 }
 
-/** Генерує підписаний листовий пакет ключа пристрою для приєднання до групового простору MLS. */
+/** Генерує підписаний листовий пакет ключа пристрою для приєднання до групового простору. */
 export function maakMlsBladSleutelPakket(
   bundel: KlimopApparaatSleutelBundel,
   nuIso?: string,
@@ -1342,6 +1372,7 @@ export function maakMlsGroep(opties: {
     initGeheim: afgeleid.nieuwInitGeheim,
     toepassingSleutel: afgeleid.toepassingSleutel,
     volgendBerichtNummer: 0,
+    ontvangenBerichtNummersPerAfzender: {},
   };
 }
 
@@ -1369,21 +1400,32 @@ function voerMlsGroepsMutatieUit(
 
   let welkom: MlsWelkomPakket | null = null;
   if (welkomDoelPakket) {
-    // Новий учасник отримує лише упакований секрет НОВОЇ епохи (не знаючи попереднього initGeheim — пряма таємниця!)
+    // Новий учасник отримує лише упакований секрет НОВОЇ епохи (не знаючи попереднього initGeheim), скріплений підписом ініціатора
     const welkomBundel = Buffer.concat([afgeleid.toepassingSleutel, afgeleid.nieuwInitGeheim]);
-    welkom = {
-      schema: 1,
-      groepId: staat.groepId,
-      epoche: naarEpoche,
-      actieveLeden: nieuweLedenLijst,
-      groepsContextSha256,
-      ingepaktInitGeheim: versleutelVoorMlsBlad(
-        welkomDoelPakket,
-        welkomBundel,
-        `mls-welkom|${staat.groepId}|ep:${naarEpoche}`,
-      ),
-    };
-    welkomBundel.fill(0);
+    try {
+      const welkomKern = {
+        schema: 1 as const,
+        groepId: staat.groepId,
+        epoche: naarEpoche,
+        afzenderApparaatId: staat.eigenApparaatId,
+        actieveLeden: nieuweLedenLijst,
+        groepsContextSha256,
+        ingepaktInitGeheim: versleutelVoorMlsBlad(
+          welkomDoelPakket,
+          welkomBundel,
+          `mls-welkom|${staat.groepId}|ep:${naarEpoche}`,
+        ),
+      };
+      welkom = {
+        ...welkomKern,
+        handtekeningB64u: tekenEd25519(
+          staat.eigenTekenGeheimPkcs8B64u,
+          Buffer.from(MLS_WELKOM_DOMEIN + canoniekeJson(welkomKern), 'utf8'),
+        ),
+      };
+    } finally {
+      welkomBundel.fill(0);
+    }
   }
 
   // Безповоротно затираємо секрети попередньої епохи у власній пам'яті!
@@ -1400,6 +1442,7 @@ function voerMlsGroepsMutatieUit(
   staat.initGeheim = afgeleid.nieuwInitGeheim;
   staat.toepassingSleutel = afgeleid.toepassingSleutel;
   staat.volgendBerichtNummer = 0;
+  staat.ontvangenBerichtNummersPerAfzender = {};
 
   const commitKern = {
     schema: 1 as const,
@@ -1425,7 +1468,7 @@ function voerMlsGroepsMutatieUit(
   };
 }
 
-/** Додає нового учасника/пристрій до групи MLS з просуванням епохи (новий учасник не читає минулих епох). */
+/** Додає нового учасника/пристрій до групового простору з просуванням епохи (новий учасник не читає минулих епох). */
 export function voegLidToeAanMlsGroep(
   staat: MlsLidSessieStaat,
   nieuwLidPakket: MlsBladSleutelPakket,
@@ -1443,9 +1486,27 @@ export function voegLidToeAanMlsGroep(
   return { commit: uit.commit, welkom: uit.welkom! };
 }
 
+/** Оновлює власний листовий ключ X25519 учасника з переходом у нову епоху для відновлення таємності після компрометації листка. */
+export function verversEigenMlsBladSleutel(
+  staat: MlsLidSessieStaat,
+  eigenBundel: KlimopApparaatSleutelBundel,
+  nuIso?: string,
+): MlsEpocheCommit {
+  const ververstEigenBlad = maakMlsBladSleutelPakket(eigenBundel, nuIso);
+  const nieuweLijst = staat.actieveLeden.map((l) =>
+    l.apparaatId === staat.eigenApparaatId ? ververstEigenBlad.pakket : l,
+  );
+  return voerMlsGroepsMutatieUit(
+    staat,
+    'sleutel_verversen',
+    nieuweLijst,
+    ververstEigenBlad.bladX25519GeheimPkcs8B64u,
+  ).commit;
+}
+
 /**
- * Вилучає втрачений чи відкликаний пристрій із групи MLS з ротацією листового ключа відправника:
- * забезпечує посткомпрометаційну безпеку — вилучений пристрій не має доступу до ключа нової епохи!
+ * Вилучає втрачений чи відкликаний пристрій із групового простору з ротацією листового ключа ініціатора:
+ * вилучений пристрій не має доступу до ключа нової епохи.
  */
 export function verwijderLidUitMlsGroep(
   staat: MlsLidSessieStaat,
@@ -1465,13 +1526,38 @@ export function verwijderLidUitMlsGroep(
   return voerMlsGroepsMutatieUit(staat, 'verwijderen', nieuweLijst, ververstEigenBlad.bladX25519GeheimPkcs8B64u).commit;
 }
 
-/** Новий учасник приєднується до групи MLS за зашифрованим пакетом привітання (лише з поточної епохи!). */
+/** Новий учасник приєднується до групового простору за підписаним пакетом привітання (лише з поточної епохи!). */
 export function pasMlsWelkomToe(
   welkom: MlsWelkomPakket,
   eigenBundel: KlimopApparaatSleutelBundel,
   eigenBladX25519GeheimPkcs8B64u: string,
 ): { ok: true; staat: MlsLidSessieStaat } | { ok: false; fout: string } {
-  if (!welkom || welkom.schema !== 1) return { ok: false, fout: 'MLS_WELKOM_ONGELDIG' };
+  if (!welkom || welkom.schema !== 1 || !welkom.afzenderApparaatId || !welkom.handtekeningB64u) {
+    return { ok: false, fout: 'MLS_WELKOM_ONGELDIG' };
+  }
+  if (
+    !Array.isArray(welkom.actieveLeden)
+    || welkom.actieveLeden.some((l) => !verifieerMlsBladSleutelPakket(l))
+  ) {
+    return { ok: false, fout: 'MLS_ONGELDIG_SLEUTELPAKKET_IN_GROEP' };
+  }
+  const afzender = welkom.actieveLeden.find(
+    (l) => l.apparaatId === welkom.afzenderApparaatId && l.apparaatId !== eigenBundel.certificaat.apparaatId,
+  );
+  if (!afzender) {
+    return { ok: false, fout: 'MLS_WELKOM_AFZENDER_NIET_IN_GROEP' };
+  }
+  const { handtekeningB64u, ...welkomKern } = welkom;
+  if (
+    !verifieerEd25519(
+      afzender.tekenPubDerB64u,
+      Buffer.from(MLS_WELKOM_DOMEIN + canoniekeJson(welkomKern), 'utf8'),
+      handtekeningB64u,
+    )
+  ) {
+    return { ok: false, fout: 'MLS_WELKOM_HANDTEKENING_ONGELDIG' };
+  }
+
   const verwachteCtx = berekenMlsGroepsContextSha256(welkom.groepId, welkom.epoche, welkom.actieveLeden);
   if (verwachteCtx !== welkom.groepsContextSha256) return { ok: false, fout: 'MLS_WELKOM_CONTEXT_FOUT' };
 
@@ -1482,8 +1568,14 @@ export function pasMlsWelkomToe(
     `mls-welkom|${welkom.groepId}|ep:${welkom.epoche}`,
   );
   if (!geopend || geopend.length !== 64) {
+    geopend?.fill(0);
     return { ok: false, fout: 'MLS_WELKOM_ONTSLEUTELING_MISLUKT' };
   }
+
+  const toepassingSleutel = Buffer.from(geopend.subarray(0, 32));
+  const initGeheim = Buffer.from(geopend.subarray(32, 64));
+  // KLIMOP-020: затираємо тимчасовий 64-байтовий буфер одразу після розділення секретів
+  geopend.fill(0);
 
   return {
     ok: true,
@@ -1495,9 +1587,10 @@ export function pasMlsWelkomToe(
       epoche: welkom.epoche,
       actieveLeden: [...welkom.actieveLeden],
       groepsContextSha256: welkom.groepsContextSha256,
-      toepassingSleutel: Buffer.from(geopend.subarray(0, 32)),
-      initGeheim: Buffer.from(geopend.subarray(32, 64)),
+      toepassingSleutel,
+      initGeheim,
       volgendBerichtNummer: 0,
+      ontvangenBerichtNummersPerAfzender: {},
     },
   };
 }
@@ -1509,6 +1602,12 @@ export function pasMlsCommitToe(
 ): { ok: true } | { ok: false; fout: string } {
   if (!commit || commit.schema !== 1 || commit.groepId !== staat.groepId || commit.vanEpoche !== staat.epoche) {
     return { ok: false, fout: 'MLS_COMMIT_EPOCHE_OF_GROEP_FOUT' };
+  }
+  if (
+    !Array.isArray(commit.actieveLeden)
+    || commit.actieveLeden.some((l) => !verifieerMlsBladSleutelPakket(l))
+  ) {
+    return { ok: false, fout: 'MLS_ONGELDIG_SLEUTELPAKKET_IN_GROEP' };
   }
   const afzender = staat.actieveLeden.find((l) => l.apparaatId === commit.afzenderApparaatId);
   if (!afzender) return { ok: false, fout: 'MLS_COMMIT_AFZENDER_NIET_IN_GROEP' };
@@ -1547,10 +1646,11 @@ export function pasMlsCommitToe(
   staat.initGeheim = afgeleid.nieuwInitGeheim;
   staat.toepassingSleutel = afgeleid.toepassingSleutel;
   staat.volgendBerichtNummer = 0;
+  staat.ontvangenBerichtNummersPerAfzender = {};
   return { ok: true };
 }
 
-/** Шифрує та підписує групове повідомлення в поточній епосі MLS. */
+/** Шифрує та підписує групове повідомлення в поточній епосі за індивідуальним ключем відправника й номера. */
 export function versleutelMlsGroepsBericht(staat: MlsLidSessieStaat, klareInhoud: Buffer): MlsGroepsBericht {
   const volgnummer = staat.volgendBerichtNummer++;
   const iv = randomBytes(12);
@@ -1558,10 +1658,22 @@ export function versleutelMlsGroepsBericht(staat: MlsLidSessieStaat, klareInhoud
     `klimop-mls-msg-v1|${staat.groepId}|ep:${staat.epoche}|${staat.groepsContextSha256}|${staat.eigenApparaatId}|${volgnummer}`,
     'utf8',
   );
-  const c = createCipheriv('chacha20-poly1305', staat.toepassingSleutel, iv, { authTagLength: 16 });
-  c.setAAD(aad, { plaintextLength: klareInhoud.length });
-  const ct = Buffer.concat([c.update(klareInhoud), c.final()]);
-  const tag = c.getAuthTag();
+  const berichtSleutel = leidMlsBerichtSleutelAf(
+    staat.toepassingSleutel,
+    staat.groepsContextSha256,
+    staat.eigenApparaatId,
+    volgnummer,
+  );
+  let ct: Buffer;
+  let tag: Buffer;
+  try {
+    const c = createCipheriv('chacha20-poly1305', berichtSleutel, iv, { authTagLength: 16 });
+    c.setAAD(aad, { plaintextLength: klareInhoud.length });
+    ct = Buffer.concat([c.update(klareInhoud), c.final()]);
+    tag = c.getAuthTag();
+  } finally {
+    berichtSleutel.fill(0);
+  }
 
   const kern = {
     schema: 1 as const,
@@ -1579,33 +1691,60 @@ export function versleutelMlsGroepsBericht(staat: MlsLidSessieStaat, klareInhoud
   };
 }
 
-/** Перевіряє підпис активного учасника поточної епохи та розшифровує групове повідомлення MLS. */
+/** Перевіряє підпис активного учасника поточної епохи, блокує повтор повідомлення та розшифровує групове повідомлення. */
 export function ontsleutelMlsGroepsBericht(
   staat: MlsLidSessieStaat,
   bericht: MlsGroepsBericht,
 ): { ok: true; klareInhoud: Buffer } | { ok: false; fout: string } {
-  if (!bericht || bericht.schema !== 1 || bericht.groepId !== staat.groepId || bericht.epoche !== staat.epoche) {
+  if (
+    !bericht
+    || bericht.schema !== 1
+    || bericht.groepId !== staat.groepId
+    || bericht.epoche !== staat.epoche
+    || !Number.isSafeInteger(bericht.volgnummer)
+    || bericht.volgnummer < 0
+  ) {
     return { ok: false, fout: 'MLS_BERICHT_EPOCHE_VERSCHILT' };
   }
   const afzender = staat.actieveLeden.find((l) => l.apparaatId === bericht.afzenderApparaatId);
   if (!afzender) return { ok: false, fout: 'MLS_BERICHT_AFZENDER_NIET_IN_EPOCHE' };
+
+  const gezieneSet = staat.ontvangenBerichtNummersPerAfzender[bericht.afzenderApparaatId];
+  if (gezieneSet?.has(bericht.volgnummer)) {
+    return { ok: false, fout: 'MLS_BERICHT_HERHALING_GEWEIGERD' };
+  }
 
   const { handtekeningB64u, ...kern } = bericht;
   if (!verifieerEd25519(afzender.tekenPubDerB64u, Buffer.from(MLS_BERICHT_DOMEIN + canoniekeJson(kern), 'utf8'), handtekeningB64u)) {
     return { ok: false, fout: 'MLS_BERICHT_HANDTEKENING_ONGELDIG' };
   }
 
+  const berichtSleutel = leidMlsBerichtSleutelAf(
+    staat.toepassingSleutel,
+    staat.groepsContextSha256,
+    bericht.afzenderApparaatId,
+    bericht.volgnummer,
+  );
   try {
     const ct = Buffer.from(bericht.cijfertekstB64u, 'base64url');
     const aad = Buffer.from(
       `klimop-mls-msg-v1|${staat.groepId}|ep:${staat.epoche}|${staat.groepsContextSha256}|${bericht.afzenderApparaatId}|${bericht.volgnummer}`,
       'utf8',
     );
-    const d = createDecipheriv('chacha20-poly1305', staat.toepassingSleutel, Buffer.from(bericht.ivB64u, 'base64url'), { authTagLength: 16 });
+    const d = createDecipheriv('chacha20-poly1305', berichtSleutel, Buffer.from(bericht.ivB64u, 'base64url'), { authTagLength: 16 });
     d.setAAD(aad, { plaintextLength: ct.length });
     d.setAuthTag(Buffer.from(bericht.tagB64u, 'base64url'));
-    return { ok: true, klareInhoud: Buffer.concat([d.update(ct), d.final()]) };
+    const klareInhoud = Buffer.concat([d.update(ct), d.final()]);
+    let registratie = staat.ontvangenBerichtNummersPerAfzender[bericht.afzenderApparaatId];
+    if (!registratie) {
+      registratie = new Set<number>();
+      staat.ontvangenBerichtNummersPerAfzender[bericht.afzenderApparaatId] = registratie;
+    }
+    registratie.add(bericht.volgnummer);
+    return { ok: true, klareInhoud };
   } catch {
     return { ok: false, fout: 'MLS_BERICHT_AUTHENTICATIE_MISLUKT' };
+  } finally {
+    berichtSleutel.fill(0);
   }
 }

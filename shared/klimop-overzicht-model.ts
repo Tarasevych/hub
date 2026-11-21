@@ -515,6 +515,8 @@ export interface KlimopQuorumAttestRegel {
   hybrideVerificatieOk: boolean;
   ketensSluitend: boolean;
   besluitVolledigOnafhankelijkToegestaan: boolean;
+  /** KLIMOP-020: чесно вказує, чи створено кворум як місцеве моделювання в одному процесі, чи за зовнішнім реєстром ключів. */
+  uitvoeringsAard?: 'lokale_simulatie_een_proces' | 'extern_knooppuntenregister';
   attestModusVoor: KlimopQuorumAttestModus;
   attestModusNa: KlimopQuorumAttestModus;
   automatischTeruggezet: boolean;
@@ -529,6 +531,8 @@ export interface KlimopQuorumAttestUitkomst {
   dienstId: KlimopDienstId;
   subdomein: string;
   geisoleerdeDienstPsid: string;
+  /** KLIMOP-020: явна позначка місцевого моделювання кворуму в одному процесі до під'єднання зовнішніх вузлів. */
+  uitvoeringsAard?: 'lokale_simulatie_een_proces' | 'extern_knooppuntenregister';
   knooppunten: {
     regios: readonly string[];
     onafhankelijkQuorumOk: boolean;
@@ -554,6 +558,9 @@ export interface KlimopQuorumAttestUitkomst {
     huidigeProductieModus: KlimopOverdrachtModus;
     gevalideerdeDoelModus: KlimopOverdrachtModus;
     reden: string;
+    /** KLIMOP-020: розрізняє місцеве моделювання в одному процесі та атестат зовнішньо зареєстрованих фізичних вузлів. */
+    bewijsOmvang?: 'lokale_simulatie' | 'extern_geverifieerd_quorum';
+    waarschuwing?: Tekst;
   };
   schakelaar: KlimopDienstSchakelaarStaat;
   automatischTeruggezetNaarErfenis: boolean;

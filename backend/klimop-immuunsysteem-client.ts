@@ -6,9 +6,15 @@
 //   - добудова втрачених фрагментів на здорових незалежних резервних вузлах у межах квот трафіку, з повагою до
 //     заряду й мережі користувацьких пристроїв (§26–§27) та без жодного самовільного розширення повноважень (§22).
 
+import { createHash } from 'node:crypto';
 import type { KlimopKnooppuntIdentiteit, KlimopOndertekendMandaat } from '../shared/klimop/kern';
 import type { KlimopRouteTabel } from '../shared/klimop/stengels';
-import { verifieerObjectManifest, type KlimopObjectManifest } from '../shared/klimop/opslag';
+import {
+  herbouwReedSolomonFragmentenZonderSleutel,
+  verifieerObjectManifest,
+  type KlimopObjectManifest,
+  type ReedSolomonFragment,
+} from '../shared/klimop/opslag';
 import {
   beoordeelKnooppuntGezondheid,
   controleerZelfherstelQuota,
@@ -37,6 +43,8 @@ export interface ObjectImmuunInspectieVerslag {
   directLeesbaarZonderHerstel: boolean;
   beoordelingenPerIndex: Record<number, KlimopImmuunBeoordeling>;
   verlorenOfBeschadigdeIndexen: number[];
+  /** KLIMOP-020: індекси смуг, для яких бракувало незалежного еталона (не зараховуються як здорові). */
+  nietGeverifieerdeIndexen?: number[];
 }
 
 export interface AutomatischZelfherstelVerslag {
@@ -59,12 +67,16 @@ export class KlimopImmuunsysteemClient {
 
   /**
    * Проводить неперервну сліпу інспекцію всіх смуг зашифрованого об'єкта без ключа розшифрування власника (§21):
-   * перевіряє досяжність вузла, автентичність стебла та криптографічний доказ цілісності кожного фрагмента.
+   * перевіряє досяжність вузла, автентичність стебла та криптографічний доказ володіння точним блоком за еталоном і розміром.
    */
   async inspecteerObjectZonderInzage(opties: {
     manifest: KlimopObjectManifest;
     plaatsing: KlimopPlaatsingsKaart;
     maxNormaleVertragingMs?: number;
+    /** KLIMOP-020: попередньо відомі зашифровані еталони блоків за їхнім SHA-256. */
+    referentieFragmentenPerSha256?: ReadonlyMap<string, Buffer>;
+    /** Якщо true, не намагається добудувати еталон з живих смуг Ріда–Соломона за відсутності в referentieFragmentenPerSha256. */
+    alleenMetGegevenReferenties?: boolean;
   }): Promise<ObjectImmuunInspectieVerslag> {
     const mv = verifieerObjectManifest(opties.manifest);
     const totaal = opties.manifest.reedSolomon.k + opties.manifest.reedSolomon.m;
@@ -80,13 +92,81 @@ export class KlimopImmuunsysteemClient {
         directLeesbaarZonderHerstel: false,
         beoordelingenPerIndex: {},
         verlorenOfBeschadigdeIndexen: Array.from({ length: totaal }, (_, i) => i),
+        nietGeverifieerdeIndexen: [],
       };
+    }
+
+    // KLIMOP-020: підготовка незалежних еталонів зашифрованих блоків (з наданої карти або з k перевірених за SHA-256 смуг Ріда–Соломона без KEK)
+    const referenties = new Map<string, Buffer>();
+    const bewezenBeschadigdeIndexen = new Set<number>();
+
+    for (const seg of opties.manifest.segmenten) {
+      let alleAanwezig = true;
+      for (const ref of seg.fragmentRefs) {
+        const gegeven = opties.referentieFragmentenPerSha256?.get(ref.sha256);
+        if (
+          gegeven
+          && gegeven.length === seg.streepLengte
+          && createHash('sha256').update(gegeven).digest('hex') === ref.sha256
+        ) {
+          referenties.set(ref.sha256, gegeven);
+        } else {
+          alleAanwezig = false;
+        }
+      }
+
+      if (!alleAanwezig && !opties.alleenMetGegevenReferenties) {
+        const geldigeBron: ReedSolomonFragment[] = [];
+        for (let r = 0; r < totaal && geldigeBron.length < minK; r++) {
+          const kn = opties.plaatsing.knooppuntPerIndex[r];
+          const mandaat = kn ? opties.plaatsing.mandatenPerKnooppuntId[kn.knooppuntId] : undefined;
+          const ref = seg.fragmentRefs.find((f) => f.index === r);
+          if (!kn || !mandaat || !ref || this.routeTabel.inQuarantaineSet().has(kn.knooppuntId)) continue;
+
+          const opgehaald = await this.netwerkClient.roepOpdrachtAan(kn.knooppuntId, {
+            actie: 'haal_blok',
+            blokSha256: ref.sha256,
+            mandaat,
+          });
+          if (!opgehaald.antwoord.ok || opgehaald.antwoord.actie !== 'opgehaald') continue;
+          const ruw = Buffer.from(opgehaald.antwoord.cijfertekstB64u, 'base64url');
+          const berekendSha = createHash('sha256').update(ruw).digest('hex');
+          if (ruw.length !== seg.streepLengte || berekendSha !== ref.sha256) {
+            bewezenBeschadigdeIndexen.add(r);
+            continue;
+          }
+          geldigeBron.push({
+            index: r,
+            soort: ref.soort,
+            sha256: ref.sha256,
+            inhoudB64u: opgehaald.antwoord.cijfertekstB64u,
+          });
+        }
+
+        if (geldigeBron.length >= minK) {
+          const herbouwd = herbouwReedSolomonFragmentenZonderSleutel(
+            geldigeBron,
+            minK,
+            opties.manifest.reedSolomon.m,
+            seg.versleuteldeLengte,
+          );
+          if (herbouwd.ok) {
+            for (const f of herbouwd.fragmenten) {
+              const verwachtRef = seg.fragmentRefs.find((x) => x.index === f.index);
+              if (verwachtRef && f.sha256 === verwachtRef.sha256) {
+                referenties.set(verwachtRef.sha256, Buffer.from(f.inhoudB64u, 'base64url'));
+              }
+            }
+          }
+        }
+      }
     }
 
     const statusPerIndex: Array<{
       knooppuntId: string;
       bereikbaar: boolean;
       integriteitOk: boolean;
+      nietGeverifieerd: boolean;
       vertragingMs: number;
     }> = [];
 
@@ -98,16 +178,19 @@ export class KlimopImmuunsysteemClient {
           knooppuntId: kn?.knooppuntId ?? `onbekend_${r}`,
           bereikbaar: false,
           integriteitOk: false,
+          nietGeverifieerd: false,
           vertragingMs: 0,
         });
         continue;
       }
 
       const tStart = performance.now();
-      let alleSegmentenVanStreepOk = true;
+      let alleSegmentenVanStreepOk = !bewezenBeschadigdeIndexen.has(r);
       let knoopBereikbaar = true;
+      let ontbrekendeReferentie = false;
 
       for (const seg of opties.manifest.segmenten) {
+        if (!alleSegmentenVanStreepOk) break;
         const ref = seg.fragmentRefs.find((f) => f.index === r);
         if (!ref) {
           alleSegmentenVanStreepOk = false;
@@ -137,11 +220,17 @@ export class KlimopImmuunsysteemClient {
           break;
         }
 
+        const referentieBuf = referenties.get(ref.sha256);
         const vBewijs = verifieerBlindeIntegriteitBewijs({
           uitdaging,
           antwoord: antw.antwoord.bewijs,
+          verwachteCijfertekst: referentieBuf,
+          verwachteGrootteBytes: seg.streepLengte,
         });
         if (!vBewijs.ok) {
+          if (vBewijs.nietGeverifieerd) {
+            ontbrekendeReferentie = true;
+          }
           alleSegmentenVanStreepOk = false;
           break;
         }
@@ -150,7 +239,8 @@ export class KlimopImmuunsysteemClient {
       statusPerIndex.push({
         knooppuntId: kn.knooppuntId,
         bereikbaar: knoopBereikbaar,
-        integriteitOk: knoopBereikbaar && alleSegmentenVanStreepOk,
+        integriteitOk: knoopBereikbaar && alleSegmentenVanStreepOk && !ontbrekendeReferentie,
+        nietGeverifieerd: knoopBereikbaar && ontbrekendeReferentie,
         vertragingMs: Math.round(performance.now() - tStart),
       });
     }
@@ -158,13 +248,18 @@ export class KlimopImmuunsysteemClient {
     const gezondeStrepen = statusPerIndex.filter((s) => s.bereikbaar && s.integriteitOk).length;
     const beoordelingenPerIndex: Record<number, KlimopImmuunBeoordeling> = {};
     const verlorenOfBeschadigdeIndexen: number[] = [];
+    const nietGeverifieerdeIndexen: number[] = [];
 
     for (let r = 0; r < totaal; r++) {
       const s = statusPerIndex[r];
+      if (s.nietGeverifieerd) {
+        nietGeverifieerdeIndexen.push(r);
+      }
       const waarneming: KlimopGezondheidsWaarneming = {
         knooppuntId: s.knooppuntId,
         bereikbaar: s.bereikbaar,
-        integriteitBewijsGeldig: s.integriteitOk,
+        // Без еталона смуга не зараховується здоровою, але вузол не ставиться в карантин без доказу пошкодження
+        integriteitBewijsGeldig: s.nietGeverifieerd ? true : s.integriteitOk,
         uitgaveIntegriteitOk: true,
         stengelAuthentiek: true,
         epocheActueel: true,
@@ -178,6 +273,9 @@ export class KlimopImmuunsysteemClient {
         geenPersoonlijkeInhoudInTelemetrie: true,
       };
       const oordeel = beoordeelKnooppuntGezondheid(waarneming);
+      if (s.nietGeverifieerd) {
+        oordeel.redenen.push('INTEGRITEIT_NIET_GEVERIFIEERD_ZONDER_REFERENTIE');
+      }
       beoordelingenPerIndex[r] = oordeel;
       if (!s.bereikbaar || !s.integriteitOk) {
         verlorenOfBeschadigdeIndexen.push(r);
@@ -185,13 +283,14 @@ export class KlimopImmuunsysteemClient {
     }
 
     return {
-      ok: verlorenOfBeschadigdeIndexen.length === 0,
+      ok: verlorenOfBeschadigdeIndexen.length === 0 && nietGeverifieerdeIndexen.length === 0,
       gezondeStrepen,
       totaalStrepen: totaal,
       vereistMinimumStrepen: minK,
       directLeesbaarZonderHerstel: gezondeStrepen >= minK,
       beoordelingenPerIndex,
       verlorenOfBeschadigdeIndexen,
+      nietGeverifieerdeIndexen,
     };
   }
 

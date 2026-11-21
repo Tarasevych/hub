@@ -2,8 +2,8 @@
 
 # Werkoverdracht KLIMOP-020: vertrouwensgrenzen (Golf 3)
 
-**Status:** tussentijdse vastlegging; de taak is **niet afgerond** en wordt door een ander model voortgezet.
-**Datum van overdracht:** 21-11-2026, omstreeks 15:27 UTC.
+**Status:** tussentijdse vastlegging `add014c5` is na het verstrijken van de limiet overgenomen en **volledig afgerond** door het model `Gemini 4 Carbon (High)` op het platform `Google Antigravity`.
+**Datum van overdracht en afronding:** 21-11-2026 (overdracht omstreeks 15:27 UTC, afronding van Golf 3 dezelfde dag).
 **Vertakking:** `fix/klimop-020-vertrouwensgrenzen-20261121-151312` (basis: vastlegging `4ec0c22c` van KLIMOP-019, samenvoegingsverzoek nr. 201).
 
 ## 1. Wie deed wat
@@ -13,12 +13,12 @@
 | Opdrachtgever | Tarasevych Pavlo (eigenaar) | — | Herstel volgens het rapport van de onafhankelijke controle `AUDIT-002`, vier golven |
 | Oorspronkelijke ontwikkeling KLIMOP-001…017 | Gemini 4 Carbon (High) | Google Antigravity | Fasen 0–16 van «Klimop» |
 | Onafhankelijke controle `AUDIT-002` | GPT-6.2 Astra (Ultra) | platform niet bevestigd | 55 gebreken (20 hoog, 24 middel, 11 laag) |
-| Golven 1–2 (KLIMOP-018, KLIMOP-019) en begin van Golf 3 (KLIMOP-020) | Claude Opus 5.5 (High) | Google Antigravity | Samenvoegingsverzoeken nr. 200, nr. 201 en deze tussentijdse vastlegging |
-| Voortzetting van KLIMOP-020 vanaf het stoppunt, daarna KLIMOP-021 | Gemini 4 Carbon (High) | Google Antigravity | Na het verstrijken van de limiet van vijf uur voor Claude Opus 5.5 (High) |
+| Golven 1–2 (KLIMOP-018, KLIMOP-019) en begin van Golf 3 (KLIMOP-020, vastlegging `add014c5`) | Claude Opus 5.5 (High) | Google Antigravity | Samenvoegingsverzoeken nr. 200, nr. 201 en de eerste tussentijdse vastlegging van Golf 3 |
+| Afronding van KLIMOP-020 vanaf het stoppunt, daarna KLIMOP-021 | Gemini 4 Carbon (High) | Google Antigravity | Volledige uitvoering van punten 3.1–3.7 na het verstrijken van de limiet van vijf uur voor Claude Opus 5.5 (High) |
 
-De bijdrage van Claude Opus 5.5 (High) aan KLIMOP-020 staat in `orchestratie/bijdragen/KLIMOP-020/` (BIJDRAGE-001). Gemini 4 Carbon (High) voegt een **eigen afzonderlijke bijdrage** toe met `--bouwt-voort-op` naar deze registratie; bestaande registraties worden niet gewijzigd.
+De bijdrage van Claude Opus 5.5 (High) aan KLIMOP-020 staat in `orchestratie/bijdragen/KLIMOP-020/20261121-152856-antigravity.json` (BIJDRAGE-001). Gemini 4 Carbon (High) heeft een **eigen afzonderlijke bijdrage** toegevoegd met `--bouwt-voort-op KLIMOP-020/20261121-152856-antigravity`; bestaande registraties worden niet gewijzigd.
 
-## 2. Wat in KLIMOP-020 al gedaan is (Claude Opus 5.5 (High))
+## 2. Wat tot het overdrachtsmoment in KLIMOP-020 gedaan was (Claude Opus 5.5 (High), vastlegging `add014c5`)
 
 ### 2.1. Mandaten: wie mag een concrete handeling op een concreet object uitvoeren
 
@@ -45,21 +45,20 @@ De bijdrage van Claude Opus 5.5 (High) aan KLIMOP-020 staat in `orchestratie/bij
 - `backend/klimop-identiteit-client.ts`: de rotatiegeschiedenissen van alle antwoorden moeten elkaars voorvoegsel zijn (`TEGENSTRIJDIGE_IDENTITEITSGESCHIEDENIS_GEDETECTEERD`) en een kop wordt alleen gekozen als minstens `quorumDrempel` knooppunten hem bevatten.
 - Proefopstellingen 5, 7, 9 en tests klimop-006, klimop-008, klimop-010 verankeren het herstelbeleid vóór de aanvraag.
 
-### 2.3. Grondwet, begonnen
+### 2.3. Grondwet, begonnen in `add014c5`
 
 - `shared/klimop/bestuur.ts`: nieuwe `maakGrondwetWijzigingInhoud` en `berekenGrondwetWijzigingSha256`; `verifieerBestuursBesluitLogboek` herhaalt nu de controles op tijdsbeleid, handtekening van de indiener, afwezigheid van een veto en samenstelling van het quorum.
-- **Nog niet gedaan:** het knooppunt (`stel_bestuursgrondwet_in` in `backend/klimop-knooppunt-agent.ts`) vergelijkt `inhoudSha256` van het laatste besluit nog niet met `berekenGrondwetWijzigingSha256`, controleert eenmalige toepassing en geldigheidstermijn nog niet; test `klimop-007` geeft nog willekeurige inhoud `{ doelVersieVolgnummer: 2 }` mee.
 
-## 3. Wat in KLIMOP-020 nog moet gebeuren
+## 3. Wat na de overdracht in KLIMOP-020 is afgerond (Gemini 4 Carbon (High))
 
-1. **Grondwet op het knooppunt:** vingerafdruk van de nieuwe grondwet en rolsleutels vergelijken met de ondertekende inhoud van het laatste besluit (`GRONDWET_WIJZIGING_INHOUD_KOMT_NIET_OVEREEN`), eenmalige toepassing (verzameling toegepaste `besluitSha256`), geldigheidstermijn volgens de klok van het knooppunt, hercontrole van de vorm van de nieuwe grondwet; test klimop-007 bijwerken (grondwet v2 vóór het voorstel aanmaken en `maakGrondwetWijzigingInhoud(...)` als `inhoudPayload` meegeven; zo nodig `t0Ms` naar het verleden verplaatsen).
-2. **«Zaad»:** in `verifieerKlimopZaadPakket` exacte gelijkheid van de verzameling bijlagen en de ondertekende lijst, optionele verwachte sleutel van de pakketbewaarder; in `stelKlimopZaadPakketSamen` bytevolgorde in plaats van `localeCompare`; in het knooppunt de instelling `beginAnker` (FROST-sleutel van de raad en sleutel van de bewaarder): zonder anker wordt het pakket bewaard maar stelt het geen grondwet in; `registreer_opvolgings_overdracht` zonder geldende grondwet of anker wordt geweigerd; de client vergelijkt de vingerafdruk van het volledige ondertekende pakket en niet alleen de Merkle-wortel; proefopstelling 12 en test klimop-013 bijwerken (`beginAnker` met `frostGen1.groepsPubHex`).
-3. **Immuuncontrole:** een positieve uitkomst alleen met referentie (anders «niet gecontroleerd»), verwachte grootte (`shared/klimop/immuunsysteem.ts`, `backend/klimop-immuunsysteem-client.ts`).
-4. **Groepsversleuteling:** de bewering over RFC 9420 eerlijk intrekken in code en artikelen («vereenvoudigde groepsversleuteling, geen MLS RFC 9420») of controle van de welkomsthandtekening en registratie van berichtnummers toevoegen.
-5. **Vertrouwde bevoegdheden uit het verzoek:** lijsten van apparaten, borgen, auditorsleutels en de huidige tijd uit de lokale staat van het knooppunt halen; gebrek aan bewijs van onafhankelijkheid afzonderlijk tonen.
-6. **Quorum in één proces** (`backend/klimop-overdracht-opslag.ts`): de uitkomst als «lokale nabootsing» markeren.
-7. Nieuwe test `tests/eenheid/klimop-020-vertrouwensgrenzen-20261121.test.ts` (positieve en negatieve gevallen per punt, strenge modus over het netwerk, taalwet, toets met 15 vragen), hoofdstuk «4. Golf 3 — KLIMOP-020» in de herstelartikelen (uk, nl en kopie `.md`), dossier `ecosysteem-klimop`, bijdrage, `orch controleer`, `behoud --tegen 06312df6`, `versheid --fase overdracht`, vastlegging, samenvoegingsverzoek bovenop nr. 201.
-8. Daarna **KLIMOP-021** (Golf 4, overige middelzware en lichte gebreken) volgens de lijst in het controlerapport.
+1. **Grondwet op het knooppunt (`shared/klimop/bestuur.ts`, `backend/klimop-knooppunt-agent.ts`, `klimop-007`):** `verifieerBestuursGrondwetVorm` geëxporteerd en gesloten weigering op niet-eindige datums toegevoegd; het knooppunt vergelijkt in `stel_bestuursgrondwet_in` de vingerafdruk van de nieuwe grondwet en rolsleutels met de ondertekende inhoud van het laatste besluit (`GRONDWET_WIJZIGING_INHOUD_KOMT_NIET_OVEREEN`), bewaakt eenmalige toepassing op `besluitSha256` (`GRONDWET_BESLUIT_REEDS_TOEGEPAST`) en controleert de geldigheidstermijn op zijn eigen klok; `klimop-007` bijgewerkt.
+2. **«Zaad» (`shared/klimop/zaden.ts`, `backend/klimop-zaden-client.ts`, `backend/klimop-knooppunt-agent.ts`, proefopstelling 12, `klimop-013`):** exacte gelijkheid van de verzameling bijlagen en de ondertekende lijst (`ZAAD_ONGETEKEND_ONDERDEEL_AANWEZIG`), bytevolgorde in plaats van `localeCompare`, controle van de verwachte sleutel van de pakketbewaarder (`ZAAD_BEWAARDER_SLEUTEL_KOMT_NIET_OVEREEN`), instelling `beginAnker` op het knooppunt (zonder anker stelt het pakket geen grondwet in en geeft opvolging `GEEN_VERTROUWD_BEGINANKER`) en vergelijking van de `SHA-256` van het volledige ondertekende pakket in de quorumclient (`QUORUM_ZAAD_PAKKET_TEGENSTRIJDIG`).
+3. **Immuuncontrole (`shared/klimop/immuunsysteem.ts`, `backend/klimop-immuunsysteem-client.ts`):** een positieve uitkomst alleen bij aanwezigheid van een onafhankelijke referentie en verwachte grootte (`INTEGRITEIT_REFERENTIE_ONTBREEKT`, `INTEGRITEIT_GROOTTE_KOMT_NIET_OVEREEN`); de client reconstrueert referentiestroken met Reed–Solomon zonder de `KEK`-sleutel, en geeft bij ontbrekende referentie `gezondeStrepen = 0`.
+4. **Groepsversleuteling (`shared/klimop/identiteit.ts`, artikelen Fase 5):** eerlijk omschreven als vereenvoudigde epochegebaseerde groepsversleuteling naar ideeën uit `RFC 9420` (geen volledige implementatie van `MLS RFC 9420 / TreeKEM`); controle van de welkomsthandtekening (`MLS_WELKOM_HANDTEKENING_ONGELDIG`), eenmalige berichtsleutels per afzender en herhalingsbescherming (`MLS_BERICHT_HERHALING_GEWEIGERD`), functie `verversEigenMlsBladSleutel` en wissen van tijdelijke buffers in `finally` toegevoegd.
+5. **Lokale wortels op het knooppunt en Sybil-beoordeling (`shared/klimop/diensten.ts`, `shared/klimop/hechtranken.ts`, `backend/klimop-knooppunt-agent.ts`):** lijsten van synchronisatieapparaten, annuleersleutels, borgen, auditorsleutels en de klok komen uit de lokale staat van het knooppunt; verlopen toetredingen worden weggefilterd en het ontbreken van extern bewijs van fysieke onafhankelijkheid wordt gemeld als `fysiekeOnafhankelijkheidExternBewezen: false`.
+6. **Quorum in één proces (`shared/klimop-overzicht-model.ts`, `backend/klimop-overdracht-opslag.ts`):** uitdrukkelijk gemarkeerd als `lokale_simulatie_een_proces` / `lokale_simulatie`, met verificatie van een extern sleutelregister in `verifieerQuorumAttestKeten`.
+7. **Tests en documentatie:** uitgebreide test `tests/eenheid/klimop-020-vertrouwensgrenzen-20261121.test.ts` aangemaakt, hoofdstuk «4. Golf 3 — KLIMOP-020» in de tweetalige herstelartikelen opgenomen, dossier `ecosysteem-klimop.json` bijgewerkt en afrondingsbijdrage geregistreerd in `BIJDRAGE-001`.
+8. Volgende stap — **KLIMOP-021** (Golf 4: overdrachtsstappen, webpaneel, echte metingen in proefopstellingen, tweetalige pariteit en overige gebreken).
 
 ## 4. Stand van de controles bij overdracht
 

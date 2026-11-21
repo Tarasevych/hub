@@ -68,7 +68,9 @@ import {
 } from '../shared/klimop/identiteit';
 import {
   beoordeelUitrolGezondheid,
+  berekenGrondwetWijzigingSha256,
   verifieerBestuursBesluitLogboek,
+  verifieerBestuursGrondwetVorm,
   verifieerUitgaveBundel,
   type KlimopBekrachtigdBestuursBesluit,
   type KlimopBestuursGrondwet,
@@ -466,6 +468,7 @@ export type KnooppuntOpdrachtAntwoord =
       zaadId: string;
       merkleWortelSha256: string;
       geverifieerdeModules: number;
+      grondwetIngesteld?: boolean;
     }
   | {
       ok: true;
@@ -581,9 +584,30 @@ export async function startKlimopProefKnooppunt(config: {
    * відправник. Без реєстру вузол працює в явному режимі `open_proef` (лише для штучних випробувань).
    */
   vertrouwdeUitgevers?: readonly string[];
+  /**
+   * KLIMOP-020: зовнішній початковий якір довіри для «Насіння» та актів спадкоємності (ключ ради FROST і ключ хранителя пакета).
+   * Без нього пакет зберігається, але не може самовільно встановити конституцію чи прийняти спадкоємність.
+   */
+  beginAnker?: {
+    frostGroepsPubliekeSleutelHex: string;
+    zaadBewaarderEd25519PubDerB64u?: string;
+    zaadBewaarderMlDsa65PubSpkiB64u?: string;
+  };
+  /** KLIMOP-020: локальні довірені корені на вузлі замість сліпої довіри полям мережевого запиту. */
+  toegestaneSynchronisatieApparaatPubSleutels?: readonly string[];
+  toegestaneAnnuleerPubSleutels?: readonly string[];
+  erkendeSponsorPubSleutels?: readonly string[];
+  erkendeAuditorSleutels?: ReadonlyArray<{
+    auditorKnooppuntId: string;
+    ed25519PubliekDerB64u: string;
+    mlDsa65PubliekSpkiB64u: string;
+  }>;
+  /** Авторитетний годинник вузла одержувача (типово `new Date().toISOString()`). */
+  klok?: () => string;
 }): Promise<KlimopProefKnooppunt> {
   const { knooppunt } = config;
   const host = config.luisterHost ?? '127.0.0.1';
+  const klok = config.klok ?? (() => new Date().toISOString());
   const sessies = new Map<string, KlimopStengelSessie>();
   const blokOpslag = new Map<string, Buffer>();
   const drempelStaat = config.staatBestand ? laadDrempelStaat(config.staatBestand, knooppunt) : laadLegeStaat();
@@ -603,6 +627,8 @@ export async function startKlimopProefKnooppunt(config: {
   const auditRapporten = new Map<string, KlimopOnafhankelijkAuditRapport>();
   const zaadPakketten = new Map<string, KlimopZaadPakket>();
   const opvolgingsOverdrachten: KlimopOpvolgingsOverdracht[] = [];
+  const toegepasteBesluitSha256s = new Set<string>();
+  const toegepasteOpvolgingIds = new Set<string>();
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
@@ -618,6 +644,16 @@ export async function startKlimopProefKnooppunt(config: {
     ? new Set(config.vertrouwdeUitgevers)
     : null;
   const vertrouwensModus: 'streng' | 'open_proef' = vertrouwdeUitgevers ? 'streng' : 'open_proef';
+  const lokaleSyncApparaten: ReadonlySet<string> | null = config.toegestaneSynchronisatieApparaatPubSleutels
+    ? new Set(config.toegestaneSynchronisatieApparaatPubSleutels)
+    : null;
+  const lokaleAnnuleerSleutels: ReadonlySet<string> | null = config.toegestaneAnnuleerPubSleutels
+    ? new Set(config.toegestaneAnnuleerPubSleutels)
+    : null;
+  const lokaleSponsors: ReadonlySet<string> | null = config.erkendeSponsorPubSleutels
+    ? new Set(config.erkendeSponsorPubSleutels)
+    : null;
+  const lokaleAuditors = config.erkendeAuditorSleutels ?? null;
 
   /** KLIMOP-020: об'єкт дії для перевірки переліку `objectIds` мандата. */
   function objectIdVanOpdracht(opdracht: KnooppuntOpdracht): string | undefined {
@@ -1076,10 +1112,24 @@ export async function startKlimopProefKnooppunt(config: {
       }
 
       if (opdracht.actie === 'stel_bestuursgrondwet_in') {
-        if (opdracht.grondwet.drempel < 2 || opdracht.erkendeDoelenRolPubDerB64u === opdracht.erkendeTijdstempelRolPubDerB64u) {
-          return { ok: false, fout: 'GRONDWET_OF_ROLLENSCHEIDING_ONGELDIG' };
+        const vorm = verifieerBestuursGrondwetVorm(opdracht.grondwet);
+        if (
+          !vorm.ok
+          || !opdracht.erkendeDoelenRolPubDerB64u
+          || !opdracht.erkendeTijdstempelRolPubDerB64u
+          || opdracht.erkendeDoelenRolPubDerB64u === opdracht.erkendeTijdstempelRolPubDerB64u
+        ) {
+          return { ok: false, fout: vorm.ok ? 'GRONDWET_OF_ROLLENSCHEIDING_ONGELDIG' : vorm.fout };
         }
-        if (actieveGrondwet) {
+        if (!actieveGrondwet) {
+          if (
+            config.beginAnker
+            && opdracht.grondwet.frostGroepsPubliekeSleutelHex.toLowerCase()
+              !== config.beginAnker.frostGroepsPubliekeSleutelHex.toLowerCase()
+          ) {
+            return { ok: false, fout: 'GRONDWET_KOMT_NIET_OVEREEN_MET_BEGINANKER' };
+          }
+        } else {
           if (opdracht.grondwet.versieVolgnummer <= actieveGrondwet.versieVolgnummer) {
             return { ok: false, fout: 'GRONDWET_VERSIE_TERUGDRAAI_GEWEIGERD' };
           }
@@ -1092,6 +1142,30 @@ export async function startKlimopProefKnooppunt(config: {
           ) {
             return { ok: false, fout: 'GRONDWET_WIJZIGING_VEREIST_FROST_BESLUIT_72U' };
           }
+          if (toegepasteBesluitSha256s.has(laatste.besluitSha256)) {
+            return { ok: false, fout: 'GRONDWET_BESLUIT_REEDS_TOEGEPAST' };
+          }
+          const nuMs = Date.parse(klok());
+          const bekrachtigdMs = Date.parse(laatste.bekrachtigdOp);
+          const maxGeldigheidMs = 30 * 24 * 3600 * 1000;
+          if (
+            !Number.isFinite(nuMs)
+            || !Number.isFinite(bekrachtigdMs)
+            || bekrachtigdMs > nuMs + 5 * 60_000
+            || nuMs - bekrachtigdMs > maxGeldigheidMs
+          ) {
+            return { ok: false, fout: 'GRONDWET_BESLUIT_VERLOPEN_OF_TOEKOMSTIG' };
+          }
+          const verwachteInhoudSha = berekenGrondwetWijzigingSha256({
+            vorigeGrondwet: actieveGrondwet,
+            nieuweGrondwet: opdracht.grondwet,
+            erkendeDoelenRolPubDerB64u: opdracht.erkendeDoelenRolPubDerB64u,
+            erkendeTijdstempelRolPubDerB64u: opdracht.erkendeTijdstempelRolPubDerB64u,
+          });
+          if (laatste.voorstel.inhoudSha256 !== verwachteInhoudSha) {
+            return { ok: false, fout: 'GRONDWET_WIJZIGING_INHOUD_KOMT_NIET_OVEREEN' };
+          }
+          toegepasteBesluitSha256s.add(laatste.besluitSha256);
         }
         actieveGrondwet = opdracht.grondwet;
         erkendeDoelenRolPub = opdracht.erkendeDoelenRolPubDerB64u;
@@ -1116,7 +1190,7 @@ export async function startKlimopProefKnooppunt(config: {
         ontvangenWebClientInhoud: Buffer.from(opdracht.webClientInhoudB64u, 'base64url'),
         erkendeDoelenRolPubDerB64u: erkendeDoelenRolPub,
         erkendeTijdstempelRolPubDerB64u: erkendeTijdstempelRolPub,
-        nuIso: opdracht.nuIso,
+        nuIso: vertrouwensModus === 'streng' || config.klok ? klok() : opdracht.nuIso,
       });
       if (!vBundel.ok) return vBundel;
 
@@ -1177,10 +1251,14 @@ export async function startKlimopProefKnooppunt(config: {
       }
       const sleutel = `${inkomend.dienstId}|${inkomend.dienstPsid}`;
       const bestaand = dienstCrdtRuimtes.get(sleutel) ?? maakLegeDienstCrdtStaat(inkomend.dienstId, inkomend.dienstPsid);
-      const toegestaanSet = opdracht.toegestaneApparaatPubSleutels
-        ? new Set(opdracht.toegestaneApparaatPubSleutels)
-        : undefined;
-      const samengevoegd = voegCrdtStatenSamen(bestaand, inkomend, toegestaanSet);
+      // KLIMOP-020: у суворому режимі (або при наявності локального списку) довірені пристрої беруться лише з вузла, а не із запиту
+      const gebruikLokaal = vertrouwensModus === 'streng' || lokaleSyncApparaten !== null;
+      const toegestaanSet = gebruikLokaal
+        ? lokaleSyncApparaten ?? undefined
+        : opdracht.toegestaneApparaatPubSleutels
+          ? new Set(opdracht.toegestaneApparaatPubSleutels)
+          : undefined;
+      const samengevoegd = voegCrdtStatenSamen(bestaand, inkomend, toegestaanSet, gebruikLokaal);
       if (!samengevoegd.ok) return samengevoegd;
 
       dienstCrdtRuimtes.set(sleutel, samengevoegd.samengevoegd);
@@ -1240,13 +1318,21 @@ export async function startKlimopProefKnooppunt(config: {
         };
       }
 
+      const gebruikLokaleAnnuleer = vertrouwensModus === 'streng' || lokaleAnnuleerSleutels !== null;
+      if (gebruikLokaleAnnuleer && (!lokaleAnnuleerSleutels || lokaleAnnuleerSleutels.size === 0)) {
+        return { ok: false, fout: 'GEEN_LOKAAL_VERTROUWDE_ANNULEERSLEUTELS' };
+      }
+      const effectieveAnnuleerSleutels = gebruikLokaleAnnuleer
+        ? lokaleAnnuleerSleutels!
+        : new Set(opdracht.toegestaneAnnuleerPubSleutels);
+
       if (opdracht.actie === 'annuleer_uitgestelde_operatie') {
         const op = uitgesteldeOperaties.get(opdracht.annulering.operatieId);
         if (!op) return { ok: false, fout: 'UITGESTELDE_OPERATIE_NIET_GEVONDEN' };
         const proefBeoordeling = beoordeelUitvoeringUitgesteldeOperatie({
           operatie: op,
           annulering: opdracht.annulering,
-          toegestaneAnnuleerPubSleutels: new Set(opdracht.toegestaneAnnuleerPubSleutels),
+          toegestaneAnnuleerPubSleutels: effectieveAnnuleerSleutels,
           actiefStilDwangAlarm: false,
           nuIso: op.uitvoerbaarVanaf,
         });
@@ -1266,9 +1352,9 @@ export async function startKlimopProefKnooppunt(config: {
       const beoordeling = beoordeelUitvoeringUitgesteldeOperatie({
         operatie: op,
         annulering: operatieAnnuleringen.get(op.operatieId) ?? null,
-        toegestaneAnnuleerPubSleutels: new Set(opdracht.toegestaneAnnuleerPubSleutels),
+        toegestaneAnnuleerPubSleutels: effectieveAnnuleerSleutels,
         actiefStilDwangAlarm: opdracht.actiefStilDwangAlarm,
-        nuIso: opdracht.nuIso,
+        nuIso: vertrouwensModus === 'streng' || config.klok ? klok() : opdracht.nuIso,
       });
       return {
         ok: true,
@@ -1293,11 +1379,15 @@ export async function startKlimopProefKnooppunt(config: {
         if (quarantaineKnooppunten.has(knId)) {
           return { ok: false, fout: 'KNOOPPUNT_IN_QUARANTAINE' };
         }
+        const gebruikLokaleSponsors = vertrouwensModus === 'streng' || lokaleSponsors !== null;
+        if (gebruikLokaleSponsors && (!lokaleSponsors || lokaleSponsors.size === 0)) {
+          return { ok: false, fout: 'GEEN_LOKAAL_ERKENDE_SPONSORS' };
+        }
         const vBew = verifieerHechtrankToetredingsBewijs({
           bewijs: opdracht.bewijs,
-          erkendeSponsorPubSleutels: new Set(opdracht.erkendeSponsorPubSleutels),
+          erkendeSponsorPubSleutels: gebruikLokaleSponsors ? lokaleSponsors! : new Set(opdracht.erkendeSponsorPubSleutels),
           ingetrokkenToetredingIds,
-          nuIso: opdracht.nuIso,
+          nuIso: vertrouwensModus === 'streng' || config.klok ? klok() : opdracht.nuIso,
         });
         if (!vBew.ok) return vBew;
         actieveToetredingen.set(knId, opdracht.bewijs);
@@ -1346,6 +1436,8 @@ export async function startKlimopProefKnooppunt(config: {
       const sybilVerslag = beoordeelSybilEnSpreidingsWeerstand({
         toetredingen: actieveLijst,
         vereisteOnafhankelijkeDrempel: opdracht.vereisteDrempel,
+        nuIso: klok(),
+        ingetrokkenToetredingIds,
       });
       const voedingBalans = berekenEerlijkeMiddelenBalans(
         opdracht.deelnemerId,
@@ -1372,9 +1464,13 @@ export async function startKlimopProefKnooppunt(config: {
         if (quarantaineKnooppunten.has(opdracht.rapport?.auditorKnooppuntId ?? '')) {
           return { ok: false, fout: 'KNOOPPUNT_IN_QUARANTAINE' };
         }
+        const gebruikLokaleAuditors = vertrouwensModus === 'streng' || lokaleAuditors !== null;
+        if (gebruikLokaleAuditors && (!lokaleAuditors || lokaleAuditors.length === 0)) {
+          return { ok: false, fout: 'GEEN_LOKAAL_ERKENDE_AUDITORS' };
+        }
         const vRap = verifieerOnafhankelijkAuditRapport({
           rapport: opdracht.rapport,
-          erkendeAuditorSleutels: opdracht.erkendeAuditorSleutels,
+          erkendeAuditorSleutels: gebruikLokaleAuditors ? lokaleAuditors! : opdracht.erkendeAuditorSleutels,
         });
         if (!vRap.ok) return vRap;
         auditRapporten.set(opdracht.rapport.auditId, opdracht.rapport);
@@ -1406,11 +1502,25 @@ export async function startKlimopProefKnooppunt(config: {
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'bewaar_gevalideerd_zaad_pakket') {
-        const vZaad = verifieerKlimopZaadPakket(opdracht.pakket);
+        const verwachteFrostHex =
+          actieveGrondwet?.frostGroepsPubliekeSleutelHex ?? config.beginAnker?.frostGroepsPubliekeSleutelHex;
+        if (vertrouwensModus === 'streng' && (!verwachteFrostHex || !config.beginAnker?.zaadBewaarderEd25519PubDerB64u)) {
+          return { ok: false, fout: 'GEEN_VERTROUWD_BEGINANKER' };
+        }
+        const verwachteBewaarder = config.beginAnker?.zaadBewaarderEd25519PubDerB64u
+          ? {
+              ed25519PubliekDerB64u: config.beginAnker.zaadBewaarderEd25519PubDerB64u,
+              mlDsa65PubliekSpkiB64u: config.beginAnker.zaadBewaarderMlDsa65PubSpkiB64u,
+            }
+          : undefined;
+        const vZaad = verifieerKlimopZaadPakket(opdracht.pakket, verwachteFrostHex, verwachteBewaarder);
         if (!vZaad.ok) return vZaad;
         zaadPakketten.set(opdracht.pakket.zaadId, opdracht.pakket);
-        if (!actieveGrondwet) {
+        let grondwetIngesteld = false;
+        // KLIMOP-020: без зовнішнього якоря довіри пакет зберігається, але ніколи самовільно не встановлює конституцію
+        if (!actieveGrondwet && config.beginAnker) {
           actieveGrondwet = opdracht.pakket.grondwet;
+          grondwetIngesteld = true;
         }
         return {
           ok: true,
@@ -1418,15 +1528,36 @@ export async function startKlimopProefKnooppunt(config: {
           zaadId: opdracht.pakket.zaadId,
           merkleWortelSha256: opdracht.pakket.merkleWortelSha256,
           geverifieerdeModules: vZaad.geverifieerdeModules,
+          grondwetIngesteld,
         };
       }
 
       if (opdracht.actie === 'registreer_opvolgings_overdracht') {
-        const vOpv = verifieerOpvolgingsOverdracht(
-          opdracht.overdracht,
-          actieveGrondwet?.frostGroepsPubliekeSleutelHex,
-        );
+        const huidigeFrostHex =
+          actieveGrondwet?.frostGroepsPubliekeSleutelHex ?? config.beginAnker?.frostGroepsPubliekeSleutelHex;
+        if (!huidigeFrostHex) {
+          return { ok: false, fout: 'GEEN_VERTROUWD_BEGINANKER' };
+        }
+        if (
+          actieveGrondwet
+          && (
+            opdracht.overdracht.vorigeGrondwet.grondwetId !== actieveGrondwet.grondwetId
+            || opdracht.overdracht.vorigeGrondwet.versieVolgnummer !== actieveGrondwet.versieVolgnummer
+          )
+        ) {
+          return { ok: false, fout: 'OPVOLGING_VORIGE_GRONDWET_KOMT_NIET_OVEREEN' };
+        }
+        if (toegepasteOpvolgingIds.has(opdracht.overdracht.overdrachtId)) {
+          return { ok: false, fout: 'OPVOLGING_REEDS_TOEGEPAST' };
+        }
+        const nuMs = Date.parse(klok());
+        const vanafMs = Date.parse(opdracht.overdracht.uitvoerbaarVanaf);
+        if (!Number.isFinite(nuMs) || !Number.isFinite(vanafMs) || nuMs < vanafMs) {
+          return { ok: false, fout: 'OPVOLGING_TIJDSLOT_72_UUR_NOG_ACTIEF' };
+        }
+        const vOpv = verifieerOpvolgingsOverdracht(opdracht.overdracht, huidigeFrostHex);
         if (!vOpv.ok) return vOpv;
+        toegepasteOpvolgingIds.add(opdracht.overdracht.overdrachtId);
         opvolgingsOverdrachten.push(opdracht.overdracht);
         actieveGrondwet = opdracht.overdracht.nieuweGrondwet;
         return {
@@ -1636,6 +1767,8 @@ export async function startKlimopProefKnooppunt(config: {
       auditRapporten.clear();
       zaadPakketten.clear();
       opvolgingsOverdrachten.length = 0;
+      toegepasteBesluitSha256s.clear();
+      toegepasteOpvolgingIds.clear();
       actieveGrondwet = null;
       await new Promise<void>((r) => server.close(() => r()));
     },

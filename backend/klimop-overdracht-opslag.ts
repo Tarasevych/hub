@@ -1543,6 +1543,7 @@ export function berekenQuorumAttestSha256(
     zonderEigenHash.hybrideVerificatieOk,
     zonderEigenHash.ketensSluitend,
     zonderEigenHash.besluitVolledigOnafhankelijkToegestaan,
+    ...(zonderEigenHash.uitvoeringsAard ? [zonderEigenHash.uitvoeringsAard] : []),
     zonderEigenHash.attestModusVoor,
     zonderEigenHash.attestModusNa,
     zonderEigenHash.automatischTeruggezet,
@@ -1578,12 +1579,20 @@ function leesAlleQuorumAttestenRuw(map: string): {
   return { attesten, parseerFoutBijRegel: null };
 }
 
+export interface ErkendQuorumSleutelRegister {
+  frostGroepsPubliekeSleutelHex: string;
+  ed25519PubliekDerB64u: string;
+  mlDsa65PubliekSpkiB64u: string;
+}
+
 /**
  * Перевіряє нерозривність ланцюжка SHA-256 та справжність ОБОХ криптографічних підписів
- * (`FROST Ed25519 RFC 9591` + `Ed25519 + ML-DSA-65 FIPS 204`) для кожного чинного кворумного атестата.
+ * (`FROST Ed25519 RFC 9591` + `Ed25519 + ML-DSA-65 FIPS 204`) для кожного чинного кворумного атестата,
+ * а за наявності `erkendSleutelRegister` — також належність ключів до наперед схваленого реєстру.
  */
 export function verifieerQuorumAttestKeten(
   attesten: readonly KlimopQuorumAttestRegel[],
+  erkendSleutelRegister?: ErkendQuorumSleutelRegister,
 ): {
   ok: boolean;
   gecontroleerdeAttesten: number;
@@ -1629,6 +1638,7 @@ export function verifieerQuorumAttestKeten(
       hybrideVerificatieOk: a.hybrideVerificatieOk,
       ketensSluitend: a.ketensSluitend,
       besluitVolledigOnafhankelijkToegestaan: a.besluitVolledigOnafhankelijkToegestaan,
+      ...(a.uitvoeringsAard ? { uitvoeringsAard: a.uitvoeringsAard } : {}),
       attestModusVoor: a.attestModusVoor,
       attestModusNa: a.attestModusNa,
       automatischTeruggezet: a.automatischTeruggezet,
@@ -1644,6 +1654,22 @@ export function verifieerQuorumAttestKeten(
         gebrokenBijVolgnummer: i + 1,
         fout: 'ATTEST_HASH_ONGELDIG',
       };
+    }
+
+    if (erkendSleutelRegister && (a.frostVerificatieOk || a.hybrideVerificatieOk || a.besluitVolledigOnafhankelijkToegestaan)) {
+      if (
+        a.frostGroepsPubliekeSleutelHex.toLowerCase() !== erkendSleutelRegister.frostGroepsPubliekeSleutelHex.toLowerCase()
+        || a.hybrideHandtekening.ed25519PubliekDerB64u !== erkendSleutelRegister.ed25519PubliekDerB64u
+        || a.hybrideHandtekening.mlDsa65PubliekSpkiB64u !== erkendSleutelRegister.mlDsa65PubliekSpkiB64u
+      ) {
+        return {
+          ok: false,
+          gecontroleerdeAttesten: i,
+          laatsteSha256: verwachteVorige,
+          gebrokenBijVolgnummer: i + 1,
+          fout: 'ATTEST_SLEUTEL_BUITEN_ERKEND_REGISTER',
+        };
+      }
     }
 
     // Якщо атестат заявлено чинним, повторно перевіряємо справжність порогового та постквантового підписів!
@@ -2074,6 +2100,7 @@ export function voerStap4QuorumAttestProefUit(
         hybrideVerificatieOk,
         ketensSluitend,
         besluitVolledigOnafhankelijkToegestaan: allesOk,
+        uitvoeringsAard: 'lokale_simulatie_een_proces',
         attestModusVoor,
         attestModusNa,
         automatischTeruggezet,
@@ -2112,6 +2139,7 @@ export function voerStap4QuorumAttestProefUit(
         dienstId,
         subdomein: profiel.subdomeinBestaand,
         geisoleerdeDienstPsid: dienstCtx.dienstPsid,
+        uitvoeringsAard: 'lokale_simulatie_een_proces',
         knooppunten: {
           regios: knooppuntRegios,
           onafhankelijkQuorumOk: onafhankelijkheid.ok,
@@ -2139,6 +2167,11 @@ export function voerStap4QuorumAttestProefUit(
             ? overdrachtBesluit.nieuweActieveModus
             : 'alleen_erfenis_postgres',
           reden,
+          bewijsOmvang: 'lokale_simulatie',
+          waarschuwing: [
+            'Місцеве моделювання кворуму в одному процесі: не замінює атестації фізично окремих вузлів за зовнішнім реєстром ключів і окремого посвідченого рішення власника.',
+            'Lokale nabootsing van het quorum in één proces: vervangt geen attestatie van fysiek gescheiden knooppunten uit een extern sleutelregister en geen afzonderlijk bevestigd eigenaarsbesluit.',
+          ],
         },
         schakelaar: bijgewerkteStaat,
         automatischTeruggezetNaarErfenis: automatischTeruggezet,
