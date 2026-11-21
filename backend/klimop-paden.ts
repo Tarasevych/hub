@@ -13,8 +13,10 @@ import {
   klimopSpiegelControle,
 } from './klimop-platform-brug';
 import {
+  leesKlimopDubbelSchrijvenLogboek,
   leesKlimopSpiegelLogboek,
   schakelKlimopDienstOverdracht,
+  voerGecontroleerdeDubbelSchrijfProefUit,
   voerPassieveSpiegelLeesProefUit,
 } from './klimop-overdracht-opslag';
 
@@ -132,6 +134,33 @@ export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddlew
         });
       }),
     ],
+    [`POST ${KLIMOP_PADEN.dubbelSchrijven}`]: [
+      eigenaar(async (ctx, e) => {
+        await limiet(e, 'dubbel', CONTROLES_PER_MINUUT);
+        const r = voerGecontroleerdeDubbelSchrijfProefUit(ctx.body, { staatMap: deps.staatMap });
+        await audit(e, 'klimop_dubbel_schrijven', r.ok ? 'success' : 'failure', {
+          dienstId: r.dienstId,
+          ok: r.ok,
+          operatiesAantal: r.operaties.totaal,
+          afwijkingen: r.pariteit.afwijkingen,
+          automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
+        });
+        return r;
+      }),
+    ],
+    [`POST ${KLIMOP_PADEN.dubbelLogboek}`]: [
+      eigenaar(async (ctx, e) => {
+        await limiet(e, 'lezen', LEZEN_PER_MINUUT);
+        const b = ctx.body && typeof ctx.body === 'object' && !Array.isArray(ctx.body)
+          ? (ctx.body as Record<string, unknown>)
+          : {};
+        return leesKlimopDubbelSchrijvenLogboek({
+          staatMap: deps.staatMap,
+          limiet: typeof b.limiet === 'number' ? b.limiet : undefined,
+          dienstId: typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined,
+        });
+      }),
+    ],
     [`POST ${KLIMOP_PADEN.overdrachtSchakelaar}`]: [
       eigenaar(async (ctx, e) => {
         await limiet(e, 'schakel', SCHAKEL_PER_MINUUT);
@@ -141,6 +170,7 @@ export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddlew
           dienstId: r.dienstId,
           omgeschakeldeDienstenAantal: r.omgeschakeldeDienstenAantal,
           actievePassiefLezenDiensten: r.actievePassiefLezenDiensten,
+          actieveDubbelSchrijvenDiensten: r.actieveDubbelSchrijvenDiensten,
         });
         return r;
       }),

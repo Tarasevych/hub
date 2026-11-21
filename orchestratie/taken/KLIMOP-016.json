@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-016",
+  "agent": "antigravity",
+  "tak": "feature/klimop-016-dubbel-schrijven-terugval-20261121-112500",
+  "basisCommit": "5f3bf205de6765edb7e094c07e600da587339667",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T11:23:54.079Z",
+  "bijgewerkt": "2026-11-21T11:23:54.080Z",
+  "omschrijving": "KLIMOP-016: Етап 15 «Плюща» — Сходинка 3 контрольованого подвійного записування зі звіркою читання та миттєвим поверненням для всіх 11 служб",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

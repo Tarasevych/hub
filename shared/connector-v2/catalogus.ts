@@ -543,6 +543,13 @@ const DEFS: readonly Def[] = [
   { id: 'klimop_spiegel_logboek', essentie: 'lezen_klimop_logboek', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
     uk: ['Читати журнал розбіжностей та стан перемикачів', 'Читає стан одинадцяти перемикачів служб, перевіряє цілісність ланцюжка SHA-256 журналу звірки та повертає останні записи.', 'Лише читання знеособленого журналу. ШІ не має доступу до самого перемикача режимів.'],
     nl: ['Spiegellogboek en schakelaars lezen', 'Leest de stand van de elf dienstschakelaars, controleert de SHA-256-keten van het spiegellogboek en geeft de recente regels terug.', 'Alleen lezen van geanonimiseerde regels. De AI kan de schakelaar niet zelfstandig bedienen.'] },
+  // KLIMOP-016 (21.11.2026) — Сходинка 3 контрольованого подвійного записування зі звіркою читання та журналом квитанцій для 11 служб (§35).
+  { id: 'klimop_dubbel_schrijven', essentie: 'testen_klimop_dubbel', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Перевіряти подвійне записування та читання служби', 'Проводить у безпечному ізольованому контурі перевірку Сходинки 3 розділу 35 на трьох незалежних вузлах зі створенням, оновленням і видаленням та миттєво повертає службу при збої.', 'Лише перевірка в ізольованому контурі без зміни основної бази даних і без розкриття вмісту.'],
+    nl: ['Dubbel schrijven en lezen testen', 'Voert in een afgeschermde proefomgeving gecontroleerd dubbel schrijven van Stap 3 uit op drie onafhankelijke knooppunten met aanmaken, bijwerken en wissen en zet bij fout direct terug.', 'Alleen een proef in een afgeschermde omgeving zonder aanpassing van de databank of inzage in inhoud.'] },
+  { id: 'klimop_dubbel_logboek', essentie: 'lezen_klimop_dubbel', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Читати квитанції подвійного записування служб', 'Читає знеособлені квитанції подвійного записування Сходинки 3, перевіряє цілісність ланцюжка SHA-256 та повертає зведення по одинадцяти службах.', 'Лише читання знеособленого журналу квитанцій. ШІ не має доступу до перемикача режимів.'],
+    nl: ['Kwitanties van dubbel schrijven lezen', 'Leest geanonimiseerde kwitanties van gecontroleerd dubbel schrijven van Stap 3, controleert de SHA-256-keten en geeft de samenvatting voor de elf diensten.', 'Alleen lezen van geanonimiseerde kwitanties. De AI kan de schakelaar niet zelfstandig bedienen.'] },
 
   // ---------------------------------------------------------------- ecosysteem: gedeelde context, taakoverdracht en ruimte-uitbreidingen
   { id: 'ecosysteem_context_list', essentie: 'tonen_werkcontext', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',

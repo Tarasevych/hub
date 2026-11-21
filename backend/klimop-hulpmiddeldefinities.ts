@@ -1,5 +1,5 @@
-// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
-// Визначення п'яти технічних інструментів MCP екосистеми «Плющ» (kant 'beheer', технічний простір власника, З'єднувач v2).
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 (21.11.2026, Етапи 13–15 впровадження «Плюща» у платформу «Мій простір»):
+// Визначення семи технічних інструментів MCP екосистеми «Плющ» (kant 'beheer', технічний простір власника, З'єднувач v2).
 // Чистий модуль без бази даних: використовується каталогом З'єднувача v2 та перевірками двомовності для всіх 14 ШІ-агентів.
 
 import type { ToolDef } from './connectors-hulpmiddelen';
@@ -8,6 +8,7 @@ import { KLIMOP_ELF_DIENSTEN } from '../shared/klimop/diensten';
 import { KLIMOP_ZESTIEN_ONTWIKKELRICHTINGEN } from '../shared/klimop/zaden';
 import {
   KLIMOP_GESIMULEERDE_AFWIJKINGEN,
+  KLIMOP_GESIMULEERDE_DUBBEL_FOUTEN,
   KLIMOP_TOOL_NAMEN,
 } from '../shared/klimop-overzicht-model';
 
@@ -16,6 +17,8 @@ export const KLIMOP_ARCHITECTUUR_TOETS = 'klimop_architectuur_toets';
 export const KLIMOP_SPIEGEL_CONTROLE = 'klimop_spiegel_controle';
 export const KLIMOP_PASSIEVE_SPIEGEL = 'klimop_passieve_spiegel';
 export const KLIMOP_SPIEGEL_LOGBOEK = 'klimop_spiegel_logboek';
+export const KLIMOP_DUBBEL_SCHRIJVEN = 'klimop_dubbel_schrijven';
+export const KLIMOP_DUBBEL_LOGBOEK = 'klimop_dubbel_logboek';
 
 export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
   {
@@ -168,6 +171,75 @@ export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
           description: p(
             'Найбільша кількість останніх записів журналу дзеркальної звірки від 1 до 200.',
             'Hoogste aantal recente regels uit het spiegellogboek van 1 tot 200.',
+          ),
+        },
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: KLIMOP_DUBBEL_SCHRIJVEN,
+    title: 'Gecontroleerd dubbel schrijven met leesverificatie testen',
+    description:
+      'Voert in een geïsoleerde proefomgeving gecontroleerd dubbel schrijven van Stap 3 (hoofdstuk 35) uit op drie onafhankelijke knooppunten met aanmaken, bijwerken en verwijdermarkeringen, toetst leesgelijkheid en zet de dienst bij elke fout automatisch terug naar de basis.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dienstId: {
+          type: 'string',
+          enum: [...KLIMOP_ELF_DIENSTEN],
+          description: p(
+            'Ідентифікатор однієї з одинадцяти служб платформи для перевірки подвійного записування зі звіркою читання.',
+            'Aanduiding van een van de elf platformdiensten voor de proef van dubbel schrijven met leesverificatie.',
+          ),
+        },
+        operatiesAantal: {
+          type: 'integer',
+          minimum: 3,
+          maximum: 12,
+          description: p(
+            'Кількість послідовних операцій створення, оновлення та видалення від 3 до 12.',
+            'Aantal opeenvolgende bewerkingen voor aanmaken, bijwerken en wissen van 3 tot 12.',
+          ),
+        },
+        simuleerFout: {
+          type: 'string',
+          enum: [...KLIMOP_GESIMULEERDE_DUBBEL_FOUTEN],
+          description: p(
+            'Необов’язковий вид штучного збою подвійного записування або звірки читання для перевірки автоповернення.',
+            'Optioneel soort gesimuleerde schrijffout of leesafwijking om de automatische terugval te beproeven.',
+          ),
+        },
+      },
+      required: ['dienstId'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: KLIMOP_DUBBEL_LOGBOEK,
+    title: 'Kwitantielogboek van dubbel schrijven lezen',
+    description:
+      'Leest de meest recente geanonimiseerde kwitanties van gecontroleerd dubbel schrijven (Stap 3), verifieert de SHA-256-keten en geeft de samenvatting terug zonder schakelrechten voor de AI.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dienstId: {
+          type: 'string',
+          enum: [...KLIMOP_ELF_DIENSTEN],
+          description: p(
+            'Необов’язковий фільтр квитанцій подвійного записування за однією з одинадцяти служб.',
+            'Optioneel filter voor kwitanties van dubbel schrijven op een van de elf diensten.',
+          ),
+        },
+        limiet: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 200,
+          description: p(
+            'Найбільша кількість останніх квитанцій подвійного записування від 1 до 200.',
+            'Hoogste aantal recente kwitanties van dubbel schrijven van 1 tot 200.',
           ),
         },
       },

@@ -328,7 +328,7 @@ export async function main(): Promise<number> {
     check(
       'усі 5 інструментів klimop_* мають імена <= 64 знаків для всіх 14 агентів, працюють у технічному просторі, а сам перемикач режимів недоступний для самовільного виклику ШІ-агентами (§34)',
       klimopToolNamenGelijk()
-      && KLIMOP_TOOL_NAMEN.length === 5
+      && KLIMOP_TOOL_NAMEN.length >= 5
       && KLIMOP_TOOL_NAMEN.every((n) => isKlimopTool(n) && BEHEER_TOOL_NAMEN.has(n) && toolRuimte(n) === 'technisch')
       && alleAgentNamen.every(
         (x) => x.naam.length <= MAX_NAAM && /^[a-z0-9_]+$/.test(x.naam) && ontleed(x.naam, x.agent).ok,

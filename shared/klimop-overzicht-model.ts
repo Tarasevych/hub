@@ -1,7 +1,7 @@
-// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 (21.11.2026, Етапи 13–15 впровадження «Плюща» у платформу «Мій простір»):
 // Спільна модель маршрутів власника (/api/owner/klimop/*), інструментів протоколу контексту моделі (klimop_*),
-// двомовних підписів 11 служб, станів Сходинки 1 та Сходинки 2 безпечного перенесення (§35),
-// криптографічного журналу розбіжностей, перемикача миттєвого повернення та контекстних підказок «?».
+// двомовних підписів 11 служб, станів Сходинок 1–3 безпечного перенесення (§35: дзеркальна звірка, пасивне читання,
+// контрольоване подвійне записування зі звіркою читання), криптографічних журналів, перемикача миттєвого повернення та підказок «?».
 // Чистий модуль (без Node.js чи оглядачевого оточення): однаково імпортується сервером і клієнтською частиною.
 
 import type {
@@ -34,6 +34,8 @@ export const KLIMOP_PADEN = Object.freeze({
   spiegelControle: '/api/owner/klimop/spiegel-controle',
   passieveSpiegel: '/api/owner/klimop/passieve-spiegel',
   spiegelLogboek: '/api/owner/klimop/spiegel-logboek',
+  dubbelSchrijven: '/api/owner/klimop/dubbel-schrijven',
+  dubbelLogboek: '/api/owner/klimop/dubbel-logboek',
   overdrachtSchakelaar: '/api/owner/klimop/overdracht-schakelaar',
 });
 
@@ -44,18 +46,39 @@ export const KLIMOP_TOOL_NAMEN = Object.freeze([
   'klimop_spiegel_controle',
   'klimop_passieve_spiegel',
   'klimop_spiegel_logboek',
+  'klimop_dubbel_schrijven',
+  'klimop_dubbel_logboek',
 ] as const);
 export type KlimopToolNaam = (typeof KLIMOP_TOOL_NAMEN)[number];
 
 export type KlimopPassieveLeesModus = 'alleen_erfenis_postgres' | 'passief_spiegel_lezen';
+export type KlimopDubbelSchrijfModus = 'alleen_erfenis_postgres' | 'gecontroleerd_dubbel_schrijven';
 export type KlimopGesimuleerdeAfwijking = 'geen' | 'inhoud' | 'machtigingen' | 'ontbrekend_record';
-export type KlimopSchakelaarActie = 'activeer_passief_lezen' | 'terug_naar_erfenis' | 'nood_terug_alle_elf';
+export type KlimopGesimuleerdeDubbelSchrijfFout =
+  | 'geen'
+  | 'tweede_schrijf_mislukt'
+  | 'lees_inhoud_afwijking'
+  | 'verwijder_tombstone_gemist'
+  | 'machtigingen_afwijking';
+export type KlimopSchakelaarActie =
+  | 'activeer_passief_lezen'
+  | 'activeer_dubbel_schrijven'
+  | 'terug_naar_erfenis'
+  | 'nood_terug_alle_elf';
 
 export const KLIMOP_GESIMULEERDE_AFWIJKINGEN = Object.freeze([
   'geen',
   'inhoud',
   'machtigingen',
   'ontbrekend_record',
+] as const);
+
+export const KLIMOP_GESIMULEERDE_DUBBEL_FOUTEN = Object.freeze([
+  'geen',
+  'tweede_schrijf_mislukt',
+  'lees_inhoud_afwijking',
+  'verwijder_tombstone_gemist',
+  'machtigingen_afwijking',
 ] as const);
 
 export const KLIMOP_LEESMODUS_TEKST: Readonly<Record<KlimopPassieveLeesModus, { uk: string; nl: string }>> =
@@ -69,6 +92,19 @@ export const KLIMOP_LEESMODUS_TEKST: Readonly<Record<KlimopPassieveLeesModus, { 
       nl: 'Stap 2: passief spiegellezen met automatische terugval',
     },
   });
+
+export const KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST: Readonly<
+  Record<KlimopDubbelSchrijfModus, { uk: string; nl: string }>
+> = Object.freeze({
+  alleen_erfenis_postgres: {
+    uk: 'Чинна основа (без подвійного записування)',
+    nl: 'Bestaande basis (zonder dubbel schrijven)',
+  },
+  gecontroleerd_dubbel_schrijven: {
+    uk: 'Сходинка 3: контрольоване подвійне записування зі звіркою читання',
+    nl: 'Stap 3: gecontroleerd dubbel schrijven met leesverificatie',
+  },
+});
 
 export const KLIMOP_DIENST_TEKST: Readonly<Record<KlimopDienstId, { uk: string; nl: string }>> = Object.freeze({
   werkblad: { uk: 'Робочий простір (головна)', nl: 'Werkblad (startruimte)' },
@@ -117,6 +153,7 @@ export interface KlimopDienstBrugStatus {
   vereistExterneVerbinderIsolatie: boolean;
   huidigeProductieModus: KlimopOverdrachtModus;
   passieveLeesModus?: KlimopPassieveLeesModus;
+  dubbelSchrijfModus?: KlimopDubbelSchrijfModus;
   spiegelVerificatieBeschikbaar: boolean;
   productieDatabankActief: true;
 }
@@ -149,8 +186,11 @@ export interface KlimopPlatformOverzicht {
   diensten: KlimopDienstBrugStatus[];
   overdrachtStaat?: {
     actievePassiefLezenDiensten: number;
+    actieveDubbelSchrijvenDiensten: number;
     totaalLogboekRegels: number;
+    totaalDubbelKwitanties: number;
     ketenIntegriteitOk: boolean;
+    dubbelKetenIntegriteitOk: boolean;
   };
   hulpmiddelen: readonly string[];
   productieOnaangetast: true;
@@ -213,18 +253,24 @@ export interface KlimopSpiegelControleUitkomst {
   gecontroleerdOp: string;
 }
 
-// ---------------------------------------------------------------- Сходинка 2 (§35): пасивне читання, журнал розбіжностей і перемикач повернення
+// ---------------------------------------------------------------- Сходинки 2–3 (§35): пасивне читання, подвійне записування та миттєве повернення
 export interface KlimopDienstSchakelaarStaat {
   dienstId: KlimopDienstId;
   primaireSchrijfBron: 'erfenis_postgres';
   leesModus: KlimopPassieveLeesModus;
+  schrijfModus: KlimopDubbelSchrijfModus;
   laatstePariteitOk: boolean | null;
   opeenvolgendeGelijkeControles: number;
   totaalUitgevoerdeControles: number;
   totaalGevondenAfwijkingen: number;
+  laatsteDubbelSchrijfOk: boolean | null;
+  opeenvolgendeDubbelSchrijfControles: number;
+  totaalDubbelSchrijfProeven: number;
+  totaalDubbelSchrijfFouten: number;
   automatischeTerugschakelingen: number;
   handmatigeTerugschakelingen: number;
   laatsteControleOp: string | null;
+  laatsteDubbelSchrijfOp: string | null;
   laatsteSchakelingOp: string | null;
   laatsteReden: string;
 }
@@ -233,7 +279,12 @@ export interface KlimopSpiegelLogboekRegel {
   regelId: string;
   volgnummer: number;
   tijdstipIso: string;
-  soort: 'passieve_spiegel_proef' | 'handmatige_schakeling' | 'automatische_terugschakeling' | 'nood_terug_alle_elf';
+  soort:
+    | 'passieve_spiegel_proef'
+    | 'dubbel_schrijven_proef'
+    | 'handmatige_schakeling'
+    | 'automatische_terugschakeling'
+    | 'nood_terug_alle_elf';
   dienstId: KlimopDienstId | 'alle_elf';
   leesModusVoor: KlimopPassieveLeesModus;
   leesModusNa: KlimopPassieveLeesModus;
@@ -287,6 +338,7 @@ export interface KlimopSpiegelLogboekOverzicht {
   };
   samenvatting: {
     actievePassiefLezenDiensten: number;
+    actieveDubbelSchrijvenDiensten: number;
     totaalDiensten: number;
     totaalLogboekRegels: number;
     totaalAutomatischeTerugschakelingen: number;
@@ -297,6 +349,103 @@ export interface KlimopSpiegelLogboekOverzicht {
   productieDatabankGewijzigd: false;
 }
 
+export interface KlimopDubbelSchrijfKwitantieRegel {
+  kwitantieId: string;
+  volgnummer: number;
+  tijdstipIso: string;
+  dienstId: KlimopDienstId;
+  geisoleerdeDienstPsid: string;
+  knooppuntRegios: readonly string[];
+  knooppuntenOnafhankelijk: boolean;
+  operatiesAantal: number;
+  zetAantal: number;
+  bijgewerktAantal: number;
+  verwijderTombstoneAantal: number;
+  gesimuleerdeFout: KlimopGesimuleerdeDubbelSchrijfFout;
+  tweedeSchrijfGeslaagd: boolean;
+  leesNaSchrijfGelijk: boolean;
+  tombstoneBevestigd: boolean;
+  reedSolomonHersteld: boolean;
+  crdtSamenvoegingOk: boolean;
+  kruisDienstIsolatieOk: boolean;
+  afwijkingenAantal: number;
+  afwijkingSleutelHashes: {
+    ontbrekend: string[];
+    inhoud: string[];
+    machtigingen: string[];
+  };
+  schrijfModusVoor: KlimopDubbelSchrijfModus;
+  schrijfModusNa: KlimopDubbelSchrijfModus;
+  automatischTeruggezet: boolean;
+  reden: string;
+  bevatGeheimenOfInhoud: false;
+  vorigeKwitantieSha256: string;
+  kwitantieSha256: string;
+}
+
+export interface KlimopDubbelSchrijvenUitkomst {
+  ok: boolean;
+  dienstId: KlimopDienstId;
+  subdomein: string;
+  geisoleerdeDienstPsid: string;
+  knooppunten: {
+    regios: readonly string[];
+    onafhankelijkQuorumOk: boolean;
+  };
+  operaties: {
+    totaal: number;
+    zetAantal: number;
+    bijgewerktAantal: number;
+    verwijderTombstoneAantal: number;
+  };
+  gesimuleerdeFout: KlimopGesimuleerdeDubbelSchrijfFout;
+  tweedeSchrijfGeslaagd: boolean;
+  leesNaSchrijfGelijk: boolean;
+  tombstoneBevestigd: boolean;
+  reedSolomonAlleActieveHersteld: boolean;
+  crdtSamenvoegingOk: boolean;
+  kruisDienstIsolatieAfgedwongen: boolean;
+  pariteit: {
+    volledigGelijk: boolean;
+    actieveRecordsGecontroleerd: number;
+    afwijkingen: number;
+    ontbrekendAantal: number;
+    inhoudAfwijkingAantal: number;
+    machtigingenAfwijkingAantal: number;
+  };
+  overdrachtBesluit: {
+    toegestaan: boolean;
+    huidigeProductieModus: KlimopOverdrachtModus;
+    gevalideerdeProefModus: KlimopOverdrachtModus;
+    reden: string;
+  };
+  schakelaar: KlimopDienstSchakelaarStaat;
+  automatischTeruggezetNaarErfenis: boolean;
+  kwitantieRegel: KlimopDubbelSchrijfKwitantieRegel;
+  logboekRegel: KlimopSpiegelLogboekRegel;
+  productieDatabankGewijzigd: false;
+}
+
+export interface KlimopDubbelLogboekOverzicht {
+  ketenIntegriteit: {
+    ok: boolean;
+    gecontroleerdeKwitanties: number;
+    laatsteSha256: string;
+    gebrokenBijVolgnummer: number | null;
+    fout: string | null;
+  };
+  samenvatting: {
+    actieveDubbelSchrijvenDiensten: number;
+    actievePassiefLezenDiensten: number;
+    totaalDiensten: number;
+    totaalKwitanties: number;
+    totaalDubbelSchrijfFouten: number;
+  };
+  schakelaars: KlimopDienstSchakelaarStaat[];
+  recenteKwitanties: KlimopDubbelSchrijfKwitantieRegel[];
+  productieDatabankGewijzigd: false;
+}
+
 export interface KlimopOverdrachtSchakelaarUitkomst {
   ok: true;
   actie: KlimopSchakelaarActie;
@@ -304,6 +453,7 @@ export interface KlimopOverdrachtSchakelaarUitkomst {
   omgeschakeldeDienstenAantal: number;
   schakelaar: KlimopDienstSchakelaarStaat | null;
   actievePassiefLezenDiensten: number;
+  actieveDubbelSchrijvenDiensten: number;
   logboekRegel: KlimopSpiegelLogboekRegel;
   productieDatabankGewijzigd: false;
 }
@@ -325,9 +475,25 @@ export const KLIMOP_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
     'Перед увімкненням пасивного дзеркального читання для служби потрібно виконати успішну безрозбіжну перевірку.',
     'Voer eerst een geslaagde spiegelcontrole zonder afwijkingen uit voordat passief spiegellezen voor deze dienst wordt ingeschakeld.',
   ),
+  KLIMOP_STAP2_ACTIEF_VEREIST: T(
+    'Перед переходом до контрольованого подвійного записування служба має перебувати на Сходинці 2 пасивного читання. Перестрибування сходинок заборонене.',
+    'Voordat gecontroleerd dubbel schrijven kan worden ingeschakeld, moet de dienst op Stap 2 van passief spiegellezen staan. Stappen overslaan is verboden.',
+  ),
+  KLIMOP_DUBBEL_SCHRIJVEN_PROEF_VEREIST: T(
+    'Перед увімкненням контрольованого подвійного записування виконайте успішну перевірку запису та звірки читання без розбіжностей.',
+    'Voer eerst een foutloze proef van gecontroleerd dubbel schrijven met leesverificatie uit voordat deze stand wordt ingeschakeld.',
+  ),
   KLIMOP_LOGBOEK_KETEN_ONGELDIG: T(
     'Порушено криптографічну цілісність ланцюжка журналу дзеркальної звірки. Перемикання вперед заблоковано, повернення на чинну основу залишається доступним.',
     'De cryptografische keten van het spiegellogboek is doorbroken. Opschakelen is geblokkeerd; terugschakelen naar de bestaande basis blijft direct beschikbaar.',
+  ),
+  KLIMOP_DUBBEL_LOGBOEK_KETEN_ONGELDIG: T(
+    'Порушено цілісність ланцюжка квитанцій подвійного записування. Перемикання вперед заблоковано, миттєве повернення на чинну основу залишається доступним.',
+    'De cryptografische keten van het kwitantielogboek voor dubbel schrijven is doorbroken. Opschakelen is geblokkeerd; terugzetten naar de bestaande basis blijft beschikbaar.',
+  ),
+  KLIMOP_LOSKOPPELING_VERBODEN: T(
+    'Самовільне відокремлення або вимкнення чинної бази даних заборонене. Робоча основа залишається обов’язковою до окремого рішення власника.',
+    'Zelfstandig loskoppelen of uitschakelen van de bestaande databank is verboden. De draaiende basis blijft verplicht tot een afzonderlijk eigenaarsbesluit.',
   ),
   KLIMOP_SCHAKELAAR_ACTIE_ONGELDIG: T(
     'Вказано невідому дію перемикача перенесення служби.',
@@ -412,15 +578,34 @@ export const HELP_KLIMOP: Readonly<Record<string, HulpItem>> = Object.freeze({
       'POST /api/owner/klimop/passieve-spiegel en /spiegel-logboek → backend/klimop-overdracht-opslag.ts; via MCP klimop_passieve_spiegel en klimop_spiegel_logboek.',
     ),
   ),
+  'klimop.dubbel': hulp(
+    'src/agenten/KlimopPaneel.tsx',
+    T(
+      'Контрольоване подвійне записування Сходинки 3 зі звіркою читання після запису, перевіркою видалень та журналом квитанцій.',
+      'Gecontroleerd dubbel schrijven van Stap 3 met onmiddellijke leesverificatie, verwijdermarkeringen en een sluitend kwitantielogboek.',
+    ),
+    T(
+      'Перевіряє створення, оновлення й видалення у кворумі трьох незалежних вузлів та миттєво скидає службу на чинну основу за найменшого збою.',
+      'Beproeft aanmaken, bijwerken en verwijderen op drie onafhankelijke knooppunten en zet de dienst bij elke fout direct terug naar de basis.',
+    ),
+    T(
+      'Низький ризик. Чинна база даних залишається єдиним первинним джерелом запису, а вміст ніколи не потрапляє до квитанцій.',
+      'Laag risico. De bestaande databank blijft de enige primaire schrijfbron en inhoud komt nooit in het kwitantielogboek terecht.',
+    ),
+    T(
+      'POST /api/owner/klimop/dubbel-schrijven та /dubbel-logboek → backend/klimop-overdracht-opslag.ts; через MCP — klimop_dubbel_schrijven і klimop_dubbel_logboek.',
+      'POST /api/owner/klimop/dubbel-schrijven en /dubbel-logboek → backend/klimop-overdracht-opslag.ts; via MCP klimop_dubbel_schrijven en klimop_dubbel_logboek.',
+    ),
+  ),
   'klimop.schakelaar': hulp(
     'src/agenten/KlimopPaneel.tsx',
     T(
-      'Керований перемикач режиму пасивного читання та миттєвого повернення однієї або всіх одинадцяти служб на чинну основу.',
-      'Beheerste schakelaar voor passief spiegellezen en onmiddellijke terugval van één of alle elf diensten naar de bestaande basis.',
+      'Керований перемикач сходинок пасивного читання, подвійного записування та миттєвого повернення однієї або всіх одинадцяти служб.',
+      'Beheerste schakelaar voor passief spiegellezen, gecontroleerd dubbel schrijven en onmiddellijke terugval van één of alle elf diensten.',
     ),
     T(
-      'Вмикає пасивне читання лише після підтвердженої безрозбіжної звірки або миттєво повертає обрану службу чи всі одинадцять служб у вихідний стан.',
-      'Schakelt passief lezen uitsluitend in na een bewezen foutloze spiegelcontrole of zet één dienst of alle elf diensten onmiddellijk terug naar de beginstand.',
+      'Дозволяє рух уперед лише послідовно без перестрибування сходинок за чистих звірок або миттєво повертає одну чи всі одинадцять служб у вихідний стан.',
+      'Staat opschakelen uitsluitend stapsgewijs toe na bewezen foutloze controles of zet één dienst of alle elf diensten onmiddellijk terug naar de beginstand.',
     ),
     T(
       'Низький ризик. Перемикач доступний виключно власнику на службовій адресі й ніколи не вимикає основну базу даних платформи.',

@@ -1,13 +1,15 @@
-// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 (21.11.2026, Етапи 13–15 впровадження «Плюща» у платформу «Мій простір»):
 // Виконання технічних MCP-інструментів екосистеми «Плющ» (klimop_*) через backend/klimop-platform-brug.ts та backend/klimop-overdracht-opslag.ts.
 // Викликається з backend/ai-beheer-hulpmiddelen.ts (лише технічний простір, власник сайту, З'єднувач v2 та підписана політика ШІ).
-// Агенти читають журнал і виконують діагностичні перевірки, але НІКОЛИ не мають права перемикати активний режим служби в обхід власника (§34).
+// Агенти читають журнали й виконують діагностичні перевірки Сходинок 1–3, але НІКОЛИ не мають права перемикати активний режим служби в обхід власника (§34).
 
 import { isAgentSlug, v2Agent } from '../shared/connector-v2/agenten';
 import type { KlimopDienstId } from '../shared/klimop/diensten';
 import { klimopCodeTekst } from '../shared/klimop-overzicht-model';
 import {
   KLIMOP_ARCHITECTUUR_TOETS,
+  KLIMOP_DUBBEL_LOGBOEK,
+  KLIMOP_DUBBEL_SCHRIJVEN,
   KLIMOP_OVERZICHT,
   KLIMOP_PASSIEVE_SPIEGEL,
   KLIMOP_SPIEGEL_CONTROLE,
@@ -21,7 +23,9 @@ import {
   klimopSpiegelControle,
 } from './klimop-platform-brug';
 import {
+  leesKlimopDubbelSchrijvenLogboek,
   leesKlimopSpiegelLogboek,
+  voerGecontroleerdeDubbelSchrijfProefUit,
   voerPassieveSpiegelLeesProefUit,
 } from './klimop-overdracht-opslag';
 
@@ -114,6 +118,24 @@ export async function voerKlimopToolUit(
       }
       case KLIMOP_SPIEGEL_LOGBOEK: {
         const res = leesKlimopSpiegelLogboek({
+          staatMap: opties?.staatMap,
+          dienstId: typeof args.dienstId === 'string' && args.dienstId ? (args.dienstId as KlimopDienstId) : undefined,
+          limiet: typeof args.limiet === 'number' ? args.limiet : undefined,
+        });
+        return uit({
+          waarschuwing: GEGEVENS_MELDING,
+          ...res,
+        });
+      }
+      case KLIMOP_DUBBEL_SCHRIJVEN: {
+        const res = voerGecontroleerdeDubbelSchrijfProefUit(args, { staatMap: opties?.staatMap });
+        return uit({
+          waarschuwing: GEGEVENS_MELDING,
+          ...res,
+        });
+      }
+      case KLIMOP_DUBBEL_LOGBOEK: {
+        const res = leesKlimopDubbelSchrijvenLogboek({
           staatMap: opties?.staatMap,
           dienstId: typeof args.dienstId === 'string' && args.dienstId ? (args.dienstId as KlimopDienstId) : undefined,
           limiet: typeof args.limiet === 'number' ? args.limiet : undefined,

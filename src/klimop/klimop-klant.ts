@@ -1,4 +1,4 @@
-// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 (21.11.2026, Етапи 13–15 впровадження «Плюща» у платформу «Мій простір»):
 // Клієнт маршрутів /api/owner/klimop/* для вебпанелі «Координація» на mcp.*/agenten та admin.* (src/agenten/KlimopPaneel.tsx).
 
 import { api } from '../platform/client';
@@ -9,7 +9,10 @@ import {
   klimopCodeTekst,
   type KlimopArchitectuurToetsInvoer,
   type KlimopArchitectuurToetsUitkomst,
+  type KlimopDubbelLogboekOverzicht,
+  type KlimopDubbelSchrijvenUitkomst,
   type KlimopGesimuleerdeAfwijking,
+  type KlimopGesimuleerdeDubbelSchrijfFout,
   type KlimopOverdrachtSchakelaarUitkomst,
   type KlimopPassieveSpiegelUitkomst,
   type KlimopPlatformOverzicht,
@@ -52,6 +55,22 @@ export const klimopSpiegelLogboekOphalen = async (
   invoer?: { dienstId?: KlimopDienstId; limiet?: number },
 ): Promise<KlimopSpiegelLogboekOverzicht> =>
   (await api.post(KLIMOP_PADEN.spiegelLogboek, { ...ctx, ...(invoer ?? {}) })).data as KlimopSpiegelLogboekOverzicht;
+
+export const klimopDubbelSchrijvenUitvoeren = async (
+  ctx: KlimopSessieContext,
+  invoer: {
+    dienstId: KlimopDienstId;
+    operatiesAantal?: number;
+    simuleerFout?: KlimopGesimuleerdeDubbelSchrijfFout;
+  },
+): Promise<KlimopDubbelSchrijvenUitkomst> =>
+  (await api.post(KLIMOP_PADEN.dubbelSchrijven, { ...ctx, ...invoer })).data as KlimopDubbelSchrijvenUitkomst;
+
+export const klimopDubbelLogboekOphalen = async (
+  ctx: KlimopSessieContext,
+  invoer?: { dienstId?: KlimopDienstId; limiet?: number },
+): Promise<KlimopDubbelLogboekOverzicht> =>
+  (await api.post(KLIMOP_PADEN.dubbelLogboek, { ...ctx, ...(invoer ?? {}) })).data as KlimopDubbelLogboekOverzicht;
 
 export const klimopOverdrachtSchakelen = async (
   ctx: KlimopSessieContext,
