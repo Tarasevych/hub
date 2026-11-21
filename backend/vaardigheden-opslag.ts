@@ -117,8 +117,15 @@ function leesIngebouwdeUitSchijf(): VaardigheidItem[] {
       const samenvattingNl = String(r.samenvatting?.nl ?? '').trim();
       const titelUk = String(r.titel?.uk ?? mdHeading ?? skillId).trim();
       const titelNl = String(r.titel?.nl ?? SYSTEEM_TITEL_NL[skillId] ?? (samenvattingNl || skillId)).trim();
-      const gesplitst = splitsTweetaligeSkillInhoud(ruweSkill, { uk: titelUk, nl: titelNl });
       const skillMap = resolve(skillPad, '..');
+      // KLIMOP-018: якщо SKILL.md одномовний, а поруч є парний VAARDIGHEID.nl.md, нідерландський вміст береться з нього,
+      // а не з українського тексту з приміткою. · Eentalige SKILL.md + VAARDIGHEID.nl.md: nl-inhoud uit het paarbestand.
+      const nlPaarPad = resolve(skillMap, 'VAARDIGHEID.nl.md');
+      const gesplitstRuw = splitsTweetaligeSkillInhoud(ruweSkill, { uk: titelUk, nl: titelNl });
+      const heeftTaalMarkering = /<!--\s*lang:nl\s*-->|\n##\s+Nederlands/i.test(ruweSkill);
+      const gesplitst = !heeftTaalMarkering && existsSync(nlPaarPad)
+        ? { uk: gesplitstRuw.uk, nl: readFileSync(nlPaarPad, 'utf8').replace(/^---[\s\S]*?---\s*/, '').trim() || gesplitstRuw.nl }
+        : gesplitstRuw;
       const voorbeeldPad = resolve(skillMap, 'VOORBEELD.uk.md');
       const ruimteBereik = skillId === 'uitgave-voorbereiden' || r.ruimte === 'technisch' ? 'technisch' : 'beide';
       const reqTools = Array.isArray(r.vereisteHulpmiddelen)

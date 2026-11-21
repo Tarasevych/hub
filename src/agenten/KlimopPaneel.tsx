@@ -9,7 +9,7 @@ import { CheckCircle2, FileText, GitCommit, KeyRound, Loader2, Network, RefreshC
 import type { Tr } from '../mcp-ui';
 import HulpVraag from '../hulp/HulpVraag';
 import { besluitFoutCode } from '../besluit/besluit-client';
-import { KLIMOP_ELF_DIENSTEN, type KlimopDienstId } from '../../shared/klimop/diensten';
+import { KLIMOP_ELF_DIENSTEN, type KlimopDienstId } from '../../shared/klimop/diensten-catalogus';
 import {
   KLIMOP_DIENST_TEKST,
   KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST,

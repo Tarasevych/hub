@@ -38,7 +38,8 @@ export async function main(): Promise<number> {
   check('посилання на неіснуючий запис виявляється', onbekend.zaken.some((z: any) => z.code === 'BIJDRAGE_VOORGANGER_ONBEKEND'));
   const zonderRecord = maakBijdrage({ ...basisB(), soort: 'overname', waaromUk: 'Fable 5.2 вичерпав ліміт.', bouwtVoortOp: [{ beschrijving: 'гілка claude/project-thread-0u9ig1, PR 142' }] });
   check('попередник без запису описується текстом (гілка, PR)', zonderRecord.zaken.length === 0, JSON.stringify(zonderRecord.zaken));
-  const rus = maakBijdrage({ ...basisB(), watUk: 'Сделаны новые уведомления для панели.' });
+  // KLIMOP-018: зразок утворюється з кодової позиції U+044B, щоб сам файл випробування не містив заборонених літер.
+  const rus = maakBijdrage({ ...basisB(), watUk: `Створено нов${String.fromCodePoint(0x44b)} сповіщення для панелі.` });
   check('мовний закон: літери поза українською абеткою відхиляються', rus.zaken.some((z: any) => z.code === 'BIJDRAGE_TAAL'));
   const mens = maakBijdrage({ ...basisB(), agent: null, mens: 'Павло Тарасевич' });
   check('внесок людини без ШІ теж записується (ярлик mens-…)', mens.zaken.length === 0 && /-mens/.test(mens.pad), mens.pad);

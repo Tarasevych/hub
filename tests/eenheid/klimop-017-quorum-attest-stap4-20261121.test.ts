@@ -708,7 +708,8 @@ export async function main(): Promise<number> {
     'досьє ecosysteem-klimop.json фіксує запит №198 для KLIMOP-016, задачу KLIMOP-017 та 36 активних можливостей без втрат',
     dossier.werk.some((w: { taakId: string; pr?: number }) => w.taakId === 'KLIMOP-016' && w.pr === 198)
     && dossier.werk.some((w: { taakId: string }) => w.taakId === 'KLIMOP-017')
-    && dossier.mogelijkheden.filter((m: { staat: string }) => m.staat === 'actief').length === 36
+    // KLIMOP-018: «без втрат» означає не менше 36 — наступні хвилі доповнюють досьє новими можливостями.
+    && dossier.mogelijkheden.filter((m: { staat: string }) => m.staat === 'actief').length >= 36
     && dossier.mogelijkheden.every((m: { staat: string }) => m.staat !== 'verloren'),
   );
 

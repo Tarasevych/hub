@@ -23,26 +23,15 @@ import {
 } from 'node:crypto';
 import { canoniekeJson } from './kern';
 import { leidPseudoniemeDienstIdentiteitAf } from './identiteit';
+import { KLIMOP_ELF_DIENSTEN, type KlimopDienstId } from './diensten-catalogus';
 
 // =================================================================================================
 // 1. Одинадцять ізольованих служб «Мого простору» (§3, §28, §30) та контроль міжслужбової взаємодії
 // =================================================================================================
 
-export const KLIMOP_ELF_DIENSTEN = Object.freeze([
-  'werkblad',            // 1. Головний робочий простір (нотатки, завдання, огляд)
-  'postvak',             // 2. Електронна пошта та повідомлення
-  'identiteit',          // 3. Облікові записи та самосуверенна ідентичність
-  'wolkopslag',          // 4. Хмарне сховище зашифрованих файлів
-  'agenda',              // 5. Календар і події
-  'ai_ruimte',           // 6. ШІ-простір
-  'mcp_poort',           // 7. Шлюз протоколу контексту моделі (14 ШІ-агентів)
-  'ontwikkelmiddelen',   // 8. Засоби розробки та інтеграції сховищ коду
-  'slimwoon',            // 9. Розумний дім і спільна оселя
-  'verbinders',          // 10. Програмні з'єднувачі зовнішніх служб
-  'beheer_en_diagnose',  // 11. Адміністрування та діагностика стану вузлів
-] as const);
-
-export type KlimopDienstId = (typeof KLIMOP_ELF_DIENSTEN)[number];
+// KLIMOP-018: сам перелік винесено до чистого модуля ./diensten-catalogus без серверних залежностей, щоб клієнтська
+// панель не тягнула node:crypto у пакунок переглядача. Тут його лише повторно експортуємо для сумісності.
+export { KLIMOP_ELF_DIENSTEN, isKlimopDienstId, type KlimopDienstId } from './diensten-catalogus';
 
 export interface KlimopDienstIsolatieProfiel {
   dienstId: KlimopDienstId;
