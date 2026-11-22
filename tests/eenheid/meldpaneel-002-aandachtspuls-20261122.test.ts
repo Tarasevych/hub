@@ -82,11 +82,11 @@ export async function main(): Promise<number> {
     ['Devin створив звіт', 'devin'],
     ['OpenCode перевірив модуль', 'opencode'],
     ['Telegram: нове підтвердження безпеки', 'telegram'],
-    ['OneDrive синхронізовано', 'onedrive'],
+    ['OneDrive синхронізовано', 'microsoftonedrive'],
     ['Home Assistant: датчик вітальні', 'homeassistant'],
     ['GitHub: перевірка пройдена', 'github'],
     ['Gmail: вхідний лист', 'gmail'],
-    ['Google Drive: спільна тека', 'google-drive'],
+    ['Google Drive: спільна тека', 'googledrive'],
   ];
 
   for (const [titel, verwachtMerk] of verwachteMerken) {

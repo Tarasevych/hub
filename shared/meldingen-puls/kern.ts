@@ -188,11 +188,11 @@ const BEKENDE_MERKEN: ReadonlyArray<{ re: RegExp; merk: string; naam: string; to
   { re: /\bdevin\b/i, merk: 'devin', naam: 'Devin', toon: 'ai', icoon: 'ai' },
   { re: /\bopencode\b/i, merk: 'opencode', naam: 'OpenCode', toon: 'ai', icoon: 'ai' },
   { re: /\btelegram\b/i, merk: 'telegram', naam: 'Telegram', toon: 'beveiliging', icoon: 'schild-ok' },
-  { re: /\bonedrive\b/i, merk: 'onedrive', naam: 'OneDrive', toon: 'wolk', icoon: 'wolk' },
+  { re: /\b(?:onedrive|microsoftonedrive)\b/i, merk: 'microsoftonedrive', naam: 'OneDrive', toon: 'wolk', icoon: 'wolk' },
   { re: /\bhome\s*assistant\b/i, merk: 'homeassistant', naam: 'Home Assistant', toon: 'huis', icoon: 'huis' },
   { re: /\bgithub\b/i, merk: 'github', naam: 'GitHub', toon: 'code', icoon: 'code' },
   { re: /\bgmail\b/i, merk: 'gmail', naam: 'Gmail', toon: 'post', icoon: 'post' },
-  { re: /\bgoogle\s*drive\b/i, merk: 'google-drive', naam: 'Google Диск', toon: 'wolk', icoon: 'wolk' },
+  { re: /\b(?:google\s*drive|googledrive)\b/i, merk: 'googledrive', naam: 'Google Диск', toon: 'wolk', icoon: 'wolk' },
   { re: /\bgoogle\b/i, merk: 'google', naam: 'Google', toon: 'post', icoon: 'post' },
   { re: /\bmicrosoft\b/i, merk: 'microsoft', naam: 'Microsoft', toon: 'wolk', icoon: 'wolk' },
   { re: /\bnextcloud\b/i, merk: 'nextcloud', naam: 'Nextcloud', toon: 'wolk', icoon: 'wolk' },
@@ -542,8 +542,8 @@ function bepaalOorzaakSleutel(geb: MeldingEcosysteemGebeurtenis, lang: Taal): { 
     /(не синхроніз|відкликав|увійдіть|помилка|не вдалася|зупинен|немає з’єднання|ключ|mislukt|verlopen|ingetrokken|geen verbinding|fout|storing|geblokkeerd)/i.test(tekst);
   if (!isStoringOfWacht) return null;
 
-  if (/\b(google|gmail|google-drive)\b/.test(tekst)) return { sleutel: 'aanbieder:google', aanbiederLabel: 'Google' };
-  if (/\b(microsoft|onedrive|outlook)\b/.test(tekst)) return { sleutel: 'aanbieder:microsoft', aanbiederLabel: 'Microsoft' };
+  if (/\b(google|gmail|googledrive|google-drive)\b/.test(tekst)) return { sleutel: 'aanbieder:google', aanbiederLabel: 'Google' };
+  if (/\b(microsoft|microsoftonedrive|onedrive|outlook)\b/.test(tekst)) return { sleutel: 'aanbieder:microsoft', aanbiederLabel: 'Microsoft' };
   if (/\bgithub\b/.test(tekst)) return { sleutel: 'aanbieder:github', aanbiederLabel: 'GitHub' };
   if (/\btelegram\b/.test(tekst)) return { sleutel: 'aanbieder:telegram', aanbiederLabel: 'Telegram' };
   if (/(мереж|з’єднан|тунел|netwerk|verbinding|offline)/i.test(tekst)) {
