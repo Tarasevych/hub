@@ -1,5 +1,3 @@
-// НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом): тести, перевірку типів і складання не проганяли
-// за прямою вказівкою власника (режим економії ліміту, 22.11.2026).
 // Спільний перегляд вкладень, етап 4 (розділ 7 концепції): картка вкладення в сповіщенні.
 // Виконавець: Claude Opus 5.5 (High) через Google Antigravity (antigravity), продовження роботи Grok (grok).
 // Прапорець `bijlage-weergave-gedeeld-v1`, типово вимкнений: картку показує лише MeldingVeegKaart за ввімкненого прапорця,
@@ -86,7 +84,7 @@ export function MeldingKaart(p: { taal: Taal; bijlage: MeldingKaartBijlage; acti
 
   return (
     <div className='weergave-melding-kaart' data-weergave-drager='melding' data-soort={soort.sleutel} data-actief={p.actief ? 'ja' : undefined}
-      data-staat={hoofd?.hint?.dringend /* свій вигляд для кожного стану строку (вказівка Павла 22.11.2026) — НЕ ПЕРЕВІРЕНО */}>
+      data-staat={hoofd?.hint?.dringend /* свій вигляд для кожного стану строку (вказівка Павла 22.11.2026) */}>
       <button type='button' className='weergave-melding-kaart-mini' onClick={(e) => { e.stopPropagation(); p.onOpen(); }}
         aria-label={t(`Відкрити «${p.bijlage.naam}»`, `«${p.bijlage.naam}» openen`)}>
         {mini && !miniFout

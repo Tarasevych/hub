@@ -124,6 +124,93 @@ export async function main(): Promise<number> {
       && onveiligeKaart.knop.url === '',
   );
 
+  const vreemdDomeinKaart = telegramKaartVoor({
+    taal: 'uk',
+    naam: 'рахунок.pdf',
+    siteUrl: 'https://evil.example/login',
+    nu,
+  });
+  const inlogGegevensKaart = telegramKaartVoor({
+    taal: 'uk',
+    naam: 'рахунок.pdf',
+    siteUrl: 'https://user:pass@hub.tarasevych.com/melding',
+    nu,
+  });
+  const valsAchtervoegselKaart = telegramKaartVoor({
+    taal: 'nl',
+    naam: 'factuur.pdf',
+    siteUrl: 'https://tarasevych.com.evil.example/melding',
+    nu,
+  });
+  const lokaalKaart = telegramKaartVoor({
+    taal: 'nl',
+    naam: 'factuur.pdf',
+    siteUrl: 'https://localhost:8443/melding',
+    nu,
+  });
+  check(
+    '1e telegramKaartVoor блокує сторонні https-домени та вбудовані облікові дані у кнопці й дозволяє власні домени та localhost',
+    vreemdDomeinKaart.knop.url === ''
+      && inlogGegevensKaart.knop.url === ''
+      && valsAchtervoegselKaart.knop.url === ''
+      && lokaalKaart.knop.url === 'https://localhost:8443/melding',
+  );
+
+  const geldigTelegramHtml = (html: string): boolean => {
+    const openB = (html.match(/<b>/g) || []).length;
+    const sluitB = (html.match(/<\/b>/g) || []).length;
+    const openI = (html.match(/<i>/g) || []).length;
+    const sluitI = (html.match(/<\/i>/g) || []).length;
+    const heeftGebrokenEntiteit = /&(?!amp;|lt;|gt;|quot;|apos;|#\d+;)/.test(html);
+    const heeftLosseSurrogaat = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(html);
+    return (
+      html.length <= 1024
+      && openB > 0
+      && openB === sluitB
+      && openI === 1
+      && openI === sluitI
+      && !heeftGebrokenEntiteit
+      && !heeftLosseSurrogaat
+    );
+  };
+  const ampersandKaart = telegramKaartVoor({
+    taal: 'uk',
+    naam: '&'.repeat(180),
+    soortNaam: 'Файл невідомого типу',
+    isRekening: true,
+    bedrag: '12 345 678,90 грн',
+    termijnIso: '2026-11-22',
+    siteUrl: 'https://hub.tarasevych.com/melding',
+    nu,
+  });
+  const gemengdHtmlKaart = telegramKaartVoor({
+    taal: 'nl',
+    naam: '<>&"'.repeat(200),
+    soortNaam: 'Rekening & bijlage <1>'.repeat(5),
+    isRekening: true,
+    bedrag: `& € ${'9'.repeat(80)}`,
+    termijnIso: '2026-11-22',
+    siteUrl: 'https://hub.tarasevych.com/melding',
+    nu,
+  });
+  const emojiGrensKaart = telegramKaartVoor({
+    taal: 'uk',
+    naam: `${'📄&'.repeat(180)}`,
+    isRekening: true,
+    bedrag: '500,00 грн',
+    termijnIso: '2026-11-22',
+    siteUrl: 'https://hub.tarasevych.com/melding',
+    nu,
+  });
+  check(
+    '1f telegramKaartVoor зберігає <= 1024 знаків, парні теги <b>/<i> і цілі сутності &amp;/&lt;/&gt; на 180 амперсандах та "<>&\\"".repeat(200)',
+    geldigTelegramHtml(ampersandKaart.onderschrift)
+      && (ampersandKaart.onderschrift.match(/<b>/g) || []).length === 3
+      && geldigTelegramHtml(gemengdHtmlKaart.onderschrift)
+      && (gemengdHtmlKaart.onderschrift.match(/<b>/g) || []).length === 3
+      && geldigTelegramHtml(emojiGrensKaart.onderschrift),
+  );
+
   // ---------------------------------------------------------------- 2. 11 окремих растрових PNG-карток 640×320
   const pngBuffers = new Map<TelegramKaartStaat, Buffer>();
   const medailleHandtekeningen = new Set<string>();
@@ -240,6 +327,46 @@ export async function main(): Promise<number> {
       && !geserialiseerd.includes(Buffer.from(geheimInhoud).toString('base64'))
       && journaalRegels.length === 1
       && journaalRegels[0].actie === 'owner.meldingen.bijlage.telegram',
+  );
+
+  const vijandigeKnoppen: string[] = [];
+  for (const kwaadHref of [
+    'https://evil.example/login',
+    'https://user:pass@hub.tarasevych.com/',
+    'https://user:pass@hub.tarasevych.com/agenda',
+  ]) {
+    await stuurBijlageMeldingNaarTelegram(
+      { userId: 'u-1', ruimte: 'prive' },
+      {
+        ...geb,
+        acties: [{ id: 'open', labelUk: 'Відкрити', labelNl: 'Openen', soort: 'navigeer', href: kwaadHref }],
+        meta: { link: kwaadHref },
+      },
+      {
+        vlagAan: async () => true,
+        leesProfielFn: async () => standaardProfiel('prive'),
+        botSleutelFn: async () => '123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi',
+        instellingenFn: async () => ({ afbeeldingen: true } as never),
+        koppelingenFn: async () => [
+          { id: 'k1', user_id: 'u-1', telegram_id: 'tg-1', chat_id: '777001', rechten: ['meldingen'], site_taal: 'uk' } as never,
+        ],
+        taalFn: async () => ({ taal: 'uk', herkend: false }),
+        botAanroepFn: (async (_sl: string, _m: string, gegevens: Record<string, unknown>) => {
+          const rm = gegevens.reply_markup as { inline_keyboard?: Array<Array<{ url?: string }>> } | undefined;
+          vijandigeKnoppen.push(rm?.inline_keyboard?.[0]?.[0]?.url ?? '');
+          return { message_id: 43 };
+        }) as never,
+        journaalFn: (async () => ({ id: 'j2', seq: 2, hash: 'h2' })) as never,
+        nu,
+      },
+    );
+  }
+  check(
+    '3d stuurBijlageMeldingNaarTelegram підміняє сторонні домени та адреси з обліковими даними на безпечний standaard власного сайту',
+    vijandigeKnoppen.length === 3
+      && vijandigeKnoppen.every((u) => u === 'https://hub.tarasevych.com/melding')
+      && !JSON.stringify(vijandigeKnoppen).includes('evil.example')
+      && !JSON.stringify(vijandigeKnoppen).includes('user:pass'),
   );
 
   // ---------------------------------------------------------------- 4. Маршрут POST /api/owner/bijlage-weergave/ocr-tekst

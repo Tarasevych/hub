@@ -1,7 +1,7 @@
 /* Спільний перегляд вкладень, етап 1 (Grok: hub.tarasevych.com). Alleen actief als het artikel data-gedeelde-weergave draagt,
    dus alleen met de vlag bijlage-weergave-gedeeld-v1 aan. Kleuren via de variabelen van de site (Макет en andere palletten);
    met een terugvalwaarde voor palletten zonder die variabelen. */
-/* Етап 4 (НЕ ПЕРЕВІРЕНО, Claude Opus 5.5 (High) через Antigravity): ті самі змінні на нейтральному носії [data-weergave-drager]
+/* Етап 4 (Claude Opus 5.5 (High) через Antigravity): ті самі змінні на нейтральному носії [data-weergave-drager]
    для Диска, спільного вікна файла й сповіщень — без сітки й без поштового класу, щоб не ламати чужу розкладку. */
 .google-mail-attachment-preview[data-gedeelde-weergave], [data-weergave-drager] {
   --wg-oppervlak: var(--mq-oppervlak, var(--panel, #141d30));
@@ -13,7 +13,7 @@
   --wg-accent: var(--mq-accent, var(--accent, #8eb9ff));
   --wg-hoofd-bg: var(--mq-knop-primair-bg, var(--accent, #f4f0ff));
   --wg-hoofd-tekst: var(--mq-knop-primair-tekst, #262246);
-  --wg-goed: var(--staat-goed, #86efac); --wg-let: var(--staat-let, #fdba74); --wg-fout: var(--staat-fout, #fca5a5); /* сталі кольори станів (src/thema/staat-kleuren.css), «Увага» помаранчева — НЕ ПЕРЕВІРЕНО */
+  --wg-goed: var(--staat-goed, #86efac); --wg-let: var(--staat-let, #fdba74); --wg-fout: var(--staat-fout, #fca5a5); /* сталі кольори станів (src/thema/staat-kleuren.css), «Увага» помаранчева */
 }
 .google-mail-attachment-preview[data-gedeelde-weergave] {
   display: grid !important; container-type: inline-size;
@@ -135,7 +135,7 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 /* Afwerking etappe 2: een leeg bestand (0 bytes) zegt dat zelf in de kop, in plaats van een lege editor zonder uitleg. */
 .weergave-titel .weergave-leeg { font-weight: 600; color: var(--wg-let); }
 
-/* Етап 3, НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом) — Claude Opus 5.5 (High) через Google Antigravity, 22.11.2026.
+/* Етап 3 — Claude Opus 5.5 (High) через Google Antigravity, 22.11.2026.
    Смуга під шапкою: швидка картка рахунку і дії етапу 3. Одна тонка смуга, значок + коротке слово + число; колір лише для терміновості. */
 .weergave-etappe3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-width: 0; }
 .weergave-snelkaart { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0; min-width: 0; flex: 1 1 auto; }
@@ -155,7 +155,7 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
   .weergave-snelkaart-rij dt span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* на телефоні значок замість слова; читач екрана підпис чує */
 }
 
-/* Етап 3, НЕ ПЕРЕВІРЕНО — дії смуги (кнопки-пігулки зі значком) і спільне вікно підтвердження (календар, підпис, версії). */
+/* Етап 3 — дії смуги (кнопки-пігулки зі значком) і спільне вікно підтвердження (календар, підпис, версії). */
 .weergave-etappe3-acties { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .weergave-etappe3-actie { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 12px; border-radius: 12px; cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--wg-accent) 45%, var(--wg-rand)); background: color-mix(in srgb, var(--wg-accent) 10%, var(--wg-oppervlak-2));
@@ -197,7 +197,7 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 .weergave-dialoog-klaar { justify-items: center; text-align: center; }
 .weergave-dialoog-klaar > svg { width: 34px; height: 34px; color: var(--wg-goed); }
 
-/* Етап 3, НЕ ПЕРЕВІРЕНО — пошук у всіх вкладеннях (ZoekVeld.tsx): на всю ширину смуги, список збігів по файлах. */
+/* Етап 3 — пошук у всіх вкладеннях (ZoekVeld.tsx): на всю ширину смуги, список збігів по файлах. */
 .weergave-verborgen { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .weergave-zoek { flex: 1 1 100%; display: grid; gap: 8px; min-width: 0; }
 .weergave-zoek-balk { display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px; border-radius: 14px; border: 1px solid var(--wg-rand-sterk); background: var(--wg-oppervlak-2); }
@@ -219,7 +219,7 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 .weergave-zoek-fragment { color: var(--wg-gedempt); font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
 .weergave-zoek-fragment mark { background: color-mix(in srgb, var(--wg-let) 38%, transparent); color: var(--wg-tekst); border-radius: 3px; padding: 0 1px; }
 
-/* Етап 4 (НЕ ПЕРЕВІРЕНО): контекстні дії джерела (Диск — «Відкрити теку», сповіщення — «Прочитано» тощо).
+/* Етап 4: контекстні дії джерела (Диск — «Відкрити теку», сповіщення — «Прочитано» тощо).
    Мінімалізм: значок завжди, слово лише коли вистачає місця; колір лише через змінні носія. */
 .weergave-context { display: inline-flex; align-items: center; gap: 6px; }
 .weergave-context-knop { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 10px; border-radius: 10px;
@@ -231,13 +231,13 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 .weergave-context-knop[data-toon='let'] svg { color: var(--wg-let); }
 @media (max-width: 640px) { .weergave-context-knop > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .weergave-context-knop { padding: 0 8px; } }
 
-/* Етап 4, крок 4.6 — картка вкладення в сповіщенні (MeldingKaart). НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом).
+/* Етап 4, крок 4.6 — картка вкладення в сповіщенні (MeldingKaart).
    Мінімалізм: мініатюра | назва з видом і головним числом | одна дія «Відкрити». Колір — лише для терміновості строку. */
 .weergave-melding-kaart { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px; border-radius: 14px;
   border: 1px solid var(--wg-rand); background: var(--wg-oppervlak-2); color: var(--wg-tekst); min-width: 0; }
 .weergave-melding-kaart[data-actief='ja'] { border-color: var(--wg-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wg-accent) 14%, transparent); }
 .mel-bijlagen-kaarten { display: grid; gap: 6px; min-width: 0; }
-/* Свій вигляд для кожного стану строку: смуга зліва сталим кольором стану (src/thema/staat-kleuren.css). НЕ ПЕРЕВІРЕНО */
+/* Свій вигляд для кожного стану строку: смуга зліва сталим кольором стану (src/thema/staat-kleuren.css). */
 .weergave-melding-kaart[data-staat] { border-left-width: 4px; }
 .weergave-melding-kaart[data-staat='verlopen'] { border-left-color: var(--wg-fout); background: color-mix(in srgb, var(--wg-fout) 7%, var(--wg-oppervlak-2)); }
 .weergave-melding-kaart[data-staat='vandaag'] { border-left-color: var(--wg-let); background: color-mix(in srgb, var(--wg-let) 7%, var(--wg-oppervlak-2)); }

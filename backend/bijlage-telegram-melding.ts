@@ -7,13 +7,14 @@
 import { crc32, deflateSync } from 'node:zlib';
 import { bijlageKaartKenmerken } from '../shared/bijlage-weergave/kaart-kenmerken';
 import {
+  isEigenPlatformHost,
   TELEGRAM_KAART_HEX,
   TELEGRAM_KAART_STATEN,
   telegramKaartVoor,
   type TelegramKaartInvoer,
   type TelegramKaartStaat,
 } from '../shared/bijlage-weergave/telegram-kaart';
-import { LINK_DIENSTEN, routeerMeldingLink, type LinkDienst } from '../shared/melding-link';
+import { dienstVoorHost, LINK_DIENSTEN, routeerMeldingLink, type LinkDienst } from '../shared/melding-link';
 import type { MeldingEcosysteemGebeurtenis, MeldingEcosysteemProfiel } from '../shared/meldingen-ecosysteem';
 import type { Lade } from '../shared/ruimte-scheiding';
 import { journaalSchrijf } from './beheer-journaal';
@@ -324,10 +325,32 @@ export function tekenBijlageStaatKaartPng(staat: TelegramKaartStaat, hexKleur?: 
   return png;
 }
 
+function heeftInlogGegevensOfOngeldig(ruw: string): boolean {
+  const s = ruw.trim();
+  if (!s) return false;
+  if (s.startsWith('/') && !s.startsWith('//')) return false;
+  if (s.startsWith('#')) return false;
+  try {
+    const u = new URL(s);
+    return Boolean(u.username || u.password);
+  } catch {
+    return true;
+  }
+}
+
 function bepaalVeiligeSiteUrl(geb: MeldingEcosysteemGebeurtenis, siteBasis?: string): string {
-  const standaard = siteBasis && /^https:\/\//i.test(siteBasis)
-    ? siteBasis
-    : `https://${SERVICE_HOSTS.hub}/melding`;
+  const terugval = `https://${SERVICE_HOSTS.hub}/melding`;
+  let standaard = terugval;
+  if (siteBasis) {
+    try {
+      const sb = new URL(siteBasis);
+      if (sb.protocol === 'https:' && !sb.username && !sb.password && isEigenPlatformHost(sb.hostname)) {
+        standaard = sb.toString();
+      }
+    } catch {
+      standaard = terugval;
+    }
+  }
   const sub = String(geb.subdomein || '');
   const dienst: LinkDienst | undefined = sub === 'id'
     ? 'identity'
@@ -335,11 +358,24 @@ function bepaalVeiligeSiteUrl(geb: MeldingEcosysteemGebeurtenis, siteBasis?: str
       ? (sub as LinkDienst)
       : undefined;
   const actieHref = geb.acties?.find((a) => typeof a.href === 'string' && a.href.trim())?.href;
-  const metaLink = typeof geb.meta?.link === 'string' ? geb.meta.link : undefined;
-  const kandidaat = routeerMeldingLink(actieHref || metaLink || '/melding', { dienst }) || standaard;
+  const metaLink = typeof geb.meta?.link === 'string' && geb.meta.link.trim() ? geb.meta.link : undefined;
+  const opgegevenLink = actieHref || metaLink;
+  if (opgegevenLink && heeftInlogGegevensOfOngeldig(opgegevenLink)) {
+    return standaard;
+  }
+  const kandidaat = routeerMeldingLink(opgegevenLink || '/melding', { dienst }) || standaard;
   try {
     const u = new URL(kandidaat);
-    return u.protocol === 'https:' ? u.toString() : standaard;
+    const standaardOrigin = new URL(standaard).origin;
+    if (
+      u.protocol === 'https:'
+      && !u.username
+      && !u.password
+      && (Boolean(dienstVoorHost(u.hostname)) || u.origin === standaardOrigin)
+    ) {
+      return u.toString();
+    }
+    return standaard;
   } catch {
     return standaard;
   }

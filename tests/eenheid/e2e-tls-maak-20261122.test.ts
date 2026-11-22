@@ -5,7 +5,7 @@
 // Eenheidstest voor scripts/e2e-tls-maak.mjs en scripts/e2e-lokaal.mjs (melding nr. 164, CONSOL-001).
 import { X509Certificate } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -140,6 +140,36 @@ export async function main(): Promise<number> {
         && foutTekstSubmap.includes('Відхилено шлях E2E_TLS')
         && foutTekstSubmap.includes('geweigerd'),
       foutTekstSubmap.slice(0, 200),
+    );
+
+    const symKoppelingNaarSrc = join(basis, 'koppeling-naar-src');
+    symlinkSync(resolve('src'), symKoppelingNaarSrc, 'dir');
+    const symDoelBinnenSrc = join(symKoppelingNaarSrc, '__verboden_symlink_tls__');
+    let symlinkGeweigerd = false;
+    let foutTekstSymlink = '';
+    try {
+      mod.zorgVoorE2eTls({ map: symDoelBinnenSrc });
+    } catch (fout) {
+      symlinkGeweigerd = true;
+      foutTekstSymlink = String((fout as Error)?.message || fout);
+    }
+    const hangendeKoppeling = join(basis, 'hangende-koppeling-naar-src');
+    symlinkSync(resolve('src/__verboden_hangende_tls__'), hangendeKoppeling, 'dir');
+    let hangendeGeweigerd = false;
+    try {
+      mod.zorgVoorE2eTls({ map: hangendeKoppeling });
+    } catch {
+      hangendeGeweigerd = true;
+    }
+    check(
+      '3а. відхиляє символічне посилання із tmpdir() усередину підкаталогу сховища (наявне й висяче) без створення тек у сховищі',
+      symlinkGeweigerd
+        && hangendeGeweigerd
+        && !existsSync(resolve('src/__verboden_symlink_tls__'))
+        && !existsSync(resolve('src/__verboden_hangende_tls__'))
+        && foutTekstSymlink.includes('Відхилено шлях E2E_TLS')
+        && foutTekstSymlink.includes('geweigerd'),
+      foutTekstSymlink.slice(0, 200),
     );
 
     // 4. Відмова e2e-lokaal.mjs з кодом 2 та двомовною підказкою при відсутньому сертифікаті в E2E_TLS без E2E_TLS_AUTO=1

@@ -1,5 +1,4 @@
-// Спільний перегляд вкладень, етапи 1–2 (Grok: hub.tarasevych.com); етапи 3–4 — Claude Opus 5.5 (High) через Google Antigravity,
-// НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом): тести, перевірку типів і складання не проганяли за вказівкою власника.
+// Спільний перегляд вкладень, етапи 1–2 (Grok: hub.tarasevych.com); етапи 3–4 — Claude Opus 5.5 (High) через Google Antigravity.
 // Vlag `bijlage-weergave-gedeeld-v1`, standaard UIT.
 // Omlijsting rond de bestaande formaatweergaven: kop in één regel (naam, vertrouwenslabel, hoofdactie, «Подробиці», «⋯», sluiten),
 // snelle kaart, strook met alle bijlagen en een eerlijke laad- en foutstaat. Weet niets van de mail: de bron geeft gegevens en
@@ -12,13 +11,13 @@ import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from
 import { technischeRijen } from './details';
 import { toonWaarde } from './labels';
 import { actiesVoor, type Beschikbaar } from './acties';
-import { WeergaveEtappe3, type WeergaveExtra } from './Etappe3'; /* етап 3, НЕ ПЕРЕВІРЕНО: Claude Opus 5.5 (High) через Antigravity */
+import { WeergaveEtappe3, type WeergaveExtra } from './Etappe3'; /* етап 3: Claude Opus 5.5 (High) через Antigravity */
 import './weergave.css';
 
 export type WeergaveItem = { naam: string; contentType: string; grootte: number };
 
 /**
- * Етап 4 (НЕ ПЕРЕВІРЕНО, Claude Opus 5.5 (High) через Antigravity): звідки файл.
+ * Етап 4 (Claude Opus 5.5 (High) через Antigravity): звідки файл.
  * Лише для чесних текстів (помилка, підпис стрічки); логіка шапки від джерела не залежить. Типово — Пошта.
  */
 export type WeergaveBron = 'post' | 'schijf' | 'melding' | 'bestand';
@@ -52,18 +51,18 @@ export type KopProps = {
   staat?: { fase: 'laden' | 'fout'; naam: string; code: string; onOpnieuw: () => void } | null;
   /** etap 2: wat de afzendercontrole al weet (null = nog geen antwoord) */
   afzender?: AfzenderBewijs | null;
-  /** етап 3 (НЕ ПЕРЕВІРЕНО): що джерело знає про вкладення — для швидкої картки й дій; без поля все як на етапі 2 */
+  /** етап 3: що джерело знає про вкладення — для швидкої картки й дій; без поля все як на етапі 2 */
   extra?: WeergaveExtra | null;
-  /** етап 4 (НЕ ПЕРЕВІРЕНО): джерело файла; без поля — Пошта, як раніше */
+  /** етап 4: джерело файла; без поля — Пошта, як раніше */
   bron?: WeergaveBron;
-  /** етап 4 (НЕ ПЕРЕВІРЕНО): дії джерела; без поля — як раніше */
+  /** етап 4: дії джерела; без поля — як раніше */
   contextActies?: ContextActie[] | null;
   /**
-   * етап 4 (НЕ ПЕРЕВІРЕНО): тег кореня шапки. Диск і інші вікна мають широкі правила на кшталт `.drive-viewer header button`,
+   * етап 4: тег кореня шапки. Диск і інші вікна мають широкі правила на кшталт `.drive-viewer header button`,
    * які переписали б кнопки шапки; з 'div' ці правила її не зачіпають. Без поля — 'header', як у Пошті.
    */
   kopElement?: 'header' | 'div';
-  /** етап 4 (НЕ ПЕРЕВІРЕНО): не показувати власну кнопку «Закрити», коли її вже має рамка вікна (спільне вікно файла) */
+  /** етап 4: не показувати власну кнопку «Закрити», коли її вже має рамка вікна (спільне вікно файла) */
   zonderSluiten?: boolean;
   onSluit: () => void;
 };
@@ -85,7 +84,7 @@ function useMenu() {
 }
 
 /**
- * Етап 4 (НЕ ПЕРЕВІРЕНО): хто «не віддав файл» — за джерелом; без джерела — сервер пошти, як раніше.
+ * Етап 4: хто «не віддав файл» — за джерелом; без джерела — сервер пошти, як раніше.
  * Українське дієслово узгоджуємо з родом: «сервер не віддав», «сховище не віддало», «служба не віддала».
  */
 const BRON_SERVER: Record<WeergaveBron, { uk: string; nl: string; uitgang: '' | 'о' | 'а' }> = {
@@ -107,7 +106,7 @@ export function foutTekst(code: string, bron: WeergaveBron = 'post'): [string, s
 
 const DONKER_SLEUTEL = 'tsv:bijlage-donkere-paginas';
 // Відповідь Павла на питання 1 (22.11.2026): у темній темі темні сторінки вмикаються самі, але людина може повернути оригінал.
-// НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Google Antigravity). Збережено: 'aan' | 'uit' — явний вибір людини; нічого — за темою.
+// Claude Opus 5.5 (High) через Google Antigravity. Збережено: 'aan' | 'uit' — явний вибір людини; нічого — за темою.
 type DonkerKeuze = 'aan' | 'uit' | null;
 function leesDonkerKeuze(): DonkerKeuze { try { const v = window.localStorage.getItem(DONKER_SLEUTEL); return v === 'aan' || v === 'uit' ? v : null; } catch { return null; } }
 function bewaarDonker(aan: boolean) { try { window.localStorage.setItem(DONKER_SLEUTEL, aan ? 'aan' : 'uit'); } catch { /* geblokkeerd: alleen deze sessie */ } }
@@ -144,7 +143,7 @@ export function WeergaveKop(p: KopProps) {
     return () => { weg = true; };
   }, [p.blob, p.naam]);
   const { hoofd, overig } = actiesVoor(soort.sleutel, formaat, p.beschikbaar);
-  // етап 4 (НЕ ПЕРЕВІРЕНО): не більше двох видимих дій джерела; решта — у «⋯» після звичайних дій
+  // етап 4: не більше двох видимих дій джерела; решта — у «⋯» після звичайних дій
   const ctx = p.contextActies || [];
   const ctxZichtbaar = ctx.filter((a) => a.zichtbaar).slice(0, 2);
   const ctxMenu = ctx.filter((a) => !ctxZichtbaar.includes(a));
@@ -255,7 +254,7 @@ function Mini(p: { taal: Taal; it: WeergaveItem; i: number; actueel: boolean; la
   );
 }
 
-/** Етап 4 (НЕ ПЕРЕВІРЕНО): підпис стрічки за джерелом; без джерела — «Усі вкладення листа», як раніше. */
+/** Етап 4: підпис стрічки за джерелом; без джерела — «Усі вкладення листа», як раніше. */
 const STROOK_LABEL: Record<WeergaveBron, [string, string]> = {
   post: ['Усі вкладення листа', 'Alle bijlagen van het bericht'],
   schijf: ['Файли теки', 'Bestanden in de map'],

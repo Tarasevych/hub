@@ -1,20 +1,17 @@
-// НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом): тести, перевірку типів і складання не проганяли
-// за прямою вказівкою власника (режим економії ліміту, 22.11.2026).
-// Виконавець: Claude Opus 5.5 (High) через Google Antigravity (antigravity).
-//
-// Картка вкладення в Telegram-боті — ОКРЕМА для кожного стану, а не одна спільна.
+// Картка вкладення в Telegram-боті — ОКРЕМА для кожного з 11 станів, а не одна спільна.
 // Відповідь Павла на питання 4 (22.11.2026, UTC+1): «так, окрім того, на кожний стан має бути своя картка, а не універсальна».
-//
-// Чистий модуль без залежностей: лише вибір стану й складання тексту картки. До бота ще НЕ підключено:
-// у цій гілці немає шляху, яким бот надсилає сповіщення з вкладеннями (є лише картки входу в
-// backend/telegram-aanmelden/kaarten.ts — їх можна взяти за зразок для малюнка картки, кольори ті самі за змістом).
+// Початковий автор: Claude Opus 5.5 (High) через Google Antigravity (antigravity); підключено до stuurBijlageMeldingNaarTelegram
+// у backend/bijlage-telegram-melding.ts та зміцнено перевірками домену й цілісності HTML у CONSOL-001 (Gemini 3.1 Pro (High)).
 //
 // Правила:
 //   • вміст файла в Telegram НЕ передаємо — лише назву, вид, суму, строк і кнопку «Відкрити на сайті»;
+//   • кнопка веде виключно на https:-адресу власного домену платформи без вбудованих облікових даних;
 //   • колір за змістом, однаковий з усім сайтом: зелений — успіх, помаранчевий — увага, червоний — небезпека чи прострочено,
 //     синій — звичайне нове;
 //   • кожен стан має свій заголовок, свій значок, своє пояснення «що це» і свою підказку «що робити»;
-//   • текст екрановано для parse_mode HTML.
+//   • текст екрановано для parse_mode HTML без розрізання тегів чи HTML-сутностей у межах 1024 знаків.
+
+import { dienstVoorHost } from '../melding-link';
 
 export type TelegramKaartStaat =
   | 'rekening-nieuw'
@@ -96,10 +93,27 @@ export type TelegramKaart = {
   knop: { tekst: string; url: string };
 };
 
+const MAX_ONDERSCHRIFT_LENGTE = 1024;
+
 const kies = (taal: 'uk' | 'nl', t: Tekst) => (taal === 'nl' ? t[1] : t[0]);
 
 export function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Обрізає сирий рядок до вказаної межі кодових одиниць UTF-16 без розрізання сурогатних пар. */
+function begrensRuw(s: string, maxEenheden: number, metEllips = false): string {
+  if (maxEenheden <= 0) return '';
+  if (s.length <= maxEenheden) return s;
+  const limiet = metEllips ? Math.max(0, maxEenheden - 1) : maxEenheden;
+  let snede = s.slice(0, limiet);
+  if (snede.length > 0) {
+    const laatste = snede.charCodeAt(snede.length - 1);
+    if (laatste >= 0xd800 && laatste <= 0xdbff) {
+      snede = snede.slice(0, -1);
+    }
+  }
+  return metEllips ? `${snede}…` : snede;
 }
 
 function dagenTot(iso: string, nu: Date): number | null {
@@ -128,10 +142,20 @@ export function telegramKaartStaat(i: TelegramKaartInvoer): TelegramKaartStaat {
   return 'document';
 }
 
+/** Перевіряє, чи належить ім'я вузла власному домену платформи (або локальному стенду). */
+export function isEigenPlatformHost(hostname: string): boolean {
+  const h = String(hostname || '').trim().toLowerCase();
+  if (!h) return false;
+  if (dienstVoorHost(h)) return true;
+  return h === 'tarasevych.com' || h.endsWith('.tarasevych.com') || h === 'localhost';
+}
+
 function veiligeSiteUrl(url: string): string {
   try {
     const u = new URL(url);
-    return u.protocol === 'https:' ? u.toString() : '';
+    if (u.protocol !== 'https:' || u.username || u.password) return '';
+    if (!isEigenPlatformHost(u.hostname)) return '';
+    return u.toString();
   } catch {
     return '';
   }
@@ -141,14 +165,38 @@ export function telegramKaartVoor(i: TelegramKaartInvoer): TelegramKaart {
   const staat = telegramKaartStaat(i);
   const o = TELEGRAM_KAART_STATEN[staat];
   const t = (x: Tekst) => kies(i.taal, x);
-  const regels: string[] = [];
-  regels.push(`${o.icoon} <b>${escHtml(t(o.kop))}</b>`);
-  regels.push(`<i>${escHtml(i.naam.slice(0, 180))}</i>${i.soortNaam ? ` · ${escHtml(i.soortNaam)}` : ''}`);
-  if (i.isRekening && i.bedrag) regels.push(`${t(['Сума', 'Bedrag'])}: <b>${escHtml(i.bedrag)}</b>`);
-  if (i.isRekening && i.termijnIso) regels.push(`${t(['Строк оплати', 'Betaaltermijn'])}: <b>${escHtml(i.termijnIso.split('-').reverse().join('.'))}</b>`);
-  regels.push(escHtml(t(o.wat)));
-  let onderschrift = regels.join('\n');
-  if (onderschrift.length > 1024) onderschrift = `${onderschrift.slice(0, 1020)}…`;
+  const ruwNaam = String(i.naam ?? '');
+  const soortTekst = i.soortNaam ? begrensRuw(String(i.soortNaam), 60, true) : '';
+  const bedragTekst = i.isRekening && i.bedrag ? begrensRuw(String(i.bedrag), 48, true) : '';
+  const termijnTekst = i.isRekening && i.termijnIso
+    ? begrensRuw(String(i.termijnIso).split('-').reverse().join('.'), 32, true)
+    : '';
+
+  const bouwOnderschrift = (naamLimiet: number): string => {
+    const gekapteNaam = ruwNaam.length > naamLimiet
+      ? begrensRuw(ruwNaam, naamLimiet, true)
+      : ruwNaam;
+    const regels: string[] = [];
+    regels.push(`${o.icoon} <b>${escHtml(t(o.kop))}</b>`);
+    regels.push(`<i>${escHtml(gekapteNaam)}</i>${soortTekst ? ` · ${escHtml(soortTekst)}` : ''}`);
+    if (bedragTekst) regels.push(`${t(['Сума', 'Bedrag'])}: <b>${escHtml(bedragTekst)}</b>`);
+    if (termijnTekst) regels.push(`${t(['Строк оплати', 'Betaaltermijn'])}: <b>${escHtml(termijnTekst)}</b>`);
+    regels.push(escHtml(t(o.wat)));
+    return regels.join('\n');
+  };
+
+  let naamLimiet = 180;
+  let onderschrift = bouwOnderschrift(naamLimiet);
+  while (onderschrift.length > MAX_ONDERSCHRIFT_LENGTE && naamLimiet > 1) {
+    const overschot = onderschrift.length - MAX_ONDERSCHRIFT_LENGTE;
+    const stap = Math.max(1, Math.floor(overschot / 5));
+    naamLimiet = Math.max(1, naamLimiet - stap);
+    onderschrift = bouwOnderschrift(naamLimiet);
+  }
+  if (onderschrift.length > MAX_ONDERSCHRIFT_LENGTE) {
+    onderschrift = bouwOnderschrift(0);
+  }
+
   return {
     staat,
     kleur: o.kleur,

@@ -7,12 +7,27 @@
 //   node scripts/e2e-tls-maak.mjs [--map <шлях>] [--dagen 30] [--vernieuw] [--nss]
 import { X509Certificate } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readlinkSync,
+  realpathSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const WORTEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const WERKELIJKE_WORTEL = (() => {
+  try { return realpathSync(WORTEL); } catch { return WORTEL; }
+})();
 export const STANDAARD_E2E_TLS_MAP = join(homedir(), '.local', 'share', 'mijn-ruimte-e2e-tls');
 const MIN_REST_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -51,20 +66,54 @@ export function controleerE2eTls(map, minRestMs = 60_000) {
   }
 }
 
-function weigerPadBinnenRepo(doelMap) {
-  const abs = resolve(doelMap);
-  const rel = relative(WORTEL, abs).replace(/\\/g, '/');
-  if (abs === WORTEL) {
+function ontvouwenPad(doelPad, diepte = 0) {
+  const abs = resolve(doelPad);
+  if (diepte > 32) return abs;
+  const staart = [];
+  let huidig = abs;
+  while (true) {
+    try {
+      const echt = realpathSync(huidig);
+      return staart.length > 0 ? resolve(echt, ...staart) : echt;
+    } catch {
+      try {
+        const st = lstatSync(huidig);
+        if (st.isSymbolicLink()) {
+          const doel = resolve(dirname(huidig), readlinkSync(huidig));
+          const vervolg = staart.length > 0 ? resolve(doel, ...staart) : doel;
+          return ontvouwenPad(vervolg, diepte + 1);
+        }
+      } catch {
+        // Проміжний сегмент іще не створено — перевіряємо найближчий батьківський каталог.
+      }
+      const ouder = dirname(huidig);
+      if (ouder === huidig) return abs;
+      staart.unshift(basename(huidig));
+      huidig = ouder;
+    }
+  }
+}
+
+function controleerTegenWortel(kandidaatAbs, wortelAbs, oorspronkelijk) {
+  const rel = relative(wortelAbs, kandidaatAbs).replace(/\\/g, '/');
+  if (kandidaatAbs === wortelAbs || rel === '') {
     throw new Error('Відхилено корінь сховища як каталог E2E_TLS. / Wortel van de opslagplaats geweigerd als E2E_TLS-map.');
   }
-  if (!rel.startsWith('..') && rel !== '' && !rel.startsWith('rapporten/')) {
+  if (!rel.startsWith('..') && !rel.startsWith('rapporten/')) {
     throw new Error(
-      `Відхилено шлях E2E_TLS усередині сховища (${abs}): ключі перевіркового центру не можна зберігати у дереві коду. ` +
+      `Відхилено шлях E2E_TLS усередині сховища (${oorspronkelijk}): ключі перевіркового центру не можна зберігати у дереві коду. ` +
       `Вкажіть зовнішній каталог (наприклад, ${STANDAARD_E2E_TLS_MAP}) або rapporten/. / ` +
-      `Pad voor E2E_TLS binnen de opslagplaats geweigerd (${abs}): proefsleutels horen buiten de bronboom ` +
+      `Pad voor E2E_TLS binnen de opslagplaats geweigerd (${oorspronkelijk}): proefsleutels horen buiten de bronboom ` +
       `(bijv. ${STANDAARD_E2E_TLS_MAP} of onder rapporten/).`,
     );
   }
+}
+
+function weigerPadBinnenRepo(doelMap) {
+  const abs = resolve(doelMap);
+  controleerTegenWortel(abs, WORTEL, abs);
+  const ontvouwen = ontvouwenPad(abs);
+  controleerTegenWortel(ontvouwen, WERKELIJKE_WORTEL, abs);
 }
 
 function draaiOpenssl(argumenten) {
