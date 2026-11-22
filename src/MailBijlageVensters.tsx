@@ -4,6 +4,8 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { Download, LoaderCircle } from 'lucide-react';
 import { Venster } from './platform/vensters';
 import { openUniverseelBestand, UNIVERSELE_MAIL_ENABLED } from './bestand/universeel-bestand';
+import { useVlag } from './functievlag-lezen';
+import { POSTA_VENSTERS_VLAG } from './mail/posta-vensters';
 import './mail-mobiel-passend.css';
 
 const MailPdfPreview = lazy(() => import('./MailPdfVoorbeeld'));
@@ -12,6 +14,8 @@ type Item = { id: string; blob: Blob; url: string; filename: string; contentType
 export default function MailBijlageVensters({ lang }: { lang: 'uk' | 'nl' }) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [items, setItems] = useState<Item[]>([]);
+  // Afwerking etappe 2 (achter posta-vensters-herstel-v1): meerdere vensters openen trapsgewijs, niet precies op elkaar.
+  const trap = useVlag(POSTA_VENSTERS_VLAG, false);
   useEffect(() => {
     const op = (e: Event) => {
       const d = (e as CustomEvent<{ blob?: Blob; filename?: string; contentType?: string }>).detail;
@@ -24,7 +28,7 @@ export default function MailBijlageVensters({ lang }: { lang: 'uk' | 'nl' }) {
     return () => window.removeEventListener('mail:bijlage-venster', op);
   }, []);
   const sluit = (id: string) => setItems((o) => { const x = o.find((i) => i.id === id); if (x) window.setTimeout(() => URL.revokeObjectURL(x.url), 500); return o.filter((i) => i.id !== id); });
-  return <>{items.map((it) => {
+  return <>{items.map((it, i) => {
     const type = it.contentType.toLowerCase();
     const inhoud = type.startsWith('image/') ? <img src={it.url} alt={it.filename} className='mail-bv-beeld' />
       : type === 'application/pdf' ? <Suspense fallback={<LoaderCircle className='spin' />}><MailPdfPreview blob={it.blob} filename={it.filename} lang={lang} /></Suspense>
@@ -32,7 +36,7 @@ export default function MailBijlageVensters({ lang }: { lang: 'uk' | 'nl' }) {
       : type.startsWith('audio/') ? <audio src={it.url} controls />
       : type.startsWith('text/') && type !== 'text/html' ? <TekstInhoud blob={it.blob} />
       : <p className='mail-bv-geen'>{t('Для цього типу файла перегляду немає — завантажте його.', 'Geen voorvertoning voor dit bestandstype — download het.')}</p>;
-    return <Venster key={it.id} id={it.id} titel={it.filename} modaal={false} breedte={640} hoogte={560} onSluit={() => sluit(it.id)} lang={lang} className='mail-bijlage-venster'>
+    return <Venster key={it.id} id={it.id} titel={it.filename} modaal={false} breedte={640} hoogte={560} verschuiving={trap ? i * 32 : 0} onSluit={() => sluit(it.id)} lang={lang} className='mail-bijlage-venster'>
       <div className='mail-bv' data-bijlage-venster>
         <div className='mail-bv-inhoud'>{inhoud}</div>
         <a className='mail-bv-download' href={it.url} download={it.filename}><Download aria-hidden='true' />{t('Завантажити', 'Downloaden')}</a>

@@ -104,11 +104,13 @@ type Props = {
   labelledBy?: string;
   describedBy?: string;
   lang?: string;
+  /** Beginpositie zoveel px naar rechtsonder (trapsgewijs openen van meerdere vensters); standaard 0 = precies in het midden. */
+  verschuiving?: number;
   children: ReactNode;
 };
 
 /** Eén venster. Rendert in een portal onder <body>, in de gezamenlijke laag. */
-export function Venster({ id, titel, kop, prioriteit = 'normaal', modaal = true, breedte = 520, hoogte, onSluit, sluitenUit, className = '', labelledBy, describedBy, lang, children }: Props) {
+export function Venster({ id, titel, kop, prioriteit = 'normaal', modaal = true, breedte = 520, hoogte, onSluit, sluitenUit, className = '', labelledBy, describedBy, lang, verschuiving = 0, children }: Props) {
   const lijst = useVensters();
   const titelId = useId();
   const frame = useRef<HTMLDivElement | null>(null);
@@ -126,7 +128,7 @@ export function Venster({ id, titel, kop, prioriteit = 'normaal', modaal = true,
     const z = vensterZone();
     const h0 = hoogte ?? Math.min(el.scrollHeight || 480, z.h - 2 * RAND);
     const b0 = Math.min(breedte, z.w - 2 * RAND);
-    const basis: Geometrie = { b: b0, h: h0, x: z.x + (z.w - b0) / 2, y: z.y + Math.max(RAND, (z.h - h0) / 2), max: false };
+    const basis: Geometrie = { b: b0, h: h0, x: z.x + (z.w - b0) / 2 + verschuiving, y: z.y + Math.max(RAND, (z.h - h0) / 2) + verschuiving, max: false };
     setGeo(binnenScherm(bewaard && Number.isFinite(bewaard.x) ? { ...basis, ...bewaard, h: bewaard.h ?? h0 } as Geometrie : basis));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   // Groeit de inhoud na het openen (eerst «Завантаження…», dan het hele venster), dan omhoog schuiven zodat de onderkant (de knoppen)
