@@ -62,6 +62,8 @@ export type KopProps = {
    * які переписали б кнопки шапки; з 'div' ці правила її не зачіпають. Без поля — 'header', як у Пошті.
    */
   kopElement?: 'header' | 'div';
+  /** етап 4 (НЕ ПЕРЕВІРЕНО): не показувати власну кнопку «Закрити», коли її вже має рамка вікна (спільне вікно файла) */
+  zonderSluiten?: boolean;
   onSluit: () => void;
 };
 
@@ -186,7 +188,7 @@ export function WeergaveKop(p: KopProps) {
               )}
             </div>
           )}
-          <button type='button' className='weergave-knop rond' aria-label={t('Закрити', 'Sluiten')} title={t('Закрити', 'Sluiten')} onClick={p.onSluit}><X aria-hidden='true' /></button>
+          {!p.zonderSluiten && <button type='button' className='weergave-knop rond' aria-label={t('Закрити', 'Sluiten')} title={t('Закрити', 'Sluiten')} onClick={p.onSluit}><X aria-hidden='true' /></button>}
         </div>
       </div>
       {p.grootte > 0 && <WeergaveEtappe3 taal={p.taal} naam={p.naam} contentType={p.contentType} blob={p.blob} extra={p.extra} />}

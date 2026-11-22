@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { lazy, Suspense, useEffect, useState, type ChangeEvent } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Download, FilePlus2, LoaderCircle, ShieldCheck, Info } from 'lucide-react';
 import { Venster, useVensters } from '../platform/vensters';
@@ -10,6 +10,11 @@ import { verbindUniverseelBestand, wisWachtendeBestanden, VOORBEELD_MAX_BYTES,
   MAX_OPEN_VENSTERS, openUniverseelBestand, type OpenBestand } from './universeel-bestand';
 import './universeel-bestand.css';
 import './universeel-bestand-maquette.css';
+// SPIL-WEERGAVE етап 4, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Antigravity): за прапорцем bijlage-weergave-gedeeld-v1
+// смугу вікна замінює спільна шапка переглядача (окремим шматком; поки вантажиться — стара смуга). Без прапорця все як раніше.
+import { useVlag } from '../functievlag-lezen';
+import { WEERGAVE_VLAG } from '../bijlage-weergave/soort';
+const WeergaveKopLui = lazy(() => import('../bijlage-weergave/Weergave').then((m) => ({ default: m.WeergaveKop })));
 
 type OpenVenster = OpenBestand & { id: string };
 const huidigeTaal = (): 'uk'|'nl' => document.documentElement.lang.toLowerCase().startsWith('nl') ? 'nl' : 'uk';
@@ -83,9 +88,8 @@ function UniverseelVenster({item,lang,onSluit}:{item:OpenVenster;lang:'uk'|'nl';
   }
   const label = item.bronLabel || ({'mail':'Mail','microsoft-mail':'Outlook','google-drive':'Google Drive','onedrive':'OneDrive','dropbox':'Dropbox','private-cloud':'Cloud','github':'GitHub','gitlab':'GitLab','browser-file':'ПК','device-agent':'Локальний агент','notes':'Нотатки','tasks':'Завдання','ai':'ШІ','plugin':'Інтеграція'} satisfies Record<OpenBestand['bron'],string>)[item.bron];
   const soort = preview ? (preview.embeddedPdf ? 'pdf' : preview.descriptor.kind) : undefined;
-  return <Venster id={item.id} titel={item.bestandsnaam} lang={lang} breedte={920} hoogte={690}
-    modaal={false} onSluit={onSluit} className='universeel-bestand-venster'>
-    <section className='universeel-bestand' data-universele-bron={item.bron} data-voorvertoning-soort={soort}>
+  const gedeeld = useVlag(WEERGAVE_VLAG, false);
+  const oudeBalk = (
       <div className='universeel-bestand-balk'>
         <span className='universeel-bron'>{label}</span><span className='universeel-type'>{formaat.label}</span>
         <span className='universeel-grootte'>{(item.bestand.size/1024).toLocaleString(lang==='uk'?'uk-UA':'nl-BE',{maximumFractionDigits:0})} KB</span>
@@ -94,6 +98,15 @@ function UniverseelVenster({item,lang,onSluit}:{item:OpenVenster;lang:'uk'|'nl';
         <button type='button' onClick={()=>setImporteer(v=>!v)} title={tekst(lang,'Відкрити локальний файл','Lokaal bestand openen')}><FilePlus2 size={16}/><span>{tekst(lang,'Інший файл','Ander bestand')}</span></button>
         <button type='button' onClick={download}><Download size={16}/><span>{tekst(lang,'Завантажити','Downloaden')}</span></button>
       </div>
+  );
+  return <Venster id={item.id} titel={item.bestandsnaam} lang={lang} breedte={920} hoogte={690}
+    modaal={false} onSluit={onSluit} className='universeel-bestand-venster'>
+    <section className='universeel-bestand' data-universele-bron={item.bron} data-voorvertoning-soort={soort} data-weergave-drager={gedeeld ? 'bestand' : undefined}>
+      {gedeeld ? <Suspense fallback={oudeBalk}><WeergaveKopLui taal={lang} bron='bestand' kopElement='div' zonderSluiten
+        naam={item.bestandsnaam} contentType={item.contentType || item.bestand.type || 'application/octet-stream'} grootte={item.bestand.size}
+        blob={item.bestand} archiefNamen={(preview?.archiveEntries || []).map((e) => e.name)} nav={null} beschikbaar={{ download }}
+        contextActies={[{ sleutel: 'ander-bestand', label: ['Інший файл', 'Ander bestand'], icoon: FilePlus2, uitvoeren: () => setImporteer((v) => !v) }]}
+        onSluit={onSluit} /></Suspense> : oudeBalk}
       {importeer&&<label className='universeel-kies'>
         {tekst(lang,'Оберіть файл на цьому пристрої','Kies een bestand op dit apparaat')}
         <input type='file' onChange={(event:ChangeEvent<HTMLInputElement>)=>{
