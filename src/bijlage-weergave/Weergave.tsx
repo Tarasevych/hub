@@ -5,6 +5,7 @@
 // snelle kaart, strook met alle bijlagen en een eerlijke laad- en foutstaat. Weet niets van de mail: de bron geeft gegevens en
 // acties door. Concept: docs/concept/bijlage-weergave/CONCEPT.md.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useDonkerThema } from '../mail-donker/weergave';
 import { ChevronLeft, ChevronRight, Download, ImageOff, Info, LoaderCircle, MoreHorizontal, RotateCcw, X, type LucideIcon } from 'lucide-react';
 import { formaatVan, grootteTekst, kies, soortVan, type Taal, type Tweetalig } from './soort';
 import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from './vertrouwen';
@@ -110,22 +111,7 @@ const DONKER_SLEUTEL = 'tsv:bijlage-donkere-paginas';
 type DonkerKeuze = 'aan' | 'uit' | null;
 function leesDonkerKeuze(): DonkerKeuze { try { const v = window.localStorage.getItem(DONKER_SLEUTEL); return v === 'aan' || v === 'uit' ? v : null; } catch { return null; } }
 function bewaarDonker(aan: boolean) { try { window.localStorage.setItem(DONKER_SLEUTEL, aan ? 'aan' : 'uit'); } catch { /* geblokkeerd: alleen deze sessie */ } }
-function isDonkerThema(): boolean {
-  if (typeof document === 'undefined') return false;
-  const c = document.documentElement.classList;
-  return !(c.contains('theme-light') || c.contains('theme-plum-light'));
-}
-/** Темна тема сайту зараз; стежить за зміною класів на <html>, щоб перемикання теми діяло одразу. */
-function useDonkerThema(): boolean {
-  const [donkerThema, setDonkerThema] = useState(isDonkerThema);
-  useEffect(() => {
-    if (typeof MutationObserver === 'undefined') return;
-    const mo = new MutationObserver(() => setDonkerThema(isDonkerThema()));
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => mo.disconnect();
-  }, []);
-  return donkerThema;
-}
+// Темна тема — спільний хук темного режиму пошти (src/mail-donker/weergave.ts), без власного правила.
 
 export function WeergaveKop(p: KopProps) {
   const t = t2(p.taal);
