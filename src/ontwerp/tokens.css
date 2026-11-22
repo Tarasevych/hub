@@ -19,8 +19,14 @@
 :root, .theme-light, .theme-plum-light {
   color-scheme: light;
   --ok:#166534; --ok-zacht:#dcfce7; --ok-vlak:#15803d;
-  --warn:#8a4b06; --warn-zacht:#fef3c7; --warn-vlak:#92400e;
+  --warn:#c2410c; --warn-zacht:#ffedd5; --warn-vlak:#c2410c;
   --fout:#b42318; --fout-zacht:#fee2e2; --fout-vlak:#b42318;
+  /* Сталі кольори станів для всього сайту (вказівка Павла 22.11.2026): успіх зелений, увага помаранчева, помилка червона —
+     незалежно від палітри й акценту. Мусять збігатися з --ok/--warn/--fout вище (їх перевіряє kleur-contrast-controle.mjs);
+     src/thema/staat-kleuren.css лише прив’язує до них змінні станів сторінок-макетів. НЕ ПЕРЕВІРЕНО. */
+  --staat-goed:#166534; --staat-goed-zacht:#dcfce7; --staat-goed-vlak:#15803d;
+  --staat-let:#c2410c; --staat-let-zacht:#ffedd5; --staat-let-vlak:#c2410c;
+  --staat-fout:#b42318; --staat-fout-zacht:#fee2e2; --staat-fout-vlak:#b42318;
   --info:#1e40af; --info-zacht:#dbeafe; --info-vlak:#1d4ed8;
   --text-on-vlak:#ffffff; --text-on-licht:#17212b; --text-on-donker:#f3f6f8;
   --papier:#ffffff; --papier-zacht:#e5e7eb; /* завжди світле: лист HTML, PDF-сторінка, плитка логотипа (текст на них — --text-on-licht) */
@@ -33,8 +39,11 @@
 .theme-dark, .theme-plum-dark {
   color-scheme: dark;
   --ok:#86efac; --ok-zacht:#14381f; --ok-vlak:#4ade80;
-  --warn:#fcd34d; --warn-zacht:#3d2a08; --warn-vlak:#fbbf24;
-  --fout:#fecaca; --fout-zacht:#4a1a1a; --fout-vlak:#fca5a5;
+  --warn:#fdba74; --warn-zacht:#431d06; --warn-vlak:#fb923c;
+  --fout:#fca5a5; --fout-zacht:#4a1a1a; --fout-vlak:#f87171;
+  --staat-goed:#86efac; --staat-goed-zacht:#14381f; --staat-goed-vlak:#4ade80;
+  --staat-let:#fdba74; --staat-let-zacht:#431d06; --staat-let-vlak:#fb923c;
+  --staat-fout:#fca5a5; --staat-fout-zacht:#4a1a1a; --staat-fout-vlak:#f87171;
   --info:#a5c8ff; --info-zacht:#172554; --info-vlak:#93c5fd;
   --text-on-vlak:#10161c; --text-on-licht:#17212b; --text-on-donker:#f3f6f8;
   --papier:#ffffff; --papier-zacht:#e5e7eb;

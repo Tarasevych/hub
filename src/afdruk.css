@@ -54,12 +54,16 @@
     --ok: #166534 !important;
     --ok-zacht: #dcfce7 !important;
     --ok-vlak: #15803d !important;
-    --warn: #8a4b06 !important;
-    --warn-zacht: #fef3c7 !important;
-    --warn-vlak: #92400e !important;
+    --warn: #c2410c !important;
+    --warn-zacht: #ffedd5 !important;
+    --warn-vlak: #c2410c !important;
     --fout: #b42318 !important;
     --fout-zacht: #fee2e2 !important;
     --fout-vlak: #b42318 !important;
+    /* сталі кольори станів (tokens.css, staat-kleuren.css) — на папері завжди світлі значення */
+    --staat-goed: #166534 !important; --staat-goed-zacht: #dcfce7 !important; --staat-goed-vlak: #15803d !important;
+    --staat-let: #c2410c !important; --staat-let-zacht: #ffedd5 !important; --staat-let-vlak: #c2410c !important;
+    --staat-fout: #b42318 !important; --staat-fout-zacht: #fee2e2 !important; --staat-fout-vlak: #b42318 !important;
     --info: #1e40af !important;
     --info-zacht: #dbeafe !important;
     --info-vlak: #1d4ed8 !important;
