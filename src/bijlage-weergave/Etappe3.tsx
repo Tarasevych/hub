@@ -8,15 +8,29 @@
 // Правила відмальовування:
 //   • рядок картки показуємо лише тоді, коли поле справді знайдено в тексті документа; порожньо — смуги немає;
 //   • поки текст читається, нічого не стрибає: смуга з’являється лише з готовими даними;
-//   • мінімалізм для розсіяної людини: одна тонка смуга, значок, коротке слово й число, колір лише для терміновості.
-import { useMemo } from 'react';
-import { CalendarClock, Hash, Wallet } from 'lucide-react';
+//   • мінімалізм для розсіяної людини: одна тонка смуга, значок, коротке слово й число, колір лише для терміновості;
+//   • дія з’являється лише тоді, коли вона справді можлива (рахунок зі строком, є попередня версія тощо).
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { CalendarClock, CalendarPlus, GitCompare, Hash, Wallet } from 'lucide-react';
 import { kies, soortVan, type Taal } from './soort';
 import { rekeningVelden, type RekeningVelden } from './rekening-velden';
 import { snelkaartRijen, termijnHint, type SnelkaartSleutel } from './snelkaart';
 import { useBijlageTekst } from './tekst';
+import { toontKalenderBetaling, type BetalingBron } from './kalender-betaling';
+import { KalenderBetalingVenster } from './KalenderBetalingVenster';
+import { groepVoor, vorigeVersie, type CtxBericht } from './versies';
+
+// Наявне вікно порівняння з Пошти (src/mail/VersieVergelijk.tsx) — окремим шматком, лише коли людина натисне.
+const VersieVergelijk = lazy(() => import('../mail/VersieVergelijk'));
 
 const ICOON: Record<SnelkaartSleutel, typeof Wallet> = { bedrag: Wallet, termijn: CalendarClock, nummer: Hash };
+
+function datumKort(ms: number, taal: Taal): string {
+  const d = new Date(ms);
+  if (!Number.isFinite(d.getTime())) return '';
+  const dd = String(d.getDate()).padStart(2, '0'), mm = String(d.getMonth() + 1).padStart(2, '0');
+  return taal === 'nl' ? `${dd}-${mm}-${d.getFullYear()}` : `${dd}.${mm}.${d.getFullYear()}`;
+}
 
 /**
  * Що джерело (Пошта; на етапі 4 — Диск, чат, дошка, сповіщення) знає про відкрите вкладення.
@@ -30,6 +44,8 @@ export type WeergaveExtra = {
   bijlageId?: string;
   afzender?: string;
   tijdzone?: string;
+  /** 15.5: уся розмова (листи з вкладеннями) і доступ до файлів для наявного вікна порівняння. */
+  versieBron?: { berichten: CtxBericht[]; bron: { context: Record<string, string>; accountId: string; cacheAccountId: string } } | null;
 };
 
 export type Etappe3Props = {
@@ -72,31 +88,59 @@ export function WeergaveSnelkaart(p: { taal: Taal; velden: RekeningVelden | null
   );
 }
 
+type Venster = null | 'kalender' | 'versies';
+
 /** Уся смуга етапу 3: швидка картка й дії. Нічого не показує, якщо ні картки, ні дій немає. */
 export function WeergaveEtappe3(p: Etappe3Props) {
   const t = (uk: string, nl: string) => kies(p.taal, [uk, nl]);
   const soort = soortVan(p.naam, p.contentType).sleutel;
   const { velden } = useRekeningVelden(p);
-  const [venster, setVenster] = useState<null | 'kalender'>(null);
+  const [venster, setVenster] = useState<Venster>(null);
+  const x: WeergaveExtra = p.extra || {};
 
   // 15.3: лише для рахунку з зрозумілим строком
   const kalenderBron = useMemo<BetalingBron | null>(() => {
     if (!velden || !toontKalenderBetaling(soort, velden)) return null;
-    const x: WeergaveExtra = p.extra || {};
     return { velden, soort, taal: p.taal, bestandsnaam: p.naam, afzender: x.afzender, profielId: x.profielId, rekeningId: x.rekeningId, briefId: x.briefId, bijlageId: x.bijlageId, tijdzone: x.tijdzone };
-  }, [velden, soort, p.taal, p.naam, p.extra]);
+  }, [velden, soort, p.taal, p.naam, x.afzender, x.profielId, x.rekeningId, x.briefId, x.bijlageId, x.tijdzone]);
 
-  const kaart = <WeergaveSnelkaart taal={p.taal} velden={velden} />;
+  // 15.5: попередня версія того самого документа в розмові (правило «той самий документ» — з src/mail/gesprek-context.ts)
+  const versie = useMemo(() => {
+    const vb = x.versieBron, briefId = x.briefId || '', bijlageId = x.bijlageId || '';
+    if (!vb || !briefId || !bijlageId || vb.berichten.length === 0) return null;
+    const groep = groepVoor(vb.berichten, briefId, bijlageId);
+    if (!groep) return null;
+    const vorige = vorigeVersie(groep, briefId, bijlageId);
+    const huidig = groep.items.find((it) => it.berichtId === briefId && it.bijlage.providerAttachmentId === bijlageId);
+    if (!vorige || !huidig) return null;
+    return { groep, vorige, huidig, bron: vb.bron };
+  }, [x.versieBron, x.briefId, x.bijlageId]);
+
   const heeftKaart = Boolean(velden && snelkaartRijen(velden).length);
   const acties = [
-    kalenderBron && <button key='kalender' type='button' className='weergave-etappe3-actie' onClick={() => setVenster('kalender')}><CalendarPlus aria-hidden='true' /><span>{t('Оплату в Календар', 'Betaling in Agenda')}</span></button>,
+    kalenderBron && (
+      <button key='kalender' type='button' className='weergave-etappe3-actie' onClick={() => setVenster('kalender')}>
+        <CalendarPlus aria-hidden='true' /><span>{t('Оплату в Календар', 'Betaling in Agenda')}</span>
+      </button>
+    ),
+    versie && (
+      <button key='versies' type='button' className='weergave-etappe3-actie' onClick={() => setVenster('versies')}
+        title={t(`Попередня версія від ${datumKort(versie.vorige.wanneer, 'uk')}`, `Vorige versie van ${datumKort(versie.vorige.wanneer, 'nl')}`)}>
+        <GitCompare aria-hidden='true' /><span>{t('Що змінилося', 'Wat is er veranderd')} <small>{t(`з ${datumKort(versie.vorige.wanneer, 'uk')}`, `sinds ${datumKort(versie.vorige.wanneer, 'nl')}`)}</small></span>
+      </button>
+    ),
   ].filter(Boolean);
   if (!heeftKaart && !acties.length) return null;
   return (
     <div className='weergave-etappe3' data-weergave-etappe3=''>
-      {kaart}
+      <WeergaveSnelkaart taal={p.taal} velden={velden} />
       {acties.length > 0 && <div className='weergave-etappe3-acties' role='group' aria-label={t('Що зробити з файлом', 'Wat te doen met het bestand')}>{acties}</div>}
       {venster === 'kalender' && kalenderBron && <KalenderBetalingVenster taal={p.taal} bron={kalenderBron} onSluit={() => setVenster(null)} />}
+      {venster === 'versies' && versie && (
+        <Suspense fallback={null}>
+          <VersieVergelijk lang={p.taal} bron={versie.bron} groep={versie.groep} beginKeuze={{ oud: versie.vorige.nummer, nieuw: versie.huidig.nummer }} onSluit={() => setVenster(null)} />
+        </Suspense>
+      )}
     </div>
   );
 }
