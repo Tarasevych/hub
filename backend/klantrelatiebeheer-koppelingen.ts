@@ -6,6 +6,7 @@ import type { DeelbareDienst, Lade } from '../shared/ruimte-scheiding';
 import { DIEPE_PARAMS } from '../shared/zoek-diepe-link';
 import type { ZoekBron } from '../shared/zoek-model';
 import { gebeurtenisAanmaken } from './agenda-google';
+import { journaalSchrijf } from './beheer-journaal';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import { googleSuiteAgendaScopeStatusVoorEmail } from './google-suite-inrichting';
 import { leesKlant, schrijfKlantopdracht } from './klantrelatiebeheer-opslag';
@@ -107,6 +108,13 @@ async function afspraak(h: Herkomst, b: Record<string, unknown>) {
   const ontvangst = `${afdruk.slice(0, 8)}-${afdruk.slice(8, 12)}-5${afdruk.slice(13, 16)}-a${afdruk.slice(17, 20)}-${afdruk.slice(20, 32)}`;
   await schrijfKlantopdracht(h.lade, 'contact', {
     sleutel: ontvangst, klantId: klant.id, kanaal: 'agenda', richting: 'intern', tekst: titel, afspraakId,
+  });
+  await journaalSchrijf({
+    actie: 'owner.klantrelatie.afspraak',
+    actor: h.user.id,
+    doel: { soort: 'klant', id: klant.id },
+    details: { ruimte: h.lade.ruimte, afspraakId },
+    service: 'crm',
   });
   return json({ afspraakId });
 }

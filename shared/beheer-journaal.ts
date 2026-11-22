@@ -29,7 +29,7 @@ export const CATEGORIEEN: readonly Categorie[] = [
   { id: 'toegang', uk: 'Способи входу та доступ', nl: 'Aanmeldmethoden en toegang', patroon: '^(access\\.|aanmeld\\.|aanmelden\\.|bevestigen\\.|beveiliging\\.|code\\.|inlog\\.|koppelen\\.|koppeling\\.|matrix\\.gewijzigd$|niet-ik$|fout-symbool$|plaats-eis\\.|stap-op$|telegram-sterk$|telegram\\.|venster\\.geopend$|widget\\.|wijziging\\.|owner\\.step_up|passkey_|toegang|toegangscode_|gast_)' },
   { id: 'sessie', uk: 'Входи та сесії', nl: 'Aanmeldingen en sessies', patroon: '^(sign_in|owner_sign_in_|sessie\\.|identity_linked|email_conflict|service_handoff|owner\\.(session|tab|redirect|auth|account|account-menu|security|browser)\\.|owner\\.browser\\.|GOOGLE_|LOGIN_|TRANSACTION_|PRIMARY_REDIRECT_|POPUP_|IDENTITY_|SERVICE_SESSION_)' },
   { id: 'mail', uk: 'Пошта', nl: 'E-mail', patroon: '^(owner\\.mail\\.|mail\\.)' },
-  { id: 'integraties', uk: 'Інтеграції', nl: 'Integraties', patroon: '^(integration\\.|owner\\.(connectors|github|cloud|google|calendar|hub)|cloud\\.|agenda\\.|huis\\.|notitie\\.|connector_|connectors\\.)' },
+  { id: 'integraties', uk: 'Інтеграції', nl: 'Integraties', patroon: '^(integration\\.|owner\\.(connectors|github|cloud|google|calendar|hub|klantrelatie)|cloud\\.|agenda\\.|huis\\.|notitie\\.|connector_|connectors\\.)' },
   { id: 'privacy', uk: 'Приватність', nl: 'Privacy', patroon: '^(owner\\.privacy|privacy\\.|owner\\.profile|owner\\.notifications|owner\\.meldingen\\.|owner\\.ui)' },
 ];
 export const CATEGORIE_OVERIG: Categorie = { id: 'overig', uk: 'Інше', nl: 'Overig', patroon: '' };
@@ -49,7 +49,7 @@ export function categorieSql(kolom = 'action'): string {
 }
 
 /** Technische ruis: gebeurtenissen die elke paginalading of aanmeldstap schrijft. Standaard verborgen, nooit verwijderd. */
-export const RUIS_PATROON = '^(owner\\.admin\\.bootstrap|owner\\.admin\\.audit\\.viewed|owner\\.notifications\\.read|owner\\.meldingen\\.ecosysteem\\.(actie|profiel)|owner\\.session\\.rotated|owner\\.session\\.refresh|owner\\.browser\\.grant\\.(used|cookie)|owner\\.diagnose\\.gelezen|owner\\.admin\\.diagnostics\\.read|owner\\.mcp\\.tools\\.list|owner\\.extensie\\.beheer\\.bekeken|owner\\.terminal\\.opdrachten\\.bekeken|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)|owner\\.ui\\.|GOOGLE_REDIRECT|GOOGLE_CALLBACK|LOGIN_CLICK|POPUP_|PRIMARY_REDIRECT_|TRANSACTION_|IDENTITY_LOADED|SERVICE_SESSION_CREATED|owner\\.redirect\\.session)';
+export const RUIS_PATROON = '^(owner\\.admin\\.bootstrap|owner\\.admin\\.audit\\.viewed|owner\\.notifications\\.read|owner\\.meldingen\\.(ecosysteem\\.(actie|profiel)|bijlage\\.telegram)|owner\\.session\\.rotated|owner\\.session\\.refresh|owner\\.browser\\.grant\\.(used|cookie)|owner\\.diagnose\\.gelezen|owner\\.admin\\.diagnostics\\.read|owner\\.mcp\\.tools\\.list|owner\\.extensie\\.beheer\\.bekeken|owner\\.terminal\\.opdrachten\\.bekeken|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)|owner\\.ui\\.|GOOGLE_REDIRECT|GOOGLE_CALLBACK|LOGIN_CLICK|POPUP_|PRIMARY_REDIRECT_|TRANSACTION_|IDENTITY_LOADED|SERVICE_SESSION_CREATED|owner\\.redirect\\.session)';
 const RUIS_RE = new RegExp(RUIS_PATROON);
 export const isRuis = (action: string) => RUIS_RE.test(action);
 
@@ -587,6 +587,18 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'workspace_share_rate_limited': ['Тимчасово обмежено занадто часті запрошення до спільного простору', 'Uitnodigingen voor gedeelde ruimte tijdelijk begrensd'],
   'zoek.index.starten': ['Запущено оновлення пошукового покажчика', 'Opbouw van zoekindex gestart'],
   'zoek.index.stoppen': ['Зупинено фонову побудову пошукового покажчика', 'Opbouw van zoekindex gestopt'],
+  'owner.meldingen.bijlage.telegram': ['Надіслано картку вкладення у Telegram', 'Bijlagekaart naar Telegram verzonden'],
+  'owner.klantrelatie.klant': ['Створено досьє клієнта', 'Klantdossier aangemaakt'],
+  'owner.klantrelatie.aanvraag': ['Зафіксовано нове звернення клієнта', 'Nieuwe klantaanvraag vastgelegd'],
+  'owner.klantrelatie.wijzig': ['Оновлено досьє клієнта', 'Klantdossier bijgewerkt'],
+  'owner.klantrelatie.wissen': ['Видалено досьє клієнта', 'Klantdossier verwijderd'],
+  'owner.klantrelatie.kans': ['Створено угоду в клієнтських взаєминах', 'Verkoopkans aangemaakt'],
+  'owner.klantrelatie.fase': ['Змінено етап угоди з клієнтом', 'Fase van verkoopkans gewijzigd'],
+  'owner.klantrelatie.contact': ['Записано взаємодію з клієнтом', 'Contactmoment vastgelegd'],
+  'owner.klantrelatie.taak': ['Додано завдання щодо клієнта', 'Vervolgtaak voor klant toegevoegd'],
+  'owner.klantrelatie.afronden': ['Завершено завдання щодо клієнта', 'Vervolgtaak voor klant afgerond'],
+  'owner.klantrelatie.afspraak': ['Заплановано зустріч із клієнтом у календарі', 'Afspraak met klant ingepland in agenda'],
+  'owner.klantrelatie.hulp': ['Підготовлено чернетку за досьє клієнта', 'Tekstvoorstel voor klantdossier voorbereid'],
 };
 
 const TOKEN_UK: Record<string, string> = { owner: '', admin: 'Адмін', mcp: 'ШІ', tool: 'інструмент', grant: 'дозвіл', created: 'створено', updated: 'змінено', deleted: 'видалено', revoked: 'відкликано', approved: 'схвалено', denied: 'відхилено', opened: 'відкрито', closed: 'закрито', login: 'вхід', logout: 'вихід' };

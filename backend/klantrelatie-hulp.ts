@@ -6,6 +6,7 @@ import { beslissing } from './ai-beleid'
 import { dienstMotor, leesDienstMotoren, reserveerGebruik, vraagOllama, type DienstRij } from './ai-dienst-motoren'
 import { getSettings } from './ai-toestemmingen'
 import { heeftApiRecht } from './api-recht'
+import { journaalSchrijf } from './beheer-journaal'
 import { klanttoegang } from './klantrelatiebeheer-toegang'
 import { huidigeNamens } from './mcp-namens'
 
@@ -30,11 +31,15 @@ const opdrachten: Record<Hulpsoort, string> = {
   oefening: 'Stel als oefenpartner één mogelijke tegenvraag op basis van het gegeven argument of bezwaar. Spreek geen oordeel uit over de persoon. Het is een oefening.',
 }
 
-export function relatiehulpRoutes(sessie: Parameters<typeof klanttoegang>[0]): RouterRoutes {
+export function relatiehulpRoutes(
+  sessie: Parameters<typeof klanttoegang>[0],
+  opties: { vlagAan?: (u: { id: string }) => Promise<boolean> } = {},
+): RouterRoutes {
   return {
     'POST /api/owner/klantrelatiebeheer/hulp/overzicht': [async ctx => {
       const toegang = await klanttoegang(sessie, ctx, false)
       if ('weigering' in toegang) return toegang.weigering
+      if (opties.vlagAan && !(await opties.vlagAan(toegang.user))) return error('KLANT_DIENST_UIT', 404)
       if (!heeftApiRecht(toegang.user) || huidigeNamens()) return json({ motoren: [] })
       const instellingen = await getSettings(toegang.user.id)
       if (instellingen.blocked_at) return json({ motoren: [] })
@@ -43,6 +48,7 @@ export function relatiehulpRoutes(sessie: Parameters<typeof klanttoegang>[0]): R
     'POST /api/owner/klantrelatiebeheer/hulp/voorbereiden': [async ctx => {
       const toegang = await klanttoegang(sessie, ctx, true)
       if ('weigering' in toegang) return toegang.weigering
+      if (opties.vlagAan && !(await opties.vlagAan(toegang.user))) return error('KLANT_DIENST_UIT', 404)
       if (!heeftApiRecht(toegang.user) || huidigeNamens()) return error('HULP_GEEN_RECHT', 403)
       const b = (ctx.body ?? {}) as Record<string, unknown>
       if (b.taal !== 'uk' && b.taal !== 'nl') return error('HULP_INVOER', 400)
@@ -64,6 +70,13 @@ export function relatiehulpRoutes(sessie: Parameters<typeof klanttoegang>[0]): R
       let voorstel: unknown
       try { voorstel = JSON.parse(uit.waarde)?.tekst } catch { return error('HULP_GEEN_VOORSTEL', 422) }
       if (typeof voorstel !== 'string' || !voorstel.trim() || voorstel.length > HULP_GRENS) return error('HULP_GEEN_VOORSTEL', 422)
+      await journaalSchrijf({
+        actie: 'owner.klantrelatie.hulp',
+        actor: toegang.user.id,
+        doel: { soort: 'klant', id: rij.id },
+        details: { ruimte: toegang.lade.ruimte, hulpsoort: b.soort },
+        service: 'crm',
+      })
       return json({ tekst: voorstel.trim(), motor: rij.naam })
     }],
   }

@@ -77,6 +77,17 @@ const SITE_LABELS: Record<string, [string, string]> = {
   'owner.extensie.ingetrokken': ['Доступ розширення браузера закрито', 'Toegang van de browserextensie gesloten'], 'owner.extensie.geweigerd': ['Розширенню браузера відмовлено в доступі', 'Browserextensie geweigerd'],
   'owner.extensie.caps-herzien': ['Дозволи розширення браузера звужено', 'Rechten van de browserextensie beperkt'], 'owner.extensie.beleid': ['Змінено правила розширення браузера', 'Regels van de browserextensie gewijzigd'],
   'owner.extensie.verlengd': ['Доступ розширення браузера продовжено', 'Toegang van de browserextensie verlengd'], 'owner.extensie.beheer.ingetrokken': ['Адміністратор закрив доступ розширення', 'Beheerder sloot de toegang van de extensie'],
+  'owner.klantrelatie.klant': ['Створено досьє клієнта', 'Klantdossier aangemaakt'],
+  'owner.klantrelatie.aanvraag': ['Зафіксовано нове звернення клієнта', 'Nieuwe klantaanvraag vastgelegd'],
+  'owner.klantrelatie.wijzig': ['Оновлено досьє клієнта', 'Klantdossier bijgewerkt'],
+  'owner.klantrelatie.wissen': ['Видалено досьє клієнта', 'Klantdossier verwijderd'],
+  'owner.klantrelatie.kans': ['Створено угоду в клієнтських взаєминах', 'Verkoopkans aangemaakt'],
+  'owner.klantrelatie.fase': ['Змінено етап угоди з клієнтом', 'Fase van verkoopkans gewijzigd'],
+  'owner.klantrelatie.contact': ['Записано взаємодію з клієнтом', 'Contactmoment vastgelegd'],
+  'owner.klantrelatie.taak': ['Додано завдання щодо клієнта', 'Vervolgtaak voor klant toegevoegd'],
+  'owner.klantrelatie.afronden': ['Завершено завдання щодо клієнта', 'Vervolgtaak voor klant afgerond'],
+  'owner.klantrelatie.afspraak': ['Заплановано зустріч із клієнтом у календарі', 'Afspraak met klant ingepland in agenda'],
+  'owner.klantrelatie.hulp': ['Підготовлено чернетку за досьє клієнта', 'Tekstvoorstel voor klantdossier voorbereid'],
 };
 const siteTitle = (e: ActivityEvent, lang: Lang): string => {
   // Een AI-actie noemt wat ze deed en waarop («Прочитав файл …»), niet het algemene «mcp tool».

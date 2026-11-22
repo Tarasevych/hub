@@ -27,7 +27,7 @@
     "docs/klantrelatiebeheer/KLANTRELATIEBEHEER.nl.md",
     "docs/klantrelatiebeheer/КЛІЄНТСЬКІ-ВЗАЄМИНИ.uk.md",
     "index.html",
-    "migrations/0307_klantrelatiebeheer.sql",
+    "migrations/0310_klantrelatiebeheer.sql",
     "orchestratie/bijdragen/KLANT-001/20261121-172227-codex.json",
     "orchestratie/taken/KLANT-001.json",
     "public/canonical-service.js",

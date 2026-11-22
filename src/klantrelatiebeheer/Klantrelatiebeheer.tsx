@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookUser, Building2, CalendarDays, Mail, Phone, Plus, RefreshCw, Search, UserRound } from 'lucide-react';
 import { FASEN, klantdossier, verkoopstand, type Klantbewerking, type Klantoverzicht, type Verkoopkans, type Vervolgtaak } from '../../shared/klantrelatiebeheer';
 import { sleutelkluisOntgrendelAdres } from '../../shared/github-koppeling';
+import { useVlag } from '../functievlag-lezen';
 import { api, ApiError } from '../platform/client';
 import Invoervenster from './Invoervenster';
 import Koppelingen, { Klantafspraak } from './Koppelingen';
@@ -28,6 +29,7 @@ function fouttekst(lang: Taal, fout: unknown) {
 
 export default function Klantrelatiebeheer({ lang, tab, naarTab, tabContext, sourceOrigin }: Eigenschappen) {
   const t = (uk: string, nl: string) => tekst(lang, uk, nl);
+  const dienstAan = useVlag('klantrelatiebeheer-v1', false);
   const [overzicht, zetOverzicht] = useState<Klantoverzicht | null>(null);
   const [fout, zetFout] = useState('');
   const [bezig, zetBezig] = useState(false);
@@ -66,9 +68,16 @@ export default function Klantrelatiebeheer({ lang, tab, naarTab, tabContext, sou
     }
   }, [tabContext, sourceOrigin]);
   useEffect(() => {
+    if (!dienstAan) {
+      zetLeest(false);
+      zetOverzicht(null);
+      zetFout('');
+      zetKluisDicht(false);
+      return () => { nummer.current++; };
+    }
     void laad();
     return () => { nummer.current++; };
-  }, [laad]);
+  }, [dienstAan, laad]);
   async function schrijf(soort: Klantbewerking, waarden: Velden) {
     if (!overzicht?.magSchrijven || opslaanBezig.current) throw new Error(t('Зараз запис недоступний.', 'Schrijven is op dit moment niet mogelijk.'));
     opslaanBezig.current = true;
@@ -140,8 +149,14 @@ export default function Klantrelatiebeheer({ lang, tab, naarTab, tabContext, sou
     minuten={dossier.momenten.reduce((som, m) => som + m.minuten, 0)} magSchrijven={overzicht.magSchrijven}
     opTaak={(titel, datum) => schrijf('taak', { klantId: klant.id, titel, datum: datum || '' })}/>;
   const leegKlant = <Leeg>{t('Додайте першого клієнта, щоб відкрити його картку.', 'Voeg de eerste klant toe om een dossier te openen.')}</Leeg>;
+  if (!dienstAan) {
+    return <div className="kr-ruimte" lang={lang}>
+      <header className="kr-kop"><div><div className="kr-plaats"><BookUser size={16} aria-hidden="true"/>{t('Клієнтські взаємини', 'Klantrelatiebeheer')}</div><h2>{naam}</h2></div></header>
+      <Leeg>{t('Середовище клієнтських взаємин наразі вимкнене в перемикачах можливостей.', 'Klantrelatiebeheer staat momenteel uit in de functieschakelaars.')}</Leeg>
+    </div>;
+  }
   return <div className="kr-ruimte" lang={lang}>
-    <header className="kr-kop"><div><div className="kr-plaats"><BookUser size={16} aria-hidden="true"/>Klantrelatiebeheer</div><h2>{naam}</h2>
+    <header className="kr-kop"><div><div className="kr-plaats"><BookUser size={16} aria-hidden="true"/>{t('Клієнтські взаємини', 'Klantrelatiebeheer')}</div><h2>{naam}</h2>
       {pagina === 'overzicht' && <p className="kr-vandaag"><CalendarDays size={15} aria-hidden="true"/>{new Intl.DateTimeFormat(land(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}</p>}
     </div><div className="kr-acties"><button className="kr-rond" type="button" title={t('Оновити дані', 'Gegevens vernieuwen')} aria-label={t('Оновити дані', 'Gegevens vernieuwen')}
       disabled={leest || bezig} onClick={() => void laad()}><RefreshCw size={18}/></button>

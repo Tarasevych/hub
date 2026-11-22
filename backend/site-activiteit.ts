@@ -19,7 +19,7 @@ export type SiteEvent = { id: string; source: string; platform: string; kind: 's
 // client.ts); in de bel/het paneel was het herhaalruis («Дія на сайті: ruimte geweigerd · виконано»). Het journaal houdt elke regel.
 // 23.10: owner.extensie.zijpaneel.chat = elk chatbericht in het zijpaneel van de extensie (zone E) — geen melding, wel in het journaal.
 // MELDINGEN-REGISTER-001: owner.meldingen.ecosysteem.(actie|profiel) = klik in het meldingenpaneel zelf — mag nooit een nieuwe melding over zichzelf maken.
-export const SITE_RUIS = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.ecosysteem\.(actie|profiel)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh)|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
+export const SITE_RUIS = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.(ecosysteem\.(actie|profiel)|bijlage\.telegram)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh)|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
 const SKIP = SITE_RUIS;
 const RULES: Array<[RegExp, string]> = [
   [/^owner\.mail\.|^mail\./, 'mail:google'], [/^owner\.cloud\.|^cloud\./, 'cloud:google'], [/^owner\.calendar\.|^agenda\./, 'calendar:google'], [/^owner\.github\./, 'github'],
@@ -28,7 +28,7 @@ const RULES: Array<[RegExp, string]> = [
   [/^owner\.api\.|^owner\.vault\./, 'api'],
   [/^owner\.(admin|uitrol|tech|ruimte|flags|ondersteuning|impersonatie|diagnose|beleid)\.|^uitrol[._]|^klimop_|^orch_|^eigenaar_besluit_|^diag\.|^zoek\.index\./, 'admin'],
   [/^owner\.(identity|privacy|profile|session|step_up|auth|access|rol)\.|^account\.|^privacy\./, 'identity'],
-  [/^huis\./, 'huis'], [/^notitie\./, 'hub'],
+  [/^owner\.klantrelatie\./, 'crm'], [/^huis\./, 'huis'], [/^notitie\./, 'hub'],
   // SEC-002 (privacy-logboek-03): veiligheidskritieke acties ZONDER «owner.»-voorvoegsel vielen hier stil weg (sourceOfAudit → null):
   // een wachtwoord erbij, TOTP uit, passkey weg, sleutelkluis, een AI-token of een namens-sessie — de eigenaar zag niets in de stroom.
   [/^access\.|^aanmeld\.|^aanmelden\.|^sleutelkluis\.|^(toegangscode|gast)_|^bevestigen\.|^code\.|^inlog\.|^koppelen\.|^koppeling\.|^telegram|^venster\.|^widget\.|^wijziging\.|^plaats-eis\.|^stap-op$|^niet-ik$|^fout-symbool$/, 'identity'],

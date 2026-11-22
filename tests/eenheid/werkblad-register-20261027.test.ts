@@ -30,7 +30,7 @@ export async function main(): Promise<number> {
   const ids = WERKBLAD_REGISTER.map((r) => r.id);
 
   check('id\'s uniek en met een bekend voorvoegsel', new Set(ids).size === ids.length && ids.every((id) => /^(svc:[a-z]+|pg:[a-z]+\/[a-z-]+|cmd:[a-z-]+|wdg:[a-z-]+|map:[a-z-]+)$/.test(id)));
-  check('elke dienst (14) staat erin', DIENST_IDS.length === 14 && DIENST_IDS.every((d) => ids.includes(`svc:${d}`)));
+  check('elke dienst (15) staat erin', DIENST_IDS.length === 15 && DIENST_IDS.every((d) => ids.includes(`svc:${d}`)));
   const paginas = Object.entries(MENU_PAGINAS).flatMap(([d, ps]) => ps.map((p) => `pg:${d}/${p}`));
   check(`elke menupagina (${paginas.length}) staat erin, en geen verzonnen pagina`, paginas.every((id) => ids.includes(id)) && ids.filter((i) => i.startsWith('pg:')).length === paginas.length && paginas.length >= 85);
   check('elke widget (21) staat erin met dezelfde id', WERKBLAD_WIDGETS.length === 21 && WERKBLAD_WIDGETS.every((w) => ids.includes(`wdg:${w.id}`)));

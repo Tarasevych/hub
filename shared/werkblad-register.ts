@@ -67,7 +67,7 @@ export const DIENST_DEF: Record<typeof DIENST_IDS[number], DienstDef> = {
   mail: { titel: { uk: 'Пошта', nl: 'E-mail' }, icoon: 'mail', doel: 'mail', tab: 'inbox' },
   cloud: { titel: { uk: 'Хмарне сховище', nl: 'Cloudopslag' }, icoon: 'cloud', doel: 'cloud', tab: 'overview' },
   github: { titel: { uk: 'GitHub', nl: 'GitHub' }, icoon: 'github', doel: 'github', tab: 'overview' },
-  crm: { titel: { uk: 'Klantrelatiebeheer', nl: 'Klantrelatiebeheer' }, icoon: 'relaties', doel: 'crm', tab: 'overview' },
+  crm: { titel: { uk: 'Клієнтські взаємини', nl: 'Klantrelatiebeheer' }, icoon: 'relaties', doel: 'crm', tab: 'overview' },
   huis: { titel: { uk: 'Розумний будинок', nl: 'Slim huis' }, icoon: 'house', doel: 'huis', tab: 'overview' },
   mcp: { titel: { uk: 'Міст ШІ → сайт', nl: 'Brug AI → site' }, icoon: 'cable', doel: 'mcp', tab: 'agents' },
   tasks: { titel: { uk: 'Завдання', nl: 'Taken' }, icoon: 'tasks', doel: 'hub', tab: 'tasks' },

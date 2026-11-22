@@ -136,6 +136,7 @@ import { besluitZoekenPg } from './orch-besluit-pg';
 import { accountVerwijderdZetten, gebruikerVeldenZetten, toegangAanvraagStatus, toegangAanvraagToegestaan } from './gebruiker-schrijven'; // SEC-002 (autorisatie-02/-06)
 import { klantrelatieRoutes } from './klantrelatiebeheer-routes';
 import { relatiehulpRoutes } from './klantrelatie-hulp';
+import { bijlageWeergaveOcrRoutes } from './bijlage-weergave-ocr';
 import { aiWerkruimteRoutes } from './ai-werkruimte';
 import { aiEcosysteemRoutes } from './ai-ecosysteem';
 import { vaardighedenRoutes } from './vaardigheden-routes';
@@ -749,6 +750,8 @@ const aanmeldWegDeps:AanmeldWegDeps={start:(rc,o,m)=>aanmeldTxStart(rc,o,m) as n
 /* «Це не я» / tegenspraak: precies de sessies die via die Telegram-koppeling ontstonden. Vorm van de id: «a:<anker>|t:<tabblad>» of «t:<tabblad>». */
 /* SEC-002 (g10g-T3): «Ні, це не я» trekt ook de «onthouden browser» (grant), zijn andere sessies, sleutels en stromen in — backend/sessie-grant-intrekken.ts */
 const telegramSessiesIntrekken=(userId:string,ids:string[])=>sessiesIntrekkenMetGrants(userId,ids,telegramSessieIntrekken).then(async(u)=>{if(u.aantal)await ownerAudit(userId,'telegram.sessies.ingetrokken','success',{aantal:u.aantal,grants:u.grants,sessies:u.sessies,tabs:u.tabs});return u.aantal});
+const klantVlag = async (u: { id: string }) => (await flagsBerekenen(u as never, ['klantrelatiebeheer-v1']))[0]?.value === true;
+const bijlageWeergaveVlag = async (u: { id: string }) => (await flagsBerekenen(u as never, ['bijlage-weergave-gedeeld-v1']))[0]?.value === true;
 export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuimte({ /* SEC-002: na een geslaagde aanmelding de eigen apparaatcookie meegeven (backend/apparaat-cookie.ts) */
   ...juridischeRoutes,
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
@@ -850,8 +853,8 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...klimopPaden({ requireSession: ownerRequireSession as never, isOwnerEmail, rateLimit, audit: (e, action, result, details, service) => auditToevoegen({ ownerId: e.id, actorId: e.id, action, type: 'beveiliging', result, details, service: service === 'admin' ? 'admin' : 'mcp' }).then(() => undefined) }),
   // Werkgebied «ШІ для вас» op ai.* (punt 13, 19.10.2026): echte startstaat van het account + chat met keuze uit de ingestelde modellen.
   // Een geldige sessie zonder het recht 'api-platform' krijgt hier API_RECHT_VEREIST, nooit OWNER_API_SESSION_REQUIRED.
-  ...klantrelatieRoutes(ownerRequireSession),
-  ...relatiehulpRoutes(ownerRequireSession),
+  ...klantrelatieRoutes(ownerRequireSession, { vlagAan: klantVlag }),
+  ...relatiehulpRoutes(ownerRequireSession, { vlagAan: klantVlag }),
   ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never }),
   ...aiEcosysteemRoutes({ requireSession: ownerRequireSession as never }),
   ...vaardighedenRoutes({ requireSession: ownerRequireSession as never }),
@@ -874,7 +877,8 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...meldingRegelsRoutes({ requireSession: ownerRequireSession as never }),
   ...meldingGelezenRoutes({ requireSession: ownerRequireSession as never }),
   ...meldingStatusRoutes({ requireSession: ownerRequireSession as never }),
-  ...meldingEcosysteemRoutes({ requireSession: ownerRequireSession as never, ontvanger: meldingOntvanger as never }),
+  ...meldingEcosysteemRoutes({ requireSession: ownerRequireSession as never, ontvanger: meldingOntvanger as never, bijlageWeergaveVlag }),
+  ...bijlageWeergaveOcrRoutes({ requireSession: ownerRequireSession as never, vlagAan: bijlageWeergaveVlag }),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createAgentRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist}),
   ...createMcpConnectorRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist as never}),

@@ -311,6 +311,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть, щоб спробувати блоки.', 'Zet aan om blokken te proberen.'],
     gevolg: ['Вимкнення ховає блоки, але не видаляє їх. Прав не додає.', 'Uitzetten verbergt de blokken maar wist ze niet. Geeft geen rechten.'],
   },
+  'klantrelatiebeheer-v1': {
+    naam: ['Клієнтські взаємини', 'Klantrelatiebeheer'],
+    wat: ['Середовище клієнтських взаємин: зашифровані власним ключем досьє клієнтів, угоди за етапами, історія взаємодій, подальші завдання, розрахунок кошторису та безпечний зв’язок із поштою, хмарним сховищем і календарем.', 'Klantrelatiebeheer: met uw eigen gegevenssleutel versleutelde klantdossiers, verkoopkansen per fase, contactgeschiedenis, vervolgtaken, begroting en veilige koppeling met e-mail, cloudopslag en agenda.'],
+    wanneer: ['Увімкніть спершу лише для себе в «Перемикачах функцій», перевірте досьє клієнтів, угоди й завдання за відкритого сховища ключів, а потім відкрийте для вибраних людей або всіх.', 'Zet eerst alleen voor uzelf aan bij «Functieschakelaars», controleer klantdossiers, verkoopkansen en taken met geopende sleutelkluis, en open daarna voor gekozen mensen of iedereen.'],
+    gevolg: ['Вимкнення негайно закриває доступ до маршрутів та екрана клієнтських взаємин без втрати чи зміни збережених зашифрованих досьє. Прав доступу перемикач не додає.', 'Uitschakelen sluit meteen de routes en het scherm van klantrelatiebeheer zonder verlies of wijziging van de versleutelde dossiers. De schakelaar geeft geen extra rechten.'],
+  },
 };
 
 export const HELP_FLAGS: HelpLagen = {
