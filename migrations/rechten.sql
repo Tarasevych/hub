@@ -232,6 +232,25 @@ BEGIN
     IF to_regclass('app.geheugen_taken') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_taken, app.geheugen_taak_stappen TO mijnruimte_app;
     END IF;
+    -- 0300 (REESTR-LOGO-001): власні знаки користувача читає й записує виключно системна роль (backend/merk-gebruiker.ts).
+    IF to_regclass('app.merk_gebruiker') IS NOT NULL THEN
+      REVOKE ALL ON app.merk_gebruiker FROM mijnruimte_app;
+    END IF;
+    -- 0304 (UPD-011): ключі уповноважених осіб для оновлень і реєстр змін випусків — контур керування через mijnruimte_system.
+    IF to_regclass('app.uitrol_beheer_sleutels') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_beheer_sleutels FROM mijnruimte_app;
+    END IF;
+    IF to_regclass('app.uitrol_release_wijzigingen') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_release_wijzigingen FROM mijnruimte_app;
+    END IF;
+    -- 0306 / 0311 (UPD-013, CONSOL-001): реєстр вузлів і перерозподілів розподіленого зберігання — контур керування через mijnruimte_system під примусовим рядковим захистом.
+    IF to_regclass('app.verdeelde_opslag_knopen') IS NOT NULL THEN
+      REVOKE ALL ON app.verdeelde_opslag_knopen, app.verdeelde_opslag_rotaties FROM mijnruimte_app;
+    END IF;
+    -- 0310 (KLANT-001): зашифрований реєстр взаємин із клієнтами — власні рядки за користувачем і простором під примусовим рядковим захистом.
+    IF to_regclass('app.klantrelatieboek') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.klantrelatieboek TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).
@@ -263,6 +282,21 @@ BEGIN
     END IF;
     IF to_regclass('app.uitrol_telegram_updates') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_telegram_updates TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.merk_gebruiker') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.merk_gebruiker TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.uitrol_beheer_sleutels') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_beheer_sleutels TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.uitrol_release_wijzigingen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_release_wijzigingen TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.verdeelde_opslag_knopen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.verdeelde_opslag_knopen, app.verdeelde_opslag_rotaties TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.klantrelatieboek') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.klantrelatieboek TO mijnruimte_system;
     END IF;
     REVOKE INSERT, UPDATE, DELETE ON app.schema_migrations FROM mijnruimte_system;
     -- De RLS-stand en de allowlist wijzigt alleen het rollenscript (postgres/migrator), nooit de app zelf.

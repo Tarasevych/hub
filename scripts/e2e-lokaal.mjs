@@ -9,7 +9,9 @@ import { pathToFileURL } from 'node:url';
 import net from 'node:net';
 import dns from 'node:dns';
 import { networkInterfaces } from 'node:os';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { STANDAARD_E2E_TLS_MAP, controleerE2eTls, zorgVoorE2eTls } from './e2e-tls-maak.mjs';
 
 // ── Alleen lokaal: geen enkele e2e-test mag productie of een andere externe host bereiken. ──
 // 1) Statische controle: Playwright-API-verzoeken vanuit Node (ctx.request / page.request / request.newContext) gaan buiten
@@ -25,6 +27,47 @@ for (const f of (await readdir('tests/e2e')).filter((n) => n.endsWith('.ts'))) {
   for (const r of verboden) if (r.test(tekst)) { console.error(`e2e-slot: ${f} gebruikt ${r} (kan buiten de lokale server gaan)`); process.exit(2); }
   if (/chromium\.launch\(/.test(tekst) && !/chromeArgs\(/.test(tekst)) { console.error(`e2e-slot: ${f} start Chrome zonder chromeArgs()`); process.exit(2); }
 }
+
+const opgegevenTls = (process.env.E2E_TLS || '').trim();
+if (opgegevenTls) {
+  const tlsStaat = controleerE2eTls(opgegevenTls, 60_000);
+  if (!tlsStaat.geldig) {
+    if (process.env.E2E_TLS_AUTO === '1') {
+      const vernieuwd = zorgVoorE2eTls({ map: opgegevenTls, vernieuw: true });
+      console.warn(
+        `[e2e-lokaal] Автоматично оновлено сертифікат у E2E_TLS (${vernieuwd.map}, чинний до ${vernieuwd.geldigTot}). / ` +
+        `Certificaat in E2E_TLS automatisch vernieuwd (${vernieuwd.map}, geldig tot ${vernieuwd.geldigTot}).`,
+      );
+    } else {
+      console.error(
+        `[e2e-lokaal] Сертифікат перевіркового центру в E2E_TLS (${opgegevenTls}) непридатний (${tlsStaat.reden}${tlsStaat.geldigTot ? `, строк чинності до ${tlsStaat.geldigTot}` : ''}).\n` +
+        `  Створіть свіжий локальний сертифікат на 30 діб командою:\n` +
+        `    node scripts/e2e-tls-maak.mjs --map "${opgegevenTls}"\n` +
+        `  або запустіть з E2E_TLS_AUTO=1 чи без застарілого шляху, щоб використати ${STANDAARD_E2E_TLS_MAP}.\n` +
+        `[e2e-lokaal] Het proefcertificaat in E2E_TLS (${opgegevenTls}) is niet bruikbaar (${tlsStaat.reden}${tlsStaat.geldigTot ? `, geldig tot ${tlsStaat.geldigTot}` : ''}).\n` +
+        `  Maak een vers lokaal certificaat voor 30 dagen aan met:\n` +
+        `    node scripts/e2e-tls-maak.mjs --map "${opgegevenTls}"`,
+      );
+      process.exit(2);
+    }
+  }
+} else {
+  const werkruimteTls = '/workspace/e2e-tools/tls';
+  const werkruimteStaat = controleerE2eTls(werkruimteTls, 60_000);
+  if (werkruimteStaat.geldig) {
+    process.env.E2E_TLS = werkruimteTls;
+  } else {
+    if (existsSync(werkruimteTls)) {
+      console.warn(
+        `[e2e-lokaal] Сертифікат у ${werkruimteTls} непридатний (${werkruimteStaat.reden}); використовуємо свіжий локальний сертифікат у ${STANDAARD_E2E_TLS_MAP}. / ` +
+        `Certificaat in ${werkruimteTls} is niet bruikbaar (${werkruimteStaat.reden}); vers lokaal certificaat in ${STANDAARD_E2E_TLS_MAP} wordt gebruikt.`,
+      );
+    }
+    const gezorgd = zorgVoorE2eTls({ map: STANDAARD_E2E_TLS_MAP });
+    process.env.E2E_TLS = gezorgd.map;
+  }
+}
+
 const weiger = (host) => { const e = new Error(`e2e-slot: verbinding naar ${host} geweigerd (alleen lokaal)`); e.code = 'E2E_NIET_LOKAAL'; return e; };
 const origConnect = net.Socket.prototype.connect;
 net.Socket.prototype.connect = function (...a) {

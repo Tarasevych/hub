@@ -4,9 +4,9 @@ name: Bandit
 
 on:
   push:
-    branches: [ "voornaamst" ]
+    branches: [ "voornaamst", "integratie", "feature/consolidatie-*" ]
   pull_request:
-    branches: [ "voornaamst" ]
+    branches: [ "voornaamst", "integratie", "feature/consolidatie-*" ]
   schedule:
     - cron: '40 20 * * 5'
 
@@ -31,4 +31,4 @@ jobs:
         with:
           exit_zero: true
           GITHUB_TOKEN: ${{ github.token }}
-          excluded_paths: '.git,node_modules,dist,dist-server,uitvoer'
+          excluded_paths: '.git,node_modules,dist,dist-server,uitvoer,rapporten'

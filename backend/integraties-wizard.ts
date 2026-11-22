@@ -37,10 +37,10 @@ export type ControleUitkomst = { stand: Stand; code: string; detail: string; n?:
 const netwerk = ((input: any, init?: any) => globalThis.fetch(input, init)) as typeof fetch;
 const TIJD = 12_000;
 /**
- * НЕ СЕКРЕТ. Навмисно вигаданий токен для перевірки пари client_id/client_secret OAuth-застосунку GitHub:
- * GitHub відповідає 404 «токен не знайдено», якщо пара дійсна, і 401, якщо ні. Сам токен нічого не відкриває.
- * Записано двома частинами, щоб сканери секретів (сторінка «Оновлення», GitHub) не плутали його зі справжнім.
- * GEEN GEHEIM: verzonnen token om de OAuth-app-gegevens te toetsen (404 = geldig, 401 = ongeldig).
+ * НЕ ТАЄМНИЦЯ. Навмисно вигаданий зразок маркера доступу для перевірки пари client_id/client_secret застосунку GitHub OAuth:
+ * GitHub повертає 404 («маркер доступу не знайдено»), якщо пара дійсна, і 401, якщо ні. Сам зразок нічого не відкриває.
+ * Записано двома частинами, щоб перевірники таємниць не сприймали рядок як справжній маркер доступу.
+ * GEEN GEHEIM: verzonnen voorbeeldwaarde om de gegevens van de OAuth-app te toetsen (404 = geldig, 401 = ongeldig).
  */
 const GITHUB_PROEFTOKEN = 'gh' + 'o_mijnruimtecontrole000000000000000000';
 const sys = () => getPool('systeem');
