@@ -57,6 +57,11 @@ export type KopProps = {
   bron?: WeergaveBron;
   /** етап 4 (НЕ ПЕРЕВІРЕНО): дії джерела; без поля — як раніше */
   contextActies?: ContextActie[] | null;
+  /**
+   * етап 4 (НЕ ПЕРЕВІРЕНО): тег кореня шапки. Диск і інші вікна мають широкі правила на кшталт `.drive-viewer header button`,
+   * які переписали б кнопки шапки; з 'div' ці правила її не зачіпають. Без поля — 'header', як у Пошті.
+   */
+  kopElement?: 'header' | 'div';
   onSluit: () => void;
 };
 
@@ -136,8 +141,10 @@ export function WeergaveKop(p: KopProps) {
   const plaats = p.nav && p.nav.totaal > 1 ? t(`вкладення ${p.nav.index + 1} з ${p.nav.totaal}`, `bijlage ${p.nav.index + 1} van ${p.nav.totaal}`) : '';
   const feiten = [formaat, grootteTekst(p.grootte, p.taal), plaats].filter(Boolean).join(' · ');
   const niveau = vertrouwen?.niveau || 'bezig';
+  // етап 4: той самий вміст, лише інший тег кореня (див. kopElement); приведення типу лише для JSX
+  const Kop = (p.kopElement === 'div' ? 'div' : 'header') as 'header';
   return (
-    <header className='weergave-kop' data-weergave-kop='' ref={kopRef}>
+    <Kop className='weergave-kop' data-weergave-kop='' ref={kopRef} role={p.kopElement === 'div' ? 'group' : undefined} aria-label={p.kopElement === 'div' ? p.naam : undefined}>
       <div className='weergave-rij'>
         <div className='weergave-titel'>
           <strong title={p.naam}>{p.naam}</strong>
@@ -190,7 +197,7 @@ export function WeergaveKop(p: KopProps) {
             : <><span>{t(`«${p.staat.naam}»: `, `«${p.staat.naam}»: `)}{kies(p.taal, foutTekst(p.staat.code, p.bron))}</span><button type='button' onClick={p.staat.onOpnieuw}><RotateCcw aria-hidden='true' />{t('Спробувати ще раз', 'Opnieuw proberen')}</button></>}
         </div>
       )}
-    </header>
+    </Kop>
   );
 }
 
