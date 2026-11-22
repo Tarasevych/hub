@@ -5,7 +5,8 @@
 import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
 import { leesPdfPlek, bewaarPdfPlek, bewaarPlek, leesPlek } from '../../src/bijlage-weergave/gedrag';
-import { toonLabel, toonWaarde } from '../../src/bijlage-weergave/labels';
+import { toonLabel, toonNaam, toonWaarde } from '../../src/bijlage-weergave/labels';
+import { NL_MOTOR_TEKSTEN } from '../../src/bijlage-weergave/nl-teksten';
 import { vertrouwenUit } from '../../src/bijlage-weergave/vertrouwen';
 
 class NepOpslag implements Storage {
@@ -69,5 +70,15 @@ export async function main(): Promise<number> {
   // 6. diagnose
   check('diagnose: dezelfde melding direct na elkaar telt met (×N)', lees('src/ai-site-acties.ts').includes('laatste.message = `${tekst} (×${n})`'));
   check('uitrol: onvolledig antwoord geeft geen paginafout', lees('src/platform/uitrol-achtergrond-beheer.ts').includes('goedgekeurd?.length ?? 0'));
+  // 7. NL-modus: vaste teksten van de formaatlezers
+  check('NL-woordenboek: meer dan 1200 lezerteksten, Nederlandse kant zonder Cyrillisch, dezelfde {n}', NL_MOTOR_TEKSTEN.length >= 1200 && NL_MOTOR_TEKSTEN.every(([uk, nl]) => !/[\u0400-\u04ff]/.test(nl) && JSON.stringify((uk.match(/\{\d\}/g) || []).sort()) === JSON.stringify((nl.match(/\{\d\}/g) || []).sort())));
+  check('NL: HEIC-codecmelding', toonWaarde('HEIC: поточний кодек браузера не розкодував контейнер. Показано лише підтверджені дані контейнера й вбудованого попереднього перегляду.', 'nl') === 'HEIC: de huidige codec van de browser heeft de container niet gedecodeerd. Alleen bevestigde gegevens van de container en de ingebouwde voorvertoning worden getoond.');
+  check('NL: EML-label en ZIP-label', toonLabel('EML · інтернет-лист', 'nl') === 'EML · internetbericht' && toonLabel('Архів ZIP', 'nl') === 'ZIP-archief');
+  check('NL: ZIP-rij (metagegevens met ingevoegde waarden)', toonWaarde('#2 · метод 8 · стиснено 1234 B · encrypted', 'nl') === '#2 · methode 8 · gecomprimeerd 1234 B · versleuteld');
+  check('NL: ingevoegd stuk wordt zelf ook vertaald', toonWaarde('Слайд 3: вбудоване зображення не вдалося декодувати.', 'nl') === 'Dia 3: de ingebouwde afbeelding kon niet worden gedecodeerd.' && toonWaarde('сирий образ · GPT', 'nl') === 'ruwe kopie · GPT');
+  check('UK-modus blijft ongewijzigd; onbekende tekst blijft staan', toonWaarde('Архів ZIP', 'uk') === 'Архів ZIP' && toonLabel('Архів ZIP', 'uk') === 'Архів ZIP' && toonWaarde('щось зовсім інше', 'nl') === 'щось зовсім інше');
+  check('namen van items: alleen een exacte treffer (geen sjabloon op «Розділ 1.docx»)', toonNaam('Розділ 1.docx', 'nl') === 'Розділ 1.docx' && toonNaam('Корінь', 'nl') === 'Wortel');
+  const graf = lees('src/MailGrafischVoorbeeld.tsx'), arch = lees('src/MailArchiefVoorbeeld.tsx'), ber = lees('src/MailBerichtVoorbeeld.tsx');
+  check('weergaven tonen lezerteksten via toonLabel/toonWaarde/toonNaam', graf.includes('<ShieldCheck/>{toonWaarde(warning,lang)}</p>') && arch.includes('<td>{toonWaarde(row.meta,lang)}</td>') && arch.includes('<td>{toonNaam(row.name,lang)}</td>') && ber.includes('{toonLabel(capability.label,lang)}'));
   return einde();
 }

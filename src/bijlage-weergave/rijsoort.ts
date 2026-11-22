@@ -1,6 +1,7 @@
 // Спільний перегляд вкладень, етап 2 (Grok: hub.tarasevych.com): de kolom «Тип» in de tabellen van de formaatweergaven
 // toonde de interne soortnaam van een rij in het Engels (entry, header, record…). Hier één woordenboek voor de weergave;
 // de interne waarde (row.kind) blijft ongewijzigd, want de logica gebruikt die. Onbekende woorden blijven zoals ze zijn.
+import { toonLabel } from './labels';
 type Taal = 'uk' | 'nl';
 const WOORDEN: Record<string, [string, string]> = {
   entry: ['запис', 'item'], directory: ['тека', 'map'], header: ['заголовок', 'kop'], string: ['рядок', 'tekenreeks'], section: ['розділ', 'sectie'],
@@ -26,6 +27,8 @@ const WOORDEN: Record<string, [string, string]> = {
 export function rijSoort(kind: unknown, taal: Taal): string {
   const k = String(kind ?? '').trim();
   if (!k) return '';
+  // afwerking etappe 2: een Oekraïense soortnaam van de lezer («Запис TAR», «Правило YARA») via het NL-woordenboek
+  if (taal === 'nl' && /[\u0400-\u04ff]/.test(k)) return toonLabel(k, taal);
   const heel = WOORDEN[k.toLowerCase()];
   if (heel) return heel[taal === 'nl' ? 1 : 0];
   return k.split(/([-_ /]+)/).map((d) => { const w = WOORDEN[d.toLowerCase()]; return w ? w[taal === 'nl' ? 1 : 0] : d.replace(/^[-_]+$/, ' '); }).join('');

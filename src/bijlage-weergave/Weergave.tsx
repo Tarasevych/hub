@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Download, ImageOff, Info, LoaderCircle, More
 import { formaatVan, grootteTekst, kies, soortVan, type Taal } from './soort';
 import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from './vertrouwen';
 import { technischeRijen } from './details';
+import { toonWaarde } from './labels';
 import { actiesVoor, type Beschikbaar } from './acties';
 import './weergave.css';
 
@@ -108,7 +109,7 @@ export function WeergaveKop(p: KopProps) {
             </button>
             {info.open && (
               <div className='weergave-paneel' id={infoId} role='dialog' aria-label={t('Подробиці про файл', 'Details over het bestand')}>
-                <dl>{technischeRijen({ taal: p.taal, naam: p.naam, contentType: p.contentType, grootte: p.grootte, vertrouwen, breedte: maat?.b, hoogte: maat?.h }).map((r) => <div key={r.label}><dt>{r.label}</dt><dd>{r.waarde}</dd></div>)}</dl>
+                <dl>{technischeRijen({ taal: p.taal, naam: p.naam, contentType: p.contentType, grootte: p.grootte, vertrouwen, breedte: maat?.b, hoogte: maat?.h }).map((r) => <div key={r.label}><dt>{r.label}</dt><dd>{toonWaarde(r.waarde, p.taal)}</dd></div>)}</dl>
                 {vertrouwen && <ul className='weergave-bevindingen'>{vertrouwen.bevindingen.map((b) => <li key={b.sleutel} data-ernst={b.ernst}>{kies(p.taal, b.tekst)}</li>)}</ul>}
               </div>
             )}
