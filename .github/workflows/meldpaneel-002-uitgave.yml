@@ -656,6 +656,7 @@ jobs:
               "Rustig 15-secondenoverzicht voor achtergrondtaken, 6 vormen van voorwaardelijk uitstel, 5-seconden ongedaan maken (Ctrl+Z), toetsenbordbesturing (↑↓, Spatie, S, E), stille voortgangspil bij de bel, uitstel van niet-kritieke pop-ups tijdens typen en slimme stiltesuggestie."
             ],
             "fixes": [
+              "Visuele scheiding tussen de compacte en de venstermodus opgeheven zonder verlies van bestaande mogelijkheden (MeldingenV2 en de klassieke weergave blijven beschikbaar via ?v2=0|1).",
               "Volledig kleurcontrast over alle 28 lichte en donkere paletten, nul horizontale overloop op mobiele schermen (390×844) en intacte .plaats-gniezdo-indeling.",
               "Bijgewerkte zoekcatalogus (1851 elementen), tweetalig meldingsdossier, functiedossier meldingen.json en takkenkroniek."
             ],
