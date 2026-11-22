@@ -86,6 +86,6 @@ export async function main(): Promise<number> {
   // 8. focus na bladeren
   const gmw8 = lees('src/GoogleMailWerkruimte.tsx'), kaartSrc = lees('src/MailBijlageKaart.tsx');
   check('kaart draagt de bijlage-id (data-bijlage-id)', kaartSrc.includes('data-bijlage-id={item.providerAttachmentId}'));
-  check('sluiten na bladeren: focus naar de kaart van de laatst bekeken bijlage (met vlag 0308), anders de opener', gmw8.includes("bijlageLaatsteIdRef.current=attachmentNav?.items[attachmentNav.index]?.providerAttachmentId||bijlageLaatsteIdRef.current;") && gmw8.includes('const doel=kaartVan(opener)||opener;') && gmw8.includes("useEffect(()=>{if(!vensterHerstel)return;if(attachmentPreview){if(!bijlageOpenerRef.current)bijlageOpenerRef.current=laatsteFocusRef.current;return}"));
+  check('sluiten na bladeren: focus naar de kaart van de laatst bekeken bijlage (met vlag 0308), anders de opener', gmw8.includes("bijlageLaatsteIdRef.current=attachmentNav?.items[attachmentNav.index]?.providerAttachmentId||bijlageLaatsteIdRef.current;") && gmw8.includes('const kaart=kaartVan(opener),doel=kaart||opener;') && gmw8.includes("if(kaart)kaart.scrollIntoView({block:'nearest',inline:'nearest'})") && gmw8.includes("useEffect(()=>{if(!vensterHerstel)return;if(attachmentPreview){if(!bijlageOpenerRef.current)bijlageOpenerRef.current=laatsteFocusRef.current;return}"));
   return einde();
 }
