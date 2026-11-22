@@ -49,6 +49,55 @@ function bepaalAuteur(opgegeven, git) {
  * Збирає tar.gz (через maak-voorstelpakket.sh) і пакет передачі. opties: { wortel, beleid, lock, taakId, auteur, agent?, versie?, uit, samenvatting?,
  * manifestPad?, testresultatenPad?, sigPad?, agentPlatform?, agentTool?, model?, nietGedaan?, nu? }. Повертає { zaken, zipPad, ... } — zaken з ernst fout = не зібрано.
  */
+/**
+ * VLAG-001 (B-026, 22.11.2026) · НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом). Виконавець: Claude Opus 5.5 (High) через Google Antigravity.
+ * Без прапорця — не випускається: пакет, що змінює поведінку, мусить оголосити в UITROL-MANIFEST.json поле functievlaggen
+ * ([{ sleutel, migratie }]) — кожен прапорець додається міграцією типово ВИМКНЕНИМ (aan=false, standaard=false), — або
+ * вузький виняток zonderVlag { reden: beveiliging|herstel|documentatie|vlag-opruiming, toelichting }.
+ * Чиста функція: { beleid, manifest, paden (змінені файли), lees(pad) → вміст|null, versie } → zaken.
+ */
+export const VLAG_SLEUTEL = /^[a-z0-9][a-z0-9-]{2,79}$/;
+export function controleerFunctievlaggen({ beleid, manifest, paden, lees, versie }) {
+  const z = []; const b = beleid?.functievlaggen;
+  if (!b?.verplicht) return z;
+  // Лише для нових пакетів: старі випуски й тестові зразки не змінюються.
+  if (versie && versie < (b.vanafVersie || '20261123-000000')) return z;
+  const gedrag = (b.gedragsPaden ?? ['src/', 'backend/', 'shared/', 'public/', 'deploy/']);
+  const zonder = (b.uitgezonderdePaden ?? ['tests/', 'docs/']);
+  const gedragPaden = (paden ?? []).filter((p) => gedrag.some((g) => p.startsWith(g)) && !zonder.some((u) => p.startsWith(u)) && !/\.md$/i.test(p));
+  if (!gedragPaden.length) return z;
+  const vlaggen = Array.isArray(manifest?.functievlaggen) ? manifest.functievlaggen : [];
+  const uitz = manifest?.zonderVlag;
+  if (!vlaggen.length) {
+    const redenen = b.toegestaneRedenen ?? ['beveiliging', 'herstel', 'documentatie', 'vlag-opruiming'];
+    if (uitz && redenen.includes(uitz.reden) && String(uitz.toelichting || '').trim().length >= 10) {
+      z.push(waarsch('VLAG_UITZONDERING', `пакет без прапорця за винятком «${uitz.reden}»: ${String(uitz.toelichting).trim().slice(0, 200)}`, `pakket zonder vlag met uitzondering «${uitz.reden}»`));
+      return z;
+    }
+    z.push(fout('VLAG_ONTBREEKT',
+      `пакет змінює поведінку (${gedragPaden.length} файлів, напр. ${gedragPaden.slice(0, 3).join(', ')}), але в UITROL-MANIFEST.json немає functievlaggen — додайте прапорець, типово вимкнений, міграцією (VLAG-001) або вузький виняток zonderVlag { reden: ${redenen.join('|')}, toelichting }`,
+      `pakket wijzigt gedrag maar UITROL-MANIFEST.json heeft geen functievlaggen — voeg een vlag (standaard uit) toe via een migratie (VLAG-001) of een smalle zonderVlag-uitzondering`));
+    return z;
+  }
+  for (const v of vlaggen) {
+    const sleutel = String(v?.sleutel || '');
+    if (!VLAG_SLEUTEL.test(sleutel)) { z.push(fout('VLAG_SLEUTEL_ONGELDIG', `прапорець «${sleutel}»: лише малі латинські літери, цифри й дефіс`, `vlag «${sleutel}»: alleen kleine letters, cijfers en koppelteken`)); continue; }
+    const mig = String(v?.migratie || '').replace(/^migrations\//, '');
+    const inhoud = mig ? lees(`migrations/${mig}`) : null;
+    if (!inhoud) { z.push(fout('VLAG_ZONDER_MIGRATIE', `прапорець ${sleutel}: міграцію «${mig || '—'}» не знайдено в migrations/`, `vlag ${sleutel}: migratie «${mig || '—'}» niet gevonden`)); continue; }
+    const i = inhoud.indexOf(`'${sleutel}'`);
+    if (!/INSERT\s+INTO\s+app\.feature_flags/i.test(inhoud) || i < 0) { z.push(fout('VLAG_ZONDER_MIGRATIE', `прапорець ${sleutel}: міграція ${mig} не додає його до app.feature_flags`, `vlag ${sleutel}: migratie ${mig} voegt hem niet toe`)); continue; }
+    // Після назви прапорця в тому самому VALUES (…) мають стояти aan=false, standaard=false.
+    const rest = inhoud.slice(i, i + 2000);
+    const kinec = rest.search(/\)\s*(ON\s+CONFLICT|;|,\s*\()/i);
+    const waarden = kinec > 0 ? rest.slice(0, kinec) : rest;
+    if (!/false\s*,\s*false\s*$/i.test(waarden.replace(/--[^\n]*/g, '').trim())) z.push(fout('VLAG_STANDAARD_AAN', `прапорець ${sleutel}: у міграції ${mig} він має бути типово вимкнений (aan=false, standaard=false), щоб з'явитися у вкладці «Активні»`, `vlag ${sleutel}: moet standaard uit staan (aan=false, standaard=false)`));
+    if (!/ON\s+CONFLICT\s*\(\s*sleutel\s*\)\s*DO\s+NOTHING/i.test(rest)) z.push(waarsch('VLAG_CONFLICT', `прапорець ${sleutel}: додайте ON CONFLICT (sleutel) DO NOTHING, щоб не перезаписати вибір власника`, `vlag ${sleutel}: voeg ON CONFLICT (sleutel) DO NOTHING toe`));
+    if (!gedragPaden.some((p) => (lees(p) || '').includes(sleutel))) z.push(waarsch('VLAG_NIET_GEBRUIKT', `прапорець ${sleutel} не згадується в жодному зміненому файлі коду — чи справді нововведення за ним?`, `vlag ${sleutel} komt in geen gewijzigd codebestand voor`));
+  }
+  return z;
+}
+
 export function maakOverdrachtPakket(o) {
   const nu = o.nu ?? new Date().toISOString(); const z = []; const git = gitIn(o.wortel);
   const taakPad = join(o.wortel, 'orchestratie/taken', `${o.taakId}.json`);
@@ -161,6 +210,15 @@ export function maakOverdrachtPakket(o) {
     }
     if (manifestBron) env.MANIFEST = manifestBron;
     if (o.testresultatenPad) env.TESTRESULTATEN_BESTAND = resolve(o.testresultatenPad);
+    // VLAG-001: перевірка прапорців до складання архіву (без прапорця — не випускається).
+    {
+      let mVlag = null; if (manifestBron) { try { mVlag = JSON.parse(readFileSync(manifestBron, 'utf8')); } catch { mVlag = null; } }
+      const padenVlag = (git('diff', '--name-only', `${takBasis}..${head}`) || '').split('\n').filter(Boolean);
+      const lees = (p) => { try { return readFileSync(join(o.wortel, p), 'utf8'); } catch { return null; } };
+      const vz = controleerFunctievlaggen({ beleid: o.beleid, manifest: mVlag, paden: padenVlag, lees, versie });
+      z.push(...vz);
+      if (vz.some((x) => x.ernst === 'fout')) return { zaken: z };
+    }
     const r = spawnSync('bash', [join(o.wortel, 'deploy/uitrol/maak-voorstelpakket.sh'), werk, basisBekend ? basis.commit : 'HEAD'], { cwd: o.wortel, env, encoding: 'utf8' });
     if (r.status !== 0) return { zaken: [fout('PAKKET_BOUW_MISLUKT', `maak-voorstelpakket.sh: ${(r.stderr || r.stdout).trim().split('\n').slice(-3).join(' | ')}`, 'maak-voorstelpakket.sh mislukt')] };
     const tarPad = join(werk, `mijn-ruimte-${versie}.tar.gz`); const voorstel = JSON.parse(readFileSync(join(werk, `mijn-ruimte-${versie}.voorstel.json`), 'utf8'));
