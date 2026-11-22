@@ -6,7 +6,7 @@ export type DomainViewEntry<T=unknown>={key:string;signature:string;model:T;time
 type DomainViewStore={version:1;entries:Record<string,DomainViewEntry>};
 const DOMAIN_VIEW_CACHE_KEY='tsv-domain-view-cache-v1';
 const DURABLE_MAX_ENTRIES=64,DURABLE_MAX_BYTES=1200000,FUTURE_SLACK_MS=60000;
-const services:CanonicalService[]=['hub','ai','mail','cloud','github','huis','identity','api','admin','mcp'];
+const services:CanonicalService[]=['hub','ai','mail','cloud','github','crm','huis','identity','api','admin','mcp'];
 const sensitive=/^(accessToken|refreshToken|idToken|token|authorization|cookie|secret|password|nonce|pkce|codeVerifier|proof|sessionToken)$/i;
 /* hash + cacheAccountKey staan sinds 21.10.2026 in ./account-sleutel (zonder afhankelijkheden: ook src/mail-bijlage-cache.ts gebruikt ze) */
 import{accountHash as hash,cacheAccountKey}from'./account-sleutel';export{cacheAccountKey};

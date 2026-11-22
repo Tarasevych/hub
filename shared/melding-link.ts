@@ -99,7 +99,7 @@ export function dienstVoorSoort(soort: string | undefined): LinkDienst | undefin
   return undefined;
 }
 
-const VOLGORDE: readonly LinkDienst[] = ['hub', 'identity', 'mail', 'cloud', 'ai', 'mcp', 'admin', 'api', 'github', 'huis'];
+const VOLGORDE: readonly LinkDienst[] = ['hub', 'identity', 'mail', 'cloud', 'ai', 'mcp', 'admin', 'api', 'github', 'crm', 'huis'];
 const absoluut = (dienst: LinkDienst, padEnRest: string): string => `https://${SERVICE_HOSTS[dienst]}${padEnRest.startsWith('/') ? padEnRest : `/${padEnRest}`}`;
 
 export type LinkHint = {

@@ -21,6 +21,7 @@
 .canonical-chrome [data-accent='roze'],.zijbalk-voorbeeld [data-accent='roze']{--a:#be185d;--a2:#d0598a}
 .canonical-chrome [data-accent='rood'],.zijbalk-voorbeeld [data-accent='rood']{--a:#dc2626;--a2:#e35151}
 .canonical-chrome [data-accent='bruin'],.zijbalk-voorbeeld [data-accent='bruin']{--a:#8b5a2b;--a2:#a27b55}
+.canonical-chrome [data-accent='wijnrood'],.zijbalk-voorbeeld [data-accent='wijnrood']{--a:#641131;--a2:#913b57}
 /* accentpalet (donker) */
 :is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='teal']{--a:#5eead4;--a2:#4db3a5}
 :is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='violet']{--a:#d8b4fe;--a2:#a48cc3}
@@ -36,6 +37,7 @@
 :is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='roze']{--a:#f9a8d4;--a2:#bc84a5}
 :is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='rood']{--a:#fca5a5;--a2:#be8183}
 :is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='bruin']{--a:#d6b48f;--a2:#a38c74}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='wijnrood']{--a:#e05a81;--a2:#b74564}
 
 /* --------------------------------------------------------------- rail: breed genoeg, geen scrollbalk over iconen */
 @media(min-width:701px){

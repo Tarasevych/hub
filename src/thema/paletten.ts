@@ -3,7 +3,7 @@
 // src/thema/paletten.css en de opstartregels in index.html gemaakt (scripts/thema-css.mjs); de test bewaakt dat ze gelijk blijven.
 import { ACCENT_KLEUREN, DIENST_ACCENT } from '../../shared/menu-model';
 
-export const SECTIES = ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin', 'mcp'] as const;
+export const SECTIES = ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'identity', 'api', 'admin', 'mcp'] as const;
 export type Sectie = typeof SECTIES[number];
 export type Waarden = { bg: string; panel: string; surface: string; surface2: string; line: string; text: string; muted: string; faint: string; accent: string; accentText: string; accentSoft: string };
 

@@ -1,5 +1,5 @@
 // Menu v2 fase B1: pure URL-hulpjes (zonder app-modules, testbaar in Node).
-const HOST_DIENST: Record<string, string> = { hub: 'hub', ai: 'ai', mail: 'mail', cloud: 'cloud', github: 'github', huis: 'huis', id: 'identity', api: 'api', admin: 'admin', mcp: 'mcp' };
+const HOST_DIENST: Record<string, string> = { hub: 'hub', ai: 'ai', mail: 'mail', cloud: 'cloud', github: 'github', crm: 'crm', huis: 'huis', id: 'identity', api: 'api', admin: 'admin', mcp: 'mcp' };
 const VERBODEN_PARAM = /^(code|state|token|proof|transaction|redeem|handoff|auth_broker|oauth_code|oauth_error|consent|invite)$/i;
 const hier = () => (typeof location !== 'undefined' ? location.href : 'https://hub.tarasevych.com/');
 

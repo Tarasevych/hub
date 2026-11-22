@@ -20,6 +20,7 @@ export const SERVICE_HOSTS = {
   mail: `mail.${PUBLIC_DOMAIN}`,
   cloud: `cloud.${PUBLIC_DOMAIN}`,
   github: `github.${PUBLIC_DOMAIN}`,
+  crm: `crm.${PUBLIC_DOMAIN}`,
   huis: `huis.${PUBLIC_DOMAIN}`,
   api: `api.${PUBLIC_DOMAIN}`,
   admin: `admin.${PUBLIC_DOMAIN}`,

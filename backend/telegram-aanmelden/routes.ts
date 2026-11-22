@@ -79,6 +79,7 @@ const HOST_DIENST: Readonly<Record<string, string>> = {
   'cloud.tarasevych.com': 'cloud',
   'ai.tarasevych.com': 'ai',
   'github.tarasevych.com': 'github',
+  'crm.tarasevych.com': 'crm',
   'huis.tarasevych.com': 'huis',
   'admin.tarasevych.com': 'admin',
   'api.tarasevych.com': 'api',
