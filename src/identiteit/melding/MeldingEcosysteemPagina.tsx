@@ -427,8 +427,8 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
           <div className='mp-sectie-titel'>
             <span className='mp-sectie-icoon'><Sparkles size={19} aria-hidden='true' /></span>
             <div>
-              <h2>{t('Режим порталу та загальна поведінка', 'Portaalmodus en algemeen gedrag')}</h2>
-              <p>{t('Перемикання між єдиним незалежним вікном «застосунок у застосунку» та класичним випаданням біля дзвоника.', 'Schakelen tussen het onafhankelijke ecosysteemvenster en het klassieke menu aan de bel.')}</p>
+              <h2>{t('Розмір єдиного Пульта уваги та загальна поведінка', 'Grootte van de ene Aandachtspuls en algemeen gedrag')}</h2>
+              <p>{t('Одна спільна панель сповіщень з офіційними логотипами служб і графом першопричини у двох зручних розмірах.', 'Één gedeeld meldingenpaneel met officiële dienstlogo’s en oorzaakketens in twee handige groottes.')}</p>
             </div>
           </div>
           <button
@@ -443,11 +443,11 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
             }}
           >
             <Bell size={17} aria-hidden='true' />
-            {t('Відкрити портал зараз', 'Portaal nu openen')}
+            {t('Відкрити Пульт зараз', 'Puls nu openen')}
           </button>
         </div>
 
-        <div className='mp-keuze-rij' role='radiogroup' aria-label={t('Режим центру сповіщень', 'Modus van het meldingencentrum')}>
+        <div className='mp-keuze-rij' role='radiogroup' aria-label={t('Розмір Пульта уваги', 'Grootte van de Aandachtspuls')}>
           <button
             type='button'
             role='radio'
@@ -456,8 +456,8 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
             className={`mp-keuze-kaart${ecosysteemActief ? ' is-actief' : ''}`}
             onClick={() => zetEcosysteemModusActief(true)}
           >
-            <strong><Sparkles size={16} aria-hidden='true' />{t('Єдина екосистема сповіщень', 'Geïntegreerd meldingen-ecosysteem')}</strong>
-            <small>{t('Незалежне вікно поверх усіх сторінок: зміна розміру, змахи, переглядач вкладень усіх форматів та розбір ШІ.', 'Onafhankelijk venster boven alle pagina’s: schaalbaar, veegacties, bijlage-speler en AI-duiding.')}</small>
+            <strong><Sparkles size={16} aria-hidden='true' />{t('Розгорнуте вікно з інспектором', 'Uitgeklapt venster met inspectie')}</strong>
+            <small>{t('Двоколонкове рухоме вікно поверх сторінок: граф першопричини, радіус мандата ШІ, умовне відкладення та вкладення.', 'Tweekoloms zwevend venster boven alle pagina’s: oorzaakketen, AI-mandaatstraal, voorwaardelijk uitstel en bijlagen.')}</small>
           </button>
           <button
             type='button'
@@ -467,8 +467,8 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
             className={`mp-keuze-kaart${!ecosysteemActief ? ' is-actief' : ''}`}
             onClick={() => zetEcosysteemModusActief(false)}
           >
-            <strong><Layers size={16} aria-hidden='true' />{t('Класичне меню біля дзвоника', 'Klassiek paneel aan de bel')}</strong>
-            <small>{t('Компактна панель біля значка дзвоника зі швидким переходом до екосистеми в будь-яку мить.', 'Compacte lijst naast het bel-icoon met snelle knop terug naar het ecosysteem.')}</small>
+            <strong><Layers size={16} aria-hidden='true' />{t('Компактний пульт біля дзвіночка', 'Compacte puls bij de bel')}</strong>
+            <small>{t('Той самий Пульт уваги у повітряному компактному форматі під дзвіночком із перемикачем «Вікно» в один дотик.', 'Dezelfde Aandachtspuls in luchtig compact formaat onder de bel met één-klik-schakelaar «Venster».')}</small>
           </button>
         </div>
 

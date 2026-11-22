@@ -50,15 +50,18 @@
     "shared/melding-",
     "shared/menu-meldingen",
     "backend/meldingen-",
-    "docs/meldingen-v2/"
+    "docs/meldingen-v2/",
+    "docs/meldingen-paneel/",
+    "shared/meldingen-puls/",
+    "src/meldingen/puls/"
   ],
   "kaart": {
-    "uk": "Зараз у коді два вигляди панелі, які перемикаються в одному компоненті src/CanoniekMeldingencentrum.tsx: (1) класична/компактна панель біля дзвіночка — MeldingenpaneelInhoud.tsx і meldingen/v2/MeldingenV2.tsx (UI-007, INTEG-001, MELDINGEN-UX-001); (2) «вікно» екосистеми — meldingen/ecosysteem/MeldingenPortaal.tsx (GEMINI-002), вмикається useEcosysteemModusActief. Обидві читають ті самі джерела (canoniek-meldingen.ts, серверні site_notifications, активності агентів).",
-    "nl": "Twee paneelweergaven in één component: klassiek/compact (UI-007, INTEG-001, MELDINGEN-UX-001) en het ecosysteemvenster (GEMINI-002)."
+    "uk": "З MELDPANEEL-002 (22.11.2026) працює одна єдина панель «Пульт уваги, спокою та дії» (src/meldingen/ecosysteem/MeldingenPortaal.tsx + src/meldingen/puls/ + shared/meldingen-puls/kern.ts) у двох розмірах в одному компоненті src/CanoniekMeldingencentrum.tsx: компактно біля дзвіночка (compactBijBel=true) та розгорнутим двоколонковим вікном (useEcosysteemModusActief). Обидва розміри мають одне число на дзвіночку, офіційні логотипи src/merk/, граф першопричини, радіус мандата ШІ, печатку ядра «Плющ» та умовне відкладення; попередні компоненти MeldingenV2.tsx і MeldingenpaneelInhoud.tsx збережено в коді для зворотних перевірок (?v2=0|1).",
+    "nl": "Sinds MELDPANEEL-002 (22.11.2026) werkt één gedeeld paneel «Aandachts-, Rust- en Actiepuls» in twee groottes (compact bij de bel en uitgeklapt tweekolomsvenster) op dezelfde stroom en statusopslag, met behoud van alle eerdere onderdelen."
   },
   "staatToelichting": {
-    "uk": "Стан можливостей «actief» записано 18.11.2026 за історією коду й гілок; наживо на встановленій версії ще не перевірено (див. open).",
-    "nl": "Staat volgens de codegeschiedenis; nog niet live gecontroleerd."
+    "uk": "Стан можливостей «actief» перевірено модульними, інтеграційними та переглядачевими випробуваннями Хроміум станом на 22.11.2026 (MELDPANEEL-002).",
+    "nl": "Staat geverifieerd met eenheids- en browsertests op 22.11.2026 (MELDPANEEL-002)."
   },
   "werk": [
     {
@@ -250,6 +253,14 @@
       "model": "Gemini 3.1 Pro (Google Antigravity)",
       "datum": "2026-11-20",
       "uk": "Перенесено 4 файли досьє MELDPANEEL-001 (docs/meldingen-paneel/*, orchestratie/taken/MELDPANEEL-001.json, orchestratie/ontwikkelarchieven/MELDPANEEL-001.json) та безпечно повернено втрачені дії в компактній панелі (MeldingenV2.tsx) і вікні екосистеми (MeldingVeegKaart.tsx): «Позначити як непрочитане», «Знову відкрити» для вирішених сповіщень і «Перша поява / Остання поява / Тривалість» для згрупованих подій (×N). Об’єднання двох панелей і вибір дизайну X4 залишено у open до погодження власником."
+    },
+    {
+      "taakId": "MELDPANEEL-002",
+      "tak": "feature/meldpaneel-002-aandachtspuls-20261122-020900",
+      "agent": "antigravity",
+      "model": "Gemini 4 Carbon (High)",
+      "datum": "2026-11-22",
+      "uk": "Втілено єдину панель «Пульт уваги, спокою та дії» у двох розмірах (компактно біля дзвіночка та розгорнуте 2-колонкове вікно) за схваленням власника: офіційні логотипи 14 ШІ-агентів і служб з src/merk/, кольорово-піктограмні маркери форматів файлів, печатка ядра «Плющ», граф першопричини з відновленням в 1 дотик, радіус дії мандата ШІ, 15-секундне спокійне зведення, 6 видів розумного умовного відкладення, 5-секундне повернення дії (Ctrl+Z), жива капсула перебігу біля дзвіночка, повага спливних вікон до набору тексту та підказка тиші."
     }
   ],
   "mogelijkheden": [
@@ -396,6 +407,36 @@
       "uk": "Повернуто показ «Перша поява / Остання поява / Тривалість» для згрупованих і повторюваних подій (×N)",
       "sinds": "UPD-013",
       "staat": "actief"
+    },
+    {
+      "id": "puls-een-paneel-twee-maten",
+      "uk": "Одна єдина панель «Пульт уваги, спокою та дії» у двох розмірах (компактно біля дзвіночка й 2-колонкове вікно)",
+      "sinds": "MELDPANEEL-002",
+      "staat": "actief"
+    },
+    {
+      "id": "puls-merk-en-bestand-ankers",
+      "uk": "Офіційні логотипи 14 ШІ-агентів і служб з src/merk/ та кольорово-піктограмні чипи форматів файлів для розсіяної уваги",
+      "sinds": "MELDPANEEL-002",
+      "staat": "actief"
+    },
+    {
+      "id": "puls-oorzaak-ketens",
+      "uk": "Граф першопричини: автоматичне склеювання пов’язаних збоїв одного кореня з відновленням в 1 дотик",
+      "sinds": "MELDPANEEL-002",
+      "staat": "actief"
+    },
+    {
+      "id": "puls-mandaat-en-klimop-zegel",
+      "uk": "Радіус дії мандата ШІ («Лише 1 раз» / «На 15 хв») та непідробна печатка ядра «Плющ»",
+      "sinds": "MELDPANEEL-002",
+      "staat": "actief"
+    },
+    {
+      "id": "puls-voorwaardelijk-uitstel-en-rust",
+      "uk": "15-секундне Спокійне зведення, 6 видів умовного відкладення, 5-секундне повернення дії (Ctrl+Z), жива капсула перебігу та затримка спливних вікон під час набору тексту",
+      "sinds": "MELDPANEEL-002",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -409,18 +450,23 @@
         "налаштування за типами й тихі години"
       ],
       "bron": "повідомлення Павла в проєкті, 18.11.2026"
+    },
+    {
+      "datum": "2026-11-22",
+      "betreft": "схвалення концепції «Пульт уваги, спокою та дії» (MELDPANEEL-002) та візуальних маркерів для розсіяної уваги",
+      "uk": "Кнопки, піктограми, кольори й офіційні логотипи мають бути присутні в кнопках, файлах та елементах панелі для миттєвого сприйняття (а не лише сирі текстові назви), водночас суворо дотримуватися повітряного мінімалізму й швидкої реакції для збереження уваги розсіяних людей.",
+      "behouden": [
+        "офіційні логотипи служб і агентів з єдиного реєстру src/merk/",
+        "кольорово-піктограмні маркери форматів файлів та дій без захаращення простору",
+        "усі інновації схваленої сучасної моделі Пульта уваги, спокою та дії"
+      ],
+      "bron": "повідомлення Павла в проєкті, 22.11.2026"
     }
   ],
   "open": [
     {
-      "uk": "Об’єднати дві панелі в одну без утрати можливостей за проєктом MELDPANEEL-001 (docs/meldingen-paneel/) після погодження знімків власником. Перед зміною звірити перелік mogelijkheden і після злиття позначити, що куди перейшло (vervangen + vervangenDoor)."
-    },
-    {
-      "uk": "Перевірити наживо, які з можливостей actief справді працюють на встановленій версії; ті, що зникли після переробок, позначити verloren і повернути."
-    },
-    {
-      "uk": "Три варіанти спливного сповіщення X4 (нотатка TOAST-ONTWERP-001) чекають вибору власника."
+      "uk": "Перевірити роботу єдиного Пульта уваги (MELDPANEEL-002) на живому сервері після встановлення пакунка оновлення власником."
     }
   ],
-  "bijgewerkt": "2026-11-20"
+  "bijgewerkt": "2026-11-22"
 }

@@ -1108,3 +1108,705 @@
     padding: 0 8px;
   }
 }
+
+/* ============================================================================
+   MELDPANEEL-002: «Пульт уваги, спокою та дії» · Aandachts-, Rust- en Actiepuls
+   Повітряний мінімалізм, офіційні логотипи src/merk/, семантичні маркери файлів,
+   граф першопричини, радіус дії мандата ШІ та умовне відкладення.
+   ============================================================================ */
+
+.mel-ecosysteem-portaal.puls-portaal {
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--panel) 96%, var(--mel-tint, transparent));
+  box-shadow: 0 26px 76px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, transparent);
+}
+
+.mel-ecosysteem-portaal.is-compact-bij-bel {
+  border-radius: 18px;
+}
+
+.mel-ecosysteem-portaal.is-compact-bij-bel .mel-rand {
+  display: none;
+}
+
+.mel-ecosysteem-portaal.is-compact-bij-bel .mel-kop.puls-kop {
+  cursor: default;
+}
+
+/* Дозволяємо випадаючому меню умовного відкладення виходити за межі картки */
+.mel-veeg-houder:has(.puls-uitstel-menu),
+.puls-keten-houder {
+  overflow: visible;
+  z-index: 22;
+}
+
+/* Семантичні колірні тони для миттєвого периферійного сприйняття */
+.is-toon-gevaar { --puls-toon: var(--danger); }
+.is-toon-besluit { --puls-toon: var(--mel-accent, var(--accent)); }
+.is-toon-oorzaak { --puls-toon: var(--warn, #d97706); }
+.is-toon-post { --puls-toon: var(--info, var(--accent)); }
+.is-toon-wolk { --puls-toon: var(--mel-accent, var(--accent)); }
+.is-toon-agenda { --puls-toon: var(--warn, #d97706); }
+.is-toon-ai { --puls-toon: var(--mel-accent, var(--accent)); }
+.is-toon-beveiliging { --puls-toon: var(--ok, var(--good, #16a34a)); }
+.is-toon-huis { --puls-toon: var(--ok, var(--good, #16a34a)); }
+.is-toon-code { --puls-toon: var(--text); }
+.is-toon-systeem { --puls-toon: var(--muted); }
+.is-toon-indigo { --puls-toon: var(--accent); }
+.is-toon-hemel { --puls-toon: var(--info, var(--accent)); }
+.is-toon-smaragd { --puls-toon: var(--ok, var(--good, #16a34a)); }
+.is-toon-amber { --puls-toon: var(--warn, #d97706); }
+.is-toon-leisteen { --puls-toon: var(--muted); }
+
+/* Плитка візуального якоря джерела (офіційний логотип <Merk> або семантична піктограма) */
+.puls-bron-teken {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--puls-toon, var(--accent)) 24%, var(--line));
+  background: color-mix(in srgb, var(--puls-toon, var(--accent)) 11%, var(--panel));
+  color: var(--puls-toon, var(--accent));
+}
+.puls-bron-teken > svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Охайні вкладки та чипи каналів із вбудованими піктограмами й логотипами */
+.puls-tab,
+.puls-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.puls-tab > svg {
+  width: 13.5px;
+  height: 13.5px;
+  flex: none;
+}
+.puls-chip > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--puls-toon, var(--muted));
+}
+.puls-chip.is-actief > svg {
+  color: var(--mel-accent, var(--accent));
+}
+
+/* Смужка активного режиму «Не турбувати» */
+.puls-dnd-strook {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  font-size: 12px;
+  font-weight: 600;
+}
+.puls-dnd-strook > svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--accent);
+}
+.puls-dnd-strook > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 15-секундне Спокійне зведення */
+.puls-rustig-overzicht {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 8px 12px 0;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--ok, var(--good, #16a34a)) 32%, var(--line));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 8%, var(--surface));
+}
+.puls-overzicht-tekst {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+.puls-overzicht-tekst strong {
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--text);
+}
+.puls-overzicht-tekst span {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.puls-knop-overzicht {
+  border-color: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 42%, var(--line));
+  background: var(--panel);
+}
+.puls-knop-overzicht:hover {
+  background: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 14%, var(--panel));
+}
+
+/* Розумна підказка тиші */
+.puls-stilte-suggestie {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin: 8px 12px 0;
+  padding: 8px 11px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  font-size: 12px;
+}
+.puls-stilte-suggestie > p {
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Повітряна картка події з лівим світлофором рівня важливості */
+.puls-kaart {
+  gap: 8px;
+  padding: 11px 13px;
+  border-radius: 14px;
+}
+.puls-kaart .mel-kaart-kop {
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+}
+.puls-kaart.is-niveau-gevaar {
+  border-left: 4px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+}
+.puls-kaart.is-niveau-besluit {
+  border-left: 4px solid var(--mel-accent, var(--accent));
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 5%, var(--surface));
+}
+.puls-kaart.is-puls-oorzaak {
+  border-left: 4px solid var(--warn, #d97706);
+  background: color-mix(in srgb, var(--warn, #d97706) 6%, var(--surface));
+}
+
+.puls-onderdeel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: none;
+  font-size: 11px;
+  font-weight: 650;
+}
+.puls-onderdeel-chip > svg {
+  width: 11.5px;
+  height: 11.5px;
+  flex: none;
+}
+
+/* Непідробна печатка ядра системи «Плющ» */
+.puls-klimop-zegel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--ok, var(--good, #16a34a)) 40%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 11%, var(--panel));
+  color: var(--ok, var(--good, #16a34a));
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.puls-klimop-zegel > svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+/* Граф Першопричини та чипи залежних служб із логотипами */
+.puls-oorzaak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warn, #d97706) 15%, var(--panel));
+  color: var(--warn, #d97706);
+  font-size: 11px;
+  font-weight: 700;
+}
+.puls-oorzaak-badge > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.puls-keten-titel-rij strong {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--text);
+}
+.puls-keten-gevolgen {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+}
+.puls-keten-label {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--muted);
+}
+.puls-keten-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.puls-dienst-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--puls-toon, var(--line)) 28%, var(--line));
+  border-radius: 9px;
+  background: var(--panel);
+  font-size: 11.5px;
+}
+.puls-dienst-chip > svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--puls-toon, var(--accent));
+}
+.puls-dienst-naam {
+  font-weight: 700;
+  color: var(--text);
+}
+.puls-dienst-sub {
+  color: var(--muted);
+  font-size: 11px;
+}
+.puls-keten-leden {
+  display: grid;
+  gap: 7px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
+/* Семантичні кольорово-піктограмні чипи файлів (XLSX, PDF, IMG, DIFF, AUD, VID, JSON, АРХІВ) */
+.puls-bestand-chip {
+  --bestand-kleur: var(--mel-accent, var(--accent));
+  gap: 6px;
+  min-height: 30px;
+  padding: 3px 9px 3px 5px;
+  border-radius: 9px;
+  border-color: color-mix(in srgb, var(--bestand-kleur) 30%, var(--line));
+}
+.puls-bestand-chip.is-bestand-smaragd { --bestand-kleur: var(--ok, var(--good, #16a34a)); }
+.puls-bestand-chip.is-bestand-koraal { --bestand-kleur: var(--danger); }
+.puls-bestand-chip.is-bestand-hemel { --bestand-kleur: var(--info, var(--accent)); }
+.puls-bestand-chip.is-bestand-paars { --bestand-kleur: var(--accent); }
+.puls-bestand-chip.is-bestand-amber { --bestand-kleur: var(--warn, #d97706); }
+.puls-bestand-chip.is-bestand-indigo { --bestand-kleur: var(--accent); }
+.puls-bestand-chip.is-bestand-teal { --bestand-kleur: var(--ok, var(--good, #16a34a)); }
+.puls-bestand-chip.is-bestand-leisteen { --bestand-kleur: var(--muted); }
+
+.puls-bestand-icoon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bestand-kleur) 15%, transparent);
+  color: var(--bestand-kleur);
+}
+.puls-bestand-icoon > svg {
+  width: 13.5px;
+  height: 13.5px;
+  color: inherit;
+}
+.puls-bestand-meta b {
+  color: var(--bestand-kleur);
+  font-weight: 700;
+}
+
+/* Радіус дії мандата ШІ: що відкривається і що суворо закрито */
+.puls-mandaat-kader {
+  display: grid;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--mel-accent, var(--accent)) 32%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+.puls-mandaat-straal {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 7px;
+}
+.puls-straal-wel,
+.puls-straal-niet {
+  display: grid;
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11.5px;
+}
+.puls-straal-wel {
+  background: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--ok, var(--good, #16a34a)) 26%, var(--line));
+}
+.puls-straal-niet {
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 24%, var(--line));
+}
+.puls-straal-kop {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.puls-straal-wel .puls-straal-kop {
+  color: var(--ok, var(--good, #16a34a));
+}
+.puls-straal-niet .puls-straal-kop {
+  color: var(--danger);
+}
+.puls-straal-kop > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.puls-straal-wel p,
+.puls-straal-niet p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.35;
+}
+.puls-mandaat-duur-rij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.puls-mandaat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.puls-mandaat-label > svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+}
+.puls-duur-segment {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.puls-duur-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.puls-duur-knop > svg {
+  width: 12.5px;
+  height: 12.5px;
+}
+.puls-duur-knop.is-actief {
+  background: var(--mel-accent, var(--accent));
+  color: var(--accentText, #fff);
+}
+
+/* Рядок дій із підписом наслідку та чіткими семантичними кнопками */
+.puls-kaart-acties {
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+.puls-gevolg-hint {
+  flex: 1 1 150px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+.puls-actie-groep {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-left: auto;
+}
+.puls-knop-gevaar {
+  border-color: var(--fout-vlak, var(--danger));
+  background: var(--fout-vlak, var(--danger));
+  color: var(--text-on-vlak, #ffffff);
+}
+.puls-knop-gevaar:hover {
+  filter: brightness(1.06);
+}
+.puls-knop-bevestig {
+  border-color: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 42%, var(--line));
+  background: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 12%, var(--panel));
+  color: var(--text);
+}
+.puls-knop-bevestig > svg {
+  color: var(--ok, var(--good, #16a34a));
+}
+.puls-knop-bevestig:hover {
+  background: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 20%, var(--panel));
+}
+.puls-knop-besluit {
+  border-color: var(--mel-accent, var(--accent));
+  background: var(--mel-accent, var(--accent));
+  color: var(--accentText, #ffffff);
+}
+.puls-knop-besluit:hover {
+  filter: brightness(1.06);
+}
+.puls-knop-oorzaak {
+  border-color: var(--warn-vlak, #b45309);
+  background: var(--warn-vlak, #b45309);
+  color: var(--text-on-vlak, #ffffff);
+}
+.puls-knop-oorzaak:hover {
+  filter: brightness(1.06);
+}
+
+/* Випадаюче меню розумного умовного відкладення */
+.puls-uitstel-anker {
+  position: relative;
+  display: inline-flex;
+}
+.puls-uitstel-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 40;
+  display: grid;
+  gap: 3px;
+  width: min(268px, calc(100vw - 32px));
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 18px 48px var(--shadow);
+}
+.puls-dnd-menu {
+  top: calc(100% + 6px);
+  bottom: auto;
+}
+.puls-uitstel-kop {
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.puls-uitstel-optie {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.puls-uitstel-optie:hover,
+.puls-uitstel-optie:focus-visible {
+  background: var(--nav-hover);
+}
+.puls-uitstel-icoon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--puls-toon, var(--accent)) 14%, transparent);
+  color: var(--puls-toon, var(--accent));
+}
+.puls-uitstel-icoon > svg {
+  width: 13.5px;
+  height: 13.5px;
+}
+
+/* Прогресивна сітка значків-питань X4 та інспектор події */
+.puls-x4-emblemen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 6px;
+}
+.puls-x4-cel {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+.puls-x4-cel small {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.2;
+}
+.puls-x4-cel strong {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.puls-detail-boven {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+.puls-detail-boven strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14.5px;
+  line-height: 1.3;
+}
+.puls-detail-boven small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.puls-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.puls-detail-keten-kader {
+  display: grid;
+  gap: 7px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--warn, #d97706) 35%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--warn, #d97706) 8%, var(--panel));
+}
+.mel-detail-tekst {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+/* 5-секундна смужка м’якого повернення дії (Ctrl+Z) та підказки клавіш */
+.puls-ongedaan-balk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 11%, var(--panel));
+  font-size: 12px;
+  font-weight: 600;
+}
+.puls-ongedaan-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.puls-ongedaan-knop > svg {
+  width: 13.5px;
+  height: 13.5px;
+  color: var(--accent);
+}
+.puls-ongedaan-knop:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+}
+
+.puls-toets-hints {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.puls-toets-hints kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+@media (max-width: 640px) {
+  .puls-toets-hints {
+    display: none;
+  }
+  .puls-gevolg-hint {
+    flex: 1 1 100%;
+  }
+  .puls-actie-groep {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+  .puls-stilte-suggestie {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+  .puls-stilte-suggestie > .puls-actie-groep {
+    grid-column: 1 / -1;
+  }
+  .puls-portaal .mel-knop {
+    min-height: 36px;
+  }
+}
+
