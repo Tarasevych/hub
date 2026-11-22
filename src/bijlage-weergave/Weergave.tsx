@@ -1,11 +1,11 @@
-// Спільний перегляд вкладень, етап 1 (Grok: hub.tarasevych.com). Vlag `bijlage-weergave-gedeeld-v1`, standaard UIT.
+// Спільний перегляд вкладень, етапи 1–2 (Grok: hub.tarasevych.com). Vlag `bijlage-weergave-gedeeld-v1`, standaard UIT.
 // Omlijsting rond de bestaande formaatweergaven: kop in één regel (naam, vertrouwenslabel, hoofdactie, «Подробиці», «⋯», sluiten),
 // snelle kaart, strook met alle bijlagen en een eerlijke laad- en foutstaat. Weet niets van de mail: de bron geeft gegevens en
 // acties door. Concept: docs/concept/bijlage-weergave/CONCEPT.md.
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { ChevronLeft, ChevronRight, Info, LoaderCircle, MoreHorizontal, RotateCcw, X } from 'lucide-react';
 import { formaatVan, grootteTekst, kies, soortVan, type Taal } from './soort';
-import { bewijsUitBlob, type Vertrouwen } from './vertrouwen';
+import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from './vertrouwen';
 import { technischeRijen } from './details';
 import { actiesVoor, type Beschikbaar } from './acties';
 import './weergave.css';
@@ -25,6 +25,8 @@ export type KopProps = {
   zoom?: { waarde: number; zet: (v: number) => void } | null;
   /** volgende bijlage wordt geladen of mislukte */
   staat?: { fase: 'laden' | 'fout'; naam: string; code: string; onOpnieuw: () => void } | null;
+  /** etap 2: wat de afzendercontrole al weet (null = nog geen antwoord) */
+  afzender?: AfzenderBewijs | null;
   onSluit: () => void;
 };
 
@@ -55,7 +57,8 @@ export function WeergaveKop(p: KopProps) {
   const t = t2(p.taal);
   const soort = soortVan(p.naam, p.contentType);
   const formaat = formaatVan(p.naam);
-  const [vertrouwen, setVertrouwen] = useState<Vertrouwen | null>(null);
+  const [bestandVertrouwen, setVertrouwen] = useState<Vertrouwen | null>(null);
+  const vertrouwen = useMemo(() => bestandVertrouwen ? metAfzender(bestandVertrouwen, p.afzender) : null, [bestandVertrouwen, p.afzender]);
   const [maat, setMaat] = useState<{ b: number; h: number } | null>(null);
   const meer = useMenu(), info = useMenu();
   const infoId = useId();
@@ -125,7 +128,47 @@ export function WeergaveKop(p: KopProps) {
   );
 }
 
-export function WeergaveStrook(p: { taal: Taal; items: WeergaveItem[]; index: number; onKies: (i: number) => void }) {
+/** Een miniatuur: pas laden als hij zichtbaar is in de strook; verkleind tot 160 px zodat een groot foto weinig geheugen kost. */
+function Mini(p: { taal: Taal; it: WeergaveItem; i: number; actueel: boolean; laad?: (i: number) => Promise<Blob | null>; onKies: (i: number) => void }) {
+  const s = soortVan(p.it.naam, p.it.contentType);
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const [beeld, setBeeld] = useState('');
+  const [zichtbaar, setZichtbaar] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !p.laad || s.sleutel !== 'foto' || zichtbaar) return;
+    if (typeof IntersectionObserver === 'undefined') { setZichtbaar(true); return; }
+    const io = new IntersectionObserver((xs) => { if (xs.some((x) => x.isIntersecting)) { setZichtbaar(true); io.disconnect(); } }, { rootMargin: '0px 120px' });
+    io.observe(el); return () => io.disconnect();
+  }, [p.laad, s.sleutel, zichtbaar]);
+  useEffect(() => {
+    if (!zichtbaar || !p.laad) return;
+    let weg = false, url = '';
+    void p.laad(p.i).then(async (blob) => {
+      if (!blob || weg) return;
+      let klein: Blob = blob;
+      try {
+        if (typeof createImageBitmap === 'function' && typeof document !== 'undefined') {
+          const bm = await createImageBitmap(blob, { resizeWidth: 160, resizeQuality: 'medium' });
+          const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height;
+          c.getContext('2d')?.drawImage(bm, 0, 0); bm.close();
+          klein = await new Promise<Blob>((ok) => c.toBlob((b) => ok(b || blob), 'image/webp', 0.8));
+        }
+      } catch { return; /* de browser kan dit beeld niet lezen (bv. HEIC): geen gebroken miniatuur, alleen de soort */ }
+      if (weg) return;
+      url = URL.createObjectURL(klein); setBeeld(url);
+    }).catch(() => undefined);
+    return () => { weg = true; if (url) URL.revokeObjectURL(url); };
+  }, [zichtbaar, p.laad, p.i]);
+  return (
+    <button ref={ref} type='button' className='weergave-mini' data-soort={s.sleutel} data-beeld={beeld ? 'ja' : undefined} aria-current={p.actueel ? 'true' : undefined} title={p.it.naam} onClick={() => p.onKies(p.i)}>
+      {beeld ? <img src={beeld} alt='' aria-hidden='true' draggable={false} onError={() => setBeeld('')} /> : null}
+      <b>{kies(p.taal, s.kort)}</b><span>{p.it.naam}</span>
+    </button>
+  );
+}
+
+export function WeergaveStrook(p: { taal: Taal; items: WeergaveItem[]; index: number; onKies: (i: number) => void; laadMini?: (i: number) => Promise<Blob | null> }) {
   const t = t2(p.taal);
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => { ref.current?.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [p.index]);
@@ -134,14 +177,7 @@ export function WeergaveStrook(p: { taal: Taal; items: WeergaveItem[]; index: nu
     <nav className='weergave-strook' aria-label={t('Усі вкладення листа', 'Alle bijlagen van het bericht')}>
       <button type='button' className='weergave-knop rond' aria-label={t('Попереднє вкладення', 'Vorige bijlage')} disabled={p.index <= 0} onClick={() => p.onKies(p.index - 1)}><ChevronLeft aria-hidden='true' /></button>
       <div className='weergave-strook-lijst' ref={ref}>
-        {p.items.map((it, i) => {
-          const s = soortVan(it.naam, it.contentType);
-          return (
-            <button key={`${i}:${it.naam}`} type='button' className='weergave-mini' data-soort={s.sleutel} aria-current={i === p.index ? 'true' : undefined} title={it.naam} onClick={() => p.onKies(i)}>
-              <b>{kies(p.taal, s.kort)}</b><span>{it.naam}</span>
-            </button>
-          );
-        })}
+        {p.items.map((it, i) => <Mini key={`${i}:${it.naam}`} taal={p.taal} it={it} i={i} actueel={i === p.index} laad={p.laadMini} onKies={p.onKies} />)}
       </div>
       <span className='weergave-strook-teller'>{t(`${p.index + 1} з ${p.items.length}`, `${p.index + 1} van ${p.items.length}`)}</span>
       <button type='button' className='weergave-knop rond' aria-label={t('Наступне вкладення', 'Volgende bijlage')} disabled={p.index >= p.items.length - 1} onClick={() => p.onKies(p.index + 1)}><ChevronRight aria-hidden='true' /></button>

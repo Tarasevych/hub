@@ -47,6 +47,8 @@ const PAST: Record<string, string[]> = {
 
 export type Bewijs = { naam: string; kop: Uint8Array; /** tekst uit het bestand (de eerste stukken), voor verborgen acties */ inhoud?: string; /** namen in een archief/kantoorbestand */ archiefNamen?: string[] };
 
+const AFZENDER_ONBEKEND: Bevinding = { sleutel: 'afzender', ernst: 'info', tekst: ['Відправника ще не перевірено.', 'De afzender is nog niet nagegaan.'] };
+
 export function vertrouwenUit(b: Bewijs): Vertrouwen {
   const ext = formaatVan(b.naam).toLowerCase();
   const werkelijk = werkelijkeSoort(b.kop);
@@ -76,7 +78,7 @@ export function vertrouwenUit(b: Bewijs): Vertrouwen {
       ? { sleutel: 'acties', ernst: 'let-op', tekst: ['Документ має приховані дії (сценарії, запуск, вкладені файли).', 'Het document heeft verborgen acties (scripts, starten, ingebedde bestanden).'] }
       : { sleutel: 'acties', ernst: 'goed', tekst: ['Прихованих дій і сценаріїв не знайдено.', 'Geen verborgen acties of scripts gevonden.'] });
   }
-  bev.push({ sleutel: 'afzender', ernst: 'info', tekst: ['Відправника ще не перевірено (наступний етап).', 'De afzender is nog niet nagegaan (volgende fase).'] });
+  bev.push(AFZENDER_ONBEKEND);
   const letOp = bev.some((x) => x.ernst === 'let-op');
   const niveau: Niveau = letOp ? 'let-op' : soortKlopt ? 'goed' : 'onbekend';
   const goed = bev.filter((x) => x.ernst === 'goed').map((x) => x.sleutel);
@@ -96,4 +98,25 @@ export async function bewijsUitBlob(blob: Blob, naam: string, archiefNamen?: str
   let inhoud = '';
   if (werkelijkeSoort(kop) === 'pdf') inhoud = new TextDecoder('latin1').decode(new Uint8Array(await blob.slice(0, 2 * 1024 * 1024).arrayBuffer()));
   return vertrouwenUit({ naam, kop, inhoud, archiefNamen });
+}
+
+/** Etap 2: wat de bestaande afzendercontrole (src/afzenders, dezelfde cache als de kop van het bericht) al weet.
+ *  Alleen bestaande gegevens; zonder antwoord blijft het eerlijk «ще не перевірено». */
+export type AfzenderBewijs = { status: 'geverifieerd' | 'onbekend' | 'verdacht'; opgeslagen: boolean; adres: string; bron: string | null };
+
+export function metAfzender(v: Vertrouwen, a: AfzenderBewijs | null | undefined): Vertrouwen {
+  const rest = v.bevindingen.filter((x) => x.sleutel !== 'afzender');
+  let b: Bevinding = AFZENDER_ONBEKEND;
+  if (a && a.status === 'verdacht') b = { sleutel: 'afzender', ernst: 'let-op', tekst: [`Відправник ${a.adres} може видавати себе за інший сервіс.`, `Afzender ${a.adres} doet zich mogelijk voor als een andere dienst.`] };
+  else if (a && a.status === 'geverifieerd') b = { sleutel: 'afzender', ernst: 'goed', tekst: a.opgeslagen
+    ? [`Відомий відправник: ${a.adres} (у ваших контактах).`, `Bekende afzender: ${a.adres} (in uw contacten).`]
+    : [`Відправника ${a.adres} перевірено.`, `Afzender ${a.adres} is nagegaan.`] };
+  else if (a && a.status === 'onbekend') b = { sleutel: 'afzender', ernst: 'info', tekst: [`Невідомий відправник: ${a.adres}. Раніше його не перевіряли.`, `Onbekende afzender: ${a.adres}. Eerder niet nagegaan.`] };
+  const bevindingen = [...rest, b];
+  if (b.ernst === 'let-op') {
+    return { ...v, niveau: 'let-op', bevindingen, kort: ['Увага', 'Let op'], zin: ['Увага: відправник може видавати себе за інший сервіс.', 'Let op: de afzender doet zich mogelijk voor als een andere dienst.'] };
+  }
+  if (v.niveau === 'goed' && b.ernst === 'goed') return { ...v, bevindingen, zin: [`Відомий відправник. ${v.zin[0]}`, `Bekende afzender. ${v.zin[1]}`] };
+  if (b.ernst === 'info' && a && a.status === 'onbekend') return { ...v, bevindingen, zin: [`${v.zin[0]} Відправник невідомий.`, `${v.zin[1]} Onbekende afzender.`] };
+  return { ...v, bevindingen };
 }

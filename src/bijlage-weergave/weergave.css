@@ -72,6 +72,10 @@ html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave] { --wg-
 .weergave-mini { flex: 0 0 auto; width: 104px; display: grid; gap: 2px; padding: 7px 9px; text-align: left; border-radius: 11px; border: 1px solid var(--wg-rand); background: var(--wg-oppervlak-2); color: var(--wg-gedempt); font: inherit; cursor: pointer; scroll-snap-align: center; }
 .weergave-mini b { font-size: 10.5px; letter-spacing: .05em; color: var(--wg-accent); }
 .weergave-mini span { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weergave-mini[data-beeld] { position: relative; overflow: hidden; color: #fff; isolation: isolate; }
+.weergave-mini[data-beeld] img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.weergave-mini[data-beeld]::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(0 0 0 / .05), rgb(0 0 0 / .62)); }
+.weergave-mini[data-beeld] b, .weergave-mini[data-beeld] span { color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / .7); }
 .weergave-mini[aria-current='true'] { border: 2px solid var(--wg-accent); color: var(--wg-tekst); box-shadow: 0 0 0 4px color-mix(in srgb, var(--wg-accent) 15%, transparent); }
 .weergave-strook-teller { color: var(--wg-gedempt); font-size: 13px; white-space: nowrap; }
 
@@ -99,10 +103,15 @@ html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave] { --wg-
   .weergave-rij { flex-wrap: wrap; row-gap: 8px; }
   .weergave-titel { flex: 1 1 100%; order: 1; }
   .weergave-vertrouwen { order: 2; }
-  .weergave-rij > .weergave-hoofd { order: 3; flex: 1 1 auto; min-width: 0; }
+  /* etap 2: basis 0, anders breekt de knop de regel af en staat de vertrouwenslabel alleen op een rij */
+  .weergave-rij > .weergave-hoofd { order: 3; flex: 1 1 0; min-width: 72px; }
+  .weergave-vertrouwen { flex: 0 0 auto; }
   .weergave-rij > .weergave-hoofd { overflow: hidden; text-overflow: ellipsis; display: block; line-height: 38px; }
   .weergave-knoppen { order: 4; margin-left: auto; }
   .weergave-strook { padding: 8px; }
   .weergave-mini { width: 88px; }
   .weergave-strook-teller { display: none; }
 }
+
+/* etap 2: achter de open viewer is de balk van het bericht niet bereikbaar (inert); zichtbaar gedempt */
+[data-weergave-inert] { opacity: .45; transition: opacity .15s; }

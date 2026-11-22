@@ -68,7 +68,7 @@ export async function main(): Promise<number> {
   check('werkruimte: oude kop blijft bij vlag uit', gmw.includes('{gedeeldeWeergave?<WeergaveKop ') && gmw.includes(':<BijlageV2Kop oud='));
 
   // taalwet
-  const bestanden = ['soort.ts', 'vertrouwen.ts', 'details.ts', 'acties.ts', 'Weergave.tsx', 'weergave.css'].map((f) => `src/bijlage-weergave/${f}`).filter(existsSync);
+  const bestanden = ['soort.ts', 'vertrouwen.ts', 'details.ts', 'acties.ts', 'gedrag.ts', 'Weergave.tsx', 'weergave.css'].map((f) => `src/bijlage-weergave/${f}`).filter(existsSync);
   const alles = [mig, ...bestanden.map((f) => readFileSync(f, 'utf8')), ...(u ? [u.naam, u.wat, u.wanneer, u.gevolg].flat() : [])].join('\n');
   check('taalwet: geen verboden letters', !VERBODEN.test(alles));
   check('taalwet: geen deelwoorden op -учий/-ючий/-ачий/-ячий', !DEELWOORD.test(alles));
