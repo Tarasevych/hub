@@ -1,7 +1,7 @@
 // Картка події екосистеми з горизонтальним змахом, швидкими діями, вкладеннями та ШІ-інспектором (GEMINI-002).
 // Захищає нові критичні сповіщення безпеки від випадкового прибирання змахом.
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   Archive,
   Bell,
@@ -45,6 +45,13 @@ import {
 import { voerPaginaSignaalActieUit } from '../../canoniek-meldingen';
 import MeldingBijlageSpeler, { IcoonVoorFormaat } from './MeldingBijlageSpeler';
 import MeldingAiPaneel from './MeldingAiPaneel';
+import { useVlag } from '../../functievlag-lezen';
+import { WEERGAVE_VLAG } from '../../bijlage-weergave/soort';
+
+// SPIL-WEERGAVE етап 4, крок 4.6, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Google Antigravity):
+// картка вкладення підвантажується ліниво й лише за ввімкненого прапорця bijlage-weergave-gedeeld-v1;
+// поки вона вантажиться (і коли прапорець вимкнений) — старі «пігулки» без змін.
+const MeldingKaartLui = lazy(() => import('../../bijlage-weergave/MeldingKaart').then((m) => ({ default: m.MeldingKaart })));
 
 function KanaalIcoon({ kanaal }: { kanaal: MeldingKanaal }) {
   if (kanaal === 'beveiliging') return <ShieldAlert aria-hidden='true' />;
@@ -131,6 +138,7 @@ export default function MeldingVeegKaart({
   const [open, setOpen] = useState(standaardOpen);
   const [aiOpen, setAiOpen] = useState(Boolean(gebeurtenis.aiSamenvatting));
   const [inlineBijlageIdx, setInlineBijlageIdx] = useState<number | null>(null);
+  const gedeeldeWeergave = useVlag(WEERGAVE_VLAG, false);
   const [offsetX, setOffsetX] = useState(0);
   const [beschermHint, setBeschermHint] = useState('');
   const [uitvoerBezig, setUitvoerBezig] = useState('');
@@ -360,7 +368,20 @@ export default function MeldingVeegKaart({
           </div>
         )}
 
-        {gebeurtenis.bijlagen.length > 0 && (
+        {gebeurtenis.bijlagen.length > 0 && (() => {
+          // Спільна дія відкриття для пігулки й картки: розгорнути сповіщення, далі вбудований або модальний переглядач.
+          const openBijlage = (idx: number, vanKaart: boolean) => {
+            setOpen(true);
+            if (bijlageVoorkeur.inlineSpeler) {
+              setInlineBijlageIdx((cur) => (cur === idx ? null : idx));
+            } else {
+              onOpenBijlageModaal(idx);
+            }
+            // Розділ 7 концепції: «переглянуте зникає з уваги» — з картки (лише за прапорцем) нове сповіщення стає прочитаним,
+            // так само як під час розгортання заголовка.
+            if (vanKaart && gebeurtenis.status === 'nieuw') void onStatus('gelezen');
+          };
+          const oudeStrook = (
           <div className='mel-bijlagen-strook' data-geen-veeg='1'>
             {gebeurtenis.bijlagen.map((b, idx) => {
               const info = classificeerBijlage(b);
@@ -372,12 +393,7 @@ export default function MeldingVeegKaart({
                   className={`mel-bijlage-chip${actief ? ' is-actief' : ''}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setOpen(true);
-                    if (bijlageVoorkeur.inlineSpeler) {
-                      setInlineBijlageIdx((cur) => (cur === idx ? null : idx));
-                    } else {
-                      onOpenBijlageModaal(idx);
-                    }
+                    openBijlage(idx, false);
                   }}
                 >
                   <IcoonVoorFormaat weergave={info.weergave} />
@@ -387,7 +403,24 @@ export default function MeldingVeegKaart({
               );
             })}
           </div>
-        )}
+          );
+          if (!gedeeldeWeergave) return oudeStrook;
+          return (
+            <Suspense fallback={oudeStrook}>
+              <div className='mel-bijlagen-kaarten' data-geen-veeg='1'>
+                {gebeurtenis.bijlagen.map((b, idx) => (
+                  <MeldingKaartLui
+                    key={b.id}
+                    taal={lang}
+                    bijlage={b}
+                    actief={inlineBijlageIdx === idx}
+                    onOpen={() => openBijlage(idx, true)}
+                  />
+                ))}
+              </div>
+            </Suspense>
+          );
+        })()}
 
         <div className='mel-kaart-acties' data-geen-veeg='1'>
           {gebeurtenis.acties

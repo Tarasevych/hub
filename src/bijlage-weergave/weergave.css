@@ -230,3 +230,33 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 .weergave-context-knop[data-toon='goed'] svg { color: var(--wg-goed); }
 .weergave-context-knop[data-toon='let'] svg { color: var(--wg-let); }
 @media (max-width: 640px) { .weergave-context-knop > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .weergave-context-knop { padding: 0 8px; } }
+
+/* Етап 4, крок 4.6 — картка вкладення в сповіщенні (MeldingKaart). НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом).
+   Мінімалізм: мініатюра | назва з видом і головним числом | одна дія «Відкрити». Колір — лише для терміновості строку. */
+.weergave-melding-kaart { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px; border-radius: 14px;
+  border: 1px solid var(--wg-rand); background: var(--wg-oppervlak-2); color: var(--wg-tekst); min-width: 0; }
+.weergave-melding-kaart[data-actief='ja'] { border-color: var(--wg-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wg-accent) 14%, transparent); }
+.mel-bijlagen-kaarten { display: grid; gap: 6px; min-width: 0; }
+.weergave-melding-kaart-mini { width: 56px; height: 56px; padding: 0; overflow: hidden; display: grid; place-items: center; border-radius: 10px;
+  border: 1px solid var(--wg-rand); background: var(--wg-oppervlak); color: var(--wg-accent); cursor: pointer; }
+.weergave-melding-kaart-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.weergave-melding-kaart-soort { display: grid; justify-items: center; gap: 2px; }
+.weergave-melding-kaart-soort svg { width: 20px; height: 20px; }
+.weergave-melding-kaart-soort b { font-size: 10px; letter-spacing: .05em; }
+.weergave-melding-kaart-tekst { display: grid; gap: 2px; min-width: 0; }
+.weergave-melding-kaart-tekst strong { font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weergave-melding-kaart-tekst > small { font-size: 12px; color: var(--wg-gedempt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weergave-melding-kaart-hoofd { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; }
+.weergave-melding-kaart-hoofd > span { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.weergave-melding-kaart-hoofd svg { width: 14px; height: 14px; flex: 0 0 auto; color: var(--wg-gedempt); }
+.weergave-melding-kaart-hoofd small { color: var(--wg-gedempt); font-size: 12px; }
+.weergave-melding-kaart-hoofd [data-dringend='verlopen'], .weergave-melding-kaart-hoofd [data-dringend='verlopen'] svg, .weergave-melding-kaart-hoofd [data-dringend='verlopen'] small { color: var(--wg-fout); }
+.weergave-melding-kaart-hoofd [data-dringend='vandaag'], .weergave-melding-kaart-hoofd [data-dringend='vandaag'] svg, .weergave-melding-kaart-hoofd [data-dringend='vandaag'] small { color: var(--wg-let); }
+.weergave-melding-kaart-open { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--wg-rand-sterk); background: var(--wg-oppervlak); color: var(--wg-tekst); font: inherit; font-size: 13.5px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.weergave-melding-kaart-open svg { width: 16px; height: 16px; }
+.weergave-melding-kaart-mini:focus-visible, .weergave-melding-kaart-open:focus-visible { outline: 2px solid var(--wg-accent); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .weergave-melding-kaart-open { width: 40px; min-height: 40px; padding: 0; justify-content: center; }
+  .weergave-melding-kaart-open span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
