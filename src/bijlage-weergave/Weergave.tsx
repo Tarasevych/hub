@@ -105,8 +105,27 @@ export function foutTekst(code: string, bron: WeergaveBron = 'post'): [string, s
 }
 
 const DONKER_SLEUTEL = 'tsv:bijlage-donkere-paginas';
-function leesDonker(): boolean { try { return window.localStorage.getItem(DONKER_SLEUTEL) === 'aan'; } catch { return false; } }
-function bewaarDonker(aan: boolean) { try { if (aan) window.localStorage.setItem(DONKER_SLEUTEL, 'aan'); else window.localStorage.removeItem(DONKER_SLEUTEL); } catch { /* geblokkeerd: alleen deze sessie */ } }
+// Відповідь Павла на питання 1 (22.11.2026): у темній темі темні сторінки вмикаються самі, але людина може повернути оригінал.
+// НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Google Antigravity). Збережено: 'aan' | 'uit' — явний вибір людини; нічого — за темою.
+type DonkerKeuze = 'aan' | 'uit' | null;
+function leesDonkerKeuze(): DonkerKeuze { try { const v = window.localStorage.getItem(DONKER_SLEUTEL); return v === 'aan' || v === 'uit' ? v : null; } catch { return null; } }
+function bewaarDonker(aan: boolean) { try { window.localStorage.setItem(DONKER_SLEUTEL, aan ? 'aan' : 'uit'); } catch { /* geblokkeerd: alleen deze sessie */ } }
+function isDonkerThema(): boolean {
+  if (typeof document === 'undefined') return false;
+  const c = document.documentElement.classList;
+  return !(c.contains('theme-light') || c.contains('theme-plum-light'));
+}
+/** Темна тема сайту зараз; стежить за зміною класів на <html>, щоб перемикання теми діяло одразу. */
+function useDonkerThema(): boolean {
+  const [donkerThema, setDonkerThema] = useState(isDonkerThema);
+  useEffect(() => {
+    if (typeof MutationObserver === 'undefined') return;
+    const mo = new MutationObserver(() => setDonkerThema(isDonkerThema()));
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => mo.disconnect();
+  }, []);
+  return donkerThema;
+}
 
 export function WeergaveKop(p: KopProps) {
   const t = t2(p.taal);
@@ -117,10 +136,13 @@ export function WeergaveKop(p: KopProps) {
   const [maat, setMaat] = useState<{ b: number; h: number } | null>(null);
   const meer = useMenu(), info = useMenu();
   const infoId = useId();
-  // afwerking etappe 2: donkere documentpagina’s als KEUZE (standaard uit, onthouden op dit apparaat); antwoord op open vraag 1 volgt nog
+  // Donkere documentpagina’s: in een donker thema standaard aan (antwoord op open vraag 1); de eigen keuze wordt op dit apparaat onthouden
   const kopRef = useRef<HTMLElement | null>(null);
   const papier = ['rekening', 'contract', 'document', 'tekst', 'presentatie', 'tabel'].includes(soort.sleutel);
-  const [donker, setDonker] = useState<boolean>(() => leesDonker());
+  const donkerThema = useDonkerThema();
+  const [keuze, setKeuze] = useState<DonkerKeuze>(() => leesDonkerKeuze());
+  const donker = keuze === null ? donkerThema : keuze === 'aan';
+  const setDonker = (aan: boolean) => setKeuze(aan ? 'aan' : 'uit');
   useEffect(() => {
     const el = kopRef.current?.closest('.google-mail-attachment-preview, [data-weergave-drager]'); /* етап 4: і нейтральний носій */
     if (!el) return;
@@ -183,7 +205,7 @@ export function WeergaveKop(p: KopProps) {
                   </div>}
                   {overig.map((a) => <button key={a.sleutel} type='button' role='menuitem' onClick={() => { meer.setOpen(false); a.uitvoeren(); }}>{kies(p.taal, a.label)}</button>)}
                   {ctxMenu.map((a) => <button key={`ctx:${a.sleutel}`} type='button' role='menuitem' onClick={() => { meer.setOpen(false); a.uitvoeren(); }}>{kies(p.taal, a.label)}</button>)}
-                  {papier && <button type='button' role='menuitemcheckbox' aria-checked={donker} className='weergave-keuze' onClick={() => { const n = !donker; setDonker(n); bewaarDonker(n); }}>{donker ? '✓ ' : ''}{t('Темні сторінки документа', 'Donkere documentpagina’s')}</button>}
+                  {papier && <button type='button' role='menuitemcheckbox' aria-checked={donker} className='weergave-keuze' onClick={() => { const n = !donker; setDonker(n); bewaarDonker(n); }}>{donker ? '✓ ' : ''}{donker ? t('Темні сторінки документа · повернути оригінал', 'Donkere documentpagina’s · origineel tonen') : t('Темні сторінки документа', 'Donkere documentpagina’s')}</button>}
                 </div>
               )}
             </div>
