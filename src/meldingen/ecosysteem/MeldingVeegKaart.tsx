@@ -348,7 +348,9 @@ export default function MeldingVeegKaart({
               <ChevronDown className={`mel-pijl-klap${open ? ' is-open' : ''}`} aria-hidden='true' />
             </button>
 
-            {gebeurtenis.contextLabel && <small className='mel-context'>{gebeurtenis.contextLabel}</small>}
+            {gebeurtenis.contextLabel && !/^[a-z_]+\s*·\s*[a-z_]+$/i.test(gebeurtenis.contextLabel.trim()) && (
+              <small className='mel-context'>{gebeurtenis.contextLabel}</small>
+            )}
           </div>
         </div>
 
@@ -395,7 +397,7 @@ export default function MeldingVeegKaart({
         )}
 
         <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
-          <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span>
+          {verrijkt.gevolgHint ? <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span> : null}
 
           <div className='puls-actie-groep'>
             {verrijkt.niveau === 'gevaar' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (

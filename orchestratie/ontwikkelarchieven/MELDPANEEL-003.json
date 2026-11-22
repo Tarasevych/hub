@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "taakId": "MELDPANEEL-003",
+  "datum": "2026-11-22",
+  "taal": "uk",
+  "titel": "MELDPANEEL-003 + MELDINGEN-REGISTER-001 · Жива палітра теми сайту, понад 80% простору під сповіщення, вільне розтягування за 8 країв, пігулка дзвіночка на id.tarasevych.com/melding та єдина класифікована База 506 кодів дій (рішення B-026, правила 1.7.0)",
+  "opdracht": "За прямим дорученням власника від 22.11.2026 після живого випробування випуску MELDPANEEL-002 (20261122-122237 @ 6be83c131bc13e6defc006784781393c3cdd0945) пояснити першопричини й системно виправити всі п’ять виявлених проблем Пульта сповіщень та перетворити базу сповіщень на самооновлюваний осмислений реєстр усієї платформи: 1) повне спадкування живої кольорової палітри й теми поточної сторінки замість чужорідного жовто-помаранчевого відтінку; 2) скорочення службових кнопок і фільтрів, щоб під потік карток віддавалося близько 80% висоти вікна; 3) вільне гнучке розтягування й звуження вікна за будь-який край, бік або кут; 4) жива пігулка дзвіночка з лічильником на https://id.tarasevych.com/melding; 5) стійка прив’язка положення компактної панелі до дзвіночка при перемиканні режимів і зміні розміру; 6) усунення беззмістовного сповіщення «Дія в технічному просторі», класифікація всіх 506 серверних кодів дій у 12 предметних категоріях, створення оглядача живої Бази на сайті (/melding#melding-register) і закріплення обов’язкового правила розвитку проєкту MELDINGEN-REGISTER-001 (B-026) з автоматичним сторожем складальника, а також супутнє виправлення помилки REPO_ONGELDIG на сторінці оновлень.",
+  "herkomst": {
+    "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
+    "agent": "antigravity",
+    "model": "Gemini 4 Carbon (High)",
+    "repo": "Tarasevych/hub",
+    "tak": "fix/meldpaneel-003-thema-ruimte-register-20261122-134000",
+    "basisCommit": "32822354ea08fc850330eed96feaff5b1bb96a58",
+    "basisVersie": "20261105-061659",
+    "geinstalleerdeBasis": "6be83c131bc13e6defc006784781393c3cdd0945",
+    "geinstalleerdeVersie": "20261122-122237",
+    "integratieBasis": "32822354ea08fc850330eed96feaff5b1bb96a58",
+    "regelsVersie": "1.7.0",
+    "regelsHash": "f6cab917b25ec902b1fca8044250a678423fd9b0bf4ca55116bf7694c1e33cc1",
+    "samengevoegd": [
+      {
+        "taak": "MELDPANEEL-002 (жива встановлена версія сервера 20261122-122237)",
+        "commit": "6be83c131bc13e6defc006784781393c3cdd0945",
+        "reden": "Пряма встановлена на живому сервері основа, яка містить integratie 32822354ea08, KLIMOP-023 та MELDPANEEL-002."
+      }
+    ]
+  },
+  "commits": [
+    "6be83c131bc13e6defc006784781393c3cdd0945"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Діагностика всіх п’яти зауважень власника та супутньої вади REPO_ONGELDIG за шістьма живими знімками сайту.",
+      "resultaat": "Встановлено точні першопричини у коді: монтування порталу в document.body поза .canonical-chrome з примусовими жовтими змінними ctx.accent, чотирирівнева шапка фільтрів і трирівневий підвал, вимкнення .mel-rand у компактному режимі, приховування .canonical-topbar у вигляді «Макет» без власного дзвіночка в .topbar, затирання геометрії після повноекранного режиму та 190+ некласифікованих нових кодів дій ('overig' → «Дія в технічному просторі»)."
+    },
+    {
+      "stap": "2) Перебудова MeldingenPortaal.tsx, MeldingBijlageSpeler.tsx, meldingen-ecosysteem.css та IdentiteitMaquette.tsx.",
+      "resultaat": "Портал монтується всередині .canonical-chrome і 100% наслідує живу палітру теми сайту; пошук і чипи каналів винесено у висувну шухлядку за лупою в шапці (/), вкладки й підвал ущільнено в один рядок (~80% простору під картки); увімкнено 8 чутливих країв і кутів розтягування в обох режимах із пам’яттю розміру; додано живу пігулку MaquetteBelKnop на id.tarasevych.com/melding та функцію vindZichtbareBel() для точної прив’язки положення."
+    },
+    {
+      "stap": "3) Створення живої класифікованої Бази 506 кодів дій (MELDINGEN-REGISTER-001, рішення B-026, правила 1.7.0), оглядача /melding#melding-register та сторожа складальника.",
+      "resultaat": "Усі 506 записів ACTIE_LABELS розкладено по 12 предметних категоріях (0 у 'overig'), відсічено самосповіщення панелі, розширено витягнення назв об’єктів у tolk.ts, додано інтерактивний оглядач 739 записів і 20 схем доказів на /melding#melding-register, вбудовано автоматичну перевірку scripts/meldingen-register-controle.mjs у npm run build та оновлено AGENTS.md і замок правил 1.7.0."
+    },
+    {
+      "stap": "4) Виправлення помилки REPO_ONGELDIG на сторінці оновлень, оновлення пошукового каталогу та перевірка у справжньому переглядачі Хроміум.",
+      "resultaat": "Додано очищення пробілів у мітках випусків (schoonGithubReleaseTag), безпечний резерв 'Tarasevych/hub' у ручному режимі та зрозуміле двомовне пояснення помилки; пройдено модульні, статичні, контрастні й переглядачеві перевірки у Хроміум на сливовій світлій, сливовій темній, світлій палітрах Макета та на екрані телефона 390×844."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Монтувати MeldingenPortaal та MeldingBijlageSpeler безпосередньо в .canonical-chrome (з резервом document.body) та прибрати інлайнові кольорові змінні піддоменів.",
+      "reden": "Канонічні палітри тем (.theme-plum-light, .theme-plum-dark, .theme-light, .theme-dark) та вибрані власником акценти оголошені саме на .canonical-chrome, тож монтування всередині нього гарантує 100% точне й миттєве спадкування кольорової гами кожної сторінки сайту."
+    },
+    {
+      "besluit": "Закріпити MELDINGEN-REGISTER-001 як обов’язкове правило розвитку проєкту (B-026, regelsVersie 1.7.0) і вбудувати автоматичний сторож scripts/meldingen-register-controle.mjs безпосередньо в npm run build.",
+      "reden": "Панель сповіщень охоплює всі служби платформи, тож жоден новий код дії audit/beheerLog не може потрапити до випуску без людської двомовної назви, предметної категорії або явної позначки службового шуму — це унеможливлює появу порожніх заглушок «Дія в технічному просторі» в майбутньому."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "pad": "src/meldingen/ecosysteem/MeldingenPortaal.tsx, src/meldingen/ecosysteem/MeldingBijlageSpeler.tsx, src/meldingen/ecosysteem/MeldingVeegKaart.tsx, src/meldingen/ecosysteem/ecosysteem-opslag.ts, src/meldingen/ecosysteem/meldingen-ecosysteem.css",
+      "omschrijving": "Монтування в .canonical-chrome для 100% спадкування палітри теми сайту, висувна шухлядка пошуку й каналів (/), однорядкові 6 вкладок і однорядковий підвал (~80% простору під сповіщення), 8-стороннє розтягування в компактному й віконному режимах, пам’ять компактного розміру та стабільна прив’язка до видимого дзвіночка."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/identiteit/maquette/IdentiteitMaquette.tsx, src/identiteit/maquette/maquette-omlijsting.css",
+      "omschrijving": "Жива реактивна пігулка дзвіночка MaquetteBelKnop з лічильником непрочитаних у верхній смузі вигляду «Макет» на id.tarasevych.com та id.tarasevych.com/melding."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/meldingen-register-overzicht.ts, src/identiteit/melding/MeldingRegisterVerkenner.tsx, scripts/meldingen-register-controle.mjs, tests/eenheid/meldpaneel-003-thema-ruimte-register-20261122.test.ts",
+      "omschrijving": "Жива зведена модель і інтерактивний оглядач класифікованої Бази сповіщень на /melding#melding-register (739 записів, 20 схем доказів, 100% покриття), автоматичний сторож складальника та набір випробувань MELDPANEEL-003."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/beheer-journaal.ts, backend/site-activiteit.ts, shared/meldingen-ecosysteem/tolk.ts, shared/meldingen-puls/kern.ts, src/identiteit/melding/MeldingEcosysteemPagina.tsx, src/identiteit/melding/melding-pagina.css, package.json",
+      "omschrijving": "Класифікація всіх 506 кодів дій у 12 предметних категоріях (0 у 'overig'), відсікання самодій панелі, змістовне розпізнавання об’єктів дій без машинних підписів hub · app та підключення сторожа бази до npm run build."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "backend/uitrol-github-ontvangen.ts, src/uitrol/fouten.ts",
+      "omschrijving": "Очищення пробілів у мітках випусків GitHub (schoonGithubReleaseTag), безпечний резерв 'Tarasevych/hub' у ручному режимі при порожньому inst.repo та зрозуміле двомовне пояснення коду REPO_ONGELDIG."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "AGENTS.md, ПРАВИЛА-АГЕНТІВ.uk.md, AGENTENREGELS.nl.md, orchestratie/beleid.json, orchestratie/BESLUITEN.md, orchestratie/РІШЕННЯ.uk.md, orchestratie/BESLUITEN.nl.md, orchestratie/regels.lock.json, orchestratie/CONTEXT-COMPACT.md, .agents/skills/wijziging-controleren/SKILL.md, orchestratie/onderwerpen/meldingen.json, docs/meldingen-paneel/ДОСЬЄ-ПАНЕЛІ-СПОВІЩЕНЬ.uk.md, docs/meldingen-paneel/DOSSIER-MELDINGENPANEEL.nl.md, shared/zoek-ui-knoppen.generated.ts, docs/hub/ХРОНОЛОГІЯ-ГІЛОК.uk.md, docs/hub/KRONIEK-TAKKEN.nl.md",
+      "omschrijving": "Закріплення правила розвитку проєкту MELDINGEN-REGISTER-001 (рішення B-026, правила 1.7.0), оновлення замка правил, навички перевірки змін, пошукового покажчика (1855 елементів), двомовної документації та хронології гілок."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "orchestratie/taken/MELDPANEEL-003.json, orchestratie/bijdragen/MELDPANEEL-003/20261122-151000-antigravity.json, orchestratie/ontwikkelarchieven/MELDPANEEL-003.json, .github/workflows/meldpaneel-003-uitgave.yml",
+      "omschrijving": "Облік завдання, запис авторства BIJDRAGE-001, досьє походження TRACE-001 та ізольований конвеєр оприлюднення випуску MELDPANEEL-003."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/meldpaneel-003-uitgave.yml",
+      "uk": "Ізольований конвеєр складання й оприлюднення випуску MELDPANEEL-003 поверх живої встановленої основи 20261122-122237: без pull_request_target і без secrets.*, усі дії закріплено повними 40-символьними відбитками фіксацій, persist-credentials: false, npm ci --ignore-scripts; ніколи не встановлює пакунок на живий сервер автоматично.",
+      "nl": "Geïsoleerde bouw- en publicatiewerkstroom voor uitgave MELDPANEEL-003 boven op de geïnstalleerde basis 20261122-122237: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s, persist-credentials: false en npm ci --ignore-scripts; installeert nooit automatisch op de productieserver."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/meldingen-register-controle.mjs && node scripts/orch.mjs controleer && NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Автоматичний сторож бази сповіщень (322 серверні коди дій, 506 записів у 12 категоріях, 0 некласифікованих у 'overig'), замок правил 1.7.0, перевірка типів клієнта й сервера, контрастність кольорів на 28 палітрах та повне виробниче складання пройшли з кодом 0."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs meldpaneel-003 && meldpaneel-002 && meldingen-ux-001 && meldingen-ecosysteem-ui && meldingen-ecosysteem-kern && meldingen-catalogus && meldingen-sferen && identiteit-maquette && bijdragen-001 && historie-kroniek && перевірка в переглядачі Хроміум",
+      "resultaat": "Усі модульні та регресійні перевірки пройшли на 100%; у переглядачі Хроміум підтверджено 100% спадкування пудрово-сливової та темно-сливової палітр, корисну площу потоку ~80%, 8-стороннє розтягування, точне повернення до дзвіночка (розбіжність 2 пікселі) та живу пігулку дзвіночка й Базу 739 записів на /melding."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/meldpaneel-003-uitgave.yml",
+      "resultaat": "Звіряє живу встановлену основу 20261122-122237 @ 6be83c131bc13e6defc006784781393c3cdd0945, виконує повний набір статичних, модульних, післяскладальних і БД-залежних перевірок з PostgreSQL 16 і Хроміум, збирає архів і перевіряє pakketVoorcontrole та root TRACE-001 без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "ANTIGRAVITY.md",
+    "orchestratie/beleid.json",
+    "orchestratie/BESLUITEN.md",
+    "orchestratie/onderwerpen/meldingen.json",
+    "docs/meldingen-paneel/ДОСЬЄ-ПАНЕЛІ-СПОВІЩЕНЬ.uk.md",
+    "shared/beheer-journaal.ts",
+    "shared/meldingen-catalogus.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Оприлюднений пакунок ніколи не встановлюється автоматично: встановлення запускає виключно власник у розділі Адміністрування → Оновлення з підтвердженням ключем доступу.",
+    "Внутрішня функція activiteitNaamUitJournaal зберігає зворотну сумісність для синтетичних тестових рядків поза реєстром, тоді як 100% справжніх серверних кодів дій перевіряються сторожем scripts/meldingen-register-controle.mjs під час кожного складання.",
+    "Критичні політики в розділі kritiek і схема бази даних PostgreSQL 18.6 не змінювалися."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "До досьє та перевірок включено виключно публічні метадані координації, штучні тестові події та відкриті назви типів сповіщень; жодних паролів, закритих ключів, маркерів доступу чи особистих даних не використано."
+  }
+}

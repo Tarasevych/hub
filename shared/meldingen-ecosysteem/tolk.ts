@@ -31,23 +31,23 @@ export function herkenSubdomein(bron = '', link = '', fallback: MeldingSubdomein
   if (hostMatch && (SUBDOMEINEN as readonly string[]).includes(hostMatch[1])) {
     return hostMatch[1] as MeldingSubdomein;
   }
-  if (/(^|[/:_\s-])(mail|gmail|imap|smtp|post)/.test(g)) return 'mail';
-  if (/(^|[/:_\s-])(cloud|drive|bestand|opslag|s3)/.test(g)) return 'cloud';
-  if (/(^|[/:_\s-])(github|git|pr|workflow|repo)/.test(g)) return 'github';
-  if (/(^|[/:_\s-])(huis|home|scene|lamp|thermostat|slim)/.test(g)) return 'huis';
-  if (/(^|[/:_\s-])(mcp|connector|agent|browser|pc|terminal)/.test(g)) return 'mcp';
-  if (/(^|[/:_\s-])(ai|gemini|claude|openai|grok|chat|vertal)/.test(g)) return 'ai';
-  if (/(^|[/:_\s-])(id|passkey|kluis|sleutelkluis|aanmeld|account|toegang|beveilig)/.test(g)) return 'id';
-  if (/(^|[/:_\s-])(admin|uitrol|diagnose|audit|beheer)/.test(g)) return 'admin';
-  if (/(^|[/:_\s-])(api|kluis-api)/.test(g)) return 'api';
-  if (/(^|[/:_\s-])(systeem|versie|verbinding|netwerk)/.test(g)) return 'systeem';
+  if (/(^|[/:_.\s-])(mail|gmail|imap|smtp|post)/.test(g)) return 'mail';
+  if (/(^|[/:_.\s-])(cloud|drive|bestand|opslag|s3)/.test(g)) return 'cloud';
+  if (/(^|[/:_.\s-])(github|git|pr|workflow|repo)/.test(g)) return 'github';
+  if (/(^|[/:_.\s-])(huis|home|scene|lamp|thermostat|slim)/.test(g)) return 'huis';
+  if (/(^|[/:_.\s-])(mcp|connector|agent|browser|pc|terminal|remote|apparaat|vaardigheden|koppeling_gewijzigd)/.test(g)) return 'mcp';
+  if (/(^|[/:_.\s-])(ai|gemini|claude|openai|grok|chat|vertal|geheugen)/.test(g)) return 'ai';
+  if (/(^|[/:_.\s-])(id|passkey|kluis|sleutelkluis|aanmeld|aanmelden|account|toegang|beveilig|bevestigen|telegram|plaats-eis|stap-op|niet-ik|fout-symbool|privacy)/.test(g)) return 'id';
+  if (/(^|[/:_.\s-])(admin|uitrol|diagnose|audit|beheer|klimop|orch|eigenaar_besluit|flags|ruimte|ondersteuning|impersonatie|zoek\.index)/.test(g)) return 'admin';
+  if (/(^|[/:_.\s-])(api|kluis-api)/.test(g)) return 'api';
+  if (/(^|[/:_.\s-])(systeem|versie|verbinding|netwerk)/.test(g)) return 'systeem';
   return fallback;
 }
 
 export function herkenKanaal(bron = '', soort = '', subdomein: MeldingSubdomein = 'hub'): MeldingKanaal {
   const b = `${bron} ${soort}`.toLowerCase();
-  if (/(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|auth|vergrendel|blokkeer|fout-auth)/.test(b)) return 'beveiliging';
-  if (/(pc[_-]?agent|host|schijf|cpu|geheugen|docker|terminal|lokale[_-]?pc)/.test(b)) return 'pc_agent';
+  if (/(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|auth|aanmeld|bevestigen|niet-ik|fout-symbool|stap-op|vergrendel|blokkeer|fout-auth)/.test(b)) return 'beveiliging';
+  if (/(pc[_-]?agent|host|schijf|cpu|geheugen_pc|docker|terminal|remote|lokale[_-]?pc)/.test(b)) return 'pc_agent';
   if (/(extensie|extension|browser|tabblad|debugger)/.test(b)) return 'extensie';
   if (/(pagina|band|strook|banner|offline|versie|herlaad)/.test(b)) return 'pagina';
   if (subdomein === 'mail') return 'mail';
