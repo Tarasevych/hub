@@ -128,7 +128,11 @@ export function Venster({ id, titel, kop, prioriteit = 'normaal', modaal = true,
     const z = vensterZone();
     const h0 = hoogte ?? Math.min(el.scrollHeight || 480, z.h - 2 * RAND);
     const b0 = Math.min(breedte, z.w - 2 * RAND);
-    const basis: Geometrie = { b: b0, h: h0, x: z.x + (z.w - b0) / 2 + verschuiving, y: z.y + Math.max(RAND, (z.h - h0) / 2) + verschuiving, max: false };
+    // Afwerking etappe 2 (achter posta-vensters-herstel-v1): aparte bijlagevensters (src/MailBijlageVensters.tsx, dat bestand blijft
+    // byte-identiek) openen trapsgewijs in plaats van precies op het vorige.
+    const trap = verschuiving || (className.includes('mail-bijlage-venster') && document.documentElement.hasAttribute('data-posta-vensters-herstel')
+      ? Math.max(0, document.querySelectorAll('.mail-bijlage-venster').length - 1) * 32 : 0);
+    const basis: Geometrie = { b: b0, h: h0, x: z.x + (z.w - b0) / 2 + trap, y: z.y + Math.max(RAND, (z.h - h0) / 2) + trap, max: false };
     setGeo(binnenScherm(bewaard && Number.isFinite(bewaard.x) ? { ...basis, ...bewaard, h: bewaard.h ?? h0 } as Geometrie : basis));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   // Groeit de inhoud na het openen (eerst «Завантаження…», dan het hele venster), dan omhoog schuiven zodat de onderkant (de knoppen)

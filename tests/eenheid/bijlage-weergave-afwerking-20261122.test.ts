@@ -51,7 +51,7 @@ export async function main(): Promise<number> {
   check('Escape: eerst het opslaanvenster, alleen met gedeelde weergave', gmw.includes("if(event.key==='Escape'&&gedeeldeRef.current&&document.querySelector('.mail-save-backdrop')){event.preventDefault();setSaveItems(null);"));
   check('te groot: knop downloaden in plaats van opnieuw', gmw.includes('onDownload={()=>void downloadAttachment(weergaveStaat.messageId,weergaveStaat.item,weergaveStaat.accountId)}') && lees('src/bijlage-weergave/Weergave.tsx').includes("/TOO_LARGE/.test(p.code) && Boolean(p.onDownload)"));
   const bv = lees('src/MailBijlageVensters.tsx'), pv = lees('src/platform/vensters.tsx');
-  check('vensters trapsgewijs alleen met vlag; standaard verschuiving 0', bv.includes('verschuiving={trap ? i * 32 : 0}') && bv.includes('useVlag(POSTA_VENSTERS_VLAG, false)') && pv.includes('verschuiving = 0'));
+  check('vensters trapsgewijs alleen met vlag; MailBijlageVensters ongewijzigd; standaard verschuiving 0', !bv.includes('verschuiving') && pv.includes("className.includes('mail-bijlage-venster') && document.documentElement.hasAttribute('data-posta-vensters-herstel')") && pv.includes('verschuiving = 0'));
 
   const leeg = vertrouwenUit({ naam: 'leeg.txt', kop: new Uint8Array(0) });
   check('leeg bestand: geen vals alarm, niveau onbekend', leeg.niveau === 'onbekend' && !leeg.zin[0].includes('Увага'));
