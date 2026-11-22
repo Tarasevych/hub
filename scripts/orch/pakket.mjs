@@ -50,7 +50,7 @@ function bepaalAuteur(opgegeven, git) {
  * manifestPad?, testresultatenPad?, sigPad?, agentPlatform?, agentTool?, model?, nietGedaan?, nu? }. Повертає { zaken, zipPad, ... } — zaken з ernst fout = не зібрано.
  */
 /**
- * VLAG-001 (B-027, 22.11.2026) · НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом). Виконавець: Claude Opus 5.5 (High) через Google Antigravity.
+ * VLAG-001 (B-027, 22.11.2026) · ПЕРЕВІРЕНО 22.11.2026: tests/eenheid/vlag-001-pakket.test.ts (10/10), усі тести orch (412/412), справжня міграція 0302 проходить без зауважень. Виконавець: Claude Opus 5.5 (High) через Google Antigravity.
  * Без прапорця — не випускається: пакет, що змінює поведінку, мусить оголосити в UITROL-MANIFEST.json поле functievlaggen
  * ([{ sleutel, migratie }]) — кожен прапорець додається міграцією типово ВИМКНЕНИМ (aan=false, standaard=false), — або
  * вузький виняток zonderVlag { reden: beveiliging|herstel|documentatie|vlag-opruiming, toelichting }.
