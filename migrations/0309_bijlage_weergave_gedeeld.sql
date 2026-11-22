@@ -1,6 +1,6 @@
 -- 0309 — СПІЛЬНИЙ ПЕРЕГЛЯД ВКЛАДЕНЬ, етап 1 (22.11.2026, Grok: hub.tarasevych.com): alleen één functievlag, standaard UIT.
 -- Met de vlag uit gedraagt de site zich exact als vóór deze wijziging. Geen tabellen, rechten of gegevens gewijzigd.
---   bijlage-weergave-gedeeld-v1  nieuwe gedeelde omlijsting van de bijlageviewer (src/weergave/): snelle kaart, één
+--   bijlage-weergave-gedeeld-v1  nieuwe gedeelde omlijsting van de bijlageviewer (src/bijlage-weergave/): snelle kaart, één
 --                                vertrouwenslabel, hoofdactie per soort, «⋯», «Подробиці», strook met alle bijlagen,
 --                                eerlijke laad- en foutstaat met «opnieuw», eigen stap voor «Назад»
 -- 0309 — ПРАПОРЕЦЬ СПІЛЬНОГО ПЕРЕГЛЯДУ: лише рядок прапорця, типово вимкнений. Концепція: docs/concept/bijlage-weergave/CONCEPT.md

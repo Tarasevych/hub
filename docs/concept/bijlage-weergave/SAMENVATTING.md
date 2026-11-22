@@ -6,7 +6,7 @@
 midden op het scherm (deels Engels), een witte pagina in het donkere thema, geen vertrouwenssignaal, geen andere bijlagen in
 beeld, en een fout sluit de viewer zonder uitleg.
 
-**Wat.** Eén gedeelde viewer (`src/weergave/`) voor Post, Schijf, bord, meldingen en chat:
+**Wat.** Eén gedeelde viewer (`src/bijlage-weergave/`) voor Post, Schijf, bord, meldingen en chat:
 snelle kaart bovenaan (wat het is en de kern), één vertrouwenslabel (kleur + één zin), acties per bestandssoort, versies en
 wijzigingen, onthouden plaats, zoeken in alle bijlagen, strook met alle bijlagen, eerlijke laad- en foutstaat met «opnieuw»,
 donkere inhoud in het donkere thema, minimale knoppen en de rest onder «⋯», technische gegevens onder «Подробиці».
