@@ -1,0 +1,20 @@
+name: Klantpakket publiceren
+on:
+  push:
+    branches: [publicatie/klant-001-20261122]
+permissions:
+  contents: write
+jobs:
+  publiceren:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Controleer en publiceer het pakket
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd overdrachten/KLANT-001
+          echo 'd69ecc3aaf8a034095a21818de013a105e6d29e19711c6e14550a43c72d4ee21  mijn-ruimte-20261122-171856.tar.gz' | sha256sum -c -
+          gh release upload 20261122-171856 mijn-ruimte-20261122-171856.tar.gz --repo Tarasevych/hub
