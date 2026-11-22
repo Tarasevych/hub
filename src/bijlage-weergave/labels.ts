@@ -4,6 +4,9 @@
 // ongewijzigd (lookups en vergelijkingen in de lezers werken op de oorspronkelijke tekst). Onbekend label: ongewijzigd.
 type Taal = 'uk' | 'nl';
 const L: Record<string, [string, string]> = {
+  // HEIC/AVIF en e-mail (afwerking etappe 2, gevonden bij de NL-proef)
+  'Основний бренд ISO BMFF': ['Основний бренд ISO BMFF', 'Hoofdmerk ISO BMFF'], 'Сумісні бренди': ['Сумісні бренди', 'Compatibele merken'],
+  'Рядки MIME': ['Рядки MIME', 'MIME-regels'],
   // Engelse sleutels die de lezers nog maken
   Size: ['Розмір', 'Grootte'], Inspected: ['Перевірено', 'Geïnspecteerd'], Evidence: ['Структурний доказ', 'Structuurbewijs'],
   Route: ['Маршрут формату', 'Formaatroute'], Lines: ['Рядків', 'Regels'], Vertices: ['Вершин', 'Hoekpunten'], Faces: ['Граней', 'Vlakken'],
@@ -41,4 +44,18 @@ export function toonLabel(label: unknown, taal: Taal): string {
   const k = String(label ?? '');
   const w = L[k];
   return w ? w[taal === 'nl' ? 1 : 0] : k;
+}
+
+/** Waarden in de NL-modus: alleen vaste, veelvoorkomende Oekraïense stukjes die de lezers in waarden zetten («N байтів»,
+ *  «записів: N», «підтверджено»). Getallen, namen en de rest blijven zoals ze zijn; UK-modus en niet-tekst: ongewijzigd. */
+const W: [RegExp, string][] = [
+  [/(\d(?:[\d\s.,]*\d)?)\s*байтів/g, '$1 bytes'], [/записів: (\d+)/g, 'vermeldingen: $1'],
+  [/^кандидат \/ не підтверджено$/, 'kandidaat / niet bevestigd'], [/^не підтверджено$/, 'niet bevestigd'], [/^підтверджено$/, 'bevestigd'],
+  [/^так$/, 'ja'], [/^ні$/, 'nee'], [/^немає$/, 'geen'],
+];
+export function toonWaarde<T>(waarde: T, taal: Taal): T | string {
+  if (taal !== 'nl' || typeof waarde !== 'string') return waarde;
+  let uit: string = waarde;
+  for (const [re, nl] of W) uit = uit.replace(re, nl);
+  return uit;
 }
