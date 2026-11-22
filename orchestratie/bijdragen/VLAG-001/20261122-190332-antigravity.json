@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "VLAG-001/20261122-190332-antigravity",
+  "taakId": "VLAG-001",
+  "tijd": "2026-11-22T19:03:32.701Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Claude Opus 5.5 (High)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Правило B-027 (VLAG-001): без типово вимкненого прапорця з міграцією пакет не випускається (orch pakket), вузькі винятки zonderVlag, сервер бере прапорці з пам'яті, перевірене й архівне — у постійний стан за 30 днів. НЕ ПЕРЕВІРЕНО.",
+    "nl": "Regel B-027 (VLAG-001): zonder standaard uitgeschakelde vlag geen release; vlaggen uit het geheugen; geteste functies binnen 30 dagen permanent. NIET GECONTROLEERD."
+  },
+  "waarom": {
+    "uk": "На сторінці «Нові можливості сайту» вкладка «Активні» порожня: після міграції 0302 (10.11.2026) жодного нового прапорця"
+  },
+  "tak": "feature/vlag-001-verplichte-vlaggen-20261122-190034",
+  "pr": null,
+  "onderwerpen": [
+    "functievlaggen"
+  ]
+}

@@ -27,10 +27,25 @@ const gearchiveerd = new Map<string, boolean>();
 /** «Voor iedereen aan»: hoofdschakelaar aan en (100 % of standaard aan zonder procent-uitrol). Zelfde regel als evalueer. */
 export const voorIedereen = (v: Vlag) => v.aan && (v.percentage >= 100 || (v.percentage === 0 && v.standaard));
 
+// VLAG-001 (B-027) · ЧАСТКОВО ПЕРЕВІРЕНО 22.11.2026 (Claude Opus 5.5 (High) через Google Antigravity): перевірка типів сервера
+// й чисті тести vlaggen пройдено; поведінку пам'яті з живою базою PostgreSQL у цьому середовищі не перевірено (бази немає).
+// прапорці не мають гальмувати сторінку й
+// навантажувати сервер — таблиця прапорців береться з пам'яті процесу (до 15 с), а не окремим запитом до бази на кожне звертання.
+// Будь-яка зміна через це вікно (zetten, standZetten, archiveren, verwijderen) одразу очищає пам'ять, тож власник бачить зміну відразу.
+// Особисті перевірки (feature_flag_tests) — як і раніше, з бази: вони стосуються однієї людини й рідкісні.
+const VLAG_GEHEUGEN_MS = 15_000;
+let vlagGeheugen: { tot: number; rows: Record<string, unknown>[] } | null = null;
+export const vlagGeheugenLeeg = () => { vlagGeheugen = null; };
+async function alleVlagRijen(): Promise<Record<string, unknown>[]> {
+  if (vlagGeheugen && vlagGeheugen.tot > Date.now()) return vlagGeheugen.rows;
+  const rows = (await sys().query('SELECT * FROM app.feature_flags ORDER BY sleutel')).rows as Record<string, unknown>[];
+  vlagGeheugen = { tot: Date.now() + VLAG_GEHEUGEN_MS, rows };
+  return rows;
+}
+
 async function vlaggen(sleutels?: string[]): Promise<Map<string, Vlag>> {
-  const rows = sleutels
-    ? (await sys().query('SELECT * FROM app.feature_flags WHERE sleutel = ANY($1::text[])', [sleutels])).rows
-    : (await sys().query('SELECT * FROM app.feature_flags ORDER BY sleutel')).rows;
+  const alle = await alleVlagRijen();
+  const rows = sleutels ? alle.filter((r) => sleutels.includes(String(r.sleutel))) : alle;
   for (const r of rows) gearchiveerd.set(String(r.sleutel), !!r.gearchiveerd_op);
   return new Map(rows.map((r) => [String(r.sleutel), vlagUit(r)]));
 }
@@ -107,7 +122,7 @@ async function idsVanEmails(emails: unknown): Promise<string[]> {
 }
 
 /** Aanmaken of wijzigen (diensten.beheren). Gebruikers komen als e-mail binnen en worden id's. */
-export async function zetten(u: Gebruiker, tab: string, input: Record<string, unknown>) {
+async function zettenIntern(u: Gebruiker, tab: string, input: Record<string, unknown>) {
   const { beheren } = await rechten(u, tab);
   if (!beheren) fout('TECH_FLAGS_BEHEER_VEREIST', 403);
   const gebruikers = await idsVanEmails(input.gebruikers ?? []);
@@ -138,7 +153,7 @@ export async function zetten(u: Gebruiker, tab: string, input: Record<string, un
  */
 export const STANDEN = ['uit', 'mij', 'lijst', 'deel', 'alle'] as const;
 export type Stand = typeof STANDEN[number];
-export async function standZetten(u: Gebruiker, tab: string, input: Record<string, unknown>) {
+async function standZettenIntern(u: Gebruiker, tab: string, input: Record<string, unknown>) {
   const { beheren } = await rechten(u, tab);
   if (!beheren) fout('TECH_FLAGS_BEHEER_VEREIST', 403);
   const s = String(input.sleutel ?? '');
@@ -169,7 +184,7 @@ export async function standZetten(u: Gebruiker, tab: string, input: Record<strin
 }
 
 /** Archief: alleen weergave. In het archief zetten mag alleen als de functie voor iedereen aan staat (anders verdwijnt iets halfs uit beeld). */
-export async function archiveren(u: Gebruiker, tab: string, sleutel: unknown, inArchief: unknown) {
+async function archiverenIntern(u: Gebruiker, tab: string, sleutel: unknown, inArchief: unknown) {
   const { beheren } = await rechten(u, tab);
   if (!beheren) fout('TECH_FLAGS_BEHEER_VEREIST', 403);
   const s = String(sleutel ?? '');
@@ -183,7 +198,7 @@ export async function archiveren(u: Gebruiker, tab: string, sleutel: unknown, in
   return beheerLijst(u, tab);
 }
 
-export async function verwijderen(u: Gebruiker, tab: string, sleutel: unknown) {
+async function verwijderenIntern(u: Gebruiker, tab: string, sleutel: unknown) {
   const { beheren } = await rechten(u, tab);
   if (!beheren) fout('TECH_FLAGS_BEHEER_VEREIST', 403);
   const s = String(sleutel ?? '');
@@ -253,4 +268,24 @@ export function flagsRoutes(requireSession: RequireSession): Record<string, Rout
     'POST /api/beheer/flags/verwijderen': [gate(async (_ctx, u, b) => json(await verwijderen(u, String(b.tabContext || ''), b.sleutel)))],
     'POST /api/beheer/flags/test': [gate(async (_ctx, u, b) => json(await testen(u, String(b.tabContext || ''), b.sleutel, b.waarde === undefined ? null : b.waarde)))],
   };
+}
+
+/** VLAG-001: після зміни прапорця пам'ять прапорців очищається (навіть якщо зміна не вдалася). */
+export async function zetten(...a: Parameters<typeof zettenIntern>): ReturnType<typeof zettenIntern> {
+  try { return await zettenIntern(...a); } finally { vlagGeheugenLeeg(); }
+}
+
+/** VLAG-001: після зміни прапорця пам'ять прапорців очищається (навіть якщо зміна не вдалася). */
+export async function standZetten(...a: Parameters<typeof standZettenIntern>): ReturnType<typeof standZettenIntern> {
+  try { return await standZettenIntern(...a); } finally { vlagGeheugenLeeg(); }
+}
+
+/** VLAG-001: після зміни прапорця пам'ять прапорців очищається (навіть якщо зміна не вдалася). */
+export async function archiveren(...a: Parameters<typeof archiverenIntern>): ReturnType<typeof archiverenIntern> {
+  try { return await archiverenIntern(...a); } finally { vlagGeheugenLeeg(); }
+}
+
+/** VLAG-001: після зміни прапорця пам'ять прапорців очищається (навіть якщо зміна не вдалася). */
+export async function verwijderen(...a: Parameters<typeof verwijderenIntern>): ReturnType<typeof verwijderenIntern> {
+  try { return await verwijderenIntern(...a); } finally { vlagGeheugenLeeg(); }
 }
