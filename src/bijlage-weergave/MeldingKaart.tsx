@@ -27,9 +27,9 @@ export type MeldingKaartBijlage = {
 };
 
 /** Найбільший вміст base64, з якого ще робимо мініатюру прямо в картці (щоб не гальмувати список сповіщень). */
-const MINI_MAX_BASE64 = 3 * 1024 * 1024;
+export const MINI_MAX_BASE64 = 3 * 1024 * 1024;
 
-function veiligeMiniAdres(url?: string): string {
+export function veiligeMiniAdres(url?: string): string {
   if (!url) return '';
   if (url.startsWith('blob:')) return url;
   if (url.startsWith('/') && !url.startsWith('//')) return url;

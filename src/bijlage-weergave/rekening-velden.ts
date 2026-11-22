@@ -48,7 +48,7 @@ const PIDPYS_NUMMER =
   /(?:номер(?:\s+рахунку(?:-?фактури)?|\s+фактури)?|рахунок(?:-?фактура)?\s*(?:№|no\.?|nr\.?)|factuurnummer|factuur(?:nummer|\s*nr\.?|\s*no\.?)|rechnungsnummer|rechnungs?-?(?:nr|nummer)|rg\.?\s*-?\s*nr\.?|invoice\s*(?:number|no\.?|#)|inv\.?\s*#?)/i;
 
 const VALUTA_RE = /(?:₴|грн\.?|UAH|€|EUR|euro|\$|USD|£|GBP|zł|PLN|CHF)/i;
-const CHYSLO_RE = /\d{1,3}(?:[.\s\u00a0\u202f']\d{3})*(?:[,.]\d{1,2})?|\d+(?:[,.]\d{1,2})?/;
+const CHYSLO_RE = /\d{1,3}(?:[.,\s\u00a0\u202f']\d{3})+(?:[,.]\d{1,2})?|\d+(?:[,.]\d{1,2})?/;
 const DATUM_CYFRI_RE = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b|\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b/;
 
 // Назви місяців — дані для розбору, не підписи для людини.

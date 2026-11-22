@@ -7,6 +7,7 @@ import { auditToevoegen } from '../server/platform/audit';
 import { db } from '../server/platform/db';
 import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-toestemmingen';
+import { stuurBijlageMeldingNaarTelegram } from './bijlage-telegram-melding';
 import { defaultChatDeps } from './connectors-chat';
 import { gegevensRuimteVeilig, RuimteFout, technischeRechten } from './ruimte-scheiding';
 import { AI_AANBIEDER_BIJ_ID, type AiAanbiederId } from '../shared/ai-aanbieders';
@@ -557,7 +558,7 @@ export async function verwerkAgentMelding(invoer: {
     if (!rechten.ok) return;
   }
   const isBrowser = invoer.platform === 'browser';
-  await slaGebeurtenisOp(
+  const opgeslagen = await slaGebeurtenisOp(
     { userId: invoer.userId, ruimte },
     {
       externeSleutel: typeof m.sleutel === 'string' && m.sleutel ? m.sleutel : `ws:${invoer.agentId}:${String(m.id || Date.now())}`,
@@ -575,13 +576,23 @@ export async function verwerkAgentMelding(invoer: {
       meta: { agentId: invoer.agentId, platform: invoer.platform || 'onbekend' },
     },
   );
+  if (geregistreerdeBijlageVlag && opgeslagen.bijlagen.length > 0 && opgeslagen.herhalingen <= 1) {
+    void stuurBijlageMeldingNaarTelegram({ userId: invoer.userId, ruimte }, opgeslagen, {
+      vlagAan: geregistreerdeBijlageVlag,
+      leesProfielFn: leesProfiel,
+    }).catch(() => undefined);
+  }
 }
+
+let geregistreerdeBijlageVlag: ((u: { id: string }) => Promise<boolean>) | undefined;
 
 export function meldingEcosysteemRoutes(deps: {
   requireSession: RequireSession;
   ontvanger?: (user: { id: string; email?: string; role?: string }) => Promise<MeldingOntvanger>;
   rateLimit?: typeof rateLimit;
+  bijlageWeergaveVlag?: (u: { id: string }) => Promise<boolean>;
 }): Record<string, RouterMiddleware[]> {
+  if (deps.bijlageWeergaveVlag) geregistreerdeBijlageVlag = deps.bijlageWeergaveVlag;
   const limietControle = deps.rateLimit ?? rateLimit;
   const metSessie = (
     fn: (lade: Lade, body: Record<string, unknown>, user: { id: string; role?: string; email?: string }) => Promise<unknown>,
@@ -636,6 +647,12 @@ export function meldingEcosysteemRoutes(deps: {
         const limiet = await limietControle(`melding-event:${lade.userId}`, 60, 60);
         if (!limiet.ok) throw new LimietFout(limiet.retryAfter);
         const gebeurtenis = await slaGebeurtenisOp(lade, body);
+        if (deps.bijlageWeergaveVlag && gebeurtenis.bijlagen.length > 0 && gebeurtenis.herhalingen <= 1) {
+          void stuurBijlageMeldingNaarTelegram(lade, gebeurtenis, {
+            vlagAan: deps.bijlageWeergaveVlag,
+            leesProfielFn: leesProfiel,
+          }).catch(() => undefined);
+        }
         return { ok: true, ruimte: lade.ruimte, gebeurtenis };
       }),
     ],

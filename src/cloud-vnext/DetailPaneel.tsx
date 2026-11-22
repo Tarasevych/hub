@@ -3,14 +3,18 @@
 // archiefverkenner (.zip / .tar / .tar.gz) met uitpakken en delen van gekozen onderdelen, metadata, labels, versies en delen.
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import {
-  Archive, Check, Download, FileText, Folder, FolderOutput, History, LoaderCircle, Pencil,
-  RotateCcw, Scissors, Search, Share2, Star, Trash2, X,
+  Archive, Check, Copy, Download, FileText, Folder, FolderOutput, History, LoaderCircle, Pencil,
+  RotateCcw, ScanText, Scissors, Search, Share2, Star, Trash2, X,
 } from 'lucide-react';
 import {
   CLOUD_VNEXT_LIMIETEN, schoneNaam, schoneTag,
   type CloudArchiefIngang, type CloudBestand, type CloudDeelDeelSoort, type CloudMap, type CloudVersie,
 } from '../../shared/cloud-vnext-model';
 import type { MailAttachmentPreview } from '../MailBijlageVoorbeeld';
+import { kanScanHerkennen, ocrFoutUitleg, vraagBijlageOcrTekst, type BijlageOcrAntwoord } from '../bijlage-weergave/ocr-client';
+import { WEERGAVE_VLAG } from '../bijlage-weergave/soort';
+import type { ContextActie } from '../bijlage-weergave/Weergave';
+import { useVlag } from '../functievlag-lezen';
 import { CloudFout, cloudClient } from './cloud-client';
 import { SOORT_ICOON, bewaarBlob, cloudFoutTekst, vanB64 } from './hulp';
 import Laag from './Laag';
@@ -18,6 +22,7 @@ import { bytesTekst, datumTekst, soortTekst, tr, type Lang } from './tekst';
 import './cloud-delen-maquette.css';
 
 const PreviewBody = lazy(() => import('../MailBijlageVoorbeeld').then((m) => ({ default: m.MailAttachmentPreviewBody })));
+const WeergaveKopLui = lazy(() => import('../bijlage-weergave/Weergave').then((m) => ({ default: m.WeergaveKop })));
 const voorbeeldMotor = () => import('../MailBijlageVoorbeeld');
 
 export type DetailDeelStart = {
@@ -54,6 +59,12 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
   const [archiefZoek, setArchiefZoek] = useState('');
   const [archiefKeuze, setArchiefKeuze] = useState<string[]>([]);
 
+  const gedeeldeWeergave = useVlag(WEERGAVE_VLAG, false);
+  const weergaveTaal = lang === 'nl' ? 'nl' : 'uk';
+  const [ocrBezig, setOcrBezig] = useState(false);
+  const [ocrUit, setOcrUit] = useState<BijlageOcrAntwoord | null>(null);
+  const [ocrGekopieerd, setOcrGekopieerd] = useState(false);
+
   const teGroot = b.kind !== 'link' && b.bytes > CLOUD_VNEXT_LIMIETEN.downloadMaxBytes;
   const grootTekst = tr(lang,
     `Передперегляд недоступний: файл більший за ${bytesTekst(lang, CLOUD_VNEXT_LIMIETEN.downloadMaxBytes)} — ліміт одного завантаження в цьому випуску (без стрімів).`,
@@ -62,6 +73,7 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
   useEffect(() => {
     let actief = true; let geladen: MailAttachmentPreview | null = null;
     setVoorbeeld(null); setVoorbeeldFout(''); setVersies(null); setVersiesOpen(false); setWisVraag(false); setHernoemAan(false);
+    setOcrBezig(false); setOcrUit(null); setOcrGekopieerd(false);
     setArchiefOndersteund(null); setArchiefReden(''); setArchiefIngangen([]); setArchiefZoek(''); setArchiefKeuze([]);
     if (b.soort === 'archief' && b.kind === 'file' && !prullenbak && b.bytes <= 64 * 1024 * 1024) {
       setArchiefLaden(true);
@@ -144,6 +156,40 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
     return z ? archiefIngangen.filter((i) => i.pad.toLowerCase().includes(z)) : archiefIngangen;
   }, [archiefIngangen, archiefZoek]);
 
+  const kanOcr = gedeeldeWeergave && b.kind === 'file' && !prullenbak && kanScanHerkennen(b.naam, b.mime, b.bytes);
+  const herkenScanTekst = async () => {
+    if (ocrBezig) return;
+    setOcrBezig(true);
+    setOcrGekopieerd(false);
+    try {
+      const res = await vraagBijlageOcrTekst({ bron: 'cloud', bestandId: b.id, filename: b.naam, contentType: b.mime });
+      setOcrUit(res);
+    } finally {
+      setOcrBezig(false);
+    }
+  };
+  const kopieerOcrTekst = async () => {
+    if (!ocrUit?.tekst) return;
+    try {
+      await navigator.clipboard?.writeText(ocrUit.tekst);
+      setOcrGekopieerd(true);
+    } catch {
+      setOcrGekopieerd(false);
+    }
+  };
+  const contextActies = useMemo<ContextActie[]>(() => (
+    kanOcr
+      ? [{
+          sleutel: 'ocr-scan',
+          label: ['Розпізнати текст скану', 'Tekst uit scan herkennen'],
+          icoon: ScanText,
+          zichtbaar: true,
+          uitvoeren: () => { void herkenScanTekst(); },
+        }]
+      : []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [kanOcr, b.id, b.naam, b.mime, ocrBezig]);
+
   return (
     <Laag lang={lang} soort={smal ? 'scherm' : 'paneel'} titel={b.naam} onSluit={onSluit} data={{ 'cvn-detail': b.id }}>
       {fout ? <p className='cvn-melding is-fout' role='alert'>{fout}</p> : null}
@@ -160,6 +206,11 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
           </button>
         ) : null}
         {b.kind !== 'link' ? <button type='button' className='cvn-knop' disabled={besig} onClick={() => void downloadHeel()}><Download aria-hidden='true' />{tr(lang, 'Завантажити', 'Downloaden')}</button> : null}
+        {kanOcr ? (
+          <button type='button' className='cvn-knop' disabled={besig || ocrBezig} onClick={() => void herkenScanTekst()}>
+            <ScanText aria-hidden='true' />{tr(lang, 'Розпізнати текст скану', 'Tekst uit scan herkennen')}
+          </button>
+        ) : null}
         <button type='button' className={`cvn-knop${b.favoriet ? ' is-actief' : ''}`} data-cvn-favoriet={b.id} aria-pressed={b.favoriet} disabled={besig} onClick={() => void favoriet()}><Star aria-hidden='true' />{b.favoriet ? tr(lang, 'В обраному', 'Favoriet') : tr(lang, 'До обраного', 'Favoriet maken')}</button>
         {!prullenbak ? <button type='button' className='cvn-knop' disabled={besig} onClick={() => { setHernoemAan(true); setHernoem(b.naam); }}><Pencil aria-hidden='true' />{tr(lang, 'Перейменувати', 'Hernoemen')}</button> : null}
         {!prullenbak
@@ -250,10 +301,58 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
           {teGroot ? <p className='cvn-melding is-info' role='status'>{grootTekst}</p> : null}
           {voorbeeldFout ? <p className='cvn-melding is-info' role='status'>{voorbeeldFout}</p> : null}
           {laden ? <p className='cvn-hint' role='status' aria-busy='true'><LoaderCircle className='cvn-draai' aria-hidden='true' />{tr(lang, 'Готуємо передперегляд…', 'Voorvertoning laden…')}</p> : null}
+          {voorbeeld && gedeeldeWeergave ? (
+            <div data-weergave-drager='schijf'>
+              <Suspense fallback={null}>
+                <WeergaveKopLui
+                  taal={weergaveTaal}
+                  bron='schijf'
+                  kopElement='div'
+                  zonderSluiten
+                  naam={voorbeeld.filename || b.naam}
+                  contentType={voorbeeld.contentType || b.mime}
+                  grootte={Number(voorbeeld.sizeBytes || b.bytes || 0)}
+                  blob={voorbeeld.blob}
+                  archiefNamen={(voorbeeld.archiveEntries || []).map((e) => e.name)}
+                  nav={null}
+                  beschikbaar={{
+                    download: b.kind !== 'link' ? () => { void downloadHeel(); } : undefined,
+                    delen: !prullenbak && onDeel ? () => onDeel({ beginModus: 'heel' }) : undefined,
+                  }}
+                  contextActies={contextActies}
+                  onSluit={onSluit}
+                />
+              </Suspense>
+            </div>
+          ) : null}
           {voorbeeld ? (
             <Suspense fallback={<p className='cvn-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
               <PreviewBody preview={voorbeeld} lang={lang} />
             </Suspense>
+          ) : null}
+          {gedeeldeWeergave && (ocrBezig || ocrUit) ? (
+            <section className='cvn-detail-meta' aria-label={tr(lang, 'Розпізнаний текст скану', 'Herkende scantekst')}>
+              <h3>
+                <ScanText aria-hidden='true' />
+                {tr(lang, 'Розпізнаний текст скану', 'Herkende scantekst')}
+                {ocrUit?.status === 'ok' && ocrUit.tekst ? (
+                  <button type='button' className='cvn-knop is-klein' onClick={() => void kopieerOcrTekst()}>
+                    {ocrGekopieerd ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}
+                    {ocrGekopieerd ? tr(lang, 'Скопійовано', 'Gekopieerd') : tr(lang, 'Скопіювати текст', 'Tekst kopiëren')}
+                  </button>
+                ) : null}
+              </h3>
+              {ocrBezig ? (
+                <p className='cvn-hint' role='status' aria-busy='true'>
+                  <LoaderCircle className='cvn-draai' aria-hidden='true' />
+                  {tr(lang, 'Розпізнаємо текст зі скану…', 'Tekst uit scan herkennen…')}
+                </p>
+              ) : ocrUit?.status === 'ok' && ocrUit.tekst ? (
+                <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: '240px', overflow: 'auto', margin: 0 }}>{ocrUit.tekst}</pre>
+              ) : ocrUit ? (
+                <p className='cvn-hint' role='status'>{ocrFoutUitleg(ocrUit.status, weergaveTaal)}</p>
+              ) : null}
+            </section>
           ) : null}
         </section>
       ) : null}
