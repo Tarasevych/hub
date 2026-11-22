@@ -882,7 +882,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...wrapFactoryMutations(createCloudRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createM10CloudAdminRoutes((event,body)=>ownerRequireSession(event,body), (ctx,auth)=>sterkeStapOpVereist(ctx,auth as never)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGoogleSuiteBrowserRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
-  ...wrapFactoryMutations(createGoogleSuiteMailBrowserRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
+  ...wrapFactoryMutations(createGoogleSuiteMailBrowserRoutes((event,body)=>ownerRequireSession(event,body),{/* LEZER-FOUT-BLIJFT-OPEN v1 */lezerFoutVlag:async(u)=>(await flagsBerekenen(u as never,['lezer-fout-blijft-open-v1']))[0]?.value===true}),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGoogleSuiteCalendarPhotosRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createAgendaRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...createExterneMcpRoutes((event,body)=>ownerRequireSession(event,body)),

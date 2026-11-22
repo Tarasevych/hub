@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "WEERGAVE-002/20261122-175629-grok",
+  "taakId": "WEERGAVE-002",
+  "tijd": "2026-11-22T17:56:29.026Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "grok",
+    "platform": "hub.tarasevych.com",
+    "model": {
+      "id": "Grok через hub.tarasevych.com (точна версія не повідомлена)",
+      "bron": "auteur"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "begin",
+  "wat": {
+    "uk": "Спільний перегляд вкладень: етапи 1–2 з перевірками на стенді; план етапу 3, чисті модулі й скелети тестів етапу 3 без перевірок; відповідь Павла на питання 2. Історичний запис, зроблений Claude Opus 5.5 (High) після вичерпання ліміту Grok.",
+    "nl": "Gedeelde bijlageweergave: fasen 1–2 met controles; plan, zuivere modules en testskeletten van fase 3 zonder controles. Historische registratie door Claude Opus 5.5 (High)."
+  },
+  "waarom": {
+    "uk": "Доручення Павла: спільний переглядач для всіх розділів сайту"
+  },
+  "tak": "functie/bijlage-weergave-v2-20261122",
+  "pr": 208,
+  "onderwerpen": [
+    "bijlage-weergave"
+  ]
+}

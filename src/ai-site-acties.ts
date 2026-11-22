@@ -24,7 +24,15 @@ const MAX_PROBLEMS = 100;
 const scrub = (value: unknown): string =>
   String(value instanceof Error ? value.message : value).replace(/\?[^\s"')]*/g, '?…').replace(/\s+/g, ' ').slice(0, 300);
 const note = (kind: Problem['kind'], message: unknown) => {
-  problems.push({ at: Date.now(), kind, message: scrub(message) });
+  // Grok: hub.tarasevych.com, 22.11.2026: dezelfde melding direct na elkaar (bv. «ResizeObserver loop completed…», tot ~100 per
+  // geopende brief op de telefoon) telt één keer met een teller, zodat de lijst van 100 niet volloopt en echte fouten verdringt.
+  const tekst = scrub(message), laatste = problems[problems.length - 1];
+  if (laatste && laatste.kind === kind && laatste.message.replace(/ \(×\d+\)$/, '') === tekst) {
+    const n = Number(/ \(×(\d+)\)$/.exec(laatste.message)?.[1] || 1) + 1;
+    laatste.message = `${tekst} (×${n})`; laatste.at = Date.now();
+    return;
+  }
+  problems.push({ at: Date.now(), kind, message: tekst });
   if (problems.length > MAX_PROBLEMS) problems.shift();
 };
 const pathOf = (input: RequestInfo | URL): string => {

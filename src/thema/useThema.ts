@@ -7,6 +7,8 @@ import { echteWissel, hervat, isKlassiekPalet, isMaquetteStelsel, leesKeuze, nor
 import './paletten.css';
 import './weergave-stijl.css';
 import './accent-laag.css';
+// Сталі кольори станів (успіх зелений, увага помаранчева, помилка червона) поверх будь-якої теми й акценту — НЕ ПЕРЕВІРЕНО
+import './staat-kleuren.css';
 import './wissel-rust.css';
 import { themaWisselRust } from './wissel-rust';
 import { pasWeergaveStijlToe, type WeergaveStijl } from './weergave-stijl';

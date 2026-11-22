@@ -332,9 +332,11 @@ export function heeftActiefUitrolProces(s: UitrolAchtergrondSnapshot): boolean {
   const srv = s.server;
   if (!srv) return false;
   if (srv.run && srv.run.staat === 'bezig') return true;
-  if (srv.goedgekeurd.length > 0) return true;
-  if (srv.lopendeUploads.length > 0) return true;
-  if (srv.githubBezig.length > 0) return true;
+  // Grok: hub.tarasevych.com, 22.11.2026: een onvolledig antwoord (oude server, proxy, proefomgeving) gaf
+  // «Cannot read properties of undefined (reading 'length')» in elke pagina; ontbrekende lijsten tellen als leeg.
+  if ((srv.goedgekeurd?.length ?? 0) > 0) return true;
+  if ((srv.lopendeUploads?.length ?? 0) > 0) return true;
+  if ((srv.githubBezig?.length ?? 0) > 0) return true;
   return false;
 }
 

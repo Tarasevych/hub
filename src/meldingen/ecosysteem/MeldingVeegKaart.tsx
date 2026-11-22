@@ -2,7 +2,7 @@
 // семантичними маркерами файлів, радіусом дії мандата ШІ, печаткою ядра «Плющ» та умовним відкладенням (MELDPANEEL-002).
 // Захищає нові критичні сповіщення безпеки від випадкового прибирання змахом.
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   Archive,
   BellDot,
@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   XCircle,
+  Zap,
 } from 'lucide-react';
 import {
   evalueerVeeg,
@@ -49,6 +50,13 @@ import {
 } from '../puls/PulsVisueelAnker';
 import MeldingAiPaneel from './MeldingAiPaneel';
 import MeldingBijlageSpeler from './MeldingBijlageSpeler';
+import { useVlag } from '../../functievlag-lezen';
+import { WEERGAVE_VLAG } from '../../bijlage-weergave/soort';
+
+// SPIL-WEERGAVE етап 4, крок 4.6, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Google Antigravity):
+// картка вкладення підвантажується ліниво й лише за ввімкненого прапорця bijlage-weergave-gedeeld-v1;
+// поки вона вантажиться (і коли прапорець вимкнений) — чинні значки файлів «Пульта уваги» без змін.
+const MeldingKaartLui = lazy(() => import('../../bijlage-weergave/MeldingKaart').then((m) => ({ default: m.MeldingKaart })));
 
 function relatieveTijd(ts: number, lang: 'uk' | 'nl'): string {
   const diff = Math.max(0, Date.now() - ts);
@@ -125,6 +133,7 @@ export default function MeldingVeegKaart({
   const [open, setOpen] = useState(standaardOpen);
   const [aiOpen, setAiOpen] = useState(Boolean(gebeurtenis.aiSamenvatting));
   const [inlineBijlageIdx, setInlineBijlageIdx] = useState<number | null>(null);
+  const gedeeldeWeergave = useVlag(WEERGAVE_VLAG, false);
   const [uitstelMenuOpen, setUitstelMenuOpen] = useState(false);
   const [mandaatDuur, setMandaatDuur] = useState<'eenmalig' | '15m'>('eenmalig');
   const [offsetX, setOffsetX] = useState(0);
@@ -374,27 +383,52 @@ export default function MeldingVeegKaart({
           </div>
         )}
 
-        {gebeurtenis.bijlagen.length > 0 && (
-          <div className='mel-bijlagen-strook' data-geen-veeg='1'>
-            {gebeurtenis.bijlagen.map((b, idx) => (
-              <PulsBestandChip
-                key={b.id}
-                bijlage={b}
-                lang={lang}
-                actief={inlineBijlageIdx === idx}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpen(true);
-                  if (bijlageVoorkeur.inlineSpeler) {
-                    setInlineBijlageIdx((cur) => (cur === idx ? null : idx));
-                  } else {
-                    onOpenBijlageModaal(idx);
-                  }
-                }}
-              />
-            ))}
-          </div>
-        )}
+        {gebeurtenis.bijlagen.length > 0 && (() => {
+          // Спільна дія відкриття для значка файла й картки: розгорнути сповіщення, далі вбудований або модальний переглядач.
+          const openBijlage = (idx: number, vanKaart: boolean) => {
+            setOpen(true);
+            if (bijlageVoorkeur.inlineSpeler) {
+              setInlineBijlageIdx((cur) => (cur === idx ? null : idx));
+            } else {
+              onOpenBijlageModaal(idx);
+            }
+            // Розділ 7 концепції: «переглянуте зникає з уваги» — з картки (лише за прапорцем) нове сповіщення стає прочитаним,
+            // так само як під час розгортання заголовка.
+            if (vanKaart && gebeurtenis.status === 'nieuw') void onStatus('gelezen');
+          };
+          const oudeStrook = (
+            <div className='mel-bijlagen-strook' data-geen-veeg='1'>
+              {gebeurtenis.bijlagen.map((b, idx) => (
+                <PulsBestandChip
+                  key={b.id}
+                  bijlage={b}
+                  lang={lang}
+                  actief={inlineBijlageIdx === idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openBijlage(idx, false);
+                  }}
+                />
+              ))}
+            </div>
+          );
+          if (!gedeeldeWeergave) return oudeStrook;
+          return (
+            <Suspense fallback={oudeStrook}>
+              <div className='mel-bijlagen-kaarten' data-geen-veeg='1'>
+                {gebeurtenis.bijlagen.map((b, idx) => (
+                  <MeldingKaartLui
+                    key={b.id}
+                    taal={lang}
+                    bijlage={b}
+                    actief={inlineBijlageIdx === idx}
+                    onOpen={() => openBijlage(idx, true)}
+                  />
+                ))}
+              </div>
+            </Suspense>
+          );
+        })()}
 
         <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
           {verrijkt.gevolgHint ? <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span> : null}
@@ -691,6 +725,15 @@ export default function MeldingVeegKaart({
                 onSelectIndex={setInlineBijlageIdx}
                 onSluiten={() => setInlineBijlageIdx(null)}
                 onToggleModaal={() => onOpenBijlageModaal(inlineBijlageIdx)}
+                contextActies={/* SPIL-WEERGAVE етап 4, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Antigravity): дії сповіщення в спільній шапці; діють лише з увімкненим прапорцем bijlage-weergave-gedeeld-v1 */ [
+                  ...(gebeurtenis.status === 'nieuw'
+                    ? [{ sleutel: 'gelezen', label: ['Прочитано', 'Gelezen'] as [string, string], icoon: Check, zichtbaar: true, toon: 'goed' as const, uitvoeren: () => void onStatus('gelezen') }]
+                    : []),
+                  ...gebeurtenis.acties
+                    .filter((a) => a.soort === 'api')
+                    .slice(0, 1)
+                    .map((a) => ({ sleutel: `actie:${a.id}`, label: [a.labelUk, a.labelNl] as [string, string], icoon: Zap, zichtbaar: true, uitvoeren: () => void voerActie(a) })),
+                ]}
               />
             )}
 
