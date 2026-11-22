@@ -12,6 +12,7 @@ import {
 import {
   STANDAARD_CATEGORIE_BELEID,
   bekrachtigBestuursBesluitMetFrost,
+  maakAanvankelijkeGrondwetFrostBoodschap,
   maakFrostBesluitBoodschap,
   maakMomentopnameFrostBoodschap,
   maakUitgaveDoelenMetadata,
@@ -43,6 +44,7 @@ export interface GefaseerdeUitrolVerslag {
   status: 'alle_golven_voltooid' | 'automatisch_gestopt_en_teruggedraaid' | 'afgewezen_voor_installatie';
   voltooideGolven: number;
   geactiveerdeKnooppuntIds: string[];
+  teruggedraaideKnooppuntIds?: string[];
   nietAangeraakteKnooppuntIds: string[];
   tussentijdseVersieCompatibiliteitOk: boolean;
   stopFout: string | null;
@@ -85,18 +87,38 @@ export class KlimopBestuurEnUitrolClient {
           mandaatId: `mnd_bestuur_${opties.netwerkId}_${kn.knooppuntId.slice(5, 17)}`,
           uitgeverKnooppuntId: opties.opdrachtgever.identiteit.knooppuntId,
           ontvangerKnooppuntId: kn.knooppuntId,
-          machtDomein: 'persoonlijke_gegevens',
+          machtDomein: 'knooppunt_beheer',
           toegestaneRollen: ['verificatie'],
           toegestaneOpslagLagen: ['gedeelde_systeemtoestanden'],
           alleenMetDrempelQuorum: false,
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
-          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
-          toegestaneActies: ['stel_bestuursgrondwet_in', 'pas_uitgave_toe', 'raadpleeg_uitgave_staat'],
+          // KLIMOP-020 / KLIMOP-022: явний перелік дій та об'єктів керування конституцією і випусками
+          toegestaneActies: [
+            'stel_bestuursgrondwet_in',
+            'pas_uitgave_toe',
+            'draai_laatste_uitgave_terug',
+            'raadpleeg_uitgave_staat',
+          ],
+          objectIds: [opties.grondwet.grondwetId],
         },
         opties.opdrachtgever,
       );
+    }
+
+    let aanvankelijkeFrostHandtekeningHex: string | undefined;
+    if (!opties.bekrachtigdLogboek || opties.bekrachtigdLogboek.length === 0) {
+      const initFrost = await this.drempelClient.tekenMetFrostQuorum({
+        groep: opties.frostGroep,
+        boodschap: maakAanvankelijkeGrondwetFrostBoodschap(
+          opties.grondwet,
+          opties.erkendeDoelenRolPubDerB64u,
+          opties.erkendeTijdstempelRolPubDerB64u,
+        ),
+      });
+      if (!initFrost.ok) return { ok: false, fout: initFrost.fout };
+      aanvankelijkeFrostHandtekeningHex = initFrost.handtekeningHex;
     }
 
     const bevestigdeKnooppuntIds: string[] = [];
@@ -108,6 +130,7 @@ export class KlimopBestuurEnUitrolClient {
         grondwet: opties.grondwet,
         erkendeDoelenRolPubDerB64u: opties.erkendeDoelenRolPubDerB64u,
         erkendeTijdstempelRolPubDerB64u: opties.erkendeTijdstempelRolPubDerB64u,
+        aanvankelijkeFrostHandtekeningHex,
         bekrachtigdLogboek: opties.bekrachtigdLogboek,
         mandaat: mandatenPerKnooppuntId[kn.knooppuntId],
       });
@@ -246,11 +269,28 @@ export class KlimopBestuurEnUitrolClient {
     return { ok: true, bundel: { doelen, momentopname, tijdstempel } };
   }
 
+  private async draaiReedsGeactiveerdeKnooppuntenTerug(
+    omgeving: KlimopBestuursNetwerkOmgeving,
+    geactiveerdeKnooppuntIds: readonly string[],
+  ): Promise<string[]> {
+    const teruggedraaid: string[] = [];
+    for (const id of [...geactiveerdeKnooppuntIds].reverse()) {
+      const r = await this.netwerkClient.roepOpdrachtAan(id, {
+        actie: 'draai_laatste_uitgave_terug',
+        mandaat: omgeving.mandatenPerKnooppuntId[id],
+      });
+      if (r.antwoord.ok && r.antwoord.actie === 'uitgave_teruggedraaid') {
+        teruggedraaid.push(id);
+      }
+    }
+    return teruggedraaid;
+  }
+
   /**
    * Послідовно розгортає випуск хвилями (`golven[0] -> golven[1] -> ...`):
    *   - на кожній хвилі вузли перевіряють усі криптографічні рівні та всі 4 показники §24;
-   *   - при порушенні на будь-якому вузлі поточної хвилі цей вузол автоматично відкочується,
-   *     а всі подальші хвилі миттєво зупиняються без торкання їхніх вузлів!
+   *   - при порушенні на будь-якому вузлі поточної хвилі або виявленні несумісності версій із наступними хвилями
+   *     всі вже оновлені вузли попередньої чи поточної хвилі автоматично відкочуються, а подальші хвилі миттєво зупиняються!
    */
   async voerGefaseerdeUitrolUit(opties: {
     omgeving: KlimopBestuursNetwerkOmgeving;
@@ -287,14 +327,21 @@ export class KlimopBestuurEnUitrolClient {
           const stopDetails = !r.antwoord.ok && r.antwoord.details ? r.antwoord.details : [];
           const behandeldSet = new Set([...geactiveerdeKnooppuntIds, knooppuntId]);
           const nietAangeraakteKnooppuntIds = alleDoelIds.filter((id) => !behandeldSet.has(id));
+          const teruggedraaid = await this.draaiReedsGeactiveerdeKnooppuntenTerug(
+            opties.omgeving,
+            geactiveerdeKnooppuntIds,
+          );
+          const teruggedraaidSet = new Set(teruggedraaid);
+          const resterendGeactiveerd = geactiveerdeKnooppuntIds.filter((id) => !teruggedraaidSet.has(id));
           return {
             voltooid: false,
             status:
-              foutCode === 'UITGAVE_GEZONDHEIDSCONTROLE_MISLUKT_TERUGGEDRAAID'
+              foutCode === 'UITGAVE_GEZONDHEIDSCONTROLE_MISLUKT_TERUGGEDRAAID' || teruggedraaid.length > 0
                 ? 'automatisch_gestopt_en_teruggedraaid'
                 : 'afgewezen_voor_installatie',
-            voltooideGolven,
-            geactiveerdeKnooppuntIds,
+            voltooideGolven: resterendGeactiveerd.length === 0 ? 0 : voltooideGolven,
+            geactiveerdeKnooppuntIds: resterendGeactiveerd,
+            teruggedraaideKnooppuntIds: teruggedraaid,
             nietAangeraakteKnooppuntIds,
             tussentijdseVersieCompatibiliteitOk,
             stopFout: foutCode,
@@ -309,8 +356,8 @@ export class KlimopBestuurEnUitrolClient {
 
       // Між хвилями перевіряємо сумісність вузлів нової версії з вузлами наступних хвиль на попередній версії (§40 п. 6)
       if (g < opties.golven.length - 1) {
-        const volgendId = opties.golven[g + 1][0];
-        if (volgendId) {
+        const volgendeGolfIds = opties.golven.slice(g + 1).flat();
+        for (const volgendId of volgendeGolfIds) {
           const stVolgend = await this.netwerkClient.roepOpdrachtAan(volgendId, {
             actie: 'raadpleeg_uitgave_staat',
             mandaat: opties.omgeving.mandatenPerKnooppuntId[volgendId],
@@ -326,7 +373,28 @@ export class KlimopBestuurEnUitrolClient {
                 minCompatibelVolgnummer: stVolgend.antwoord.minCompatibelVolgnummer,
               },
             );
-            if (!compat) tussentijdseVersieCompatibiliteitOk = false;
+            if (!compat) {
+              tussentijdseVersieCompatibiliteitOk = false;
+              const behandeldSet = new Set(geactiveerdeKnooppuntIds);
+              const nietAangeraakteKnooppuntIds = alleDoelIds.filter((id) => !behandeldSet.has(id));
+              const teruggedraaid = await this.draaiReedsGeactiveerdeKnooppuntenTerug(
+                opties.omgeving,
+                geactiveerdeKnooppuntIds,
+              );
+              const teruggedraaidSet = new Set(teruggedraaid);
+              const resterendGeactiveerd = geactiveerdeKnooppuntIds.filter((id) => !teruggedraaidSet.has(id));
+              return {
+                voltooid: false,
+                status: 'automatisch_gestopt_en_teruggedraaid',
+                voltooideGolven: 0,
+                geactiveerdeKnooppuntIds: resterendGeactiveerd,
+                teruggedraaideKnooppuntIds: teruggedraaid,
+                nietAangeraakteKnooppuntIds,
+                tussentijdseVersieCompatibiliteitOk: false,
+                stopFout: 'TUSSENTIJDSE_VERSIE_ONVERENIGBAAR_TERUGGEDRAAID',
+                stopDetails: [`onverenigbaar_met:${volgendId}`],
+              };
+            }
           }
         }
       }
@@ -337,6 +405,7 @@ export class KlimopBestuurEnUitrolClient {
       status: 'alle_golven_voltooid',
       voltooideGolven,
       geactiveerdeKnooppuntIds,
+      teruggedraaideKnooppuntIds: [],
       nietAangeraakteKnooppuntIds: [],
       tussentijdseVersieCompatibiliteitOk,
       stopFout: null,

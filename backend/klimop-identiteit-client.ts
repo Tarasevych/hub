@@ -12,6 +12,7 @@ import {
   type KlimopOndertekendMandaat,
 } from '../shared/klimop/kern';
 import {
+  heeftGeldigGemeenschappelijkRotatieVoorvoegsel,
   verifieerApparaatCertificaat,
   verifieerApparaatIntrekking,
   verifieerPersoonsStaat,
@@ -42,6 +43,7 @@ export class KlimopIdentiteitNetwerkClient {
     opdrachtgever: { identiteit: KlimopKnooppuntIdentiteit; geheimeSleutelPkcs8B64u: string };
     knooppunten: readonly KlimopKnooppuntIdentiteit[];
     quorumDrempel: number;
+    toegestanePersoonsIds?: readonly string[];
     nuIso?: string;
     verlooptOpIso?: string;
   }): { ok: true; groep: KlimopIdentiteitRegisterGroep } | { ok: false; fout: string; details?: string[] } {
@@ -76,6 +78,7 @@ export class KlimopIdentiteitNetwerkClient {
           verlooptOp: verlooptOpIso,
           // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
           toegestaneActies: ['publiceer_identiteit_staat', 'raadpleeg_identiteit_staat'],
+          ...(opties.toegestanePersoonsIds ? { objectIds: [...opties.toegestanePersoonsIds] } : {}),
         },
         opties.opdrachtgever,
       );
@@ -110,7 +113,7 @@ export class KlimopIdentiteitNetwerkClient {
 
     const intrekkingen = opties.intrekkingen ?? [];
     for (const intr of intrekkingen) {
-      const iv = verifieerApparaatIntrekking(intr, opties.staat);
+      const iv = verifieerApparaatIntrekking(intr, opties.staat, intrekkingen);
       if (!iv.ok) return { ok: false, fout: iv.fout, bevestigdeKnooppuntIds: [] };
     }
 
@@ -186,32 +189,29 @@ export class KlimopIdentiteitNetwerkClient {
       return { ok: false, fout: 'TEGENSTRIJDIGE_OPRICHTINGSBEWIJZEN_GEDETECTEERD' };
     }
 
-    // KLIMOP-020: історії ротацій усіх відповідей мають бути префіксами одна одної (розбіжні голови — відмова),
+    // KLIMOP-020 / KLIMOP-022: історії ротацій усіх відповідей мають бути префіксами одна одної (розбіжні голови — відмова),
     // а обрана голова мусить бути підтверджена кворумом, а не взята з однієї відповіді з найбільшою епохою
-    const ketenVan = (st: KlimopPersoonsStaat): string[] => st.rotaties.map((r) => canoniekeJson(r));
-    const ketens = geldigeAntwoorden.map((a) => ketenVan(a.invoer.staat));
-    for (let i = 0; i < ketens.length; i++) {
-      for (let j = i + 1; j < ketens.length; j++) {
-        const kort = ketens[i].length <= ketens[j].length ? ketens[i] : ketens[j];
-        const lang = kort === ketens[i] ? ketens[j] : ketens[i];
-        if (kort.some((r, idx) => lang[idx] !== r)) {
+    for (let i = 0; i < geldigeAntwoorden.length; i++) {
+      for (let j = i + 1; j < geldigeAntwoorden.length; j++) {
+        if (!heeftGeldigGemeenschappelijkRotatieVoorvoegsel(geldigeAntwoorden[i].invoer.staat, geldigeAntwoorden[j].invoer.staat)) {
           return { ok: false, fout: 'TEGENSTRIJDIGE_IDENTITEITSGESCHIEDENIS_GEDETECTEERD' };
         }
       }
     }
     const geordend = geldigeAntwoorden
-      .map((a, idx) => ({ a, lengte: ketens[idx].length }))
+      .map((a) => ({ a, lengte: a.invoer.staat.rotaties.length }))
       .sort((x, y) => y.lengte - x.lengte);
     // Відповідь з індексом (кворум − 1) у спадному порядку — найдовша історія, яку містять щонайменше `quorumDrempel` вузлів
     const nieuwsteStaat = geordend[opties.groep.quorumDrempel - 1].a.invoer.staat;
 
-    // Об'єднуємо всі криптографічно дійсні відкликання пристроїв з усіх опитаних вузлів
+    // Об'єднуємо всі криптографічно дійсні відкликання пристроїв з усіх опитаних вузлів з передаванням повного набору відкликань
+    const alleOntvangenIntrekkingen = geldigeAntwoorden.flatMap((a) => a.invoer.intrekkingen);
     const intrekkingenMap = new Map<string, KlimopApparaatIntrekking>();
     let gekozenHerstelAanvraag: KlimopHerstelAanvraag | null = null;
 
     for (const a of geldigeAntwoorden) {
       for (const intr of a.invoer.intrekkingen) {
-        if (verifieerApparaatIntrekking(intr, nieuwsteStaat).ok) {
+        if (verifieerApparaatIntrekking(intr, nieuwsteStaat, alleOntvangenIntrekkingen).ok) {
           intrekkingenMap.set(intr.ingetrokkenApparaatId, intr);
         }
       }

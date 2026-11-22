@@ -278,7 +278,7 @@ function bouwSystematischeCauchyMatrix(k: number, m: number): Uint8Array[] {
   return rijen;
 }
 
-/** Обертає квадратну матрицю k × k над GF(2^8) методом Гауса–Жордана з вибором ведучого елемента. */
+/** Обертає квадратну матрицю k × k над GF(2^8) методом Гауса–Жордана з вибором головного елемента. */
 function inverteerGfMatrix(matrix: Uint8Array[]): Uint8Array[] {
   const n = matrix.length;
   const links = matrix.map((r) => new Uint8Array(r));
@@ -733,7 +733,10 @@ export function versleutelEnVerdeelObject(opties: {
 }
 
 /** Перевіряє цілісність і підпис Ed25519 (та гібридний ML-DSA-65 для рівня 20) маніфесту об'єкта без ключа KEK. */
-export function verifieerObjectManifest(manifest: KlimopObjectManifest): { ok: true } | { ok: false; fout: string } {
+export function verifieerObjectManifest(
+  manifest: KlimopObjectManifest,
+  opties?: { verwachteMlDsa65PubliekSpkiB64u?: string },
+): { ok: true } | { ok: false; fout: string } {
   if (!manifest || manifest.schema !== 1) return { ok: false, fout: 'MANIFEST_ONGELDIGE_VORM' };
   const id = manifest.eigenaarIdentiteit;
   if (!id || berekenKnooppuntId(id.publiekeSleutelDerB64u) !== id.knooppuntId) {
@@ -743,6 +746,10 @@ export function verifieerObjectManifest(manifest: KlimopObjectManifest): { ok: t
     manifest.effectieveBeveiligingsRang === 20
     && (!manifest.mlDsa65PubliekSpkiB64u || !manifest.mlDsa65HandtekeningB64u)
   ) {
+    return { ok: false, fout: 'MANIFEST_POSTKWANTUM_HANDTEKENING_ONTBREEKT' };
+  }
+  const verwachtePqPub = opties?.verwachteMlDsa65PubliekSpkiB64u ?? id.postkwantumPubliekeSleutelB64u ?? undefined;
+  if (opties?.verwachteMlDsa65PubliekSpkiB64u && !manifest.mlDsa65PubliekSpkiB64u) {
     return { ok: false, fout: 'MANIFEST_POSTKWANTUM_HANDTEKENING_ONTBREEKT' };
   }
   try {
@@ -764,6 +771,15 @@ export function verifieerObjectManifest(manifest: KlimopObjectManifest): { ok: t
     if (manifest.mlDsa65PubliekSpkiB64u || mlDsa65HandtekeningB64u) {
       if (!manifest.mlDsa65PubliekSpkiB64u || !mlDsa65HandtekeningB64u) {
         return { ok: false, fout: 'MANIFEST_POSTKWANTUM_HANDTEKENING_ONTBREEKT' };
+      }
+      if (!verwachtePqPub) {
+        return { ok: false, fout: 'MANIFEST_EIGENAAR_MIST_POSTKWANTUM_SLEUTEL' };
+      }
+      if (
+        manifest.mlDsa65PubliekSpkiB64u !== verwachtePqPub
+        || (id.postkwantumPubliekeSleutelB64u !== null && id.postkwantumPubliekeSleutelB64u !== verwachtePqPub)
+      ) {
+        return { ok: false, fout: 'MANIFEST_POSTKWANTUM_SLEUTEL_KOMT_NIET_OVEREEN' };
       }
       const pqPub = createPublicKey({
         key: Buffer.from(manifest.mlDsa65PubliekSpkiB64u, 'base64url'),
@@ -795,8 +811,11 @@ export function herstelEnOntsleutelObject(opties: {
   manifest: KlimopObjectManifest;
   fragmentenPerSegment: ReadonlyArray<readonly ReedSolomonFragment[]>;
   kek: Buffer;
+  verwachteMlDsa65PubliekSpkiB64u?: string;
 }): { ok: true; inhoud: Buffer } | { ok: false; fout: string } {
-  const mv = verifieerObjectManifest(opties.manifest);
+  const mv = verifieerObjectManifest(opties.manifest, {
+    verwachteMlDsa65PubliekSpkiB64u: opties.verwachteMlDsa65PubliekSpkiB64u,
+  });
   if (!mv.ok) return mv;
 
   const { manifest } = opties;

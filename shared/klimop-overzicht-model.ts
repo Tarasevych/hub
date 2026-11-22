@@ -260,6 +260,89 @@ export const KLIMOP_VIJFTIEN_VRAGEN_LIJST: ReadonlyArray<{
   { id: 'geen_netwerkrisico_door_een_verbinder', uk: '15. Чи не створюється нова небезпека для мережі через один з’єднувач?', nl: '15. Ontstaat er geen netwerkbreed risico via één enkele verbinder?' },
 ]);
 
+export const KLIMOP_VEERTIEN_VERBODEN_LIJST: ReadonlyArray<{
+  id: KlimopVerbodenVereenvoudigingId;
+  uk: string;
+  nl: string;
+}> = Object.freeze([
+  { id: 'onkwetsbaarheid_claimen', uk: '1. Твердження про абсолютну невразливість системи', nl: '1. Bewering van volledige onkwetsbaarheid van het systeem' },
+  { id: 'kopieen_op_een_server_als_onafhankelijk', uk: '2. Копії на одному сервері видаються за незалежні вузли', nl: '2. Kopieën op één server voorgesteld als onafhankelijke knooppunten' },
+  { id: 'shamir_verwarren_met_grote_bestanden', uk: '3. Плутання поділу секрету Шаміра з поділом великих файлів', nl: '3. Verwarring van geheimdeling van Shamir met opsplitsing van grote bestanden' },
+  { id: 'serverversleuteling_als_nulkennis', uk: '4. Звичайне серверне шифрування видається за нульове розголошення', nl: '4. Gewone serverversleuteling voorgesteld als nulkennisopslag' },
+  { id: 'drempelhandtekening_als_versleuteling', uk: '5. Пороговий підпис прирівнюється до шифрування вмісту', nl: '5. Drempelhandtekening gelijkgesteld aan inhoudsversleuteling' },
+  { id: 'vertrouwen_op_netwerknabijheid', uk: '6. Довіра на підставі мережевої близькості замість криптографії', nl: '6. Vertrouwen op netwerknabijheid in plaats van cryptografie' },
+  { id: 'kritieke_macht_aan_toevallige_meerderheid', uk: '7. Передавання критичних прав випадковій більшості вузлів', nl: '7. Kritieke bevoegdheden overgedragen aan een toevallige meerderheid' },
+  { id: 'hardware_isolatie_als_absoluut', uk: '8. Апаратна ізоляція подається як абсолютна гарантія', nl: '8. Fysieke afscherming voorgesteld als onfeilbare waarborg' },
+  { id: 'automatisch_herstel_of_vernietiging', uk: '9. Автоматичне відновлення прав або знищення особистих даних', nl: '9. Automatisch rechtenherstel of vernietiging van persoonsgegevens' },
+  { id: 'verborgen_gebruik_gebruikersapparaten', uk: '10. Приховане використання пристроїв користувачів без згоди', nl: '10. Verborgen inzet van gebruikersapparaten zonder toestemming' },
+  { id: 'productie_uitschakelen_voor_vervanging', uk: '11. Вимкнення робочої основи до доведеної готовності заміни', nl: '11. Uitschakeling van de draaiende basis vóór bewezen vervanging' },
+  { id: 'eigen_ongeteste_cryptografie', uk: '12. Саморобні неперевірені криптографічні алгоритми', nl: '12. Zelfbedachte onbeproefde cryptografische algoritmen' },
+  { id: 'tests_geslaagd_zonder_bewijs', uk: '13. Заяви про успішні випробування без фактичних доказів', nl: '13. Melding van geslaagde beproevingen zonder feitelijk bewijs' },
+  { id: 'kritieke_uitrol_zonder_goedkeuring', uk: '14. Критичне розгортання без затвердження власника чи кворуму', nl: '14. Kritieke uitrol zonder goedkeuring van eigenaar of quorum' },
+]);
+
+const GELDIGE_VRAAG_ID_SET: ReadonlySet<string> = new Set(KLIMOP_VIJFTIEN_VRAGEN_LIJST.map((v) => v.id));
+
+/** KLIMOP-022: створює поіменний шаблон для 15 питань архітектурної перевірки розділу 42. */
+export function maakLeegVragenBewijsSjabloon(): string {
+  return KLIMOP_VIJFTIEN_VRAGEN_LIJST.map((v) => `${v.id}: `).join('\n');
+}
+
+/**
+ * KLIMOP-022: розбирає лише поіменні докази за конкретними ідентифікаторами 15 питань
+ * (JSON-словник або поіменні рядки `ідентифікатор_питання: перевірний доказ`).
+ * Довільний неструктурований рядок ніколи не приписується автоматично всім 15 питанням.
+ */
+export function ontleedVoorstelBewijsNaarAntwoorden(
+  ruwBewijs: string,
+): Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> {
+  const getrimd = ruwBewijs.trim();
+  if (!getrimd) return {};
+
+  if (getrimd.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(getrimd) as Record<string, unknown>;
+      const uit: Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> = {};
+      for (const v of KLIMOP_VIJFTIEN_VRAGEN_LIJST) {
+        const waarde = parsed[v.id];
+        if (typeof waarde === 'string' && waarde.trim()) {
+          uit[v.id] = { voldaan: true, bewijs: waarde.trim() };
+        } else if (waarde && typeof waarde === 'object' && !Array.isArray(waarde)) {
+          const obj = waarde as Record<string, unknown>;
+          const bew = String(obj.bewijs ?? '').trim();
+          if (bew || obj.voldaan === false) {
+            uit[v.id] = {
+              voldaan: obj.voldaan !== false,
+              bewijs: bew,
+            };
+          }
+        }
+      }
+      return uit;
+    } catch {
+      return {};
+    }
+  }
+
+  const uit: Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> = {};
+  for (const rauweLijn of getrimd.split('\n')) {
+    const lijn = rauweLijn.trim();
+    if (!lijn || lijn.startsWith('#')) continue;
+    const dubbelePuntIndex = lijn.indexOf(':');
+    if (dubbelePuntIndex <= 0) continue;
+    const sleutel = lijn.slice(0, dubbelePuntIndex).trim().replace(/^[-*•\d.)\s]+/, '');
+    const bewijsTekst = lijn.slice(dubbelePuntIndex + 1).trim();
+    if (!GELDIGE_VRAAG_ID_SET.has(sleutel) || !bewijsTekst) continue;
+    const vraagId = sleutel as KlimopControleVraagId;
+    if (/^(nee|niet|ні|відхилено|false)\b/i.test(bewijsTekst)) {
+      uit[vraagId] = { voldaan: false, bewijs: bewijsTekst };
+    } else {
+      uit[vraagId] = { voldaan: true, bewijs: bewijsTekst };
+    }
+  }
+  return uit;
+}
+
 export interface KlimopVraagToetsResultaat {
   vraagId: KlimopControleVraagId;
   status: 'voldaan' | 'gefaald' | 'onbeoordeeld';

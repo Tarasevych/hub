@@ -5,6 +5,7 @@
 
 import { randomBytes } from 'node:crypto';
 import {
+  canoniekeJson,
   controleerKnooppuntOnafhankelijkheid,
   ondertekenKlimopMandaat,
   type KlimopKnooppuntIdentiteit,
@@ -162,6 +163,7 @@ export class KlimopDrempelOndertekenaarClient {
     let groepsPubliekeSleutelHex = '';
     let groepsPubliekeSleutelSpkiB64u = '';
     let deelnemerPubliekeSleutelsHex: Record<number, string> = {};
+    let deelnemerPubliekeSleutelsCanoniek = '';
 
     for (let idx = 1; idx <= totaal; idx++) {
       const kn = knooppuntPerDeelnemerIndex[idx];
@@ -178,12 +180,19 @@ export class KlimopDrempelOndertekenaarClient {
       if (r.antwoord.samenstellingHex !== samenstelling.samenstellingHex) {
         return { ok: false, fout: 'DKG_SAMENSTELLING_VERSCHILT_TUSSEN_KNOOPPUNTEN' };
       }
+      const huidigeDeelnemerSleutelsCanoniek = canoniekeJson(r.antwoord.deelnemerPubliekeSleutelsHex);
       if (!groepsPubliekeSleutelHex) {
         groepsPubliekeSleutelHex = r.antwoord.groepsPubliekeSleutelHex;
         groepsPubliekeSleutelSpkiB64u = r.antwoord.groepsPubliekeSleutelSpkiB64u;
         deelnemerPubliekeSleutelsHex = r.antwoord.deelnemerPubliekeSleutelsHex;
-      } else if (groepsPubliekeSleutelHex !== r.antwoord.groepsPubliekeSleutelHex) {
+        deelnemerPubliekeSleutelsCanoniek = huidigeDeelnemerSleutelsCanoniek;
+      } else if (
+        groepsPubliekeSleutelHex !== r.antwoord.groepsPubliekeSleutelHex
+        || groepsPubliekeSleutelSpkiB64u !== r.antwoord.groepsPubliekeSleutelSpkiB64u
+      ) {
         return { ok: false, fout: 'DKG_GROEPSSLEUTEL_VERSCHILT_TUSSEN_KNOOPPUNTEN' };
+      } else if (deelnemerPubliekeSleutelsCanoniek !== huidigeDeelnemerSleutelsCanoniek) {
+        return { ok: false, fout: 'DKG_DEELNEMERSLEUTELS_VERSCHILLEN_TUSSEN_KNOOPPUNTEN' };
       }
     }
 

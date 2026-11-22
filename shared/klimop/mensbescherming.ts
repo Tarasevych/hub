@@ -25,6 +25,7 @@ import {
   randomBytes,
   scryptSync,
   sign,
+  timingSafeEqual,
   verify,
 } from 'node:crypto';
 import { canoniekeJson } from './kern';
@@ -196,6 +197,22 @@ export function valideerDwangBeschermingsProfiel(
  *     ідентичної довжини ключа (32 байти), без доступу до ключів основного сховища, резервних часток чи керування мережею!
  *   - жодних ознак існування іншого сховища у виведеному ключі немає; дані основного сховища залишаються цілими.
  */
+function vergelijkVerifier32ConstantTijd(verifier32: Buffer, verwachteHex: string): boolean {
+  if (typeof verwachteHex !== 'string' || !/^[0-9a-f]{64}$/i.test(verwachteHex)) {
+    // Виконуємо холосте порівняння фіксованої довжини 32 байти, щоб не розкривати формат через час
+    const nep = Buffer.alloc(32, 0);
+    timingSafeEqual(verifier32, nep);
+    return false;
+  }
+  const verwachtBuf = Buffer.from(verwachteHex, 'hex');
+  if (verwachtBuf.length !== 32) {
+    const nep = Buffer.alloc(32, 0);
+    timingSafeEqual(verifier32, nep);
+    return false;
+  }
+  return timingSafeEqual(verifier32, verwachtBuf);
+}
+
 export function leidScheidbareKluisContextAf(opties: {
   ingevoerdGeheimMateriaal: Buffer;
   kluisZout32: Buffer;
@@ -214,39 +231,49 @@ export function leidScheidbareKluisContextAf(opties: {
   if (opties.kluisZout32.length < 32 || opties.ingevoerdGeheimMateriaal.length < 16) {
     return { ok: false, fout: 'KLUIS_SLEUTELMATERIAAL_ONGELDIG' };
   }
-  const verifier = Buffer.from(
+  const verifierBuf = Buffer.from(
     hkdfSync('sha256', opties.ingevoerdGeheimMateriaal, opties.kluisZout32, Buffer.from('klimop-kluis-verifier-v1', 'utf8'), 32),
-  ).toString('hex');
+  );
+  try {
+    // Обчислюємо обидва порівняння у сталий час до розгалуження, щоб виключити часовий побічний канал між сховищами
+    const isHoofd = vergelijkVerifier32ConstantTijd(verifierBuf, opties.verwachteHoofdVerifierHex);
+    const isDwang = vergelijkVerifier32ConstantTijd(verifierBuf, opties.verwachteDwangVerifierHex);
+    if (isHoofd && isDwang) {
+      return { ok: false, fout: 'KLUIS_VERIFIERS_MOGEN_NIET_SAMENVALLEN' };
+    }
 
-  if (verifier === opties.verwachteHoofdVerifierHex) {
-    const kluisSleutel32 = Buffer.from(
-      hkdfSync('sha256', opties.ingevoerdGeheimMateriaal, opties.kluisZout32, Buffer.from('klimop-kluis-sleutel-v1|hoofd', 'utf8'), 32),
-    );
-    return {
-      ok: true,
-      geopendeKluis: 'hoofd_kluis',
-      kluisSleutel32,
-      stilDwangModusActief: false,
-      toegestaneRechten: ['lezen_volledig', 'schrijven_basis', 'kritiek_beheer'],
-      hoofdGegevensIntact: true,
-    };
+    if (isHoofd) {
+      const kluisSleutel32 = Buffer.from(
+        hkdfSync('sha256', opties.ingevoerdGeheimMateriaal, opties.kluisZout32, Buffer.from('klimop-kluis-sleutel-v1|hoofd', 'utf8'), 32),
+      );
+      return {
+        ok: true,
+        geopendeKluis: 'hoofd_kluis',
+        kluisSleutel32,
+        stilDwangModusActief: false,
+        toegestaneRechten: ['lezen_volledig', 'schrijven_basis', 'kritiek_beheer'],
+        hoofdGegevensIntact: true,
+      };
+    }
+
+    if (isDwang) {
+      const kluisSleutel32 = Buffer.from(
+        hkdfSync('sha256', opties.ingevoerdGeheimMateriaal, opties.kluisZout32, Buffer.from('klimop-kluis-sleutel-v1|neven', 'utf8'), 32),
+      );
+      return {
+        ok: true,
+        geopendeKluis: 'afgeschermde_nevenkluis',
+        kluisSleutel32,
+        stilDwangModusActief: true,
+        toegestaneRechten: ['lezen_nevenkluis', 'schrijven_basis'],
+        hoofdGegevensIntact: true,
+      };
+    }
+
+    return { ok: false, fout: 'INLOGGEGEVENS_ONJUIST' };
+  } finally {
+    verifierBuf.fill(0);
   }
-
-  if (verifier === opties.verwachteDwangVerifierHex) {
-    const kluisSleutel32 = Buffer.from(
-      hkdfSync('sha256', opties.ingevoerdGeheimMateriaal, opties.kluisZout32, Buffer.from('klimop-kluis-sleutel-v1|neven', 'utf8'), 32),
-    );
-    return {
-      ok: true,
-      geopendeKluis: 'afgeschermde_nevenkluis',
-      kluisSleutel32,
-      stilDwangModusActief: true,
-      toegestaneRechten: ['lezen_nevenkluis', 'schrijven_basis'],
-      hoofdGegevensIntact: true,
-    };
-  }
-
-  return { ok: false, fout: 'INLOGGEGEVENS_ONJUIST' };
 }
 
 export function berekenKluisVerifierHex(geheimMateriaal: Buffer, kluisZout32: Buffer): string {
@@ -482,6 +509,7 @@ export function openNoodSignaalDoorVertrouwenspersoon(opties: {
  */
 export function maakValsAlarmHerstelVerklaring(opties: {
   persoonsId: string;
+  alarmId?: string;
   alarmGeactiveerdOp: string;
   eigenaarSleutels: { publiekeSleutelDerB64u: string; geheimeSleutelPkcs8B64u: string };
   voogdSleutels: { voogdId: string; publiekeSleutelDerB64u: string; geheimeSleutelPkcs8B64u: string };
@@ -490,6 +518,7 @@ export function maakValsAlarmHerstelVerklaring(opties: {
   const kern = {
     schema: 1 as const,
     persoonsId: opties.persoonsId,
+    ...(opties.alarmId !== undefined ? { alarmId: opties.alarmId } : {}),
     alarmGeactiveerdOp: opties.alarmGeactiveerdOp,
     bevestigdOp: opties.nuIso ?? new Date().toISOString(),
     eigenaarPubDerB64u: opties.eigenaarSleutels.publiekeSleutelDerB64u,
@@ -507,6 +536,8 @@ export function maakValsAlarmHerstelVerklaring(opties: {
 export function herstelNaValsDwangAlarm(opties: {
   profiel: KlimopDwangBeschermingsProfiel;
   verwachteEigenaarPubDerB64u: string;
+  verwachtAlarmId?: string;
+  verwachtAlarmGeactiveerdOp?: string;
   verklaring: ReturnType<typeof maakValsAlarmHerstelVerklaring>;
 }): { ok: true; nieuweModus: 'normaal'; gegevensVerliesBytes: 0 } | { ok: false; fout: string } {
   const { verklaring } = opties;
@@ -515,6 +546,20 @@ export function herstelNaValsDwangAlarm(opties: {
     || verklaring.eigenaarPubDerB64u !== opties.verwachteEigenaarPubDerB64u
   ) {
     return { ok: false, fout: 'VALS_ALARM_EIGENAAR_ONGELDIG' };
+  }
+  const alarmMs = Date.parse(verklaring.alarmGeactiveerdOp);
+  const bevestigdMs = Date.parse(verklaring.bevestigdOp);
+  if (!Number.isFinite(alarmMs) || !Number.isFinite(bevestigdMs) || bevestigdMs < alarmMs) {
+    return { ok: false, fout: 'VALS_ALARM_TIJDSTIP_ONGELDIG' };
+  }
+  if (opties.verwachtAlarmId !== undefined && verklaring.alarmId !== opties.verwachtAlarmId) {
+    return { ok: false, fout: 'VALS_ALARM_ID_KOMT_NIET_OVEREEN' };
+  }
+  if (
+    opties.verwachtAlarmGeactiveerdOp !== undefined
+    && verklaring.alarmGeactiveerdOp !== opties.verwachtAlarmGeactiveerdOp
+  ) {
+    return { ok: false, fout: 'VALS_ALARM_TIJDSTIP_KOMT_NIET_OVEREEN' };
   }
   const erkendeVoogd = opties.profiel.vertrouwenspersonenVoorAlarm.find(
     (v) => v.voogdId === verklaring.voogdId && v.ed25519PubDerB64u === verklaring.voogdPubDerB64u,

@@ -132,20 +132,21 @@ export async function main(): Promise<number> {
     && verwijderKaderOpvulling(opgevuldKort).toString('utf8') === 'Привіт'
     && verwijderKaderOpvulling(opgevuldLang).length === 190);
 
+  const kaderTijdOpt = { nuMs: Date.parse(nuIso) + 1000 };
   const boodschapI2R = Buffer.from('Наскрізно зашифрований кадр ChaCha20-Poly1305', 'utf8');
-  const kaderChaCha = versleutelStengelKader(volt1.sessie, boodschapI2R);
-  const geopendChaCha = ontsleutelStengelKader(antw1.sessie, kaderChaCha);
-  const herhalingChaCha = ontsleutelStengelKader(antw1.sessie, kaderChaCha);
+  const kaderChaCha = versleutelStengelKader(volt1.sessie, boodschapI2R, kaderTijdOpt);
+  const geopendChaCha = ontsleutelStengelKader(antw1.sessie, kaderChaCha, kaderTijdOpt);
+  const herhalingChaCha = ontsleutelStengelKader(antw1.sessie, kaderChaCha, kaderTijdOpt);
 
   const boodschapAes = Buffer.from('Зворотний кадр AES-256-GCM від отримувача до ініціатора', 'utf8');
-  const kaderAes = versleutelStengelKader(antw2.sessie, boodschapAes);
-  const geopendAes = ontsleutelStengelKader(volt2.sessie, kaderAes);
+  const kaderAes = versleutelStengelKader(antw2.sessie, boodschapAes, kaderTijdOpt);
+  const geopendAes = ontsleutelStengelKader(volt2.sessie, kaderAes, kaderTijdOpt);
 
   const beschadigdKader = {
-    ...versleutelStengelKader(volt1.sessie, Buffer.from('Перевірка цілісності', 'utf8')),
+    ...versleutelStengelKader(volt1.sessie, Buffer.from('Перевірка цілісності', 'utf8'), kaderTijdOpt),
     authenticatieTagB64u: randomBytes(16).toString('base64url'),
   };
-  const geopendBeschadigd = ontsleutelStengelKader(antw1.sessie, beschadigdKader);
+  const geopendBeschadigd = ontsleutelStengelKader(antw1.sessie, beschadigdKader, kaderTijdOpt);
 
   check('кадри ChaCha20-Poly1305 та AES-256-GCM розшифровуються без втрат, а повтор і підробка мітки автентичності блокуються',
     geopendChaCha.ok === true && geopendChaCha.klareInhoud.equals(boodschapI2R)
@@ -158,7 +159,7 @@ export async function main(): Promise<number> {
     volt1.sessie.gesloten === true
     && volt1.sessie.zendSleutel.every((b) => b === 0)
     && volt1.sessie.ontvangSleutel.every((b) => b === 0)
-    && ontsleutelStengelKader(volt1.sessie, kaderAes).ok === false);
+    && ontsleutelStengelKader(volt1.sessie, kaderAes, kaderTijdOpt).ok === false);
 
   // ------------------------------------------------------------------ 3. Таблиця маршрутизації KlimopRouteTabel
   const tabel = new KlimopRouteTabel();

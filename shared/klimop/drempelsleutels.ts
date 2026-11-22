@@ -1023,6 +1023,10 @@ function berekenFrostGroepsToezeggingEnUitdaging(
     rhoPerIndex.set(t.deelnemerIndex, rho);
     groepsPuntR = puntTelOp(groepsPuntR, puntTelOp(D, puntVermenigvuldig(E, rho)));
   }
+  // RFC 9591 §4.3: одинична групова точка зобов'язання R = O категорично відхиляється
+  if (puntIsGelijk(groepsPuntR, NUL_PUNT)) {
+    return { ok: false, fout: 'FROST_GROEPSPUNT_IDENTITEIT_GEWEIGERD' };
+  }
 
   const groepsPuntRHex = codeerPuntHex(groepsPuntR);
   // H2 RFC 9591 §6.1 збігається з викликом Шнорра RFC 8032 §5.1.6: SHA-512(enc(R) || enc(Y) || M) mod L
@@ -1157,6 +1161,13 @@ export function frostVoegHandtekeningSamen(opties: {
     || opties.deelHandtekeningen.length !== opties.toezeggingenLijst.length
   ) {
     return { ok: false, fout: 'FROST_AANTAL_DEELHANDTEKENINGEN_ONGELDIG' };
+  }
+  const gezieneDeelIndexen = new Set<number>();
+  for (const dh of opties.deelHandtekeningen) {
+    if (gezieneDeelIndexen.has(dh.deelnemerIndex)) {
+      return { ok: false, fout: 'FROST_DUBBELE_DEELHANDTEKENING_INDEX' };
+    }
+    gezieneDeelIndexen.add(dh.deelnemerIndex);
   }
 
   const ber = berekenFrostGroepsToezeggingEnUitdaging(

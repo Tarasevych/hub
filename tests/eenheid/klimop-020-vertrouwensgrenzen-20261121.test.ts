@@ -462,6 +462,11 @@ export async function main(): Promise<number> {
   const srvStrengNl = await startKlimopProefKnooppunt({
     knooppunt: knOpslagNl,
     vertrouwdeUitgevers: [knEigenaar.identiteit.knooppuntId],
+    beginAnker: {
+      frostGroepsPubliekeSleutelHex: frostRaad.groepsPubHex,
+      zaadBewaarderEd25519PubDerB64u: zaadBewaarder.ed25519PubliekDerB64u,
+      zaadBewaarderMlDsa65PubSpkiB64u: zaadBewaarder.mlDsa65PubliekSpkiB64u,
+    },
     toegestaneSynchronisatieApparaatPubSleutels: [vertrouwdAppSleutels.publiekeSleutelDerB64u],
     toegestaneAnnuleerPubSleutels: [vertrouwdAppSleutels.publiekeSleutelDerB64u],
     erkendeSponsorPubSleutels: [sponsorSleutels.publiekeSleutelDerB64u],
@@ -525,6 +530,7 @@ export async function main(): Promise<number> {
       uitgegevenOp: nuIso,
       verlooptOp: verlooptIso,
       toegestaneActies: ['synchroniseer_dienst_crdt'],
+      objectIds: ['psid1_020_proef'],
     }, knEigenaar);
     const dienstCtx = { dienstId: KLIMOP_ELF_DIENSTEN[0], dienstPsid: 'psid1_020_proef', dienstSleutel32: randomBytes(32), epoche: 1 };
     const vreemdeCrdtOp = maakOndertekendeCrdtOperatie({
@@ -592,13 +598,27 @@ export async function main(): Promise<number> {
       uitgegevenOp: nuIso,
       verlooptOp: verlooptIso,
       toegestaneActies: ['stel_bestuursgrondwet_in', 'bewaar_gevalideerd_zaad_pakket', 'registreer_opvolgings_overdracht'],
+      objectIds: ['gw_020'],
     }, knEigenaar);
 
+    const { maakAanvankelijkeGrondwetFrostBoodschap } = await import('../../shared/klimop/bestuur');
+    const frostSigGw1 = tekenFrost(
+      maakAanvankelijkeGrondwetFrostBoodschap(
+        gw1Uit.grondwet,
+        doelenRol1.publiekeSleutelDerB64u,
+        tsRol1.publiekeSleutelDerB64u,
+      ),
+      [frostRaad.delen[0], frostRaad.delen[1]],
+      frostRaad.groepsPubHex,
+      frostRaad.deelnemerPubMap,
+      2,
+    );
     const stelGw1 = await clientEigenaar.roepOpdrachtAan(knOpslagNl.identiteit.knooppuntId, {
       actie: 'stel_bestuursgrondwet_in',
       grondwet: gw1Uit.grondwet,
       erkendeDoelenRolPubDerB64u: doelenRol1.publiekeSleutelDerB64u,
       erkendeTijdstempelRolPubDerB64u: tsRol1.publiekeSleutelDerB64u,
+      aanvankelijkeFrostHandtekeningHex: frostSigGw1,
       mandaat: gwMandaat,
     });
 

@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [Українська](SKILL.md) · **Nederlands** | [Startpagina](../../../README.md)
+> 🌐 **Taal / Мова:** [Українська](SKILL.md) · **Nederlands** | [Hoofdpagina](../../../LEESMIJ.md) · [Documentatie-index](../../../docs/INDEX.nl.md)
 
 # Absolute taalwet (zonder uitzonderingen en interpretaties)
 
@@ -11,14 +11,42 @@ Zuiver, authentiek **Oekraïens** (`uk`, met de letters Ґґ, Єє, Іі, Її) 
 ## 2. Volledig verbod op Russisch, Engels, mengtaal en jargon
 
 - Verboden zijn Russische woorden, letters buiten het Oekraïense alfabet (codeposities `U+0401`, `U+0451`, `U+042A`, `U+044A`, `U+042B`, `U+044B`, `U+042D`, `U+044D`), russismen, Sovjet- of imperiale leenvertalingen, mengtaal en actieve deelwoorden op «‑учий», «‑ючий», «‑ачий», «‑ячий» (gebruik in plaats daarvan een bijzin, een bijvoeglijk naamwoord of een zelfstandig naamwoord).
-- Verboden zijn Engels proza, anglicismen, Latijnse transliteratie in Oekraïense tekst en technisch jargon. Gebruik uitsluitend de eigen Oekraïense of Nederlandse termen uit de tabel in [SKILL.md](SKILL.md) (bijvoorbeeld «vastlegging» in plaats van «commit», «tak» in plaats van «branch», «samenvoegingsverzoek» in plaats van «pull request», «logboek» in plaats van «log», «reservekopie» in plaats van «back-up»).
+- Verboden zijn Engels proza, anglicismen, Latijnse transliteratie in Oekraïense tekst en technisch jargon. Gebruik uitsluitend de eigen Oekraïense en Nederlandse equivalenten uit de onderstaande tabel.
+
+<!-- taalwet:verboden-voorbeelden:begin -->
+| Verboden (Oekraïens jargon) | Zuiver Oekraïens (`uk`) | Zuiver Nederlands (`nl`) |
+| --- | --- | --- |
+| баг | вада, помилка | fout, gebrek |
+| фікс | виправлення | herstel, verbetering |
+| білд | складання | opbouw, samenstelling |
+| деплой | розгортання | uitrol, plaatsing |
+| коміт | фіксація змін | vastlegging |
+| бренч | гілка | vertakking, tak |
+| пул-реквест | запит на злиття | samenvoegingsverzoek |
+| таска | завдання | taak, opdracht |
+| фіча | можливість | mogelijkheid, voorziening |
+| лог | журнал | logboek |
+| кеш | проміжне сховище | tussenopslag |
+| бекап | запасна копія | reservekopie |
+| дефолтний | типовий | standaard |
+| кастомний | власний | eigen, op maat gemaakt |
+| апдейт | оновлення | bijwerking |
+| рендер | відмальовування | weergave, opmaak |
+| колбек | зворотний виклик | terugroepfunctie |
+| токен (доступу) | маркер доступу | toegangsbewijs |
+| бенчмарк | порівняльне випробування | prestatieproef |
+| рефакторинг | впорядкування коду | herstructurering van code |
+| бандл | пакунок | bundel, pakket |
+<!-- taalwet:verboden-voorbeelden:einde -->
+
+De tabel staat tussen de markeringen `taalwet:verboden-voorbeelden`, zodat de automatische vaardighedencontrole de voorbeelden niet als overtreding aanmerkt. Buiten deze tabel worden verboden termen nergens gebruikt.
 
 ## 3. Reikwijdte — alles zonder uitzondering
 
 - communicatie met de eigenaar, redeneringen, rapporten en uitleg;
 - alle GitHub-opslagplaatsen, namen en beschrijvingen, taknamen, vastleggingsberichten, samenvoegingsverzoeken en uitgaven;
 - namen van mappen en artikelbestanden (`.md`, `.uk.md`, `.nl.md`) en hun volledige inhoud;
-- broncode, commentaar, productinterface, zoekwoordenlijsten, foutmeldingen, tests en uitgavemetadata (`UITROL-MANIFEST.json`, `ORCH-OVERDRACHT.json`, `BIJDRAGEN.json`).
+- broncode, commentaar, productinterface, zoekwoordenlijsten, foutmeldingen, beproevingen en uitgavemetadata (`UITROL-MANIFEST.json`, `ORCH-OVERDRACHT.json`, `BIJDRAGEN.json`).
 
 Ongewijzigd blijven alleen identificaties van protocollen, standaarden, programmeerinterfaces en algoritmen (`RFC 9591`, `FROST`, `Ed25519`, `ML-DSA-65`, `HKDF-SHA-256`, `node:crypto`) en model- en productnamen in de velden voor auteurschap (`Claude Opus 5.5 (High)`, `Gemini 4 Carbon (High)`).
 

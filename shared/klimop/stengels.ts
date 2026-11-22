@@ -456,9 +456,18 @@ export function verwijderKaderOpvulling(opgevuld: Buffer): Buffer {
   return Buffer.from(opgevuld.subarray(4, 4 + echteLengte));
 }
 
-/** Шифрує корисні байти у захищений кадр «Стебла» з монотонним номером, межею зміни ключа та вирівнюванням довжини. */
-export function versleutelStengelKader(sessie: KlimopStengelSessie, klareInhoud: Buffer): StengelVersleuteldKader {
+/** Шифрує корисні байти у захищений кадр «Стебла» з монотонним номером, строком життя, межею зміни ключа та вирівнюванням довжини. */
+export function versleutelStengelKader(
+  sessie: KlimopStengelSessie,
+  klareInhoud: Buffer,
+  opties?: { nuMs?: number },
+): StengelVersleuteldKader {
   if (sessie.gesloten) throw new Error('STENGEL_SESSIE_GESLOTEN');
+  const nuMs = opties?.nuMs ?? Date.now();
+  if (!Number.isFinite(nuMs) || (Number.isFinite(sessie.verlooptOpMs) && nuMs > sessie.verlooptOpMs)) {
+    sluitStengelSessie(sessie);
+    throw new Error('STENGEL_SESSIE_VERLOPEN');
+  }
   const maxKaders = sessie.maxKadersTotSleutelWissel ?? STENGEL_STANDAARD_MAX_KADERS;
   if (!Number.isSafeInteger(sessie.volgendZendNummer) || sessie.volgendZendNummer >= maxKaders) {
     sluitStengelSessie(sessie);
@@ -516,12 +525,18 @@ export function versleutelStengelKader(sessie: KlimopStengelSessie, klareInhoud:
   }
 }
 
-/** Перевіряє автентичність, ковзне вікно захисту від повторів і розшифровує кадр «Стебла». */
+/** Перевіряє автентичність, строк життя сеансу, ковзне вікно захисту від повторів і розшифровує кадр «Стебла». */
 export function ontsleutelStengelKader(
   sessie: KlimopStengelSessie,
   kader: StengelVersleuteldKader,
+  opties?: { nuMs?: number },
 ): { ok: true; klareInhoud: Buffer } | { ok: false; fout: string } {
   if (sessie.gesloten) return { ok: false, fout: 'STENGEL_SESSIE_GESLOTEN' };
+  const nuMs = opties?.nuMs ?? Date.now();
+  if (!Number.isFinite(nuMs) || (Number.isFinite(sessie.verlooptOpMs) && nuMs > sessie.verlooptOpMs)) {
+    sluitStengelSessie(sessie);
+    return { ok: false, fout: 'STENGEL_SESSIE_VERLOPEN' };
+  }
   if (
     !kader
     || kader.schema !== 1

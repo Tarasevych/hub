@@ -137,7 +137,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
 
 /**
  * KLIMOP-021: звіряє всі 11 ізоляційних профілів «Плюща» з канонічною картою `SERVICE_HOSTS`
- * (`backend/deployment-identiteit.ts`), щоб жодна служба не посилалася на неіснуючий хост.
+ * (`backend/deployment-identiteit.ts`), щоб жодна служба не посилалася на відсутній у реєстрі вузол чи піддомен.
  */
 export function controleerDienstIsolatieTegenServiceHosts(
   serviceHosts: Readonly<Record<string, string>>,
@@ -229,8 +229,12 @@ export function maakKruisDienstToestemming(opties: {
     throw new Error('ONGELDIGE_KRUISDIENST_TOESTEMMING');
   }
   const uitgegevenOp = opties.nuIso ?? new Date().toISOString();
+  const uitMs = Date.parse(uitgegevenOp);
+  if (!Number.isFinite(uitMs)) {
+    throw new Error('KRUISDIENST_TIJDSTIP_ONGELDIG');
+  }
   const min = Math.max(1, opties.geldigheidMinuten ?? 30);
-  const verlooptOp = new Date(Date.parse(uitgegevenOp) + min * 60_000).toISOString();
+  const verlooptOp = new Date(uitMs + min * 60_000).toISOString();
   const kern = {
     schema: 1 as const,
     toestemmingId: `kdt_${randomBytes(10).toString('hex')}`,
@@ -276,7 +280,12 @@ export function verifieerKruisDienstToestemming(opties: {
     return { ok: false, fout: 'KRUISDIENST_HANDTEKENING_ONGELDIG' };
   }
   const nuMs = Date.parse(opties.nuIso ?? new Date().toISOString());
-  if (nuMs > Date.parse(toestemming.verlooptOp)) {
+  const uitMs = Date.parse(toestemming.uitgegevenOp);
+  const verMs = Date.parse(toestemming.verlooptOp);
+  if (!Number.isFinite(nuMs) || !Number.isFinite(uitMs) || !Number.isFinite(verMs) || verMs <= uitMs) {
+    return { ok: false, fout: 'KRUISDIENST_TOESTEMMING_TIJD_ONGELDIG' };
+  }
+  if (nuMs < uitMs || nuMs > verMs) {
     return { ok: false, fout: 'KRUISDIENST_TOESTEMMING_VERLOPEN' };
   }
   if (!toestemming.toegestaneSleutelPatronen.includes(opties.gevraagdeSleutelId)) {
@@ -564,7 +573,12 @@ export function valideerExterneVerbinder(
   ) {
     return { ok: false, fout: 'VERBINDER_DEELT_INLOGGEGEVENS_MET_ANDERE_DIENST' };
   }
-  if (Date.parse(nuIso) > Date.parse(contract.verlooptOp)) {
+  const nuMs = Date.parse(nuIso);
+  const verMs = Date.parse(contract.verlooptOp);
+  if (!Number.isFinite(nuMs) || !Number.isFinite(verMs)) {
+    return { ok: false, fout: 'VERBINDER_TIJDSTIP_ONGELDIG' };
+  }
+  if (nuMs > verMs) {
     return { ok: false, fout: 'VERBINDER_TOEGANG_VERLOPEN' };
   }
   // §29 абз. 3: не представляти сторонню централізовану службу як повністю приватну або децентралізовану!

@@ -10,14 +10,17 @@ import type { Tr } from '../mcp-ui';
 import HulpVraag from '../hulp/HulpVraag';
 import { besluitFoutCode } from '../besluit/besluit-client';
 import { KLIMOP_ELF_DIENSTEN, type KlimopDienstId } from '../../shared/klimop/diensten-catalogus';
-import type { KlimopControleVraagId } from '../../shared/klimop/kern';
+import type { KlimopVerbodenVereenvoudigingId } from '../../shared/klimop/kern';
 import {
   KLIMOP_DIENST_TEKST,
   KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST,
   KLIMOP_LEESMODUS_TEKST,
   KLIMOP_OVERDRACHT_TEKST,
   KLIMOP_QUORUM_ATTESTMODUS_TEKST,
+  KLIMOP_VEERTIEN_VERBODEN_LIJST,
   KLIMOP_VIJFTIEN_VRAGEN_LIJST,
+  maakLeegVragenBewijsSjabloon,
+  ontleedVoorstelBewijsNaarAntwoorden,
   type KlimopArchitectuurToetsUitkomst,
   type KlimopDubbelLogboekOverzicht,
   type KlimopDubbelSchrijvenUitkomst,
@@ -44,43 +47,10 @@ import {
 } from '../klimop/klimop-klant';
 import { Badge, Knop, Tech } from './ui';
 
+export { maakLeegVragenBewijsSjabloon, ontleedVoorstelBewijsNaarAntwoorden };
+
 const kort = (s: string | null | undefined, n = 16) => (s ? s.slice(0, n) : '—');
 const KLIMOP_BESCHIKBARE_FASEN = Array.from({ length: 17 }, (_, i) => i);
-
-function ontleedVoorstelBewijsNaarAntwoorden(
-  ruwBewijs: string,
-): Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> {
-  const getrimd = ruwBewijs.trim();
-  if (!getrimd) return {};
-
-  if (getrimd.startsWith('{')) {
-    try {
-      const parsed = JSON.parse(getrimd) as Record<string, unknown>;
-      const uit: Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> = {};
-      for (const v of KLIMOP_VIJFTIEN_VRAGEN_LIJST) {
-        const waarde = parsed[v.id];
-        if (typeof waarde === 'string' && waarde.trim()) {
-          uit[v.id] = { voldaan: true, bewijs: waarde.trim() };
-        } else if (waarde && typeof waarde === 'object' && !Array.isArray(waarde)) {
-          const obj = waarde as Record<string, unknown>;
-          uit[v.id] = {
-            voldaan: obj.voldaan !== false,
-            bewijs: String(obj.bewijs ?? '').trim(),
-          };
-        }
-      }
-      return uit;
-    } catch {
-      // Якщо це не JSON-словник, трактуємо введений текст як спільний перевірний доказ власника
-    }
-  }
-
-  const uit: Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> = {};
-  for (const v of KLIMOP_VIJFTIEN_VRAGEN_LIJST) {
-    uit[v.id] = { voldaan: true, bewijs: getrimd };
-  }
-  return uit;
-}
 
 export default function KlimopPaneel({
   tr,
@@ -126,6 +96,7 @@ export default function KlimopPaneel({
   const [voorstelNaam, setVoorstelNaam] = useState('');
   const [voorstelFase, setVoorstelFase] = useState<number>(16);
   const [voorstelBewijs, setVoorstelBewijs] = useState('');
+  const [gekozenVerboden, setGekozenVerboden] = useState<KlimopVerbodenVereenvoudigingId[]>([]);
   const [toetsBezig, setToetsBezig] = useState(false);
   const [toetsUit, setToetsUit] = useState<KlimopArchitectuurToetsUitkomst | null>(null);
   const [toetsFout, setToetsFout] = useState('');
@@ -313,6 +284,12 @@ export default function KlimopPaneel({
     }
   };
 
+  const wisselVerboden = (id: KlimopVerbodenVereenvoudigingId) => {
+    setGekozenVerboden((vorige) =>
+      vorige.includes(id) ? vorige.filter((x) => x !== id) : [...vorige, id],
+    );
+  };
+
   const startToets = async () => {
     setToetsBezig(true);
     setToetsFout('');
@@ -328,6 +305,7 @@ export default function KlimopPaneel({
           ),
         fase: voorstelFase,
         raaktProductieDirectZonderGoedkeuring: false,
+        aanwezigeVerbodenVereenvoudigingen: gekozenVerboden,
         antwoorden15,
         gebruikStandaardBewijsVoorOntbrekendeVragen: false,
       });
@@ -395,8 +373,8 @@ export default function KlimopPaneel({
         </div>
         <p className='ag-blok-uitleg'>
           {tr(
-            'Перевірка наявності й поточних відбитків дванадцяти модулів ядра, кореня Меркла пакета «Насіння» та Сходинок 1–4 розділу 35 із криптографічними журналами, кворумними атестатами й миттєвим поверненням без зміни робочої бази даних.',
-            'Controle van aanwezigheid en actuele afdrukken van de twaalf kernmodules, de Merkle-wortel van het Zaadpakket en Stappen 1–4 van hoofdstuk 35 met cryptografische logboeken, quorumattesten en directe terugval zonder wijziging van de draaiende databank.',
+            'Перевірка наявності й поточних відбитків чотирнадцяти модулів ядра, кореня Меркла пакета «Насіння» та Сходинок 1–4 розділу 35 із криптографічними журналами, кворумними атестатами й миттєвим поверненням без зміни робочої бази даних.',
+            'Controle van aanwezigheid en actuele afdrukken van de veertien kernmodules, de Merkle-wortel van het Zaadpakket en Stappen 1–4 van hoofdstuk 35 met cryptografische logboeken, quorumattesten en directe terugval zonder wijziging van de draaiende databank.',
           )}
         </p>
       </header>
@@ -430,9 +408,12 @@ export default function KlimopPaneel({
             <small>{tr('Модулі ядра «Насіння»', 'Kernmodules van «Zaden»')}</small>
             <b>
               {aanwezigeModules} / {overzicht.kernModules.length}{' '}
-              <Badge toon={aanwezigeModules === 12 ? 'ok' : 'warn'}>
-                {aanwezigeModules === 12
-                  ? tr('усі 12 наявні (відбитки знято)', 'alle 12 aanwezig (afdrukken berekend)')
+              <Badge toon={aanwezigeModules === overzicht.kernModules.length && overzicht.kernModules.length > 0 ? 'ok' : 'warn'}>
+                {aanwezigeModules === overzicht.kernModules.length && overzicht.kernModules.length > 0
+                  ? tr(
+                      `усі ${overzicht.kernModules.length} наявні (відбитки знято)`,
+                      `alle ${overzicht.kernModules.length} aanwezig (afdrukken berekend)`,
+                    )
                   : tr('неповний набір', 'onvolledig')}
               </Badge>
             </b>
@@ -948,31 +929,69 @@ export default function KlimopPaneel({
         <div className='bsl-veld ag-formrij-uitleg'>
           <span>
             <label htmlFor='klimop-voorstel-bewijs'>
-              {tr('Перевірний доказ до 15 питань (посилання на випробування або JSON за ідентифікаторами питань; порожнє поле = неоцінено)', 'Verifieerbaar bewijs voor de 15 vragen (testverwijzing of JSON per vraag-id; leeg veld = onbeoordeeld)')}
+              {tr('Поіменний доказ до 15 питань (рядки «ідентифікатор: доказ» або JSON за ідентифікаторами питань; порожнє поле = неоцінено)', 'Bewijs per vraag voor de 15 vragen (regels «vraag-id: bewijs» of JSON per vraag-id; leeg veld = onbeoordeeld)')}
             </label>
           </span>
           <textarea
             id='klimop-voorstel-bewijs'
-            rows={2}
+            rows={3}
             value={voorstelBewijs}
             maxLength={4000}
             disabled={toetsBezig}
             placeholder={tr(
-              'Вкажіть перевірний доказ (щонайменше 8 знаків); без доказу питання залишаються неоціненими',
-              'Geef verifieerbaar bewijs op (minstens 8 tekens); zonder bewijs blijven de vragen onbeoordeeld',
+              'Наприклад: geen_nieuw_spof: Перевірено в модульному випробуванні (щонайменше 8 знаків на питання)',
+              'Bijvoorbeeld: geen_nieuw_spof: Bevestigd in eenheidsproef (minstens 8 tekens per vraag)',
             )}
             onChange={(e) => setVoorstelBewijs(e.target.value)}
             data-klimop-veld='voorstel-bewijs'
           />
         </div>
-        <Knop
-          icoon={<CheckCircle2 />}
-          bezig={toetsBezig}
-          onClick={() => void startToets()}
-          data='klimop-toets-start'
-        >
-          {tr('Перевірити за 15 питаннями', 'Aan 15 vragen toetsen')}
-        </Knop>
+        <details className='klimop-verboden-details' data-klimop-verboden-details='1'>
+          <summary>
+            {tr(
+              `Заборонені спрощення розділу 43 (позначено: ${gekozenVerboden.length}/14)`,
+              `Verboden vereenvoudigingen van hoofdstuk 43 (aangekruist: ${gekozenVerboden.length}/14)`,
+            )}
+          </summary>
+          <ul className='klimop-verboden-lijst' data-klimop-verboden-lijst='1'>
+            {KLIMOP_VEERTIEN_VERBODEN_LIJST.map((verbod) => {
+              const veldId = `klimop-verbod-${verbod.id}`;
+              return (
+                <li key={verbod.id}>
+                  <input
+                    id={veldId}
+                    type='checkbox'
+                    checked={gekozenVerboden.includes(verbod.id)}
+                    disabled={toetsBezig}
+                    onChange={() => wisselVerboden(verbod.id)}
+                    data-klimop-verbod-id={verbod.id}
+                  />
+                  <label htmlFor={veldId}>
+                    {lang === 'uk' ? verbod.uk : verbod.nl}
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+        <div className='ag-knoppen'>
+          <Knop
+            icoon={<CheckCircle2 />}
+            bezig={toetsBezig}
+            onClick={() => void startToets()}
+            data='klimop-toets-start'
+          >
+            {tr('Перевірити за 15 питаннями', 'Aan 15 vragen toetsen')}
+          </Knop>
+          <Knop
+            icoon={<FileText />}
+            disabled={toetsBezig}
+            onClick={() => setVoorstelBewijs(maakLeegVragenBewijsSjabloon())}
+            data='klimop-toets-sjabloon'
+          >
+            {tr('Заповнити шаблон питань', 'Vragensjabloon invullen')}
+          </Knop>
+        </div>
       </div>
 
       {toetsFout ? (
@@ -987,16 +1006,18 @@ export default function KlimopPaneel({
             <b>
               {toetsUit.goedgekeurd
                 ? tr('Усі 15 питань архітектурної перевірки підтверджено доказами', 'Alle 15 architectuurvragen met bewijs bevestigd')
-                : (toetsUit.onbeoordeeldeVragen?.length ?? 0) > 0
-                  ? tr('Частина питань архітектурної перевірки ще неоцінена (немає перевірного доказу)', 'Een deel van de architectuurvragen is nog onbeoordeeld (geen verifieerbaar bewijs)')
-                  : tr('Виявлено порушення архітектурних правил', 'Schending van architectuurregels vastgesteld')}
+                : toetsUit.geschondenVereenvoudigingen.length > 0
+                  ? tr('Виявлено заборонене спрощення розділу 43', 'Verboden vereenvoudiging van hoofdstuk 43 vastgesteld')
+                  : (toetsUit.onbeoordeeldeVragen?.length ?? 0) > 0
+                    ? tr('Частина питань архітектурної перевірки ще неоцінена (немає перевірного доказу)', 'Een deel van de architectuurvragen is nog onbeoordeeld (geen verifieerbaar bewijs)')
+                    : tr('Виявлено порушення архітектурних правил', 'Schending van architectuurregels vastgesteld')}
             </b>{' '}
             · {toetsUit.naam} · {tr(`Етап ${toetsUit.fase}`, `Fase ${toetsUit.fase}`)}
           </p>
           <p className='ag-meta'>
             {tr(
-              `Оцінено питань: ${toetsUit.beoordeeldeVragen}/15 · Неоцінено: ${toetsUit.onbeoordeeldeVragen?.length ?? 0}/15 · Будь-яка реальна зміна потребує окремого рішення власника або кворуму.`,
-              `Beoordeelde vragen: ${toetsUit.beoordeeldeVragen}/15 · Onbeoordeeld: ${toetsUit.onbeoordeeldeVragen?.length ?? 0}/15 · Elke echte doorvoering vereist een afzonderlijk besluit van eigenaar of quorum.`,
+              `Оцінено питань: ${toetsUit.beoordeeldeVragen}/15 · Неоцінено: ${toetsUit.onbeoordeeldeVragen?.length ?? 0}/15 · Заборон розділу 43: ${toetsUit.geschondenVereenvoudigingen.length}/14 · Будь-яка реальна зміна потребує окремого рішення власника або кворуму.`,
+              `Beoordeelde vragen: ${toetsUit.beoordeeldeVragen}/15 · Onbeoordeeld: ${toetsUit.onbeoordeeldeVragen?.length ?? 0}/15 · Verboden §43: ${toetsUit.geschondenVereenvoudigingen.length}/14 · Elke echte doorvoering vereist een afzonderlijk besluit van eigenaar of quorum.`,
             )}
           </p>
           <ul className='klimop-vragen-lijst' data-klimop-vragen-lijst='1'>

@@ -113,12 +113,17 @@ function bouwDienstenStatusLijst(
   });
 }
 
-/** Живий огляд 12 модулів ядра, кореня Меркла «Насіння», досьє та стану Сходинок 1–4 для всіх 11 служб (§35, §46). */
-export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): KlimopPlatformOverzicht {
+/** Живий огляд 14 модулів ядра, кореня Меркла «Насіння», досьє та стану Сходинок 1–4 для всіх 11 служб (§35, §46). */
+export function klimopOverzicht(
+  wortel = klimopWortel(),
+  staatMap?: string,
+  opties?: { alleenLezenZonderMutatie?: boolean },
+): KlimopPlatformOverzicht {
   const afhankelijkheden = valideerTechnischeAfhankelijkheden();
-  const logboekStaat = leesKlimopSpiegelLogboek({ staatMap, limiet: 1 });
-  const dubbelStaat = leesKlimopDubbelSchrijvenLogboek({ staatMap, limiet: 1 });
-  const attestStaat = leesKlimopQuorumAttestLogboek({ staatMap, limiet: 1 });
+  const alleenLezenZonderMutatie = opties?.alleenLezenZonderMutatie === true;
+  const logboekStaat = leesKlimopSpiegelLogboek({ staatMap, limiet: 1, alleenLezenZonderMutatie });
+  const dubbelStaat = leesKlimopDubbelSchrijvenLogboek({ staatMap, limiet: 1, alleenLezenZonderMutatie });
+  const attestStaat = leesKlimopQuorumAttestLogboek({ staatMap, limiet: 1, alleenLezenZonderMutatie });
   const leesModusKaart = new Map(
     logboekStaat.schakelaars.map((s) => [s.dienstId, s.leesModus] as const),
   );
@@ -172,7 +177,8 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
     zaadRegels.push({ pad: relPad, grootteBytes: buf.length, sha256 });
   }
 
-  const alleTwaalfAanwezig = kernModules.length === 12 && kernModules.every((m) => m.aanwezig);
+  const alleTwaalfAanwezig =
+    kernModules.length === KLIMOP_TWAALF_KERNMODULES.length && kernModules.every((m) => m.aanwezig);
   const zaadMerkleWortelSha256 = alleTwaalfAanwezig ? berekenZaadMerkleWortelSha256(zaadRegels) : null;
 
   // KLIMOP-021: змістовна звірка обох мовних версій усіх 25 обов'язкових документів §44 маніфесту
@@ -239,8 +245,27 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
   };
 }
 
-export async function klimopOverzichtA(wortel = klimopWortel(), staatMap?: string): Promise<KlimopPlatformOverzicht> {
-  return klimopOverzicht(wortel, staatMap);
+export async function klimopOverzichtA(
+  wortel = klimopWortel(),
+  staatMap?: string,
+  opties?: { alleenLezenZonderMutatie?: boolean },
+): Promise<KlimopPlatformOverzicht> {
+  return klimopOverzicht(wortel, staatMap, opties);
+}
+
+function leesActieveRegelsVersie(wortel = klimopWortel()): string {
+  const beleidPad = join(wortel, 'orchestratie/beleid.json');
+  if (existsSync(beleidPad)) {
+    try {
+      const parsed = JSON.parse(readFileSync(beleidPad, 'utf8')) as { regelsVersie?: unknown };
+      if (typeof parsed.regelsVersie === 'string' && parsed.regelsVersie.trim()) {
+        return parsed.regelsVersie.trim();
+      }
+    } catch {
+      // Резервна версія нижче
+    }
+  }
+  return '1.6.0';
 }
 
 /** Машинна оцінка пропозиції за 15 питаннями §42, 14 заборонами §43 та правилами ШІ-агентів §33–§34. */
@@ -250,7 +275,7 @@ export function klimopArchitectuurToets(raw: unknown): KlimopArchitectuurToetsUi
   }
   const b = raw as KlimopArchitectuurToetsInvoer;
   const naam = typeof b.naam === 'string' && b.naam.trim() ? b.naam.trim().slice(0, 200) : 'Перевірка пропозиції Плющ';
-  const fase = Number.isInteger(b.fase) ? Number(b.fase) : 12;
+  const fase = Number.isInteger(b.fase) ? Number(b.fase) : 16;
 
   const antwoorden15 = {} as Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>;
   const standaardAanvullen = b.gebruikStandaardBewijsVoorOntbrekendeVragen === true;
@@ -335,7 +360,7 @@ export function klimopArchitectuurToets(raw: unknown): KlimopArchitectuurToetsUi
         voorstelId: 'TOETS-PLATFORM',
         agentId: typeof b.agentId === 'string' && b.agentId.trim() ? b.agentId.trim() : 'antigravity',
         richting,
-        regelsVersie: typeof b.regelsVersie === 'string' ? b.regelsVersie : '1.5.0',
+        regelsVersie: typeof b.regelsVersie === 'string' && b.regelsVersie.trim() ? b.regelsVersie.trim() : leesActieveRegelsVersie(),
         bevatTestBewijs: b.bevatTestBewijs !== false,
         antwoorden15,
         probeertZelfGoedTeKeurenOfUitTeRollen: b.probeertZelfGoedTeKeurenOfUitTeRollen === true,
