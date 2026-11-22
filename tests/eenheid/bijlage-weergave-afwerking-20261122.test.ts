@@ -62,6 +62,10 @@ export async function main(): Promise<number> {
   check('donker: standaard uit, onthouden, alleen voor papier', w.includes("=== 'aan'") && w.includes("DONKER_SLEUTEL = 'tsv:bijlage-donkere-paginas'") && css.includes('[data-donkere-paginas]'));
   check('menu boven de inhoud (z-index op de kop)', css.includes('.weergave-kop { position: relative; z-index: 40;'));
 
+  // 6. bron van de ResizeObserver-lusfouten
+  const mbt = lees('src/MailBerichtTekst.tsx');
+  check('brieftekst: met vlag geen observer op html/body van het iframe, wel breedte van de houder + MutationObserver', mbt.includes('const eigenRoAan=useVlag(POSTA_VENSTERS_VLAG,false)') && mbt.includes('observer.observe(houder)') && mbt.includes('new MutationObserver(later)') && !/observer\.observe\(frame\)/.test(mbt));
+  check('brieftekst: zonder vlag de oude observer (html en body)', mbt.includes('}else{observer=new ResizeObserver(resize);observer.observe(doc.documentElement);if(doc.body)observer.observe(doc.body)}'));
   // 6. diagnose
   check('diagnose: dezelfde melding direct na elkaar telt met (×N)', lees('src/ai-site-acties.ts').includes('laatste.message = `${tekst} (×${n})`'));
   check('uitrol: onvolledig antwoord geeft geen paginafout', lees('src/platform/uitrol-achtergrond-beheer.ts').includes('goedgekeurd?.length ?? 0'));
