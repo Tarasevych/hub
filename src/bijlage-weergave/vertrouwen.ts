@@ -58,6 +58,9 @@ export function vertrouwenUit(b: Bewijs): Vertrouwen {
   if (werkelijk === 'programma') {
     bev.push({ sleutel: 'programma', ernst: 'let-op', tekst: ['Усередині — програма, а не документ. Не запускайте її.', 'Binnenin zit een programma, geen document. Start het niet.'] });
     soortKlopt = false;
+  } else if (!b.kop.length) {
+    // afwerking etappe 2: een leeg bestand (0 bytes) heeft geen soort; geen vals alarm «andere soort binnenin»
+    bev.push({ sleutel: 'soort', ernst: 'info', tekst: ['Файл порожній (0 байтів): перевіряти нічого.', 'Het bestand is leeg (0 bytes): er is niets na te gaan.'] });
   } else if (verwacht) {
     soortKlopt = verwacht.includes(werkelijk);
     bev.push(soortKlopt

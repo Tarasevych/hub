@@ -3,7 +3,7 @@
 // snelle kaart, strook met alle bijlagen en een eerlijke laad- en foutstaat. Weet niets van de mail: de bron geeft gegevens en
 // acties door. Concept: docs/concept/bijlage-weergave/CONCEPT.md.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { ChevronLeft, ChevronRight, ImageOff, Info, LoaderCircle, MoreHorizontal, RotateCcw, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, ImageOff, Info, LoaderCircle, MoreHorizontal, RotateCcw, X } from 'lucide-react';
 import { formaatVan, grootteTekst, kies, soortVan, type Taal } from './soort';
 import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from './vertrouwen';
 import { technischeRijen } from './details';
@@ -93,7 +93,7 @@ export function WeergaveKop(p: KopProps) {
       <div className='weergave-rij'>
         <div className='weergave-titel'>
           <strong title={p.naam}>{p.naam}</strong>
-          <span>{kies(p.taal, soort.naam)}{feiten ? ` · ${feiten}` : ''}</span>
+          <span>{kies(p.taal, soort.naam)}{feiten ? ` · ${feiten}` : ''}{p.grootte === 0 && <b className='weergave-leeg'>{t(' · файл порожній, вмісту немає', ' · bestand is leeg, geen inhoud')}</b>}</span>
         </div>
         <span className='weergave-vertrouwen' data-niveau={niveau} title={vertrouwen ? kies(p.taal, vertrouwen.zin) : ''} role='status'>
           <i aria-hidden='true' />
@@ -205,17 +205,25 @@ export function WeergaveStrook(p: { taal: Taal; items: WeergaveItem[]; index: nu
 }
 
 /** Eerste opening: het venster verschijnt meteen, ook tijdens het laden en bij een fout (niet stil dichtgaan). */
-export function WeergaveStaatVenster(p: { taal: Taal; naam: string; contentType: string; grootte: number; fase: 'laden' | 'fout'; code: string; stijl?: CSSProperties; onOpnieuw: () => void; onSluit: () => void }) {
+export function WeergaveStaatVenster(p: { taal: Taal; naam: string; contentType: string; grootte: number; fase: 'laden' | 'fout'; code: string; stijl?: CSSProperties; onOpnieuw: () => void; onSluit: () => void; onDownload?: () => void; binnen?: boolean }) {
   const t = t2(p.taal);
   const soort = soortVan(p.naam, p.contentType);
   const knop = useRef<HTMLButtonElement | null>(null);
+  // Afwerking etappe 2: bij sluiten gaat de focus terug naar wat het venster opende (de kaart van de bijlage), ook na een fout. Opent
+  // daarna de viewer zelf (laden geslaagd), dan krijgt die de focus en doet dit niets.
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+    return () => { window.setTimeout(() => { const a = document.activeElement; if (opener && opener.isConnected && (!a || a === document.body) && !document.querySelector('.google-mail-attachment-preview')) opener.focus({ preventScroll: true }); }, 0); };
+  }, []);
   useEffect(() => { knop.current?.focus({ preventScroll: true }); }, [p.fase]);
+  // Te groot om veilig te tonen: opnieuw proberen helpt niet, downloaden wel.
+  const teGroot = p.fase === 'fout' && /TOO_LARGE/.test(p.code) && Boolean(p.onDownload);
   useEffect(() => {
     const toets = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); p.onSluit(); } };
     document.addEventListener('keydown', toets); return () => document.removeEventListener('keydown', toets);
   }, [p.onSluit]);
   return (
-    <div className='google-mail-attachment-backdrop weergave-staat-achtergrond' style={p.stijl} role='presentation'>
+    <div className='google-mail-attachment-backdrop weergave-staat-achtergrond' style={p.stijl} data-binnen-venster={p.binnen ? 'ja' : undefined} role='presentation'>
       <article className='google-mail-attachment-preview weergave-staat' data-gedeelde-weergave='aan' role='dialog' aria-modal='true' aria-label={p.naam}>
         <header className='weergave-kop'><div className='weergave-rij'>
           <div className='weergave-titel'><strong title={p.naam}>{p.naam}</strong><span>{kies(p.taal, soort.naam)} · {grootteTekst(p.grootte, p.taal)}</span></div>
@@ -225,7 +233,9 @@ export function WeergaveStaatVenster(p: { taal: Taal; naam: string; contentType:
           {p.fase === 'laden'
             ? <><LoaderCircle className='spin' aria-hidden='true' /><strong>{t('Завантажуємо вкладення…', 'Bijlage laden…')}</strong><span>{t('Файл береться просто з пошти й ніде не зберігається.', 'Het bestand komt rechtstreeks uit de mail en wordt nergens bewaard.')}</span></>
             : <><strong>{t('Не вдалося відкрити вкладення', 'Bijlage kon niet worden geopend')}</strong><span>{kies(p.taal, foutTekst(p.code))}</span>
-                <div className='weergave-staat-knoppen'><button type='button' className='weergave-hoofd' ref={knop} onClick={p.onOpnieuw}><RotateCcw aria-hidden='true' />{t('Спробувати ще раз', 'Opnieuw proberen')}</button><button type='button' className='weergave-knop' onClick={p.onSluit}>{t('Закрити', 'Sluiten')}</button></div></>}
+                <div className='weergave-staat-knoppen'>{teGroot
+                  ? <button type='button' className='weergave-hoofd' ref={knop} onClick={p.onDownload}><Download aria-hidden='true' />{t('Завантажити', 'Downloaden')}</button>
+                  : <button type='button' className='weergave-hoofd' ref={knop} onClick={p.onOpnieuw}><RotateCcw aria-hidden='true' />{t('Спробувати ще раз', 'Opnieuw proberen')}</button>}<button type='button' className='weergave-knop' onClick={p.onSluit}>{t('Закрити', 'Sluiten')}</button></div></>}
         </section>
       </article>
     </div>

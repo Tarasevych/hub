@@ -18,7 +18,7 @@
 }
 html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave] { --wg-goed: #1f8a55; --wg-let: #a86200; --wg-fout: #c03535; }
 
-.weergave-kop { display: grid; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--wg-rand); background: var(--wg-oppervlak); min-width: 0; }
+.weergave-kop { position: relative; z-index: 40; display: grid; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--wg-rand); background: var(--wg-oppervlak); min-width: 0; }
 .weergave-rij { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .weergave-titel { display: flex; flex-direction: column; min-width: min(14ch, 100%); flex: 1 1 auto; }
 .weergave-titel strong { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--wg-tekst); }
@@ -116,6 +116,7 @@ html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave] { --wg-
 }
 
 /* afwerking etappe 2: viewer binnen het zwevende leesvenster («Вікно у вікні») */
+html body .google-mail-attachment-backdrop[data-binnen-venster] { position: fixed !important; left: var(--bw-l) !important; top: var(--bw-t) !important; width: var(--bw-b) !important; height: var(--bw-h) !important; right: auto !important; bottom: auto !important; padding: 0 !important; }
 html body .google-mail-attachment-backdrop[data-binnen-venster] { background: transparent !important; backdrop-filter: none !important; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 50px rgb(0 0 0 / .35); }
 html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-attachment-preview { width: 100% !important; max-width: 100% !important; height: 100% !important; max-height: 100% !important; margin: 0 !important; border-radius: 16px !important; container-type: inline-size; }
 
@@ -126,3 +127,6 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 .google-mail-attachment-preview[data-donkere-paginas] :is(.mail-pdf-page canvas, .mail-fixed-page, .mail-docx-preview, .mail-text-preview-paper) { filter: invert(.9) hue-rotate(180deg) brightness(1.05); }
 .google-mail-attachment-preview[data-donkere-paginas] :is(.mail-pdf-page, .mail-fixed-page) { background: #111 !important; }
 .weergave-keuze[aria-checked='true'] { color: var(--wg-accent); font-weight: 600; }
+
+/* Afwerking etappe 2: een leeg bestand (0 bytes) zegt dat zelf in de kop, in plaats van een lege editor zonder uitleg. */
+.weergave-titel .weergave-leeg { font-weight: 600; color: var(--wg-let); }
