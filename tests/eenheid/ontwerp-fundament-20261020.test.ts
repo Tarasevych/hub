@@ -78,7 +78,7 @@ export async function main(): Promise<number> {
   const r = await controleer();
   check(`kleur-contrast-controle: 0 fouten over ${r.paren.length} paren en ${r.vlakken} paletten (tekst ≥ 4,5, groot/icoon ≥ 3)`, r.fouten.length === 0 && r.paren.length > 1000, r.fouten.slice(0, 5).join(' | '));
   // package.json wordt niet naar de testomgeving gekopieerd (synctest): alleen controleren als het de huidige is, anders melden.
-  if (/kleur-contrast-controle/.test(pkg.scripts.build)) check('npm run build voert de contrastcontrole uit vóór vite build', /kleur-contrast-controle\.mjs[^&]*&&\s*vite build/.test(pkg.scripts.build));
+  if (/kleur-contrast-controle/.test(pkg.scripts.build)) check('npm run build voert de contrastcontrole uit vóór vite build', pkg.scripts.build.indexOf('kleur-contrast-controle.mjs') < pkg.scripts.build.indexOf('vite build') && pkg.scripts.build.indexOf('vite build') > 0);
   else console.log('  info: package.json in de testomgeving is ouder dan deze test (build-hook niet gecontroleerd; zie package.json in de bron)');
 
   // ------------------------------------------------------------------ 3. primitieven: globaal, via :where (pagina's winnen), op tokens

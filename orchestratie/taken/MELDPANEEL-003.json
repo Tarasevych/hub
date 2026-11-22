@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MELDPANEEL-003",
+  "agent": "antigravity",
+  "tak": "fix/meldpaneel-003-thema-ruimte-register-20261122-134000",
+  "basisCommit": "32822354ea08fc850330eed96feaff5b1bb96a58",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.7.0",
+  "regelsHash": "f6cab917b25ec902b1fca8044250a678423fd9b0bf4ca55116bf7694c1e33cc1",
+  "staat": "in_progress",
+  "gestart": "2026-11-22T13:43:20.020Z",
+  "bijgewerkt": "2026-11-22T14:28:30.000Z",
+  "omschrijving": "Узгодження палітри теми Пульта сповіщень (.canonical-chrome), >80% простору під картки, 8-стороннє розтягування в обох режимах, прив’язка до видимого дзвіночка, живий дзвіночок на id.tarasevych.com/melding та єдина жива База типів і кодів дій MELDINGEN-REGISTER-001",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

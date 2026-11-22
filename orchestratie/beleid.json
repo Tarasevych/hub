@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.7.0",
+  "regelsVersie": "1.8.0",
   "bijgewerkt": "2026-11-22",
   "regelBestanden": [
     "AGENTS.md",
@@ -504,7 +504,7 @@
     "toelichting": "B-024 (KLIMOP-001): цільова архітектурна концепція поступового перетворення платформи «Мій простір» на розподілену, самовідновлювану та криптографічно захищену екосистему з незалежними вузлами, розмежованими повноваженнями й здатністю працювати без постійної участі єдиного творця. Маніфест НЕ є дозволом на негайну зміну робочої інфраструктури чи вимкнення чинних серверів і бази PostgreSQL; кожна зміна будь-якого з 14 агентів проходить 15-пунктову перевірку (§3б, §10 AGENTS.md)."
   },
   "functievlaggen": {
-    "besluit": "B-026",
+    "besluit": "B-027",
     "verplicht": true,
     "manifestVeld": "functievlaggen",
     "uitzonderingVeld": "zonderVlag",
@@ -532,5 +532,19 @@
     "opruimenNaDagen": 30,
     "toelichting": "Без прапорця — не випускається; прапорець типово вимкнений, додається міграцією; читається один раз на сторінку з пам'яті; перевірене й архівне — у постійний стан за 30 днів.",
     "vanafVersie": "20261123-000000"
+  },
+  "meldingenRegister": {
+    "code": "MELDINGEN-REGISTER-001",
+    "besluit": "B-026",
+    "bronnen": [
+      "shared/beheer-journaal.ts",
+      "shared/meldingen-catalogus.ts",
+      "shared/meldingen-register-overzicht.ts",
+      "backend/site-activiteit.ts"
+    ],
+    "poortwachterScript": "scripts/meldingen-register-controle.mjs",
+    "paginaPad": "/melding#melding-register",
+    "overigToegestaan": 0,
+    "toelichting": "B-026 (MELDINGEN-REGISTER-001): кожен новий сервіс, маршрут і код дії аудиту/сповіщення зобов'язаний мати змістовний двомовний заголовок [uk, nl], предметну категорію без потрапляння в 'overig' та схему доказів S1..S20, а самодії панелі й технічні читання відсікаються в RUIS_PATROON / SITE_RUIS. Сторож scripts/meldingen-register-controle.mjs автоматично блокує складання при появі незареєстрованого коду дії."
   }
 }

@@ -205,7 +205,8 @@ export async function main(): Promise<number> {
       assert.ok(!/_door\b/.test(mig), 'Міграція 0304 не повинна містити зайвих колонок *_door');
 
       const beleid = JSON.parse(lees('orchestratie/beleid.json'));
-      assert.equal(beleid.regelsVersie, '1.4.18');
+      const [maj, min, pat] = String(beleid.regelsVersie || '0.0.0').split('.').map(Number);
+      assert.ok(maj > 1 || (maj === 1 && (min > 4 || (min === 4 && pat >= 18))), `Очікувалася regelsVersie >= 1.4.18, отримано ${beleid.regelsVersie}`);
       assert.ok(beleid.drieFactoren);
       assert.ok(beleid.selectiefTerugdraaien);
       assert.ok(lees('orchestratie/BESLUITEN.md').includes('## B-023'));

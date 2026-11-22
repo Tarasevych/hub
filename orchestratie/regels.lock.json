@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "regelsVersie": "1.7.0",
-  "hash": "006124a5fb3ecb79977e0000171835f92dd988a56dccc4e6b3f006ece9d70393",
+  "regelsVersie": "1.8.0",
+  "hash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
   "kritiekHash": "15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7",
   "bestanden": {
-    "AGENTS.md": "d16ba5a824a1d7363d2cf6b2ec1bb3ab1e5bea7dcb282f1d928d546830b9dc7e",
-    "orchestratie/BESLUITEN.md": "67a8332d5459057f08201ea61774ecc28e02a6143c3a8bebf3063c501be32227",
-    "orchestratie/beleid.json": "62e6eca6df088fe79579b50c87ab3cfa752eadc1a91755378bfff77be43f181d"
+    "AGENTS.md": "e55990ace2cab637f637a7c86ef6eacf5207d47ff37a028e96f15a24962a1504",
+    "orchestratie/BESLUITEN.md": "6b908b1168f05456ee77eec42fc7eeb7544b90844c3e82c33a42a899d6e78a6f",
+    "orchestratie/beleid.json": "272822131bf5d277a0df11603bba11edf84363e1b41d1109ae092070d43413a8"
   },
   "eigenaar": null
 }

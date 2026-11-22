@@ -27,7 +27,7 @@ const gearchiveerd = new Map<string, boolean>();
 /** «Voor iedereen aan»: hoofdschakelaar aan en (100 % of standaard aan zonder procent-uitrol). Zelfde regel als evalueer. */
 export const voorIedereen = (v: Vlag) => v.aan && (v.percentage >= 100 || (v.percentage === 0 && v.standaard));
 
-// VLAG-001 (B-026) · НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Google Antigravity): прапорці не мають гальмувати сторінку й
+// VLAG-001 (B-027) · НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Google Antigravity): прапорці не мають гальмувати сторінку й
 // навантажувати сервер — таблиця прапорців береться з пам'яті процесу (до 15 с), а не окремим запитом до бази на кожне звертання.
 // Будь-яка зміна через це вікно (zetten, standZetten, archiveren, verwijderen) одразу очищає пам'ять, тож власник бачить зміну відразу.
 // Особисті перевірки (feature_flag_tests) — як і раніше, з бази: вони стосуються однієї людини й рідкісні.

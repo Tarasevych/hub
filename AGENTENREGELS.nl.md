@@ -46,6 +46,7 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 - Geheimen, toegangsbewijzen, privésleutels en e-mailinhoud horen nooit in de chat, logboeken, commits of pakketten. Privésleutels van de eigenaar worden nooit aan agenten gegeven.
 - Productie, de standaardtak, reservekopieën en kritieke rechten worden alleen gewijzigd na expliciete toestemming van de eigenaar (niet van een andere agent).
 - Logo's (`REESTR-LOGO-001`): uitsluitend uit het merkregister `src/merk/` (`<Merk>`, `MerkLogo`); nieuw teken via `scripts/merk-officieel-maken.mjs`, geen losse `<svg>`-kopieën. Details in §6.
+- Meldingen- en actieregister (`MELDINGEN-REGISTER-001`, `B-026`): elke nieuwe dienst of serveractiecode krijgt verplicht een betekenisvolle titel `[uk, nl]`, inhoudelijke categorie (geen `overig`) en bewijsschema in `shared/beheer-journaal.ts` / `shared/meldingen-catalogus.ts`, en technische ruis gaat in `RUIS_PATROON`; bewaakt door `node scripts/meldingen-register-controle.mjs` (§11).
 - Diagnostiek en tijd van de eigenaar (`B-009`): vraag de eigenaar nooit om handmatig terminalcommando's uit te voeren (`df -h`, `journalctl`) of handmatig pakketten te bouwen; geef zonder directe toegang tot `<VM-IP>` een korte technische conclusie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar. Gis nooit naar de oorzaak van een `voorcontrole`-fout (wijt het niet aan een `.zip` als de stap `structuur` al geslaagd is). Details hieronder bij `B-009`.
 
 ## 3a. Auteurschap, dossiers, vaardigheden (BIJDRAGE-001, details in §9)
@@ -243,3 +244,13 @@ Het is strikt verboden om: (1) het systeem volstrekt onkwetsbaar te noemen; (2) 
 
 - **Volgorde van fasen (§36):** Fase 0 (volledige audit) → Fase 1 (architectuurkern) → Fase 2 (beproevingsnetwerk) → Fase 3 (versleuteling en opslag) → Fase 4 (gespreide sleutels) → Fase 5 (onafhankelijke identiteit) → Fase 6 (verdeeld bestuur) → Fase 7 (zelfherstel) → Fase 8 (overzetten van diensten) → Fase 9 (bescherming tegen dwang) → Fase 10 (bredere uitrol) → Fase 11 (onafhankelijke audit) → Fase 12 (doorlopende ontwikkeling zonder afhankelijkheid van de aanvankelijke auteur).
 - **Eerste stappen van agenten (§45):** 1) audit van het feitelijke project en de actuele installatiewijze → 2) doelarchitectuur «Klimop» → 3) vergelijking van bewezen technologieën → 4) gefaseerd plan van onafhankelijke uitgaven → 5) pas daarna geïsoleerde beproevingen en uitvoering zonder de productieomgeving zonder goedkeuring van de eigenaar te wijzigen. Alle documentatie wordt tweetalig bijgehouden (`uk` + `nl`, lijst van 25 verplichte documenten in §44 van het manifest).
+
+---
+
+## 11. Eén levend register van meldingen en actiecodes (`MELDINGEN-REGISTER-001` / `B-026`, vanaf 22.11.2026)
+
+Het meldingenpaneel («Aandachtspuls») bestrijkt alle onderdelen en subdomeinen van «Mijn Ruimte». Een melding zonder inhoudelijke betekenis (zoals een loze verzamelterm «Actie in technische ruimte») is verboden. Daarom geldt bij elke ontwikkeling van een nieuwe dienst, route of auditgebeurtenis de vaste projectregel:
+
+1. **Verplichte registratie per code:** elke nieuwe `schrijfBeheerAudit`- of `audit_events`-actiecode en elke nieuwe dienstmelding moet in dezelfde wijziging geregistreerd worden in `shared/beheer-journaal.ts` (`ACTIE_LABELS` met betekenisvolle tweetalige titel `[uk, nl]` + indeling in `CATEGORIEEN`, nooit `'overig'`) en/of `shared/meldingen-catalogus.ts` (`MELDINGEN` met bewijsschema `S1..S20`), evenals in de regeltabel van `backend/site-activiteit.ts` (`RULES`).
+2. **Strikte scheiding van ruis en zelfmeldingen:** puur technische leesbewerkingen en handelingen binnen het meldingenpaneel zelf (`owner.meldingen.ecosysteem.actie`, `owner.meldingen.ecosysteem.profiel`) horen in `RUIS_PATROON` en `SITE_RUIS`: ze blijven bewaard in het beveiligingslogboek, maar vervuilen nooit de bel of de meldingsstroom.
+3. **Levend inzicht op de site en automatische poortwachter:** het gecombineerde register (`shared/meldingen-register-overzicht.ts`) is live in te zien en doorzoekbaar op `/melding#melding-register` (en rechtstreeks vanuit de voettekst van het paneel). `npm run build` draait verplicht `node scripts/meldingen-register-controle.mjs` en breekt het bouwen onmiddellijk af zodra in `backend/` of `server/` een ongeregistreerde actiecode of een `'overig'`-terugval verschijnt.

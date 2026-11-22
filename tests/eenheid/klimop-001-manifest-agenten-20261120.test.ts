@@ -88,8 +88,9 @@ export async function main(): Promise<number> {
   const lock = JSON.parse(lees('orchestratie/regels.lock.json'));
   const regelBestanden = Object.fromEntries(beleid.regelBestanden.map((p: string) => [p, lees(p)]));
 
+  const [rMaj, rMin] = String(beleid.regelsVersie || '0.0.0').split('.').map(Number);
   check('beleid.json має актуальну версію >= 1.6.0, проходить valideerBeleid та узгоджений з regels.lock.json',
-    beleid.regelsVersie === '1.6.0'
+    (rMaj > 1 || (rMaj === 1 && rMin >= 6))
     && k.valideerBeleid(beleid).length === 0
     && k.controleerLock(beleid, regelBestanden, lock).length === 0);
 

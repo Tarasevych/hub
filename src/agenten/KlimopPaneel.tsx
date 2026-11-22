@@ -10,7 +10,6 @@ import type { Tr } from '../mcp-ui';
 import HulpVraag from '../hulp/HulpVraag';
 import { besluitFoutCode } from '../besluit/besluit-client';
 import { KLIMOP_ELF_DIENSTEN, type KlimopDienstId } from '../../shared/klimop/diensten-catalogus';
-import type { KlimopVerbodenVereenvoudigingId } from '../../shared/klimop/kern';
 import {
   KLIMOP_DIENST_TEKST,
   KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST,
@@ -31,6 +30,7 @@ import {
   type KlimopSchakelaarActie,
   type KlimopSpiegelControleUitkomst,
   type KlimopSpiegelLogboekOverzicht,
+  type KlimopVerbodenVereenvoudigingId,
 } from '../../shared/klimop-overzicht-model';
 import {
   klimopArchitectuurToetsen,

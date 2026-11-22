@@ -17,8 +17,8 @@
   },
   "soort": "nieuw",
   "wat": {
-    "uk": "Правило B-026 (VLAG-001): без типово вимкненого прапорця з міграцією пакет не випускається (orch pakket), вузькі винятки zonderVlag, сервер бере прапорці з пам'яті, перевірене й архівне — у постійний стан за 30 днів. НЕ ПЕРЕВІРЕНО.",
-    "nl": "Regel B-026 (VLAG-001): zonder standaard uitgeschakelde vlag geen release; vlaggen uit het geheugen; geteste functies binnen 30 dagen permanent. NIET GECONTROLEERD."
+    "uk": "Правило B-027 (VLAG-001): без типово вимкненого прапорця з міграцією пакет не випускається (orch pakket), вузькі винятки zonderVlag, сервер бере прапорці з пам'яті, перевірене й архівне — у постійний стан за 30 днів. НЕ ПЕРЕВІРЕНО.",
+    "nl": "Regel B-027 (VLAG-001): zonder standaard uitgeschakelde vlag geen release; vlaggen uit het geheugen; geteste functies binnen 30 dagen permanent. NIET GECONTROLEERD."
   },
   "waarom": {
     "uk": "На сторінці «Нові можливості сайту» вкладка «Активні» порожня: після міграції 0302 (10.11.2026) жодного нового прапорця"

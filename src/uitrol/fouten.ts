@@ -75,6 +75,10 @@ const FOUTEN: Record<string, [string, string]> = {
     'Передане сховище GitHub відхилено: воно не збігається з дозволеним джерелом оновлень.',
     'De opgegeven GitHub-opslagplaats is geweigerd: deze komt niet overeen met de toegestane updatebron.',
   ],
+  REPO_ONGELDIG: [
+    'Неправильний формат адреси сховища GitHub (очікується формат власник/сховище, наприклад Tarasevych/hub). Перевірте «Налаштування → GitHub Releases».',
+    'Ongeldig formaat van de GitHub-opslagplaats (verwacht eigenaar/opslagplaats, bijv. Tarasevych/hub). Controleer «Instellingen → GitHub Releases».',
+  ],
 };
 const OORZAAK: Record<string, [string, string]> = {
   NETWORK_ERROR: ['немає зв’язку із сервером (мережа, VPN чи проксі обірвали запит)', 'geen verbinding met de server (netwerk, VPN of proxy brak het verzoek af)'],

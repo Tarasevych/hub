@@ -670,6 +670,7 @@ export default function MeldingBijlageSpeler({
   );
 
   if (modaal && typeof document !== 'undefined' && document.body) {
+    const portaalDoel = document.querySelector<HTMLElement>('.canonical-chrome') || document.body;
     return createPortal(
       <div
         className='mel-bijlage-portaal'
@@ -681,7 +682,7 @@ export default function MeldingBijlageSpeler({
       >
         {inhoud}
       </div>,
-      document.body,
+      portaalDoel,
     );
   }
 
