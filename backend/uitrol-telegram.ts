@@ -573,6 +573,24 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
         'Mijn Ruimte — test van het Telegram-releasearchief geslaagd.',
       ].join('\n'),
     });
+
+    // Пробний маленький файл: доводить, що sendDocument і права на документи в цій темі справді працюють
+    // (тестове повідомлення саме по собі цього не показує, а архів надсилається саме документом).
+    const proefDocument = await stuurDocument(
+      bot.token,
+      inst.chatId,
+      inst.messageThreadId,
+      'mijn-ruimte-verbindingstest.txt',
+      Buffer.from(
+        [
+          'Mijn Ruimte — тестовий файл архіву випусків.',
+          'Mijn Ruimte — testbestand van het releasearchief.',
+          `Час / Tijd: ${new Date().toISOString()}`,
+        ].join('\n'),
+        'utf8',
+      ),
+      'Mijn Ruimte · тестовий файл / testbestand (не архів)',
+    );
     await sys().query(
       `UPDATE app.uitrol_telegram_instellingen SET laatst_getest_op = now(), laatste_test_ok = true, laatste_test_fout = '', bijgewerkt_op = now() WHERE user_id = $1`,
       [eigenaar.id],
@@ -581,7 +599,7 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
       actor: eigenaar,
       actie: 'owner.uitrol.telegram.test',
       doel: { soort: 'telegram', id: inst.chatId },
-      details: { bot: String(me?.username || ''), chatType, botStatus, isForum, messageThreadId: inst.messageThreadId },
+      details: { bot: String(me?.username || ''), chatType, botStatus, isForum, messageThreadId: inst.messageThreadId, documentMessageId: proefDocument.messageId },
       service: 'admin',
     });
     return {
@@ -592,6 +610,8 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
       botStatus,
       isForum,
       messageThreadId: inst.messageThreadId,
+      documentOk: true,
+      documentMessageId: proefDocument.messageId,
     };
   } catch (e) {
     const code = e instanceof TelegramArchiefFout ? e.code : 'TELEGRAM_BOT_FOUT';

@@ -317,7 +317,8 @@ export async function main(): Promise<number> {
       && errGroepRecht === 'TELEGRAM_GEEN_SCHRIJFRECHT'
       && errGeenForum === 'TELEGRAM_GEEN_FORUM'
       && testRes.ok && testRes.botUsername === 'mijn_test_bot' && testRes.chatType === 'supergroup'
-      && testRes.botStatus === 'administrator' && testRes.isForum === true && testRes.messageThreadId === 42);
+      && testRes.botStatus === 'administrator' && testRes.isForum === true && testRes.messageThreadId === 42
+      && testRes.documentOk === true && [...telegramBestanden.values()].some((b) => b.naam === 'mijn-ruimte-verbindingstest.txt'));
 
     const v1 = '20261115-010000';
     const pak1 = maakTestArchief(tmpDir, v1, 'groot.bin', randomBytes(4200));

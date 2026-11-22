@@ -211,8 +211,8 @@ export default function TelegramArchief({
         soort: 'ok',
         tekst: tr(
           lang,
-          `Зв’язок підтверджено: бот @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) надіслав тестове повідомлення у «${r.chatTitle || chatId}»${r.messageThreadId ? ` (тема ${r.messageThreadId})` : ''}.`,
-          `Verbinding geslaagd: bot @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) stuurde een testbericht naar «${r.chatTitle || chatId}»${r.messageThreadId ? ` (topic ${r.messageThreadId})` : ''}.`,
+          `Зв’язок підтверджено: бот @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) надіслав тестове повідомлення і тестовий файл у «${r.chatTitle || chatId}»${r.messageThreadId ? ` (тема ${r.messageThreadId})` : ''}.`,
+          `Verbinding geslaagd: bot @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) stuurde een testbericht en een testbestand naar «${r.chatTitle || chatId}»${r.messageThreadId ? ` (topic ${r.messageThreadId})` : ''}.`,
         ),
       });
       await laden();
