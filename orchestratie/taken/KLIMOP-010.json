@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-010",
+  "agent": "antigravity",
+  "tak": "feature/klimop-010-etappe9-mensbescherming-dwang-20261120-231800",
+  "basisCommit": "5c5cf3c292186ee6040e21c78bb4dab7184e77ad",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-20T23:17:36.797Z",
+  "bijgewerkt": "2026-11-20T23:17:36.798Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

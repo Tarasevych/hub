@@ -3532,6 +3532,66 @@
    "pad": "tests/eenheid/tech-yarlyky-20261117.test.ts",
    "wat": "Eenheidstest voor delegatierechten en weergaveregels van technische snelkoppelingen in beide menuhelften.",
    "sinds": "FIX-001 (PR #156)"
+  },
+  {
+   "pad": "shared/klimop-overzicht-model.ts",
+   "wat": "Gedeeld tweetalig model voor eigenaarsroutes (/api/owner/klimop/*), MCP-hulpmiddelen (klimop_*), Stap-1-status van 11 diensten en contexthulp HELP_KLIMOP.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "backend/klimop-platform-brug.ts",
+   "wat": "Gemeenschappelijke serverbrug voor het overzicht van de 12 Klimop-kernmodules, de 15-puntentoets en risicoloze Stap-1-spiegelverificatie in geheugen.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "backend/klimop-paden.ts",
+   "wat": "Beveiligde eigenaarsroutes /api/owner/klimop/* op mcp.* en admin.* met snelheidsbegrenzing en registratie in het beveiligingslogboek.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "backend/klimop-hulpmiddeldefinities.ts",
+   "wat": "Zuivere definities van de drie technische MCP-hulpmiddelen klimop_* in Connector v2 voor alle 14 AI-agenten.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "backend/klimop-hulpmiddelen.ts",
+   "wat": "Uitvoerder van de technische MCP-hulpmiddelen klimop_* met uurlimiet per eigenaar en afscherming van lokale serverpaden.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "src/klimop/klimop-klant.ts",
+   "wat": "Webklantmodule voor het aanroepen van /api/owner/klimop/* vanuit het onderdeel Coördinatie.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "src/agenten/KlimopPaneel.tsx",
+   "wat": "Tweetalig webpaneel voor de integriteitsstaat van het ecosysteem Klimop, de Merkle-wortel van het Zaadpakket en Stap-1-spiegelverificatie van de 11 diensten.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "tests/eenheid/klimop-014-platformintegratie-spiegel-20261121.test.ts",
+   "wat": "Integratietest voor de Klimop-platformbrug, Stap-1-spiegelverificatie van alle 11 diensten, eigenaarsroutes, MCP voor 14 agenten en het webpaneel.",
+   "sinds": "KLIMOP-014"
+  },
+  {
+   "pad": "backend/klimop-overdracht-opslag.ts",
+   "wat": "Serveropslag van Stappen 2–4 voor passief spiegellezen, gecontroleerd dubbel schrijven, FROST+postkwantum-quorumattesten, SHA-256-logboeken en directe terugval voor alle 11 diensten.",
+   "sinds": "KLIMOP-015"
+  },
+  {
+   "pad": "tests/eenheid/klimop-015-passieve-spiegel-terugschakeling-20261121.test.ts",
+   "wat": "Eenheids- en integratietest voor Stap 2 passief spiegellezen, ketenintegriteit van het afwijkingslogboek, automatische en noodterugschakeling van 11 diensten en tweetalige weergave.",
+   "sinds": "KLIMOP-015"
+  },
+  {
+   "pad": "tests/eenheid/klimop-016-dubbel-schrijven-terugval-20261121.test.ts",
+   "wat": "Eenheids- en integratietest voor Stap 3 gecontroleerd dubbel schrijven met leesverificatie, verwijdermarkeringen, kwitantieketen en directe terugval van alle 11 diensten.",
+   "sinds": "KLIMOP-016"
+  },
+  {
+   "pad": "tests/eenheid/klimop-017-quorum-attest-stap4-20261121.test.ts",
+   "wat": "Eenheids- en integratietest voor Stap 4 quorumattesten onder FROST en Ed25519+ML-DSA-65, ketenherverificatie, eigenaarsvrijgave en directe terugval van alle 11 diensten.",
+   "sinds": "KLIMOP-017"
   }
  ]
 }

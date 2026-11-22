@@ -41,6 +41,7 @@ import {
 
 export { BEHEER_TOOLS, BEHEER_TOOL_NAMEN } from './ai-beheer-hulpmiddeldefinities';
 import { isOrchTool, voerOrchToolUit } from './orch-hulpmiddelen';
+import { isKlimopTool, voerKlimopToolUit } from './klimop-hulpmiddelen';
 
 const sys = () => getPool('systeem');
 type ToolUit = { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
@@ -543,6 +544,8 @@ export async function voerBeheerToolUit(who: BeheerWie, name: string, args: Reco
       default:
         // ORCH-001 етап 3: координація агентів (orch_*) — backend/orch-hulpmiddelen.ts, той самий конвеєр, що й scripts/orch.mjs.
         if (isOrchTool(name)) return await voerOrchToolUit({ userId: who.userId, clientName: who.clientName, agent: who.agent, grantId: who.grantId, tokenId: who.tokenId }, name, args);
+        // KLIMOP-014: інспекція та дзеркальна звірка Сходинки 1 екосистеми «Плющ» (klimop_*) — backend/klimop-hulpmiddelen.ts.
+        if (isKlimopTool(name)) return await voerKlimopToolUit({ userId: who.userId, clientName: who.clientName, agent: who.agent, grantId: who.grantId, tokenId: who.tokenId }, name, args);
         return fout(`UNKNOWN_TOOL: ${name.slice(0, 80)}`);
     }
   } catch (e) {

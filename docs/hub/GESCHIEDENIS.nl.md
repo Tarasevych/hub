@@ -106,3 +106,13 @@ flowchart LR
 - **MAQUETTE-001, HISTORIE-001, IDENTITEIT-011 (13.11):** in uitvoering: thema «Ontwerp» (Golf 0), kroniek van takken, plan voor het «Ontwerp» (PR #76).
 
 Live versie op 13-11-2026: `20261113-121403` (commit [`5f2325d`](https://github.com/Tarasevych/hub/commit/5f2325d788e29c5126f9ede6975afbbac7e5aae2)). De tak `voornaamst` bevat die nog niet — zie «Achterstand» in de kroniek.
+
+---
+
+## Fase VIII. Gedeelde vaardigheden, auteurschap `BIJDRAGE-001`, driefactorvertrouwen `B-023`, verdeelde opslag `UPD-013` en het Hoofdarchitectuurmanifest «Klimop» `KLIMOP-001` (14–20 november 2026)
+
+- **`VAARD-001`/`002` en `REESTR-LOGO-001` (`B-020`, 15–16.11.2026):** centrale catalogus voor gedeelde vaardigheden `.agents/skills/` en één centraal merkregister `src/merk/` met ondersteuning voor eigen gebruikerslogo's.
+- **`BIJDRAGE-001` en `VERWIJZING-001` (`B-021`/`B-022`, 18.11.2026):** onveranderlijke auteurschapsregistratie per bijdrage (`orchestratie/bijdragen/`), functiedossiers (`orchestratie/onderwerpen/`), sessiestart `orch begin` en blijvende mensleesbare verwijzingen zonder «404» (`orchestratie/verwijzingen/`).
+- **`UPD-011` (`B-023`, 20.11.2026):** persoonlijke intrekbare uitgavesleutels, driefactorvertrouwen (`GitHub + TRACE-001` ↔ `MCP AI + geldende regels` ↔ `Site-account`), dynamische Telegram-bevestigingskaarten en selectief terugdraaien van één uitgave met behoud van latere wijzigingen.
+- **`UPD-012`/`UPD-013` (20.11.2026, geïnstalleerde uitgave `20261120-141041` @ `ba289fa919c66765b6fc5565d340976994261c05`):** werkend subsysteem voor verdeelde versleutelde opslag met Shamir-drempeldelen `k`-van-`n`, spreidingscontrole per land/aanbieder en proactieve deelrotatie.
+- **`KLIMOP-001` (`B-024`, 20.11.2026, regels `1.5.0`):** vaststelling van het **Hoofdarchitectuurmanifest «Mijn Ruimte» — Levend Digitaal Ecosysteem «Klimop»** ([`ARCHITECTUURMANIFEST-KLIMOP.nl.md`](./ARCHITECTUURMANIFEST-KLIMOP.nl.md) ↔ [`АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](./АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md), 16 delen, 46 hoofdstukken) als doelarchitectuur, invoering van de gedeelde vaardigheid [`klimop-architectuur`](../../.agents/skills/klimop-architectuur/VAARDIGHEID.nl.md) en gelijktrekking van regels en adapters voor **alle 14 AI-agentintegraties** zonder onmiddellijke wijziging van de productie-infrastructuur.

@@ -2,24 +2,33 @@
 
 # AI-connectors v2: een eigen adres voor elke agent (fase 1, 15.10.2026)
 
-> **Bijgewerkt op 20.10.2026 — fase 2 voltooid.** De adressen zijn nu kort: `https://mcp.tarasevych.com/<agent>` (`/claude`, `/gpt`,
-> `/grok`, `/gemini`, `/copilot`, `/cursor`). De oude `/ai/<agent>`-paden antwoorden met een **308 Permanent Redirect** naar de korte paden (308 en niet
+> **Bijgewerkt op 20.11.2026 (`KLIMOP-001`, `B-024`, regels `1.5.0`):** uitgebreid naar **alle 14 AI-agentintegraties** en afgestemd op het [Hoofdarchitectuurmanifest «Klimop»](../docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) (§1.4, §5.2, §26, §28–§34) en de canonieke regels [`AGENTENREGELS.nl.md`](../AGENTENREGELS.nl.md). Elke agent heeft een eigen kort pad `https://mcp.tarasevych.com/<pad>`, gescheiden toegangsbewijzen, een eigen tweetalige adapter en de gedeelde catalogus van 12 vaardigheden (waaronder `klimop-architectuur`). Het doelconcept «Klimop» **staat geen enkele agent toe om de productie-infrastructuur eigenmachtig te wijzigen**.
+>
+> **Bijgewerkt op 20.10.2026 — fase 2 voltooid.** De adressen zijn nu kort: `https://mcp.tarasevych.com/<pad>` (`/claude`, `/gpt`,
+> `/codex`, `/grok`, `/gemini`, `/githubcopilot`, `/copilot`, `/cursor`, `/antigravity`, `/autoclaw`, `/windsurf`, `/cline`, `/devin`, `/opencode`). De oude `/ai/<agent>`-paden antwoorden met een **308 Permanent Redirect** naar de korte paden (308 en niet
 > 301/302: MCP werkt via POST, en bij 301/302 mag een client dat omzetten in GET). Rechten worden niet langer vastgelegd in de grant:
 > één connector toont zowel privé- als technische hulpmiddelen, en wat er precies beschikbaar is wordt bij elke aanroep bepaald op basis van
-> de actuele status van de gebruiker. Alles over de uitrol: **`deploy/VERBINDER-EEN-PAD.nl.md`**. Hieronder staat de beschrijving van fase 1; waar
-> `/ai/<agent>` staat, leest u `/<agent>`.
+> de actuele status van de gebruiker. Alles over de uitrol: **`deploy/VERBINDER-EEN-PAD.nl.md`**. Hieronder staan de historische beschrijving van fase 1 en de actuele tabel van alle 14 adressen.
 
 ## Wat het is
-- **Een eigen adres voor elke AI**:
+- **Een eigen adres voor elk van de 14 AI-agenten**:
 
-  | Agent | Connectoradres |
+  | Agent (`beleid.json`-id) | Huidig kort connectoradres |
   |---|---|
-  | Claude | `https://mcp.tarasevych.com/ai/claude` |
-  | ChatGPT | `https://mcp.tarasevych.com/ai/gpt` |
-  | Grok | `https://mcp.tarasevych.com/ai/grok` |
-  | Gemini | `https://mcp.tarasevych.com/ai/gemini` |
-  | Copilot | `https://mcp.tarasevych.com/ai/copilot` |
-  | Cursor | `https://mcp.tarasevych.com/ai/cursor` |
+  | Claude (`claude`) | `https://mcp.tarasevych.com/claude` |
+  | ChatGPT (`chatgpt`) | `https://mcp.tarasevych.com/gpt` |
+  | OpenAI Codex (`codex`) | `https://mcp.tarasevych.com/codex` |
+  | Grok (`grok`) | `https://mcp.tarasevych.com/grok` |
+  | Gemini (`gemini`) | `https://mcp.tarasevych.com/gemini` |
+  | GitHub Copilot (`copilot`) | `https://mcp.tarasevych.com/githubcopilot` |
+  | Microsoft Copilot Studio (`mscopilot`) | `https://mcp.tarasevych.com/copilot` |
+  | Cursor (`cursor`) | `https://mcp.tarasevych.com/cursor` |
+  | Google Antigravity (`antigravity`) | `https://mcp.tarasevych.com/antigravity` |
+  | AutoClaw (`autoclaw`) | `https://mcp.tarasevych.com/autoclaw` |
+  | Windsurf (`windsurf`) | `https://mcp.tarasevych.com/windsurf` |
+  | Cline (`cline`) | `https://mcp.tarasevych.com/cline` |
+  | Devin (`devin`) | `https://mcp.tarasevych.com/devin` |
+  | OpenCode (`opencode`) | `https://mcp.tarasevych.com/opencode` |
 
   Een token dat voor het ene adres is uitgegeven, werkt niet op een ander adres en werkt niet op het oude `/mcp`. Dit wordt gecontroleerd aan de hand van zowel het
   terugkeeradres (claude.ai kan niet koppelen op `/ai/grok`) als door de server bij elke aanroep. Elke poging wordt vastgelegd in het logboek.

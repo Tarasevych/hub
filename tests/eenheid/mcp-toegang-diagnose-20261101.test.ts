@@ -358,8 +358,8 @@ export async function main(): Promise<number> {
     const alleGebruikerAantal = V2_OPTIES.filter((o) => o.status === 'actief' && o.kant === 'gebruiker').length;
     const alleBeheerAantal = V2_OPTIES.filter((o) => o.status === 'actief' && o.kant === 'beheer').length;
     check(`catalogus telt ${alleGebruikerAantal} gebruiker + ${alleBeheerAantal} beheer = ${alleSleutels.length} actieve sleutels`,
-      // UPD-003: + browser_local_ai (LAI-CON-001, #137) на обох боках · aan beide kanten
-      alleGebruikerAantal === 124 && alleBeheerAantal === 80 && alleSleutels.length === 204,
+      // UPD-003: + browser_local_ai (LAI-CON-001, #137) на обох боках · aan beide kanten; KLIMOP-014..017: +9 klimop_*:beheer
+      alleGebruikerAantal === 124 && alleBeheerAantal === 89 && alleSleutels.length === 213,
       `${alleGebruikerAantal}+${alleBeheerAantal}=${alleSleutels.length}`);
 
     const cur = await koppelAgent(uid, 'cursor', { kanten: ['gebruiker', 'beheer'], sleutels: alleSleutels });

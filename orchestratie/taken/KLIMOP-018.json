@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-018",
+  "agent": "antigravity",
+  "tak": "fix/klimop-018-klientbouw-zoek-taalvaardigheid-20261121-142230",
+  "basisCommit": "06312df6c79c0cdfd9c15c01d84519460c3e75ff",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T14:22:23.507Z",
+  "bijgewerkt": "2026-11-21T14:22:23.507Z",
+  "omschrijving": "Хвиля 1 виправлень за незалежною перевіркою: чисте клієнтське складання без node:crypto, пошуковий покажчик, спільна навичка movnyi-zakon, виправлення обліку авторства",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

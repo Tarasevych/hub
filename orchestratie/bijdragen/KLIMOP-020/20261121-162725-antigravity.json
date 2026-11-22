@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-020/20261121-162725-antigravity",
+  "taakId": "KLIMOP-020",
+  "tijd": "2026-11-21T16:27:25.343Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Завершення Хвилі 3 (KLIMOP-020) з місця зупинки фіксації add014c5: прив'язка зміни конституції та ключів ролей на вузлі до відбитка змісту 72-годинного рішення FROST, однократність і строк дії; точна рівність вкладень пакета «Насіння», ключ хранителя, зовнішній початковий якір beginAnker на вузлі та звірка повного пакета на кворумі; сліпа імунна перевірка виключно за незалежним еталоном і розміром (відновлення еталонів Ріда–Соломона без KEK); чесне уточнення спрощеного групового шифрування з підписом привітання, одноразовими ключами повідомлень і захистом від повтору; локальні довірені корені на вузлі замість полів запиту; позначка місцевого моделювання кворуму в одному процесі; модульне й мережеве випробування klimop-020 та двомовні статті Хвилі 3.",
+    "nl": "Afronding van Golf 3 (KLIMOP-020) vanaf vastlegging add014c5: inhoudsbinding, eenmaligheid en geldigheidstermijn van grondwetswijzigingen op het knooppunt; exacte bijlagenset, bewaarderssleutel, extern beginanker en volledige pakketvergelijking voor Zaden; blinde immuuncontrole uitsluitend met onafhankelijke referentie en grootte; eerlijke omschrijving van vereenvoudigde groepsversleuteling met welkomsthandtekening en herhalingsbescherming; lokale vertrouwenswortels op het knooppunt; markering van lokale nabootsing in één proces; test klimop-020 en tweetalige documentatie."
+  },
+  "waarom": {
+    "uk": "Після вичерпання 5-годинного ліміту моделі Claude Opus 5.5 (High) на платформі Google Antigravity власник доручив підхопити і завершити виправлення всіх високих вад меж довіри зі звіту незалежної перевірки AUDIT-002 (GPT-6.2 Astra (Ультра)) на моделі Gemini 4 Carbon (High) без повторення вже виконаної частини.",
+    "nl": "Na het verstrijken van de limiet van vijf uur voor Claude Opus 5.5 (High) op Google Antigravity gaf de eigenaar opdracht de afronding van Golf 3 volgens het onafhankelijke controlerapport AUDIT-002 (GPT-6.2 Astra (Ultra)) voort te zetten op Gemini 4 Carbon (High) zonder dubbel werk."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-020/20261121-152856-antigravity",
+    "AUDIT-002/20261121-140000-chatgpt"
+  ],
+  "tak": "fix/klimop-020-vertrouwensgrenzen-20261121-151312",
+  "pr": null,
+  "commits": [
+    "add014c5871921f11501cbe4017054eb1269d468"
+  ],
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

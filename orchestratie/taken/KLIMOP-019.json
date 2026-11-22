@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-019",
+  "agent": "antigravity",
+  "tak": "fix/klimop-019-frost-dkg-epoche-merkle-crdt-20261121-144953",
+  "basisCommit": "9054a211b717e4467d9c08ece436a80e9e80256a",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T14:49:53.703Z",
+  "bijgewerkt": "2026-11-21T14:49:53.703Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

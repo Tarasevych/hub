@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "AUDIT-003/20261121-193700-antigravity",
+  "taakId": "AUDIT-003",
+  "tijd": "2026-11-21T19:37:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "controle",
+  "wat": {
+    "uk": "Повторна незалежна перевірка екосистеми «Плющ» на фіксації integratie 6a705b3857f215a64c2575b770716e4d62438f53 (після злиття запитів №200–203, хвилі KLIMOP-018–021): критичних вад 0, високих 6 (В-1..В-6), середніх 11 (С-1..С-11), низьких 8 (Н-1..Н-8); проведено емпіричні міжпроцесні випробування та 8 проходів у переглядачі Chromium; сформовано план п’ятої хвилі KLIMOP-022",
+    "nl": "Herhaalde onafhankelijke controle van het ecosysteem «Klimop» op integratie-vastlegging 6a705b3857f215a64c2575b770716e4d62438f53 (na samenvoeging van verzoeken nr. 200–203, golven KLIMOP-018–021): kritiek 0, hoog 6, middel 11, laag 8; inclusief procesoverstijgende proeven en 8 doorgangen in Chromium; vijfde golf KLIMOP-022 opgesteld"
+  },
+  "waarom": {
+    "uk": "Власник доручив повторну незалежну ревізію після злиття чотирьох хвиль виправлень, щоб перед передаванням до зовнішнього середовища виявити всі залишкові й межові лазівки в коді, мандатах, міжпроцесному сховищі та статтях",
+    "nl": "De eigenaar gaf opdracht tot een herhaalde onafhankelijke controle na de eerste vier herstelgolven om alle overgebleven randgevallen in code, mandaten, procesoverstijgende opslag en documentatie te sluiten"
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-018/20261121-143926-antigravity",
+    "KLIMOP-019/20261121-150914-antigravity",
+    "KLIMOP-020/20261121-152856-antigravity",
+    "KLIMOP-020/20261121-162725-antigravity",
+    "KLIMOP-021/20261121-182221-antigravity",
+    "AUDIT-002/20261121-140000-chatgpt"
+  ],
+  "tak": "integratie",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

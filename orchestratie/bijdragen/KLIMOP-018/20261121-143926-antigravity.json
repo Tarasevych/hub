@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-018/20261121-143926-antigravity",
+  "taakId": "KLIMOP-018",
+  "tijd": "2026-11-21T14:39:26.791Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Claude Opus 5.5 (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Перша хвиля виправлень за незалежною перевіркою «Плюща»: чисте складання клієнта без node:crypto (перелік служб у shared/klimop/diensten-catalogus.ts, перевірка межі в npm run build), панель «Плюща» в пошуковому покажчику (technisch, #orch), спільна навичка movnyi-zakon для 14 агентів у кожному перехіднику, механізм виправлення авторства correctie + corrigeert і 17 записів виправлення моделі на Gemini 4 Carbon (High)",
+    "nl": "Eerste herstelgolf na de onafhankelijke controle van Klimop: schone clientbouw zonder node:crypto, Klimop-paneel in de zoekindex, gedeelde vaardigheid movnyi-zakon voor 14 agenten, auteurscorrectie met correctie + corrigeert en 17 correcties naar Gemini 4 Carbon (High)"
+  },
+  "waarom": {
+    "uk": "Незалежну перевірку робіт Gemini 4 Carbon (High) провела GPT-6.2 Astra (Ультра); власник доручив виправити всі вади чотирма хвилями, ця хвиля усуває зірване складання клієнта, прогалину пошуку, відсутню мовну навичку та хибну модель в обліку",
+    "nl": "De onafhankelijke controle door GPT-6.2 Astra (Ultra) van het werk van Gemini 4 Carbon (High) vond gebreken; deze golf herstelt de clientbouw, de zoekindex, de taalvaardigheid en het model in de registratie"
+  },
+  "bouwtVoortOp": [
+    "AUDIT-002/20261121-140000-chatgpt",
+    "KLIMOP-017/20261121-123535-antigravity"
+  ],
+  "tak": "fix/klimop-018-klientbouw-zoek-taalvaardigheid-20261121-142230",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop",
+    "vaardigheden"
+  ]
+}

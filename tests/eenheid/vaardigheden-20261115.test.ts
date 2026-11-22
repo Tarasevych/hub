@@ -27,6 +27,8 @@ const VERWACHTE_VAARDIGHEDEN = [
   'mijn-ruimte',
   'reyestr-lohotypiv', // REESTR-LOGO-001 (16.11.2026): логотипи лише з єдиного реєстру src/merk
   'bijdragen-vastleggen', // BIJDRAGE-001 (18.11.2026): облік авторства, досьє функцій, злиття без утрат
+  'klimop-architectuur', // KLIMOP-001 (20.11.2026): архітектурний маніфест «Плющ» / «Klimop» для всіх 14 агентів
+  'movnyi-zakon', // KLIMOP-018 (21.11.2026): спільна навичка Абсолютного мовного закону для всіх 14 агентів
 ] as const;
 
 const MET_VOORBEELD = [
@@ -96,6 +98,8 @@ export async function main(): Promise<number> {
     ['nl-mijn-ruimte', 'koppel antigravity connector, autoclaw en browserextensie via tweerichtingsbrug', 'mijn-ruimte'],
     ['uk-логотип', 'додай логотип сервісу в реєстр логотипів', 'reyestr-lohotypiv'],
     ['nl-logo', 'voeg een logo toe aan het merkregister', 'reyestr-lohotypiv'],
+    ['uk-плющ-архітектура', 'перевір архітектурний маніфест екосистема плющ і порогові підписи фрост', 'klimop-architectuur'],
+    ['nl-klimop-architectuur', 'toets wijziging aan architectuurmanifest ecosysteem klimop en drempelhandtekeningen frost', 'klimop-architectuur'],
   ];
 
   for (const [label, vraag, verwacht] of proeven) {
@@ -299,6 +303,9 @@ export async function main(): Promise<number> {
     '.agents/skills/mijn-ruimte/НАВИЧКА.uk.md',
     '.agents/skills/mijn-ruimte/НАВИЧКА-МІЙ-ПРОСТІР.uk.md',
     '.agents/skills/mijn-ruimte/scripts/mijn-ruimte',
+    '.agents/skills/klimop-architectuur/SKILL.md',
+    '.agents/skills/klimop-architectuur/НАВИЧКА-АРХІТЕКТУРА-ПЛЮЩ.uk.md',
+    '.agents/skills/klimop-architectuur/VAARDIGHEID.nl.md',
     'scripts/vaardigheden/catalogus.json',
     'scripts/vaardigheden/kies.mjs',
     'scripts/vaardigheden/valideer.mjs',

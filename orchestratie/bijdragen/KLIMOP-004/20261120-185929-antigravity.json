@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-004/20261120-185929-antigravity",
+  "taakId": "KLIMOP-004",
+  "tijd": "2026-11-20T18:59:29.653Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Після злиття запиту №185 у integratie реалізовано Етап 3 маніфесту «Плющ»: криптографічний модуль shared/klimop/opslag.ts (ієрархія ключів HKDF-SHA-256, узгодження профілів із захистом від пониження рівня шифрування, сегментоване конвертне шифрування ChaCha20-Poly1305 / AES-256-GCM, коди відновлення Ріда–Соломона k+m над GF(2^8), підписані маніфести Ed25519 та перехідні сліпі пошукові відбитки HMAC-SHA-256), мережевий розподільник backend/klimop-opslag-client.ts із добудовою втраченої смуги без ключа та законним видаленням wis_blok, полігон 4 вузлів NL/CH/UA/SE scripts/klimop-etappe3-opslag-proef.mjs, двомовну документацію Етапу 3 та випробування 18/18."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника від 20.11.2026: злити KLIMOP-003 у integratie та продовжити виконання Етапу 3 маніфесту «Плющ» (клієнтське шифрування, розподілене зберігання та криптографічна гнучкість)."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-003/20261120-183433-antigravity"
+  ],
+  "tak": "feature/klimop-004-etappe3-versleuteling-opslag-20261120-184500",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

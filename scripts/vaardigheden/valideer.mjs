@@ -99,6 +99,36 @@ export function laadV2CatalogusSleutels(wortel = WORTEL) {
   return { sleutels, ids, fout: sleutels.size === 0 ? 'Geen V2-opties geparseerd uit catalogus.ts' : null };
 }
 
+// KLIMOP-018 (21.11.2026): навички, обов'язкові для всіх 14 агентів, та перевірка посилань перехідників на мовний закон.
+// Незалежна перевірка «Плюща» виявила, що навички movnyi-zakon у сховищі не було, а штатний перевіряльник цього не помічав.
+export const VERPLICHTE_VAARDIGHEDEN = Object.freeze(['movnyi-zakon', 'klimop-architectuur', 'bijdragen-vastleggen']);
+export const TAALWET_VERWIJZING = '.agents/skills/movnyi-zakon/SKILL.md';
+export const TAALWET_NL_VERWIJZING = '.agents/skills/movnyi-zakon/VAARDIGHEID.nl.md';
+const VOORBEELD_TABEL_RE = /<!-- taalwet:verboden-voorbeelden:begin -->[\s\S]*?<!-- taalwet:verboden-voorbeelden:einde -->/g;
+export function zonderVoorbeeldTabel(rel, tekst) {
+  return rel === TAALWET_VERWIJZING || rel === TAALWET_NL_VERWIJZING
+    ? tekst.replace(VOORBEELD_TABEL_RE, '')
+    : tekst;
+}
+
+/** Перехідники агентів із orchestratie/beleid.json, які не посилаються на спільну навичку мовного закону. */
+export function adaptersZonderTaalwet(wortel = WORTEL) {
+  const uit = [];
+  let beleid = null;
+  try {
+    beleid = JSON.parse(readFileSync(path.join(wortel, 'orchestratie/beleid.json'), 'utf8'));
+  } catch {
+    return uit;
+  }
+  for (const a of beleid?.agenten ?? []) {
+    if (!a?.adapter) continue;
+    const pad = path.join(wortel, a.adapter);
+    if (!existsSync(pad)) { uit.push(`${a.id}: ${a.adapter} ontbreekt`); continue; }
+    if (!readFileSync(pad, 'utf8').includes(TAALWET_VERWIJZING)) uit.push(`${a.id}: ${a.adapter} verwijst niet naar ${TAALWET_VERWIJZING}`);
+  }
+  return uit;
+}
+
 function parseerFrontmatter(inhoud) {
   if (!inhoud.startsWith('---\n')) return null;
   const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(inhoud);
@@ -235,6 +265,12 @@ export function valideerVaardigheden(wortel = WORTEL) {
     }
   }
 
+  // KLIMOP-018: обов'язкові спільні навички та посилання всіх перехідників на мовний закон.
+  for (const naam of VERPLICHTE_VAARDIGHEDEN) {
+    if (!perNaam.has(naam)) fouten.push(`verplichte vaardigheid "${naam}" ontbreekt in catalogus.json (обов'язкова навичка відсутня)`);
+  }
+  for (const f of adaptersZonderTaalwet(wortel)) fouten.push(`taalwet-adapter: ${f}`);
+
   // Afhankelijkheidsgraaf: geldige verwijzingen, geen zelfverwijzing, 3-kleuren-DFS tegen cycli
   for (const [naam, v] of perNaam.entries()) {
     if (!Array.isArray(v.afhankelijkheden)) continue;
@@ -315,7 +351,9 @@ export function valideerVaardigheden(wortel = WORTEL) {
     if (RU_LETTERS.test(tekst)) {
       fouten.push(`taalwet: verboden Russische letters in ${rel}`);
     }
-    const mJargon = TECH_JARGON.exec(tekst);
+    // KLIMOP-018: лише в навичці movnyi-zakon таблиця «заборонено → уживати» між межами taalwet:verboden-voorbeelden
+    // навмисно наводить заборонені слова як приклади; поза цими межами перевірка жаргону діє повністю.
+    const mJargon = TECH_JARGON.exec(zonderVoorbeeldTabel(rel, tekst));
     if (mJargon) {
       fouten.push(`taalwet: verboden tech-jargon "${mJargon[1]}" in ${rel}`);
     }

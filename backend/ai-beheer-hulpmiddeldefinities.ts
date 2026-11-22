@@ -9,6 +9,7 @@ import type { ToolDef } from './connectors-hulpmiddelen';
 import { p } from '../shared/hulpmiddel-teksten';
 import { ALLE_CATEGORIEEN } from '../shared/beheer-journaal';
 import { ORCH_TOOLS } from './orch-hulpmiddeldefinities'; // ORCH-001 етап 3: координація агентів (orch_*), zelfde kant 'beheer'
+import { KLIMOP_TOOLS } from './klimop-hulpmiddeldefinities'; // KLIMOP-014: огляд, архітектурна перевірка та Сходинка 1 «Плюща» (klimop_*)
 
 /** Interne namen (= `intern` in de catalogus van connector v2). */
 export const AUDIT_READ = 'audit_read';
@@ -97,6 +98,8 @@ export const BEHEER_TOOLS: readonly ToolDef[] = Object.freeze([
   },
   // ORCH-001 етап 3 (31.10.2026): координація агентів — ті самі правила доступу (kant beheer, connector v2, право на кожен інструмент).
   ...ORCH_TOOLS,
+  // KLIMOP-014 (21.11.2026): огляд, 15-пунктова перевірка та дзеркальна перевірка Сходинки 1 екосистеми «Плющ».
+  ...KLIMOP_TOOLS,
 ] as ToolDef[]);
 
-export const BEHEER_TOOL_NAMEN: ReadonlySet<string> = new Set([...BEHEER_TOOLS, ...ORCH_TOOLS].map((t) => t.name));
+export const BEHEER_TOOL_NAMEN: ReadonlySet<string> = new Set(BEHEER_TOOLS.map((t) => t.name));

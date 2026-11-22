@@ -22,6 +22,7 @@ html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-scroll-top{dis
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar{visibility:hidden;background:transparent;border:0;box-shadow:none;pointer-events:none}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar :is(.canonical-account-panel,.canonical-notification-toast){visibility:visible;pointer-events:auto}
 html[data-identiteit-maquette='aan'] :is(.canonical-account-portal,.am3-mobiel-laag){visibility:visible;pointer-events:auto}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar :is(.canonical-notification-panel,.cnc-pijl),html[data-identiteit-maquette='aan'] :is(.mel-ecosysteem-portaal,.mel-minimale-pil,.mel-bijlage-portaal){visibility:visible;pointer-events:auto}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-content{min-height:0}
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical-sidebar{display:flex!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer:has(.am3-mobiel-laag) :is(.canonical-sidebar,.canonical-sidebar-scrim){visibility:hidden;pointer-events:none}
@@ -105,6 +106,14 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 /* Блок «Чинні налаштування» у стилі «Можливостей для доопрацювання»; у вкладеній панелі він іде після робочої області. */
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok .future-section-flower{font-size:21px}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok[open] .future-section-head{margin-bottom:0}
+
+/* MELDPANEEL-003: жива пігулка дзвіночка сповіщень у верхній смузі вигляду «Макет» (між пошуком і аватаром). */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-bel-houder{display:inline-flex;align-items:center;flex:0 0 auto}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-bel-knop{height:35px;min-width:35px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:rgba(160,171,202,.07);color:var(--text);border:1px solid var(--card-border);border-radius:10px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;transition:background .18s,border-color .18s,color .18s!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-bel-knop:hover{border-color:rgba(var(--global-rgb),.55);background:rgba(var(--global-rgb),.11)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-bel-knop[aria-expanded='true']{background:rgba(var(--global-rgb),.18);border-color:rgba(var(--global-rgb),.65);color:var(--text)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-bel-knop svg{width:16px;height:16px;flex:0 0 auto;stroke-width:1.85}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-bel-teller{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--global,#7c65d6);color:#fff;font-size:10.5px;font-weight:700;line-height:1}
 
 /* Перемикач вигляду (макет / «Студія» / класичний) у вікні навігації та під підвалом — у стилі макета. */
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving{margin-top:14px}

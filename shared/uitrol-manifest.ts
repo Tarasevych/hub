@@ -36,6 +36,8 @@ export const BIJDRAGE_SOORTEN: readonly BijdrageSoort[] = ['begin', 'nieuw', 'he
 export type ManifestBijdrage = {
   taakId: string; tijd: string; soort: BijdrageSoort;
   wie: { soort: 'ai' | 'mens'; naam: string; model?: string | null; platform?: string | null };
+  /** KLIMOP-018: первинний (помилковий) виконавець, якщо запис виправлено окремим записом «correctie». */
+  eerderGeregistreerd?: { naam: string; model?: string | null };
   opdrachtgever?: { naam: string };
   wat: { uk: string; nl?: string }; waarom?: { uk: string; nl?: string };
   tak?: string | null; pr?: number | null;
@@ -166,6 +168,7 @@ function leesManifestBijdragen(ruw: unknown, f: (veld: string, uk: string, nl: s
     uit.push({
       taakId, tijd, soort,
       wie: { soort: wieSoort, naam: wieNaam, ...(wieSoort === 'ai' ? { model: str(b?.wie?.model, 120), platform: str(b?.wie?.platform, 80) || null } : {}) },
+      ...(str(b?.eerderGeregistreerd?.naam, 80) ? { eerderGeregistreerd: { naam: str(b.eerderGeregistreerd.naam, 80), ...(str(b?.eerderGeregistreerd?.model, 120) ? { model: str(b.eerderGeregistreerd.model, 120) } : {}) } } : {}),
       ...(str(b?.opdrachtgever?.naam, 120) ? { opdrachtgever: { naam: str(b?.opdrachtgever?.naam, 120) } } : {}),
       wat: { uk: watUk, ...(str(b?.wat?.nl, 1000) ? { nl: str(b?.wat?.nl, 1000) } : {}) },
       ...(str(b?.waarom?.uk, 1000) ? { waarom: { uk: str(b?.waarom?.uk, 1000), ...(str(b?.waarom?.nl, 1000) ? { nl: str(b?.waarom?.nl, 1000) } : {}) } } : {}),

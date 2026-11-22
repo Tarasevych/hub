@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-015",
+  "agent": "antigravity",
+  "tak": "feature/klimop-015-passieve-spiegel-terugschakeling-20261121-100000",
+  "basisCommit": "6445c9670946005ce885614a2d0df7409f11e173",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T09:58:15.368Z",
+  "bijgewerkt": "2026-11-21T09:58:15.368Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

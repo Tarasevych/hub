@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "id": "AUDIT-002/20261121-140000-chatgpt",
+  "taakId": "AUDIT-002",
+  "tijd": "2026-11-21T14:00:00.000Z",
+  "vastgelegd": "2026-11-21T14:33:17.425Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "chatgpt",
+    "platform": "ChatGPT — середовище незалежної перевірки",
+    "model": {
+      "id": "GPT-6.2 Astra (Ультра)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "controle",
+  "wat": {
+    "uk": "Незалежна перевірка робіт KLIMOP-001–017 (запити на злиття №183–199) на фіксації integratie 06312df6c79c0cdfd9c15c01d84519460c3e75ff, виконаних моделлю Gemini 4 Carbon (High) у Google Antigravity: критичних вад 0, високих 20, середніх 24, низьких 11; запропоновано чотири хвилі виправлень KLIMOP-018–021",
+    "nl": "Onafhankelijke controle van KLIMOP-001–017 (samenvoegingsverzoeken nr. 183–199) op integratie-vastlegging 06312df6c79c0cdfd9c15c01d84519460c3e75ff, uitgevoerd door Gemini 4 Carbon (High) in Google Antigravity: kritiek 0, hoog 20, middel 24, laag 11; vier herstelgolven KLIMOP-018–021 voorgesteld"
+  },
+  "waarom": {
+    "uk": "Власник доручив незалежний огляд, щоб знайти прогалини, які виконавець міг пропустити; звіт «Незалежна перевірка Плюща» передано власником як основу виправлень",
+    "nl": "De eigenaar liet een onafhankelijke controle uitvoeren om gemiste hiaten te vinden; het verslag «Onafhankelijke controle Klimop» is de basis voor de herstelgolven"
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-001/20261120-170917-antigravity",
+    "KLIMOP-002/20261120-180746-antigravity",
+    "KLIMOP-003/20261120-183433-antigravity",
+    "KLIMOP-004/20261120-185929-antigravity",
+    "KLIMOP-005/20261120-192148-antigravity",
+    "KLIMOP-006/20261120-202721-antigravity",
+    "KLIMOP-007/20261120-210451-antigravity",
+    "KLIMOP-008/20261120-215506-antigravity",
+    "KLIMOP-009/20261120-225500-antigravity",
+    "KLIMOP-010/20261120-233611-antigravity",
+    "KLIMOP-011/20261121-021835-antigravity",
+    "KLIMOP-012/20261121-052057-antigravity",
+    "KLIMOP-013/20261121-070525-antigravity",
+    "KLIMOP-014/20261121-081855-antigravity",
+    "KLIMOP-015/20261121-102530-antigravity",
+    "KLIMOP-016/20261121-115236-antigravity",
+    "KLIMOP-017/20261121-123535-antigravity"
+  ],
+  "tak": "integratie",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

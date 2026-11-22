@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-009/20261120-225500-antigravity",
+  "taakId": "KLIMOP-009",
+  "tijd": "2026-11-20T22:55:00.141Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Реалізовано Етап 8 маніфесту Плющ (KLIMOP-009): ізоляцію всіх 11 служб за некорельованими псевдонімами psid1_… і ключами HKDF-SHA-256, обмежені підписані міжслужбові дозволи Ed25519, сліпе комутативне злиття зашифрованих ChaCha20-Poly1305 робочих записів CRDT зі штампами HLC, ізольовані зовнішні з'єднувачі без оманливих заяв про децентралізацію (Документ №13), локальний пошук по 4 класах джерел, 4 сходинки перенесення з автоматичним поверненням при розбіжності (Документ №17), клієнт klimop-diensten-client.ts, полігон 3 вузлів NL/CH/UA та випробування klimop-009"
+  },
+  "waarom": {
+    "uk": "Виконання доручення власника щодо злиття Етапу 7 в integratie та повного впровадження Етапу 8 маніфесту Плющ без жодного порушення живої робочої інфраструктури"
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-008/20261120-215506-antigravity"
+  ],
+  "tak": "feature/klimop-009-etappe8-diensten-overdracht-20261120-223800",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

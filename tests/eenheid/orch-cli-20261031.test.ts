@@ -7,8 +7,8 @@ import { checker } from './hulp/nep-google';
 
 function kopie(): string {
   const d = mkdtempSync(join(tmpdir(), 'orch-'));
-  for (const p of ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'ANTIGRAVITY.md', 'CHATGPT.md', 'CODEX.md', 'GROK.md', '.cursorrules', 'orchestratie', 'scripts/orch.mjs', 'scripts/orch']) cpSync(p, join(d, p), { recursive: true });
-  cpSync('.github/copilot-instructions.md', join(d, '.github/copilot-instructions.md'));
+  const adapters: string[] = JSON.parse(readFileSync('orchestratie/beleid.json', 'utf8')).adapters.bestanden;
+  for (const p of ['AGENTS.md', ...adapters, 'orchestratie', 'scripts/orch.mjs', 'scripts/orch']) cpSync(p, join(d, p), { recursive: true });
   return d;
 }
 const run = (d: string, ...a: string[]) => { const r = spawnSync(process.execPath, [join(d, 'scripts/orch.mjs'), ...a], { cwd: d, encoding: 'utf8' }); return { code: r.status ?? -1, uit: `${r.stdout}${r.stderr}` }; };
