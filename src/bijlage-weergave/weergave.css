@@ -106,7 +106,7 @@ html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave] { --wg-
   /* etap 2: label en acties op één rij; de hoofdknop (binnen .weergave-knoppen) krimpt met afkapping, basis 0 */
   .weergave-vertrouwen { order: 2; flex: 0 0 auto; }
   .weergave-knoppen { order: 3; flex: 1 1 0; min-width: 0; justify-content: flex-end; margin-left: 0; }
-  .weergave-knoppen > .weergave-hoofd { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: block; line-height: 38px; }
+  .weergave-knoppen > .weergave-hoofd { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: block; line-height: 38px; height: 38px; padding-block: 0; }
   .weergave-strook { padding: 8px; }
   .weergave-mini { width: 88px; }
   .weergave-strook-teller { display: none; }
