@@ -13,14 +13,14 @@
   --wg-accent: var(--mq-accent, var(--accent, #8eb9ff));
   --wg-hoofd-bg: var(--mq-knop-primair-bg, var(--accent, #f4f0ff));
   --wg-hoofd-tekst: var(--mq-knop-primair-tekst, #262246);
-  --wg-goed: #5fd39a; --wg-let: #f5b864; --wg-fout: #ff8a8a;
+  --wg-goed: var(--staat-goed, #4ade80); --wg-let: var(--staat-let, #fb923c); --wg-fout: var(--staat-fout, #f87171); /* сталі кольори станів (src/thema/staat-kleuren.css), «Увага» помаранчева — НЕ ПЕРЕВІРЕНО */
 }
 .google-mail-attachment-preview[data-gedeelde-weergave] {
   display: grid !important; container-type: inline-size;
   grid-template-rows: auto minmax(0, 1fr) auto !important;
   grid-template-columns: minmax(0, 1fr) !important;
 }
-html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave], html.theme-light [data-weergave-drager] { --wg-goed: #1f8a55; --wg-let: #a86200; --wg-fout: #c03535; }
+html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave], html.theme-light [data-weergave-drager] { --wg-goed: var(--staat-goed, #15803d); --wg-let: var(--staat-let, #c2410c); --wg-fout: var(--staat-fout, #b42318); }
 
 .weergave-kop { position: relative; z-index: 40; display: grid; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--wg-rand); background: var(--wg-oppervlak); min-width: 0; }
 .weergave-rij { display: flex; align-items: center; gap: 10px; min-width: 0; }
