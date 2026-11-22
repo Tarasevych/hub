@@ -56,6 +56,9 @@ export async function main(): Promise<number> {
 
   const leeg = vertrouwenUit({ naam: 'leeg.txt', kop: new Uint8Array(0) });
   check('leeg bestand: geen vals alarm, niveau onbekend', leeg.niveau === 'onbekend' && !leeg.zin[0].includes('Увага'));
+  check('leeg bestand: de badge zegt dat het leeg is (UK en NL), niet «Не вдалося перевірити тип»', leeg.zin[0].startsWith('Файл порожній') && leeg.zin[1].startsWith('Het bestand is leeg') && leeg.kort[0] === 'Порожній' && leeg.kort[1] === 'Leeg' && !leeg.zin[0].includes('Не вдалося'));
+  const nietLeeg = vertrouwenUit({ naam: 'x.xyz', kop: new Uint8Array([1, 2, 3]) });
+  check('niet-leeg onbekend bestand houdt de oude zin', nietLeeg.zin[0] === 'Не вдалося перевірити тип цього файлу.' && nietLeeg.kort[0] === 'Не перевірено');
   check('leeg bestand: kop zegt «файл порожній»', lees('src/bijlage-weergave/Weergave.tsx').includes('файл порожній, вмісту немає'));
 
   // 7. donkere pagina’s
