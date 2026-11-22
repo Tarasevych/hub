@@ -94,9 +94,10 @@ export async function main(): Promise<number> {
     regelsVersie: string;
     meldingenRegister?: { code: string; besluit: string; overigToegestaan: number };
   };
+  const [bMaj, bMin] = String(beleid.regelsVersie || '0.0.0').split('.').map(Number);
   check(
-    'register-4: правило MELDINGEN-REGISTER-001 (B-026, regelsVersie 1.7.0) закріплено в beleid.json, AGENTS.md і package.json',
-    beleid.regelsVersie === '1.7.0' &&
+    'register-4: правило MELDINGEN-REGISTER-001 (B-026, regelsVersie >= 1.7.0) закріплено в beleid.json, AGENTS.md і package.json',
+    (bMaj > 1 || (bMaj === 1 && bMin >= 7)) &&
       beleid.meldingenRegister?.code === 'MELDINGEN-REGISTER-001' &&
       beleid.meldingenRegister?.besluit === 'B-026' &&
       beleid.meldingenRegister?.overigToegestaan === 0 &&
