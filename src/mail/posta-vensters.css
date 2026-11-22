@@ -61,3 +61,17 @@ html[data-posta-vensters-herstel] body [data-lees-modus='zwevend'] .google-mail-
 html[data-posta-vensters-herstel] body [data-lees-modus='zwevend'] .google-mail-reader > header:has(.vertaal-strook) .mail-reader-kop-opties .vertaal-strook {
   flex: 0 1 auto; min-width: 0;
 }
+
+/* 9. Afwerking etappe 2 (22.11.2026): taalstrook in de kop van een smal leesvenster (rechts, zwevend). De regel van
+      mail-lezer-compact-kop.css die de strook naar een eigen rij zet, hing aan de schermbreedte (≤960px); naast de lijst is
+      het venster maar ±660px breed op een breed scherm, en dan schoven «Оригінал · Переклад · Порівняти» over de knoppen
+      ernaast. Nu beslist de breedte van de kop zelf. */
+html[data-posta-vensters-herstel] body .google-mail-reader > header { container: mail-lezer-kop / inline-size; }
+@container mail-lezer-kop (max-width: 900px) {
+  html[data-posta-vensters-herstel] body .mail-reader-toolbar:not(.layout-editing) { flex-wrap: wrap; row-gap: 6px; }
+  html[data-posta-vensters-herstel] body .mail-reader-toolbar:not(.layout-editing) > .mail-reader-kop-opties:not(:empty) {
+    order: 20; flex: 1 0 100%; flex-wrap: wrap; margin-inline: 0; padding-top: 4px;
+    border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  }
+  html[data-posta-vensters-herstel] body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-voorvoegsel { display: none; }
+}
