@@ -4,7 +4,7 @@
 // prullenbak) hoort hier eerlijk NIET bij — dat zegt de pagina er ook bij. Voor onedrive/dropbox: geen nep-verkenner maar de
 // levende sleutelchecklist (SleutelsChecklist uit ./Integraties) — de lees-/previewcode (M8/M10) zit al in de repository.
 // De voorvertoning leeft in een EIGEN laag (BronLaag): portaal in <body>, Esc, Tab-val — zelfde regels als src/huis/HuisLaag.tsx.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronRight, CloudDownload, File, FileImage, FileText, Folder, Link2, LoaderCircle, RefreshCw, Search, X } from 'lucide-react';
 import { CLOUD_RICHTING_LABEL, CLOUD_STAND_LABEL, cloudTekst, cloudVnextAanbieder } from '../../../shared/cloud-vnext-model';
@@ -16,6 +16,11 @@ import { bytesTekst, foutTekst, tr, type Lang } from '../tekst';
 import { Monogram, SleutelsChecklist, accountStatusTekst } from './Integraties';
 import { sessieLees, sessieZet } from '../hulp';
 import '../cloud-integraties-maquette.css';
+// SPIL-WEERGAVE етап 4, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Antigravity): за прапорцем bijlage-weergave-gedeeld-v1
+// над переглядом — спільна шапка (позначка довіри, «Подробиці», «Завантажити»); окремим шматком. Без прапорця все як раніше.
+import { useVlag } from '../../functievlag-lezen';
+import { WEERGAVE_VLAG } from '../../bijlage-weergave/soort';
+const WeergaveKopLui = lazy(() => import('../../bijlage-weergave/Weergave').then((m) => ({ default: m.WeergaveKop })));
 
 /**
  * ZOEKDIEP-001 (05.11.2026): overdracht uit «Пошук» of een diepe link (CloudPagina → 'cvn-drive-open' = { bestand, principal }).
@@ -133,6 +138,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
   const [meerLaden, setMeerLaden] = useState(false);
   const [fout, setFout] = useState('');
   const [voorbeeld, setVoorbeeld] = useState<MailAttachmentPreview | null>(null);
+  const gedeeldeWeergave = useVlag(WEERGAVE_VLAG, false);
   const [voorbeeldLaden, setVoorbeeldLaden] = useState(false);
   const [bezig, setBezig] = useState(false);
   const [wachten, setWachten] = useState(false);
@@ -306,9 +312,20 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
       </section>
       {voorbeeldLaden ? <BronLaag lang={lang} titel={tr(lang, 'Готуємо безпечний перегляд…', 'Veilige weergave voorbereiden…')} onSluit={() => setVoorbeeldLaden(false)}><p className='cvn-hint' role='status' aria-busy='true'><LoaderCircle className='cvi-draai' aria-hidden='true' />{tr(lang, 'Завантажуємо вміст…', 'Inhoud laden…')}</p></BronLaag> : null}
       {voorbeeld ? (
-        <BronLaag lang={lang} titel={voorbeeld.filename} onSluit={() => setVoorbeeld((oud) => { if (oud) revokeMailAttachmentPreview(oud); return null; })}>
+        <BronLaag lang={lang} titel={gedeeldeWeergave ? tr(lang, 'Безпечний перегляд', 'Veilige weergave') : voorbeeld.filename} onSluit={() => setVoorbeeld((oud) => { if (oud) revokeMailAttachmentPreview(oud); return null; })}>
+          {gedeeldeWeergave ? (
+            <div data-weergave-drager='schijf'>
+              <Suspense fallback={null}>
+                <WeergaveKopLui taal={lang === 'nl' ? 'nl' : 'uk'} bron='schijf' kopElement='div' zonderSluiten
+                  naam={voorbeeld.filename} contentType={voorbeeld.contentType} grootte={Number(voorbeeld.sizeBytes || voorbeeld.blob?.size || 0)}
+                  blob={voorbeeld.blob} archiefNamen={(voorbeeld.archiveEntries || []).map((e) => e.name)} nav={null}
+                  beschikbaar={{ download: () => { const a = document.createElement('a'); a.href = voorbeeld.url; a.download = voorbeeld.filename; document.body.appendChild(a); a.click(); a.remove(); } }}
+                  onSluit={() => setVoorbeeld((oud) => { if (oud) revokeMailAttachmentPreview(oud); return null; })} />
+              </Suspense>
+            </div>
+          ) : null}
           <div className='cvi-voorbeeld'><MailAttachmentPreviewBody preview={voorbeeld} lang={lang} /></div>
-          <p className='cvn-hint'>{voorbeeld.contentType} · {bytesTekst(lang, voorbeeld.sizeBytes)}</p>
+          {gedeeldeWeergave ? null : <p className='cvn-hint'>{voorbeeld.contentType} · {bytesTekst(lang, voorbeeld.sizeBytes)}</p>}
         </BronLaag>
       ) : null}
     </div>
