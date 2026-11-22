@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-023",
+  "agent": "antigravity",
+  "tak": "feature/klimop-023-uitgave-20261121-234300",
+  "basisCommit": "32822354ea08fc850330eed96feaff5b1bb96a58",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.6.0",
+  "regelsHash": "f1b6227978cedd14cecc559a756581689942ed580308898a68bd8cecc7fe47ef",
+  "staat": "in_progress",
+  "gestart": "2026-11-22T07:43:14.075Z",
+  "bijgewerkt": "2026-11-22T07:45:00.000Z",
+  "omschrijving": "Узгоджений кумулятивний випуск KLIMOP-023 поверх живої встановленої основи 20261120-141041 (ba289fa919c66765b6fc5565d340976994261c05) та інтеграційної вершини 32822354ea08fc850330eed96feaff5b1bb96a58: повна цільова екосистема «Плющ» Етапів 0–16 (запити №183–№199), п’ять хвиль виправлень за незалежними перевірками AUDIT-002 і AUDIT-003 (запити №200–№204), спільна мовна навичка movnyi-zakon, рішення B-024/B-025 (regelsVersie 1.6.0) та повний облік участі моделей ШІ з походженням TRACE-001.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
