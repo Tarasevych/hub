@@ -130,3 +130,23 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 
 /* Afwerking etappe 2: een leeg bestand (0 bytes) zegt dat zelf in de kop, in plaats van een lege editor zonder uitleg. */
 .weergave-titel .weergave-leeg { font-weight: 600; color: var(--wg-let); }
+
+/* Етап 3, НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом) — Claude Opus 5.5 (High) через Google Antigravity, 22.11.2026.
+   Смуга під шапкою: швидка картка рахунку і дії етапу 3. Одна тонка смуга, значок + коротке слово + число; колір лише для терміновості. */
+.weergave-etappe3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-width: 0; }
+.weergave-snelkaart { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0; min-width: 0; flex: 1 1 auto; }
+.weergave-snelkaart-rij { display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px; border-radius: 12px; border: 1px solid var(--wg-rand);
+  background: var(--wg-oppervlak-2); font-size: 13px; min-width: 0; }
+.weergave-snelkaart-rij dt { display: inline-flex; align-items: center; gap: 6px; color: var(--wg-gedempt); white-space: nowrap; }
+.weergave-snelkaart-rij dt svg { width: 15px; height: 15px; color: var(--wg-accent); flex: 0 0 auto; }
+.weergave-snelkaart-rij dd { margin: 0; display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; }
+.weergave-snelkaart-rij dd b { color: var(--wg-tekst); font-weight: 700; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.weergave-snelkaart-rij dd small { color: var(--wg-gedempt); font-size: 12px; white-space: nowrap; }
+.weergave-snelkaart-rij[data-dringend='binnenkort'], .weergave-snelkaart-rij[data-dringend='vandaag'] { border-color: color-mix(in srgb, var(--wg-let) 55%, transparent); background: color-mix(in srgb, var(--wg-let) 12%, var(--wg-oppervlak-2)); }
+.weergave-snelkaart-rij[data-dringend='binnenkort'] dd small, .weergave-snelkaart-rij[data-dringend='vandaag'] dd small { color: var(--wg-let); font-weight: 600; }
+.weergave-snelkaart-rij[data-dringend='verlopen'] { border-color: color-mix(in srgb, var(--wg-fout) 55%, transparent); background: color-mix(in srgb, var(--wg-fout) 12%, var(--wg-oppervlak-2)); }
+.weergave-snelkaart-rij[data-dringend='verlopen'] dd small { color: var(--wg-fout); font-weight: 600; }
+@media (max-width: 720px) {
+  .weergave-snelkaart-rij { padding: 4px 9px; font-size: 12.5px; }
+  .weergave-snelkaart-rij dt span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* на телефоні значок замість слова; читач екрана підпис чує */
+}

@@ -98,3 +98,41 @@ export function snelkaartRijen(velden: RekeningVelden): SnelkaartRij[] {
 export function snelkaartVoor(velden: RekeningVelden, taal: Taal): { label: string; waarde: string }[] {
   return snelkaartRijen(velden).map((r) => ({ label: kies(taal, r.label), waarde: kies(taal, r.waarde) }));
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом). Додано Claude Opus 5.5 (High) через Google Antigravity
+// (antigravity) 22.11.2026 після Grok: коротка підказка біля строку, щоб розсіяна людина одразу бачила терміновість.
+
+export type TermijnDringend = 'verlopen' | 'vandaag' | 'binnenkort' | 'later';
+
+/** Українська множина: 1 день, 2 дні, 5 днів, 11 днів, 21 день. */
+function dniv(n: number): string {
+  const d = Math.abs(n) % 100, o = d % 10;
+  if (d >= 11 && d <= 14) return `${n} днів`;
+  if (o === 1) return `${n} день`;
+  if (o >= 2 && o <= 4) return `${n} дні`;
+  return `${n} днів`;
+}
+
+/** Скільки цілих календарних днів від `nu` до строку (за місцевою датою людини). null — дата незрозуміла. */
+export function dagenTot(iso: string, nu: Date = new Date()): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const doel = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const vandaag = Date.UTC(nu.getFullYear(), nu.getMonth(), nu.getDate());
+  if (!Number.isFinite(doel)) return null;
+  return Math.round((doel - vandaag) / 86_400_000);
+}
+
+/**
+ * Підказка біля строку: «прострочено на 2 дні», «сьогодні», «через 3 дні». Порожньо — дата незрозуміла.
+ * `binnenkort` — до 7 днів включно: оболонка підсвічує рядок кольором уваги.
+ */
+export function termijnHint(iso: string, taal: Taal, nu: Date = new Date()): { tekst: string; dringend: TermijnDringend } | null {
+  const n = dagenTot(iso, nu);
+  if (n === null) return null;
+  if (n < 0) return { dringend: 'verlopen', tekst: taal === 'nl' ? `${-n} ${-n === 1 ? 'dag' : 'dagen'} te laat` : `прострочено на ${dniv(-n)}` };
+  if (n === 0) return { dringend: 'vandaag', tekst: taal === 'nl' ? 'vandaag' : 'сьогодні' };
+  if (n === 1) return { dringend: 'binnenkort', tekst: taal === 'nl' ? 'morgen' : 'завтра' };
+  return { dringend: n <= 7 ? 'binnenkort' : 'later', tekst: taal === 'nl' ? `over ${n} dagen` : `через ${dniv(n)}` };
+}

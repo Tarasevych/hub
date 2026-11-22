@@ -9,6 +9,7 @@ import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from
 import { technischeRijen } from './details';
 import { toonWaarde } from './labels';
 import { actiesVoor, type Beschikbaar } from './acties';
+import { WeergaveEtappe3, type WeergaveExtra } from './Etappe3'; /* етап 3, НЕ ПЕРЕВІРЕНО: Claude Opus 5.5 (High) через Antigravity */
 import './weergave.css';
 
 export type WeergaveItem = { naam: string; contentType: string; grootte: number };
@@ -28,6 +29,8 @@ export type KopProps = {
   staat?: { fase: 'laden' | 'fout'; naam: string; code: string; onOpnieuw: () => void } | null;
   /** etap 2: wat de afzendercontrole al weet (null = nog geen antwoord) */
   afzender?: AfzenderBewijs | null;
+  /** етап 3 (НЕ ПЕРЕВІРЕНО): що джерело знає про вкладення — для швидкої картки й дій; без поля все як на етапі 2 */
+  extra?: WeergaveExtra | null;
   onSluit: () => void;
 };
 
@@ -133,6 +136,7 @@ export function WeergaveKop(p: KopProps) {
           <button type='button' className='weergave-knop rond' aria-label={t('Закрити', 'Sluiten')} title={t('Закрити', 'Sluiten')} onClick={p.onSluit}><X aria-hidden='true' /></button>
         </div>
       </div>
+      {p.grootte > 0 && <WeergaveEtappe3 taal={p.taal} naam={p.naam} contentType={p.contentType} blob={p.blob} extra={p.extra} />}
       {p.staat && (
         <div className='weergave-melding' data-fase={p.staat.fase} role={p.staat.fase === 'fout' ? 'alert' : 'status'}>
           {p.staat.fase === 'laden'
