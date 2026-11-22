@@ -17,7 +17,7 @@ class NepOpslag implements Storage {
 const bytes = (...x: (number | string)[]) => Uint8Array.from(x.flatMap((v) => (typeof v === 'string' ? [...v].map((c) => c.charCodeAt(0)) : [v])));
 
 export async function main(): Promise<number> {
-  const { check, einde } = checker('bijlage-weergave-etap2');
+  const { check, einde } = checker('bijlage-weergave-etappe2');
 
   // vegen
   check('vegen naar links = volgende, naar rechts = vorige', veegRichting(-120, 10, 200) === 1 && veegRichting(130, -5, 300) === -1);
@@ -53,7 +53,7 @@ export async function main(): Promise<number> {
 
   // bedrading
   const gmw = readFileSync('src/GoogleMailWerkruimte.tsx', 'utf8');
-  check('Escape sluit een ingeklapte viewer niet (met vlag)', gmw.includes("if(event.key==='Escape'){/* etap 2: Escape sluit een ingeklapte viewer niet */if(attachmentMinimized&&gedeeldeRef.current)return;"));
+  check('Escape sluit een ingeklapte viewer niet (met vlag)', gmw.includes("/* etap 2: Escape sluit een ingeklapte viewer niet */if(event.key==='Escape'&&attachmentMinimized&&gedeeldeRef.current)return;if(event.key==='Escape'){event.preventDefault();closeAttachment();return}"));
   check('mailbalk achter de viewer inert', gmw.includes("useAchterInert(weergaveOpen,'.google-mail-reader > header')"));
   check('vegen alleen met vlag, open en niet ingezoomd', gmw.includes('useVeeg(attachmentDialogRef,gedeeldeWeergave&&!!attachmentPreview&&!attachmentMinimized,r=>adjacentAttachment(r),attachmentZoom>1.01)'));
   check('plek per accountprofiel', gmw.includes('plekSleutel(String(ownerUserId||\'\'),attachmentNav.accountId,attachmentNav.messageId,weergaveItem.providerAttachmentId)'));
@@ -63,6 +63,6 @@ export async function main(): Promise<number> {
   check('kaart: lui laden met vlag (IntersectionObserver)', kaart.includes('useVlag(WEERGAVE_VLAG,false)') && kaart.includes('new IntersectionObserver') && kaart.includes("presentation!=='preview'||gedeeld&&!zichtbaar"));
   check('kaart: grote bestanden alleen uit de cache', kaart.includes('KAART_MAX_BYTES=4*1024*1024') && kaart.includes('alleenKesh?{cacheOnly:true}:{}'));
   const css = readFileSync('src/bijlage-weergave/weergave.css', 'utf8');
-  check('telefoon: hoofdknop basis 0 (label niet alleen op een rij)', css.includes('.weergave-rij > .weergave-hoofd { order: 3; flex: 1 1 0;'));
+  check('telefoon: hoofdknop basis 0 (label niet alleen op een rij)', css.includes('.weergave-knoppen > .weergave-hoofd { flex: 1 1 0; min-width: 0;') && css.includes('.weergave-knoppen { order: 3; flex: 1 1 0; min-width: 0;'));
   return einde();
 }
