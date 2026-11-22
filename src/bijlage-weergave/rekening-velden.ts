@@ -183,9 +183,10 @@ function bedragZFragmentu(fragment: string): { centen: number; valuta: string; b
   if (!chysloV) return null;
   const centen = parsuvatyChyslo(chysloV[0]);
   if (centen == null) return null;
-  const valuta = valutaV ? normaValuta(valutaV[0]) : null;
+  if (!valutaV) return null;
+  const valuta = normaValuta(valutaV[0]);
   if (!valuta) return null;
-  return { centen, valuta, bron: (valutaV && valutaV.index != null && valutaV.index < (chysloV.index ?? 0)
+  return { centen, valuta, bron: (valutaV.index != null && valutaV.index < (chysloV.index ?? 0)
     ? `${valutaV[0]} ${chysloV[0]}`
     : `${chysloV[0]} ${valutaV[0]}`).replace(/\s+/g, ' ').trim() };
 }
