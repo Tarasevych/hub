@@ -18,6 +18,8 @@ import {
 } from './lees-modus';
 import { koppel, opZwevend, pasToe, verschuif, zetZwevend, zwevendVoorkeur } from '../lezer-venster';
 import SneltoetsenHulp from './SneltoetsenHulp';
+import { useVlag } from '../functievlag-lezen';
+import { POSTA_VENSTERS_VLAG } from './posta-vensters';
 import './lees-venster.css';
 
 export type LeesVensterApi = {
@@ -232,14 +234,19 @@ export default function LeesVenster(p: Props) {
     };
     return () => { abonnee = null; if (eigenStap.current) { eigenStap.current = false; eigenBladStap.current = false; haalStapWeg(); } };
   }, []);
+  // Afwerking etappe 2 (22.11.2026, achter posta-vensters-herstel-v1): ook naast de lijst (rechts, onder) en zwevend krijgt de brief
+  // een eigen stap. Zonder die stap sloot het eerste «Назад» de viewer en verliet het tweede de site in plaats van de brief te sluiten.
+  // Het blad van het contextpaneel krijgt in die vormen nog steeds geen eigen stap (bladStap blijft telefoon/volledig).
+  const stapOveral = useVlag(POSTA_VENSTERS_VLAG, false);
   useEffect(() => {
     const nodig = geschiedenisStap(modus) && !p.geminimaliseerd;
-    if (nodig && !eigenStap.current) {
+    const nodigOveral = nodig || (stapOveral && (modus === 'rechts' || modus === 'onder' || modus === 'zwevend') && !p.geminimaliseerd);
+    if (nodigOveral && !eigenStap.current) {
       eigenStap.current = eigenStapBoven() || zetStap(p.berichtId); // na herladen staat de stap er al
       // na herladen met het blad open: die stap ligt er ook nog — het blad dus weer open, anders doet het eerste «Назад» niets zichtbaars
       if (eigenStap.current && stapBoven(BLAD_SLEUTEL)) { eigenBladStap.current = true; setBladOpen(true); }
-    } else if (!nodig && eigenStap.current) { eigenStap.current = false; eigenBladStap.current = false; haalStapWeg(); }
-  }, [modus, p.geminimaliseerd]);
+    } else if (!nodigOveral && eigenStap.current) { eigenStap.current = false; eigenBladStap.current = false; haalStapWeg(); }
+  }, [modus, p.geminimaliseerd, stapOveral]);
 
   const openBlad = useCallback(() => {
     setBladOpen(true);
