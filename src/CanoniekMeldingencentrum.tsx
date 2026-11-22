@@ -12,8 +12,8 @@ import { fractie, gepauzeerd, klaar, nieuweAftelling, pauze as pauzeAftelling, t
 // UI-007 (29.10.2026): vlag `meldingen-v2` (standaard UIT) — compact aandachtscentrum in hetzelfde paneel; zonder vlag alles zoals het was.
 const MeldingenV2 = lazy(() => import('./meldingen/v2/MeldingenV2'));
 import { useMeldingenV2, meldingenV2Nu } from './meldingen/v2/vlag';
-import { useLeverRegels, nietStorenActief, regelsNu } from './meldingen/v2/regels-opslag';
-import { geldendeRegel } from '../shared/meldingen-v2/beleid';
+import { useLeverRegels, nietStorenActief, regelsNu, bewaarRegels } from './meldingen/v2/regels-opslag';
+import { geldendeRegel, zetNietStoren, zetRegel } from '../shared/meldingen-v2/beleid';
 import { dienstVan } from './meldingen/v2/omzetten';
 import { bouwModel } from './meldingen/v2/model';
 import { useStatusStand, wijzigStatus } from './meldingen/v2/status-opslag';
@@ -57,6 +57,8 @@ import { abonneerPaginaSignalen, haalPaginaSignalenOp, meldingInTaal, type Pagin
 import { dienstVanHostnaam } from '../shared/foutuitleg';
 import { activityTitle, activiteitContext } from './connector-activiteit';
 import { SUBDOMEINEN, type MeldingSubdomein } from '../shared/meldingen-ecosysteem';
+import { detecteerLiveVoortgang, isInvoerElementActief, magToastNuTonen } from '../shared/meldingen-puls/kern';
+import Merk from './merk/Merk';
 
 const naarMeldingSubdomein = (dienst: string): MeldingSubdomein => {
   const norm = dienst === 'identity' ? 'id' : dienst;
@@ -112,8 +114,10 @@ const DETAIL_ICON_COMPONENTS: Record<CanonicalNoticeDetailIcon, typeof Info> = {
 const ANDERE_ESC_LAGEN = '.menu-bellen,.plaats-acties,.menu-acties,.zk-uitklap,[role="menu"],[role="listbox"]';
 
 export default function CanonicalNotificationCenter(p: Props) {
+  const oudeTestStand = typeof location !== 'undefined' && /[?&]v2=[01]\b/.test(location.search);
+  const eenheidPuls = !oudeTestStand;
   const v2 = useMeldingenV2();
-  const v2Regels = useLeverRegels(v2);
+  const v2Regels = useLeverRegels(v2 || eenheidPuls);
   // INTEG-001: de blijvende status (archief, opgelost) geldt nu voor elk paneel, niet alleen met de vlag meldingen-uitleg-v3: «Очистити»
   // en «Архів» moeten overal werken. Alleen voor een aangemeld account (anders is er geen server-status).
   const v3Status = useStatusStand(!!p.scope && p.scope !== 'anon');
@@ -124,7 +128,8 @@ export default function CanonicalNotificationCenter(p: Props) {
   const [sound, setSound] = useState(prefs.notificationSound !== false);
   const [retained, setRetained] = useState<Retained[]>(() => readRows(p.scope));
   const [active, setActive] = useState<Active | null>(null);
-  const ecosysteemActief = useEcosysteemModusActief();
+  const vensterModusActief = useEcosysteemModusActief();
+  const ecosysteemActief = eenheidPuls || vensterModusActief;
   const [paginaSignalen, setPaginaSignalen] = useState<PaginaSignaal[]>(() => haalPaginaSignalenOp());
   const [toastVeegDx, setToastVeegDx] = useState(0);
   const toastVeegStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -147,6 +152,9 @@ export default function CanonicalNotificationCenter(p: Props) {
   const [viewportRev, setViewportRev] = useState(0);
   const activeRef = useRef<Active | null>(null);
   const queueRef = useRef<Active[]>([]);
+  const laatsteTypMsRef = useRef(0);
+  const typWachtTimerRef = useRef<number | undefined>(undefined);
+  const [wachtOpTypPauze, setWachtOpTypPauze] = useState(0);
   const retainedRef = useRef<Retained[]>(retained);
   /** Aftelling van de pop-up die nu staat (null = blijft staan tot u sluit). */
   const aftelRef = useRef<Aftelling | null>(null);
@@ -194,7 +202,7 @@ export default function CanonicalNotificationCenter(p: Props) {
   const markRetainedRead = (id: string) => markRetainedReadMany([id]);
 
   const playChime = () => {
-    if (meldingenV2Nu() && nietStorenActief()) return;
+    if ((meldingenV2Nu() || eenheidPuls) && nietStorenActief()) return;
     if (!soundRef.current || !(unlocked.current || navigator.userActivation?.hasBeenActive)) return;
     try {
       const ctx = new AudioContext();
@@ -259,6 +267,21 @@ export default function CanonicalNotificationCenter(p: Props) {
 
   useEffect(() => abonneerPaginaSignalen(setPaginaSignalen), []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const opTypToets = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key === 'Escape' || e.key === 'Tab') return;
+      if (isInvoerElementActief(e.target)) {
+        laatsteTypMsRef.current = Date.now();
+      }
+    };
+    window.addEventListener('keydown', opTypToets, true);
+    return () => {
+      window.removeEventListener('keydown', opTypToets, true);
+      if (typWachtTimerRef.current !== undefined) window.clearTimeout(typWachtTimerRef.current);
+    };
+  }, []);
+
   const vk = (type: MeldingType) => voorkeurVoor(typenRef.current, type);
 
   /**
@@ -276,12 +299,13 @@ export default function CanonicalNotificationCenter(p: Props) {
     // INTEG-001 (oude fout): «Не турбувати» beloofde «без звуку й спливних вікон», maar alleen het geluid zweeg. Nu ook geen pop-up
     // (beveiliging blijft opduiken). En één gebeurtenis die uit twee bronnen binnenkomt (dienst + serveractiviteit) krijgt één pop-up.
     const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);
+    const pulsDnd = eenheidPuls && nietStorenActief() && !isKritiekType(type);
     // Meldingen v2: een regel «Тихе»/«Вимкнене» voor deze bron maakt het stiller (geen pop-up, geen geluid); beveiliging nooit.
-    const regel = meldingenV2Nu() ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
+    const regel = (meldingenV2Nu() || eenheidPuls) ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
     const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);
     const dubbel = !notice.voorbeeld && isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
-    const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil && !notice.alleenPaneel };
-    let geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil && !notice.alleenPaneel;
+    const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil && !pulsDnd && !notice.alleenPaneel };
+    let geluid = (opties.geluid ?? voorkeur.geluid) && !pulsDnd && !dubbel && !regelStil && !notice.alleenPaneel;
     if (!voorkeur.tonen) {
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
       return;
@@ -340,6 +364,27 @@ export default function CanonicalNotificationCenter(p: Props) {
       if (geluid) playChime();
       return;
     }
+
+    // MELDPANEEL-002: Повага до потоку думки — під час активного набору в полі вводу некритичне вікно чекає 2,5 с паузи.
+    if (!notice.voorbeeld && !magToastNuTonen({ isKritiek: isKritiekType(type), laatsteToetsDrukMs: laatsteTypMsRef.current, nu })) {
+      queueRef.current.push(next);
+      if (queueRef.current.length > 6) queueRef.current.splice(0, queueRef.current.length - 6);
+      setWachtOpTypPauze(queueRef.current.length);
+      if (typWachtTimerRef.current !== undefined) window.clearTimeout(typWachtTimerRef.current);
+      const planNaPauze = () => {
+        const nuCheck = Date.now();
+        if (!magToastNuTonen({ isKritiek: false, laatsteToetsDrukMs: laatsteTypMsRef.current, nu: nuCheck })) {
+          typWachtTimerRef.current = window.setTimeout(planNaPauze, 800);
+          return;
+        }
+        typWachtTimerRef.current = undefined;
+        setWachtOpTypPauze(0);
+        if (!activeRef.current) showNext();
+      };
+      typWachtTimerRef.current = window.setTimeout(planNaPauze, 2550);
+      return;
+    }
+
     if (activeRef.current) {
       if (next.action && !activeRef.current.action) {
         activeRef.current = null;
@@ -878,7 +923,8 @@ export default function CanonicalNotificationCenter(p: Props) {
     titelVanActiviteit: (ev) => activityTitle(ev, p.lang),
     contextVanActiviteit: (ev) => activiteitContext(ev, p.lang) || '',
   });
-  /* MELDINGEN-UX-001 (16.11.2026): één getal — zie shared/meldingen-v2/bel-teller.ts. Bel = lengte van «Нові» in het gekozen paneel. */
+  const liveVoortgang = useMemo(() => detecteerLiveVoortgang(eco.stroom, p.lang), [eco.stroom, p.lang]);
+  /* MELDINGEN-UX-001 + MELDPANEEL-002: één getal op de bel in beide groottes van het ene paneel. */
   const [v2OpenNieuw, setV2OpenNieuw] = useState<number | null>(null);
   useEffect(() => { if (!panelOpen || ecosysteemActief) setV2OpenNieuw(null); }, [panelOpen, ecosysteemActief]);
   const vensterNieuw = eco.stroom.filter((g) => g.status === 'nieuw').length;
@@ -1114,21 +1160,53 @@ export default function CanonicalNotificationCenter(p: Props) {
       {active && toastPijl ? <span className='cnc-pijl is-toast' data-kant={toastPijl.kant} style={{ left: toastPijl.left, top: toastPijl.top }} aria-hidden='true' /> : null}
 
       <Plek knop='bel'>
-        {(vorm) => (
-          <button
-            ref={bellRef}
-            data-qa-id='canonical-notification-bell'
-            type='button'
-            className='canonical-notification-bell'
-            data-vorm={vorm}
-            aria-expanded={panelOpen}
-            aria-label={unreadCount ? t(`Непрочитаних сповіщень: ${unreadCount}`, `Ongelezen meldingen: ${unreadCount}`) : historyCount ? t(`Історія сповіщень: ${historyCount}`, `Meldingsgeschiedenis: ${historyCount}`) : t('Сповіщення', 'Meldingen')}
-            onClick={toggleBell}
-          >
-            <Bell aria-hidden='true' />
-            {vorm === 'rij' && <span className='plaats-rij-label'>{t('Сповіщення', 'Meldingen')}</span>}
-            {unreadCount > 0 && <small>{unreadCount > 99 ? '99+' : unreadCount}</small>}
-          </button>
+        {(vorm, zone) => (
+          <>
+            <button
+              ref={bellRef}
+              data-qa-id='canonical-notification-bell'
+              type='button'
+              className='canonical-notification-bell'
+              data-vorm={vorm}
+              aria-expanded={panelOpen}
+              aria-label={unreadCount ? t(`Непрочитаних сповіщень: ${unreadCount}`, `Ongelezen meldingen: ${unreadCount}`) : historyCount ? t(`Історія сповіщень: ${historyCount}`, `Meldingsgeschiedenis: ${historyCount}`) : t('Сповіщення', 'Meldingen')}
+              onClick={toggleBell}
+            >
+              <Bell aria-hidden='true' />
+              {vorm === 'rij' && <span className='plaats-rij-label'>{t('Сповіщення', 'Meldingen')}</span>}
+              {unreadCount > 0 && <small>{unreadCount > 99 ? '99+' : unreadCount}</small>}
+            </button>
+
+            {vorm !== 'rij' && !panelOpen && !active && liveVoortgang ? (
+              <button
+                type='button'
+                className='puls-live-pil'
+                data-zone={zone}
+                data-qa-id='melding-live-pil'
+                onClick={toggleBell}
+                title={`${liveVoortgang.label} (${liveVoortgang.tijdTekst})`}
+              >
+                <span className='puls-live-ring' aria-hidden='true' />
+                {liveVoortgang.merkSleutel ? (
+                  <Merk merk={liveVoortgang.merkSleutel} naam={liveVoortgang.label} maat={14} vorm='rond' />
+                ) : null}
+                <span className='puls-live-tekst'>
+                  {liveVoortgang.label}
+                  {liveVoortgang.procent !== null ? ` · ${liveVoortgang.procent}%` : ''}
+                </span>
+              </button>
+            ) : vorm !== 'rij' && !panelOpen && !active && wachtOpTypPauze > 0 ? (
+              <span
+                className='puls-typ-wacht-pil'
+                data-zone={zone}
+                role='status'
+                title={t('Некритичне сповіщення чекає завершення набору тексту', 'Niet-kritieke melding wacht tot u klaar bent met typen')}
+              >
+                <i aria-hidden='true' />
+                <span>{t(`Чекає завершення набору (${wachtOpTypPauze})`, `Wacht op typen (${wachtOpTypPauze})`)}</span>
+              </span>
+            ) : null}
+          </>
         )}
       </Plek>
 
@@ -1247,7 +1325,9 @@ export default function CanonicalNotificationCenter(p: Props) {
         <Suspense fallback={null}>
           <MeldingenPortaal
             lang={p.lang}
+            scope={p.scope}
             open={panelOpen}
+            compactBijBel={eenheidPuls && !vensterModusActief}
             ruimte={ecoRuimte}
             subdomeinNu={subdomeinNu}
             profiel={eco.profiel}
@@ -1255,6 +1335,9 @@ export default function CanonicalNotificationCenter(p: Props) {
             laden={eco.laden}
             sound={sound}
             techTypen={!!tech.profiel}
+            nietStorenTot={v2Regels.nietStoren?.tot ?? null}
+            onZetNietStoren={(min) => void bewaarRegels(zetNietStoren(v2Regels, min))}
+            onStilVoorKanaal={(k) => void bewaarRegels(zetRegel(v2Regels, { dienst: k }, 'stil'))}
             onSluiten={() => setPanelOpen(false)}
             onOpenen={() => setPanelOpen(true)}
             onToggleSound={toggleSound}
@@ -1264,6 +1347,7 @@ export default function CanonicalNotificationCenter(p: Props) {
             onOntleden={(g, modus, aanbieder) => eco.ontledenMetAi(g, modus, aanbieder)}
             onMarkAll={() => void markAll()}
             onSwitchToClassic={() => { zetEcosysteemModusActief(false); setPanelOpen(true); }}
+            onOpenVensterModus={() => { zetEcosysteemModusActief(true); setPanelOpen(true); }}
           />
         </Suspense>
       )}

@@ -1,17 +1,27 @@
-// Незалежний портальний центр сповіщень формату «застосунок у застосунку» (GEMINI-002).
-// Відображається в окремому шарі безпосередньо в document.body поверх усіх вікон і меню сайту:
-// перетягування, 8-стороннє змінення розмірів, 4 режими розміру, рухома міні-пігулка, картки зі змахами,
-// вбудований програвач усіх форматів вкладень, ШІ-інспектор та контекстна адаптація до піддомену.
+// Єдиний портальний центр «Пульт уваги, спокою та дії» у двох розмірах: компактному біля дзвіночка
+// та розгорнутому двоколонковому вікні (GEMINI-002 + MELDPANEEL-002).
+// Об’єднує перетягування, 8-стороннє змінення розмірів, рухому міні-пігулку, картки зі змахами,
+// фірмові логотипи з src/merk/, граф першопричини, 15-секундне спокійне зведення, радіус дії мандата ШІ,
+// розумне умовне відкладення, 5-секундне повернення дії (Ctrl+Z), вбудований переглядач вкладень і розбір ШІ.
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  AppWindow,
+  Archive,
   Bell,
+  BellDot,
+  CheckCheck,
+  CheckCircle2,
+  Clock3,
   Columns2,
   ExternalLink,
+  Layers,
   Maximize2,
   Minimize2,
   Minus,
+  Moon,
+  Network,
   PanelRightClose,
   Pin,
   PinOff,
@@ -19,14 +29,16 @@ import {
   Search,
   Settings,
   SlidersHorizontal,
+  Sparkles,
+  Undo2,
   Volume2,
   VolumeX,
   X,
 } from 'lucide-react';
 import {
+  KANALEN,
   contextVoorSubdomein,
   kanaalLabel,
-  KANALEN,
   klemVenster,
   maatVanModus,
   pasVensterMaatAan,
@@ -42,13 +54,34 @@ import {
   type VensterGeometrie,
   type VensterModus,
 } from '../../../shared/meldingen-ecosysteem';
+import {
+  bouwRustigOverzicht,
+  bundelOorzaakKetens,
+  kanaalVisueelAnker,
+  subdomeinMenselijkLabel,
+  uitstelKeuzeLabel,
+  verrijkGebeurtenisVoorPuls,
+  type PulsOorzaakKeten,
+  type VoorwaardelijkUitstelSoort,
+} from '../../../shared/meldingen-puls/kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
+import Merk from '../../merk/Merk';
 import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
-import MeldingVeegKaart from './MeldingVeegKaart';
-import MeldingBijlageSpeler from './MeldingBijlageSpeler';
+import PulsOorzaakKetenKaart from '../puls/PulsOorzaakKetenKaart';
+import {
+  PulsBronTeken,
+  PulsDienstChip,
+  PulsIcoon,
+  PulsKlimopZegel,
+  PulsMandaatStraalBlok,
+} from '../puls/PulsVisueelAnker';
+import { usePulsSlimmeStaat } from '../puls/puls-opslag';
 import MeldingAiPaneel from './MeldingAiPaneel';
+import MeldingBijlageSpeler from './MeldingBijlageSpeler';
+import MeldingVeegKaart from './MeldingVeegKaart';
 
 const RANDEN: readonly RandRichting[] = ['n', 'z', 'w', 'o', 'nw', 'no', 'zw', 'zo'];
+const DND_KEUZES_MIN = [30, 60, 120, 480] as const;
 
 function leesScherm() {
   if (typeof window === 'undefined') {
@@ -80,9 +113,18 @@ function leesScherm() {
 
 type StatusFilter = 'actief' | 'nieuw' | 'uitgesteld' | 'opgelost' | 'archief' | 'alle';
 
+type OngedaanMakenStaat = {
+  id: string;
+  tekst: string;
+  vorigeItems: Array<{ geb: MeldingEcosysteemGebeurtenis; vorigeStatus: MeldingGebeurtenisStatus }>;
+  verlooptOp: number;
+};
+
 type Props = {
   lang: 'uk' | 'nl';
+  scope?: string;
   open: boolean;
+  compactBijBel?: boolean;
   ruimte: RuimteType;
   subdomeinNu: MeldingSubdomein;
   profiel: MeldingEcosysteemProfiel;
@@ -90,6 +132,9 @@ type Props = {
   laden: boolean;
   sound: boolean;
   techTypen?: boolean;
+  nietStorenTot?: number | null;
+  onZetNietStoren?: (minuten: number | null) => void;
+  onStilVoorKanaal?: (kanaal: MeldingKanaal) => void;
   onSluiten: () => void;
   onOpenen: () => void;
   onToggleSound: () => void;
@@ -99,11 +144,23 @@ type Props = {
   onOntleden: (g: MeldingEcosysteemGebeurtenis, modus: 'intern' | 'extern', aanbieder?: AiAanbiederKeuze) => Promise<MeldingAiSamenvatting>;
   onMarkAll: () => void;
   onSwitchToClassic: () => void;
+  onOpenVensterModus?: () => void;
 };
+
+function TabIcoon({ sleutel }: { sleutel: StatusFilter }) {
+  if (sleutel === 'actief') return <Sparkles aria-hidden='true' />;
+  if (sleutel === 'nieuw') return <BellDot aria-hidden='true' />;
+  if (sleutel === 'uitgesteld') return <Clock3 aria-hidden='true' />;
+  if (sleutel === 'opgelost') return <CheckCircle2 aria-hidden='true' />;
+  if (sleutel === 'archief') return <Archive aria-hidden='true' />;
+  return <Layers aria-hidden='true' />;
+}
 
 export default function MeldingenPortaal({
   lang,
+  scope = 'standaard',
   open,
+  compactBijBel = false,
   ruimte,
   subdomeinNu,
   profiel,
@@ -111,6 +168,9 @@ export default function MeldingenPortaal({
   laden,
   sound,
   techTypen = false,
+  nietStorenTot = null,
+  onZetNietStoren,
+  onStilVoorKanaal,
   onSluiten,
   onOpenen,
   onToggleSound,
@@ -120,6 +180,7 @@ export default function MeldingenPortaal({
   onOntleden,
   onMarkAll,
   onSwitchToClassic,
+  onOpenVensterModus,
 }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const ctx = useMemo(() => contextVoorSubdomein(subdomeinNu, ruimte), [subdomeinNu, ruimte]);
@@ -132,10 +193,79 @@ export default function MeldingenPortaal({
   const [kanaalFilter, setKanaalFilter] = useState<MeldingKanaal | 'alle'>('alle');
   const [alleenDitSubdomein, setAlleenDitSubdomein] = useState(false);
   const [toonVoorkeuren, setToonVoorkeuren] = useState(false);
+  const [dndMenuOpen, setDndMenuOpen] = useState(false);
   const [geselecteerdId, setGeselecteerdId] = useState<string>('');
+  const [spatieOpenId, setSpatieOpenId] = useState<string>('');
+  const [detailMandaatDuur, setDetailMandaatDuur] = useState<'eenmalig' | '15m'>('eenmalig');
   const [detailBijlageIdx, setDetailBijlageIdx] = useState(0);
   const [modaalBijlage, setModaalBijlage] = useState<{ gebeurtenis: MeldingEcosysteemGebeurtenis; index: number } | null>(null);
+  const [ongedaan, setOngedaan] = useState<OngedaanMakenStaat | null>(null);
+  const [ongedaanSec, setOngedaanSec] = useState(5);
   const vensterRef = useRef<HTMLElement | null>(null);
+
+  const wekGebeurtenis = useCallback(
+    (geb: MeldingEcosysteemGebeurtenis) => {
+      void onStatusWijzigen(geb, 'nieuw');
+    },
+    [onStatusWijzigen],
+  );
+
+  const slim = usePulsSlimmeStaat({
+    scope,
+    lang,
+    subdomeinNu,
+    stroom,
+    onWekGebeurtenis: wekGebeurtenis,
+  });
+
+  useEffect(() => {
+    if (!ongedaan) return undefined;
+    const werkBij = () => {
+      const rest = Math.ceil((ongedaan.verlooptOp - Date.now()) / 1000);
+      if (rest <= 0) {
+        setOngedaan(null);
+      } else {
+        setOngedaanSec(rest);
+      }
+    };
+    werkBij();
+    const timer = window.setInterval(werkBij, 250);
+    return () => window.clearInterval(timer);
+  }, [ongedaan]);
+
+  const registreerActieMetOngedaan = useCallback(
+    async (
+      items: MeldingEcosysteemGebeurtenis[],
+      doelStatus: MeldingGebeurtenisStatus,
+      tekst: string,
+      uitstelMinuten?: number,
+    ) => {
+      if (!items.length) return;
+      const vorigeItems = items.map((geb) => ({ geb, vorigeStatus: geb.status }));
+      setOngedaan({
+        id: `${Date.now()}`,
+        tekst,
+        vorigeItems,
+        verlooptOp: Date.now() + 5000,
+      });
+      for (const geb of items) {
+        if (doelStatus !== 'uitgesteld') slim.wisUitstelRegel(geb.id);
+        if (doelStatus === 'archief' && items.length === 1) slim.meldSnelOpgeruimd(geb);
+        await onStatusWijzigen(geb, doelStatus, uitstelMinuten);
+      }
+    },
+    [onStatusWijzigen, slim],
+  );
+
+  const voerOngedaanUit = useCallback(async () => {
+    if (!ongedaan) return;
+    const teHerstellen = ongedaan.vorigeItems;
+    setOngedaan(null);
+    for (const { geb, vorigeStatus } of teHerstellen) {
+      slim.wisUitstelRegel(geb.id);
+      await onStatusWijzigen(geb, vorigeStatus);
+    }
+  }, [ongedaan, onStatusWijzigen, slim]);
 
   useEffect(() => {
     const geklemd = klemVenster(profiel.geometrie, leesScherm());
@@ -155,12 +285,15 @@ export default function MeldingenPortaal({
   useEffect(() => {
     if (!open) return;
     const g = profiel.geometrie;
-    if (g.modus === 'volledig' || g.x !== 24 || g.y !== 72) return;
+    if (!compactBijBel && (g.modus === 'volledig' || g.x !== 24 || g.y !== 72)) return;
     const bel = document.querySelector<HTMLElement>('.canonical-notification-bell');
     const r = bel?.getBoundingClientRect();
     if (!r || (!r.width && !r.height)) return;
-    setGeo((h) => klemVenster({ ...h, x: r.right - h.breedte, y: r.bottom + 10 }, leesScherm()));
-  }, [open, profiel.geometrie]);
+    setGeo((h0) => {
+      const h = compactBijBel ? { ...h0, breedte: 440, hoogte: 620 } : h0;
+      return klemVenster({ ...h, x: r.right - h.breedte, y: r.bottom + 10 }, leesScherm());
+    });
+  }, [open, compactBijBel, profiel.geometrie]);
 
   useEffect(() => {
     const onResize = () => {
@@ -188,11 +321,21 @@ export default function MeldingenPortaal({
   useEffect(() => {
     if (!open && !modaalBijlage) return;
     const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && ongedaan) {
+        e.preventDefault();
+        void voerOngedaanUit();
+        return;
+      }
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       if (modaalBijlage) {
         e.preventDefault();
         e.stopPropagation();
         setModaalBijlage(null);
+        return;
+      }
+      if (dndMenuOpen) {
+        e.preventDefault();
+        setDndMenuOpen(false);
         return;
       }
       if (open) {
@@ -207,11 +350,11 @@ export default function MeldingenPortaal({
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [open, modaalBijlage, onSluiten]);
+  }, [open, modaalBijlage, dndMenuOpen, ongedaan, voerOngedaanUit, onSluiten]);
 
-  // Автозакриття при натисканні зовні (коли вікно не закріплене)
+  // Автозакриття при натисканні зовні (коли вікно не закріплене або відкрите компактно біля дзвіночка)
   useEffect(() => {
-    if (!open || geo.vastgepind) return;
+    if (!open || (geo.vastgepind && !compactBijBel)) return;
     const onDown = (e: PointerEvent) => {
       const el = e.target as Element | null;
       if (!el) return;
@@ -226,7 +369,7 @@ export default function MeldingenPortaal({
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [open, geo.vastgepind, onSluiten]);
+  }, [open, geo.vastgepind, compactBijBel, onSluiten]);
 
   const sleepStaat = useRef<{
     soort: 'verplaats' | 'maat';
@@ -238,7 +381,7 @@ export default function MeldingenPortaal({
   } | null>(null);
 
   const startVerplaats = (e: ReactPointerEvent<HTMLElement>) => {
-    if (e.button > 0 || geo.modus === 'volledig') return;
+    if (compactBijBel || e.button > 0 || geo.modus === 'volledig') return;
     const el = e.target as HTMLElement | null;
     if (el?.closest('button,a,input,select')) return;
     e.preventDefault();
@@ -257,7 +400,7 @@ export default function MeldingenPortaal({
   };
 
   const startMaat = (richting: RandRichting, e: ReactPointerEvent<HTMLElement>) => {
-    if (e.button > 0) return;
+    if (compactBijBel || e.button > 0) return;
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -338,6 +481,11 @@ export default function MeldingenPortaal({
     else onOpenen();
   };
 
+  const alleGebeurtenissenMap = useMemo(
+    () => new Map(stroom.map((g) => [g.id, g] as const)),
+    [stroom],
+  );
+
   const gefilterd = useMemo(() => {
     const q = zoek.trim().toLowerCase();
     return stroom.filter((g) => {
@@ -353,10 +501,34 @@ export default function MeldingenPortaal({
     });
   }, [stroom, statusFilter, kanaalFilter, alleenDitSubdomein, subdomeinNu, zoek]);
 
+  const stroomEenheden = useMemo(() => {
+    if (zoek.trim() || (statusFilter !== 'actief' && statusFilter !== 'nieuw')) {
+      return gefilterd.map((gebeurtenis) => ({ soort: 'los' as const, gebeurtenis }));
+    }
+    return bundelOorzaakKetens(gefilterd, lang);
+  }, [gefilterd, statusFilter, zoek, lang]);
+
+  const rustigOverzicht = useMemo(() => bouwRustigOverzicht(stroom, lang), [stroom, lang]);
+
   const geselecteerd = useMemo(() => {
     if (!gefilterd.length) return null;
     return gefilterd.find((g) => g.id === geselecteerdId) ?? gefilterd[0];
   }, [gefilterd, geselecteerdId]);
+
+  const geselecteerdVerrijkt = useMemo(
+    () => (geselecteerd ? verrijkGebeurtenisVoorPuls(geselecteerd, lang) : null),
+    [geselecteerd, lang],
+  );
+
+  const geselecteerdKeten = useMemo(() => {
+    if (!geselecteerd) return null;
+    for (const eenheid of stroomEenheden) {
+      if (eenheid.soort === 'keten' && eenheid.keten.alleIds.includes(geselecteerd.id)) {
+        return eenheid.keten;
+      }
+    }
+    return null;
+  }, [geselecteerd, stroomEenheden]);
 
   useEffect(() => {
     setDetailBijlageIdx(0);
@@ -365,17 +537,122 @@ export default function MeldingenPortaal({
   const tellers = useMemo(() => {
     let nieuw = 0;
     let kritiek = 0;
+    let uitgesteld = 0;
     for (const g of stroom) {
       if (g.status === 'nieuw') nieuw += 1;
       if (g.status === 'nieuw' && g.prioriteit === 'kritiek') kritiek += 1;
+      if (g.status === 'uitgesteld') uitgesteld += 1;
     }
-    return { nieuw, kritiek, totaal: stroom.length };
+    return { nieuw, kritiek, uitgesteld, totaal: stroom.length };
   }, [stroom]);
 
-  const isBreed = (geo.modus === 'breed' || geo.modus === 'volledig' || geo.breedte >= 660) && !toonVoorkeuren;
+  const isBreed = !compactBijBel && (geo.modus === 'breed' || geo.modus === 'volledig' || geo.breedte >= 660) && !toonVoorkeuren;
   const instellingenHref = canonicalNavigationUrl('identity', 'melding', lang);
+  const dndActief = Boolean(nietStorenTot && nietStorenTot > Date.now());
+
+  const opPaneelToets = (e: ReactKeyboardEvent<HTMLElement>) => {
+    const doel = e.target as HTMLElement | null;
+    if (doel && /^(INPUT|TEXTAREA|SELECT)$/.test(doel.tagName)) return;
+    if (!gefilterd.length) return;
+    const idx = Math.max(0, gefilterd.findIndex((g) => g.id === geselecteerd?.id));
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const volgende = gefilterd[Math.min(gefilterd.length - 1, idx + 1)];
+      if (volgende) setGeselecteerdId(volgende.id);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const vorige = gefilterd[Math.max(0, idx - 1)];
+      if (vorige) setGeselecteerdId(vorige.id);
+    } else if (e.key === ' ' && geselecteerd && !(doel && /^(BUTTON|A)$/.test(doel.tagName))) {
+      e.preventDefault();
+      setSpatieOpenId((cur) => (cur === geselecteerd.id ? '' : geselecteerd.id));
+    } else if (e.key.toLowerCase() === 'e' && !e.ctrlKey && !e.metaKey && geselecteerd && geselecteerd.status !== 'archief') {
+      if (geselecteerd.prioriteit === 'kritiek' && geselecteerd.kanaal === 'beveiliging' && geselecteerd.status === 'nieuw') return;
+      e.preventDefault();
+      void registreerActieMetOngedaan(
+        [geselecteerd],
+        'archief',
+        t(`Перенесено в архів: «${geselecteerd.titel.slice(0, 38)}»`, `Gearchiveerd: «${geselecteerd.titel.slice(0, 38)}»`),
+      );
+    } else if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey && geselecteerd && geselecteerd.status !== 'uitgesteld') {
+      e.preventDefault();
+      const min = slim.planVoorwaardelijkUitstel(geselecteerd.id, 'op_computer', geselecteerd.subdomein);
+      void registreerActieMetOngedaan(
+        [geselecteerd],
+        'uitgesteld',
+        t(`Відкладено (коли відкриєте на ПК): «${geselecteerd.titel.slice(0, 32)}»`, `Uitgesteld (op computer): «${geselecteerd.titel.slice(0, 32)}»`),
+        min,
+      );
+    }
+  };
+
+  const behandelKaartStatus = useCallback(
+    async (geb: MeldingEcosysteemGebeurtenis, st: MeldingGebeurtenisStatus, min?: number) => {
+      if (st === 'archief' || st === 'opgelost' || st === 'uitgesteld') {
+        const actieWoord =
+          st === 'archief'
+            ? t('В архіві', 'In archief')
+            : st === 'opgelost'
+              ? t('Вирішено', 'Opgelost')
+              : t('Відкладено', 'Uitgesteld');
+        await registreerActieMetOngedaan([geb], st, `${actieWoord}: «${geb.titel.slice(0, 40)}»`, min);
+      } else {
+        slim.wisUitstelRegel(geb.id);
+        await onStatusWijzigen(geb, st, min);
+      }
+    },
+    [registreerActieMetOngedaan, onStatusWijzigen, slim, lang],
+  );
+
+  const behandelVoorwaardelijkUitstel = useCallback(
+    (geb: MeldingEcosysteemGebeurtenis, soort: VoorwaardelijkUitstelSoort) => {
+      const min = slim.planVoorwaardelijkUitstel(geb.id, soort, geb.subdomein);
+      const label = uitstelKeuzeLabel(soort, lang, geb.subdomein);
+      void registreerActieMetOngedaan([geb], 'uitgesteld', `${label}: «${geb.titel.slice(0, 34)}»`, min);
+    },
+    [slim, lang, registreerActieMetOngedaan],
+  );
+
+  const behandelKetenActie = useCallback(
+    (keten: PulsOorzaakKeten, status: MeldingGebeurtenisStatus, uitstelSoort?: VoorwaardelijkUitstelSoort) => {
+      const leden = keten.alleIds.map((id) => alleGebeurtenissenMap.get(id)).filter(Boolean) as MeldingEcosysteemGebeurtenis[];
+      if (!leden.length) return;
+      let min: number | undefined;
+      if (status === 'uitgesteld' && uitstelSoort) {
+        for (const lid of leden) {
+          min = slim.planVoorwaardelijkUitstel(lid.id, uitstelSoort, lid.subdomein);
+        }
+      }
+      const samenvatting =
+        status === 'opgelost'
+          ? t(`Ланцюжок (${leden.length}) позначено вирішеним`, `Keten (${leden.length}) als opgelost gemarkeerd`)
+          : status === 'uitgesteld'
+            ? t(`Ланцюжок (${leden.length}) відкладено за умовою`, `Keten (${leden.length}) voorwaardelijk uitgesteld`)
+            : t(`Ланцюжок (${leden.length}) перенесено в архів`, `Keten (${leden.length}) gearchiveerd`);
+      void registreerActieMetOngedaan(leden, status, samenvatting, min);
+    },
+    [alleGebeurtenissenMap, slim, registreerActieMetOngedaan, lang],
+  );
 
   if (!open && !geo.minimalePil && !modaalBijlage) return null;
+
+  const renderLosseKaart = (geb: MeldingEcosysteemGebeurtenis) => (
+    <MeldingVeegKaart
+      key={geb.id}
+      lang={lang}
+      gebeurtenis={geb}
+      profiel={profiel}
+      geselecteerd={isBreed && geselecteerd?.id === geb.id}
+      geforceerdOpen={spatieOpenId ? spatieOpenId === geb.id : undefined}
+      bijlageVoorkeur={profiel.bijlageWeergave}
+      onSelect={() => setGeselecteerdId(geb.id)}
+      onStatus={(st, min) => behandelKaartStatus(geb, st, min)}
+      onVoorwaardelijkUitstel={(soort) => behandelVoorwaardelijkUitstel(geb, soort)}
+      onOntleden={(modus, aanbieder) => onOntleden(geb, modus, aanbieder)}
+      onOpenBijlageModaal={(idx) => setModaalBijlage({ gebeurtenis: geb, index: idx })}
+    />
+  );
 
   const portalLaag = (
     <>
@@ -397,7 +674,7 @@ export default function MeldingenPortaal({
           >
             <Bell className={tellers.kritiek > 0 ? 'is-kritiek' : undefined} aria-hidden='true' />
             <span className='mel-pil-tekst'>
-              <strong>{lang === 'nl' ? ctx.naamNl : ctx.naamUk}</strong>
+              <strong>{subdomeinMenselijkLabel(subdomeinNu, lang)}</strong>
               <small>
                 {tellers.nieuw > 0
                   ? t(`Нових: ${tellers.nieuw}`, `Nieuw: ${tellers.nieuw}`)
@@ -426,19 +703,21 @@ export default function MeldingenPortaal({
       {open && (
         <section
           ref={vensterRef}
-          className={`mel-ecosysteem-portaal is-modus-${geo.modus}${isBreed ? ' is-tweekolom' : ''}`}
+          className={`mel-ecosysteem-portaal puls-portaal is-modus-${compactBijBel ? 'kompakt' : geo.modus}${isBreed ? ' is-tweekolom' : ''}${compactBijBel ? ' is-compact-bij-bel' : ''}`}
           data-qa-id='canonical-notification-panel'
+          data-puls-vorm={compactBijBel ? 'compact' : 'venster'}
           data-no-edge-swipe='1'
           data-ruimte={ruimte}
           data-subdomein={subdomeinNu}
           role='dialog'
           tabIndex={-1}
           aria-label={t('Екосистема сповіщень', 'Meldingen-ecosysteem')}
+          onKeyDown={opPaneelToets}
           style={{
             ['--mel-x' as string]: `${geo.x}px`,
             ['--mel-y' as string]: `${geo.y}px`,
-            ['--mel-w' as string]: `${geo.breedte}px`,
-            ['--mel-h' as string]: `${geo.hoogte}px`,
+            ['--mel-w' as string]: `${compactBijBel ? Math.min(448, Math.max(320, leesScherm().breedte - 16)) : geo.breedte}px`,
+            ['--mel-h' as string]: `${compactBijBel ? Math.min(650, Math.max(360, leesScherm().hoogte - 88)) : geo.hoogte}px`,
             ['--mel-accent' as string]: ctx.accent,
             ['--mel-tint' as string]: ctx.tintAchtergrond,
           }}
@@ -456,7 +735,7 @@ export default function MeldingenPortaal({
           ))}
 
           <header
-            className='mel-kop'
+            className='mel-kop puls-kop'
             onPointerDown={startVerplaats}
             onPointerMove={beweegVenster}
             onPointerUp={eindigVensterSleep}
@@ -469,60 +748,137 @@ export default function MeldingenPortaal({
               <div>
                 <strong>{t('Сповіщення', 'Meldingen')}</strong>
                 <small>
-                  {lang === 'nl' ? ctx.naamNl : ctx.naamUk} ·{' '}
+                  {subdomeinMenselijkLabel(subdomeinNu, lang)} ·{' '}
                   {tellers.nieuw > 0
-                    ? t(`нових: ${tellers.nieuw}`, `nieuw: ${tellers.nieuw}`)
-                    : t('усе переглянуто', 'alles bijgewerkt')}
+                    ? t(`потребують уваги / нових: ${tellers.nieuw}`, `nieuw: ${tellers.nieuw}`)
+                    : t('усе під контролем', 'alles onder controle')}
                 </small>
               </div>
             </div>
 
             <div className='mel-kop-gereedschap'>
-              <button
-                type='button'
-                className={`mel-ikoon-knop${geo.modus === 'breed' ? ' is-actief' : ''}`}
-                aria-pressed={geo.modus === 'breed'}
-                onClick={() => pasModusToe(geo.modus === 'breed' ? 'normaal' : 'breed')}
-                title={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки: список і подробиці поруч', 'Twee kolommen: lijst en details naast elkaar')}
-                aria-label={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки', 'Twee kolommen')}
-              >
-                <Columns2 aria-hidden='true' />
-              </button>
-              <button
-                type='button'
-                className={`mel-ikoon-knop${geo.modus === 'volledig' ? ' is-actief' : ''}`}
-                aria-pressed={geo.modus === 'volledig'}
-                onClick={() => pasModusToe(geo.modus === 'volledig' ? 'normaal' : 'volledig')}
-                title={geo.modus === 'volledig' ? t('Повернути звичайний розмір вікна', 'Terug naar de gewone venstergrootte') : t('На весь екран', 'Volledig scherm')}
-                aria-label={geo.modus === 'volledig' ? t('Звичайний розмір', 'Gewone grootte') : t('На весь екран', 'Volledig scherm')}
-              >
-                {geo.modus === 'volledig' ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}
-              </button>
+              {onZetNietStoren && (
+                <div className='puls-uitstel-anker'>
+                  <button
+                    type='button'
+                    className={`mel-ikoon-knop${dndActief ? ' is-actief' : ''}`}
+                    aria-pressed={dndActief}
+                    aria-expanded={dndMenuOpen}
+                    onClick={() => setDndMenuOpen((v) => !v)}
+                    title={t('Не турбувати (безпека все одно проходить)', 'Niet storen (beveiliging blijft zichtbaar)')}
+                    aria-label={t('Не турбувати', 'Niet storen')}
+                  >
+                    <Moon aria-hidden='true' />
+                  </button>
+                  {dndMenuOpen && (
+                    <div className='puls-uitstel-menu puls-dnd-menu' role='menu' onClick={(e) => e.stopPropagation()}>
+                      <div className='puls-uitstel-kop'>{t('Режим тиші (без звуку й спливання)', 'Stiltestand (geen geluid of pop-ups)')}</div>
+                      {dndActief && (
+                        <button
+                          type='button'
+                          role='menuitem'
+                          className='puls-uitstel-optie is-toon-smaragd'
+                          onClick={() => {
+                            onZetNietStoren(null);
+                            setDndMenuOpen(false);
+                          }}
+                        >
+                          <span className='puls-uitstel-icoon' aria-hidden='true'><Bell /></span>
+                          <span>{t('Вимкнути «Не турбувати» зараз', '«Niet storen» nu uitzetten')}</span>
+                        </button>
+                      )}
+                      {DND_KEUZES_MIN.map((min) => (
+                        <button
+                          key={min}
+                          type='button'
+                          role='menuitem'
+                          className='puls-uitstel-optie is-toon-indigo'
+                          onClick={() => {
+                            onZetNietStoren(min);
+                            setDndMenuOpen(false);
+                          }}
+                        >
+                          <span className='puls-uitstel-icoon' aria-hidden='true'><Moon /></span>
+                          <span>
+                            {min < 60
+                              ? t(`На ${min} хвилин`, `${min} minuten`)
+                              : min < 480
+                                ? t(`На ${min / 60} год`, `${min / 60} uur`)
+                                : t('До ранку (8 год)', 'Tot de ochtend (8 uur)')}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              <button
-                type='button'
-                className={`mel-ikoon-knop${geo.vastgepind ? ' is-actief' : ''}`}
-                onClick={toggleVastpinnen}
-                aria-pressed={geo.vastgepind}
-                title={geo.vastgepind ? t('Відкріпити: вікно закриється від кліку поза ним', 'Losmaken: het venster sluit bij een klik erbuiten') : t('Закріпити: вікно лишається відкритим, коли працюєте на сторінці', 'Vastpinnen: het venster blijft open terwijl u op de pagina werkt')}
-                aria-label={geo.vastgepind ? t('Відкріпити вікно', 'Venster losmaken') : t('Закріпити поверх сайту', 'Vastpinnen boven de site')}
-              >
-                {geo.vastgepind ? <Pin aria-hidden='true' /> : <PinOff aria-hidden='true' />}
-              </button>
+              {!compactBijBel && (
+                <>
+                  <button
+                    type='button'
+                    className={`mel-ikoon-knop${geo.modus === 'breed' ? ' is-actief' : ''}`}
+                    aria-pressed={geo.modus === 'breed'}
+                    onClick={() => pasModusToe(geo.modus === 'breed' ? 'normaal' : 'breed')}
+                    title={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки: список і подробиці поруч', 'Twee kolommen: lijst en details naast elkaar')}
+                    aria-label={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки', 'Twee kolommen')}
+                  >
+                    <Columns2 aria-hidden='true' />
+                  </button>
+                  <button
+                    type='button'
+                    className={`mel-ikoon-knop${geo.modus === 'volledig' ? ' is-actief' : ''}`}
+                    aria-pressed={geo.modus === 'volledig'}
+                    onClick={() => pasModusToe(geo.modus === 'volledig' ? 'normaal' : 'volledig')}
+                    title={geo.modus === 'volledig' ? t('Повернути звичайний розмір вікна', 'Terug naar de gewone venstergrootte') : t('На весь екран', 'Volledig scherm')}
+                    aria-label={geo.modus === 'volledig' ? t('Звичайний розмір', 'Gewone grootte') : t('На весь екран', 'Volledig scherm')}
+                  >
+                    {geo.modus === 'volledig' ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}
+                  </button>
 
-              <button
-                type='button'
-                className='mel-ikoon-knop'
-                onClick={() => togglePil(true)}
-                title={t('Згорнути в маленьку рухому кнопку з лічильником', 'Minimaliseren naar een kleine zwevende knop met teller')}
-                aria-label={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
-              >
-                <Minus aria-hidden='true' />
-              </button>
+                  <button
+                    type='button'
+                    className={`mel-ikoon-knop${geo.vastgepind ? ' is-actief' : ''}`}
+                    onClick={toggleVastpinnen}
+                    aria-pressed={geo.vastgepind}
+                    title={geo.vastgepind ? t('Відкріпити: вікно закриється після натискання поза ним', 'Losmaken: het venster sluit bij een klik erbuiten') : t('Закріпити: вікно лишається відкритим, коли працюєте на сторінці', 'Vastpinnen: het venster blijft open terwijl u op de pagina werkt')}
+                    aria-label={geo.vastgepind ? t('Відкріпити вікно', 'Venster losmaken') : t('Закріпити поверх сайту', 'Vastpinnen boven de site')}
+                  >
+                    {geo.vastgepind ? <Pin aria-hidden='true' /> : <PinOff aria-hidden='true' />}
+                  </button>
+
+                  <button
+                    type='button'
+                    className='mel-ikoon-knop'
+                    onClick={() => togglePil(true)}
+                    title={t('Згорнути в маленьку рухому кнопку з лічильником', 'Minimaliseren naar een kleine zwevende knop met teller')}
+                    aria-label={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
+                  >
+                    <Minus aria-hidden='true' />
+                  </button>
+                </>
+              )}
+
+              {compactBijBel && onOpenVensterModus ? (
+                <button
+                  type='button'
+                  className='mel-vorm-schakel'
+                  data-qa-id='melding-vorm-venster-puls'
+                  onClick={() => {
+                    pasModusToe('breed');
+                    onOpenVensterModus();
+                  }}
+                  title={t('Розгорнути цю ж панель у широке вікно з інспектором. Повернутися — кнопкою «Компактно» у вікні.', 'Dit paneel uitklappen naar een breed venster met inspectie. Terug met «Compact» in het venster.')}
+                >
+                  <AppWindow aria-hidden='true' />
+                  <span>{t('Вікно', 'Venster')}</span>
+                </button>
+              ) : null}
 
               <button
                 type='button'
                 className='mel-vorm-schakel'
+                style={compactBijBel && onOpenVensterModus ? { display: 'none' } : undefined}
                 data-qa-id='melding-vorm-compact'
                 onClick={onSwitchToClassic}
                 title={t('Показувати сповіщення компактною панеллю біля дзвіночка. Повернутися до вікна — кнопкою «Вікно» в тій панелі.', 'Meldingen tonen als compact paneel bij de bel. Terug naar het venster met de knop «Venster» in dat paneel.')}
@@ -542,6 +898,21 @@ export default function MeldingenPortaal({
               </button>
             </div>
           </header>
+
+          {dndActief && nietStorenTot ? (
+            <div className='puls-dnd-strook' role='status'>
+              <Moon aria-hidden='true' />
+              <span>
+                {t('Не турбувати до ', 'Niet storen tot ')}
+                {new Date(nietStorenTot).toLocaleTimeString(lang === 'nl' ? 'nl-BE' : 'uk-UA', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              {onZetNietStoren ? (
+                <button type='button' className='mel-knop mel-knop-zacht' onClick={() => onZetNietStoren(null)}>
+                  {t('Вимкнути', 'Uitzetten')}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className='mel-werkbalk'>
             <label className='mel-zoekveld'>
@@ -599,14 +970,14 @@ export default function MeldingenPortaal({
 
           {!toonVoorkeuren && (
             <div className='mel-filters'>
-              <div className='mel-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
+              <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
                 {(
                   [
-                    ['actief', t('Активні', 'Actief')],
+                    ['actief', t('Потребують уваги', 'Vraagt aandacht')],
                     ['nieuw', t(`Нові (${tellers.nieuw})`, `Nieuw (${tellers.nieuw})`)],
-                    ['uitgesteld', t('Відкладені', 'Uitgesteld')],
+                    ['uitgesteld', tellers.uitgesteld > 0 ? t(`За умовою (${tellers.uitgesteld})`, `Op voorwaarde (${tellers.uitgesteld})`) : t('За умовою', 'Op voorwaarde')],
                     ['opgelost', t('Вирішені', 'Opgelost')],
-                    ['archief', t('Архів', 'Archief')],
+                    ['archief', t('Спокійний журнал', 'Archief')],
                     ['alle', t('Усі', 'Alle')],
                   ] as const
                 ).map(([sleutel, tekst]) => (
@@ -615,43 +986,52 @@ export default function MeldingenPortaal({
                     type='button'
                     role='tab'
                     aria-selected={statusFilter === sleutel}
-                    className={`mel-tab${statusFilter === sleutel ? ' is-actief' : ''}`}
+                    className={`mel-tab puls-tab is-tab-${sleutel}${statusFilter === sleutel ? ' is-actief' : ''}`}
                     onClick={() => setStatusFilter(sleutel)}
                   >
-                    {tekst}
+                    <TabIcoon sleutel={sleutel} />
+                    <span>{tekst}</span>
                   </button>
                 ))}
               </div>
 
-              <div className='mel-kanaal-chips'>
+              <div className='mel-kanaal-chips puls-kanaal-chips'>
                 <button
                   type='button'
-                  className={`mel-kanaal-chip${alleenDitSubdomein ? ' is-actief' : ''}`}
+                  className={`mel-kanaal-chip puls-chip${alleenDitSubdomein ? ' is-actief' : ''}`}
                   onClick={() => setAlleenDitSubdomein((v) => !v)}
                 >
-                  {alleenDitSubdomein
-                    ? t(`Тільки ${subdomeinNu}`, `Alleen ${subdomeinNu}`)
-                    : t(`Контекст: ${subdomeinNu}`, `Context: ${subdomeinNu}`)}
+                  <Sparkles aria-hidden='true' />
+                  <span>
+                    {alleenDitSubdomein
+                      ? t(`Лише: ${subdomeinMenselijkLabel(subdomeinNu, lang)}`, `Alleen: ${subdomeinMenselijkLabel(subdomeinNu, lang)}`)
+                      : t(`Розділ: ${subdomeinMenselijkLabel(subdomeinNu, lang)}`, `Onderdeel: ${subdomeinMenselijkLabel(subdomeinNu, lang)}`)}
+                  </span>
                 </button>
 
                 <button
                   type='button'
-                  className={`mel-kanaal-chip${kanaalFilter === 'alle' ? ' is-actief' : ''}`}
+                  className={`mel-kanaal-chip puls-chip${kanaalFilter === 'alle' ? ' is-actief' : ''}`}
                   onClick={() => setKanaalFilter('alle')}
                 >
-                  {t('Усі канали', 'Alle kanalen')}
+                  <Layers aria-hidden='true' />
+                  <span>{t('Усі канали', 'Alle kanalen')}</span>
                 </button>
 
-                {ctx.snelFilters.map((k) => (
-                  <button
-                    key={k}
-                    type='button'
-                    className={`mel-kanaal-chip${kanaalFilter === k ? ' is-actief' : ''}`}
-                    onClick={() => setKanaalFilter((cur) => (cur === k ? 'alle' : k))}
-                  >
-                    {kanaalLabel(k, lang)}
-                  </button>
-                ))}
+                {ctx.snelFilters.map((k) => {
+                  const ka = kanaalVisueelAnker(k, lang);
+                  return (
+                    <button
+                      key={k}
+                      type='button'
+                      className={`mel-kanaal-chip puls-chip is-toon-${ka.toon}${kanaalFilter === k ? ' is-actief' : ''}`}
+                      onClick={() => setKanaalFilter((cur) => (cur === k ? 'alle' : k))}
+                    >
+                      {ka.merkSleutel ? <Merk merk={ka.merkSleutel} naam={ka.label} maat={13} vorm='rond' /> : <PulsIcoon soort={ka.icoon} />}
+                      <span>{kanaalLabel(k, lang)}</span>
+                    </button>
+                  );
+                })}
 
                 <select
                   className='mel-kanaal-select'
@@ -670,6 +1050,66 @@ export default function MeldingenPortaal({
             </div>
           )}
 
+          {/* 15-секундне Спокійне зведення для швидкого очищення фонового шуму в 1 дотик */}
+          {!toonVoorkeuren && statusFilter === 'actief' && !zoek.trim() && rustigOverzicht.toon && (
+            <div className='puls-rustig-overzicht' data-puls-overzicht='1'>
+              <div className='puls-overzicht-tekst'>
+                <strong>{rustigOverzicht.titel}</strong>
+                <span>{rustigOverzicht.subtitel}</span>
+              </div>
+              <button
+                type='button'
+                className='mel-knop puls-knop-overzicht'
+                onClick={() => {
+                  const items = rustigOverzicht.achtergrondKlaarIds
+                    .map((id) => alleGebeurtenissenMap.get(id))
+                    .filter(Boolean) as MeldingEcosysteemGebeurtenis[];
+                  void registreerActieMetOngedaan(
+                    items,
+                    'archief',
+                    t(`Згорнуто в спокійний журнал: ${items.length} фонових дій`, `${items.length} achtergrondtaken opgeruimd`),
+                  );
+                }}
+              >
+                <CheckCheck aria-hidden='true' />
+                <span>{rustigOverzicht.actieLabel}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Розумна підказка тиші після 3 закриттів однотипних некритичних подій */}
+          {!toonVoorkeuren && slim.stilteSuggestie && (
+            <div className='puls-stilte-suggestie' role='status'>
+              <PulsBronTeken
+                anker={{
+                  merkSleutel: slim.stilteSuggestie.merkSleutel,
+                  icoon: slim.stilteSuggestie.icoon,
+                  toon: 'systeem',
+                  label: slim.stilteSuggestie.bronLabel,
+                }}
+                maat={28}
+              />
+              <p>{slim.stilteSuggestie.vraagTekst}</p>
+              <div className='puls-actie-groep'>
+                <button type='button' className='mel-knop mel-knop-zacht' onClick={() => slim.sluitStilteSuggestie(true)}>
+                  {t('Залишити', 'Behouden')}
+                </button>
+                <button
+                  type='button'
+                  className='mel-knop mel-knop-primair'
+                  onClick={() => {
+                    const k = slim.stilteSuggestie?.bronSleutel.split(':')[0] as MeldingKanaal | undefined;
+                    if (k && onStilVoorKanaal) onStilVoorKanaal(k);
+                    slim.sluitStilteSuggestie(true);
+                  }}
+                >
+                  <Moon aria-hidden='true' />
+                  <span>{t('Тихо в журнал', 'Stil in logboek')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className='mel-lichaam'>
             {toonVoorkeuren ? (
               <div className='mel-voorkeuren-kader'>
@@ -678,42 +1118,95 @@ export default function MeldingenPortaal({
             ) : (
               <>
                 <div className='mel-stroom-kolom'>
-                  {gefilterd.length === 0 ? (
+                  {stroomEenheden.length === 0 ? (
                     <div className='mel-leeg-staat'>
-                      <Bell aria-hidden='true' />
-                      <strong>{t('За вибраними фільтрами подій немає', 'Geen gebeurtenissen voor deze filters')}</strong>
+                      <CheckCircle2 aria-hidden='true' />
+                      <strong>{t('Спокій і порядок — активних питань за цим фільтром немає', 'Rust en overzicht — geen openstaande punten voor dit filter')}</strong>
                       <span>
                         {t(
-                          'Змініть стан фільтра, очистіть пошук або відкрийте повні налаштування на сторінці /melding.',
-                          'Pas de filters aan, wis de zoekopdracht of open de instellingen op /melding.',
+                          'Усі фонові дії збережені у вкладці «Спокійний журнал», а правила доступні на сторінці /melding.',
+                          'Alle achtergrondtaken staan in het archief en regels zijn beschikbaar op /melding.',
                         )}
                       </span>
                     </div>
                   ) : (
-                    gefilterd.map((geb) => (
-                      <MeldingVeegKaart
-                        key={geb.id}
-                        lang={lang}
-                        gebeurtenis={geb}
-                        profiel={profiel}
-                        geselecteerd={isBreed && geselecteerd?.id === geb.id}
-                        bijlageVoorkeur={profiel.bijlageWeergave}
-                        onSelect={() => setGeselecteerdId(geb.id)}
-                        onStatus={(st, min) => onStatusWijzigen(geb, st, min)}
-                        onOntleden={(modus, aanbieder) => onOntleden(geb, modus, aanbieder)}
-                        onOpenBijlageModaal={(idx) => setModaalBijlage({ gebeurtenis: geb, index: idx })}
-                      />
-                    ))
+                    stroomEenheden.map((eenheid) =>
+                      eenheid.soort === 'keten' ? (
+                        <PulsOorzaakKetenKaart
+                          key={eenheid.keten.sleutel}
+                          lang={lang}
+                          keten={eenheid.keten}
+                          geselecteerd={isBreed && Boolean(geselecteerd && eenheid.keten.alleIds.includes(geselecteerd.id))}
+                          onSelect={(wortel) => setGeselecteerdId(wortel.id)}
+                          onHerstelKeten={behandelKetenActie}
+                          renderLosseKaart={renderLosseKaart}
+                          alleGebeurtenissenMap={alleGebeurtenissenMap}
+                        />
+                      ) : (
+                        renderLosseKaart(eenheid.gebeurtenis)
+                      ),
+                    )
                   )}
                 </div>
 
-                {isBreed && geselecteerd && (
-                  <aside className='mel-detail-kolom' aria-label={t('Інспектор події', 'Gebeurtenisinspectie')}>
-                    <div className='mel-detail-kop'>
-                      <span className='mel-subdomein-chip'>{geselecteerd.subdomein}</span>
-                      <strong>{geselecteerd.titel}</strong>
-                      <small>{geselecteerd.contextLabel}</small>
+                {isBreed && geselecteerd && geselecteerdVerrijkt && (
+                  <aside className='mel-detail-kolom puls-detail-kolom' aria-label={t('Інспектор події', 'Gebeurtenisinspectie')}>
+                    <div className='mel-detail-kop puls-detail-kop'>
+                      <div className='puls-detail-boven'>
+                        <PulsBronTeken anker={geselecteerdVerrijkt.anker} maat={38} />
+                        <div>
+                          <div className='puls-detail-chips'>
+                            <span className='mel-subdomein-chip puls-onderdeel-chip'>
+                              <PulsIcoon soort={geselecteerdVerrijkt.anker.icoon} />
+                              <span>{subdomeinMenselijkLabel(geselecteerd.subdomein, lang)}</span>
+                            </span>
+                            {geselecteerdVerrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} />}
+                          </div>
+                          <strong>{geselecteerd.titel}</strong>
+                          {geselecteerd.contextLabel && <small>{geselecteerd.contextLabel}</small>}
+                        </div>
+                      </div>
                     </div>
+
+                    {geselecteerdKeten && (
+                      <div className='puls-detail-keten-kader'>
+                        <div className='puls-oorzaak-badge'>
+                          <Network aria-hidden='true' />
+                          <span>{geselecteerdKeten.samenvatting}</span>
+                        </div>
+                        <div className='puls-keten-chips'>
+                          {geselecteerdKeten.gevolgen.map((gev) => (
+                            <PulsDienstChip
+                              key={gev.id}
+                              merkSleutel={gev.merkSleutel}
+                              icoon={gev.icoon}
+                              toon={gev.toon}
+                              label={gev.label}
+                              sub={gev.herstelTekst}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className='puls-x4-emblemen'>
+                      {geselecteerdVerrijkt.emblemen.map((emb) => (
+                        <div key={emb.vraag} className='puls-x4-cel'>
+                          <small>{emb.vraag}</small>
+                          <strong>{emb.waarde}</strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    {geselecteerdVerrijkt.mandaat && (
+                      <PulsMandaatStraalBlok
+                        mandaat={geselecteerdVerrijkt.mandaat}
+                        gekozenDuur={detailMandaatDuur}
+                        onKiesDuur={setDetailMandaatDuur}
+                        lang={lang}
+                      />
+                    )}
+
                     {geselecteerd.bericht && <p className='mel-detail-tekst'>{geselecteerd.bericht}</p>}
                     {geselecteerd.uitleg && <pre className='mel-uitleg-blok'>{geselecteerd.uitleg}</pre>}
 
@@ -740,19 +1233,35 @@ export default function MeldingenPortaal({
             )}
           </div>
 
-          <div className='mel-voet' role='region' aria-label={t('Дії екосистеми', 'Ecosysteemacties')}>
+          {/* 5-секундна смужка м’якого повернення дії (Ctrl+Z) */}
+          {ongedaan && (
+            <div className='puls-ongedaan-balk' role='status' data-puls-ongedaan='1'>
+              <span>{ongedaan.tekst}</span>
+              <button type='button' className='puls-ongedaan-knop' onClick={() => void voerOngedaanUit()}>
+                <Undo2 aria-hidden='true' />
+                <span>{t(`Повернути · Ctrl+Z (${ongedaanSec} с)`, `Ongedaan maken · Ctrl+Z (${ongedaanSec} s)`)}</span>
+              </button>
+            </div>
+          )}
+
+          <div className='mel-voet puls-voet' role='region' aria-label={t('Дії екосистеми', 'Ecosysteemacties')}>
             <button
               type='button'
               className='mel-knop mel-knop-zacht'
               disabled={tellers.nieuw === 0}
               onClick={onMarkAll}
             >
-              {t('Позначити все прочитаним', 'Alles als gelezen')}
+              <CheckCheck aria-hidden='true' />
+              <span>{t('Позначити все прочитаним', 'Alles als gelezen')}</span>
             </button>
+
+            <span className='puls-toets-hints' aria-hidden='true'>
+              <kbd>↑↓</kbd> {t('вибір', 'keuze')} · <kbd>{t('Пробіл', 'Spatie')}</kbd> {t('докази', 'bewijs')} · <kbd>S</kbd> {t('умова', 'uitstel')} · <kbd>E</kbd> {t('архів', 'archief')}
+            </span>
 
             <a href={instellingenHref} className='mel-knop mel-knop-primair'>
               <ExternalLink aria-hidden='true' />
-              {t('Усі правила (/melding)', 'Alle regels (/melding)')}
+              <span>{t('Усі правила (/melding)', 'Alle regels (/melding)')}</span>
             </a>
           </div>
         </section>

@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "taakId": "MELDPANEEL-002",
+  "datum": "2026-11-22",
+  "taal": "uk",
+  "titel": "MELDPANEEL-002 · Єдина панель «Пульт уваги, спокою та дії» у двох розмірах з офіційними логотипами src/merk/, маркерами форматів файлів, печаткою ядра «Плющ», графом першопричини, радіусом дії мандата ШІ та умовним відкладенням",
+  "opdracht": "За прямим дорученням власника від 22.11.2026 після огляду візуальних порівнянь ДО і ПІСЛЯ втілити схвалену концепцію єдиної сучасної панелі сповіщень «Пульт уваги, спокою та дії» у двох розмірах (компактно біля дзвіночка та розгорнуте двоколонкове вікно з інспектором) поверх живої встановленої на сервері версії KLIMOP-023 (20261122-082021 @ 55291902d45bda6431471c5a94bc9f4eed93b8ed), дотримуючись повітряного мінімалізму для людей із розсіяною увагою та використовуючи наочні офіційні логотипи з єдиного реєстру src/merk/ (<Merk>) і семантичні піктограми й мікрокольори у кнопках, службах і файлах замість сирих текстових назв, без самовільного встановлення пакунка на живий сервер.",
+  "herkomst": {
+    "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
+    "agent": "antigravity",
+    "model": "Gemini 4 Carbon (High)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/meldpaneel-002-aandachtspuls-20261122-020900",
+    "basisCommit": "32822354ea08fc850330eed96feaff5b1bb96a58",
+    "basisVersie": "20261105-061659",
+    "geinstalleerdeBasis": "55291902d45bda6431471c5a94bc9f4eed93b8ed",
+    "geinstalleerdeVersie": "20261122-082021",
+    "integratieBasis": "32822354ea08fc850330eed96feaff5b1bb96a58",
+    "regelsVersie": "1.6.0",
+    "regelsHash": "f1b6227978cedd14cecc559a756581689942ed580308898a68bd8cecc7fe47ef",
+    "samengevoegd": [
+      {
+        "taak": "KLIMOP-023 (жива встановлена версія сервера 20261122-082021)",
+        "commit": "55291902d45bda6431471c5a94bc9f4eed93b8ed",
+        "reden": "Пряма встановлена на живому сервері основа, яка вже містить integratie 32822354ea08, Етапи 0–16 екосистеми «Плющ», п’ять хвиль виправлень KLIMOP-018..022 та спільну мовну навичку movnyi-zakon."
+      }
+    ]
+  },
+  "commits": [
+    "55291902d45bda6431471c5a94bc9f4eed93b8ed"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Звірка живої встановленої основи сервера (20261122-082021 @ 55291902d45b), досьє функції orchestratie/onderwerpen/meldingen.json, реєстру shared/meldingen-catalogus.ts та єдиного реєстру логотипів src/merk/.",
+      "resultaat": "Зафіксовано всі чинні контракти регресійних випробувань (MELDINGEN-UX-001, GEMINI-002, INTEG-001, REESTR-LOGO-001, plaatsing-controle, kleur-contrast-controle) та вимоги власника щодо підтримки розсіяної уваги."
+    },
+    {
+      "stap": "2) Розробка клієнтобезпечного ядра Пульта уваги (shared/meldingen-puls/kern.ts) та компонентів візуальних маркерів (src/meldingen/puls/*).",
+      "resultaat": "Реалізовано розпізнавання офіційних логотипів 14 ШІ-агентів і відомих служб без фальшивого вгадування, кольорово-піктограмні маркери форматів файлів (XLSX/CSV, PDF, IMG/SVG, DIFF, AUD, VID, ICS, VCF, JSON, АРХІВ), непідробну печатку ядра «Плющ», радіус дії мандата ШІ, склеювання графа першопричини, 15-секундне спокійне зведення, 6 видів умовного відкладення, живу капсулу перебігу, повагу спливних вікон до набору тексту та розумну підказку тиші."
+    },
+    {
+      "stap": "3) Об’єднання двох розмірів однієї панелі в src/meldingen/ecosysteem/MeldingenPortaal.tsx, MeldingVeegKaart.tsx та src/CanoniekMeldingencentrum.tsx разом із повітряними стилями для світлої та темної тем і мобільних екранів.",
+      "resultaat": "Компактний пульт під дзвіночком і двоколонкове рухоме вікно працюють як одна панель на спільному потоці та спільному сховищі стану з 5-секундним поверненням дії (Ctrl+Z) і клавіатурним керуванням, зберігаючи 100% сумісність з усіма чинними наборами випробувань."
+    },
+    {
+      "stap": "4) Комплексна модульна, статична, контрастна та переглядачева перевірка у Хроміум на екранах ПК (1440×900) і телефона (390×844) у світлій і темній темах обома мовами (uk, nl).",
+      "resultaat": "Пройдено meldpaneel-002 (54/54), усі 12 регресійних наборів сповіщень і логотипів, перевірку контрасту на 28 палітрах, клієнт-серверну межу, повне виробниче складання та візуальну перевірку в переглядачі без помилок."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Втілити одну спільну панель у двох розмірах (compactBijBel біля дзвіночка та розгорнуте двоколонкове вікно) замість паралельної підтримки розрізнених інтерфейсів, залишивши старі гілки відмальовування доступними для еталонних стендів (?v2=0|1).",
+      "reden": "Повністю усуває розбіжність лічильників, назв кнопок і станів відкладення між компактним та віконним режимами без втрати жодної наявної можливості чи регресійного випробування."
+    },
+    {
+      "besluit": "Використовувати виключно офіційний компонент <Merk> із src/merk/Merk.tsx у парі з семантичними векторними піктограмами lucide-react та канонічними змінними кольорів оформлення.",
+      "reden": "Дотримується правила REESTR-LOGO-001 (нуль ручних копій <svg>), забезпечує миттєве візуальне розпізнавання для людей із розсіяною увагою та гарантує контрастність WCAG на всіх 28 палітрах сайту."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/meldingen-puls/kern.ts, shared/meldingen-puls/index.ts, src/meldingen/puls/puls-opslag.ts, src/meldingen/puls/PulsVisueelAnker.tsx, src/meldingen/puls/PulsOorzaakKetenKaart.tsx",
+      "omschrijving": "Чисте ядро та компоненти «Пульта уваги, спокою та дії»: візуальні якорі логотипів і файлів, печатка ядра «Плющ», граф першопричини, радіус дії мандата ШІ, 15-секундне спокійне зведення, реактивне умовне відкладення, жива капсула перебігу, повага до набору тексту та навчання тиші."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/meldingen/ecosysteem/MeldingenPortaal.tsx, src/meldingen/ecosysteem/MeldingVeegKaart.tsx, src/meldingen/ecosysteem/meldingen-ecosysteem.css, src/CanoniekMeldingencentrum.tsx, src/canoniek-meldingencentrum.css, src/identiteit/melding/MeldingEcosysteemPagina.tsx",
+      "omschrijving": "Єдиний Пульт уваги у двох розмірах (компактно під дзвіночком і широке 2-колонкове вікно), 5-секундна смужка повернення дії (Ctrl+Z), клавіатурні скорочення (↑↓, Пробіл, S, E), жива капсула в гнізді дзвіночка та повітряні адаптивні стилі."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/meldpaneel-002-aandachtspuls-20261122.test.ts, orchestratie/taken/MELDPANEEL-002.json, orchestratie/bijdragen/MELDPANEEL-002/20261122-105400-antigravity.json, orchestratie/ontwikkelarchieven/MELDPANEEL-002.json, .github/workflows/meldpaneel-002-uitgave.yml",
+      "omschrijving": "54 модульні та інтеграційні перевірки MELDPANEEL-002, запис авторства BIJDRAGE-001, досьє походження TRACE-001 та ізольований конвеєр оприлюднення пакунка випуску."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/zoek-ui-knoppen.generated.ts, docs/meldingen-paneel/ДОСЬЄ-ПАНЕЛІ-СПОВІЩЕНЬ.uk.md, docs/meldingen-paneel/DOSSIER-MELDINGENPANEEL.nl.md, orchestratie/onderwerpen/meldingen.json, docs/hub/ХРОНОЛОГІЯ-ГІЛОК.uk.md, docs/hub/KRONIEK-TAKKEN.nl.md",
+      "omschrijving": "Оновлений пошуковий покажчик інтерфейсу (1851 елемент), двомовна документація панелі сповіщень, доповнене досьє функції meldingen та оновлена хронологія гілок."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/meldpaneel-002-uitgave.yml",
+      "uk": "Ізольований сценарій складання та оприлюднення випуску MELDPANEEL-002 поверх живої основи 20261122-082021: без pull_request_target і без secrets.*, усі дії закріплені 40-символьними відбитками фіксацій, persist-credentials: false, npm ci --ignore-scripts; ніколи не встановлює пакунок на живий сервер автоматично.",
+      "nl": "Geïsoleerde bouw- en publicatiewerkstroom voor uitgave MELDPANEEL-002 boven op de actieve basis 20261122-082021: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s, persist-credentials: false en npm ci --ignore-scripts; installeert nooit automatisch op de productieserver."
+    },
+    {
+      "pad": "src/identiteit/melding/MeldingEcosysteemPagina.tsx",
+      "uk": "Оновлено виключно двомовні текстові пояснення двох розмірів єдиного Пульта уваги на сторінці налаштувань сповіщень (/melding); жодна логіка входу, ключів доступу, прав чи сеансів не змінювалася.",
+      "nl": "Uitsluitend tweetalige toelichtingen voor de twee groottes van de ene Aandachtspuls op de instellingenpagina (/melding) bijgewerkt; aanmeld-, sleutel- en sessielogica zijn ongewijzigd."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера, усі 9 архітектурних передперевірок (включно з kleur-contrast-controle на 28 палітрах і klant-servergrens-controle) та повне виробниче складання пройшли з кодом 0."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs meldpaneel-002 && усі регресійні набори melding* && merk-een-register && browser-gedeeld-20261022 && візуальна перевірка у переглядачі Chromium (ПК 1440×900 і телефон 390×844, світла і темна теми, uk і nl)",
+      "resultaat": "Усі 54 перевірки meldpaneel-002 та всі регресійні набори пройшли на 100%; у справжньому переглядачі Chromium підтверджено безпомилкове відображення обох розмірів Пульта уваги, фірмових логотипів і чипів файлів без переповнення чи помилок сторінки."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/meldpaneel-002-uitgave.yml",
+      "resultaat": "Звіряє живу встановлену версію на сервері (20261122-082021 @ 55291902d45b), проганяє повний комплекс модульних, хмарних, післяскладальних і 120 БД-залежних випробувань з подвійним накатом усіх міграцій трьома ролями, збирає пакунок випуску, перевіряє pakketVoorcontrole та root-trace.py і оприлюднює архів на GitHub без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "ANTIGRAVITY.md",
+    "orchestratie/beleid.json",
+    "orchestratie/onderwerpen/meldingen.json",
+    "docs/meldingen-paneel/ДОСЬЄ-ПАНЕЛІ-СПОВІЩЕНЬ.uk.md",
+    "shared/meldingen-catalogus.ts",
+    "https://mcp.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Оприлюднений пакунок ніколи не встановлюється автоматично: встановлення запускається виключно власником у розділі Адміністрування → Оновлення після перевірки свіжої запасної копії, зеленої попередньої перевірки та підтвердження власним ключем доступу.",
+    "Попередні модулі MeldingenV2.tsx та MeldingenpaneelInhoud.tsx збережено в коді для зворотної перевірки за параметром ?v2=0|1 та безпечного повернення.",
+    "Критичні політики в розділі kritiek і схема бази даних PostgreSQL 18.6 не змінювалися."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано виключно штучні тестові зразки та публічні метадані координації; жодних паролів, закритих ключів, маркерів доступу чи вмісту особистих повідомлень до журналу не включено."
+  }
+}
