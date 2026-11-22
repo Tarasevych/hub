@@ -67,7 +67,7 @@ export async function main(): Promise<number> {
   const gmw = readFileSync('src/GoogleMailWerkruimte.tsx', 'utf8');
   check('vlag standaard uit in de client', gmw.includes('useVlag(POSTA_VENSTERS_VLAG,false)') && POSTA_VENSTERS_VLAG === 'posta-vensters-herstel-v1');
   check('attribuut en strenge JOSE alleen met vlag aan, bij uit weer weg', gmw.includes('html.setAttribute(POSTA_VENSTERS_ATTR,\'\');zetStrikteJose(true)') && gmw.includes('html.removeAttribute(POSTA_VENSTERS_ATTR);zetStrikteJose(false)') && gmw.includes('if(!vensterHerstel)return;const html'));
-  check('geschiedenisstap alleen met vlag aan en open, niet geminimaliseerde viewer', gmw.includes('if(!vensterHerstel||!attachmentPreview||attachmentMinimized)return;return bijlageStapInstalleren('));
+  check('geschiedenisstap alleen met vlag aan (herstel of gedeelde weergave) en open, niet geminimaliseerde viewer', gmw.includes('if(!(vensterHerstel||gedeeldeWeergave)||!attachmentPreview||attachmentMinimized)return;return bijlageStapInstalleren('));
   const css = readFileSync('src/mail/posta-vensters.css', 'utf8');
   const regels = css.replace(/\/\*[\s\S]*?\*\//g, '').split('}').map((r) => r.trim()).filter((r) => r.includes('{'));
   const selectors = regels.map((r) => r.replace(/@media[^{]*\{/, '')).map((r) => r.slice(0, r.indexOf('{')).trim()).filter(Boolean);
