@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "CONSOL-001",
+  "agent": "antigravity",
+  "tak": "feature/consolidatie-001-20261122-203500",
+  "basisCommit": "95fda93a7084c102d1c682fbb9a83a83d49f9259",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.8.0",
+  "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
+  "staat": "in_progress",
+  "gestart": "2026-11-22T21:06:06.518Z",
+  "bijgewerkt": "2026-11-22T21:06:06.518Z",
+  "omschrijving": "Консолідація гілок №208 і №211, завершення спільного переглядача вкладень та доробка безпеки / Consolidatie van takken #208 en #211, afronding gedeelde bijlageweergave en beveiliging",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
