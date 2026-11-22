@@ -20,6 +20,7 @@ import {
   Mail,
   Paperclip,
   PlugZap,
+  Zap,
   Puzzle,
   RotateCcw,
   ShieldAlert,
@@ -560,6 +561,15 @@ export default function MeldingVeegKaart({
                 onSelectIndex={setInlineBijlageIdx}
                 onSluiten={() => setInlineBijlageIdx(null)}
                 onToggleModaal={() => onOpenBijlageModaal(inlineBijlageIdx)}
+                contextActies={/* SPIL-WEERGAVE етап 4, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Antigravity): дії сповіщення в спільній шапці; діють лише з увімкненим прапорцем bijlage-weergave-gedeeld-v1 */ [
+                  ...(gebeurtenis.status === 'nieuw'
+                    ? [{ sleutel: 'gelezen', label: ['Прочитано', 'Gelezen'] as [string, string], icoon: Check, zichtbaar: true, toon: 'goed' as const, uitvoeren: () => void onStatus('gelezen') }]
+                    : []),
+                  ...gebeurtenis.acties
+                    .filter((a) => a.soort === 'api')
+                    .slice(0, 1)
+                    .map((a) => ({ sleutel: `actie:${a.id}`, label: [a.labelUk, a.labelNl] as [string, string], icoon: Zap, zichtbaar: true, uitvoeren: () => void voerActie(a) })),
+                ]}
               />
             )}
 
