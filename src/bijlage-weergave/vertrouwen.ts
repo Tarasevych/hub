@@ -85,13 +85,17 @@ export function vertrouwenUit(b: Bewijs): Vertrouwen {
   const letOp = bev.some((x) => x.ernst === 'let-op');
   const niveau: Niveau = letOp ? 'let-op' : soortKlopt ? 'goed' : 'onbekend';
   const goed = bev.filter((x) => x.ernst === 'goed').map((x) => x.sleutel);
+  const leeg = !b.kop.length && werkelijk !== 'programma';
   const zin: Tweetalig = niveau === 'let-op'
     ? [`Увага: ${bev.find((x) => x.ernst === 'let-op')!.tekst[0].replace(/^./, (c) => c.toLowerCase())}`, `Let op: ${bev.find((x) => x.ernst === 'let-op')!.tekst[1].replace(/^./, (c) => c.toLowerCase())}`]
     : niveau === 'goed'
       ? [['Справжній тип збігається з назвою', goed.includes('macro') ? 'без макросів' : '', goed.includes('acties') ? 'без прихованих дій' : ''].filter(Boolean).join(', ') + '.',
          ['De echte soort past bij de naam', goed.includes('macro') ? 'zonder macro’s' : '', goed.includes('acties') ? 'zonder verborgen acties' : ''].filter(Boolean).join(', ') + '.']
-      : ['Не вдалося перевірити тип цього файлу.', 'De soort van dit bestand kon niet worden nagegaan.'];
-  const kort: Tweetalig = niveau === 'let-op' ? ['Увага', 'Let op'] : niveau === 'goed' ? ['Перевірено', 'Nagegaan'] : ['Не перевірено', 'Niet nagegaan'];
+      : leeg
+        // afwerking etappe 2: een leeg bestand zegt dat het leeg is, niet «Не вдалося перевірити тип»
+        ? ['Файл порожній (0 байтів): перевіряти нічого.', 'Het bestand is leeg (0 bytes): er is niets na te gaan.']
+        : ['Не вдалося перевірити тип цього файлу.', 'De soort van dit bestand kon niet worden nagegaan.'];
+  const kort: Tweetalig = niveau === 'let-op' ? ['Увага', 'Let op'] : niveau === 'goed' ? ['Перевірено', 'Nagegaan'] : leeg ? ['Порожній', 'Leeg'] : ['Не перевірено', 'Niet nagegaan'];
   return { niveau, kort, zin, bevindingen: bev, werkelijk };
 }
 
