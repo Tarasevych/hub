@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "MELDPANEEL-003/20261122-151000-antigravity",
+  "taakId": "MELDPANEEL-003",
+  "tijd": "2026-11-22T15:10:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herstel",
+  "wat": {
+    "uk": "Системне вирішення всіх 5 зауважень власника після живого випробування на сайті та впровадження єдиної живої Бази типів сповіщень (MELDPANEEL-003 + MELDINGEN-REGISTER-001, рішення B-026, regelsVersie 1.7.0): 1) монтування MeldingenPortaal і MeldingBijlageSpeler всередині .canonical-chrome зі зняттям чужорідних жовто-помаранчевих перевизначень — 100% спадкування живої палітри теми сайту (зокрема пудрово-сливової та темно-сливової); 2) перенесення пошуку й каналів у висувну шухлядку за лупою в шапці (/), однорядкові 6 вкладок станів та однорядковий підвал із кнопкою «База типів», перенесення Спокійного зведення в прокручуваний потік (~80% простору під сповіщення); 3) вільне розтягування вікна за всі 8 країв і кутів у компактному та віконному режимах із пам’яттю розміру; 4) жива пігулка дзвіночка з лічильником у шапці вигляду «Макет» на id.tarasevych.com/melding (MaquetteBelKnop) та точна прив’язка vindZichtbareBel() без збивання положення при перемиканні режимів; 5) жива База 506 кодів дій у 12 предметних категоріях (0 некласифікованих у 'overig'), інтерактивний оглядач /melding#melding-register на 739 записів, відсікання самодій панелі, обов’язковий сторож складальника scripts/meldingen-register-controle.mjs у npm run build та виправлення REPO_ONGELDIG на сторінці оновлень.",
+    "nl": "Systematische oplossing van alle 5 bevindingen van de eigenaar na live beproeving en invoering van het levende Meldingenregister (MELDPANEEL-003 + MELDINGEN-REGISTER-001, besluit B-026, regelsVersie 1.7.0): 1) portaalmontage binnen .canonical-chrome zonder vreemde amberkleuren — 100% overerving van het actieve sitepalet; 2) zoek- en kanaalfilters in een uitklapbare lade achter het vergrootglas (/), éénregelige tabbladen en voettekst (~80% werkruimte voor meldingen); 3) vrij schalen langs alle 8 randen en hoeken in compacte én venstermodus met maatgeheugen; 4) levende belpil met teller in de bovenbalk van weergave «Maquette» op id.tarasevych.com/melding en stabiele ankerpositie bij moduswissels; 5) geclassificeerde basis van 506 actiecodes in 12 domeincategorieën (0 in 'overig'), interactieve verkenner op /melding#melding-register (739 items), uitsluiting van zelfacties, verplichte bouwbewaker scripts/meldingen-register-controle.mjs en herstel van REPO_ONGELDIG bij updates."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника від 22.11.2026 за результатами перевірки живого сайту: узгодити кольорову гаму панелі з темою сайту, вивільнити основний простір під сповіщення, дати вільне розтягування вікна за будь-який край, додати відсутню пігулку дзвіночка на id.tarasevych.com/melding, усунути збивання позиції вікна та перетворити базу сповіщень на осмислений самооновлюваний реєстр усієї платформи за правилом розвитку проєкту.",
+    "nl": "Rechtstreekse opdracht van de eigenaar van 22.11.2026 na toetsing op de live site: paletovererving herstellen, werkruimte vrijmaken, 8-zijdige schaling bieden, ontbrekende belpil op id.tarasevych.com/melding toevoegen, positieverlies bij moduswissels verhelpen en een verplicht levend register van meldingstypen en actiecodes verankeren in de projectregels."
+  },
+  "bouwtVoortOp": [
+    "MELDPANEEL-002/20261122-105400-antigravity",
+    "KLIMOP-023/20261122-074500-antigravity"
+  ],
+  "tak": "fix/meldpaneel-003-thema-ruimte-register-20261122-134000",
+  "onderwerpen": [
+    "meldingen",
+    "ecosysteem-klimop"
+  ]
+}

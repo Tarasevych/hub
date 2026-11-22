@@ -503,10 +503,7 @@ export function verrijkGebeurtenisVoorPuls(geb: MeldingEcosysteemGebeurtenis, la
         ? 'Geïsoleerde voorvertoning direct in dit paneel zonder pagina te verlaten'
         : 'Ізольований перегляд вкладення прямо тут без покидання сторінки';
   } else {
-    gevolgHint =
-      lang === 'nl'
-        ? 'Snelle actie · Spatie toont alle bewijsvelden'
-        : 'Швидка дія · Пробіл відкриває всі поля доказів';
+    gevolgHint = '';
   }
 
   const knoppenPaar: readonly [string, string] | null =

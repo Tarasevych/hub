@@ -1,8 +1,8 @@
 <!-- GEGENEREERD door node scripts/orch.mjs context — niet met de hand wijzigen · ЗГЕНЕРОВАНО, не редагувати вручну -->
 # Mijn Ruimte — компактний контекст агента · compacte agentcontext
 
-- regelsVersie: `1.6.0`
-- regelsHash: `f1b6227978cedd14cecc559a756581689942ed580308898a68bd8cecc7fe47ef`
+- regelsVersie: `1.7.0`
+- regelsHash: `f6cab917b25ec902b1fca8044250a678423fd9b0bf4ca55116bf7694c1e33cc1`
 - kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
 - база · basis: `20261105-061659` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844` (geverifieerd_productie)
 - інтеграційна гілка · integratietak: `integratie`
@@ -48,6 +48,7 @@
 - Секрети, маркери доступу, приватні ключі, вміст листів — ніколи в чат, журнал, фіксація змін чи пакет. Приватні ключі власника агентам не передаються.
 - Робоче середовище, основна гілка, резервні копії, критичні дозволи — тільки після явного погодження власника (не іншого агента).
 - Логотипи (REESTR-LOGO-001): лише з реєстру `src/merk/` (`<Merk>`, `MerkLogo`); новий знак — через `scripts/merk-officieel-maken.mjs`, без копій `<svg>`. Деталі — §6. · Elk logo uit het ene merkregister.
+- База сповіщень і дій (MELDINGEN-REGISTER-001, B-026): кожна нова служба чи код дії сервера обов'язково отримує людську назву `[uk, nl]`, предметну категорію (без `overig`) і схему доказів у `shared/beheer-journaal.ts` / `shared/meldingen-catalogus.ts`, а технічний шум — фільтр у `RUIS_PATROON`; перевіряє `node scripts/meldingen-register-controle.mjs` (§11).
 - Діагностика й час власника (B-009): не просити власника вручну виконувати команди в терміналі (`df -h`, `journalctl`) чи вручну збирати пакети; без доступу до `<VM-IP>` дати стислий висновок (1–2 речення) для інфраструктурного агента на ПК власника. Не вгадувати причину збою `voorcontrole` (не списувати на `.zip`, якщо `structuur` пройдено). Деталі нижче, B-009.
 
 ## 3а. Авторство, досьє, навички · Auteurschap, dossiers, vaardigheden (BIJDRAGE-001, деталі — §9)

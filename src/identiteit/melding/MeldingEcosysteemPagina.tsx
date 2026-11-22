@@ -60,6 +60,7 @@ import MeldingVoorkeurenPaneel from '../../meldingen/MeldingVoorkeurenPaneel';
 import { useHuidigeRuimte } from '../../tech/ruimtes/ruimte-signaal';
 import { useTech } from '../../tech/tech-opslag';
 import { useZijbalkVoorkeuren, zetZijbalk } from '../../zijbalk-voorkeuren'; // ДУБЛІ-001: одне сховище тихих годин
+import MeldingRegisterVerkenner from './MeldingRegisterVerkenner';
 import './melding-pagina.css';
 
 type Props = {
@@ -1217,6 +1218,9 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
           />
         </div>
       </section>
+
+      {/* 8. Жива класифікована база типів сповіщень, кодів дій та схем доказів (MELDINGEN-REGISTER-001) */}
+      <MeldingRegisterVerkenner lang={lang} magTechnisch={magTechnisch} />
     </div>
   );
 }

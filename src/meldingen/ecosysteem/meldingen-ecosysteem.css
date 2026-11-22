@@ -14,11 +14,11 @@
   min-height: 300px;
   max-width: calc(100vw - 16px);
   max-height: calc(100dvh - 16px);
-  border: 1px solid color-mix(in srgb, var(--mel-accent, var(--accent)) 36%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
   border-radius: 18px;
-  background: color-mix(in srgb, var(--panel) 97%, var(--mel-tint, transparent));
+  background: color-mix(in srgb, var(--panel) 96%, var(--surface));
   color: var(--text);
-  box-shadow: 0 28px 80px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, transparent);
+  box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
   backdrop-filter: blur(18px);
   overflow: hidden;
   user-select: text;
@@ -28,29 +28,30 @@
   border-radius: 14px;
 }
 
-/* 8 ручок змінення розмірів вікна по краях і кутах */
+/* 8 чутливих ручок змінення розмірів вікна по краях і кутах (працюють у віконному та компактному режимах) */
 .mel-rand {
   position: absolute;
-  z-index: 6;
+  z-index: 35;
   touch-action: none;
+  transition: background-color 0.14s ease;
 }
-.mel-rand-n { top: -3px; left: 12px; right: 12px; height: 7px; cursor: ns-resize; }
-.mel-rand-z { bottom: -3px; left: 12px; right: 12px; height: 7px; cursor: ns-resize; }
-.mel-rand-w { left: -3px; top: 12px; bottom: 12px; width: 7px; cursor: ew-resize; }
-.mel-rand-o { right: -3px; top: 12px; bottom: 12px; width: 7px; cursor: ew-resize; }
-.mel-rand-nw { top: -4px; left: -4px; width: 14px; height: 14px; cursor: nwse-resize; }
-.mel-rand-no { top: -4px; right: -4px; width: 14px; height: 14px; cursor: nesw-resize; }
-.mel-rand-zw { bottom: -4px; left: -4px; width: 14px; height: 14px; cursor: nesw-resize; }
-.mel-rand-zo { bottom: -4px; right: -4px; width: 14px; height: 14px; cursor: nwse-resize; }
+.mel-rand-n { top: 0; left: 16px; right: 16px; height: 7px; cursor: ns-resize; }
+.mel-rand-z { bottom: 0; left: 16px; right: 16px; height: 8px; cursor: ns-resize; }
+.mel-rand-w { left: 0; top: 16px; bottom: 16px; width: 8px; cursor: ew-resize; }
+.mel-rand-o { right: 0; top: 16px; bottom: 16px; width: 8px; cursor: ew-resize; }
+.mel-rand-nw { top: 0; left: 0; width: 16px; height: 16px; z-index: 36; cursor: nwse-resize; }
+.mel-rand-no { top: 0; right: 0; width: 16px; height: 16px; z-index: 36; cursor: nesw-resize; }
+.mel-rand-zw { bottom: 0; left: 0; width: 18px; height: 18px; z-index: 36; cursor: nesw-resize; }
+.mel-rand-zo { bottom: 0; right: 0; width: 18px; height: 18px; z-index: 36; cursor: nwse-resize; }
 
 .mel-kop {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 11px;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(135deg, var(--mel-tint, var(--accent-soft)), transparent 70%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 55%, var(--panel)), color-mix(in srgb, var(--surface) 42%, var(--panel)));
   cursor: grab;
   touch-action: none;
 }
@@ -1116,16 +1117,17 @@
    ============================================================================ */
 
 .mel-ecosysteem-portaal.puls-portaal {
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--panel) 96%, var(--mel-tint, transparent));
-  box-shadow: 0 26px 76px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--panel) 96%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--line));
+  box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .mel-ecosysteem-portaal.is-compact-bij-bel {
   border-radius: 18px;
 }
 
-.mel-ecosysteem-portaal.is-compact-bij-bel .mel-rand {
+.mel-ecosysteem-portaal.is-modus-volledig .mel-rand {
   display: none;
 }
 
@@ -1670,7 +1672,7 @@
 /* Прогресивна сітка значків-питань X4 та інспектор події */
 .puls-x4-emblemen {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
   gap: 6px;
 }
 .puls-x4-cel {
@@ -1807,6 +1809,241 @@
   }
   .puls-portaal .mel-knop {
     min-height: 36px;
+  }
+}
+
+/* ============================================================================
+   MELDPANEEL-003: Повна гармонія з темою сайту, >80% простору під живі картки,
+   висувна шухлядка пошуку/каналів та наочне 8-стороннє змінення розмірів.
+   ============================================================================ */
+
+/* Підсвітка країв при наведенні та делікатний кутовий маркер розтягування */
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-n:hover,
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-z:hover,
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-w:hover,
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-o:hover {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-zw::after,
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-zo::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 9px;
+  height: 9px;
+  opacity: 0.48;
+  transition: opacity 0.14s ease;
+  pointer-events: none;
+}
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-zo::after {
+  right: 4px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  border-bottom-right-radius: 3px;
+}
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-zw::after {
+  left: 4px;
+  border-left: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  border-bottom-left-radius: 3px;
+}
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-zw:hover::after,
+.mel-ecosysteem-portaal:not(.is-modus-volledig) .mel-rand-zo:hover::after {
+  opacity: 0.95;
+  border-color: var(--accent);
+}
+
+/* Надкомпактна шапка та кнопка пошуку з точкою активного відбору */
+.puls-portaal .mel-kop.puls-kop {
+  padding: 7px 10px;
+  min-height: 44px;
+}
+.puls-portaal .mel-kop-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.puls-portaal .mel-kop-badge svg {
+  width: 15px;
+  height: 15px;
+}
+.puls-portaal .mel-kop-titel {
+  gap: 8px;
+}
+.puls-portaal .mel-kop-titel strong {
+  font-size: 13.5px;
+  line-height: 1.2;
+}
+.puls-portaal .mel-kop-titel small {
+  font-size: 11px;
+  line-height: 1.2;
+}
+.puls-portaal .mel-kop-gereedschap .mel-ikoon-knop {
+  width: 29px;
+  height: 29px;
+  border-radius: 8px;
+}
+.puls-filter-schakel {
+  position: relative;
+}
+.puls-filter-stip {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Компактна однорядкова смужка зрізів + висувна шухлядка пошуку/каналів */
+.mel-filters.puls-filters-slank {
+  gap: 4px;
+  padding: 3px 7px;
+  background: color-mix(in srgb, var(--surface) 62%, var(--panel));
+}
+.puls-filters-slank .mel-tabs.puls-tabs {
+  gap: 2px;
+}
+.puls-filters-slank .mel-tab.puls-tab {
+  min-height: 24px;
+  padding: 0 5px;
+  gap: 2.5px;
+  font-size: 11px;
+}
+.puls-filters-slank .mel-tab.puls-tab > svg {
+  width: 11px;
+  height: 11px;
+}
+.puls-filters-slank .mel-tab.is-actief {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.mel-filter-lade {
+  display: grid;
+  gap: 6px;
+  padding-top: 5px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+}
+.mel-filter-lade[hidden] {
+  display: none;
+}
+.mel-filter-lade .mel-werkbalk {
+  padding: 0;
+  border-bottom: 0;
+}
+.mel-filter-lade .mel-zoekveld input {
+  height: 30px;
+  font-size: 12.5px;
+}
+
+.puls-actieve-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.puls-actief-filter-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.puls-actief-filter-pil svg {
+  width: 11px;
+  height: 11px;
+}
+
+/* Компактне спокійне зведення та охайні однорядкові кнопки дій на картці */
+.puls-portaal .puls-rustig-overzicht {
+  margin: 0;
+  padding: 7px 10px;
+  gap: 6px 10px;
+  flex: 0 0 auto;
+}
+.puls-portaal .puls-overzicht-tekst strong {
+  font-size: 12px;
+}
+.puls-portaal .puls-overzicht-tekst span {
+  font-size: 11px;
+}
+.puls-portaal .puls-knop-overzicht {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+.puls-portaal .puls-stilte-suggestie {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.puls-portaal .puls-kaart {
+  padding: 9px 11px;
+  gap: 6px;
+}
+.puls-portaal .puls-kaart .mel-knop {
+  min-height: 27px;
+  padding: 0 7.5px;
+  font-size: 11.5px;
+  gap: 4px;
+}
+.puls-portaal .puls-kaart .mel-ikoon-knop {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+}
+
+/* Однорядковий тихий підвал у кольорах теми (без важкої помаранчевої заливки) */
+.mel-voet.puls-voet {
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 5px 10px;
+  min-height: 38px;
+  background: color-mix(in srgb, var(--surface) 70%, var(--panel));
+}
+.mel-ecosysteem-portaal:not(.is-tweekolom) .puls-toets-hints {
+  display: none;
+}
+.puls-voet-rechts {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+.puls-voet .puls-voet-knop {
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.puls-voet .puls-voet-accent {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.puls-voet .puls-voet-accent:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--accent-soft));
+}
+@media (max-width: 640px) {
+  .mel-ecosysteem-portaal .mel-rand {
+    display: none;
+  }
+  .puls-portaal .puls-kaart .mel-knop {
+    min-height: 34px;
   }
 }
 

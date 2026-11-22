@@ -3,6 +3,7 @@
 // pictogram en het logo van de dienst kan tonen. Ruis (elke leesactie, sessierotatie, menuvoorkeuren) komt er bewust niet in.
 import { V2_AGENTEN } from '../shared/connector-v2/agenten';
 import { klantVan } from '../shared/ai-verbinding';
+import { doelVan } from '../shared/beheer-journaal';
 
 export type SiteEvent = { id: string; source: string; platform: string; kind: 'site'; type: string; subject: string; status: 'succeeded' | 'failed' | 'rejected'; createdAt: number; finishedAt: number;
   /** Alleen bij AI-acties (owner.mcp.tool): wat, waarop, en bij mislukking WAAROM — zodat de melding de kern noemt, niet alleen «помилка». */
@@ -17,15 +18,21 @@ export type SiteEvent = { id: string; source: string; platform: string; kind: 's
 // van de hub in een technisch tabblad zonder keuze gaf er 46 in één korte stand-run). De pagina legt de weigering zelf uit (RuimteStrook,
 // client.ts); in de bel/het paneel was het herhaalruis («Дія на сайті: ruimte geweigerd · виконано»). Het journaal houdt elke regel.
 // 23.10: owner.extensie.zijpaneel.chat = elk chatbericht in het zijpaneel van de extensie (zone E) — geen melding, wel in het journaal.
-export const SITE_RUIS = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.notifications\.|owner\.session\.(rotated|refresh)|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
+// MELDINGEN-REGISTER-001: owner.meldingen.ecosysteem.(actie|profiel) = klik in het meldingenpaneel zelf — mag nooit een nieuwe melding over zichzelf maken.
+export const SITE_RUIS = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.ecosysteem\.(actie|profiel)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh)|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
 const SKIP = SITE_RUIS;
 const RULES: Array<[RegExp, string]> = [
-  [/^owner\.mail\./, 'mail:google'], [/^owner\.cloud\./, 'cloud:google'], [/^owner\.calendar\./, 'calendar:google'], [/^owner\.github\./, 'github'],
-  [/^owner\.ai\.|^owner\.chat\./, 'ai:anthropic'], [/^owner\.(agent|agents)\./, 'agent'], [/^owner\.mcp\./, 'claude'], [/^owner\.browser\./, 'browser'],
-  [/^owner\.api\.|^owner\.vault\./, 'api'], [/^owner\.admin\./, 'admin'], [/^owner\.(identity|privacy|profile|session|step_up|auth|access)\./, 'identity'], [/^account\./, 'identity'],
+  [/^owner\.mail\.|^mail\./, 'mail:google'], [/^owner\.cloud\.|^cloud\./, 'cloud:google'], [/^owner\.calendar\.|^agenda\./, 'calendar:google'], [/^owner\.github\./, 'github'],
+  [/^owner\.ai\.|^owner\.chat\./, 'ai:anthropic'], [/^owner\.(agent|agents)\.|^owner\.(terminal|remote|apparaat)\.|^apparaat\./, 'agent'],
+  [/^owner\.(mcp|vaardigheden|connector)\.|^koppeling_gewijzigd$/, 'claude'], [/^owner\.(browser|extensie)\./, 'browser'],
+  [/^owner\.api\.|^owner\.vault\./, 'api'],
+  [/^owner\.(admin|uitrol|tech|ruimte|flags|ondersteuning|impersonatie|diagnose|beleid)\.|^uitrol[._]|^klimop_|^orch_|^eigenaar_besluit_|^diag\.|^zoek\.index\./, 'admin'],
+  [/^owner\.(identity|privacy|profile|session|step_up|auth|access|rol)\.|^account\.|^privacy\./, 'identity'],
+  [/^huis\./, 'huis'], [/^notitie\./, 'hub'],
   // SEC-002 (privacy-logboek-03): veiligheidskritieke acties ZONDER «owner.»-voorvoegsel vielen hier stil weg (sourceOfAudit → null):
   // een wachtwoord erbij, TOTP uit, passkey weg, sleutelkluis, een AI-token of een namens-sessie — de eigenaar zag niets in de stroom.
-  [/^access\.|^aanmeld\.|^sleutelkluis\.|^(toegangscode|gast)_/, 'identity'], [/^agent\.|^ai_/, 'agent'], [/^mcp_console_/, 'agent'],
+  [/^access\.|^aanmeld\.|^aanmelden\.|^sleutelkluis\.|^(toegangscode|gast)_|^bevestigen\.|^code\.|^inlog\.|^koppelen\.|^koppeling\.|^telegram|^venster\.|^widget\.|^wijziging\.|^plaats-eis\.|^stap-op$|^niet-ik$|^fout-symbool$/, 'identity'],
+  [/^agent\.|^ai_/, 'agent'], [/^mcp_console_/, 'agent'],
 ];
 /** «claude:<klant>» voor een gebeurtenis van een AI-koppeling: agent-slug of klantnaam uit de details; onbekend → «claude» zonder logo. */
 export function aiBron(details?: Record<string, unknown>): string {
@@ -57,7 +64,10 @@ export function siteEventsFromAudit(rows: Array<{ id: string; action: string; re
     if (!basis) continue;
     // AGENTSCHEIDING-001: AI-koppelingen tonen het logo en de naam van DE AI die het deed (agent/klant uit het journaal), niet altijd «Claude».
     const source = basis === 'claude' ? aiBron(r.details) : basis;
-    const subject = typeof r.details?.provider === 'string' ? r.details.provider.slice(0, 40) : '';
+    const afgeleidDoel = doelVan(r.details, r.action);
+    const subject = typeof r.details?.provider === 'string'
+      ? r.details.provider.slice(0, 40)
+      : (afgeleidDoel?.naam ? afgeleidDoel.naam.slice(0, 60) : '');
     const failed = FAIL.test(r.result);
     const ev: SiteEvent = { id: `audit:${r.id}`, source, platform: '', kind: 'site', type: r.action, subject, status: GEWEIGERD.test(String(r.result || '')) ? 'rejected' : failed ? 'failed' : 'succeeded', createdAt: r.createdAt, finishedAt: r.createdAt };
     // Alleen de VLAG «technisch profiel actief», nooit de profiel-/activatie-id zelf.
@@ -82,6 +92,7 @@ export function siteEventsFromAudit(rows: Array<{ id: string; action: string; re
       if (code) ev.code = code;
       if (reden) ev.reden = reden;
     }
+    if (!ev.doel && afgeleidDoel?.naam) ev.doel = afgeleidDoel.naam.slice(0, 80);
     // Elke andere mislukte actie krijgt de foutcode uit het journaal (alleen een code), zodat de melding zegt waarom. Voor AI-acties staat dat hierboven.
     if (ev.code === undefined && r.action !== 'owner.mcp.tool') { const code = reasonOfAudit(r.details); if (code) ev.code = code; }
     out.push(ev);

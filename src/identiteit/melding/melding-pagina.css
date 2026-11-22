@@ -276,6 +276,219 @@
   color: var(--muted);
 }
 
+/* Жива база типів сповіщень, кодів дій та схем доказів (MELDINGEN-REGISTER-001) */
+.mp-register-waarborg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid color-mix(in srgb, var(--good, #16a34a) 38%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--good, #16a34a) 11%, var(--panel));
+  color: var(--good, #16a34a);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mp-register-tellers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+}
+
+.mp-register-kaartje {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.mp-register-kaartje small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.mp-register-kaartje strong {
+  font-size: 1.25rem;
+  font-weight: 750;
+  color: var(--text);
+}
+
+.mp-register-filters {
+  display: grid;
+  gap: 8px;
+}
+
+.mp-register-zoek {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+}
+.mp-register-zoek svg {
+  color: var(--muted);
+  flex: none;
+}
+.mp-register-zoek input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.mp-register-selects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+.mp-register-selects > label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+}
+.mp-register-selects > label select {
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.mp-register-lijst {
+  display: grid;
+  gap: 7px;
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 2px;
+  overscroll-behavior: contain;
+}
+
+.mp-register-rij {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.mp-register-rij-hoofd {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.mp-register-merk {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--accent);
+}
+
+.mp-register-inhoud {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mp-register-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.mp-reg-pil {
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+.mp-reg-pil.is-melding {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.mp-reg-pil.is-actie {
+  border-color: color-mix(in srgb, var(--good, #16a34a) 38%, var(--line));
+  background: color-mix(in srgb, var(--good, #16a34a) 10%, var(--panel));
+  color: var(--good, #16a34a);
+}
+.mp-reg-pil.is-gevaar {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--line));
+  background: color-mix(in srgb, var(--danger) 11%, var(--panel));
+  color: var(--danger);
+}
+.mp-reg-pil.is-besluit {
+  border-color: color-mix(in srgb, var(--warn, #d97706) 40%, var(--line));
+  background: color-mix(in srgb, var(--warn, #d97706) 11%, var(--panel));
+  color: var(--warn, #d97706);
+}
+.mp-reg-pil.is-schema {
+  color: var(--text);
+}
+
+.mp-register-titel {
+  font-size: 0.92rem;
+  line-height: 1.3;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.mp-register-code {
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.mp-register-klap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.mp-register-klap svg.is-open {
+  transform: rotate(180deg);
+}
+
+.mp-register-details {
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-size: 0.84rem;
+}
+
+.mp-register-detail-rij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.mp-register-detail-rij small {
+  color: var(--muted);
+  font-weight: 650;
+}
+
 @media (max-width: 780px) {
   .mp-kanaal-rij {
     grid-template-columns: 1fr 1fr;
@@ -285,5 +498,12 @@
   }
   .mp-kanaal-rij > select {
     grid-column: 1 / -1;
+  }
+  .mp-register-rij-hoofd {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+  .mp-register-klap {
+    grid-column: 1 / -1;
+    justify-content: center;
   }
 }
