@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-020/20261121-152856-antigravity",
+  "taakId": "KLIMOP-020",
+  "tijd": "2026-11-21T15:28:56.268Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Claude Opus 5.5 (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Проміжна частина Хвилі 3 (KLIMOP-020): суворий режим мандатів із реєстром видавців, переліком дій і об'єктів та перевіркою відправника сеансу; сертифікат переходу відновлення з закріпленою політикою; право коренів лише на момент видачі; кворум голови історії в клієнті ідентичності; повторні перевірки журналу рішень ради. Роботу передано Gemini 4 Carbon (High) через вичерпання ліміту.",
+    "nl": "Tussentijds deel van Golf 3 (KLIMOP-020): strenge mandaatmodus met uitgeversregister, lijst van handelingen en objecten en controle van de sessieafzender; overgangscertificaat bij herstel met verankerd beleid; wortelbevoegdheid alleen op het moment van uitgifte; quorum over de geschiedeniskop in de identiteitsclient; hercontroles van het besluitenlogboek van de raad. Werk overgedragen aan Gemini 4 Carbon (High) wegens verstreken limiet."
+  },
+  "waarom": {
+    "uk": "Усунення високих вад меж довіри зі звіту незалежної перевірки AUDIT-002 (GPT-6.2 Astra (Ультра)); п'ятигодинний ліміт Claude Opus 5.5 (High) на платформі Google Antigravity вичерпано, тому стан зафіксовано для продовження без повторення роботи.",
+    "nl": "Herstel van ernstige gebreken in vertrouwensgrenzen uit het onafhankelijke controlerapport AUDIT-002 (GPT-6.2 Astra (Ultra)); de limiet van vijf uur voor Claude Opus 5.5 (High) op Google Antigravity is verstreken, daarom is de stand vastgelegd voor voortzetting zonder herhaling."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-019/20261121-150914-antigravity",
+    "AUDIT-002/20261121-140000-chatgpt"
+  ],
+  "tak": "fix/klimop-020-vertrouwensgrenzen-20261121-151312",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

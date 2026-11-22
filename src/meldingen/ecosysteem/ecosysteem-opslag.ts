@@ -444,6 +444,7 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
 
   // 4. Активності підключень, агентів і ШІ (activity.events)
   for (const ev of invoer.activityEvents) {
+    if (/^owner\.meldingen\.ecosysteem\.(actie|profiel)$/.test(String(ev.type || ''))) continue;
     const titel = invoer.titelVanActiviteit ? invoer.titelVanActiviteit(ev) : (ev.tool || ev.doel || ev.subject || ev.type || ev.kind);
     const ctx = invoer.contextVanActiviteit ? invoer.contextVanActiviteit(ev) : (ev.subject || '');
     const sl = `act:${ev.id}`;

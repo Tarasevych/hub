@@ -23,7 +23,7 @@ export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SHA = /^[0-9a-f]{7,40}$/;
 const CYRILLISCH = /[Ѐ-ӿ]/;
 // Літери, яких немає в українській абетці (мовний закон проєкту).
-const RU_LETTERS = /[ЁёЪъЫыЭэ]/;
+const RU_LETTERS = /[\u0401\u0451\u042A\u044A\u042B\u044B\u042D\u044D]/;
 /** «Claude», «Gemini», «GPT» — це родини чи платформи, а не модель. Потрібна конкретна модель (claude-opus-5-5, Gemini 4 Hydrogen (high)…). */
 export const ALLEEN_FAMILIE = /^(claude|grok|gpt|gemini|cursor|copilot|codex|chatgpt|antigravity|autoclaw|openclaw|zhipu|glm|llama|mistral|ai|llm|ші|onbekend|unknown|невідомо|модель)$/i;
 export const GENERIEKE_MENS = /^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author|невідомо|onbekend|unknown)$/i;
@@ -106,6 +106,23 @@ export function valideerBijdrage(b, { pad, bekendeIds } = {}) {
   if (b.pr !== undefined && b.pr !== null && !(Number.isInteger(b.pr) && b.pr > 0)) z.push(fout('BIJDRAGE_PR', `${p}: pr — номер запиту на злиття або null`, `${p}: pr — nummer of null`));
   if (b.commits !== undefined && (!Array.isArray(b.commits) || !b.commits.every((c) => SHA.test(String(c))))) z.push(fout('BIJDRAGE_COMMITS', `${p}: commits — список SHA`, `${p}: commits — lijst met SHA's`));
   if (b.onderwerpen !== undefined && (!Array.isArray(b.onderwerpen) || !b.onderwerpen.every((o) => SLUG.test(String(o))))) z.push(fout('BIJDRAGE_ONDERWERP', `${p}: onderwerpen — назви досьє (meldingen, vaardigheden…)`, `${p}: onderwerpen — namen van dossiers`));
+  // KLIMOP-018: виправлення виконавця в уже зроблених записах (записи не редагують — новий «correctie» з полем corrigeert).
+  if (b.corrigeert !== undefined) {
+    const c = b.corrigeert;
+    if (b.soort !== 'correctie') z.push(fout('BIJDRAGE_CORRIGEERT', `${p}: corrigeert дозволене лише у виді «correctie»`, `${p}: corrigeert alleen bij soort «correctie»`));
+    if (!isObj(c) || !Array.isArray(c.bijdragen) || !c.bijdragen.length || !c.bijdragen.every((x) => typeof x === 'string' && x.includes('/'))) {
+      z.push(fout('BIJDRAGE_CORRIGEERT', `${p}: corrigeert.bijdragen — непорожній список ідентифікаторів записів, які виправляються`, `${p}: corrigeert.bijdragen — niet-lege lijst met id's`));
+    } else {
+      for (const id of c.bijdragen) {
+        if (bekendeIds && !bekendeIds.has(id)) z.push(fout('BIJDRAGE_CORRIGEERT_ONBEKEND', `${p}: corrigeert «${id}» — такого запису немає в ${BIJDRAGEN_MAP}`, `${p}: corrigeert «${id}» bestaat niet`));
+        if (!op.includes(id)) z.push(fout('BIJDRAGE_CORRIGEERT', `${p}: кожен виправлений запис «${id}» має бути й у bouwtVoortOp`, `${p}: elke gecorrigeerde registratie hoort ook in bouwtVoortOp`));
+      }
+    }
+    const ju = c?.uitvoerder;
+    if (!isObj(ju) || ju.soort !== 'ai' || !/^[a-z][a-z0-9-]{1,30}$/.test(String(ju.agent || '')) || !tekst(ju.platform, 80) || !tekst(ju.model?.id, 120) || ALLEEN_FAMILIE.test(tekst(ju.model?.id, 120)) || !MODEL_BRONNEN.includes(ju.model?.bron)) {
+      z.push(fout('BIJDRAGE_CORRIGEERT_UITVOERDER', `${p}: corrigeert.uitvoerder — правильний виконавець { soort: «ai», agent, platform, model: { id (конкретна модель), bron } }`, `${p}: corrigeert.uitvoerder — juiste uitvoerder met concreet model`));
+    }
+  }
   if (pad && b.taakId && !pad.startsWith(`${BIJDRAGEN_MAP}/${b.taakId}/`)) z.push(fout('BIJDRAGE_PAD', `${p}: файл має лежати в ${BIJDRAGEN_MAP}/${b.taakId}/`, `${p}: bestand hoort in ${BIJDRAGEN_MAP}/${b.taakId}/`));
   if (pad && b.id && pad !== `${BIJDRAGEN_MAP}/${b.id}.json`) z.push(fout('BIJDRAGE_ID', `${p}: id «${b.id}» не відповідає шляху файла`, `${p}: id «${b.id}» past niet bij het pad`));
   return z;
@@ -128,6 +145,7 @@ export function maakBijdrage(o) {
     ...(o.commits?.length ? { commits: o.commits } : {}),
     ...(o.onderwerpen?.length ? { onderwerpen: o.onderwerpen } : {}),
     ...(o.parallel?.length ? { parallel: o.parallel } : {}),
+    ...(o.corrigeert ? { corrigeert: o.corrigeert } : {}),
   };
   const pad = bijdragePad(o.taakId, stempel, wie);
   return { bijdrage: b, pad, zaken: valideerBijdrage(b, { pad, bekendeIds: o.bekendeIds }) };
@@ -232,17 +250,42 @@ export function kiesOnderwerpen(onderwerpen, { tekst: t = '', bestanden = [] } =
   return uit.sort((a, b) => b.score - a.score || a.naam.localeCompare(b.naam));
 }
 
+/**
+ * KLIMOP-018: застосовує записи «correctie» з полем corrigeert до виправлених записів (пізніше виправлення перемагає).
+ * Самі записи не змінюються: повертається копія з правильним виконавцем, первинним (помилковим) виконавцем у
+ * eerderGeregistreerd та ідентифікатором виправлення в gecorrigeerdDoor. Так сторінка оновлень і пакет випуску
+ * показують справжню модель, а історія помилкового запису лишається видимою.
+ */
+export function pasCorrectiesToe(bijdragen) {
+  const lijst = [...bijdragen];
+  const juist = new Map();
+  for (const b of [...lijst].sort((a, c) => String(a.tijd).localeCompare(String(c.tijd)))) {
+    if (b?.soort !== 'correctie' || !isObj(b.corrigeert) || !isObj(b.corrigeert.uitvoerder)) continue;
+    for (const id of b.corrigeert.bijdragen ?? []) juist.set(id, { uitvoerder: b.corrigeert.uitvoerder, door: b.id });
+  }
+  if (!juist.size) return lijst;
+  return lijst.map((b) => {
+    const j = juist.get(b?.id);
+    if (!j) return b;
+    return { ...b, uitvoerder: j.uitvoerder, eerderGeregistreerd: b.uitvoerder, gecorrigeerdDoor: j.door };
+  });
+}
+
 /** Хронологія внесків задачі: для звіту, `orch begin` і пакета. */
-export function bijdragenTijdlijn(bijdragen) {
+export function bijdragenTijdlijn(bijdragenRuw) {
+  const bijdragen = pasCorrectiesToe(bijdragenRuw);
   return [...bijdragen].sort((a, b) => String(a.tijd).localeCompare(String(b.tijd))).map((b) => {
     const u = b.uitvoerder ?? {};
     const wie = u.soort === 'ai' ? `${u.agent} · ${u.model?.id ?? '—'} (${u.platform ?? '—'})` : `${u.naam} (людина)`;
-    return { id: b.id, tijd: b.tijd, taakId: b.taakId, wie, opdrachtgever: b.opdrachtgever?.naam ?? '', soort: b.soort, soortUk: SOORTEN[b.soort]?.uk ?? b.soort, wat: b.wat?.uk ?? '', waarom: b.waarom?.uk ?? '', bouwtVoortOp: b.bouwtVoortOp ?? [], tak: b.tak ?? '', pr: b.pr ?? null };
+    const e = b.eerderGeregistreerd;
+    const eerder = e ? (e.soort === 'ai' ? `${e.agent} · ${e.model?.id ?? '—'} (${e.platform ?? '—'})` : `${e.naam} (людина)`) : '';
+    return { id: b.id, tijd: b.tijd, taakId: b.taakId, wie, ...(eerder ? { eerderGeregistreerd: eerder, gecorrigeerdDoor: b.gecorrigeerdDoor } : {}), opdrachtgever: b.opdrachtgever?.naam ?? '', soort: b.soort, soortUk: SOORTEN[b.soort]?.uk ?? b.soort, wat: b.wat?.uk ?? '', waarom: b.waarom?.uk ?? '', bouwtVoortOp: b.bouwtVoortOp ?? [], tak: b.tak ?? '', pr: b.pr ?? null };
   });
 }
 
 /** Учасники випуску з обліку (людина-замовник + кожна пара агент/модель) у форматі UITROL-MANIFEST deelnemers. */
-export function deelnemersUitBijdragen(bijdragen) {
+export function deelnemersUitBijdragen(bijdragenRuw) {
+  const bijdragen = pasCorrectiesToe(bijdragenRuw);
   const mensen = new Map(); const ai = new Map();
   for (const b of bijdragen) {
     const o = tekst(b.opdrachtgever?.naam, 120); if (o) mensen.set(o, { soort: 'mens', naam: o, rollen: ['auteur'] });
@@ -250,7 +293,8 @@ export function deelnemersUitBijdragen(bijdragen) {
     if (u.soort === 'mens' && u.naam) mensen.set(u.naam, { soort: 'mens', naam: u.naam, rollen: ['auteur', 'ontwikkeling'] });
     if (u.soort === 'ai') {
       const k = `${u.agent}|${u.model?.id}`;
-      const rol = b.soort === 'controle' ? 'controle' : 'ontwikkeling';
+      const rol = b.soort === 'controle' || b.soort === 'correctie' ? 'controle' : 'ontwikkeling';
+      // Схема маніфесту приймає лише omgeving|auteur (сумісність зі старими встановлювачами): модель «зі слів власника» — auteur.
       const d = ai.get(k) ?? { soort: 'ai', naam: u.agent, platform: u.platform, tool: u.tool ?? u.platform, model: { id: u.model?.id ?? null, versie: null, bron: u.model?.bron === 'omgeving' ? 'omgeving' : 'auteur' }, rollen: [] };
       if (!d.rollen.includes(rol)) d.rollen.push(rol);
       ai.set(k, d);
@@ -260,13 +304,16 @@ export function deelnemersUitBijdragen(bijdragen) {
 }
 
 /** Стислий вигляд внеску для UITROL-MANIFEST.json → bijdragen (сторінка оновлень на сайті). */
-export function manifestBijdragen(bijdragen) {
+export function manifestBijdragen(bijdragenRuw) {
+  const bijdragen = pasCorrectiesToe(bijdragenRuw);
   return bijdragenTijdlijn(bijdragen).slice(0, 200).map((b) => {
     const src = bijdragen.find((x) => x.id === b.id) ?? {};
     const u = src.uitvoerder ?? {};
+    const e = src.eerderGeregistreerd;
     return {
       taakId: b.taakId, tijd: b.tijd, soort: b.soort,
       wie: u.soort === 'ai' ? { soort: 'ai', naam: u.agent, model: u.model?.id ?? null, platform: u.platform ?? null } : { soort: 'mens', naam: u.naam },
+      ...(e ? { eerderGeregistreerd: e.soort === 'ai' ? { naam: e.agent, model: e.model?.id ?? null } : { naam: e.naam } } : {}),
       opdrachtgever: b.opdrachtgever, wat: { uk: b.wat, ...(src.wat?.nl ? { nl: src.wat.nl } : {}) },
       ...(b.waarom ? { waarom: { uk: b.waarom, ...(src.waarom?.nl ? { nl: src.waarom.nl } : {}) } } : {}),
       tak: b.tak || null, pr: b.pr,

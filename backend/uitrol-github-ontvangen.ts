@@ -416,6 +416,30 @@ async function eigenaarVoorbereiderGrant(eigenaarId: string): Promise<{ id: stri
 }
 
 // ------------------------------------------------------------------------------------------------ основний потік приймання випуску
+/** Нормалізує введену користувачем мітку випуску GitHub (приймає URL випуску, назву файла mijn-ruimte-…tar.gz або дату з пробілом «20261122 122237»). */
+export function schoonGithubReleaseTag(rauw: unknown): string {
+  let s = String(rauw ?? '').trim();
+  if (!s) return '';
+  try {
+    if (/^https?:\/\//i.test(s)) {
+      const u = new URL(s);
+      const mTag = /\/releases\/(?:tag|download)\/([^/?#]+)/i.exec(u.pathname);
+      if (mTag?.[1]) s = decodeURIComponent(mTag[1]).trim();
+    }
+  } catch {
+    /* залишаємо рядок як є */
+  }
+  s = s.replace(/\.tar\.gz$/i, '').replace(/\.tgz$/i, '').trim();
+  if (/^mijn-ruimte-\d{8}[- ]\d{6}$/i.test(s)) {
+    s = s.replace(/^mijn-ruimte-/i, '');
+  }
+  const mSpatie = /^(\d{8})\s+(\d{6})$/.exec(s);
+  if (mSpatie) {
+    s = `${mSpatie[1]}-${mSpatie[2]}`;
+  }
+  return s;
+}
+
 export async function haalGithubReleaseOp(invoer: {
   eigenaarId: string;
   actor?: { id: string; email?: string } | null;
@@ -430,18 +454,23 @@ export async function haalGithubReleaseOp(invoer: {
   const inst = await githubOntvangstInstellingenVan(invoer.eigenaarId);
   const explicieteRepo = String(invoer.repo || '').trim();
   const ingesteldeRepo = String(inst.repo || '').trim();
-  const repo = String(explicieteRepo || ingesteldeRepo).trim();
+  const standaardHandmatigRepo =
+    (invoer.bron === 'handmatig' || invoer.bron === 'mcp') && !explicieteRepo && !ingesteldeRepo
+      ? 'Tarasevych/hub'
+      : '';
+  const repo = String(explicieteRepo || ingesteldeRepo || standaardHandmatigRepo).trim();
   if (!repo || !REPO.test(repo)) throw new GithubOntvangstFout('REPO_ONGELDIG', 400);
   if (explicieteRepo) {
     if (ingesteldeRepo && explicieteRepo.toLowerCase() !== ingesteldeRepo.toLowerCase()) {
       throw new GithubOntvangstFout('GITHUB_ONJUISTE_BRON', 403);
     }
-    if (invoer.bron === 'mcp' && !ingesteldeRepo && explicieteRepo.toLowerCase() !== 'tarasevych/hub') {
+    if ((invoer.bron === 'mcp' || invoer.bron === 'handmatig') && !ingesteldeRepo && explicieteRepo.toLowerCase() !== 'tarasevych/hub') {
       throw new GithubOntvangstFout('GITHUB_ONJUISTE_BRON', 403);
     }
   }
 
-  let agentGrant: { id: string; label: string } | null = null;
+  let agentGrant: { id: string; label: string } | null;
+  agentGrant = null;
   if (invoer.bron === 'mcp' && invoer.agentSlug) {
     const g = await actieveGrant([{ soort: 'agent', id: invoer.agentSlug, accountId: invoer.eigenaarId }]).catch(() => null);
     if (g) agentGrant = { id: g.id, label: g.label };
@@ -451,7 +480,7 @@ export async function haalGithubReleaseOp(invoer: {
   let release = invoer.releasePayload || null;
 
   if (!release) {
-    const tag = String(invoer.tag || '').trim();
+    const tag = schoonGithubReleaseTag(invoer.tag);
     if (tag && !TAG_RE.test(tag)) throw new GithubOntvangstFout('TAG_ONGELDIG', 400);
     const pad = tag
       ? `${API}/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`
@@ -779,17 +808,21 @@ export async function startGithubReleaseAchtergrond(invoer: {
   const inst = await githubOntvangstInstellingenVan(invoer.eigenaarId);
   const explicieteRepo = String(invoer.repo || '').trim();
   const ingesteldeRepo = String(inst.repo || '').trim();
-  const repo = String(explicieteRepo || ingesteldeRepo).trim();
+  const standaardHandmatigRepo =
+    (invoer.bron === 'handmatig' || invoer.bron === 'mcp') && !explicieteRepo && !ingesteldeRepo
+      ? 'Tarasevych/hub'
+      : '';
+  const repo = String(explicieteRepo || ingesteldeRepo || standaardHandmatigRepo).trim();
   if (!repo || !REPO.test(repo)) throw new GithubOntvangstFout('REPO_ONGELDIG', 400);
   if (explicieteRepo) {
     if (ingesteldeRepo && explicieteRepo.toLowerCase() !== ingesteldeRepo.toLowerCase()) {
       throw new GithubOntvangstFout('GITHUB_ONJUISTE_BRON', 403);
     }
-    if (invoer.bron === 'mcp' && !ingesteldeRepo && explicieteRepo.toLowerCase() !== 'tarasevych/hub') {
+    if ((invoer.bron === 'mcp' || invoer.bron === 'handmatig') && !ingesteldeRepo && explicieteRepo.toLowerCase() !== 'tarasevych/hub') {
       throw new GithubOntvangstFout('GITHUB_ONJUISTE_BRON', 403);
     }
   }
-  const tag = String(invoer.tag || '').trim();
+  const tag = schoonGithubReleaseTag(invoer.tag);
   if (tag && !TAG_RE.test(tag)) throw new GithubOntvangstFout('TAG_ONGELDIG', 400);
 
   const ontvangstId = (await sys().query(

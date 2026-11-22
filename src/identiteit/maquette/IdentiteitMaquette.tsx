@@ -2,10 +2,12 @@
 // смуга сервісів, герой, картки з елементами макета; під ними в згортаному блоці «Чинні налаштування» — справжні панелі сайту з чинними
 // діями та правами. Оболонка сайту на час вигляду схована; тема й мова беруться із сайту, адресу змінює застосунок.
 // De weergave «Ontwerp»: het ontwerp van de eigenaar één op één, de echte onderdelen van de site in een inklapbaar blok onder de kaarten.
+import { Bell } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import './maquette-omlijsting.css';
 import type { Maquette, MaquetteOpties, MaquetteWeergave } from './maquette-motor';
+import { MELDINGEN_OPENEN_EVENT } from '../../canoniek-meldingen';
 import { useThemaStand, zetWeergaveStijl } from '../../thema/useThema';
 import type { WeergaveStijl } from '../../thema/weergave-stijl';
 import { useZijbalkVoorkeuren, zetZijbalk } from '../../zijbalk-voorkeuren';
@@ -16,6 +18,66 @@ import { GA_NAAR_DIENST } from '../identiteit-vormgeving';
 import { AtelierInhoud, RuimtewisselElders } from '../atelier-inhoud';
 
 export type MaquetteGebruiker = { naam: string; foto: string } | null;
+
+/** Жива пігулка дзвіночка у верхній смузі «Макета» (MELDPANEEL-003): синхронізує лічильник і стан зі схованою оболонкою сайту. */
+function MaquetteBelKnop({ lang }: { lang: 'uk' | 'nl' }) {
+  const [teller, setTeller] = useState('');
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof MutationObserver !== 'function') return undefined;
+    const lees = () => {
+      const bel = document.querySelector<HTMLButtonElement>('.canonical-notification-bell');
+      if (!bel) return;
+      setOpen(bel.getAttribute('aria-expanded') === 'true');
+      setTeller((bel.querySelector('small')?.textContent || '').trim());
+    };
+    lees();
+    const doel = document.querySelector('.canonical-chrome') || document.body;
+    const w = new MutationObserver(lees);
+    w.observe(doel, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['aria-expanded'],
+    });
+    return () => w.disconnect();
+  }, []);
+
+  const label = teller
+    ? lang === 'uk'
+      ? `Непрочитаних сповіщень: ${teller}`
+      : `Ongelezen meldingen: ${teller}`
+    : lang === 'uk'
+      ? 'Сповіщення'
+      : 'Meldingen';
+
+  const klik = () => {
+    const bel = document.querySelector<HTMLButtonElement>('.canonical-notification-bell');
+    if (bel) {
+      bel.click();
+      return;
+    }
+    window.dispatchEvent(new CustomEvent(MELDINGEN_OPENEN_EVENT));
+  };
+
+  return (
+    <button
+      type='button'
+      className='mq-bel-knop'
+      data-bel-anker='maquette'
+      data-qa-id='maquette-notification-bell'
+      aria-expanded={open}
+      aria-label={label}
+      title={label}
+      onClick={klik}
+    >
+      <Bell aria-hidden='true' />
+      {teller ? <b className='mq-bel-teller'>{teller}</b> : null}
+    </button>
+  );
+}
 
 /** Типовий розділ адреси: з ним сторінка відкривається на герої макета, як і сам макет; інші розділи прокручуються до себе. */
 const TYPISCH = 'personalization';
@@ -115,6 +177,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
   const motor = useRef<Maquette | null>(null);
   // Гнізда .mq-echt у живій розмітці; картки будуються рядком HTML, тож після кожного перемальовування збираємо їх знову.
   const [gaten, setGaten] = useState<HTMLElement[]>([]);
+  const [belHouder, setBelHouder] = useState<HTMLElement | null>(null);
   // IDENTITEIT-011: один сталий контейнер на розділ. Двигун перемальовує картки рядком HTML і створює нові гнізда, а контейнер
   // лише переноситься в нове гніздо — React-стан панелі (введений текст, відкриті форми) не губиться.
   // Eén vaste houder per onderdeel: bij hertekenen verhuist alleen de houder, de React-toestand van het paneel blijft behouden.
@@ -168,6 +231,15 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
     ]).then(([{ MAQUETTE_SJABLOON }, { startMaquette }]) => {
       if (!actiefMount || !wortel.current) return;
       root.innerHTML = MAQUETTE_SJABLOON;
+      const topActies = root.querySelector<HTMLElement>('.topbar .top-actions');
+      if (topActies) {
+        const anker = document.createElement('span');
+        anker.className = 'mq-bel-houder';
+        const avatar = topActies.querySelector('.top-avatar');
+        if (avatar) topActies.insertBefore(anker, avatar);
+        else topActies.appendChild(anker);
+        setBelHouder(anker);
+      }
       const m = startMaquette(root, {
         lang,
         licht: helder(),
@@ -203,6 +275,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
       kijker?.disconnect();
       motorActief?.stop();
       motor.current = null;
+      setBelHouder(null);
       root.innerHTML = '';
     };
     // Мова перезапускає двигун (усі тексти макета — з його словника); решта оновлюється окремими ефектами.
@@ -234,6 +307,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
   return (
     <>
       <div ref={wortel} className='mr-mq' lang={lang} data-vormgeving='maquette' />
+      {belHouder ? createPortal(<MaquetteBelKnop lang={lang} />, belHouder, 'mq-bel') : null}
       {/* Межі розділів, як у класичному вигляді: гнізда «Способи входу», «Безпека», «Відновлення» показують лише свій розділ. */}
       <AtelierInhoud.Provider value={true}><RuimtewisselElders.Provider value={true}>
         {gaten.map((gat) => {

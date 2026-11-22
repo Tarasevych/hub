@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-023/20261122-074500-antigravity",
+  "taakId": "KLIMOP-023",
+  "tijd": "2026-11-22T07:45:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "samenvoeging",
+  "wat": {
+    "uk": "Підготовка та оприлюднення узгодженого випуску KLIMOP-023 (mijn-ruimte-<versie>.tar.gz з походженням TRACE-001) поверх живої встановленої основи 20261120-141041 (ba289fa919c66765b6fc5565d340976994261c05) та інтеграційної вершини 32822354ea08fc850330eed96feaff5b1bb96a58: включено всі Етапи 0–16 екосистеми «Плющ» (запити №183–№199), усі п’ять хвиль виправлень KLIMOP-018..KLIMOP-022 за незалежними перевірками AUDIT-002 і AUDIT-003 (запити №200–№204), спільну мовну навичку movnyi-zakon, рішення B-024/B-025 (regelsVersie 1.6.0), узгодження лічильника активних ключів beheer (89 із 213) у mcp-toegang-diagnose-20261101.test.ts, досьє походження orchestratie/ontwikkelarchieven/KLIMOP-023.json та ізольований конвеєр оприлюднення .github/workflows/klimop-023-uitgave.yml зі збереженням усього ланцюжка авторства моделей (Gemini 4 Carbon (High), GPT-6.2 Astra (Ультра), Claude Opus 5.5 (High)).",
+    "nl": "Voorbereiding en publicatie van de afgestemde cumulatieve uitgave KLIMOP-023 (mijn-ruimte-<versie>.tar.gz met TRACE-001-herkomst) boven op de geïnstalleerde basis 20261120-141041 (ba289fa919c66765b6fc5565d340976994261c05) en integratietop 32822354ea08fc850330eed96feaff5b1bb96a58: omvat alle Fasen 0–16 van het ecosysteem «Klimop» (nr. 183–199), alle vijf herstelgolven KLIMOP-018..KLIMOP-022 naar aanleiding van AUDIT-002 en AUDIT-003 (nr. 200–204), de gedeelde vaardigheid movnyi-zakon, besluiten B-024/B-025 (regelsVersie 1.6.0), het ontwikkeldossier KLIMOP-023.json en de geïsoleerde uitgavewerkstroom klimop-023-uitgave.yml met volledige auteurschapsketen."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника підготувати узгоджений пакунок оновлення сайту із походженням TRACE-001 від нової основи integratie 32822354ea08fc850330eed96feaff5b1bb96a58 зі збереженням усієї історії участі моделей для сторінки оновлень без самовільного встановлення на живий сервер.",
+    "nl": "Rechtstreekse opdracht van de eigenaar om een afgestemd uitrolpakket met TRACE-001-herkomst voor te bereiden vanaf integratie 32822354ea08fc850330eed96feaff5b1bb96a58 met behoud van alle modelbijdragen zonder automatische installatie."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-022/20261121-213500-antigravity",
+    "AUDIT-003/20261121-193700-antigravity",
+    "KLIMOP-021/20261121-182221-antigravity",
+    "KLIMOP-020/20261121-162725-antigravity",
+    "KLIMOP-020/20261121-152856-antigravity",
+    "KLIMOP-019/20261121-150914-antigravity",
+    "KLIMOP-018/20261121-143926-antigravity",
+    "AUDIT-002/20261121-140000-chatgpt"
+  ],
+  "tak": "feature/klimop-023-uitgave-20261121-234300",
+  "pr": 205,
+  "onderwerpen": [
+    "ecosysteem-klimop",
+    "auteurschap-en-vaardigheden"
+  ]
+}

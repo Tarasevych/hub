@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "taakId": "KLIMOP-023",
+  "datum": "2026-11-22",
+  "taal": "uk",
+  "titel": "KLIMOP-023 · Узгоджений випуск цільової екосистеми «Плющ» Етапів 0–16, п’яти хвиль перевірених виправлень (KLIMOP-018..022), спільної мовної навички movnyi-zakon та повного обліку моделей (B-024, B-025)",
+  "opdracht": "За прямим дорученням власника від 21–22.11.2026 підготувати та оприлюднити узгоджений кумулятивний пакунок оновлення сайту mijn-ruimte-<versie>.tar.gz із походженням TRACE-001 поверх встановленої на живому сервері версії UPD-013 (20261120-141041 @ ba289fa919c66765b6fc5565d340976994261c05) та інтеграційної вершини integratie 32822354ea08fc850330eed96feaff5b1bb96a58. Пакунок об’єднує повну програмну, криптографічну й двомовну документаційну реалізацію Етапів 0–16 Головного архітектурного маніфесту «Плющ» (KLIMOP-001..KLIMOP-017, запити №183–№199), усі п’ять хвиль виправлень KLIMOP-018..KLIMOP-022 за незалежними перевірками AUDIT-002 та AUDIT-003 (запити №200–№204), спільну мовну навичку movnyi-zakon для всіх 14 ШІ-агентів, правила координації версії 1.6.0 (рішення B-024 і B-025) та повний прозорий облік участі моделей ШІ на сторінці оновлень сайту без самовільного встановлення на живий сервер чи втручання в робочу базу PostgreSQL 18.6.",
+  "herkomst": {
+    "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
+    "agent": "antigravity",
+    "model": "Gemini 4 Carbon (High)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/klimop-023-uitgave-20261121-234300",
+    "basisCommit": "32822354ea08fc850330eed96feaff5b1bb96a58",
+    "basisVersie": "20261105-061659",
+    "geinstalleerdeBasis": "ba289fa919c66765b6fc5565d340976994261c05",
+    "geinstalleerdeVersie": "20261120-141041",
+    "integratieBasis": "32822354ea08fc850330eed96feaff5b1bb96a58",
+    "regelsVersie": "1.6.0",
+    "regelsHash": "f1b6227978cedd14cecc559a756581689942ed580308898a68bd8cecc7fe47ef",
+    "samengevoegd": [
+      {
+        "taak": "KLIMOP-001..KLIMOP-017 (запити на злиття №183–№199)",
+        "commit": "06312df6c79c0cdfd9c15c01d84519460c3e75ff",
+        "reden": "Повна реалізація Етапів 0–16 екосистеми «Плющ» (25 двомовних документів §44, криптографічні модулі shared/klimop/*.ts, серверний міст Сходинок 1–4, 9 технічних інструментів MCP klimop_* та двомовна панель KlimopPaneel.tsx). Виконавець: Gemini 4 Carbon (High) (Google Antigravity)."
+      },
+      {
+        "taak": "KLIMOP-018..KLIMOP-021 (запити на злиття №200–№203 за перевіркою AUDIT-002)",
+        "commit": "6a705b3857f215a64c2575b770716e4d62438f53",
+        "reden": "Чотири хвилі виправлень усіх 55 знахідок незалежної перевірки AUDIT-002 (проведеної моделлю GPT-6.2 Astra (Ультра)): Хвилі 1–2 та початок Хвилі 3 виконано моделлю Claude Opus 5.5 (High), завершення Хвилі 3 та Хвилю 4 виконано моделлю Gemini 4 Carbon (High)."
+      },
+      {
+        "taak": "KLIMOP-022 (запит на злиття №204 за повторною перевіркою AUDIT-003)",
+        "commit": "32822354ea08fc850330eed96feaff5b1bb96a58",
+        "reden": "П’ята хвиля виправлень із повним закриттям усіх 25 залишкових знахідок повторної перевірки AUDIT-003, злита в integratie (--no-ff) за прямим дозволом власника. Виконавець: Gemini 4 Carbon (High) (Google Antigravity)."
+      }
+    ],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 / TOAST-ONTWERP-001 (запит на злиття №159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Очікує на окремий вибір візуального варіанта спливних сповіщень власником; робоча гілка збережена."
+      }
+    ]
+  },
+  "commits": [
+    "92f2c35d3ab272b43bf154524f702dd992128159",
+    "06312df6c79c0cdfd9c15c01d84519460c3e75ff",
+    "de6e9f0028a21590d7657a1c1765f03999077a47",
+    "99569ae13b0ef12a78cf087f1e88557c162319cb",
+    "9b4b4439222dc70763da786b99bb727651173b3a",
+    "6a705b3857f215a64c2575b770716e4d62438f53",
+    "32822354ea08fc850330eed96feaff5b1bb96a58"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Реалізація Етапів 0–16 маніфесту «Плющ» (KLIMOP-001..KLIMOP-017, запити №183–№199) поверх встановленої версії UPD-013 (20261120-141041 @ ba289fa919c6).",
+      "resultaat": "Створено повний двомовний канон із 25 документів §44, 14 модулів криптографічного ядра shared/klimop/*.ts, серверні клієнти та вузловий агент, 12 відтворюваних стендів scripts/klimop-*.mjs, Сходинки 1–4 безризикової перевірки всіх 11 служб, 9 технічних інструментів MCP klimop_* та двомовну панель KlimopPaneel.tsx."
+    },
+    {
+      "stap": "2) Незалежна перехресна перевірка AUDIT-002 (модель GPT-6.2 Astra (Ультра)) та чотири хвилі виправлень KLIMOP-018..KLIMOP-021 (моделі Claude Opus 5.5 (High) та Gemini 4 Carbon (High), запити №200–№203).",
+      "resultaat": "Закрито всі 55 знахідок першої перевірки: сувора межа клієнт/сервер, побайтова відповідність FROST стандарту RFC 9591 (додаток E.1), адресне шифрування DKG, стійкі переходи епох, Меркл v2, детермінований CRDT, межі мандатів, транзакційне сховище передачі стану з WAL і контрольними точками, навичка movnyi-zakon, рішення B-025 (версія правил 1.6.0) та виправлення обліку моделей corrigeert."
+    },
+    {
+      "stap": "3) Повторна незалежна перевірка AUDIT-003 та п’ята хвиля виправлень KLIMOP-022 (запит №204, злито в integratie 32822354ea08).",
+      "resultaat": "Повністю закрито всі 25 залишкових і межових знахідок (6 високих, 11 середніх, 8 низьких): спільний префікс ротацій особи, криптографічна прив’язка політик відновлення, транзитивне відкликання пристроїв без циклів, обов’язковість objectIds і площин влади, первинний якір конституції FROST, замкове відновлення WAL із fsyncSync і повним SHA-256, читання MCP без запису в теку власника, усі 14 модулів ядра у «Насінні», 14 прапорців заборон §43 на панелі, багатоланкова підписана естафета й автоматичне хвильове повернення."
+    },
+    {
+      "stap": "4) Передвипускна перевірка основи сервера (20261120-141041 @ ba289fa919c6), очищення імпорту типу в KlimopPaneel.tsx для browser-gedeeld, узгодження лічильника активних ключів beheer (89 із 213) у mcp-toegang-diagnose-20261101.test.ts та формування пакунка випуску KLIMOP-023.",
+      "resultaat": "Підтверджено пряме походження integratie (32822354ea08) від живої версії сервера ba289fa919c6 (50 фіксацій змін уперед, 0 розбіжних фіксацій); пройдено browser-gedeeld (3/3), усі 22 набори klimop-001..022, усі 12 стендів Етапів 0 і 2–12, orch controleer і всі безбазові та післяскладальні тести."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Зібрати та оприлюднити пакунок KLIMOP-023 через ізольований конвеєр GitHub Actions (.github/workflows/klimop-023-uitgave.yml) із подвійним прогоном усіх міграцій на чистій службі PostgreSQL у середовищі складання трьома ролями та перевіркою живої основи 20261120-141041 @ ba289fa919c6.",
+      "reden": "Забезпечує офіційне походження випуску від імені github-actions[bot] без червоного прапорця ручного завантаження, повне тестування всіх 120 БД-залежних випробувань із трьома ролями БД, автоматичне підписання CRX3 0.9.7 та подвійну перевірку TRACE-001 до і після публікації."
+    },
+    {
+      "besluit": "Зберегти в UITROL-MANIFEST.json та BIJDRAGEN.json увесь ланцюжок трьох моделей ШІ (Gemini 4 Carbon (High), GPT-6.2 Astra (Ультра), Claude Opus 5.5 (High)) і записів виправлення corrigeert.",
+      "reden": "На сторінці Адміністрування → Оновлення власник бачить повну й правдиву історію того, яка модель розробляла етапи, яка модель проводила перехресну перевірку та які моделі виконували п’ять хвиль виправлень."
+    },
+    {
+      "besluit": "Реекспортувати типи KlimopControleVraagId та KlimopVerbodenVereenvoudigingId через чистий клієнтський міст shared/klimop-overzicht-model.ts замість прямого імпорту типу із shared/klimop/kern.ts у src/agenten/KlimopPaneel.tsx.",
+      "reden": "Гарантує безпомилкове проходження суворого ізоляційного випробування browser-gedeeld-20261022.test.ts, яке компілює кожен згаданий у src/ спільний файл у чистому оточенні переглядача без вбудованих модулів Node.js."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/klimop/*.ts, backend/klimop-*.ts, src/klimop/klimop-klant.ts, src/agenten/KlimopPaneel.tsx, scripts/klimop-*.mjs, scripts/klant-servergrens-controle.mjs",
+      "omschrijving": "Повне програмне ядро екосистеми «Плющ» (14 спільних модулів, 13 серверних модулів і клієнтів Сходинок 1–4, 9 технічних інструментів MCP klimop_*, двомовна вебпанель у розділі «Координація», 12 ізольованих стендів Етапів 0 та 2–12 і перевіряльник клієнт-серверної межі)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": ".agents/skills/klimop-architectuur/*, .agents/skills/movnyi-zakon/*, docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md, docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md, docs/hub/ПЛЮЩ-ЕТАП-*.uk.md, docs/hub/KLIMOP-FASE-*.nl.md, docs/hub/ПЛЮЩ-ВИПРАВЛЕННЯ-ЗА-НЕЗАЛЕЖНОЮ-ПЕРЕВІРКОЮ.uk.md, docs/hub/KLIMOP-HERSTEL-NA-ONAFHANKELIJKE-CONTROLE.nl.md",
+      "omschrijving": "Усі 25 обов’язкових двомовних документів §44 маніфесту «Плющ», зведений звіт п’яти хвиль виправлень та дві нові спільні навички для всіх 14 ШІ-агентів (klimop-architectuur і movnyi-zakon)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "AGENTS.md, AGENTENREGELS.nl.md, orchestratie/beleid.json, orchestratie/BESLUITEN.md, orchestratie/regels.lock.json, перехідники 14 агентів, src/agenten/TabOrch.tsx, src/uitrol/UitgaveBeschrijving.tsx, shared/uitrol-manifest.ts, shared/zoek-ui-knoppen.generated.ts, docs/hub/ХРОНОЛОГІЯ-ГІЛОК.uk.md, docs/hub/KRONIEK-TAKKEN.nl.md",
+      "omschrijving": "Правила координації версії 1.6.0 (рішення B-024 та B-025), підтримка неруйнівного уточнення моделі corrigeert на сторінці оновлень, доповнена хронологія гілок і оновлений пошуковий покажчик інтерфейсу (1839 елементів)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/klimop-001..klimop-022*.test.ts, orchestratie/onderwerpen/ecosysteem-klimop.json, orchestratie/bijdragen/KLIMOP-001..023/*, orchestratie/bijdragen/AUDIT-002..003/*, orchestratie/ontwikkelarchieven/KLIMOP-023.json, .github/workflows/klimop-023-uitgave.yml",
+      "omschrijving": "22 набори модульних і мережевих регресійних випробувань екосистеми «Плющ», повне досьє функції та облік авторства всіх моделей, журнал походження TRACE-001 і конвеєр оприлюднення випуску KLIMOP-023."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/klimop-overzicht-model.ts, src/agenten/KlimopPaneel.tsx, tests/eenheid/mcp-toegang-diagnose-20261101.test.ts, tests/eenheid/upd-011-telegram-3f-terugdraai-20261120.test.ts, tests/eenheid/ontwerp-fundament-20261020.test.ts",
+      "omschrijving": "Чистий реекспорт типів для переглядача (browser-gedeeld 3/3), семантична перевірка regelsVersie >= 1.4.18 (upd-011 5/5), перевірка порядку kleur-contrast-controle перед vite build (ontwerp-fundament 40/40) та узгодження очікуваної кількості активних ключів beheer у З’єднувачі другої версії (89 із 213 з урахуванням 9 інструментів klimop_*)."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": "deploy/klimop-proefnetwerk/docker-compose.proef.yml",
+      "uk": "Лабораторний опис ізольованої місцевої мережі з 3 тестових вузлів для ручних випробувань Етапу 2 «Плюща»: не підключається до робочих служб, не має прав суперкористувача чи доступу до живої бази даних і ніколи не запускається автоматично встановлювачем сервера.",
+      "nl": "Laboratoriumopstelling van een geïsoleerd lokaal proefnetwerk met 3 testknooppunten voor handmatige proeven van Fase 2 van «Klimop»: raakt geen productiediensten of databank aan, heeft geen verhoogde rechten en wordt nooit automatisch door het installatieprogramma gestart."
+    },
+    {
+      "pad": ".github/workflows/klimop-023-uitgave.yml",
+      "uk": "Ізольований сценарій збирання та оприлюднення випуску KLIMOP-023: без pull_request_target і без secrets.*, усі сторонні дії закріплені 40-символьними відбитками фіксацій, persist-credentials: false, npm ci --ignore-scripts; проганяє всі тести й подвійні міграції PostgreSQL трьома ролями та публікує архів на GitHub без автоматичного встановлення на живий сервер.",
+      "nl": "Geïsoleerde bouw- en publicatiewerkstroom voor uitgave KLIMOP-023: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s, persist-credentials: false en npm ci --ignore-scripts; draait alle tests en dubbele PostgreSQL-migraties met drie rollen en publiceert zonder automatische installatie op de productieserver."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера, перевірка клієнт-серверної межі й повне виробниче складання (сайт, макет, розширення з підписаним CRX3 0.9.7 і серверний пакунок) пройшли з кодом 0."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs klimop && усі 12 стендів scripts/klimop-*.mjs && browser-gedeeld-20261022 && historie-kroniek && 20 хмарних + 155 безбазових + 13 післяскладальних тестів",
+      "resultaat": "Усі 22 набори klimop-001..klimop-022, усі 12 стендів Етапів 0 і 2–12, browser-gedeeld (3/3), historie-kroniek (18/18), orch controleer, behoud, versheid, vaardigheden/valideer (13 навичок, 213 ключів), zoek-ui-catalogus --controle (1839 елементів) та 8 живих проходів у переглядачі Chromium пройшли без жодної помилки (код 0)."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/klimop-023-uitgave.yml",
+      "resultaat": "Звіряє живу встановлену основу на сервері (20261120-141041 @ ba289fa919c6), проганяє повний набір модульних, хмарних, післяскладальних і 120 БД-залежних випробувань з подвійним накатом усіх міграцій на чистій PostgreSQL 16 трьома ролями (за повної зворотної сумісності з робочою PostgreSQL 18.6), формує пакунок випуску, перевіряє pakketVoorcontrole та root-trace.py і оприлюднює випуск у GitHub Releases без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "ANTIGRAVITY.md",
+    "orchestratie/beleid.json",
+    "orchestratie/BESLUITEN.md",
+    "docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md",
+    "shared/ontwikkelarchief.ts",
+    "https://mcp.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Оприлюднений пакунок ніколи не встановлюється автоматично: встановлення запускається виключно власником у розділі Адміністрування → Оновлення після перевірки свіжої запасної копії на R:\\mijn-ruimte-reservekopie\\, зеленої попередньої перевірки та підтвердження власним ключем доступу.",
+    "Чинна робоча інфраструктура та жива база даних PostgreSQL 18.6 залишаються первинним джерелом запису; будь-яке самовільне відокремлення чинної бази програмно заблоковане (KLIMOP_LOSKOPPELING_VERBODEN, 403).",
+    "Критичні політики в розділі kritiek не змінювалися."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано виключно штучні тестові зразки та публічні метадані координації; жодних паролів, закритих ключів, маркерів доступу чи вмісту особистих повідомлень до журналу не включено."
+  }
+}

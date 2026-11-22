@@ -2,8 +2,9 @@
 
 # Runbook: veilige agenten 0.4 (extensie 0.4.0, toestemmingen per gebruiker, auditfixes)
 
-Branch `veilig-agenten-0.4`. Dit document beschrijft wat er verandert, hoe je het op de VM zet en hoe je controleert dat
-het werkt. De uitrol van de deur zelf (ondertekende pakketten, geen root-pad) staat in `RUNBOOK-VEILIGE-UITROL.md`.
+> **Geldende regelcanon en architectuur per 20.11.2026 (`KLIMOP-001`, `B-024`, regelversie `1.5.0`):** de enige canonieke regelbron voor **alle 14 AI-agentintegraties** (`claude`, `chatgpt`, `codex`, `grok`, `gemini`, `copilot`, `mscopilot`, `cursor`, `antigravity`, `autoclaw`, `windsurf`, `cline`, `devin`, `opencode`) is [`AGENTENREGELS.nl.md`](../AGENTENREGELS.nl.md) ([`AGENTS.md`](../AGENTS.md)) samen met [`orchestratie/beleid.json`](../orchestratie/beleid.json); de doelarchitectuur staat in het [Hoofdarchitectuurmanifest «Klimop»](../docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) (§1.4 «Hechtranken», §5.2, §26). Geen enkele AI-agent of clientproces heeft alleenmacht, een verborgen opdrachtregel of toestemming om de productie-infrastructuur onmiddellijk te wijzigen. De afzonderlijke korte agentadressen staan in [`deploy/VERBINDER-EEN-PAD.nl.md`](VERBINDER-EEN-PAD.nl.md).
+
+Branch `veilig-agenten-0.4`. Dit historisch-operationele document beschrijft de basismechanismen van toestemmingen 0.4, hoe u deze op de VM plaatst en hoe u controleert dat alles werkt. De uitrol van de deur zelf (ondertekende pakketten, geen direct root-pad) staat in `RUNBOOK-VEILIGE-UITROL.nl.md`.
 
 ## 1. Wat er verandert
 

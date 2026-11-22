@@ -53,6 +53,7 @@ export function Bijdragen({ lang, lijst, verwijzingen = [] }: { lang: Lang; lijs
             <b>{b.wie.naam}</b>{b.wie.model ? <small className='ut-hint'> · {b.wie.model}</small> : null}
             {' '}<span className='ut-bijdrage-soort'>{tr(lang, SOORT[b.soort][0], SOORT[b.soort][1])}</span>
             {b.opdrachtgever?.naam ? <small className='ut-hint'> · {tr(lang, 'доручив', 'opdracht van')} {b.opdrachtgever.naam}</small> : null}
+            {b.eerderGeregistreerd ? <small className='ut-hint' title={tr(lang, 'Виконавця в обліку виправлено окремим записом: первинний запис зберігається в історії.', 'De uitvoerder is met een aparte registratie gecorrigeerd; de oorspronkelijke registratie blijft in de geschiedenis.')}> · {tr(lang, 'в обліку виправлено, було:', 'gecorrigeerd, eerder:')} {b.eerderGeregistreerd.naam}{b.eerderGeregistreerd.model ? ` · ${b.eerderGeregistreerd.model}` : ''}</small> : null}
             <br /><span>{wat}</span>
             {waarom ? <><br /><small className='ut-hint'>{tr(lang, 'Чому: ', 'Waarom: ')}{waarom}</small></> : null}
             {verwijzingen.length ? null : b.pr ? <><br /><small><a href={`${PR_ADRES}${b.pr}`} target='_blank' rel='noreferrer noopener' title={tr(lang, 'Відкрити запит на злиття на GitHub: там повна історія змін і обговорення', 'Pull request op GitHub openen: volledige geschiedenis en bespreking')}>#{b.pr}</a>{b.tak ? ` · ${b.tak}` : ''}</small></> : b.tak ? <><br /><small className='ut-hint'>{b.tak}</small></> : null}

@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-003/20261120-183433-antigravity",
+  "taakId": "KLIMOP-003",
+  "tijd": "2026-11-20T18:34:33.580Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Після злиття запиту №184 у integratie реалізовано Етап 2 маніфесту «Плющ»: криптографічний протокол захищених зв’язків «Стебла» (shared/klimop/stengels.ts: X25519 + Ed25519 + HKDF-SHA-256, ChaCha20-Poly1305 / AES-256-GCM, вирівнювання до 256 байт, захист від повторів і маршрутизація), живий ізольований мережевий вузол та клієнт (backend/klimop-knooppunt-agent.ts), відтворюваний стенд 3 незалежних вузлів NL/CH/UA з обходом розривів через наскрізну естафету й карантином (scripts/klimop-proefnetwerk.mjs, docker-compose.proef.yml), двомовна документація Етапу 2 та інтеграційні випробування."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника від 20.11.2026: злити KLIMOP-002 у integratie та приступити до наступного етапу з відповідним продовженням (Етап 2 — випробувальна мережа незалежних вузлів і протокол Стебла)."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-002/20261120-180746-antigravity"
+  ],
+  "tak": "feature/klimop-003-etappe2-proefnetwerk-20261120-182000",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

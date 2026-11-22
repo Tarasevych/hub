@@ -49,14 +49,14 @@ function pythonCmd(): string {
 
 function maakOrchRepo() {
   const R = mkdtempSync(join(tmpdir(), 'orch-mcp-int-'));
+  const adapters: string[] = JSON.parse(readFileSync('orchestratie/beleid.json', 'utf8')).adapters.bestanden;
   for (const p of [
-    'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'ANTIGRAVITY.md', 'CHATGPT.md', 'CODEX.md', 'GROK.md', '.cursorrules',
+    'AGENTS.md', ...adapters,
     'scripts/orch.mjs', 'scripts/orch', 'orchestratie/beleid.json', 'orchestratie/BESLUITEN.md',
     'orchestratie/eigenaar-ondertekenaars', 'orchestratie/sjablonen',
   ]) {
     cpSync(p, join(R, p), { recursive: true });
   }
-  cpSync('.github/copilot-instructions.md', join(R, '.github/copilot-instructions.md'));
   mkdirSync(join(R, 'src'), { recursive: true });
   writeFileSync(join(R, 'src/a.ts'), 'export const a = 1;\n');
   writeFileSync(join(R, 'orchestratie/wachtrij.json'), JSON.stringify({

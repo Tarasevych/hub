@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "MELDPANEEL-002/20261122-105400-antigravity",
+  "taakId": "MELDPANEEL-002",
+  "tijd": "2026-11-22T10:54:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Втілено сучасну єдину панель сповіщень «Пульт уваги, спокою та дії» (MELDPANEEL-002) у двох розмірах — компактному під дзвіночком (compactBijBel) та розгорнутому двоколонковому вікні — без дублювання й без захаращення простору, спеціально адаптоване для швидкого візуального сприйняття людьми з розсіяною увагою: офіційні фірмові логотипи всіх 14 ШІ-агентів і служб з єдиного реєстру src/merk/ (<Merk>), кольорово-піктограмні чипи форматів файлів (XLSX/CSV, PDF, IMG/SVG, DIFF, AUD, VID, ICS, VCF, JSON, АРХІВ), непідробна смарагдова печатка ядра «Плющ» (data-puls-zegel=klimop), автоматичне склеювання пов’язаних збоїв одного кореня у вузол «Першопричина» з відновленням в 1 дотик, прозорий радіус дії мандата ШІ («Лише 1 раз» / «На 15 хв»), 15-секундне Спокійне зведення фонових дій, 6 видів умовного відкладення (на ПК, у розділі, після дії, завтра о 09:00, 30 хв, 1 год), 5-секундна смужка повернення дії (Ctrl+Z), клавіатурна навігація (↑↓, Пробіл, S, E), тиха «Жива капсула перебігу» біля дзвіночка, повага спливних вікон до потоку набору тексту та розумна підказка тиші.",
+    "nl": "Uitvoering van het ene moderne meldingenpaneel «Aandachts-, Rust- en Actiepuls» (MELDPANEEL-002) in twee groottes — compact bij de bel en uitgeklapt tweekolomsvenster — met luchtig minimalisme en visuele ankers voor verstrooide aandacht: officiële merklogo’s van alle 14 AI-agenten en diensten uit src/merk/ (<Merk>), semantische bestandspictogrammen, onvervalsbaar Klimop-kernzegel, automatische bundeling van oorzaakketens, transparante AI-mandaatstraal, rustig 15-secondenoverzicht, 6 vormen van voorwaardelijk uitstel, 5-seconden ongedaan maken (Ctrl+Z), toetsenbordbesturing, stille voortgangspil bij de bel, uitstel van pop-ups tijdens typen en slimme stiltesuggestie."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника (22.11.2026) після огляду візуальних порівнянь ДО і ПІСЛЯ втілити схвалену концепцію ідеальної сучасної панелі сповіщень з наочними логотипами й піктограмами у кнопках, службах і файлах для збереження фокусу та підтримки розсіяної уваги.",
+    "nl": "Rechtstreekse opdracht van de eigenaar (22.11.2026) om het goedgekeurde moderne meldingenpaneel met officiële logo’s en semantische pictogrammen te realiseren voor snel overzicht en behoud van aandacht."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-023/20261122-074500-antigravity",
+    "UPD-013/20261120-102343-gemini"
+  ],
+  "tak": "feature/meldpaneel-002-aandachtspuls-20261122-020900",
+  "onderwerpen": [
+    "meldingen",
+    "ecosysteem-klimop"
+  ]
+}

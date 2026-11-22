@@ -2,11 +2,13 @@
 
 # Mijn Ruimte-connector voor Claude (claude.ai → Customize → Connectors)
 
+> **Belangrijk per 20.11.2026 (`KLIMOP-001`, `B-024`, regels `1.5.0`):** het gedeelde adres `https://mcp.tarasevych.com/mcp` hieronder blijft uitsluitend behouden voor achterwaartse compatibiliteit van oudere koppelingen. Gebruik voor alle nieuwe koppelingen de **afzonderlijke connectoradressen van versie 2** voor elk van de **14 AI-agenten** (`/claude`, `/gpt`, `/codex`, `/grok`, `/gemini`, `/githubcopilot`, `/copilot`, `/cursor`, `/antigravity`, `/autoclaw`, `/windsurf`, `/cline`, `/devin`, `/opencode` — zie [`deploy/VERBINDER-EEN-PAD.nl.md`](VERBINDER-EEN-PAD.nl.md) en [`deploy/VERBINDER-V2.nl.md`](VERBINDER-V2.nl.md)) volgens [`AGENTENREGELS.nl.md`](../AGENTENREGELS.nl.md) en de bevoegdheidsgrenzen van het [Hoofdarchitectuurmanifest «Klimop»](../docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md).
+
 Hiermee koppelt u **uw eigen Claude-account** aan de site: Claude (vanuit de Anthropic-cloud) krijgt hulpmiddelen voor **uw eigen
 apparaten** (pc, VM met agent) en uw GitHub-token. Elke geregistreerde gebruiker van de site meldt zich aan met zijn eigen account
 en geeft uitsluitend toegang tot zijn eigen apparaten.
 
-## Adres van de connector
+## Adres van de connector (oud gedeeld pad; voor Claude wordt nu `https://mcp.tarasevych.com/claude` aanbevolen)
 
 ```
 https://mcp.tarasevych.com/mcp

@@ -152,6 +152,9 @@ export function cliBijdrage({ wortel, args }) {
     bouwtVoortOp: [...alle('bouwt-voort-op'), ...alle('voorganger').map((t) => ({ beschrijving: t }))],
     tak: o('tak', git('branch', '--show-current') || taak?.tak || null), pr: o('pr', null) ? Number(o('pr', '')) : null,
     commits, onderwerpen: alle('onderwerp'), parallel: alle('parallel').map((t) => ({ beschrijving: t })), bekendeIds: ids,
+    // KLIMOP-018: --corrigeert <id>… разом із --juist-agent/--juist-platform/--juist-model/--juist-model-bron виправляє виконавця
+    // попередніх записів (вид «correctie»); самі записи не змінюються, пакет і сторінка оновлень показують правильну модель.
+    ...(alle('corrigeert').length ? { corrigeert: { bijdragen: alle('corrigeert'), uitvoerder: { soort: 'ai', agent: o('juist-agent', ''), platform: o('juist-platform', ''), model: { id: o('juist-model', ''), bron: o('juist-model-bron', 'eigenaar') } } } } : {}),
   });
   if (toon(r.zaken)) { console.log('ORCH bijdrage: НЕ записано · niet vastgelegd'); return 1; }
   const vol = join(wortel, r.pad);

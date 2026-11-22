@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-012",
+  "agent": "antigravity",
+  "tak": "audit/klimop-012-etappe11-beveiligingsaudit-dreigingen-20261121-045500",
+  "basisCommit": "89293d0b4eaac12084f17c21681479e46b35aa20",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T04:55:20.571Z",
+  "bijgewerkt": "2026-11-21T04:55:20.571Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

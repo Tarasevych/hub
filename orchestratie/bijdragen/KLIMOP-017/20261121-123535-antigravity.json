@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-017/20261121-123535-antigravity",
+  "taakId": "KLIMOP-017",
+  "tijd": "2026-11-21T12:35:35.315Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Виконано Етап 16 впровадження екосистеми Плющ за розділами 35, 10, 13 і 34 Головного архітектурного маніфесту: Сходинка 4 кворумного атестата готовності на між’юрисдикційному кворумі 3 незалежних вузлів NL/CH/UA через бездилерський DKG (2-з-3), пороговий підпис Шнорра FROST(Ed25519, SHA-512) RFC 9591 із поіменним виявленням підроблених часток та гібридний постквантовий підпис Ed25519 + ML-DSA-65 FIPS 204, прив’язаний до голів журналів Сходинок 2–3, збережуваний журнал quorum-attesten-kluis.jsonl із повторною криптоперевіркою обох підписів, дія власника bevestig_quorum_gereedheid, технічні інструменти klimop_quorum_attest і klimop_quorum_logboek (разом 9 інструментів klimop_*) для 14 ШІ-агентів, оновлена двомовна панель KlimopPaneel.tsx та двомовні статті Етапу 16 без вимкнення живої бази PostgreSQL 18.6"
+  },
+  "waarom": {
+    "uk": "Прямий дозвіл власника злити запит №198 до integratie та виконати завершальну Сходинку 4 (Етап 16, KLIMOP-017) зі збереженням повної недоторканності живої бази PostgreSQL 18.6"
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-016/20261121-115236-antigravity"
+  ],
+  "tak": "feature/klimop-017-quorum-attest-stap4-20261121-120330",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

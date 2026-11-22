@@ -32,3 +32,27 @@ Alle 227 takken zijn vergeleken, ook de 37 takken met de oude geschiedenis van v
 ## Ontwerp: één paneel, twee maten
 
 Hetzelfde paneel bij de bel en uitgeklapt als venster: dezelfde kop, tabbladen «Нові · Відкладені · Прочитані · Архів», kanaalchips met logo's, gevaar bovenaan als X4-kaart, compacte rijen met «⋯»-menu, in het venster lijst links en details rechts (X4-strook, bijlagen, AI-duiding), op de telefoon een blad met vegen. Eén getal, één statusopslag, één regelspagina. Schermafdrukken: `/mnt/project-files/meldpaneel-001/ontwerp/`.
+
+## Realisatie MELDPANEEL-002 — «Aandachts-, Rust- en Actiepuls» (22.11.2026)
+
+Na beoordeling van de visuele vergelijkingen heeft de eigenaar (Pavlo Tarasevych) de uitvoering van één modern paneel in twee groottes (`compactBijBel` bij de bel en uitgeklapt tweekolomsvenster) goedgekeurd, met luchtig minimalisme, onmiddellijke visuele herkenning voor verstrooide aandacht en officiële merktekens uit `src/merk/` plus semantische bestandspictogrammen in plaats van kale tekstlabels.
+
+Uitgevoerd in `shared/meldingen-puls/`, `src/meldingen/puls/`, `src/meldingen/ecosysteem/` en `src/CanoniekMeldingencentrum.tsx`:
+
+1. **Één paneel in twee groottes en één getal op de bel:** compact bij de bel én breed venster delen dezelfde stroom, statusopslag en schakelaar «Venster ↔ Compact», met behoud van alle bestaande mogelijkheden.
+2. **Visuele ankers uit het merkregister (`REESTR-LOGO-001`):** alle 14 AI-agenten en bekende diensten gebruiken `<Merk>` zonder gissingen bij onbekende afzenders; bijlagen tonen kleur- en formaatankers (`XLSX/CSV`, `PDF`, `IMG/SVG`, `DIFF`, `AUD`, `VID`, `ICS`, `VCF`, `JSON`, `ARCHIEF`).
+3. **Onvervalsbaar Klimop-kernzegel (`data-puls-zegel="klimop"`):** uitsluitend voor authentieke interne systeem- en beveiligingsgebeurtenissen, nooit voor inkomende post.
+4. **Oorzaakketens (`PulsOorzaakKetenKaart`):** samenhangende storingen van dezelfde bron worden gebundeld tot één herstelknoop met logo’s van alle getroffen onderdelen.
+5. **AI-mandaatstraal (`PulsMandaatStraalBlok`):** toont direct op de kaart wat wel wordt opengesteld, wat strikt afgeschermd blijft en de mandaatduur («Slechts 1 keer» / «15 min»).
+6. **Rustig 15-secondenoverzicht, voorwaardelijk uitstel en respect voor typstroom:** achtergrondtaken in 1 klik opruimen, 6 uitstelvoorwaarden (computer, onderdeel, na taak, morgen 09:00, 30 min, 1 uur), 5-seconden ongedaan maken (`Ctrl+Z`), toetsenbordbesturing (`↑↓`, `Spatie`, `S`, `E`), stille voortgangspil bij de bel, uitstel van niet-kritieke pop-ups tijdens typen en slimme stiltesuggestie na drie keer wegklikken zonder openen.
+
+## Verfijning MELDPANEEL-003 en projectregel MELDINGEN-REGISTER-001 (22.11.2026)
+
+Na live beoordeling van uitgave `20261122-122237` zijn vijf fundamentele verbeteringen doorgevoerd:
+
+1. **Volledige palet- en thema-overerving:** `MeldingenPortaal` en de modale bijlagespeler worden gemonteerd binnen `.canonical-chrome` zonder vaste gele inline-variabelen, zodat lichte, pruimkleurige en donkere paletten exact worden overgenomen.
+2. **Meer dan 80% werkruimte voor meldingskaarten:** zoekveld en kanaalchips staan in een uitklapbare filterlade achter de zoekknop in de kop (toets `/`), met compacte eenregelige tabbladen en voettekst.
+3. **Vrij 8-richtingen schalen in beide modi en vaste bel-uitlijning:** alle 8 rand- en hoekgrepen (`.mel-rand`) werken zowel in het uitgeklapte venster als bij het compacte paneel, en wisselen tussen «Venster ↔ Compact» of volledig scherm behoudt altijd de juiste uitlijning bij de zichtbare bel.
+4. **Levende belpil op `https://id.tarasevych.com/melding`:** in de bovenbalk van de weergave «Ontwerp» (`IdentiteitMaquette.tsx`) staat een reactieve belknop met teller waaronder het meldingenpaneel direct opent.
+5. **Levend register van 506 meldingssoorten en actiecodes (`MELDINGEN-REGISTER-001`, besluit `B-026`, `regelsVersie: 1.7.0`):** nul ongeclassificeerde `'overig'`-codes, uitsluiting van zelfmeldingen (`owner.meldingen.ecosysteem.actie` / `profiel`), live verkenner op `/melding#melding-register` en automatische poortwachter `scripts/meldingen-register-controle.mjs` tijdens `npm run build`.
+

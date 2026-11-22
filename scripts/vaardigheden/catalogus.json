@@ -542,7 +542,7 @@
     {
       "naam": "bijdragen-vastleggen",
       "pad": ".agents/skills/bijdragen-vastleggen/SKILL.md",
-      "versie": "1.0.0",
+      "versie": "1.1.0",
       "afhankelijkheden": [
         "ontwikkelgeheugen-bewaken"
       ],
@@ -598,7 +598,12 @@
             "cursor",
             "chatgpt",
             "grok",
-            "autoclaw"
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
           ]
         },
         {
@@ -614,7 +619,12 @@
             "cursor",
             "chatgpt",
             "grok",
-            "autoclaw"
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
           ]
         },
         {
@@ -630,7 +640,12 @@
             "cursor",
             "chatgpt",
             "grok",
-            "autoclaw"
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
           ]
         },
         {
@@ -646,8 +661,259 @@
             "cursor",
             "chatgpt",
             "grok",
-            "autoclaw"
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
           ]
+        }
+      ]
+    },
+    {
+      "naam": "klimop-architectuur",
+      "pad": ".agents/skills/klimop-architectuur/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "project-verkennen",
+        "ontwikkelgeheugen-bewaken"
+      ],
+      "titel": {
+        "uk": "Архітектура живої цифрової екосистеми «Плющ»",
+        "nl": "Architectuur van het levende digitale ecosysteem «Klimop»"
+      },
+      "samenvatting": {
+        "uk": "Головний архітектурний маніфест «Плющ»: 7 елементів, відсутність одноосібної влади, 15 питань перевірки змін, 14 заборонених спрощень і Етапи 0–12 без самовільної зміни робочого середовища.",
+        "nl": "Hoofdarchitectuurmanifest «Klimop»: 7 structuurelementen, geen alleenheerschappij, 15 architectuurcontrolevragen, 14 verboden vereenvoudigingen en Fasen 0–12 zonder eigenmachtige productiewijziging."
+      },
+      "termen": {
+        "uk": [
+          "екосистема плющ",
+          "архітектурний маніфест",
+          "цифровий плющ",
+          "маніфест плющ",
+          "плющ",
+          "коріння стебла листя вусики",
+          "незалежні вузли",
+          "порогові підписи фрост",
+          "захист від примусу",
+          "перевірюваний поділ секретів",
+          "постквантова криптографія",
+          "15 питань архітектурної перевірки",
+          "заборонені спрощення"
+        ],
+        "nl": [
+          "ecosysteem klimop",
+          "architectuurmanifest",
+          "digitale klimop",
+          "manifest klimop",
+          "klimop",
+          "wortels stengels bladeren hechtranken",
+          "onafhankelijke knooppunten",
+          "drempelhandtekeningen frost",
+          "dwangbestendigheid",
+          "postkwantumcryptografie",
+          "15 architectuurcontrolevragen",
+          "verboden vereenvoudigingen"
+        ]
+      },
+      "vereisteHulpmiddelen": [],
+      "mogelijkheden": [
+        {
+          "id": "klimop-15-vragen-toets",
+          "uk": "Обов’язкова 15-пунктова архітектурна перевірка кожної зміни перед упровадженням (§42 маніфесту)",
+          "nl": "Verplichte architectuurcontrole van 15 vragen vóór invoering (§42)",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "klimop-verboden-vereenvoudigingen",
+          "uk": "Відсікання 14 заборонених спрощень під час проєктування, написання коду та звітування (§43 маніфесту)",
+          "nl": "Wering van de 14 verboden vereenvoudigingen (§43)",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "klimop-fasen-0-tot-12",
+          "uk": "Поетапний перехід за Етапами 0–12 та 16 напрямами відповідальності агентів без вимкнення чинної інфраструктури (§32–§36, §45)",
+          "nl": "Gefaseerde overgang langs Fasen 0–12 zonder uitschakeling van de productie-infrastructuur",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        }
+      ]
+    },
+    {
+      "naam": "movnyi-zakon",
+      "pad": ".agents/skills/movnyi-zakon/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
+      "titel": {
+        "uk": "Абсолютний мовний закон (uk + nl)",
+        "nl": "Absolute taalwet (uk + nl)"
+      },
+      "samenvatting": {
+        "uk": "Єдиний спільний для 14 агентів текст мовного закону власника: лише чиста українська та нідерландська мови, заборона російської, літер поза українською абеткою, суржику, англійської прози й технічного жаргону, таблиця питомих відповідників і автоперевірка перед кожною дією.",
+        "nl": "De enige gedeelde tekst van de taalwet van de eigenaar voor alle 14 agenten: uitsluitend zuiver Oekraïens en Nederlands, verbod op Russisch, letters buiten het Oekraïense alfabet, mengtaal, Engels proza en jargon, met een tabel van eigen termen en zelfcontrole vóór elke handeling."
+      },
+      "termen": {
+        "uk": [
+          "мовний закон",
+          "абсолютний мовний закон",
+          "чиста українська",
+          "двомовність",
+          "суржик",
+          "русизми",
+          "технічний жаргон",
+          "питомі відповідники"
+        ],
+        "nl": [
+          "taalwet",
+          "absolute taalwet",
+          "zuiver nederlands",
+          "tweetaligheid",
+          "mengtaal",
+          "jargon",
+          "eigen termen"
+        ]
+      },
+      "vereisteHulpmiddelen": [],
+      "mogelijkheden": [
+        {
+          "id": "taalwet-twee-talen",
+          "uk": "Лише чиста українська (uk) та нідерландська (nl) мови в усіх текстах, коді, метаданих і спілкуванні",
+          "nl": "Uitsluitend zuiver Oekraïens en Nederlands in alle teksten, code, metadata en communicatie",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "taalwet-verboden-letters-en-jargon",
+          "uk": "Заборона літер поза українською абеткою, русизмів, суржику, активних дієприкметників і технічного жаргону з таблицею питомих відповідників",
+          "nl": "Verbod op letters buiten het Oekraïense alfabet, russismen, mengtaal, actieve deelwoorden en jargon, met tabel van eigen termen",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "taalwet-zelfcontrole",
+          "uk": "Обов’язкова автоперевірка тексту й коду перед кожною відповіддю, збереженням файла та відправленням змін",
+          "nl": "Verplichte zelfcontrole van tekst en code vóór elk antwoord, elke opslag en elke verzending",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "taalwet-tweetalige-pariteit",
+          "uk": "Парні українські та нідерландські статті й тексти інтерфейсу з однаковою будовою, умовами та станом",
+          "nl": "Gekoppelde Oekraïense en Nederlandse artikelen en interfaceteksten met gelijke opbouw, voorwaarden en status",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        }
+      ],
+      "ookBekendAls": [
+        {
+          "bron": "globale regels van de eigenaar (Antigravity)",
+          "naam": "movnyi-zakon"
+        },
+        {
+          "bron": "MCP-bron",
+          "naam": "mr://skills/movnyi-zakon"
         }
       ]
     }

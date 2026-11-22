@@ -35,10 +35,11 @@ export async function main(): Promise<number> {
   const herwerktGoed = maakBijdrage({ ...basisB(), soort: 'herwerkt', waaromUk: 'Власник просив змінити лише вигляд стрілки.', bouwtVoortOp: ['TEST-001/20261118-080000-claude'], bekendeIds: new Set(['TEST-001/20261118-080000-claude']) });
   check('переробка з причиною й посиланням на попередній запис приймається', herwerktGoed.zaken.length === 0, JSON.stringify(herwerktGoed.zaken));
   const onbekend = maakBijdrage({ ...basisB(), soort: 'afgerond', waaromUk: 'Доробка після вичерпання ліміту.', bouwtVoortOp: ['TEST-001/19990101-000000-gemini'], bekendeIds: new Set() });
-  check('посилання на неіснуючий запис виявляється', onbekend.zaken.some((z: any) => z.code === 'BIJDRAGE_VOORGANGER_ONBEKEND'));
+  check('посилання на відсутній запис виявляється', onbekend.zaken.some((z: any) => z.code === 'BIJDRAGE_VOORGANGER_ONBEKEND'));
   const zonderRecord = maakBijdrage({ ...basisB(), soort: 'overname', waaromUk: 'Fable 5.2 вичерпав ліміт.', bouwtVoortOp: [{ beschrijving: 'гілка claude/project-thread-0u9ig1, PR 142' }] });
   check('попередник без запису описується текстом (гілка, PR)', zonderRecord.zaken.length === 0, JSON.stringify(zonderRecord.zaken));
-  const rus = maakBijdrage({ ...basisB(), watUk: 'Сделаны новые уведомления для панели.' });
+  // KLIMOP-018: зразок утворюється з кодової позиції U+044B, щоб сам файл випробування не містив заборонених літер.
+  const rus = maakBijdrage({ ...basisB(), watUk: `Створено нов${String.fromCodePoint(0x44b)} сповіщення для панелі.` });
   check('мовний закон: літери поза українською абеткою відхиляються', rus.zaken.some((z: any) => z.code === 'BIJDRAGE_TAAL'));
   const mens = maakBijdrage({ ...basisB(), agent: null, mens: 'Павло Тарасевич' });
   check('внесок людини без ШІ теж записується (ярлик mens-…)', mens.zaken.length === 0 && /-mens/.test(mens.pad), mens.pad);
@@ -96,7 +97,8 @@ export async function main(): Promise<number> {
   try {
     const repo = join(tmp, 'repo');
     mkdirSync(repo);
-    for (const p of ['scripts', 'orchestratie', '.agents', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.github', '.cursorrules', 'CODEX.md', 'GROK.md', 'ANTIGRAVITY.md', 'AUTOCLAW.md', 'CHATGPT.md', 'shared', '.gitignore']) {
+    const adapters: string[] = JSON.parse(readFileSync(join(WORTEL, 'orchestratie/beleid.json'), 'utf8')).adapters.bestanden;
+    for (const p of ['scripts', 'orchestratie', '.agents', 'AGENTS.md', ...adapters, '.github', 'shared', '.gitignore']) {
       if (existsSync(join(WORTEL, p))) cpSync(join(WORTEL, p), join(repo, p), { recursive: true });
     }
     git(repo, 'init', '-q', '-b', 'werk'); git(repo, 'config', 'user.email', 't@t'); git(repo, 'config', 'user.name', 'Тест');
@@ -147,7 +149,8 @@ export async function main(): Promise<number> {
   check('усі записи обліку в репозиторії дійсні', echte.length >= 2 && echte.every((p) => valideerBijdrage(JSON.parse(readFileSync(join(WORTEL, p), 'utf8')), { pad: p, bekendeIds: ids }).length === 0));
   const agents = readFileSync(join(WORTEL, 'AGENTS.md'), 'utf8');
   check('AGENTS.md: перший крок — orch begin, розділ §9 і правило про зауваження власника', agents.includes('node scripts/orch.mjs begin --agent') && agents.includes('## 9. Авторство') && agents.includes('### 9.4 Зауваження власника'));
-  for (const a of ['CLAUDE.md', 'GEMINI.md', 'ANTIGRAVITY.md', 'CODEX.md', '.cursorrules', '.github/copilot-instructions.md']) {
+  const alleAdapters: string[] = JSON.parse(readFileSync(join(WORTEL, 'orchestratie/beleid.json'), 'utf8')).adapters.bestanden;
+  for (const a of alleAdapters) {
     check(`перехідник ${a} вказує на orch begin і запис обліку`, /orch\.mjs begin/.test(readFileSync(join(WORTEL, a), 'utf8')) && /orch bijdrage/.test(readFileSync(join(WORTEL, a), 'utf8')));
   }
   const inst = JSON.parse(readFileSync(join(WORTEL, '.claude/settings.json'), 'utf8'));

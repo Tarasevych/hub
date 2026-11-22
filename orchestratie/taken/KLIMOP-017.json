@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-017",
+  "agent": "antigravity",
+  "tak": "feature/klimop-017-quorum-attest-stap4-20261121-120330",
+  "basisCommit": "be560bcdf6b55af79b43ed724a7a2e434c001b07",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T12:03:22.303Z",
+  "bijgewerkt": "2026-11-21T12:03:22.304Z",
+  "omschrijving": "Етап 16 Плюща: Сходинка 4 кворумного атестата готовності та порогового допуску власника FROST + Ed25519+ML-DSA-65",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-011",
+  "agent": "antigravity",
+  "tak": "feature/klimop-011-etappe10-hechtranken-voeding-20261121-015100",
+  "basisCommit": "f1ef34bc2d871f6d47e7122e70bb83f695085bfc",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T01:50:41.828Z",
+  "bijgewerkt": "2026-11-21T01:50:41.828Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
