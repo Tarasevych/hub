@@ -9,7 +9,7 @@ export * from './menu-meldingen-voorkeuren';
 import { MELDING_CATEGORIEEN, type MeldingCategorie, type MeldingVoorkeuren } from './menu-meldingen-voorkeuren';
 
 // ------------------------------------------------------------------------------------------------ waar hoort een melding?
-const HOST_DIENST: Record<string, DienstId> = { hub: 'hub', ai: 'ai', mail: 'mail', cloud: 'cloud', github: 'github', huis: 'huis', id: 'identity', api: 'api', admin: 'admin', mcp: 'mcp' };
+const HOST_DIENST: Record<string, DienstId> = { hub: 'hub', ai: 'ai', mail: 'mail', cloud: 'cloud', github: 'github', crm: 'crm', huis: 'huis', id: 'identity', api: 'api', admin: 'admin', mcp: 'mcp' };
 const SOORT_DOEL: Record<string, [string, MeldingCategorie]> = {
   access_request: ['pg:admin/access', 'toegang'], access_decision: ['svc:hub', 'toegang'], workspace_share: ['pg:hub/overview', 'delen'],
   workspace_role_changed: ['pg:hub/overview', 'delen'], workspace_access_revoked: ['pg:hub/overview', 'delen'], workspace_invite_accepted: ['pg:hub/overview', 'delen'], workspace_share_link_revoked: ['pg:hub/overview', 'delen'], workspace_member_left: ['pg:hub/overview', 'delen'], /* IDENTITEIT-015 */ workspace_share_link_created: ['pg:hub/overview', 'delen'], // IDENTITEIT-014

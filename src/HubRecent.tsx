@@ -17,6 +17,7 @@ import './hub-recent.css';
 type Lang = CanonicalLang;
 const NAAM: Record<string, [string, string]> = {
   ai: ['ШІ для вас', 'AI voor u'], mail: ['Пошта', 'E-mail'], cloud: ['Хмарне сховище', 'Cloudopslag'], github: ['GitHub та код', 'GitHub en code'],
+  crm: ['Klantrelatiebeheer', 'Klantrelatiebeheer'],
   huis: ['Розумний будинок', 'Slim huis'], mcp: ['Міст ШІ → сайт', 'Brug AI → site'],
 };
 

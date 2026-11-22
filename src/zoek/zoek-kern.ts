@@ -44,7 +44,7 @@ export function levenshtein(a: string, b: string, max = Infinity): number {
 // ---------------------------------------------------------------- routes → echte URL
 // Eén leidende schuine streep (nooit «//host»), geen «..», alleen veilige tekens.
 const PAD_OK = /^\/(?!\/)(?!.*\.\.)[A-Za-z0-9._~\-\/%]*$/;
-const HOST_DIENST: Record<ZoekRoute['host'], string> = { hub: 'hub', mail: 'mail', cloud: 'cloud', id: 'identity', identity: 'identity', mcp: 'mcp', ai: 'ai', github: 'github', huis: 'huis', api: 'api', admin: 'admin' };
+const HOST_DIENST: Record<ZoekRoute['host'], string> = { hub: 'hub', mail: 'mail', cloud: 'cloud', id: 'identity', identity: 'identity', mcp: 'mcp', ai: 'ai', github: 'github', crm: 'crm', huis: 'huis', api: 'api', admin: 'admin' };
 type Canoniek = { domains?: Record<string, string>; tabs?: Record<string, readonly string[]>; tabSlug?: (id: string) => string };
 /** public/canonical-service.js (lui gelezen: deze module laadt ook zonder browser, in tests). */
 const canoniek = (): Canoniek => { try { return (globalThis as { window?: { __TSV_CANONICAL_SERVICE__?: Canoniek } }).window?.__TSV_CANONICAL_SERVICE__ || {}; } catch { return {}; } };

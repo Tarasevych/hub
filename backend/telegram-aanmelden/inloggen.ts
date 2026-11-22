@@ -51,6 +51,7 @@ const EIGEN_ORIGINS: ReadonlySet<string> = new Set([
   'https://cloud.tarasevych.com',
   'https://ai.tarasevych.com',
   'https://github.tarasevych.com',
+  'https://crm.tarasevych.com',
   'https://huis.tarasevych.com',
   'https://admin.tarasevych.com',
   'https://api.tarasevych.com',

@@ -306,6 +306,7 @@ export function paginaLijst(hosts, metSessie) {
     P('mcp-dashboard', hosts.mcp, '/dashboard'), P('mcp-agenten', hosts.mcp, '/agenten'),
     P('id-inloggen', hosts.identity, '/', { zonder: true }),
     P('github-overzicht', hosts.github, '/overzicht'),
+    P('klantrelatiebeheer', hosts.crm, '/klanten'),
     P('ai', hosts.ai, '/'),
   ];
 }
@@ -485,7 +486,7 @@ async function hoofd() {
         if (sessie.diep) res.diep = sessie.diep;   // diepe gezondheidscontrole van de stand (technische ruimte + /assets/tech/*)
       } else if (arg('--live')) {
         const pr = await liveProxy(arg('--live')); basisPoort = pr.poort; stop = pr.stop; res.modus = 'live';
-        hosts = Object.fromEntries(['hub', 'identity', 'ai', 'mail', 'cloud', 'github', 'huis', 'api', 'admin', 'mcp'].map((k) => [k, `${k === 'identity' ? 'id' : k}.${domein}`]));
+        hosts = Object.fromEntries(['hub', 'identity', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'api', 'admin', 'mcp'].map((k) => [k, `${k === 'identity' ? 'id' : k}.${domein}`]));
       } else throw new Error('kies --stand, --live URL, --sessie FILE of --alleen-modules');
       const profiel = arg('--profiel') || mkdtempSync(join(tmpdir(), 'rook-chromium-'));
       mkdirSync(profiel, { recursive: true });

@@ -204,6 +204,7 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   github_list_branches: 'github.read', github_list_tree: 'github.read', github_read_file: 'github.read',
   github_compare: 'github.read', github_list_releases: 'github.read',
   github_save_file: 'github.write', github_sync_mirror: 'github.write',
+  klantrelatie_tekst_voorbereiden: 'site.read',
   ecosysteem_context_list: 'site.read', ecosysteem_context_save: 'board.write',
   ecosysteem_agent_overdracht: 'board.write', ecosysteem_ruimte_uitbreiding: 'board.write',
   vaardigheden_aanbevelen: 'site.read', vaardigheden_opslaan: 'board.write',

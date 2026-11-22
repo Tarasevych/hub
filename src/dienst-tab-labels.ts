@@ -3,6 +3,8 @@
 type Pair = readonly [string, string];
 
 const LABELS: Record<string, Pair> = {
+  klanten: ['Клієнти', 'Klanten'], overeenkomsten: ['Угоди', 'Overeenkomsten'], inzichten: ['Показники', 'Inzichten'],
+  assistenten: ['Помічники', 'Assistenten'], koppelingen: ['Підключення', 'Koppelingen'],
   overview: ['Огляд', 'Overzicht'], recent: ['Останні', 'Recent'], tasks: ['Завдання', 'Taken'], calendar: ['Календар', 'Agenda'], notes: ['Нотатки', 'Notities'], zoek: ['Пошук', 'Zoeken'],
   workspace: ['Робочий простір', 'Werkruimte'], agents: ['Агенти', 'Agenten'], runs: ['Запуски', 'Runs'], workflows: ['Процеси', 'Workflows'], verbindingen: ['Підключення ШІ', 'AI-koppelingen'],
   inbox: ['Вхідні', 'Postvak IN'], starred: ['З зірочкою', 'Met ster'], snoozed: ['Відкладені', 'Gesnoozed'], sent: ['Надіслані', 'Verzonden'], drafts: ['Чернетки', 'Concepten'],

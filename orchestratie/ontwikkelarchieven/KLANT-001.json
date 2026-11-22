@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "taakId": "KLANT-001",
+  "opdracht": "Створити в Mijn Ruimte середовище Klantrelatiebeheer та розробити повну концепцію взаємодії з іншими службами.",
+  "tijdlijn": [
+    "Звірено встановлений випуск і перенесено зміни на його вихідний код."
+  ],
+  "keuzes": [
+    "Особистий ключ для кожного простору. Повторні запити перевіряються в одній транзакції."
+  ],
+  "wijzigingen": [
+    "backend/deployment-identiteit.ts",
+    "backend/eigenaar-sessie-overdracht.ts",
+    "backend/index.ts",
+    "backend/klantrelatie-hulp.ts",
+    "backend/klantrelatiebeheer-invoer.ts",
+    "backend/klantrelatiebeheer-koppelingen.ts",
+    "backend/klantrelatiebeheer-opslag.ts",
+    "backend/klantrelatiebeheer-routes.ts",
+    "backend/klantrelatiebeheer-toegang.ts",
+    "backend/site-hulpmiddelen.ts",
+    "backend/telegram-aanmelden/inloggen.ts",
+    "backend/telegram-aanmelden/routes.ts",
+    "backend/zoek/catalogus-ui.ts",
+    "deploy/cloudflared-config.yml",
+    "deploy/herstelset/herstel-vm.sh",
+    "docs/klantrelatiebeheer/KLANTRELATIEBEHEER.nl.md",
+    "docs/klantrelatiebeheer/КЛІЄНТСЬКІ-ВЗАЄМИНИ.uk.md",
+    "index.html",
+    "migrations/0307_klantrelatiebeheer.sql",
+    "orchestratie/bijdragen/KLANT-001/20261121-172227-codex.json",
+    "orchestratie/taken/KLANT-001.json",
+    "public/canonical-service.js",
+    "scripts/rook-controle.mjs",
+    "scripts/zoek-ui-catalogus.mjs",
+    "shared/ai-beleid/catalogus.ts",
+    "shared/klantrelatie-begroting.ts",
+    "shared/klantrelatie-hulp.ts",
+    "shared/klantrelatie-koppelingen.ts",
+    "shared/klantrelatiebeheer.ts",
+    "shared/melding-link.ts",
+    "shared/menu-meldingen.ts",
+    "shared/menu-model.ts",
+    "shared/uiterlijk.ts",
+    "shared/werkblad-register.ts",
+    "shared/zoek-model.ts",
+    "shared/zoek-ui-knoppen.generated.ts",
+    "src/App.tsx",
+    "src/CanoniekOmlijsting.tsx",
+    "src/HubRecent.tsx",
+    "src/SnelleToegangBewerker.tsx",
+    "src/VerenigdDienstApp.tsx",
+    "src/aanmeld-omleiding.ts",
+    "src/canoniek-dienst.ts",
+    "src/dienst-tab-labels.ts",
+    "src/domein-weergave-cache.ts",
+    "src/klantrelatiebeheer/Invoervenster.tsx",
+    "src/klantrelatiebeheer/Klantrelatiebeheer.tsx",
+    "src/klantrelatiebeheer/Koppelingen.tsx",
+    "src/klantrelatiebeheer/Rekenvoorstel.tsx",
+    "src/klantrelatiebeheer/Relatiehulp.tsx",
+    "src/klantrelatiebeheer/Werkoverzicht.tsx",
+    "src/klantrelatiebeheer/klantrelatiebeheer.css",
+    "src/klantrelatiebeheer/relatiehulp.css",
+    "src/klantrelatiebeheer/relatietaal.ts",
+    "src/menu-v2.css",
+    "src/menu-voorkeuren.tsx",
+    "src/navigatie-urls.ts",
+    "src/platform/stap-op.ts",
+    "src/tab-context.ts",
+    "src/thema/paletten.css",
+    "src/thema/paletten.ts",
+    "src/werkblad/blokken/koppeling.ts",
+    "src/werkblad/soorten.ts",
+    "src/zoek/zoek-kern.ts",
+    "tests/eenheid/klantrelatie-begroting.test.ts"
+  ],
+  "controles": [
+    "Перевірено підрахунок кошторису, рівночасні заявки, видалення й закрите сховище в окремій базі."
+  ],
+  "bronnen": [
+    "https://hub.tarasevych.com/api/version",
+    "docs/klantrelatiebeheer"
+  ],
+  "beperkingen": [
+    "Зовнішні канали та обладнання потребують окремих підключень."
+  ],
+  "risicoUitleg": [
+    {
+      "pad": "deploy/cloudflared-config.yml",
+      "uk": "Додає адресу служби клієнтських взаємин до налаштувань наявного тунелю або відновлення.",
+      "nl": "Voegt het adres van de klantendienst toe aan de bestaande tunnel of het herstel."
+    },
+    {
+      "pad": "deploy/herstelset/herstel-vm.sh",
+      "uk": "Додає адресу служби клієнтських взаємин до налаштувань наявного тунелю або відновлення.",
+      "nl": "Voegt het adres van de klantendienst toe aan de bestaande tunnel of het herstel."
+    }
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true
+  }
+}

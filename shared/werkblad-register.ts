@@ -25,13 +25,13 @@ export type Tweetalig = { uk: string; nl: string };
 export type RegisterCategorie = RegisterItem['categorie'];
 
 /** Diensten die de canonieke router kent (public/canonical-service.js `serviceIds`). */
-export const CANONIEKE_DIENSTEN = ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin', 'mcp'] as const;
+export const CANONIEKE_DIENSTEN = ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'identity', 'api', 'admin', 'mcp'] as const;
 export type CanoniekeDienst = typeof CANONIEKE_DIENSTEN[number];
 
 /** Veilige iconen: exact de id's die MenuGlyph (src/menu-voorkeuren.tsx) kent + vier lucide-terugvallers voor de bibliotheek.
  *  Een eenheidstest bewaakt dat elk id hier een echt component heeft. Nooit vrije SVG of URL. */
 export const MENU_ICOON_IDS = [
-  'home', 'bot', 'mail', 'cloud', 'github', 'house', 'key', 'network', 'shield', 'share', 'calendar', 'tasks', 'notes', 'google', 'microsoft', 'drive', 'onedrive', 'dropbox', 'settings', 'cable',
+  'home', 'bot', 'mail', 'cloud', 'github', 'house', 'relaties', 'key', 'network', 'shield', 'share', 'calendar', 'tasks', 'notes', 'google', 'microsoft', 'drive', 'onedrive', 'dropbox', 'settings', 'cable',
   'overview', 'recent', 'workspace', 'agents', 'runs', 'workflows', 'connections', 'unread', 'all-mail', 'important', 'drafts', 'sent', 'archive', 'labels', 'local', 'photos', 'accounts',
   'repositories', 'projects', 'documentation', 'research', 'activity', 'personalization', 'menu', 'themes', 'languages', 'widgets', 'melding', 'sharing', 'identity', 'account', 'sessions', 'vault', 'oauth',
   'access', 'webhooks', 'events', 'logs', 'import', 'reconciliation', 'apps', 'devices', 'sso', 'directories', 'roles', 'audit', 'inbox', 'star', 'snooze', 'dot', 'spam', 'trash', 'news',
@@ -50,6 +50,7 @@ const PAGINA_ICOON: Record<string, Record<string, string>> = {
   mail: { inbox: 'inbox', starred: 'star', snoozed: 'snooze', sent: 'sent', drafts: 'drafts', archive: 'archive', labels: 'labels', accounts: 'accounts', local: 'local', unread: 'dot', all: 'all-mail', important: 'important', spam: 'spam', trash: 'trash', subscriptions: 'news', scheduled: 'scheduled', settings: 'tune' },
   cloud: { overview: 'overview', files: 'local', shared: 'link', workspaces: 'projects', capture: 'import', inbox: 'inbox', search: 'research', recent: 'recent', calendar: 'scheduled', photos: 'photos', accounts: 'accounts', google: 'drive', onedrive: 'onedrive', dropbox: 'dropbox' },
   github: { overview: 'github', repositories: 'repositories', code: 'drafts', issues: 'dot', pulls: 'reconcile', actions: 'workflows', releases: 'deploy', sync: 'webhooks', projects: 'projects', documentation: 'documentation', research: 'research', activity: 'activity', accounts: 'accounts' },
+  crm: { overview: 'overview', klanten: 'accounts', overeenkomsten: 'logs', tasks: 'scheduled', inzichten: 'gauge', assistenten: 'ai-access', koppelingen: 'connections' },
   huis: { overview: 'overview', rooms: 'blocks', devices: 'devices', scenes: 'workspace', automations: 'workflows', security: 'lock', energy: 'gauge', activity: 'activity', integrations: 'connections', assistant: 'ai-access', settings: 'tune', showroom: 'photos', planner: 'reconcile' },
   mcp: { overview: 'overview', dashboard: 'deploy', services: 'connections', tools: 'workflows', board: 'projects', agents: 'agents', apps: 'blocks', playground: 'runs', traffic: 'gauge', connect: 'link', roadmap: 'documentation', download: 'download', verbindingen: 'key' },
   identity: { personalization: 'tune', menu: 'sidebar', themes: 'themes', languages: 'languages', widgets: 'blocks', melding: 'melding', sharing: 'invite', identity: 'id-card', account: 'account', sessions: 'sessions', methods: 'vault', security: 'lock', recovery: 'lifebuoy' },
@@ -66,6 +67,7 @@ export const DIENST_DEF: Record<typeof DIENST_IDS[number], DienstDef> = {
   mail: { titel: { uk: 'Пошта', nl: 'E-mail' }, icoon: 'mail', doel: 'mail', tab: 'inbox' },
   cloud: { titel: { uk: 'Хмарне сховище', nl: 'Cloudopslag' }, icoon: 'cloud', doel: 'cloud', tab: 'overview' },
   github: { titel: { uk: 'GitHub', nl: 'GitHub' }, icoon: 'github', doel: 'github', tab: 'overview' },
+  crm: { titel: { uk: 'Klantrelatiebeheer', nl: 'Klantrelatiebeheer' }, icoon: 'relaties', doel: 'crm', tab: 'overview' },
   huis: { titel: { uk: 'Розумний будинок', nl: 'Slim huis' }, icoon: 'house', doel: 'huis', tab: 'overview' },
   mcp: { titel: { uk: 'Міст ШІ → сайт', nl: 'Brug AI → site' }, icoon: 'cable', doel: 'mcp', tab: 'agents' },
   tasks: { titel: { uk: 'Завдання', nl: 'Taken' }, icoon: 'tasks', doel: 'hub', tab: 'tasks' },

@@ -47,6 +47,7 @@ export const PLEKKEN = [
   ['meldingen/ecosysteem/', 'hub', 'overview', 'iedereen'], ['meldingen/', 'hub', 'overview', 'iedereen'], ['CanoniekMeldingencentrum', 'hub', 'overview', 'iedereen'], ['MeldingenpaneelInhoud', 'hub', 'overview', 'iedereen'],
   ['CanoniekAccountMenu', 'hub', 'overview', 'iedereen'], ['CanoniekOmlijsting', 'hub', 'overview', 'iedereen'], ['ZijbalkWerkbalk', 'hub', 'overview', 'iedereen'],
   ['RuimteStrook', 'hub', 'overview', 'iedereen'], ['ExtensieUpdateBand', 'hub', 'overview', 'iedereen'], ['CanoniekVerbindingBand', 'hub', 'overview', 'iedereen'],
+  ['klantrelatiebeheer/', 'crm', 'overview', 'iedereen'],
   ['DomoticaWeergave', 'huis', 'overview', 'iedereen'],
   ['merk/MijnLogos', 'identity', 'themes', 'iedereen'] /* REESTR-LOGO-001: «Логотипи сервісів» staat in Thema's, voor iedereen */,
   ['identiteit/melding/', 'identity', 'melding', 'iedereen'], ['thema/', 'identity', 'themes', 'iedereen'], ['weergave/', 'identity', 'personalization', 'iedereen'], ['achtergrond/', 'identity', 'personalization', 'iedereen'], ['instellingen/', 'identity', 'account', 'iedereen'],

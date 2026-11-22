@@ -996,12 +996,12 @@ SITE_TOOLS.push(
       description: 'The design context of the Mijn Ruimte site for AI design work: the CSS tokens (status colors, spacing, radii, type sizes, shadows), the palette THIS user chose (with real hex values for light and dark), the fonts and the component primitives (button, field, card, badge, notice). Styles only — never user data. Read-only.',
       inputSchema: {
         type: 'object',
-        properties: { sectie: { type: 'string', enum: ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin', 'mcp'], description: p('Розділ сайту, для якого потрібні кольори: "hub", "mail", "cloud", "github", "ai", "admin", "mcp" тощо (типово "hub").', 'Onderdeel van de site waarvoor de kleuren nodig zijn: "hub", "mail", "cloud", "github", "ai", "admin", "mcp" enz. (standaard "hub").') } },
+        properties: { sectie: { type: 'string', enum: ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'identity', 'api', 'admin', 'mcp'], description: p('Розділ сайту, для якого потрібні кольори: "hub", "mail", "cloud", "github", "ai", "admin", "mcp" тощо (типово "hub").', 'Onderdeel van de site waarvoor de kleuren nodig zijn: "hub", "mail", "cloud", "github", "ai", "admin", "mcp" enz. (standaard "hub").') } },
         additionalProperties: false,
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    validate: (a) => (a.sectie === undefined || ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin', 'mcp'].includes(a.sectie) ? null : 'Invalid "sectie".'),
+    validate: (a) => (a.sectie === undefined || ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'identity', 'api', 'admin', 'mcp'].includes(a.sectie) ? null : 'Invalid "sectie".'),
     request: (a) => ({ route: 'POST /api/owner/media/ontwerp-context', body: without({ sectie: a.sectie }) }),
     // Tokens en primitieven zijn korte waarden; compact() snijdt alleen lange teksten, dus het geheel blijft intact.
     shape: (d) => compact(d),

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "KLANT-001",
+  "agent": "codex",
+  "tak": "feature/klant-001-klantrelatiebeheer-20261121-181800",
+  "basisCommit": "ba289fa919c66765b6fc5565d340976994261c05",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.7.0",
+  "regelsHash": "f6cab917b25ec902b1fca8044250a678423fd9b0bf4ca55116bf7694c1e33cc1",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T17:17:29.622Z",
+  "bijgewerkt": "2026-11-22T17:18:14.148Z",
+  "omschrijving": "Klantrelatiebeheer in de eigen werkruimte",
+  "kanaal": "github_pr",
+  "overdrachten": [],
+  "regelsHerlezen": [
+    {
+      "van": "1.4.18",
+      "naar": "1.7.0",
+      "op": "2026-11-22T17:18:14.148Z"
+    }
+  ]
+}

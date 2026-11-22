@@ -25,7 +25,7 @@ const KLEUR_NAAM: Record<Accent, [string, string]> = {
   teal: ['Бірюзовий', 'Turkoois'], violet: ['Фіолетовий', 'Violet'], blauw: ['Синій', 'Blauw'], hemel: ['Блакитний', 'Hemelsblauw'],
   grafiet: ['Графітовий', 'Grafiet'], oranje: ['Оранжевий', 'Oranje'], groen: ['Зелений', 'Groen'], limoen: ['Лаймовий', 'Limoen'],
   indigo: ['Індиго', 'Indigo'], oker: ['Вохра', 'Oker'], grijs: ['Сірий', 'Grijs'], roze: ['Рожевий', 'Roze'],
-  rood: ['Червоний', 'Rood'], bruin: ['Коричневий', 'Bruin'],
+  wijnrood: ['Винний', 'Wijnrood'], rood: ['Червоний', 'Rood'], bruin: ['Коричневий', 'Bruin'],
 };
 const kleurLabel = (k: Accent, lang: 'uk' | 'nl') => KLEUR_NAAM[k][lang === 'uk' ? 0 : 1];
 const rnd = (n: number) => { const a = new Uint8Array(n); (globalThis.crypto || { getRandomValues: (x: Uint8Array) => x }).getRandomValues?.(a); return a; };
