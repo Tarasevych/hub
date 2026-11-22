@@ -1,99 +1,95 @@
 /* Сталі кольори станів на всьому сайті — незалежно від теми, палітри й акценту.
    Вказівка Павла 22.11.2026 (UTC+1): «весь сайт, незалежно від теми, там, де це стосується, має бути зеленим успіх,
    помаранчевим — увага, червоним — там, де це потрібно; особливо однотонні теми й теми з кольоровим акцентом».
-   НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом: контраст scripts/kleur-contrast-controle.mjs, знімки всіх палітр).
-   Виконавець: Claude Opus 5.5 (High) через Google Antigravity (antigravity).
+   НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом). Виконавець: Claude Opus 5.5 (High) через Google Antigravity.
 
-   Чому так: сторінки-макети (діагностика, керування, MCP, ключі, випуски тощо) задавали свої змінні станів через акцент
-   теми (наприклад, --mq-diag-goed: var(--mq-kaart-accent)), тому в однотонних палітрах «успіх» ставав сірим чи кольору акценту.
-   Тут усі такі змінні вказують на три сталі кольори --staat-goed / --staat-let / --staat-fout.
-   Значення задано лише літералами на :root і темних вставках, тож кругових посилань (--ok: var(--mq-adm-goed) у макетах) немає.
-   Друк (afdruk.css, !important) має перевагу. Компоненти, що фарбують успіх прямо акцентом (var(--accent)) чи вбудованими
-   стилями, цей шар не змінює — їх треба виправляти окремо (див. CONCEPT.md, «Що лишилося»).
+   Узгодження з іншими правилами (перевірено читанням коду 22.11.2026):
+   • ЄДИНЕ ДЖЕРЕЛО КОЛЬОРІВ — src/ontwerp/tokens.css (--staat-goed/-let/-fout, -zacht, -vlak). Тут власних кольорів НЕМАЄ,
+     лише прив’язки; тому захист контрасту scripts/kleur-contrast-controle.mjs (читає tokens.css) далі охоплює ці кольори.
+   • Друк: src/afdruk.css примусово (!important) ставить світлі --staat-* на :root і елементах тем, а цей шар на кожному
+     елементі бере var(--staat-…) — тож на папері лишаються світлі значення.
+   • Кругових посилань немає: --staat-* задано лише літералами в tokens.css; макети мають --ok: var(--mq-adm-goed), але тут
+     обидві змінні вказують на --staat-goed.
+   • Причина шару: сторінки-макети (діагностика, керування, MCP, ключі, випуски тощо) задавали свої змінні станів через
+     акцент теми (наприклад, --mq-diag-goed: var(--mq-kaart-accent)), тому в однотонних палітрах «успіх» не був зеленим.
+   • Відтінки -zacht/-rand макетів лишаються напівпрозорими (як і були), лише від сталого кольору стану.
+   • Акцентний шар (accent-laag.css, специфічність 2 ідентифікатори) змінних станів не задає; шар прозорості
+     (weergave-stijl.css, 3 ідентифікатори) — теж. Вбудованих стилів чи setProperty для цих змінних у коді немає.
+   • Не охоплено: елементи, що фарбують стан прямо акцентом (var(--accent)) чи сталим кольором у власному правилі.
    Список змінних макетів згенеровано з усіх *.css у src/ (22.11.2026); нова змінна стану в макеті має потрапити сюди. */
-
-:root:not(#_sk1):not(#_sk2), :root .theme-light:not(#_sk1):not(#_sk2), :root .theme-plum-light:not(#_sk1):not(#_sk2) {
-  --staat-goed: #15803d; --staat-let: #c2410c; --staat-fout: #b42318;
-  --staat-goed-zacht: #dcfce7; --staat-let-zacht: #ffedd5; --staat-fout-zacht: #fee2e2;
-  --staat-goed-rand: #86efac; --staat-let-rand: #fdba74; --staat-fout-rand: #fca5a5;
-}
-:root:is(.theme-dark, .theme-plum-dark):not(#_sk1):not(#_sk2), :root .theme-dark:not(#_sk1):not(#_sk2), :root .theme-plum-dark:not(#_sk1):not(#_sk2) {
-  --staat-goed: #4ade80; --staat-let: #fb923c; --staat-fout: #f87171;
-  --staat-goed-zacht: #14381f; --staat-let-zacht: #431d06; --staat-fout-zacht: #4a1a1a;
-  --staat-goed-rand: #166534; --staat-let-rand: #9a3412; --staat-fout-rand: #991b1b;
-}
 
 :root:not(#_sk1):not(#_sk2):not(#_sk3), :root *:not(#_sk1):not(#_sk2):not(#_sk3) {
   --ok: var(--staat-goed);
-  --ok-vlak: var(--staat-goed);
+  --ok-zacht: var(--staat-goed-zacht);
+  --ok-vlak: var(--staat-goed-vlak);
+  --good: var(--staat-goed);
   --success: var(--staat-goed);
   --warn: var(--staat-let);
-  --warn-vlak: var(--staat-let);
+  --warn-zacht: var(--staat-let-zacht);
+  --warn-vlak: var(--staat-let-vlak);
   --warning: var(--staat-let);
+  --warning-bg: var(--staat-let-zacht);
   --waarschuwing: var(--staat-let);
   --fout: var(--staat-fout);
-  --fout-vlak: var(--staat-fout);
-  --danger: var(--staat-fout);
-  --gevaar: var(--staat-fout);
-  --ok-zacht: var(--staat-goed-zacht);
-  --warn-zacht: var(--staat-let-zacht);
   --fout-zacht: var(--staat-fout-zacht);
-  --warning-bg: var(--staat-let-zacht);
+  --fout-vlak: var(--staat-fout-vlak);
+  --danger: var(--staat-fout);
   --danger-bg: var(--staat-fout-zacht);
+  --gevaar: var(--staat-fout);
   --mq-ab-waarschuwing: var(--staat-let);
   --mq-adm-gevaar: var(--staat-fout);
-  --mq-adm-gevaar-zacht: var(--staat-fout-zacht);
+  --mq-adm-gevaar-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-adm-goed: var(--staat-goed);
-  --mq-adm-goed-zacht: var(--staat-goed-zacht);
+  --mq-adm-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-adm-wacht: var(--staat-let);
-  --mq-adm-wacht-zacht: var(--staat-let-zacht);
+  --mq-adm-wacht-zacht: color-mix(in srgb, var(--staat-let) 15%, transparent);
   --mq-aie-gevaar: var(--staat-fout);
   --mq-api-gevaar: var(--staat-fout);
-  --mq-api-gevaar-zacht: var(--staat-fout-zacht);
+  --mq-api-gevaar-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-api-goed: var(--staat-goed);
-  --mq-api-goed-zacht: var(--staat-goed-zacht);
+  --mq-api-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-api-wacht: var(--staat-let);
-  --mq-api-wacht-zacht: var(--staat-let-zacht);
+  --mq-api-wacht-zacht: color-mix(in srgb, var(--staat-let) 15%, transparent);
   --mq-diag-fout: var(--staat-fout);
-  --mq-diag-fout-rand: var(--staat-fout-rand);
-  --mq-diag-fout-zacht: var(--staat-fout-zacht);
+  --mq-diag-fout-rand: color-mix(in srgb, var(--staat-fout) 45%, transparent);
+  --mq-diag-fout-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-diag-goed: var(--staat-goed);
-  --mq-diag-goed-rand: var(--staat-goed-rand);
-  --mq-diag-goed-zacht: var(--staat-goed-zacht);
+  --mq-diag-goed-rand: color-mix(in srgb, var(--staat-goed) 45%, transparent);
+  --mq-diag-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-diag-letop: var(--staat-let);
-  --mq-diag-letop-rand: var(--staat-let-rand);
-  --mq-diag-letop-zacht: var(--staat-let-zacht);
+  --mq-diag-letop-rand: color-mix(in srgb, var(--staat-let) 45%, transparent);
+  --mq-diag-letop-zacht: color-mix(in srgb, var(--staat-let) 15%, transparent);
   --mq-gm-gevaar: var(--staat-fout);
-  --mq-gm-gevaar-zacht: var(--staat-fout-zacht);
+  --mq-gm-gevaar-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-gm-goed: var(--staat-goed);
-  --mq-gm-goed-zacht: var(--staat-goed-zacht);
+  --mq-gm-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-huis-fout: var(--staat-fout);
-  --mq-huis-fout-zacht: var(--staat-fout-zacht);
+  --mq-huis-fout-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-journaal-gevaar: var(--staat-fout);
-  --mq-journaal-gevaar-rand: var(--staat-fout-rand);
-  --mq-journaal-gevaar-zacht: var(--staat-fout-zacht);
+  --mq-journaal-gevaar-rand: color-mix(in srgb, var(--staat-fout) 45%, transparent);
+  --mq-journaal-gevaar-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-journaal-goed: var(--staat-goed);
-  --mq-journaal-goed-rand: var(--staat-goed-rand);
-  --mq-journaal-goed-zacht: var(--staat-goed-zacht);
+  --mq-journaal-goed-rand: color-mix(in srgb, var(--staat-goed) 45%, transparent);
+  --mq-journaal-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-journaal-waarschuwing: var(--staat-let);
-  --mq-journaal-waarschuwing-rand: var(--staat-let-rand);
-  --mq-journaal-waarschuwing-zacht: var(--staat-let-zacht);
+  --mq-journaal-waarschuwing-rand: color-mix(in srgb, var(--staat-let) 45%, transparent);
+  --mq-journaal-waarschuwing-zacht: color-mix(in srgb, var(--staat-let) 15%, transparent);
   --mq-mcp-fout: var(--staat-fout);
-  --mq-mcp-fout-zacht: var(--staat-fout-zacht);
+  --mq-mcp-fout-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-mcp-gevaar: var(--staat-fout);
-  --mq-mcp-gevaar-zacht: var(--staat-fout-zacht);
+  --mq-mcp-gevaar-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-mcp-goed: var(--staat-goed);
-  --mq-mcp-goed-zacht: var(--staat-goed-zacht);
+  --mq-mcp-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-mcp-wacht: var(--staat-let);
-  --mq-mcp-wacht-zacht: var(--staat-let-zacht);
+  --mq-mcp-wacht-zacht: color-mix(in srgb, var(--staat-let) 15%, transparent);
   --mq-ov-gevaar: var(--staat-fout);
-  --mq-ov-gevaar-zacht: var(--staat-fout-zacht);
+  --mq-ov-gevaar-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-ov-goed: var(--staat-goed);
-  --mq-ov-goed-zacht: var(--staat-goed-zacht);
+  --mq-ov-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-ut-gevaar: var(--staat-fout);
-  --mq-ut-gevaar-zacht: var(--staat-fout-zacht);
+  --mq-ut-gevaar-zacht: color-mix(in srgb, var(--staat-fout) 15%, transparent);
   --mq-ut-goed: var(--staat-goed);
-  --mq-ut-goed-zacht: var(--staat-goed-zacht);
+  --mq-ut-goed-zacht: color-mix(in srgb, var(--staat-goed) 15%, transparent);
   --mq-ut-term-gevaar: var(--staat-fout);
   --mq-ut-term-goed: var(--staat-goed);
 }
