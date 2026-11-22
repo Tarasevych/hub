@@ -1,10 +1,12 @@
-// Спільний перегляд вкладень, етапи 1–2 (Grok: hub.tarasevych.com). Vlag `bijlage-weergave-gedeeld-v1`, standaard UIT.
+// Спільний перегляд вкладень, етапи 1–2 (Grok: hub.tarasevych.com); етапи 3–4 — Claude Opus 5.5 (High) через Google Antigravity,
+// НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом): тести, перевірку типів і складання не проганяли за вказівкою власника.
+// Vlag `bijlage-weergave-gedeeld-v1`, standaard UIT.
 // Omlijsting rond de bestaande formaatweergaven: kop in één regel (naam, vertrouwenslabel, hoofdactie, «Подробиці», «⋯», sluiten),
 // snelle kaart, strook met alle bijlagen en een eerlijke laad- en foutstaat. Weet niets van de mail: de bron geeft gegevens en
 // acties door. Concept: docs/concept/bijlage-weergave/CONCEPT.md.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { ChevronLeft, ChevronRight, Download, ImageOff, Info, LoaderCircle, MoreHorizontal, RotateCcw, X } from 'lucide-react';
-import { formaatVan, grootteTekst, kies, soortVan, type Taal } from './soort';
+import { ChevronLeft, ChevronRight, Download, ImageOff, Info, LoaderCircle, MoreHorizontal, RotateCcw, X, type LucideIcon } from 'lucide-react';
+import { formaatVan, grootteTekst, kies, soortVan, type Taal, type Tweetalig } from './soort';
 import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from './vertrouwen';
 import { technischeRijen } from './details';
 import { toonWaarde } from './labels';
@@ -13,6 +15,26 @@ import { WeergaveEtappe3, type WeergaveExtra } from './Etappe3'; /* етап 3, 
 import './weergave.css';
 
 export type WeergaveItem = { naam: string; contentType: string; grootte: number };
+
+/**
+ * Етап 4 (НЕ ПЕРЕВІРЕНО, Claude Opus 5.5 (High) через Antigravity): звідки файл.
+ * Лише для чесних текстів (помилка, підпис стрічки); логіка шапки від джерела не залежить. Типово — Пошта.
+ */
+export type WeergaveBron = 'post' | 'schijf' | 'melding' | 'bestand';
+
+/**
+ * Етап 4: дія, яку знає лише джерело (Диск — «Відкрити теку», сповіщення — «Прочитано», швидка дія).
+ * `zichtbaar` — показати кнопкою зі значком у шапці (не більше двох, щоб не захаращувати); решта йде в «⋯».
+ * `toon` — колір значка: звичайний (акцент), «goed» (зелений) або «let» (жовтий).
+ */
+export type ContextActie = {
+  sleutel: string;
+  label: Tweetalig;
+  uitvoeren: () => void;
+  icoon?: LucideIcon;
+  zichtbaar?: boolean;
+  toon?: 'goed' | 'let';
+};
 
 export type KopProps = {
   taal: Taal;
@@ -31,6 +53,10 @@ export type KopProps = {
   afzender?: AfzenderBewijs | null;
   /** етап 3 (НЕ ПЕРЕВІРЕНО): що джерело знає про вкладення — для швидкої картки й дій; без поля все як на етапі 2 */
   extra?: WeergaveExtra | null;
+  /** етап 4 (НЕ ПЕРЕВІРЕНО): джерело файла; без поля — Пошта, як раніше */
+  bron?: WeergaveBron;
+  /** етап 4 (НЕ ПЕРЕВІРЕНО): дії джерела; без поля — як раніше */
+  contextActies?: ContextActie[] | null;
   onSluit: () => void;
 };
 
@@ -50,11 +76,25 @@ function useMenu() {
   return { open, setOpen, ref };
 }
 
-export function foutTekst(code: string): [string, string] {
+/**
+ * Етап 4 (НЕ ПЕРЕВІРЕНО): хто «не віддав файл» — за джерелом; без джерела — сервер пошти, як раніше.
+ * Українське дієслово узгоджуємо з родом: «сервер не віддав», «сховище не віддало», «служба не віддала».
+ */
+const BRON_SERVER: Record<WeergaveBron, { uk: string; nl: string; uitgang: '' | 'о' | 'а' }> = {
+  post: { uk: 'Сервер пошти', nl: 'De mailserver', uitgang: '' },
+  schijf: { uk: 'Сховище файлів', nl: 'De bestandsopslag', uitgang: 'о' },
+  melding: { uk: 'Служба сповіщень', nl: 'De meldingsdienst', uitgang: 'а' },
+  bestand: { uk: 'Джерело файла', nl: 'De bron van het bestand', uitgang: 'о' },
+};
+
+export function foutTekst(code: string, bron: WeergaveBron = 'post'): [string, string] {
+  const w = BRON_SERVER[bron] || BRON_SERVER.post;
+  const vidpoviv = w.uitgang ? `відповіл${w.uitgang}` : 'відповів';
+  const viddav = w.uitgang ? `віддал${w.uitgang}` : 'віддав';
   if (/TOO_LARGE/.test(code)) return ['Вкладення завелике для безпечного перегляду. Оригінал не змінено, його можна завантажити.', 'De bijlage is te groot voor een veilige weergave. Het origineel is ongewijzigd en kan worden gedownload.'];
   if (/NETWORK|Network|Failed to fetch|ERR_|offline/i.test(code)) return ['Немає зв’язку із сервером. Перевірте мережу й спробуйте ще раз.', 'Geen verbinding met de server. Controleer het netwerk en probeer opnieuw.'];
-  if (/TIJD|TIMEOUT|timeout/i.test(code)) return ['Сервер пошти не відповів вчасно. Нічого не втрачено.', 'De mailserver antwoordde niet op tijd. Er is niets verloren.'];
-  return ['Сервер пошти не віддав файл. Нічого не втрачено — спробуйте ще раз.', 'De mailserver gaf het bestand niet terug. Er is niets verloren — probeer opnieuw.'];
+  if (/TIJD|TIMEOUT|timeout/i.test(code)) return [`${w.uk} не ${vidpoviv} вчасно. Нічого не втрачено.`, `${w.nl} antwoordde niet op tijd. Er is niets verloren.`];
+  return [`${w.uk} не ${viddav} файл. Нічого не втрачено — спробуйте ще раз.`, `${w.nl} gaf het bestand niet terug. Er is niets verloren — probeer opnieuw.`];
 }
 
 const DONKER_SLEUTEL = 'tsv:bijlage-donkere-paginas';
@@ -75,7 +115,7 @@ export function WeergaveKop(p: KopProps) {
   const papier = ['rekening', 'contract', 'document', 'tekst', 'presentatie', 'tabel'].includes(soort.sleutel);
   const [donker, setDonker] = useState<boolean>(() => leesDonker());
   useEffect(() => {
-    const el = kopRef.current?.closest('.google-mail-attachment-preview');
+    const el = kopRef.current?.closest('.google-mail-attachment-preview, [data-weergave-drager]'); /* етап 4: і нейтральний носій */
     if (!el) return;
     if (donker && papier) el.setAttribute('data-donkere-paginas', 'ja'); else el.removeAttribute('data-donkere-paginas');
     return () => el.removeAttribute('data-donkere-paginas');
@@ -89,6 +129,10 @@ export function WeergaveKop(p: KopProps) {
     return () => { weg = true; };
   }, [p.blob, p.naam]);
   const { hoofd, overig } = actiesVoor(soort.sleutel, formaat, p.beschikbaar);
+  // етап 4 (НЕ ПЕРЕВІРЕНО): не більше двох видимих дій джерела; решта — у «⋯» після звичайних дій
+  const ctx = p.contextActies || [];
+  const ctxZichtbaar = ctx.filter((a) => a.zichtbaar).slice(0, 2);
+  const ctxMenu = ctx.filter((a) => !ctxZichtbaar.includes(a));
   const plaats = p.nav && p.nav.totaal > 1 ? t(`вкладення ${p.nav.index + 1} з ${p.nav.totaal}`, `bijlage ${p.nav.index + 1} van ${p.nav.totaal}`) : '';
   const feiten = [formaat, grootteTekst(p.grootte, p.taal), plaats].filter(Boolean).join(' · ');
   const niveau = vertrouwen?.niveau || 'bezig';
@@ -105,6 +149,7 @@ export function WeergaveKop(p: KopProps) {
           <span className='weergave-vertrouwen-kort'>{vertrouwen ? kies(p.taal, vertrouwen.kort) : t('Перевірка', 'Nagaan')}</span>
         </span>
         <div className='weergave-knoppen' role='toolbar' aria-label={t('Дії вкладення', 'Bijlageacties')}>
+          {ctxZichtbaar.length > 0 && <span className='weergave-context'>{ctxZichtbaar.map((a) => { const Icoon = a.icoon; return <button key={a.sleutel} type='button' className='weergave-context-knop' data-toon={a.toon} title={kies(p.taal, a.label)} onClick={a.uitvoeren}>{Icoon ? <Icoon aria-hidden='true' /> : null}<span>{kies(p.taal, a.label)}</span></button>; })}</span>}
           {hoofd && <button type='button' className='weergave-hoofd' onClick={hoofd.uitvoeren}>{kies(p.taal, hoofd.label)}</button>}
           <div className='weergave-menu-anker' ref={info.ref}>
             <button type='button' className='weergave-knop' aria-expanded={info.open} aria-controls={infoId} onClick={() => { meer.setOpen(false); info.setOpen(!info.open); }}>
@@ -117,7 +162,7 @@ export function WeergaveKop(p: KopProps) {
               </div>
             )}
           </div>
-          {(overig.length > 0 || p.zoom || papier) && (
+          {(overig.length > 0 || ctxMenu.length > 0 || p.zoom || papier) && (
             <div className='weergave-menu-anker' ref={meer.ref}>
               <button type='button' className='weergave-knop rond' aria-label={t('Ще дії', 'Meer acties')} title={t('Ще дії', 'Meer acties')} aria-expanded={meer.open} onClick={() => { info.setOpen(false); meer.setOpen(!meer.open); }}><MoreHorizontal aria-hidden='true' /></button>
               {meer.open && (
@@ -128,6 +173,7 @@ export function WeergaveKop(p: KopProps) {
                     <button type='button' role='menuitem' onClick={() => p.zoom!.zet(Math.min(2.5, Math.round((p.zoom!.waarde + 0.1) * 10) / 10))}>+</button>
                   </div>}
                   {overig.map((a) => <button key={a.sleutel} type='button' role='menuitem' onClick={() => { meer.setOpen(false); a.uitvoeren(); }}>{kies(p.taal, a.label)}</button>)}
+                  {ctxMenu.map((a) => <button key={`ctx:${a.sleutel}`} type='button' role='menuitem' onClick={() => { meer.setOpen(false); a.uitvoeren(); }}>{kies(p.taal, a.label)}</button>)}
                   {papier && <button type='button' role='menuitemcheckbox' aria-checked={donker} className='weergave-keuze' onClick={() => { const n = !donker; setDonker(n); bewaarDonker(n); }}>{donker ? '✓ ' : ''}{t('Темні сторінки документа', 'Donkere documentpagina’s')}</button>}
                 </div>
               )}
@@ -141,7 +187,7 @@ export function WeergaveKop(p: KopProps) {
         <div className='weergave-melding' data-fase={p.staat.fase} role={p.staat.fase === 'fout' ? 'alert' : 'status'}>
           {p.staat.fase === 'laden'
             ? <><LoaderCircle className='spin' aria-hidden='true' /><span>{t(`Завантажуємо «${p.staat.naam}»…`, `«${p.staat.naam}» laden…`)}</span></>
-            : <><span>{t(`«${p.staat.naam}»: `, `«${p.staat.naam}»: `)}{kies(p.taal, foutTekst(p.staat.code))}</span><button type='button' onClick={p.staat.onOpnieuw}><RotateCcw aria-hidden='true' />{t('Спробувати ще раз', 'Opnieuw proberen')}</button></>}
+            : <><span>{t(`«${p.staat.naam}»: `, `«${p.staat.naam}»: `)}{kies(p.taal, foutTekst(p.staat.code, p.bron))}</span><button type='button' onClick={p.staat.onOpnieuw}><RotateCcw aria-hidden='true' />{t('Спробувати ще раз', 'Opnieuw proberen')}</button></>}
         </div>
       )}
     </header>
@@ -192,13 +238,21 @@ function Mini(p: { taal: Taal; it: WeergaveItem; i: number; actueel: boolean; la
   );
 }
 
-export function WeergaveStrook(p: { taal: Taal; items: WeergaveItem[]; index: number; onKies: (i: number) => void; laadMini?: (i: number) => Promise<Blob | null> }) {
+/** Етап 4 (НЕ ПЕРЕВІРЕНО): підпис стрічки за джерелом; без джерела — «Усі вкладення листа», як раніше. */
+const STROOK_LABEL: Record<WeergaveBron, [string, string]> = {
+  post: ['Усі вкладення листа', 'Alle bijlagen van het bericht'],
+  schijf: ['Файли теки', 'Bestanden in de map'],
+  melding: ['Усі вкладення сповіщення', 'Alle bijlagen van de melding'],
+  bestand: ['Усі файли', 'Alle bestanden'],
+};
+
+export function WeergaveStrook(p: { taal: Taal; items: WeergaveItem[]; index: number; onKies: (i: number) => void; laadMini?: (i: number) => Promise<Blob | null>; bron?: WeergaveBron }) {
   const t = t2(p.taal);
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => { ref.current?.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [p.index]);
   if (p.items.length < 2) return null;
   return (
-    <nav className='weergave-strook' aria-label={t('Усі вкладення листа', 'Alle bijlagen van het bericht')}>
+    <nav className='weergave-strook' aria-label={kies(p.taal, STROOK_LABEL[p.bron || 'post'])}>
       <button type='button' className='weergave-knop rond' aria-label={t('Попереднє вкладення', 'Vorige bijlage')} disabled={p.index <= 0} onClick={() => p.onKies(p.index - 1)}><ChevronLeft aria-hidden='true' /></button>
       <div className='weergave-strook-lijst' ref={ref}>
         {p.items.map((it, i) => <Mini key={`${i}:${it.naam}`} taal={p.taal} it={it} i={i} actueel={i === p.index} laad={p.laadMini} onKies={p.onKies} />)}
