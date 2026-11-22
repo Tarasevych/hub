@@ -11,7 +11,7 @@
 //   • мінімалізм для розсіяної людини: одна тонка смуга, значок, коротке слово й число, колір лише для терміновості;
 //   • дія з’являється лише тоді, коли вона справді можлива (рахунок зі строком, є попередня версія тощо).
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { CalendarClock, CalendarPlus, GitCompare, Hash, Search, Wallet } from 'lucide-react';
+import { CalendarClock, CalendarPlus, GitCompare, Hash, PenLine, Search, Wallet } from 'lucide-react';
 import { kies, soortVan, type Taal } from './soort';
 import { rekeningVelden, type RekeningVelden } from './rekening-velden';
 import { snelkaartRijen, termijnHint, type SnelkaartSleutel } from './snelkaart';
@@ -20,6 +20,7 @@ import { toontKalenderBetaling, type BetalingBron } from './kalender-betaling';
 import { KalenderBetalingVenster } from './KalenderBetalingVenster';
 import { groepVoor, vorigeVersie, type CtxBericht } from './versies';
 import { ZoekVeld, type ZoekBron } from './ZoekVeld';
+import { ONDERTEKEN_LABEL, ONDERTEKEN_TOELICHTING, toontOndertekenen } from './ondertekenen';
 
 // Наявне вікно порівняння з Пошти (src/mail/VersieVergelijk.tsx) — окремим шматком, лише коли людина натисне.
 const VersieVergelijk = lazy(() => import('../mail/VersieVergelijk'));
@@ -49,6 +50,12 @@ export type WeergaveExtra = {
   versieBron?: { berichten: CtxBericht[]; bron: { context: Record<string, string>; accountId: string; cacheAccountId: string } } | null;
   /** 15.6: усі вкладення відкритого листа для пошуку одразу в усіх (читаються лише після запиту людини). */
   zoekBron?: ZoekBron | null;
+  /**
+   * 15.4: відкрити наявний редактор документа Пошти (MailDocumentBewerker) одразу в режимі позначок.
+   * Джерело подає це поле лише тоді, коли редактор для файла справді доступний.
+   * Редактор зберігає нову копію; оригінал у листі не змінюється.
+   */
+  onOndertekenen?: (() => void) | null;
 };
 
 export type Etappe3Props = {
@@ -135,6 +142,13 @@ export function WeergaveEtappe3(p: Etappe3Props) {
     x.zoekBron && x.zoekBron.items.length > 1 && (
       <button key='zoek' type='button' className='weergave-etappe3-actie' aria-pressed={venster === 'zoek'} onClick={() => setVenster(venster === 'zoek' ? null : 'zoek')}>
         <Search aria-hidden='true' /><span>{t('Пошук у вкладеннях', 'Zoeken in bijlagen')}</span>
+      </button>
+    ),
+    // 15.4: візуальна позначка на окремій копії через наявний редактор; не кваліфікований електронний підпис
+    x.onOndertekenen && (toontOndertekenen(soort, p.contentType) || toontOndertekenen(soort, p.naam)) && (
+      <button key='ondertekenen' type='button' className='weergave-etappe3-actie' onClick={() => x.onOndertekenen?.()}
+        title={kies(p.taal, ONDERTEKEN_TOELICHTING)}>
+        <PenLine aria-hidden='true' /><span>{kies(p.taal, ONDERTEKEN_LABEL)}</span>
       </button>
     ),
   ].filter(Boolean);
