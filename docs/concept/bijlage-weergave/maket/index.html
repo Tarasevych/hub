@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="uk" class="theme-dark palet-maquette">
+<head>
+<meta charset="utf-8">
+<title>Концепція перегляду вкладень — до і після</title>
+<!-- Concept (Grok: hub.tarasevych.com). Statische maquette, geen code van de site. Kleuren en letters uit «Макет (студійний)», donker. -->
+<style>
+:root{
+  --mq-bg:#090e1b;--mq-bg-2:#101728;--mq-oppervlak:#141d30;--mq-oppervlak-2:#1b263a;
+  --mq-oppervlak-zacht:rgba(159,174,218,.045);--mq-oppervlak-hover:rgba(159,174,224,.095);
+  --mq-rand:rgba(197,212,239,.12);--mq-rand-sterk:rgba(197,212,239,.24);
+  --mq-tekst:#eff4ff;--mq-gedempt:#98a7bf;--mq-stil:#74849f;--mq-wit:#fff;
+  --mq-accent:#8eb9ff;--mq-accent-2:#4471be;--mq-accent-op:#11182c;
+  --mq-tech-markering:#f5b864;--mq-am-accent:#b3a0ff;--mq-am-accent-2:#5adad4;
+  --mq-knop-primair-bg:#f4f0ff;--mq-knop-primair-tekst:#262246;
+  --mq-straal-kaart:26px;--mq-straal-veld:13px;--mq-straal-knop:13px;
+  --mq-schaduw:0 30px 80px rgba(0,0,0,.28);--mq-schaduw-zacht:0 18px 46px rgba(4,8,22,.22);
+  --mq-font-ui:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;
+  --goed:#5fd39a;--goed-zacht:rgba(95,211,154,.14);--let:#f5b864;--let-zacht:rgba(245,184,100,.16);--fout:#ff8a8a;--fout-zacht:rgba(255,138,138,.14);
+  --merk:#ffcf5a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--mq-bg);color:var(--mq-tekst);font-family:var(--mq-font-ui);}
+.blad{padding:36px 40px 44px;width:max-content}
+h1{font-size:30px;margin:0 0 6px;letter-spacing:-.01em}
+.onder{color:var(--mq-gedempt);font-size:16px;margin:0 0 26px}
+.duo{display:flex;gap:36px;align-items:flex-start}
+.kolom{display:flex;flex-direction:column;gap:12px}
+.kolomkop{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:700}
+.etiket{font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px}
+.etiket.zo{background:var(--fout-zacht);color:var(--fout)}
+.etiket.na{background:var(--goed-zacht);color:var(--goed)}
+.etiket.prik{background:var(--let-zacht);color:var(--let)}
+.vak{position:relative;border:1px solid var(--mq-rand-sterk);border-radius:18px;overflow:hidden;background:var(--mq-bg-2);box-shadow:var(--mq-schaduw-zacht)}
+.vak>img{display:block}
+.uitleg{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:8px;font-size:15.5px;line-height:1.4;color:var(--mq-tekst)}
+.uitleg li{display:flex;gap:10px;align-items:flex-start}
+.uitleg li b{flex:0 0 auto}
+.nr{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-weight:800;font-size:14px;flex:0 0 auto}
+.zo-lijst .nr{background:var(--fout);color:#2a0d0d}
+.na-lijst .nr{background:var(--merk);color:#2a1d00}
+.punt{position:absolute;z-index:50;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;font-weight:800;font-size:14px;box-shadow:0 0 0 3px rgba(9,14,27,.85),0 6px 16px rgba(0,0,0,.5)}
+.punt.zo{background:var(--fout);color:#2a0d0d}
+.punt.na{background:var(--merk);color:#2a1d00}
+.kader-zo{position:absolute;z-index:40;border:3px dashed var(--fout);border-radius:10px}
+
+/* ---------- de nieuwe viewer (maquette) ---------- */
+.werk{position:relative;background:radial-gradient(1200px 600px at 70% -10%,rgba(54,96,178,.18),transparent),var(--mq-bg);overflow:hidden}
+.zijbalk{position:absolute;left:0;top:0;bottom:0;width:58px;background:rgba(10,16,30,.88);border-right:1px solid var(--mq-rand);display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:16px}
+.zijbalk i{width:26px;height:26px;border-radius:8px;background:var(--mq-oppervlak-2);display:block}
+.zijbalk i.aan{background:var(--mq-accent-2)}
+.lijstvaag{position:absolute;inset:0 0 0 58px;filter:blur(3px);opacity:.35;padding:70px 24px;display:grid;gap:14px;align-content:start}
+.lijstvaag div{height:42px;border-radius:12px;background:var(--mq-oppervlak)}
+.viewer{position:absolute;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr auto;background:var(--mq-oppervlak);border:1px solid var(--mq-rand-sterk);border-radius:22px;box-shadow:var(--mq-schaduw);overflow:hidden}
+.vkop{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--mq-rand)}
+.knop{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:var(--mq-straal-knop);border:1px solid var(--mq-rand-sterk);background:var(--mq-oppervlak-2);color:var(--mq-tekst);font:600 14px var(--mq-font-ui);white-space:nowrap}
+.knop.rond{width:38px;padding:0;justify-content:center;font-size:18px}
+.knop.primair{background:var(--mq-knop-primair-bg);color:var(--mq-knop-primair-tekst);border-color:transparent}
+.knop.zacht{background:transparent}
+.titelblok{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}
+.titel{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subtitel{font-size:12.5px;color:var(--mq-gedempt)}
+.vertrouwen{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--goed-zacht);color:var(--goed);font-size:13px;font-weight:600;white-space:nowrap;flex:0 0 auto}
+.vertrouwen.lang{white-space:normal;max-width:330px;border-radius:14px;line-height:1.3}
+.vertrouwen::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--goed);box-shadow:0 0 0 4px rgba(95,211,154,.18)}
+.snelkaart{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;padding:12px 16px;background:linear-gradient(145deg,#1f3559 0%,#121c2f 100%);border-bottom:1px solid var(--mq-rand)}
+.snelkaart .soort{font-size:12px;color:var(--mq-accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.snelkaart .feit{font-size:21px;font-weight:800}
+.snelkaart .feit span{color:var(--mq-gedempt);font-weight:600}
+.snelkaart .acties{margin-left:auto;display:flex;gap:8px}
+.versie{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:var(--let-zacht);color:var(--let);font-size:13px;font-weight:600;white-space:nowrap}
+.prikbord{position:absolute;z-index:45;top:10px;right:12px}
+.inhoud{display:grid;grid-template-columns:minmax(0,1fr) 310px;min-height:0}
+.inhoud.smal{grid-template-columns:1fr}
+.podium{position:relative;overflow:hidden;padding:18px;display:grid;justify-items:center;align-content:start;background:var(--mq-bg-2)}
+.pagina{width:100%;max-width:620px;border-radius:12px;background:#151e31;border:1px solid var(--mq-rand);padding:26px 30px;color:#dfe7f7;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.pagina h3{margin:0 0 4px;color:#9fc2ff;font-size:22px}
+.pagina .r{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(197,212,239,.08);font-size:14px}
+.pagina .r.mark{background:rgba(245,184,100,.16);border-radius:6px;padding:6px 8px;margin:0 -8px;border-bottom-color:transparent}
+.pagina .r.mark b{color:var(--let)}
+.pagina .som{display:flex;justify-content:space-between;margin-top:12px;font-weight:800;font-size:17px}
+.zijpaneel{border-left:1px solid var(--mq-rand);padding:14px;display:grid;gap:12px;align-content:start;font-size:13.5px}
+.zoek{display:flex;align-items:center;gap:8px;height:40px;border-radius:var(--mq-straal-veld);border:1px solid var(--mq-rand-sterk);background:var(--mq-oppervlak-zacht);padding:0 12px;color:var(--mq-gedempt);font-size:13.5px}
+.treffer{padding:8px 10px;border-radius:10px;background:var(--mq-oppervlak-2);color:var(--mq-gedempt)}
+.treffer b{color:var(--mq-tekst)}
+.treffer mark{background:rgba(142,185,255,.25);color:var(--mq-tekst);border-radius:4px;padding:0 2px}
+.positie{padding:8px 10px;border-radius:10px;border:1px dashed var(--mq-rand-sterk);color:var(--mq-gedempt)}
+.details{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:10px;background:var(--mq-oppervlak-zacht);color:var(--mq-gedempt)}
+.strook{display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--mq-rand);background:var(--mq-oppervlak);overflow:hidden}
+.mini{flex:0 0 auto;width:64px;height:48px;border-radius:9px;background:var(--mq-oppervlak-2);border:1px solid var(--mq-rand);display:grid;place-items:center;font-size:10.5px;color:var(--mq-gedempt);font-weight:700}
+.mini.aan{border:2px solid var(--mq-accent);color:var(--mq-tekst);box-shadow:0 0 0 4px rgba(142,185,255,.15)}
+.mini.foto{background:linear-gradient(135deg,#2c6fb0,#1b3e6c)}
+.strook .tel{margin-left:auto;color:var(--mq-gedempt);font-size:13px;white-space:nowrap}
+.menu{position:absolute;z-index:44;width:250px;border-radius:16px;background:rgba(24,33,54,.98);border:1px solid var(--mq-rand-sterk);box-shadow:var(--mq-schaduw);padding:8px;display:grid;gap:2px;font-size:14px}
+.menu div{padding:9px 10px;border-radius:9px;color:var(--mq-tekst)}
+.menu div:first-child{background:var(--mq-oppervlak-hover)}
+.menu small{color:var(--mq-stil);padding:4px 10px}
+.vraag{position:absolute;left:50%;transform:translateX(-50%);z-index:46}
+
+/* lezer en zwevend venster */
+.lezer{position:absolute;background:var(--mq-oppervlak);border:1px solid var(--mq-rand-sterk);border-radius:20px;box-shadow:var(--mq-schaduw);overflow:hidden}
+.lkop{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--mq-rand)}
+.lkop i{width:32px;height:32px;border-radius:10px;background:var(--mq-oppervlak-2);display:block}
+.ltekst{padding:12px 16px;font-size:13.5px;color:var(--mq-gedempt);line-height:1.5}
+.ltekst b{color:var(--mq-tekst);font-size:15px}
+
+/* telefoon */
+.tel{}
+.telefoon{position:relative;width:390px;height:844px;border-radius:44px;border:10px solid #050810;background:var(--mq-bg);overflow:hidden;box-shadow:var(--mq-schaduw)}
+.telefoon .viewer>*{min-width:0}
+.foutvak .knop{white-space:normal;height:auto;min-height:38px;padding:8px 12px}
+.telefoon .viewer{inset:0;border-radius:0;border:0;grid-template-rows:auto auto 1fr auto auto}
+.balk{display:flex;gap:8px;padding:10px 12px 16px;border-top:1px solid var(--mq-rand);background:var(--mq-oppervlak)}
+.balk .knop{height:46px;flex:1;justify-content:center}
+.balk .knop.rond{flex:0 0 46px;height:46px;width:46px}
+.veeg{color:var(--mq-stil);font-size:12px;text-align:center;padding:0 0 2px}
+.foutvak{margin:16px;min-width:0;border-radius:18px;border:1px solid rgba(255,138,138,.35);background:var(--fout-zacht);padding:18px;display:grid;gap:10px;font-size:14.5px;line-height:1.45}
+.foutvak b{color:var(--fout);font-size:16px}
+.laden{height:8px;border-radius:99px;background:var(--mq-oppervlak-2);overflow:hidden}
+.laden i{display:block;height:100%;width:62%;background:var(--mq-accent);border-radius:99px}
+
+/* melding */
+.melding{width:420px;border-radius:22px;background:rgba(24,33,54,.97);border:1px solid var(--mq-rand-sterk);box-shadow:var(--mq-schaduw);padding:14px;display:grid;grid-template-columns:84px 1fr;gap:14px}
+.melding .duim{width:84px;height:108px;border-radius:12px;background:#151e31;border:1px solid var(--mq-rand);padding:10px 9px;display:grid;gap:5px;align-content:start}
+.melding .duim i{height:5px;border-radius:3px;background:rgba(159,194,255,.35);display:block}
+.melding .duim i.k{width:60%;background:#9fc2ff;height:7px}
+.melding .wie{font-size:12.5px;color:var(--mq-gedempt)}
+.melding .wat{font-size:17px;font-weight:800;margin:2px 0 4px}
+.melding .acties{display:flex;gap:8px;margin-top:8px}
+.melding .verval{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mq-stil)}
+.melding .verval .laden{flex:1;height:5px}
+.melding .verval .laden i{width:35%;background:var(--mq-stil)}
+.bronnen{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.bron{display:grid;justify-items:center;gap:6px;width:92px;padding:12px 6px;border-radius:16px;background:var(--mq-oppervlak);border:1px solid var(--mq-rand);font-size:13px;font-weight:600}
+.bron i{width:34px;height:34px;border-radius:11px;background:var(--mq-oppervlak-2);display:block;font-style:normal;display:grid;place-items:center;font-size:18px}
+.pijl{font-size:30px;color:var(--mq-accent)}
+.een{padding:14px 18px;border-radius:18px;background:linear-gradient(145deg,#1f3559 0%,#121c2f 100%);border:1px solid var(--mq-rand-sterk);font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- ======================= КОМП'ЮТЕР ======================= -->
+<section class="blad" id="computer">
+  <h1>Перегляд вкладення на комп’ютері — що є і що могло б бути</h1>
+  <p class="onder">Ліворуч — справжній знімок поточного перегляду (тестовий стенд, прапорці вимкнено). Праворуч — концепція. Усі дані праворуч — <b>приклад</b>, вигадані.</p>
+  <div class="duo">
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket zo">ЗАРАЗ</span> рахунок, на весь екран</div>
+      <div class="vak" style="width:1100px;height:688px">
+        <img src="beelden/zo-computer-pdf.png" style="width:1100px">
+        <div class="kader-zo" style="left:40px;top:54px;width:150px;height:32px"></div><div class="punt zo" style="left:176px;top:40px">1</div>
+        <div class="kader-zo" style="left:196px;top:50px;width:900px;height:40px"></div><div class="punt zo" style="left:600px;top:36px">2</div>
+        <div class="kader-zo" style="left:62px;top:136px;width:1000px;height:544px"></div><div class="punt zo" style="left:76px;top:150px">3</div>
+        <div class="punt zo" style="left:1050px;top:300px">4</div>
+      </div>
+      <ul class="uitleg zo-lijst" style="width:1100px">
+        <li><span class="nr">1</span><span>Назва файлу обрізана до кількох літер, не видно, що це за документ і що з ним робити.</span></li>
+        <li><span class="nr">2</span><span>Сім однакових кнопок у два рядки: «Друк», «Зберегти», «Завантажити», «Згорнути», «Закрити»… Головної дії немає.</span></li>
+        <li><span class="nr">3</span><span>Біла сторінка серед темної теми сліпить; ні суми, ні строку оплати окремо не показано.</span></li>
+        <li><span class="nr">4</span><span>Немає позначки довіри, немає порівняння з попереднім рахунком, немає інших вкладень листа поруч.</span></li>
+      </ul>
+    </div>
+
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket na">МОГЛО Б БУТИ</span> той самий рахунок <span class="etiket prik">Приклад</span></div>
+      <div class="vak werk" style="width:1100px;height:688px">
+        <div class="zijbalk"><i></i><i class="aan"></i><i></i><i></i><i></i><i></i></div>
+        <div class="lijstvaag"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+        <div class="viewer" style="left:74px;top:14px;right:14px;bottom:14px">
+          <div class="vkop">
+            <button class="knop rond zacht">‹</button>
+            <div class="titelblok"><span class="titel">Рахунок за жовтень — ТОВ «Приклад-Енерго»</span><span class="subtitel">Вкладення 3 з 12 · лист від Олени Коваль, 22 листопада</span></div>
+            <span class="vertrouwen lang">Безпечно: справжній документ, відправник відомий, без макросів і прихованих посилань</span>
+            <button class="knop">⤓ Завантажити</button>
+            <button class="knop rond">⋯</button>
+            <button class="knop rond">✕</button>
+          </div>
+          <div class="snelkaart">
+            <div><div class="soort">Рахунок · приклад</div><div class="feit">1 240 € <span>· сплатити до 5 грудня</span></div></div>
+            <span class="versie">Той самий рахунок, що й 3 листопада: 2 зміни</span>
+            <div class="acties"><button class="knop primair">📅 Додати оплату в Календар</button><button class="knop">Порівняти з попереднім</button></div>
+          </div>
+          <div class="inhoud">
+            <div class="podium">
+              <div class="pagina">
+                <h3>Рахунок № 2026-10-117</h3>
+                <div style="color:var(--mq-gedempt);font-size:13px;margin-bottom:12px">Приклад · ТОВ «Приклад-Енерго» · сторінка 2 з 3</div>
+                <div class="r"><span>Електроенергія, жовтень</span><span>860,00 €</span></div>
+                <div class="r mark"><span>Мережевий тариф <b>(змінено: було 190,00 €)</b></span><b>230,00 €</b></div>
+                <div class="r"><span>Обслуговування лічильника</span><span>40,00 €</span></div>
+                <div class="r mark"><span>Пеня за вересень <b>(новий рядок)</b></span><b>110,00 €</b></div>
+                <div class="som"><span>Разом до сплати</span><span>1 240,00 €</span></div>
+              </div>
+            </div>
+            <div class="zijpaneel">
+              <div class="zoek">⌕ Пошук у всіх 12 вкладеннях</div>
+              <div class="treffer"><b>«пеня»</b> — знайдено у 2 файлах:<br>рахунок за жовтень, стор. 2<br>договір оренди, п. 7.3 — «<mark>пеня</mark> 0,1 % за день»</div>
+              <div class="positie">↺ Ви зупинилися тут минулого разу: сторінка 2 з 3</div>
+              <div class="details"><span>Подробиці: формат, розмір, підписи</span><span>›</span></div>
+            </div>
+          </div>
+          <div class="strook">
+            <div class="mini">ДОГОВІР</div><div class="mini">ТАБЛИЦЯ</div><div class="mini aan">РАХУНОК</div><div class="mini foto"></div><div class="mini foto"></div><div class="mini">АРХІВ</div><div class="mini">ТЕКСТ</div><div class="mini">ЛИСТ</div><div class="mini foto"></div><div class="mini">ФОТО</div><div class="mini">ІНШЕ</div><div class="mini">ДОГОВІР</div>
+            <span class="tel">← → гортати · 3 з 12</span>
+          </div>
+        </div>
+        <div class="punt na" style="left:470px;top:22px">1</div>
+        <div class="punt na" style="left:610px;top:-2px;top:4px">2</div>
+        <div class="punt na" style="left:88px;top:86px">3</div>
+        <div class="punt na" style="left:390px;top:100px">4</div>
+        <div class="punt na" style="left:600px;top:150px">5</div>
+        <div class="punt na" style="left:470px;top:250px">6</div>
+        <div class="punt na" style="left:760px;top:226px">7</div>
+        <div class="punt na" style="left:760px;top:372px">8</div>
+        <div class="punt na" style="left:760px;top:440px">9</div>
+        <div class="punt na" style="left:960px;top:20px">10</div>
+        <div class="punt na" style="left:88px;top:614px">11</div>
+      </div>
+      <ul class="uitleg na-lijst" style="width:1100px">
+        <li><span class="nr">1</span><span>Повна людська назва й звідки файл: «Вкладення 3 з 12 · лист від Олени Коваль».</span></li>
+        <li><span class="nr">2</span><span>Одна позначка довіри: колір і одне речення (справжній тип збігається з назвою, відправник відомий, без макросів і прихованих посилань).</span></li>
+        <li><span class="nr">3</span><span>Швидка картка вгорі: що це і головне — «Рахунок, 1 240 €, сплатити до 5 грудня».</span></li>
+        <li><span class="nr">4</span><span>Версії: «Той самий рахунок, що й 3 листопада: 2 зміни».</span></li>
+        <li><span class="nr">5</span><span>Дії під тип файлу: для рахунку — «Додати оплату в Календар» і «Порівняти з попереднім»; для договору — «Підписати».</span></li>
+        <li><span class="nr">6</span><span>Темна сторінка в темній темі, зміни підсвічено прямо в документі.</span></li>
+        <li><span class="nr">7</span><span>Пошук одразу в усіх вкладеннях листа.</span></li>
+        <li><span class="nr">8</span><span>Запам’ятоване місце: відкривається там, де ви зупинилися.</span></li>
+        <li><span class="nr">9</span><span>Технічні дані (формат, байти, кодеки) сховано під «Подробиці».</span></li>
+        <li><span class="nr">10</span><span>Мінімум кнопок: «Завантажити», «⋯» (друк, зберегти на Диск, поділитися…) і «Закрити».</span></li>
+        <li><span class="nr">11</span><span>Стрічка мініатюр усіх 12 вкладень, стрілки й гортання.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ВІКНО У ВІКНІ ======================= -->
+<section class="blad" id="zwevend">
+  <h1>«Вікно у вікні» — що є і що могло б бути</h1>
+  <p class="onder">Лист відкрито зменшеним вікном поверх пошти. Ліворуч — справжні знімки стенда, праворуч — концепція (<b>приклад</b>).</p>
+  <div class="duo">
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket zo">ЗАРАЗ</span> лист у вікні → відкрили вкладення</div>
+      <div style="display:flex;gap:14px">
+        <div class="vak" style="width:540px;height:338px"><img src="beelden/zo-zwevend-lezer.png" style="width:540px">
+          <div class="kader-zo" style="left:228px;top:74px;width:186px;height:250px"></div><div class="punt zo" style="left:212px;top:60px">1</div></div>
+        <div class="vak" style="width:540px;height:338px"><img src="beelden/zo-zwevend-pdf.png" style="width:540px">
+          <div class="kader-zo" style="left:12px;top:12px;width:516px;height:316px"></div><div class="punt zo" style="left:20px;top:20px">2</div></div>
+      </div>
+      <ul class="uitleg zo-lijst" style="width:1094px">
+        <li><span class="nr">1</span><span>Маленьке вікно листа; поруч права смуга «Макету» закриває частину пошти.</span></li>
+        <li><span class="nr">2</span><span>Вкладення розкривається на весь робочий простір — вікно листа й пошта зникають, відчуття «вікна у вікні» втрачено.</span></li>
+      </ul>
+    </div>
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket na">МОГЛО Б БУТИ</span> перегляд у межах того самого вікна <span class="etiket prik">Приклад</span></div>
+      <div class="vak werk" style="width:1100px;height:688px">
+        <div class="zijbalk"><i></i><i class="aan"></i><i></i><i></i><i></i></div>
+        <div class="lijstvaag" style="filter:none;opacity:.55"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+        <div class="viewer" style="left:520px;top:40px;width:560px;height:620px;grid-template-rows:auto auto 1fr auto">
+          <div class="vkop">
+            <button class="knop rond zacht">‹</button>
+            <div class="titelblok"><span class="titel">Рахунок за жовтень</span><span class="subtitel">3 з 12 · назад до листа</span></div>
+            <span class="vertrouwen" style="padding:6px 10px">Безпечно</span>
+            <button class="knop rond">⋯</button>
+            <button class="knop rond">✕</button>
+          </div>
+          <div class="snelkaart" style="flex-wrap:wrap;gap:10px">
+            <div><div class="soort">Рахунок · приклад</div><div class="feit" style="font-size:18px">1 240 € <span>· до 5 грудня</span></div></div>
+            <div class="acties"><button class="knop primair">📅 В Календар</button></div>
+            <span class="versie">Як рахунок від 3 листопада: 2 зміни</span>
+          </div>
+          <div class="inhoud smal">
+            <div class="podium" style="padding:12px">
+              <div class="pagina" style="padding:18px 20px">
+                <h3 style="font-size:18px">Рахунок № 2026-10-117</h3>
+                <div class="r"><span>Електроенергія</span><span>860,00 €</span></div>
+                <div class="r mark"><span>Мережевий тариф <b>(було 190 €)</b></span><b>230,00 €</b></div>
+                <div class="r"><span>Лічильник</span><span>40,00 €</span></div>
+                <div class="r mark"><span>Пеня <b>(новий рядок)</b></span><b>110,00 €</b></div>
+                <div class="som"><span>Разом</span><span>1 240,00 €</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="strook" style="padding:8px 10px"><div class="mini" style="width:52px;height:40px">ДОГ.</div><div class="mini" style="width:52px;height:40px">ТАБЛ.</div><div class="mini aan" style="width:52px;height:40px">РАХ.</div><div class="mini foto" style="width:52px;height:40px"></div><div class="mini foto" style="width:52px;height:40px"></div><div class="mini" style="width:52px;height:40px">АРХ.</div><span class="tel">3 з 12 ›</span></div>
+        </div>
+        <div class="menu" style="left:820px;top:96px"><small>Ще дії</small><div>Друк</div><div>Зберегти на Диск</div><div>Поділитися</div><div>Відкрити на весь екран</div><div>Подробиці про файл</div></div>
+        <div class="punt na" style="left:506px;top:26px">1</div>
+        <div class="punt na" style="left:900px;top:44px">2</div>
+        <div class="punt na" style="left:806px;top:84px">3</div>
+        <div class="punt na" style="left:506px;top:120px">4</div>
+        <div class="punt na" style="left:506px;top:600px">5</div>
+      </div>
+      <ul class="uitleg na-lijst" style="width:1100px">
+        <li><span class="nr">1</span><span>Вкладення відкривається всередині того самого вікна листа, пошта лишається видимою; «‹» повертає до листа.</span></li>
+        <li><span class="nr">2</span><span>У вузькому вікні позначка довіри стискається до одного слова й кольору; повне речення — при наведенні.</span></li>
+        <li><span class="nr">3</span><span>Лише «⋯» і «Закрити»: усе інше (друк, Диск, поділитися, на весь екран, подробиці) — в одному меню.</span></li>
+        <li><span class="nr">4</span><span>Швидка картка й головна дія вміщуються у вузьке вікно без накладання кнопок.</span></li>
+        <li><span class="nr">5</span><span>Стрічка мініатюр лишається — можна перейти до іншого вкладення, не закриваючи вікно.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ТЕЛЕФОН ======================= -->
+<section class="blad" id="telefoon">
+  <h1>Телефон, ширина 390 пікселів — що є і що могло б бути</h1>
+  <p class="onder">Ліворуч — справжні знімки стенда (прапорці вимкнено), праворуч — концепція (<b>приклад</b>), зокрема чесний стан помилки.</p>
+  <div class="duo">
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket zo">ЗАРАЗ</span> рахунок і фото</div>
+      <div style="display:flex;gap:16px">
+        <div class="vak" style="width:390px;height:844px"><img src="beelden/zo-telefoon-pdf.png">
+          <div class="kader-zo" style="left:0;top:58px;width:60px;height:786px"></div><div class="punt zo" style="left:14px;top:300px">1</div>
+          <div class="kader-zo" style="left:62px;top:62px;width:324px;height:206px"></div><div class="punt zo" style="left:340px;top:70px">2</div></div>
+        <div class="vak" style="width:390px;height:844px"><img src="beelden/zo-telefoon-foto.png">
+          <div class="kader-zo" style="left:70px;top:290px;width:310px;height:50px"></div><div class="punt zo" style="left:350px;top:300px">3</div>
+          <div class="kader-zo" style="left:70px;top:560px;width:310px;height:260px"></div><div class="punt zo" style="left:350px;top:570px">4</div></div>
+      </div>
+      <ul class="uitleg zo-lijst" style="width:796px">
+        <li><span class="nr">1</span><span>Перегляд не на весь екран: ліворуч і зверху видно шматки листа (уже виправлено на гілці окремим прапорцем, типово вимкненим).</span></li>
+        <li><span class="nr">2</span><span>Заголовок із кнопками займає чверть екрана, кнопки у два-три ряди.</span></li>
+        <li><span class="nr">3</span><span>Змішані слова: українські підписи впереміш з англійськими.</span></li>
+        <li><span class="nr">4</span><span>Технічні поля (формат, байти, ширина, висота) — посеред екрана, та ще й англійською.</span></li>
+      </ul>
+    </div>
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket na">МОГЛО Б БУТИ</span> звичайний стан і помилка <span class="etiket prik">Приклад</span></div>
+      <div style="display:flex;gap:40px;position:relative">
+        <div class="telefoon">
+          <div class="viewer">
+            <div class="vkop" style="padding:10px 10px">
+              <button class="knop rond zacht">‹</button>
+              <div class="titelblok"><span class="titel">Рахунок за жовтень</span><span class="subtitel">3 з 12 · Олена Коваль</span></div>
+              <button class="knop rond">✕</button>
+            </div>
+            <div class="snelkaart" style="display:grid;gap:8px">
+              <div class="soort">Рахунок · приклад</div>
+              <div class="feit" style="font-size:22px">1 240 € <span>· до 5 грудня</span></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="vertrouwen">Безпечний документ</span><span class="versie">2 зміни від 3 листопада</span></div>
+            </div>
+            <div class="podium" style="padding:12px">
+              <div class="pagina" style="padding:16px">
+                <h3 style="font-size:17px">Рахунок № 2026-10-117</h3>
+                <div class="r"><span>Електроенергія</span><span>860 €</span></div>
+                <div class="r mark"><span>Тариф <b>(було 190)</b></span><b>230 €</b></div>
+                <div class="r"><span>Лічильник</span><span>40 €</span></div>
+                <div class="r mark"><span>Пеня <b>(нове)</b></span><b>110 €</b></div>
+                <div class="som"><span>Разом</span><span>1 240 €</span></div>
+              </div>
+              <div class="positie" style="margin-top:10px;font-size:12.5px">↺ Відкрито там, де ви зупинилися: стор. 2</div>
+            </div>
+            <div><div class="strook" style="padding:8px 10px;border-top:1px solid var(--mq-rand)"><div class="mini" style="width:50px;height:40px">ДОГ.</div><div class="mini" style="width:50px;height:40px">ТАБЛ.</div><div class="mini aan" style="width:50px;height:40px">РАХ.</div><div class="mini foto" style="width:50px;height:40px"></div><div class="mini foto" style="width:50px;height:40px"></div><div class="mini" style="width:50px;height:40px">АРХ.</div></div><div class="veeg">← гортайте пальцем між вкладеннями →</div></div>
+            <div class="balk"><button class="knop primair">📅 Додати оплату в Календар</button><button class="knop rond">⋯</button></div>
+          </div>
+        </div>
+        <div class="telefoon">
+          <div class="viewer">
+            <div class="vkop" style="padding:10px 10px">
+              <button class="knop rond zacht">‹</button>
+              <div class="titelblok"><span class="titel">Договір оренди 2026</span><span class="subtitel">1 з 12 · Олена Коваль</span></div>
+              <button class="knop rond">✕</button>
+            </div>
+            <div class="snelkaart" style="display:grid;gap:6px"><div class="soort">Договір · приклад</div><div class="feit" style="font-size:19px">Оренда квартири <span>· з 1 січня</span></div></div>
+            <div style="display:grid;align-content:start">
+              <div style="padding:22px 22px 0;display:grid;gap:10px;font-size:14px;color:var(--mq-gedempt)">Завантажено 2,1 з 3,4 МБ…<div class="laden"><i></i></div></div>
+              <div class="foutvak"><b>Не вдалося завантажити решту файлу</b>Поштовий сервер не відповів за 20 секунд. Ваш файл у безпеці, нічого не втрачено. Уже завантажені 2 сторінки можна переглянути.<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"><button class="knop primair">↻ Спробувати ще раз</button><button class="knop">Показати 2 сторінки</button></div></div>
+            </div>
+            <div><div class="strook" style="padding:8px 10px;border-top:1px solid var(--mq-rand)"><div class="mini aan" style="width:50px;height:40px">ДОГ.</div><div class="mini" style="width:50px;height:40px">ТАБЛ.</div><div class="mini" style="width:50px;height:40px">РАХ.</div><div class="mini foto" style="width:50px;height:40px"></div><div class="mini foto" style="width:50px;height:40px"></div><div class="mini" style="width:50px;height:40px">АРХ.</div></div><div class="veeg">← гортайте пальцем між вкладеннями →</div></div>
+            <div class="balk"><button class="knop primair">✍ Підписати</button><button class="knop rond">⋯</button></div>
+          </div>
+        </div>
+        <div class="punt na" style="left:394px;top:24px">1</div>
+        <div class="punt na" style="left:394px;top:110px">2</div>
+        <div class="punt na" style="left:394px;top:176px">3</div>
+        <div class="punt na" style="left:394px;top:486px">4</div>
+        <div class="punt na" style="left:394px;top:664px">5</div>
+        <div class="punt na" style="left:394px;top:780px">6</div>
+        <div class="punt na" style="left:800px;top:300px">7</div>
+        <div class="punt na" style="left:800px;top:780px">8</div>
+      </div>
+      <ul class="uitleg na-lijst" style="width:812px">
+        <li><span class="nr">1</span><span>Справді весь екран, один тонкий заголовок: «‹», назва, «Закрити».</span></li>
+        <li><span class="nr">2</span><span>Швидка картка: сума й строк видно без відкривання сторінок.</span></li>
+        <li><span class="nr">3</span><span>Довіра й версія — двома короткими позначками.</span></li>
+        <li><span class="nr">4</span><span>Запам’ятоване місце в документі.</span></li>
+        <li><span class="nr">5</span><span>Мініатюри всіх вкладень і гортання пальцем.</span></li>
+        <li><span class="nr">6</span><span>Велика головна дія під великий палець, решта — під «⋯».</span></li>
+        <li><span class="nr">7</span><span>Чесний стан: що саме сталося, що нічого не втрачено, «Спробувати ще раз» і показ уже завантаженого.</span></li>
+        <li><span class="nr">8</span><span>Для договору головна дія інша — «Підписати».</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= СПОВІЩЕННЯ ======================= -->
+<section class="blad" id="melding">
+  <h1>Сповіщення про вкладення і один перегляд для всіх розділів</h1>
+  <p class="onder">Ліворуч — справжній знімок стенда, праворуч — концепція (<b>приклад</b>).</p>
+  <div class="duo">
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket zo">ЗАРАЗ</span> вкладення видно лише в листі</div>
+      <div class="vak" style="width:390px;height:844px"><img src="beelden/zo-telefoon-lezer.png">
+        <div class="kader-zo" style="left:10px;top:300px;width:370px;height:500px"></div><div class="punt zo" style="left:340px;top:310px">1</div></div>
+      <ul class="uitleg zo-lijst" style="width:390px">
+        <li><span class="nr">1</span><span>Щоб дізнатися, що в рахунку, треба відкрити лист, знайти картку й відкрити перегляд. У цьому стенді окремої картки сповіщення з мініатюрою й сумою немає.</span></li>
+      </ul>
+    </div>
+    <div class="kolom">
+      <div class="kolomkop"><span class="etiket na">МОГЛО Б БУТИ</span> картка сповіщення <span class="etiket prik">Приклад</span></div>
+      <div class="vak werk" style="width:1100px;height:420px;padding:40px">
+        <div style="display:flex;gap:40px;align-items:flex-start;position:relative">
+          <div style="display:grid;gap:16px">
+            <div class="melding">
+              <div class="duim"><i class="k"></i><i></i><i></i><i style="width:70%"></i><i></i><i style="width:50%;background:var(--let)"></i></div>
+              <div>
+                <div class="wie">Пошта · Олена Коваль · щойно</div>
+                <div class="wat">Рахунок: 1 240 € до 5 грудня</div>
+                <div style="font-size:13px;color:var(--mq-gedempt)">Приклад · 2 зміни від рахунку 3 листопада</div>
+                <div class="acties"><button class="knop primair">📅 В Календар</button><button class="knop">Відкрити</button></div>
+              </div>
+              <div class="verval">Зникне саме після перегляду <div class="laden"><i></i></div></div>
+            </div>
+            <div class="melding" style="opacity:.75">
+              <div class="duim"><i class="k"></i><i></i><i></i><i></i><i style="width:60%"></i></div>
+              <div>
+                <div class="wie">Чат · Андрій · 5 хв тому</div>
+                <div class="wat">Договір оренди: чекає підпису</div>
+                <div style="font-size:13px;color:var(--mq-gedempt)">Приклад · 4 сторінки</div>
+                <div class="acties"><button class="knop primair">✍ Підписати</button><button class="knop">Відкрити</button></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;gap:18px;padding-top:6px">
+            <div style="font-weight:700;font-size:17px">Один спільний перегляд відкривається звідусіль</div>
+            <div class="bronnen">
+              <div class="bron"><i>✉</i>Пошта</div><div class="bron"><i>☁</i>Диск</div><div class="bron"><i>▦</i>Дошка</div><div class="bron"><i>🔔</i>Сповіщення</div><div class="bron"><i>💬</i>Чат</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px"><span class="pijl">↓</span><div class="een">Той самий перегляд: швидка картка, довіра, дії, версії, пошук, мініатюри</div></div>
+            <div style="font-size:14px;color:var(--mq-gedempt);max-width:520px;line-height:1.5">Однакові кнопки й однакова поведінка «Назад» усюди; запам’ятоване місце й позначки довіри спільні для файлу, хоч звідки його відкрили.</div>
+          </div>
+          <div class="punt na" style="left:-14px;top:-14px">1</div>
+          <div class="punt na" style="left:384px;top:2px">2</div>
+          <div class="punt na" style="left:362px;top:74px">3</div>
+          <div class="punt na" style="left:318px;top:118px">4</div>
+          <div class="punt na" style="left:440px;top:-14px">5</div>
+        </div>
+      </div>
+      <ul class="uitleg na-lijst" style="width:1100px">
+        <li><span class="nr">1</span><span>Мініатюра самого документа, а не загальна піктограма.</span></li>
+        <li><span class="nr">2</span><span>Головне одразу в сповіщенні: сума й строк.</span></li>
+        <li><span class="nr">3</span><span>Кнопка дії під тип файлу — без відкривання листа.</span></li>
+        <li><span class="nr">4</span><span>Картка зникає сама, щойно вкладення переглянуто.</span></li>
+        <li><span class="nr">5</span><span>Пошта, Диск, дошка, сповіщення й чат відкривають один і той самий перегляд.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+</body>
+</html>
