@@ -3,15 +3,14 @@
 // весь день, нагадування, опис, внутрішнє посилання на лист). Мережі немає, клієнт
 // agenda-client.ts не викликаємо, maakGebeurtenis не викликаємо, нічого не
 // записуємо. Людина має підтвердити пізніше. Це початок, не готовий результат.
-// Питання 2 розділу 13 ще відкрите: Павло 22.11.2026 погодився почати запис на
-// GitHub, але не вибрав, куди саме писати (наш Календар чи Google Календар).
-// Тимчасовий найобережніший вибір: лише чорнетка; якщо пізніше підтвердять запис —
-// спершу наш Календар через наявний maakGebeurtenis. Прямого запису в Google
-// Календар з переглядача немає.
-// Лишилося: прогнати скелет тесту; коротке вікно підтвердження в Weergave.tsx;
-// після згоди людини викликати наявний maakGebeurtenis з ключем проти подвійного
-// запису; не множити подію при повторному натисканні; уточнити ціль, коли Павло
-// відповість на питання 2; коротко перевірити типи.
+// Питання 2 розділу 13 закрито 22.11.2026: Павло відповів «Нехай людина щоразу
+// вибирає календар». Типової цілі немає. Той, хто викликає maakBetalingOntwerp,
+// мусить щоразу передати вибір: наш Календар (onze-agenda) або Google Календар
+// (google-agenda). Лише чорнетка, запис лише після згоди.
+// Лишилося: прогнати скелет тесту; коротке вікно підтвердження в Weergave.tsx
+// з вибором цілі щоразу, без типової цілі; після згоди людини викликати наявний
+// запис згідно з вибором; не множити подію при повторному натисканні; коротко
+// перевірити типи.
 // Спільний перегляд вкладень, етап 3, розділ 15.3 (Grok: hub.tarasevych.com).
 // Прапорець `bijlage-weergave-gedeeld-v1`, типово вимкнений. Без DOM, щоб можна було викликати з тестів.
 
@@ -20,14 +19,22 @@ import type { RekeningVelden } from './rekening-velden';
 import { kies, type SoortSleutel, type Taal, type Tweetalig } from './soort';
 import { opysBedrag, opysTermijn } from './snelkaart';
 
-/** Тимчасовий вибір цілі, поки питання 2 розділу 13 відкрите. */
-export type BetalingDoel = 'onze-agenda';
-
 /**
- * ТИМЧАСОВИЙ ВИБІР (питання 2 ще без повної відповіді).
- * Пишемо не зараз. Якщо людина пізніше підтвердить — спершу наш Календар.
+ * Ціль, яку людина вибирає щоразу. Типової цілі немає.
+ * Наш Календар — onze-agenda, Google Календар — google-agenda.
  */
-export const VOORLOPIG_DOEL: BetalingDoel = 'onze-agenda';
+export type BetalingDoel = 'onze-agenda' | 'google-agenda';
+
+export const BETALING_DOELEN: readonly BetalingDoel[] = ['onze-agenda', 'google-agenda'];
+
+export const BETALING_DOEL_LABEL: { readonly [K in BetalingDoel]: Tweetalig } = {
+  'onze-agenda': ['Наш Календар', 'Onze Agenda'],
+  'google-agenda': ['Google Календар', 'Google Agenda'],
+};
+
+export function geldigBetalingDoel(waarde: string): waarde is BetalingDoel {
+  return waarde === 'onze-agenda' || waarde === 'google-agenda';
+}
 
 /** Нагадування: за день і в день сплати. Лише повідомлення, без листа. */
 export const STANDAARD_HERINNERINGEN_MINUTEN: readonly number[] = [1440, 0];
@@ -35,8 +42,8 @@ export const STANDAARD_HERINNERINGEN_MINUTEN: readonly number[] = [1440, 0];
 export const BETALING_LABEL: Tweetalig = ['Додати оплату в Календар', 'Betaling aan Agenda toevoegen'];
 
 export const BETALING_TOELICHTING: Tweetalig = [
-  'Спершу покажемо чорнетку. У Календар запишемо лише після вашої згоди.',
-  'Eerst tonen we een ontwerp. We schrijven pas in de Agenda na uw instemming.',
+  'Спершу покажемо чорнетку. Календар виберете самі. Запишемо лише після вашої згоди.',
+  'Eerst tonen we een ontwerp. U kiest zelf de agenda. We schrijven pas na uw instemming.',
 ];
 
 const DATUM_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -56,7 +63,7 @@ export type BetalingBron = {
   taal?: Taal;
 };
 
-export type BetalingFout = 'geen-termijn' | 'geen-rekening' | 'ongeldige-datum';
+export type BetalingFout = 'geen-termijn' | 'geen-rekening' | 'ongeldige-datum' | 'geen-doel';
 
 export type BetalingOntwerp = {
   vorm: AgendaVorm;
@@ -165,8 +172,12 @@ function opys(bron: BetalingBron, taal: Taal, verwijzing: string): string {
 /**
  * Складає чорнетку. Нічого не надсилає і не змінює Календар.
  * Без строку або якщо це не рахунок — повертає причину, без вигаданої дати.
+ * Типової цілі немає: її треба передати щоразу.
  */
-export function maakBetalingOntwerp(bron: BetalingBron): OntwerpUitkomst {
+export function maakBetalingOntwerp(bron: BetalingBron, doel: BetalingDoel): OntwerpUitkomst {
+  if (!geldigBetalingDoel(doel)) {
+    return { ok: false, fout: 'geen-doel' };
+  }
   if (bron.soort !== undefined && bron.soort !== 'rekening') {
     return { ok: false, fout: 'geen-rekening' };
   }
@@ -199,7 +210,7 @@ export function maakBetalingOntwerp(bron: BetalingBron): OntwerpUitkomst {
       vorm,
       sleutel: betalingSleutel(bron),
       briefVerwijzing: verwijzing,
-      doel: VOORLOPIG_DOEL,
+      doel,
       wachtOpBevestiging: true,
       meldDeelnemers: 'none',
     },

@@ -1,19 +1,22 @@
 // ПОЧАТОК РОБОТИ, НЕ ПЕРЕВІРЕНО: скелет модульних тестів для kalender-betaling.ts.
 // Цей файл ще не проганяли. Це початок, не готовий результат.
+// Питання 2 закрито 22.11.2026: людина щоразу сама вибирає календар.
 // Лишилося: прогнати через звичайний запуск тестів; додати зразки без суми,
 // без відправника, іншої мови; перевірка, що інтерфейс ще не підключено
 // (Weergave.tsx і acties.ts без імпорту kalender-betaling) і що модуль
-// не викликає agenda-client.
+// не викликає agenda-client; вікно з вибором цілі ще попереду.
 // Спільний перегляд вкладень, етап 3, розділ 15.3 (Grok: hub.tarasevych.com).
 import { checker } from './hulp/nep-google';
 import type { RekeningVelden } from '../../src/bijlage-weergave/rekening-velden';
 import {
+  BETALING_DOEL_LABEL,
+  BETALING_DOELEN,
   BETALING_LABEL,
   BETALING_TOELICHTING,
   STANDAARD_HERINNERINGEN_MINUTEN,
-  VOORLOPIG_DOEL,
   betalingSleutel,
   briefVerwijzing,
+  geldigBetalingDoel,
   geldigeIsoDag,
   herinneringenVoor,
   maakBetalingOntwerp,
@@ -64,12 +67,11 @@ export async function main(): Promise<number> {
   check('дата 2026-13-40 нечинна', geldigeIsoDag('2026-13-40') === false);
   check('дата 2026-02-30 нечинна', geldigeIsoDag('2026-02-30') === false);
 
-  const ok = maakBetalingOntwerp(bron());
+  const ok = maakBetalingOntwerp(bron(), 'onze-agenda');
   check(
     'чорнетка складається',
     ok.ok === true &&
       ok.ontwerp.wachtOpBevestiging === true &&
-      ok.ontwerp.doel === VOORLOPIG_DOEL &&
       ok.ontwerp.doel === 'onze-agenda' &&
       ok.ontwerp.meldDeelnemers === 'none',
   );
@@ -111,8 +113,31 @@ export async function main(): Promise<number> {
       ok.ontwerp.vorm.herinneringen.every((h) => h.methode === 'popup'),
   );
 
+  const google = maakBetalingOntwerp(bron(), 'google-agenda');
+  check(
+    'ціль Google зберігається, запису немає',
+    google.ok === true &&
+      google.ontwerp.doel === 'google-agenda' &&
+      google.ontwerp.wachtOpBevestiging === true &&
+      google.ontwerp.vorm.gebeurtenisId === '',
+  );
+  check(
+    'обидві цілі відомі, типової немає',
+    BETALING_DOELEN.join(',') === 'onze-agenda,google-agenda' &&
+      geldigBetalingDoel('onze-agenda') === true &&
+      geldigBetalingDoel('google-agenda') === true &&
+      geldigBetalingDoel('') === false &&
+      BETALING_DOEL_LABEL['onze-agenda'][0] === 'Наш Календар' &&
+      BETALING_DOEL_LABEL['google-agenda'][0] === 'Google Календар',
+  );
+  check(
+    'без цілі — geen-doel',
+    (maakBetalingOntwerp(bron(), '' as never) as { ok: false; fout: string }).fout === 'geen-doel',
+  );
+
   const zonderSom = maakBetalingOntwerp(
     bron({ velden: { ...VELDEN, bedrag: null } }),
+    'onze-agenda',
   );
   check(
     'без суми чорнетка є, у описі суми немає',
@@ -124,13 +149,14 @@ export async function main(): Promise<number> {
 
   const zonderNummer = maakBetalingOntwerp(
     bron({ velden: { ...VELDEN, nummer: null } }),
+    'onze-agenda',
   );
   check(
     'без номера назва бере ім’я файла',
     zonderNummer.ok === true && zonderNummer.ontwerp.vorm.titel === 'Оплата: rekening.pdf',
   );
 
-  const nl = maakBetalingOntwerp(bron({ taal: 'nl' }));
+  const nl = maakBetalingOntwerp(bron({ taal: 'nl' }), 'onze-agenda');
   check(
     'нідерландська назва й опис',
     nl.ok === true &&
@@ -152,21 +178,22 @@ export async function main(): Promise<number> {
 
   check(
     'без строку — geen-termijn',
-    (maakBetalingOntwerp(bron({ velden: { ...VELDEN, termijn: null } })) as { ok: false; fout: string }).fout ===
+    (maakBetalingOntwerp(bron({ velden: { ...VELDEN, termijn: null } }), 'onze-agenda') as { ok: false; fout: string }).fout ===
       'geen-termijn',
   );
   check(
     'фото — geen-rekening',
-    (maakBetalingOntwerp(bron({ soort: 'foto' })) as { ok: false; fout: string }).fout === 'geen-rekening',
+    (maakBetalingOntwerp(bron({ soort: 'foto' }), 'onze-agenda') as { ok: false; fout: string }).fout === 'geen-rekening',
   );
   check(
     'без виду — geen-rekening',
-    (maakBetalingOntwerp(bron({ soort: undefined })) as { ok: false; fout: string }).fout === 'geen-rekening',
+    (maakBetalingOntwerp(bron({ soort: undefined }), 'onze-agenda') as { ok: false; fout: string }).fout === 'geen-rekening',
   );
   check(
     'хибна дата — ongeldige-datum',
     (maakBetalingOntwerp(
       bron({ velden: { ...VELDEN, termijn: { iso: '2026-02-30', bron: '30.02.2026' } } }),
+      'onze-agenda',
     ) as { ok: false; fout: string }).fout === 'ongeldige-datum',
   );
 
