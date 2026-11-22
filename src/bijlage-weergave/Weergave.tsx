@@ -3,7 +3,7 @@
 // snelle kaart, strook met alle bijlagen en een eerlijke laad- en foutstaat. Weet niets van de mail: de bron geeft gegevens en
 // acties door. Concept: docs/concept/bijlage-weergave/CONCEPT.md.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { ChevronLeft, ChevronRight, Info, LoaderCircle, MoreHorizontal, RotateCcw, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageOff, Info, LoaderCircle, MoreHorizontal, RotateCcw, X } from 'lucide-react';
 import { formaatVan, grootteTekst, kies, soortVan, type Taal } from './soort';
 import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from './vertrouwen';
 import { technischeRijen } from './details';
@@ -133,6 +133,7 @@ function Mini(p: { taal: Taal; it: WeergaveItem; i: number; actueel: boolean; la
   const s = soortVan(p.it.naam, p.it.contentType);
   const ref = useRef<HTMLButtonElement | null>(null);
   const [beeld, setBeeld] = useState('');
+  const [geenBeeld, setGeenBeeld] = useState(false);
   const [zichtbaar, setZichtbaar] = useState(false);
   useEffect(() => {
     const el = ref.current;
@@ -154,16 +155,19 @@ function Mini(p: { taal: Taal; it: WeergaveItem; i: number; actueel: boolean; la
           c.getContext('2d')?.drawImage(bm, 0, 0); bm.close();
           klein = await new Promise<Blob>((ok) => c.toBlob((b) => ok(b || blob), 'image/webp', 0.8));
         }
-      } catch { return; /* de browser kan dit beeld niet lezen (bv. HEIC): geen gebroken miniatuur, alleen de soort */ }
+      } catch { if (!weg) setGeenBeeld(true); return; /* de browser kan dit beeld niet lezen (bv. HEIC): een duidelijke plaatshouder met formaat en naam, nooit een leeg vak */ }
       if (weg) return;
       url = URL.createObjectURL(klein); setBeeld(url);
     }).catch(() => undefined);
     return () => { weg = true; if (url) URL.revokeObjectURL(url); };
   }, [zichtbaar, p.laad, p.i]);
+  const ext = (/\.([a-z0-9]{2,5})$/i.exec(p.it.naam)?.[1] || '').toUpperCase();
   return (
-    <button ref={ref} type='button' className='weergave-mini' data-soort={s.sleutel} data-beeld={beeld ? 'ja' : undefined} aria-current={p.actueel ? 'true' : undefined} title={p.it.naam} onClick={() => p.onKies(p.i)}>
-      {beeld ? <img src={beeld} alt='' aria-hidden='true' draggable={false} onError={() => setBeeld('')} /> : null}
-      <b>{kies(p.taal, s.kort)}</b><span>{p.it.naam}</span>
+    <button ref={ref} type='button' className='weergave-mini' data-geen-beeld={geenBeeld ? 'ja' : undefined} data-soort={s.sleutel} data-beeld={beeld ? 'ja' : undefined} aria-current={p.actueel ? 'true' : undefined} title={p.it.naam} onClick={() => p.onKies(p.i)}>
+      {beeld ? <img src={beeld} alt='' aria-hidden='true' draggable={false} onError={() => { setBeeld(''); setGeenBeeld(true); }} /> : null}
+      <b>{kies(p.taal, s.kort)}{geenBeeld && ext ? ` · ${ext}` : ''}</b>
+      {geenBeeld ? <i className='weergave-mini-geen' title={p.taal === 'nl' ? 'Geen voorbeeld in deze browser' : 'Цей браузер не показує мініатюру'}><ImageOff aria-hidden='true' /></i> : null}
+      <span>{p.it.naam}</span>
     </button>
   );
 }

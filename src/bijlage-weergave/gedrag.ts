@@ -1,7 +1,7 @@
 // Спільний перегляд вкладень, етап 2 (Grok: hub.tarasevych.com). Vlag `bijlage-weergave-gedeeld-v1`, standaard UIT.
 // Gedrag rond de viewer: vegen op de telefoon, de mailbalk erachter onbereikbaar maken zolang de viewer open is,
 // en per bestand de plek onthouden (scrollpositie en zoom), lokaal en per accountprofiel.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 /** Vegen met een vinger: links = volgende, rechts = vorige. Niet als de inhoud zelf horizontaal scrolt of ingezoomd is. */
 export function veegRichting(dx: number, dy: number, ms: number): -1 | 0 | 1 {
@@ -74,7 +74,9 @@ export function leesPlek(opslag: Storage | null, sleutel: string): Plek | null {
 export function bewaarPlek(opslag: Storage | null, sleutel: string, plek: Omit<Plek, 't'>, nu = Date.now()) {
   if (!opslag) return;
   try {
-    opslag.setItem(sleutel, JSON.stringify({ ...plek, t: nu }));
+    // eigen PDF-stand (pagina, passen, zoom) van hetzelfde bestand niet weggooien
+    let pdf: unknown; try { pdf = (JSON.parse(opslag.getItem(sleutel) || 'null') as { pdf?: unknown } | null)?.pdf; } catch { pdf = undefined; }
+    opslag.setItem(sleutel, JSON.stringify({ ...plek, ...(pdf ? { pdf } : {}), t: nu }));
     // opruimen: alleen de nieuwste MAX_PLEKKEN bewaren
     const alle: Array<[string, number]> = [];
     for (let i = 0; i < opslag.length; i++) {
@@ -100,6 +102,31 @@ export function zoekScroller(wortel: Element | null): HTMLElement | null {
   return beste;
 }
 
+export type PdfPlek = { fit: 'width' | 'page' | 'actual'; zoom: number; pagina: number };
+/** Eigen stand van de PDF-viewer (afwerking etappe 2): passen, extra zoom en pagina, in hetzelfde record als de scrollplek. */
+export function leesPdfPlek(opslag: Storage | null, sleutel: string): PdfPlek | null {
+  try {
+    const v = (JSON.parse(opslag?.getItem(sleutel) || 'null') as { pdf?: Partial<PdfPlek> } | null)?.pdf;
+    if (!v) return null;
+    const fit = v.fit === 'page' || v.fit === 'actual' ? v.fit : 'width';
+    return { fit, zoom: Math.min(4, Math.max(0.25, Number(v.zoom) || 1)), pagina: Math.max(1, Math.round(Number(v.pagina) || 1)) };
+  } catch { return null; }
+}
+export function bewaarPdfPlek(opslag: Storage | null, sleutel: string, pdf: PdfPlek, nu = Date.now()) {
+  if (!opslag || !sleutel) return;
+  const oud = leesPlek(opslag, sleutel);
+  try { opslag.setItem(sleutel, JSON.stringify({ boven: oud?.boven || 0, links: oud?.links || 0, zoom: oud?.zoom || 1, pdf, t: nu })); } catch { /* vol */ }
+}
+
+// De sleutel van het bestand dat nu in de gedeelde viewer open is ('' als geen of als de vlag uit staat). Zo kan een
+// formaatweergave diep in de boom (MailPdfVoorbeeld) haar eigen stand onthouden zonder nieuwe props door de oude viewer.
+let actief = '';
+const luisteraars = new Set<() => void>();
+export function zetActievePlek(sleutel: string) { if (sleutel === actief) return; actief = sleutel; luisteraars.forEach((l) => l()); }
+export function useActievePlek(): string {
+  return useSyncExternalStore((l) => { luisteraars.add(l); return () => { luisteraars.delete(l); }; }, () => actief, () => '');
+}
+
 const opslagVan = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
 /** Herstelt de plek zodra de inhoud lang genoeg is (tot 4 s wachten op trage rendering) en bewaart elke wijziging. */
@@ -108,6 +135,7 @@ export function usePlekOnthouden(o: { actief: boolean; sleutel: string; wortel: 
   const zet = useRef(o.zetZoom); zet.current = o.zetZoom;
   useEffect(() => {
     if (!o.actief || !o.sleutel) return;
+    zetActievePlek(o.sleutel);
     const opslag = opslagVan();
     const plek = leesPlek(opslag, o.sleutel);
     let scroller: HTMLElement | null = null, klaar = !plek, weg = false, timer = 0;
@@ -132,7 +160,7 @@ export function usePlekOnthouden(o: { actief: boolean; sleutel: string; wortel: 
       else klaar = true;
     };
     window.setTimeout(probeer, 60);
-    return () => { weg = true; window.clearTimeout(timer); opslaan(); scroller?.removeEventListener('scroll', opScroll); };
+    return () => { weg = true; window.clearTimeout(timer); opslaan(); scroller?.removeEventListener('scroll', opScroll); zetActievePlek(''); };
   }, [o.actief, o.sleutel, o.wortel]);
   // zoom wijzigt zonder scroll: ook bewaren (niet bij de eerste weergave van een bestand: dan wordt juist hersteld)
   const gezien = useRef('');

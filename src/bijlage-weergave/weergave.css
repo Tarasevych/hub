@@ -72,6 +72,9 @@ html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave] { --wg-
 .weergave-mini { flex: 0 0 auto; width: 104px; display: grid; gap: 2px; padding: 7px 9px; text-align: left; border-radius: 11px; border: 1px solid var(--wg-rand); background: var(--wg-oppervlak-2); color: var(--wg-gedempt); font: inherit; cursor: pointer; scroll-snap-align: center; }
 .weergave-mini b { font-size: 10.5px; letter-spacing: .05em; color: var(--wg-accent); }
 .weergave-mini span { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weergave-mini[data-geen-beeld] { position: relative; padding-right: 30px; }
+.weergave-mini-geen { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 18px; height: 18px; color: var(--wg-gedempt); font-style: normal; }
+.weergave-mini-geen svg { width: 16px; height: 16px; }
 .weergave-mini[data-beeld] { position: relative; overflow: hidden; color: #fff; isolation: isolate; }
 .weergave-mini[data-beeld] img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
 .weergave-mini[data-beeld]::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(0 0 0 / .05), rgb(0 0 0 / .62)); }
