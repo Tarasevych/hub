@@ -13,6 +13,8 @@ import type { KlimopDienstId, KlimopOverdrachtModus } from './klimop/diensten';
 import type { HybrideDubbeleHandtekening } from './klimop/beveiligingsaudit';
 import type { KlimopOntwikkelRichtingId } from './klimop/zaden';
 
+export type { KlimopControleVraagId, KlimopVerbodenVereenvoudigingId };
+
 type Tekst = [string, string];
 const T = (uk: string, nl: string): Tekst => [uk, nl];
 

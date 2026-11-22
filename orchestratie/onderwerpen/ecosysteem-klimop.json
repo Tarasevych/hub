@@ -501,12 +501,24 @@
       "taakId": "KLIMOP-022",
       "tak": "fix/klimop-022-sluit-audit003-restbevindingen-20261121-195600",
       "pr": 204,
+      "integratieCommit": "32822354ea08fc850330eed96feaff5b1bb96a58",
       "agent": "antigravity",
       "model": "Gemini 4 Carbon (High)",
       "modelBron": "eigenaar",
       "datum": "2026-11-21",
       "uk": "П’ята хвиля виправлень KLIMOP-022 із повним закриттям усіх 25 знахідок AUDIT-003: спільний префікс ротацій особи на вузлі, криптографічна прив’язка політики відновлення до епохи й передавання andereIntrekkingen у всіх 4 місцях із захистом від циклів; обов’язковість objectIds, вкладені ідентифікатори команд (зокрема voogdId), toegestaneMachtDomeinen, первинний якір конституції FROST і локальний стан тривоги на вузлі; замкове відновлення WAL і контрольні точки з повним SHA-256 файла та fsyncSync, читання MCP без зміни теки власника й фільтр .lock; усі 14 модулів ядра у пакеті «Насіння» з перевіркою імпортів і форми конституції в спадкоємності та паритет заголовків ## у 25 документах; відмова на NaN-датах і прострочених сеансах «Стебел», прив’язка ключа ML-DSA-65 у маніфесті, перевірка концентрації кворуму в одній юрисдикції, межі FROST/DKG, схема MCP 0..16 + antwoorden15, 14 заборон §43 у KlimopPaneel.tsx, багатоланкова підписана естафета, повний хвильовий відкат, timingSafeEqual + alarmId, окремі ліміти частоти MCP на агента та двомовна синхронізація.",
       "nl": "Vijfde herstelgolf KLIMOP-022 ter sluiting van alle 25 restbevindingen uit AUDIT-003: gemeenschappelijk rotatievoorvoegsel op het registerknooppunt, epochebinding van herstelbeleid en doorgave van andereIntrekkingen op alle 4 plaatsen; verplichte objectIds, geneste opdrachtpaden (waaronder voogdId), toegestaneMachtDomeinen, initieel FROST-grondwetanker en lokale dwangstaat; vergrendeld WAL-herstel en controlepunten met volledige SHA-256 en fsyncSync, mutatievrij MCP-lezen en .lock-filter; alle 14 kernmodules in «Zaden» met import- en grondwetvormtoetsing en ##-koppenpariteit over 25 documenten; weigering van NaN-datums en verlopen Stengels-sessies, ML-DSA-65-sleutelbinding, quorumspreiding per rechtsgebied, FROST/DKG-randcontroles, MCP-schema 0..16 + antwoorden15, 14 verbodsvinkjes in KlimopPaneel.tsx, meersprongs-estafette, volledige golfterugdraaiing, timingSafeEqual + alarmId, gescheiden MCP-limiet per agent en tweetalige synchronisatie."
+    },
+    {
+      "taakId": "KLIMOP-023",
+      "tak": "feature/klimop-023-uitgave-20261121-234300",
+      "pr": 205,
+      "agent": "antigravity",
+      "model": "Gemini 4 Carbon (High)",
+      "modelBron": "eigenaar",
+      "datum": "2026-11-22",
+      "uk": "Узгоджений кумулятивний випуск KLIMOP-023 із походженням TRACE-001 поверх встановленої на сервері версії 20261120-141041 (ba289fa919c66765b6fc5565d340976994261c05) та інтеграційної вершини 32822354ea08fc850330eed96feaff5b1bb96a58: запечатано Етапи 0–16 екосистеми «Плющ», п’ять хвиль виправлень KLIMOP-018..KLIMOP-022, навичку movnyi-zakon, рішення B-024/B-025 (regelsVersie 1.6.0) та повну історію моделей у UITROL-MANIFEST.json без автоматичного встановлення на робочий сервер.",
+      "nl": "Afgestemde cumulatieve uitgave KLIMOP-023 met TRACE-001-herkomst boven op de geïnstalleerde serverversie 20261120-141041 (ba289fa919c66765b6fc5565d340976994261c05) en integratietop 32822354ea08fc850330eed96feaff5b1bb96a58: omvat Fasen 0–16 van «Klimop», vijf herstelgolven KLIMOP-018..KLIMOP-022, vaardigheid movnyi-zakon, besluiten B-024/B-025 en de volledige auteurschapsketen in UITROL-MANIFEST.json zonder automatische installatie."
     }
   ],
   "mogelijkheden": [
