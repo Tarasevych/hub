@@ -192,3 +192,25 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
 .weergave-dialoog-knoppen .weergave-hoofd:disabled { opacity: .45; cursor: not-allowed; }
 .weergave-dialoog-klaar { justify-items: center; text-align: center; }
 .weergave-dialoog-klaar > svg { width: 34px; height: 34px; color: var(--wg-goed); }
+
+/* Етап 3, НЕ ПЕРЕВІРЕНО — пошук у всіх вкладеннях (ZoekVeld.tsx): на всю ширину смуги, список збігів по файлах. */
+.weergave-verborgen { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.weergave-zoek { flex: 1 1 100%; display: grid; gap: 8px; min-width: 0; }
+.weergave-zoek-balk { display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px; border-radius: 14px; border: 1px solid var(--wg-rand-sterk); background: var(--wg-oppervlak-2); }
+.weergave-zoek-balk > svg { width: 17px; height: 17px; color: var(--wg-gedempt); flex: 0 0 auto; }
+.weergave-zoek-balk > svg.spin { animation: weergave-draai 1s linear infinite; color: var(--wg-accent); }
+.weergave-zoek-balk input { flex: 1 1 auto; min-width: 0; min-height: 40px; border: 0; outline: 0; background: transparent; color: var(--wg-tekst); font: inherit; font-size: 14.5px; }
+.weergave-zoek-balk:focus-within { border-color: var(--wg-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wg-accent) 18%, transparent); }
+.weergave-zoek-balk .weergave-knop.rond { width: 32px; min-height: 32px; border-color: transparent; background: transparent; }
+.weergave-zoek-uitslag { max-height: min(42vh, 360px); overflow: auto; display: grid; gap: 6px; }
+.weergave-zoek-telling, .weergave-zoek-noot { margin: 0; color: var(--wg-gedempt); font-size: 12.5px; }
+.weergave-zoek-uitslag ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.weergave-zoek-uitslag li > button { width: 100%; display: grid; gap: 4px; text-align: left; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--wg-rand); background: var(--wg-oppervlak-2); color: var(--wg-tekst); font: inherit; cursor: pointer; }
+.weergave-zoek-uitslag li > button:hover, .weergave-zoek-uitslag li > button:focus-visible { border-color: var(--wg-accent); outline: none; }
+.weergave-zoek-uitslag li[data-actueel] > button { border-color: color-mix(in srgb, var(--wg-accent) 60%, transparent); }
+.weergave-zoek-bestand { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.weergave-zoek-bestand svg { width: 15px; height: 15px; color: var(--wg-accent); flex: 0 0 auto; }
+.weergave-zoek-bestand b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; }
+.weergave-zoek-bestand small { margin-left: auto; color: var(--wg-gedempt); font-size: 12px; white-space: nowrap; }
+.weergave-zoek-fragment { color: var(--wg-gedempt); font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.weergave-zoek-fragment mark { background: color-mix(in srgb, var(--wg-let) 38%, transparent); color: var(--wg-tekst); border-radius: 3px; padding: 0 1px; }

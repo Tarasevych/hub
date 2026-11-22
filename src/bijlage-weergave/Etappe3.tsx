@@ -11,7 +11,7 @@
 //   • мінімалізм для розсіяної людини: одна тонка смуга, значок, коротке слово й число, колір лише для терміновості;
 //   • дія з’являється лише тоді, коли вона справді можлива (рахунок зі строком, є попередня версія тощо).
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { CalendarClock, CalendarPlus, GitCompare, Hash, Wallet } from 'lucide-react';
+import { CalendarClock, CalendarPlus, GitCompare, Hash, Search, Wallet } from 'lucide-react';
 import { kies, soortVan, type Taal } from './soort';
 import { rekeningVelden, type RekeningVelden } from './rekening-velden';
 import { snelkaartRijen, termijnHint, type SnelkaartSleutel } from './snelkaart';
@@ -19,6 +19,7 @@ import { useBijlageTekst } from './tekst';
 import { toontKalenderBetaling, type BetalingBron } from './kalender-betaling';
 import { KalenderBetalingVenster } from './KalenderBetalingVenster';
 import { groepVoor, vorigeVersie, type CtxBericht } from './versies';
+import { ZoekVeld, type ZoekBron } from './ZoekVeld';
 
 // Наявне вікно порівняння з Пошти (src/mail/VersieVergelijk.tsx) — окремим шматком, лише коли людина натисне.
 const VersieVergelijk = lazy(() => import('../mail/VersieVergelijk'));
@@ -46,6 +47,8 @@ export type WeergaveExtra = {
   tijdzone?: string;
   /** 15.5: уся розмова (листи з вкладеннями) і доступ до файлів для наявного вікна порівняння. */
   versieBron?: { berichten: CtxBericht[]; bron: { context: Record<string, string>; accountId: string; cacheAccountId: string } } | null;
+  /** 15.6: усі вкладення відкритого листа для пошуку одразу в усіх (читаються лише після запиту людини). */
+  zoekBron?: ZoekBron | null;
 };
 
 export type Etappe3Props = {
@@ -88,7 +91,7 @@ export function WeergaveSnelkaart(p: { taal: Taal; velden: RekeningVelden | null
   );
 }
 
-type Venster = null | 'kalender' | 'versies';
+type Venster = null | 'kalender' | 'versies' | 'zoek';
 
 /** Уся смуга етапу 3: швидка картка й дії. Нічого не показує, якщо ні картки, ні дій немає. */
 export function WeergaveEtappe3(p: Etappe3Props) {
@@ -129,6 +132,11 @@ export function WeergaveEtappe3(p: Etappe3Props) {
         <GitCompare aria-hidden='true' /><span>{t('Що змінилося', 'Wat is er veranderd')} <small>{t(`з ${datumKort(versie.vorige.wanneer, 'uk')}`, `sinds ${datumKort(versie.vorige.wanneer, 'nl')}`)}</small></span>
       </button>
     ),
+    x.zoekBron && x.zoekBron.items.length > 1 && (
+      <button key='zoek' type='button' className='weergave-etappe3-actie' aria-pressed={venster === 'zoek'} onClick={() => setVenster(venster === 'zoek' ? null : 'zoek')}>
+        <Search aria-hidden='true' /><span>{t('Пошук у вкладеннях', 'Zoeken in bijlagen')}</span>
+      </button>
+    ),
   ].filter(Boolean);
   if (!heeftKaart && !acties.length) return null;
   return (
@@ -136,6 +144,7 @@ export function WeergaveEtappe3(p: Etappe3Props) {
       <WeergaveSnelkaart taal={p.taal} velden={velden} />
       {acties.length > 0 && <div className='weergave-etappe3-acties' role='group' aria-label={t('Що зробити з файлом', 'Wat te doen met het bestand')}>{acties}</div>}
       {venster === 'kalender' && kalenderBron && <KalenderBetalingVenster taal={p.taal} bron={kalenderBron} onSluit={() => setVenster(null)} />}
+      {venster === 'zoek' && x.zoekBron && <ZoekVeld taal={p.taal} bron={x.zoekBron} onSluit={() => setVenster(null)} />}
       {venster === 'versies' && versie && (
         <Suspense fallback={null}>
           <VersieVergelijk lang={p.taal} bron={versie.bron} groep={versie.groep} beginKeuze={{ oud: versie.vorige.nummer, nieuw: versie.huidig.nummer }} onSluit={() => setVenster(null)} />
