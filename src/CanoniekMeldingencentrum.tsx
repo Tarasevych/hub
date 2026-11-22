@@ -364,9 +364,17 @@ export default function CanonicalNotificationCenter(p: Props) {
       if (geluid) playChime();
       return;
     }
-
-    // MELDPANEEL-002: Повага до потоку думки — під час активного набору в полі вводу некритичне вікно чекає 2,5 с паузи.
-    if (!notice.voorbeeld && !magToastNuTonen({ isKritiek: isKritiekType(type), laatsteToetsDrukMs: laatsteTypMsRef.current, nu })) {
+    if (activeRef.current) {
+      if (next.action && !activeRef.current.action) {
+        activeRef.current = null;
+        setActive(null);
+        requestAnimationFrame(() => activate(next));
+      } else {
+        queueRef.current.push(next);
+        if (queueRef.current.length > 6) queueRef.current.splice(0, queueRef.current.length - 6);
+      }
+    } else if (!notice.voorbeeld && !magToastNuTonen({ isKritiek: isKritiekType(type), laatsteToetsDrukMs: laatsteTypMsRef.current, nu })) {
+      // MELDPANEEL-002: Повага до потоку думки — під час активного набору в полі вводу некритичне вікно чекає 2,5 с паузи.
       queueRef.current.push(next);
       if (queueRef.current.length > 6) queueRef.current.splice(0, queueRef.current.length - 6);
       setWachtOpTypPauze(queueRef.current.length);
@@ -382,18 +390,6 @@ export default function CanonicalNotificationCenter(p: Props) {
         if (!activeRef.current) showNext();
       };
       typWachtTimerRef.current = window.setTimeout(planNaPauze, 2550);
-      return;
-    }
-
-    if (activeRef.current) {
-      if (next.action && !activeRef.current.action) {
-        activeRef.current = null;
-        setActive(null);
-        requestAnimationFrame(() => activate(next));
-      } else {
-        queueRef.current.push(next);
-        if (queueRef.current.length > 6) queueRef.current.splice(0, queueRef.current.length - 6);
-      }
     } else {
       activate(next);
     }
