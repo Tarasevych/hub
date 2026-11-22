@@ -85,7 +85,8 @@ export function MeldingKaart(p: { taal: Taal; bijlage: MeldingKaartBijlage; acti
   }, [soort.sleutel, p.bijlage.tekstVoorbeeld, p.taal]);
 
   return (
-    <div className='weergave-melding-kaart' data-weergave-drager='melding' data-soort={soort.sleutel} data-actief={p.actief ? 'ja' : undefined}>
+    <div className='weergave-melding-kaart' data-weergave-drager='melding' data-soort={soort.sleutel} data-actief={p.actief ? 'ja' : undefined}
+      data-staat={hoofd?.hint?.dringend /* свій вигляд для кожного стану строку (вказівка Павла 22.11.2026) — НЕ ПЕРЕВІРЕНО */}>
       <button type='button' className='weergave-melding-kaart-mini' onClick={(e) => { e.stopPropagation(); p.onOpen(); }}
         aria-label={t(`Відкрити «${p.bijlage.naam}»`, `«${p.bijlage.naam}» openen`)}>
         {mini && !miniFout

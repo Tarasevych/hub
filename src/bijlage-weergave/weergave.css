@@ -237,6 +237,12 @@ html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-a
   border: 1px solid var(--wg-rand); background: var(--wg-oppervlak-2); color: var(--wg-tekst); min-width: 0; }
 .weergave-melding-kaart[data-actief='ja'] { border-color: var(--wg-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wg-accent) 14%, transparent); }
 .mel-bijlagen-kaarten { display: grid; gap: 6px; min-width: 0; }
+/* Свій вигляд для кожного стану строку: смуга зліва сталим кольором стану (src/thema/staat-kleuren.css). НЕ ПЕРЕВІРЕНО */
+.weergave-melding-kaart[data-staat] { border-left-width: 4px; }
+.weergave-melding-kaart[data-staat='verlopen'] { border-left-color: var(--wg-fout); background: color-mix(in srgb, var(--wg-fout) 7%, var(--wg-oppervlak-2)); }
+.weergave-melding-kaart[data-staat='vandaag'] { border-left-color: var(--wg-let); background: color-mix(in srgb, var(--wg-let) 7%, var(--wg-oppervlak-2)); }
+.weergave-melding-kaart[data-staat='binnenkort'] { border-left-color: var(--wg-let); }
+.weergave-melding-kaart[data-staat='later'] { border-left-color: var(--wg-rand-sterk); }
 .weergave-melding-kaart-mini { width: 56px; height: 56px; padding: 0; overflow: hidden; display: grid; place-items: center; border-radius: 10px;
   border: 1px solid var(--wg-rand); background: var(--wg-oppervlak); color: var(--wg-accent); cursor: pointer; }
 .weergave-melding-kaart-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
