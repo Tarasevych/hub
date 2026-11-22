@@ -216,3 +216,90 @@ export function maakBetalingOntwerp(bron: BetalingBron, doel: BetalingDoel): Ont
     },
   };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// НЕ ПЕРЕВІРЕНО (очікує перевірки наступним агентом). Додано Claude Opus 5.5 (High) через Google Antigravity
+// (antigravity) 22.11.2026 після Grok: короткий ключ для сервера, адреса вікна Google Календаря та пам’ять
+// уже записаних оплат на пристрої. Тести й перевірку типів не проганяли за вказівкою власника.
+//
+// Важлива знахідка (записано в CONCEPT.md, журнал рішень): «наш Календар» (`/api/owner/agenda/*`) пише ВЖЕ через
+// підключений обліковий запис Google (backend/agenda-routes.ts → backend/agenda-google.ts, календар 'primary').
+// Тому дві цілі розрізняємо чесно:
+//   • onze-agenda   — запис одразу нашим сервером (maakGebeurtenis) у Календар «Мого простору»; подія з’явиться
+//                     і в основному календарі підключеного облікового запису Google;
+//   • google-agenda — відкриваємо власне вікно Google Календаря з уже заповненою подією; людина сама вибирає там
+//                     обліковий запис і календар і сама натискає «Зберегти». Наш сервер нічого не пише.
+
+/** Сервер приймає лише [A-Za-z0-9_-]{8,120} (shared/agenda-model.ts → IDEMPOTENTIE_SLEUTEL). FNV-1a, два проходи. */
+export function betalingSleutelKort(bron: BetalingBron): string {
+  const ruw = betalingSleutel(bron);
+  const fnv = (s: string, basis: number) => {
+    let h = basis >>> 0;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16).padStart(8, '0');
+  };
+  return `betaling-${fnv(ruw, 0x811c9dc5)}${fnv(ruw, 0x01000193 ^ 0x5bd1e995)}`;
+}
+
+function zonderStreepjes(iso: string): string { return iso.replace(/-/g, ''); }
+
+function volgendeDagIso(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Адреса власного вікна Google Календаря з заповненою подією на весь день (кінець у Google не входить у подію,
+ * тому + 1 день). Людина сама вибирає обліковий запис і натискає «Зберегти» — без нашого запису.
+ */
+export function googleAgendaAdres(vorm: Pick<AgendaVorm, 'titel' | 'beschrijving' | 'begin' | 'einde'>): string {
+  if (!geldigeIsoDag(vorm.begin)) return '';
+  const einde = geldigeIsoDag(vorm.einde) && vorm.einde >= vorm.begin ? vorm.einde : vorm.begin;
+  const q = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: vorm.titel,
+    dates: `${zonderStreepjes(vorm.begin)}/${zonderStreepjes(volgendeDagIso(einde))}`,
+    details: vorm.beschrijving,
+  });
+  return `https://calendar.google.com/calendar/render?${q.toString()}`;
+}
+
+/** Що вже зроблено з цією оплатою на цьому пристрої (сервер усе одно не створить другу подію з тим самим ключем). */
+export type BetalingSpoor = { doel: BetalingDoel; wanneer: number; datum: string; gebeurtenisId?: string; agendaId?: string };
+
+const SPOOR_SLEUTEL = 'tsv:bijlage-betaling-spoor-v1';
+const SPOOR_MAX = 200;
+
+function leesSporen(): Record<string, BetalingSpoor> {
+  try {
+    const ruw = JSON.parse(globalThis.localStorage?.getItem(SPOOR_SLEUTEL) || '{}') as unknown;
+    return ruw && typeof ruw === 'object' ? (ruw as Record<string, BetalingSpoor>) : {};
+  } catch { return {}; }
+}
+
+export function betalingSpoor(sleutel: string): BetalingSpoor | null {
+  const s = leesSporen()[sleutel];
+  return s && geldigBetalingDoel(String(s.doel)) && typeof s.wanneer === 'number' ? s : null;
+}
+
+export function bewaarBetalingSpoor(sleutel: string, spoor: BetalingSpoor): void {
+  try {
+    const alle = leesSporen();
+    alle[sleutel] = spoor;
+    const rijen = Object.entries(alle).sort((a, b) => b[1].wanneer - a[1].wanneer).slice(0, SPOOR_MAX);
+    globalThis.localStorage?.setItem(SPOOR_SLEUTEL, JSON.stringify(Object.fromEntries(rijen)));
+  } catch { /* сховище заблоковане: пам’ятаємо лише ключ на сервері */ }
+}
+
+/** Двомовні пояснення цілей для вікна вибору. */
+export const BETALING_DOEL_UITLEG: { readonly [K in BetalingDoel]: Tweetalig } = {
+  'onze-agenda': [
+    'Запишемо одразу в Календар «Мого простору». Він пише через ваш підключений Google, тож подія з’явиться і там.',
+    'We schrijven meteen in de Agenda van «Mijn Ruimte». Die schrijft via uw gekoppelde Google, dus de afspraak verschijnt ook daar.',
+  ],
+  'google-agenda': [
+    'Відкриємо вікно Google Календаря з готовою подією. Там самі виберете обліковий запис і натиснете «Зберегти».',
+    'We openen het venster van Google Agenda met de afspraak klaar. Daar kiest u zelf het account en klikt u op «Opslaan».',
+  ],
+};

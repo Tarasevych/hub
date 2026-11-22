@@ -72,10 +72,31 @@ export function WeergaveSnelkaart(p: { taal: Taal; velden: RekeningVelden | null
   );
 }
 
-/** Уся смуга етапу 3. На цьому кроці — лише швидка картка; дії додаються наступними фіксаціями змін. */
+/** Уся смуга етапу 3: швидка картка й дії. Нічого не показує, якщо ні картки, ні дій немає. */
 export function WeergaveEtappe3(p: Etappe3Props) {
+  const t = (uk: string, nl: string) => kies(p.taal, [uk, nl]);
+  const soort = soortVan(p.naam, p.contentType).sleutel;
   const { velden } = useRekeningVelden(p);
+  const [venster, setVenster] = useState<null | 'kalender'>(null);
+
+  // 15.3: лише для рахунку з зрозумілим строком
+  const kalenderBron = useMemo<BetalingBron | null>(() => {
+    if (!velden || !toontKalenderBetaling(soort, velden)) return null;
+    const x: WeergaveExtra = p.extra || {};
+    return { velden, soort, taal: p.taal, bestandsnaam: p.naam, afzender: x.afzender, profielId: x.profielId, rekeningId: x.rekeningId, briefId: x.briefId, bijlageId: x.bijlageId, tijdzone: x.tijdzone };
+  }, [velden, soort, p.taal, p.naam, p.extra]);
+
   const kaart = <WeergaveSnelkaart taal={p.taal} velden={velden} />;
-  if (!velden) return null;
-  return <div className='weergave-etappe3' data-weergave-etappe3=''>{kaart}</div>;
+  const heeftKaart = Boolean(velden && snelkaartRijen(velden).length);
+  const acties = [
+    kalenderBron && <button key='kalender' type='button' className='weergave-etappe3-actie' onClick={() => setVenster('kalender')}><CalendarPlus aria-hidden='true' /><span>{t('Оплату в Календар', 'Betaling in Agenda')}</span></button>,
+  ].filter(Boolean);
+  if (!heeftKaart && !acties.length) return null;
+  return (
+    <div className='weergave-etappe3' data-weergave-etappe3=''>
+      {kaart}
+      {acties.length > 0 && <div className='weergave-etappe3-acties' role='group' aria-label={t('Що зробити з файлом', 'Wat te doen met het bestand')}>{acties}</div>}
+      {venster === 'kalender' && kalenderBron && <KalenderBetalingVenster taal={p.taal} bron={kalenderBron} onSluit={() => setVenster(null)} />}
+    </div>
+  );
 }
