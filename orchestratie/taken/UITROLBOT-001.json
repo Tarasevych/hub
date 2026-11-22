@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "UITROLBOT-001",
+  "agent": "autoclaw",
+  "tak": "feature/uitrolbot-001-20261122-214039",
+  "basisCommit": "95fda93a7084c102d1c682fbb9a83a83d49f9259",
+  "basisVersie": "20261122-171856",
+  "regelsVersie": "1.8.0",
+  "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
+  "staat": "in_progress",
+  "gestart": "2026-11-22T19:45:00.000Z",
+  "bijgewerkt": "2026-11-22T19:45:00.000Z",
+  "omschrijving": "Запуск і активація бота випусків @Tarasevych_MijnRuimte_UitrolBot: розбір посилання t.me на гілку в chat_id і message_thread_id, публікація двомовного пояснення встановленого випуску з UITROL-MANIFEST.json, меню команд /status /laatste /help і зрозумілі підказки для помилок теми та прав.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

@@ -9,6 +9,7 @@ import { foutCode } from '../platform/webauthn';
 import { leesSha256 } from '../../shared/bestand-lezen';
 import HulpVraag from '../hulp/HulpVraag';
 import { foutTekst } from './fouten';
+import { leesTelegramKoppeling } from './telegram-koppeling';
 import { datum, mb, tr, type Lang, type Run } from './types';
 
 const SLEUTEL_VERBERG_SEC = 30;
@@ -83,6 +84,7 @@ export default function TelegramArchief({
 }) {
   const [stand, setStand] = useState<TelegramStand | null>(null);
   const [chatId, setChatId] = useState('');
+  const [koppelLink, setKoppelLink] = useState('');
   const [threadId, setThreadId] = useState('');
   const [actief, setActief] = useState(false);
   const [verplicht, setVerplicht] = useState(false);
@@ -146,6 +148,47 @@ export default function TelegramArchief({
       });
       await laden();
       onGewijzigd?.();
+    } catch (e) {
+      setMelding({ soort: 'fout', tekst: foutTekst(lang, foutCode(e)) });
+    } finally {
+      setBezig('');
+    }
+  };
+
+  const verwerkKoppeling = (waarde: string) => {
+    setKoppelLink(waarde);
+    const koppeling = leesTelegramKoppeling(waarde);
+    if (!koppeling) return;
+    setChatId(koppeling.chatId);
+    if (koppeling.threadId) setThreadId(koppeling.threadId);
+    setMelding({
+      soort: 'ok',
+      tekst: tr(
+        lang,
+        `З посилання взято chat_id ${koppeling.chatId}${koppeling.threadId ? ` і тему ${koppeling.threadId}` : ''}. Натисніть «Зберегти налаштування», потім «Перевірити зв’язок».`,
+        `Uit de link overgenomen: chat_id ${koppeling.chatId}${koppeling.threadId ? ` en topic ${koppeling.threadId}` : ''}. Klik op «Instellingen opslaan» en daarna op «Verbinding testen».`,
+      ),
+    });
+  };
+
+  const publiceerUitleg = async () => {
+    setBezig('publiceer');
+    setMelding(null);
+    try {
+      const r = (await api.post('/api/owner/uitrol/telegram/publiceren', context)).data as {
+        versie?: string;
+        messageId?: number;
+        tekens?: number;
+      };
+      setMelding({
+        soort: 'ok',
+        tekst: tr(
+          lang,
+          `Пояснення випуску ${r.versie || ''} опубліковано в погодженій темі (${r.tekens || 0} символів).`,
+          `De uitleg van uitgave ${r.versie || ''} is in het ingestelde topic gepubliceerd (${r.tekens || 0} tekens).`,
+        ),
+      });
+      await laden();
     } catch (e) {
       setMelding({ soort: 'fout', tekst: foutTekst(lang, foutCode(e)) });
     } finally {
@@ -445,6 +488,27 @@ export default function TelegramArchief({
               </ul>
 
               <label className='ut-veld'>
+                <span>{tr(lang, 'Посилання на гілку Telegram (необов’язково, заповнить поля нижче)', 'Link naar het Telegram-topic (optioneel, vult de velden hieronder)')}</span>
+                <input
+                  type='text'
+                  value={koppelLink}
+                  onChange={(e) => verwerkKoppeling(e.target.value)}
+                  placeholder='https://t.me/c/3928298101/1939'
+                  maxLength={200}
+                  spellCheck={false}
+                  autoComplete='off'
+                  data-ut-tg-koppeling
+                />
+                <small className='ut-hint'>
+                  {tr(
+                    lang,
+                    'Вставте посилання на тему (як у Telegram: три числа — чат, тема, повідомлення). З нього буде взято chat_id і номер теми; перевірка зв’язку покаже, чи вони правильні.',
+                    'Plak de topiclink (zoals in Telegram: drie getallen — chat, topic, bericht). Daaruit worden chat_id en topicnummer overgenomen; de verbindingstest toont of ze kloppen.',
+                  )}
+                </small>
+              </label>
+
+              <label className='ut-veld'>
                 <span>{tr(lang, 'Ідентифікатор чату / каналу (chat_id)', 'Chat- of kanaal-ID (chat_id)')}</span>
                 <input
                   type='text'
@@ -668,6 +732,27 @@ export default function TelegramArchief({
               </div>
             </div>
           )}
+
+          <div className='ut-gh-blok' data-ut-tg-publiceren>
+            <h3><Send aria-hidden='true' /> {tr(lang, 'Пояснення випуску для учасників', 'Uitleg van de uitgave voor de leden')}</h3>
+            <p className='ut-hint'>
+              {tr(
+                lang,
+                'Надсилає в погоджену тему двомовний опис поточного встановленого випуску з UITROL-MANIFEST.json: назва, підсумок, зміни, виправлення, обмеження та інструкції. Нічого не змінює на сервері.',
+                'Stuurt naar het ingestelde topic een tweetalige beschrijving van de huidige geïnstalleerde uitgave uit UITROL-MANIFEST.json: titel, samenvatting, wijzigingen, fixes, beperkingen en instructies. Wijzigt niets op de server.',
+              )}
+            </p>
+            <button
+              type='button'
+              className='ut-knop ut-knop-primair'
+              disabled={Boolean(bezig) || !stand.klaar}
+              onClick={() => void publiceerUitleg()}
+              data-ut-tg-publiceer
+            >
+              {bezig === 'publiceer' ? <Loader2 className='ut-draai' aria-hidden='true' /> : <Send aria-hidden='true' />}
+              {tr(lang, 'Опублікувати пояснення поточного випуску', 'Uitleg van de huidige uitgave publiceren')}
+            </button>
+          </div>
 
           {melding && (
             <p className={melding.soort === 'ok' ? 'ut-ok-tekst' : 'ut-fout'} role={melding.soort === 'ok' ? 'status' : 'alert'}>

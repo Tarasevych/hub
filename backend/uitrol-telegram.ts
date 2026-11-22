@@ -17,6 +17,7 @@ import {
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import { releaseInfo } from './uitgave-info';
+import { bouwUitgaveUitleg } from './uitrol-telegram-uitleg';
 import { pakkettenDir } from './uitrol-github';
 
 const VERSIE_RE = /^\d{8}-\d{6}$/;
@@ -1045,6 +1046,23 @@ export type TelegramUitrolGebeurtenis = {
 const UPDATES_URL = () => `https://${SERVICE_HOSTS.admin || 'admin.tarasevych.com'}/updates`;
 const schoonRegel = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 
+/** Коротке пояснення до встановленого випуску для автоматичного повідомлення (лише якщо версія збігається з живою). */
+function korteUitgaveUitleg(versie: string): string {
+  const info = releaseInfo();
+  if (!versie || String(info.versie || '') !== versie) return '';
+  const b = info.manifest?.beschrijving;
+  if (!b?.uk?.samenvatting || !b?.nl?.samenvatting) return '';
+  const regels = [
+    `🇺🇦 ${schoonRegel(b.uk.titel, 120)}`,
+    schoonRegel(b.uk.samenvatting, 320),
+    `🇳🇱 ${schoonRegel(b.nl.titel, 120)}`,
+    schoonRegel(b.nl.samenvatting, 320),
+  ];
+  const wijzigingen = (b.uk.wijzigingen || []).map((w) => schoonRegel(w, 160)).filter(Boolean).slice(0, 3);
+  if (wijzigingen.length) regels.push('📝', ...wijzigingen.map((w) => `• ${w}`));
+  return regels.join('\n');
+}
+
 function bouwUitrolToetsenbord(metLaatste = true) {
   const acties: Array<{ text: string; callback_data: string }> = [
     { text: '📊 Оновити стан / Status', callback_data: 'ut:status' },
@@ -1125,6 +1143,8 @@ function bouwGebeurtenisTekst(g: TelegramUitrolGebeurtenis): string {
     if (methode) regels.push(`• Спосіб / Methode: ${methode}`);
     if (door) regels.push(`• Виконавець / Uitvoerder: ${door}`);
     if (commit) regels.push(`• Фіксація змін / Vastlegging: ${commit}`);
+    const uitleg = korteUitgaveUitleg(versie);
+    if (uitleg) regels.push('', uitleg);
   } else if (g.soort === 'mislukt') {
     regels.push(`❌ Збій або переривання встановлення: ${versie}`);
     regels.push(`❌ Installatie mislukt of afgebroken: ${versie}`);
@@ -1230,6 +1250,17 @@ export async function telegramWebhookInstellen(
     allowed_updates: ['message', 'callback_query'],
   });
 
+  // Меню команд у Telegram: без нього користувач не бачить, що бот взагалі вміє.
+  // Необов’язково й не блокує активацію, тому помилки ковтаємо.
+  const opdrachten = [
+    { command: 'status', description: 'Стан випусків / Releasestatus' },
+    { command: 'laatste', description: 'Останній випуск / Laatste uitgave' },
+    { command: 'help', description: 'Довідка / Help' },
+  ];
+  for (const scope of [undefined, { type: 'all_group_chats' }] as const) {
+    await tgApi(bot.token, 'setMyCommands', { commands: opdrachten, ...(scope ? { scope } : {}) }).catch(() => undefined);
+  }
+
   await schrijfBeheerAudit({
     actor: eigenaar,
     actie: 'owner.uitrol.telegram.webhook',
@@ -1326,6 +1357,44 @@ async function bouwLaatsteTekst(): Promise<string> {
   }
   lijnen.push('🔐 Управління виключно на сайті з ключем доступу / Beheer uitsluitend op de site met toegangssleutel.');
   return lijnen.join('\n');
+}
+
+/**
+ * Публікує в погоджену групу/тему повне двомовне пояснення поточного встановленого випуску
+ * (назва, підсумок, зміни, виправлення, обмеження, інструкції) з UITROL-MANIFEST.json.
+ * Нічого не змінює на сервері — лише надсилає текст у Telegram.
+ */
+export async function publiceerUitgaveUitleg(eigenaar: { id: string; email?: string }) {
+  const inst = await telegramInstellingenVan(eigenaar.id);
+  const bot = await leesBotToken(eigenaar.id);
+  if (!bot || !inst.chatId) throw new TelegramArchiefFout('TELEGRAM_CHAT_ONTBREEKT', 400);
+
+  const info = releaseInfo();
+  const tekst = bouwUitgaveUitleg(info);
+  if (!tekst) throw new TelegramArchiefFout('UITGAVE_UITLEG_ONTBREEKT', 400);
+
+  const res = await tgApi<{ message_id?: number }>(bot.token, 'sendMessage', {
+    chat_id: inst.chatId,
+    ...(inst.messageThreadId ? { message_thread_id: inst.messageThreadId } : {}),
+    disable_notification: true,
+    text: tekst,
+    reply_markup: bouwUitrolToetsenbord(true),
+  });
+
+  await schrijfBeheerAudit({
+    actor: eigenaar,
+    actie: 'owner.uitrol.telegram.gepubliceerd',
+    doel: { soort: 'release', id: String(info.versie || '—') },
+    details: { messageId: Number(res?.message_id || 0), tekens: tekst.length, thread: inst.messageThreadId },
+    service: 'admin',
+  });
+
+  return {
+    ok: true,
+    versie: String(info.versie || ''),
+    messageId: Number(res?.message_id || 0),
+    tekens: tekst.length,
+  };
 }
 
 export async function verwerkTelegramUitrolWebhook(invoer: {
@@ -1482,7 +1551,7 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
 
   const tekst = String(msg.text || '').trim();
   const eerste = tekst.split(/\s+/)[0] || '';
-  const cmdMatch = /^\/(status|laatste|help)(?:@[A-Za-z0-9_]{3,64})?$/i.exec(eerste);
+  const cmdMatch = /^\/(status|laatste|help|start)(?:@[A-Za-z0-9_]{3,64})?$/i.exec(eerste);
   if (!cmdMatch) {
     await markeer('geen-commando');
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
@@ -1495,7 +1564,7 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
   }
 
-  if (commando === 'help') {
+  if (commando === 'help' || commando === 'start') {
     await tgApi(bot.token, 'sendMessage', {
       chat_id: doelChat,
       ...threadOpt,
@@ -1597,6 +1666,11 @@ export function uitrolTelegramRoutes(deps: TelegramRouteDeps): Record<string, Ro
       if (!limiet.ok) return error('RATE_LIMITED', 429);
       const b = lichaam(c.body);
       return archiveerRunNaarTelegram(wie(a), String(b.runId || b.run || ''));
+    })],
+    'POST /api/owner/uitrol/telegram/publiceren': [eigenaar({ sterk: true }, async (_c, a) => {
+      const limiet = await rateLimit(`uitrol-telegram-publiceer:${a.user.id}`, 10, 3600);
+      if (!limiet.ok) return error('RATE_LIMITED', 429);
+      return publiceerUitgaveUitleg(wie(a));
     })],
     'POST /api/owner/uitrol/telegram/archief/:id/herstel': [eigenaar({ sterk: true }, async (c, a) => {
       const limiet = await rateLimit(`uitrol-telegram-herstel:${a.user.id}`, 10, 3600);
