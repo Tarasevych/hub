@@ -53,6 +53,10 @@ export function foutTekst(code: string): [string, string] {
   return ['Сервер пошти не віддав файл. Нічого не втрачено — спробуйте ще раз.', 'De mailserver gaf het bestand niet terug. Er is niets verloren — probeer opnieuw.'];
 }
 
+const DONKER_SLEUTEL = 'tsv:bijlage-donkere-paginas';
+function leesDonker(): boolean { try { return window.localStorage.getItem(DONKER_SLEUTEL) === 'aan'; } catch { return false; } }
+function bewaarDonker(aan: boolean) { try { if (aan) window.localStorage.setItem(DONKER_SLEUTEL, 'aan'); else window.localStorage.removeItem(DONKER_SLEUTEL); } catch { /* geblokkeerd: alleen deze sessie */ } }
+
 export function WeergaveKop(p: KopProps) {
   const t = t2(p.taal);
   const soort = soortVan(p.naam, p.contentType);
@@ -62,6 +66,16 @@ export function WeergaveKop(p: KopProps) {
   const [maat, setMaat] = useState<{ b: number; h: number } | null>(null);
   const meer = useMenu(), info = useMenu();
   const infoId = useId();
+  // afwerking etappe 2: donkere documentpagina’s als KEUZE (standaard uit, onthouden op dit apparaat); antwoord op open vraag 1 volgt nog
+  const kopRef = useRef<HTMLElement | null>(null);
+  const papier = ['rekening', 'contract', 'document', 'tekst', 'presentatie', 'tabel'].includes(soort.sleutel);
+  const [donker, setDonker] = useState<boolean>(() => leesDonker());
+  useEffect(() => {
+    const el = kopRef.current?.closest('.google-mail-attachment-preview');
+    if (!el) return;
+    if (donker && papier) el.setAttribute('data-donkere-paginas', 'ja'); else el.removeAttribute('data-donkere-paginas');
+    return () => el.removeAttribute('data-donkere-paginas');
+  }, [donker, papier]);
   useEffect(() => {
     let weg = false; setVertrouwen(null); setMaat(null);
     if (p.blob) {
@@ -75,7 +89,7 @@ export function WeergaveKop(p: KopProps) {
   const feiten = [formaat, grootteTekst(p.grootte, p.taal), plaats].filter(Boolean).join(' · ');
   const niveau = vertrouwen?.niveau || 'bezig';
   return (
-    <header className='weergave-kop' data-weergave-kop=''>
+    <header className='weergave-kop' data-weergave-kop='' ref={kopRef}>
       <div className='weergave-rij'>
         <div className='weergave-titel'>
           <strong title={p.naam}>{p.naam}</strong>
@@ -99,7 +113,7 @@ export function WeergaveKop(p: KopProps) {
               </div>
             )}
           </div>
-          {(overig.length > 0 || p.zoom) && (
+          {(overig.length > 0 || p.zoom || papier) && (
             <div className='weergave-menu-anker' ref={meer.ref}>
               <button type='button' className='weergave-knop rond' aria-label={t('Ще дії', 'Meer acties')} title={t('Ще дії', 'Meer acties')} aria-expanded={meer.open} onClick={() => { info.setOpen(false); meer.setOpen(!meer.open); }}><MoreHorizontal aria-hidden='true' /></button>
               {meer.open && (
@@ -110,6 +124,7 @@ export function WeergaveKop(p: KopProps) {
                     <button type='button' role='menuitem' onClick={() => p.zoom!.zet(Math.min(2.5, Math.round((p.zoom!.waarde + 0.1) * 10) / 10))}>+</button>
                   </div>}
                   {overig.map((a) => <button key={a.sleutel} type='button' role='menuitem' onClick={() => { meer.setOpen(false); a.uitvoeren(); }}>{kies(p.taal, a.label)}</button>)}
+                  {papier && <button type='button' role='menuitemcheckbox' aria-checked={donker} className='weergave-keuze' onClick={() => { const n = !donker; setDonker(n); bewaarDonker(n); }}>{donker ? '✓ ' : ''}{t('Темні сторінки документа', 'Donkere documentpagina’s')}</button>}
                 </div>
               )}
             </div>

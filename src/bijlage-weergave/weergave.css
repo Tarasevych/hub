@@ -115,5 +115,14 @@ html.theme-light .google-mail-attachment-preview[data-gedeelde-weergave] { --wg-
   .weergave-strook-teller { display: none; }
 }
 
+/* afwerking etappe 2: viewer binnen het zwevende leesvenster («Вікно у вікні») */
+html body .google-mail-attachment-backdrop[data-binnen-venster] { background: transparent !important; backdrop-filter: none !important; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 50px rgb(0 0 0 / .35); }
+html body .google-mail-attachment-backdrop[data-binnen-venster] > .google-mail-attachment-preview { width: 100% !important; max-width: 100% !important; height: 100% !important; max-height: 100% !important; margin: 0 !important; border-radius: 16px !important; container-type: inline-size; }
+
 /* etap 2: achter de open viewer is de balk van het bericht niet bereikbaar (inert); zichtbaar gedempt */
 [data-weergave-inert] { opacity: .45; transition: opacity .15s; }
+
+/* afwerking etappe 2: donkere documentpagina’s (keuze in «⋯», standaard uit). Alleen het papier, niet de foto’s in een document apart. */
+.google-mail-attachment-preview[data-donkere-paginas] :is(.mail-pdf-page canvas, .mail-fixed-page, .mail-docx-preview, .mail-text-preview-paper) { filter: invert(.9) hue-rotate(180deg) brightness(1.05); }
+.google-mail-attachment-preview[data-donkere-paginas] :is(.mail-pdf-page, .mail-fixed-page) { background: #111 !important; }
+.weergave-keuze[aria-checked='true'] { color: var(--wg-accent); font-weight: 600; }
