@@ -108,8 +108,8 @@
     },
     {
       "soort": "gewijzigd",
-      "pad": "shared/klimop-overzicht-model.ts, src/agenten/KlimopPaneel.tsx, tests/eenheid/mcp-toegang-diagnose-20261101.test.ts, tests/eenheid/upd-011-telegram-3f-terugdraai-20261120.test.ts",
-      "omschrijving": "Чистий реекспорт типів для переглядача (browser-gedeeld 3/3), семантична перевірка regelsVersie >= 1.4.18 (upd-011 5/5) та узгодження очікуваної кількості активних ключів beheer у З’єднувачі другої версії (89 із 213 з урахуванням 9 інструментів klimop_*)."
+      "pad": "shared/klimop-overzicht-model.ts, src/agenten/KlimopPaneel.tsx, tests/eenheid/mcp-toegang-diagnose-20261101.test.ts, tests/eenheid/upd-011-telegram-3f-terugdraai-20261120.test.ts, tests/eenheid/ontwerp-fundament-20261020.test.ts",
+      "omschrijving": "Чистий реекспорт типів для переглядача (browser-gedeeld 3/3), семантична перевірка regelsVersie >= 1.4.18 (upd-011 5/5), перевірка порядку kleur-contrast-controle перед vite build (ontwerp-fundament 40/40) та узгодження очікуваної кількості активних ключів beheer у З’єднувачі другої версії (89 із 213 з урахуванням 9 інструментів klimop_*)."
     }
   ],
   "risicoUitleg": [
