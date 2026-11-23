@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 2,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:51.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Повністю вбудовано в основну лінію встановлювача в integratie та розширено тричинниковою моделлю B-023.",
+    "nl": "Volledig ingebouwd in de installatielijn op integratie en uitgebreid met het driefactorenmodel B-023."
+  },
+  "titel": {
+    "uk": "Запис встановлення через SSH до історії випусків та журналу перевірки",
+    "nl": "Vastlegging van SSH-installaties in de uitgavegeschiedenis en het controlelogboek"
+  },
+  "laatsteCommit": "0bf60856a2a51245c31d7096ecb78d0f8e0fa670",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

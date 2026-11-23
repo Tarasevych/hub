@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 133,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:29.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі 190 файлів і міграція 0285_ai_delegatie_termijnen.sql на 100% інтегровані у випусках UPD-002 та UPD-003.",
+    "nl": "Alle 190 bestanden en migratie 0285_ai_delegatie_termijnen.sql zitten al volledig in UPD-002 en UPD-003."
+  },
+  "titel": {
+    "uk": "ANKERS-002: зведений кандидат випуску (меню якорів, каталоги ШІ, офіційні логотипи, терміни делегування)",
+    "nl": "ANKERS-002: gebundelde uitgavekandidaat (ankermenu, AI-catalogi, merklogo’s en delegatietermijnen)"
+  },
+  "laatsteCommit": "49f99d2489f2a573e61df77d018426a86602915b",
+  "opgenomenIn": "UPD-003",
+  "taken": [
+    "ANKERS-002",
+    "UPD-003",
+    "CONSOL-001"
+  ]
+}

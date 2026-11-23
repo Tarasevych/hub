@@ -58,6 +58,8 @@ import { dienstVanHostnaam } from '../shared/foutuitleg';
 import { activityTitle, activiteitContext } from './connector-activiteit';
 import { SUBDOMEINEN, type MeldingSubdomein } from '../shared/meldingen-ecosysteem';
 import { detecteerLiveVoortgang, isInvoerElementActief, magToastNuTonen } from '../shared/meldingen-puls/kern';
+import { useVlag } from './functievlag-lezen';
+import { leesMeldingWeergaveKeuze, useMeldingWeergaveKeuze } from './meldingen/weergave-keuze';
 import Merk from './merk/Merk';
 
 const naarMeldingSubdomein = (dienst: string): MeldingSubdomein => {
@@ -114,9 +116,13 @@ const DETAIL_ICON_COMPONENTS: Record<CanonicalNoticeDetailIcon, typeof Info> = {
 const ANDERE_ESC_LAGEN = '.menu-bellen,.plaats-acties,.menu-acties,.zk-uitklap,[role="menu"],[role="listbox"]';
 
 export default function CanonicalNotificationCenter(p: Props) {
+  const vlagV2 = useVlag('meldingen-v2', false);
+  const vlagUitlegV3 = useVlag('meldingen-uitleg-v3', false);
+  const weergaveKeuze = useMeldingWeergaveKeuze();
   const oudeTestStand = typeof location !== 'undefined' && /[?&]v2=[01]\b/.test(location.search);
-  const eenheidPuls = !oudeTestStand;
-  const v2 = useMeldingenV2();
+  const eenheidPuls = !oudeTestStand && weergaveKeuze.stijl !== 'v2';
+  const v2 = useMeldingenV2() || (oudeTestStand ? vlagV2 : weergaveKeuze.stijl === 'v2' || vlagV2);
+  const uitlegV3Actief = weergaveKeuze.eigenUitleg ? weergaveKeuze.uitlegV3 : vlagUitlegV3;
   const v2Regels = useLeverRegels(v2 || eenheidPuls);
   // INTEG-001: de blijvende status (archief, opgelost) geldt nu voor elk paneel, niet alleen met de vlag meldingen-uitleg-v3: «Очистити»
   // en «Архів» moeten overal werken. Alleen voor een aangemeld account (anders is er geen server-status).
@@ -201,8 +207,12 @@ export default function CanonicalNotificationCenter(p: Props) {
   };
   const markRetainedRead = (id: string) => markRetainedReadMany([id]);
 
-  const playChime = () => {
-    if ((meldingenV2Nu() || eenheidPuls) && nietStorenActief()) return;
+  const chimeTypeRef = useRef<MeldingType | undefined>(undefined);
+  const v2OfPulsNu = () => meldingenV2Nu() || eenheidPuls || leesMeldingWeergaveKeuze().stijl === 'v2';
+  const playChime = (type?: MeldingType) => {
+    const effType = type ?? chimeTypeRef.current;
+    chimeTypeRef.current = undefined;
+    if (v2OfPulsNu() && nietStorenActief() && !(effType && isKritiekType(effType))) return;
     if (!soundRef.current || !(unlocked.current || navigator.userActivation?.hasBeenActive)) return;
     try {
       const ctx = new AudioContext();
@@ -261,6 +271,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     setPaused(!!aftelRef.current && gepauzeerd(aftelRef.current));
     setBalkSegment({ versie: 0, duur: next.levensduurMs ?? 2000, verstreken: 0 });
     setActive(next);
+    chimeTypeRef.current = next.type;
     if (!next.stil) playChime();
     markeerGetoond(next);
   };
@@ -298,10 +309,10 @@ export default function CanonicalNotificationCenter(p: Props) {
     const basis = vk(type);
     // INTEG-001 (oude fout): «Не турбувати» beloofde «без звуку й спливних вікон», maar alleen het geluid zweeg. Nu ook geen pop-up
     // (beveiliging blijft opduiken). En één gebeurtenis die uit twee bronnen binnenkomt (dienst + serveractiviteit) krijgt één pop-up.
-    const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);
+    const dnd = (meldingenV2Nu() || leesMeldingWeergaveKeuze().stijl === 'v2') && nietStorenActief() && !isKritiekType(type);
     const pulsDnd = eenheidPuls && nietStorenActief() && !isKritiekType(type);
     // Meldingen v2: een regel «Тихе»/«Вимкнене» voor deze bron maakt het stiller (geen pop-up, geen geluid); beveiliging nooit.
-    const regel = (meldingenV2Nu() || eenheidPuls) ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
+    const regel = v2OfPulsNu() ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
     const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);
     const dubbel = !notice.voorbeeld && isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
     const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil && !pulsDnd && !notice.alleenPaneel };
@@ -1237,6 +1248,7 @@ export default function CanonicalNotificationCenter(p: Props) {
                 onGeluid={toggleSound}
                 onSluiten={() => setPanelOpen(false)}
                 onVenster={() => { zetEcosysteemModusActief(true); }}
+                uitlegV3={uitlegV3Actief}
                 techTypen={!!tech.profiel}
                 tech={techRegel ? { aantal: techUnread, open: () => { setPanelOpen(false); openTechMeldingen(); }, tekst: techSamenvattingTekst(p.lang, techUnread) } : null}
               />

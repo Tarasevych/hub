@@ -19,7 +19,7 @@ export type HervatIntentie = { actie: string; gegevens?: Record<string, string |
 export type StapOpUitkomst = { ok: true; methode: StapOpMethode; code?: string } | { ok: false; reden?: string };
 type Post = (url: string, data: unknown) => Promise<unknown>;
 
-const SERVICES = new Set(['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin', 'mcp']);
+const SERVICES = new Set(['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'identity', 'api', 'admin', 'mcp']);
 export const HERVAT_SLEUTEL = 'mijn-ruimte-bevestig-hervat';
 export const HERVAT_MAX_MS = 10 * 60 * 1000;
 type Opgeslagen = HervatIntentie & { pad: string; at: number };

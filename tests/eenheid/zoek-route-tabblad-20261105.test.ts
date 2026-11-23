@@ -71,7 +71,7 @@ export async function main(): Promise<number> {
 
     // B. voorbeelden met de volledige URL
     const urlVan = (pred: (o: (typeof cat)[number]) => boolean) => { const o = cat.find(pred); return o ? routeUrl(leesRoute(o.route), 'uk') : '(niet gevonden)'; };
-    check('B «Підтвердити видалення» → https://id.tarasevych.com/account', urlVan((o) => o.titels.uk === 'Підтвердити видалення' && o.bron === 'ui') === 'https://id.tarasevych.com/account?lang=uk', urlVan((o) => o.titels.uk === 'Підтвердити видалення'));
+    check('B «Підтвердити видалення» → https://id.tarasevych.com/account', urlVan((o) => o.titels.uk === 'Підтвердити видалення' && o.bron === 'ui' && o.route.host === 'identity') === 'https://id.tarasevych.com/account?lang=uk', urlVan((o) => o.titels.uk === 'Підтвердити видалення' && o.route.host === 'identity'));
     check('B «Перейменувати» van de sleutelkluis → https://api.tarasevych.com/kluis', urlVan((o) => o.titels.uk === 'Перейменувати' && (o.extra as { bestand?: string }).bestand === 'src/ApiPlatformWeergave.tsx') === 'https://api.tarasevych.com/kluis?lang=uk');
     check('B pagina mail/local → https://mail.tarasevych.com/prive; pagina admin/sso → admin.*/sso; huis/devices → huis.*/apparaten',
       urlVan((o) => o.id === 'pagina:mail/local') === 'https://mail.tarasevych.com/prive?lang=uk' && urlVan((o) => o.id === 'pagina:admin/sso') === 'https://admin.tarasevych.com/sso?lang=uk' && urlVan((o) => o.id === 'pagina:huis/devices') === 'https://huis.tarasevych.com/apparaten?lang=uk');

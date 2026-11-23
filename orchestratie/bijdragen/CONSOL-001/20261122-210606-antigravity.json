@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "id": "CONSOL-001/20261122-210606-antigravity",
+  "taakId": "CONSOL-001",
+  "tijd": "2026-11-22T21:06:06.609Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (High)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "begin",
+  "wat": {
+    "uk": "Створено гілку консолідації від актуальної вершини інтеграції та розпочато об'єднання спільного переглядача вкладень і середовища клієнтських взаємин.",
+    "nl": "Consolidatietak aangemaakt vanaf het actuele integratiehoofd en gestart met het samenvoegen van de gedeelde bijlageweergave en klantrelatiebeheer."
+  },
+  "tak": "feature/consolidatie-001-20261122-203500",
+  "pr": null,
+  "onderwerpen": [
+    "meldingen",
+    "vertaling-en-integraties"
+  ]
+}

@@ -8,7 +8,7 @@
 #   --proefrun  voert niets uit: toont alleen wat er zou gebeuren (en controleert de controlesommen en de sleutel).
 #   --zonder-tunnel  slaat cloudflared over (bijv. als u de tunnel later zelf koppelt).
 #   --cloudflared-versie V --cloudflared-sha256 HEX
-#               de vastgezette cloudflared-uitgave (bv. 2026.10.0) met de SHA-256 van het .deb-pakket voor DEZE architectuur.
+#               de vastgezette cloudflared-uitgave (bv. 2026.11.0) met de SHA-256 van het .deb-pakket voor DEZE architectuur.
 #               Zonder vastgezette versie wordt cloudflared NIET geïnstalleerd: de rest van het herstel loopt gewoon door.
 #   --tunnel-ongecontroleerd
 #               ! haalt de NIEUWSTE cloudflared op ZONDER controlesom en installeert die als root. Risico: een vervalste of
@@ -16,120 +16,154 @@
 #   --node-sha256 HEX   de vastgezette SHA-256 van het Node-archief voor deze architectuur. Zonder: de som uit de officiële
 #               SHASUMS256.txt van precies deze Node-uitgave. Het archief wordt nooit uitgepakt als de som niet klopt.
 #
-# Werkt op Ubuntu/Debian, virtueel of fysiek, x86-64 of ARM (de code wordt opnieuw gebouwd voor deze architectuur; Node wordt voor deze architectuur gehaald).
+# Werkt op Ubuntu/Debian, virtueel of fysiek, x86-64 of ARM (de code wordt opnieuw gebouwd voor deze architectuur; Node en cloudflared worden met SHA-256 gecontroleerd).
 # Vereist internet (apt, nodejs.org, npm, cloudflared). Draai dit alleen op een NIEUWE/lege machine: bestaande Mijn Ruimte-data wordt vervangen.
 set -euo pipefail
 
-# Vastgezette cloudflared (SEC-002, server-uitrol-10; zelfde regel als deploy/opa/versie.env: nooit «latest», altijd een SHA-256).
-# Leeg = niet vastgezet. Een nieuwe versie = deze drie waarden bijwerken in een nieuwe uitgave van Mijn Ruimte; dit script reist
-# met die waarden mee in elk archief (vidnovyty.sh). Op de opdrachtregel kan de eigenaar ze voor één herstel opgeven.
-# 2026.10.7 (uitgave van 30.10.2026: bevat de beveiligingsupdates van 2026.10.4–10.6 en het herstel van de http2-regressie).
-# Nagekeken op 12.11.2026: de .deb van de GitHub-uitgave (github.com/cloudflare/cloudflared/releases/download/2026.10.7/) en dezelfde
-# versie uit het pakketarchief van Cloudflare (pkg.cloudflare.com/cloudflared/pool/main/c/cloudflared/) hebben dezelfde SHA-256;
-# dpkg-deb meldt Package=cloudflared, Version=2026.10.7 en de juiste architectuur.
-# Перевірено 12.11.2026: однакова SHA-256 з двох незалежних джерел (випуск на GitHub і пакетний архів Cloudflare).
-CF_VERSIE_VAST="2026.10.7"
-CF_SHA256_AMD64_VAST="70b1a1e0f46033ffc8d90b406e554044ba6cbf2e4360295ef1163aed31e09393"
-CF_SHA256_ARM64_VAST="d9407eb6e70ac31f54978a6b408a0320b51b664a6d0b498248692d7ac56bf836"
+# Vastgezette cloudflared (SEC-002 / SEC-003; nooit «latest» als standaard, altijd een SHA-256 per architectuur).
+CF_VERSIE_VAST="2026.11.0"
+CF_SHA256_AMD64_VAST="5305dbaf62984e92e7daa29cdd6a35a4797edc23385d4c5b8422ff97eb96a19b"
+CF_SHA256_ARM64_VAST="ce671bc2b4afbd16b43f9a3c279527e9e2be8b30b87648047a1f95cccfbacdfd"
 
 HIER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SLEUTEL=""; PROEF=0; TUNNEL=1; DB_NAAM="mijnruimte"
 CF_VERSIE=""; CF_SHA256=""; NODE_SHA256=""; TUNNEL_ONGECONTROLEERD=0
+WERK=""; WERKMAP=""; PG_LOG=""
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --sleutel) SLEUTEL="${2:-}"; shift 2 ;;
+    --sleutel) [ $# -ge 2 ] || { echo "onbekende of onvolledige optie: $1" >&2; exit 2; }; SLEUTEL="$2"; shift 2 ;;
     --proefrun) PROEF=1; shift ;;
     --zonder-tunnel) TUNNEL=0; shift ;;
-    --db) DB_NAAM="${2:-mijnruimte}"; shift 2 ;;
-    --cloudflared-versie) CF_VERSIE="${2:-}"; shift 2 ;;
-    --cloudflared-sha256) CF_SHA256="${2:-}"; shift 2 ;;
-    --node-sha256) NODE_SHA256="${2:-}"; shift 2 ;;
+    --db) [ $# -ge 2 ] || { echo "onbekende of onvolledige optie: $1" >&2; exit 2; }; DB_NAAM="$2"; shift 2 ;;
+    --cloudflared-versie) [ $# -ge 2 ] || { echo "onbekende of onvolledige optie: $1" >&2; exit 2; }; CF_VERSIE="$2"; shift 2 ;;
+    --cloudflared-sha256) [ $# -ge 2 ] || { echo "onbekende of onvolledige optie: $1" >&2; exit 2; }; CF_SHA256="$2"; shift 2 ;;
+    --node-sha256) [ $# -ge 2 ] || { echo "onbekende of onvolledige optie: $1" >&2; exit 2; }; NODE_SHA256="$2"; shift 2 ;;
     --tunnel-ongecontroleerd) TUNNEL_ONGECONTROLEERD=1; shift ;;
     -h|--help) sed -n 2,20p "$0"; exit 0 ;;
     *) echo "onbekende optie: $1" >&2; exit 2 ;;
   esac
 done
-# De naam wordt in shell-opdrachten gebruikt: alleen een gewone PostgreSQL-naam toestaan.
+
+# De naam wordt in PostgreSQL-opdrachten gebruikt: alleen een gewone PostgreSQL-naam toestaan.
 [[ "$DB_NAAM" =~ ^[a-z_][a-z0-9_]{0,62}$ ]] || { echo "FOUT: ongeldige databasenaam voor --db: $DB_NAAM" >&2; exit 2; }
-# Vastgezette downloads: alleen een echte versie (nooit «latest») en alleen samen met een SHA-256.
 if [ -n "$CF_VERSIE" ] || [ -n "$CF_SHA256" ]; then
-  [[ "$CF_VERSIE" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,3}$ ]] || { echo "FOUT: --cloudflared-versie moet een uitgave zijn zoals 2026.10.0 (nooit «latest»): $CF_VERSIE" >&2; exit 2; }
+  [[ "$CF_VERSIE" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,3}$ ]] || { echo "FOUT: --cloudflared-versie moet een uitgave zijn zoals 2026.11.0 (nooit «latest»): $CF_VERSIE" >&2; exit 2; }
   [[ "$CF_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "FOUT: --cloudflared-versie vraagt ook --cloudflared-sha256 (64 hexadecimale tekens, kleine letters)" >&2; exit 2; }
 fi
 [ -z "$NODE_SHA256" ] || [[ "$NODE_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "FOUT: --node-sha256 moet 64 hexadecimale tekens zijn (kleine letters)" >&2; exit 2; }
-# Alleen voor tests (zoals OPA_BRON in deploy/opa/opa-ophalen.sh): een nagebootste downloadbron, bv. file:///…; sudo geeft dit niet door.
+
 PROTO='=https'
 if [ -n "${HERSTEL_TEST_BRON:-}" ]; then PROTO='=https,file'; fi
 
 stap() { echo; echo "==> $*"; }
 fout() { echo "FOUT: $*" >&2; exit 1; }
-# Voert uit, of toont alleen (proefrun).
 doe() { if [ "$PROEF" -eq 1 ]; then echo "  [proefrun] $*"; else "$@"; fi; }
-# Voert een VASTE opdrachttekst uit in een eigen shell. Paden en namen gaan als losse argumenten mee ($1, $2, …) en worden nooit
-# in de tekst geplakt: een aanhalingsteken of $(…) in een pad blijft zo een gewoon teken en kan de opdracht niet veranderen.
-doe_sh() {
-  local tekst="$1" i=1 a; shift
-  if [ "$PROEF" -eq 1 ]; then
-    echo "  [proefrun] $tekst"
-    for a in "$@"; do echo "             \$$i = $a"; i=$((i + 1)); done
-  else bash -c "$tekst" herstel "$@"; fi
-}
-# Voert een functie van dit script uit, of toont alleen de omschrijving (proefrun).
 doe_fn() { local wat="$1"; shift; if [ "$PROEF" -eq 1 ]; then echo "  [proefrun] $wat"; else "$@"; fi; }
+werk_pad() { printf '%s' "${WERK:-${WERKMAP:-}}"; }
+
+curl_naar() {
+  local doel="$1" url="$2" max_tijd="${3:-900}" proto="$PROTO"
+  case "$url" in file://*) proto='=https,file' ;; esac
+  curl -fsSL --proto "$proto" --proto-redir "$proto" --tlsv1.2 --max-time "$max_tijd" -o "$doel" "$url"
+}
 
 # Downloadt <url> naar <doel> en vergelijkt de SHA-256 met <verwacht> VÓÓR enig gebruik. Klopt die niet, dan blijft er niets liggen.
 haal_gecontroleerd() {
-  local url="$1" verwacht="$2" doel="$3" echt
+  local url="$1" verwacht="$2" doel="$3" echt map naam
   [[ "$verwacht" =~ ^[0-9a-f]{64}$ ]] || { echo "FOUT: geen geldige SHA-256 bekend voor $url — niets opgehaald" >&2; return 1; }
-  curl -fsSL --proto "$PROTO" --proto-redir "$PROTO" --max-time 900 -o "$doel" "$url" || { rm -f -- "$doel"; echo "FOUT: downloaden mislukt: $url" >&2; return 1; }
+  curl_naar "$doel" "$url" 900 || { rm -f -- "$doel"; echo "FOUT: downloaden mislukt: $url" >&2; return 1; }
   echt="$(sha256sum "$doel" | cut -d' ' -f1)"
-  if [ "$echt" != "$verwacht" ]; then
+  map="$(dirname "$doel")"; naam="$(basename "$doel")"
+  if [ "$echt" != "$verwacht" ] || ! ( cd "$map" && printf '%s  %s\n' "$verwacht" "$naam" | sha256sum -c - >/dev/null 2>&1 ); then
     rm -f -- "$doel"
     echo "FOUT: SHA-256 KLOPT NIET voor $url (verwacht $verwacht, kreeg $echt) — niets geïnstalleerd" >&2
     return 1
   fi
 }
-# Node-archief voor deze architectuur naar $WERK/node.tar.xz, gecontroleerd. Verwachte som: --node-sha256, anders de regel voor
-# precies dit bestand in de officiële SHASUMS256.txt van deze uitgave.
+
+# Node-archief voor deze architectuur naar $WERK/node.tar.xz, gecontroleerd met SHASUMS256.txt of --node-sha256.
 node_ophalen() {
-  local naam="node-v${NODE_VERSIE}-linux-${NODE_ARCH}.tar.xz" basis="${HERSTEL_TEST_BRON:+$HERSTEL_TEST_BRON/node}" verwacht="$NODE_SHA256"
-  basis="${basis:-https://nodejs.org/dist}/v${NODE_VERSIE}"
-  if [ -z "$verwacht" ]; then
-    curl -fsSL --proto "$PROTO" --proto-redir "$PROTO" --max-time 120 -o "$WERK/SHASUMS256.txt" "$basis/SHASUMS256.txt" || { echo "FOUT: SHASUMS256.txt van Node $NODE_VERSIE kon niet worden opgehaald" >&2; return 1; }
-    verwacht="$(awk -v f="$naam" '$2 == f { print $1; exit }' "$WERK/SHASUMS256.txt")"
+  local w naam basis verwacht="${NODE_SHA256:-}"
+  w="$(werk_pad)"
+  [ -n "$w" ] && [ -d "$w" ] || { echo "FOUT: tijdelijke werkmap ontbreekt" >&2; return 1; }
+  [[ "$NODE_VERSIE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "FOUT: ongeldige Node-versie: $NODE_VERSIE" >&2; return 1; }
+  naam="node-v${NODE_VERSIE}-linux-${NODE_ARCH}.tar.xz"
+  if [ -n "${NODE_BRON:-}" ]; then
+    basis="$NODE_BRON"
+  elif [ -n "${HERSTEL_TEST_BRON:-}" ]; then
+    basis="$HERSTEL_TEST_BRON/node/v${NODE_VERSIE}"
+  else
+    basis="https://nodejs.org/dist/v${NODE_VERSIE}"
   fi
-  haal_gecontroleerd "$basis/$naam" "$verwacht" "$WERK/node.tar.xz"
+  if [ -z "$verwacht" ]; then
+    curl_naar "$w/SHASUMS256.txt" "$basis/SHASUMS256.txt" 120 || { echo "FOUT: SHASUMS256.txt van Node $NODE_VERSIE kon niet worden opgehaald" >&2; return 1; }
+    verwacht="$(awk -v f="$naam" '{ bestand = $2; sub(/^\*/, "", bestand); if (bestand == f && $1 ~ /^[0-9a-f]{64}$/) { print $1; exit } }' "$w/SHASUMS256.txt")"
+  fi
+  haal_gecontroleerd "$basis/$naam" "$verwacht" "$w/node.tar.xz"
 }
+
 node_installeren() {
-  local map="/usr/local/lib/nodejs/node-v${NODE_VERSIE}-linux-${NODE_ARCH}"
+  local w doel_lib="${NODE_DOEL:-/usr/local/lib/nodejs}" doel_bin="${NODE_BIN_DOEL:-/usr/bin}" map
+  w="$(werk_pad)"
+  if [ "$PROEF" -eq 1 ]; then
+    echo "  [proefrun] node-v${NODE_VERSIE}-linux-${NODE_ARCH}.tar.xz ophalen, SHA-256 controleren en uitpakken naar ${doel_lib}"
+    return 0
+  fi
   node_ophalen || fout "Node.js $NODE_VERSIE is niet geïnstalleerd: het archief kon niet worden opgehaald of de SHA-256 klopt niet"
-  mkdir -p /usr/local/lib/nodejs
-  tar -xJf "$WERK/node.tar.xz" -C /usr/local/lib/nodejs
-  ln -sf "$map/bin/node" /usr/bin/node
-  ln -sf "$map/bin/npm" /usr/bin/npm
-  ln -sf "$map/bin/npx" /usr/bin/npx
-  rm -f -- "$WERK/node.tar.xz"
+  map="$doel_lib/node-v${NODE_VERSIE}-linux-${NODE_ARCH}"
+  mkdir -p -- "$doel_lib" "$doel_bin"
+  tar -xJf "$w/node.tar.xz" -C "$doel_lib"
+  ln -sf "$map/bin/node" "$doel_bin/node"
+  ln -sf "$map/bin/npm" "$doel_bin/npm"
+  ln -sf "$map/bin/npx" "$doel_bin/npx"
+  rm -f -- "$w/node.tar.xz" "$w/SHASUMS256.txt"
 }
-# cloudflared-pakket naar $WERK/cloudflared.deb. 0 = opgehaald (vastgezet: SHA-256 gecontroleerd); 3 = niets opgehaald omdat er geen
-# vastgezette versie is en de eigenaar niet uitdrukkelijk voor «zonder controle» koos; anders = downloaden mislukt of som fout.
+
+# cloudflared-pakket naar $WERK/cloudflared.deb. 0 = opgehaald; 3 = geen vastgezette versie en geen --tunnel-ongecontroleerd.
 cloudflared_ophalen() {
-  local pakket="cloudflared-linux-${DEB_ARCH}.deb" basis="${HERSTEL_TEST_BRON:+$HERSTEL_TEST_BRON/cloudflared}"
+  local w pakket="cloudflared-linux-${DEB_ARCH}.deb" basis
+  w="$(werk_pad)"
+  [ -n "$w" ] && [ -d "$w" ] || { echo "FOUT: tijdelijke werkmap ontbreekt" >&2; return 1; }
+  basis="${HERSTEL_TEST_BRON:+$HERSTEL_TEST_BRON/cloudflared}"
   basis="${basis:-https://github.com/cloudflare/cloudflared/releases}"
   if [ -n "$CF_VERSIE" ]; then
-    haal_gecontroleerd "$basis/download/${CF_VERSIE}/$pakket" "$CF_SHA256" "$WERK/cloudflared.deb"
+    haal_gecontroleerd "$basis/download/${CF_VERSIE}/$pakket" "$CF_SHA256" "$w/cloudflared.deb"
     return
   fi
   [ "$TUNNEL_ONGECONTROLEERD" -eq 1 ] || return 3
   echo "  ! LET OP: cloudflared wordt ZONDER controlesom opgehaald (nieuwste uitgave) en als root geïnstalleerd (--tunnel-ongecontroleerd)"
-  curl -fsSL --proto "$PROTO" --proto-redir "$PROTO" --max-time 900 -o "$WERK/cloudflared.deb" "$basis/latest/download/$pakket" || { rm -f -- "$WERK/cloudflared.deb"; return 1; }
+  curl_naar "$w/cloudflared.deb" "$basis/latest/download/$pakket" 900 || { rm -f -- "$w/cloudflared.deb"; return 1; }
 }
-# Stap 10. Mislukt hier iets, dan stopt het herstel niet: de site draait al, alleen de tunnel moet dan met de hand.
+
+cloudflared_installeren() {
+  local w cf_ver="${CLOUDFLARED_VERSIE:-${CF_VERSIE:-$CF_VERSIE_VAST}}" cf_sha="" pakket="cloudflared-linux-${DEB_ARCH}.deb" bron dpkg_cmd="${DPKG_CMD:-dpkg}"
+  w="$(werk_pad)"
+  [[ "$cf_ver" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,3}$ ]] || fout "ongeldige cloudflared-versie: $cf_ver"
+  case "$DEB_ARCH" in
+    amd64) cf_sha="${CLOUDFLARED_SHA256_AMD64:-${CF_SHA256:-$CF_SHA256_AMD64_VAST}}" ;;
+    arm64) cf_sha="${CLOUDFLARED_SHA256_ARM64:-${CF_SHA256:-$CF_SHA256_ARM64_VAST}}" ;;
+    *) fout "architectuur $DEB_ARCH wordt niet ondersteund voor cloudflared" ;;
+  esac
+  if [ "$PROEF" -eq 1 ]; then
+    echo "  [proefrun] cloudflared $cf_ver ($DEB_ARCH) ophalen, SHA-256 controleren en installeren"
+    return 0
+  fi
+  [ -n "$w" ] && [ -d "$w" ] || fout "tijdelijke werkmap ontbreekt"
+  bron="${CLOUDFLARED_BRON:-https://github.com/cloudflare/cloudflared/releases/download/${cf_ver}}/${pakket}"
+  haal_gecontroleerd "$bron" "$cf_sha" "$w/cloudflared.deb" || fout "SHA-256 controle van $pakket mislukt — pakket niet geïnstalleerd"
+  "$dpkg_cmd" -i "$w/cloudflared.deb"
+  rm -f -- "$w/cloudflared.deb"
+}
+
 tunnel_inrichten() {
-  local s=0
+  local w s=0 dpkg_cmd="${DPKG_CMD:-dpkg}"
+  w="$(werk_pad)"
   if ! command -v cloudflared >/dev/null 2>&1; then
     cloudflared_ophalen || s=$?
     if [ "$s" -eq 0 ]; then
-      dpkg -i "$WERK/cloudflared.deb" || echo "  LET OP: cloudflared kon niet worden geïnstalleerd (dpkg); koppel de tunnel zelf"
+      "$dpkg_cmd" -i "$w/cloudflared.deb" || echo "  LET OP: cloudflared kon niet worden geïnstalleerd (dpkg); koppel de tunnel zelf"
+      rm -f -- "$w/cloudflared.deb"
     elif [ "$s" -eq 3 ]; then
       echo "  ! cloudflared is NIET geïnstalleerd: er is geen vastgezette versie met SHA-256, en zonder controle halen we niets binnen dat als root draait."
       echo "    De site zelf draait; alleen de tunnel naar buiten ontbreekt nog. Installeer cloudflared uit een bron die u vertrouwt"
@@ -144,6 +178,80 @@ tunnel_inrichten() {
   return 0
 }
 
+stap_pg17_installeren() {
+  /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+  apt-get install -y postgresql-17 postgresql-client-17
+}
+
+stap_pad_schrijven_proef() {
+  printf '%s' "$1" > "$2"
+}
+
+stap_code_uitpakken() {
+  local doel="$1" archief="$2"
+  rm -rf -- "$doel"
+  mkdir -p -- "$doel"
+  tar -xzf "$archief" -C "$doel"
+  ls -- "$doel"
+}
+
+stap_geheimen_terugzetten() {
+  local sleutel_pad="$1" archief="$2"
+  age --decrypt -i "$sleutel_pad" "$archief" | tar -xpf - -C /
+}
+
+stap_systeem_inrichten() {
+  local archief="$1" w sys_tmp f
+  w="$(werk_pad)"
+  sys_tmp="$(mktemp -d "${w:-/tmp}/systeem.XXXXXX")"
+  chmod 0700 "$sys_tmp"
+  tar -xzpf "$archief" -C "$sys_tmp"
+  for f in "$sys_tmp"/usr/local/sbin/*; do
+    [ -e "$f" ] && install -m 0755 -o root -g root "$f" /usr/local/sbin/
+  done
+  for f in "$sys_tmp"/etc/sudoers.d/*; do
+    [ -e "$f" ] && visudo -cf "$f" >/dev/null && install -m 0440 -o root -g root "$f" /etc/sudoers.d/
+  done
+  if [ -e "$sys_tmp/etc/cloudflared/config.yml" ]; then
+    install -d /etc/cloudflared
+    install -m 0644 "$sys_tmp/etc/cloudflared/config.yml" /etc/cloudflared/config.yml
+  fi
+  if [ -e "$sys_tmp/etc/systemd/system/cloudflared.service" ]; then
+    install -m 0644 "$sys_tmp/etc/systemd/system/cloudflared.service" /etc/systemd/system/cloudflared.service
+  fi
+  rm -rf -- "$sys_tmp"
+  systemctl daemon-reload || true
+}
+
+stap_database_herstellen() {
+  local sleutel_pad="$1" globals_age="$2" dump_age="$3" db_naam="$4" pg_log="$5"
+  [[ "$db_naam" =~ ^[a-z_][a-z0-9_]{0,62}$ ]] || fout "ongeldige databasenaam: $db_naam"
+  age --decrypt -i "$sleutel_pad" "$globals_age" | runuser -u postgres -- psql -q -v ON_ERROR_STOP=0 postgres >/dev/null 2>&1 || true
+  printf '%s\n' "SELECT format('DROP DATABASE IF EXISTS %I', :'db') \\gexec" \
+    | runuser -u postgres -- psql -q -v ON_ERROR_STOP=1 -v db="$db_naam" postgres
+  runuser -u postgres -- createdb -- "$db_naam"
+  age --decrypt -i "$sleutel_pad" "$dump_age" | runuser -u postgres -- pg_restore --dbname="$db_naam" --exit-on-error=0 2>"$pg_log" || true
+}
+
+stap_uploads_terugzetten() {
+  local sleutel_pad="$1" archief="$2"
+  install -d /srv/data
+  age --decrypt -i "$sleutel_pad" "$archief" | tar -xzpf - -C /srv/data
+  chown -R mijnruimte:mijnruimte /srv/data/uploads
+}
+
+stap_site_bouwen() {
+  local code_pad="$1" mcp_archief="$2"
+  ZONDER_BACKUP=1 NODE=/usr/bin/node bash "$code_pad/deploy/installeer-app.sh" installeren "$code_pad"
+  if [ -f "$mcp_archief" ]; then
+    tar -xzpf "$mcp_archief" -C /srv/mijn-ruimte
+    chown -R mijnruimte:mijnruimte /srv/mijn-ruimte/mcp 2>/dev/null || true
+    if [ -f /etc/systemd/system/mijn-ruimte-mcp.service ]; then
+      systemctl enable --now mijn-ruimte-mcp.service || true
+    fi
+  fi
+}
+
 # Wordt dit bestand ingelezen in plaats van uitgevoerd (de eenheidstest van de functies hierboven), dan stopt het hier: er gebeurt niets.
 if [ "${BASH_SOURCE[0]}" != "$0" ]; then return 0; fi
 
@@ -152,24 +260,27 @@ if [ "${BASH_SOURCE[0]}" != "$0" ]; then return 0; fi
 grep -q '^AGE-SECRET-KEY-' "$SLEUTEL" || fout "$SLEUTEL lijkt geen age-privésleutel"
 command -v apt-get >/dev/null || fout "dit script ondersteunt apt (Ubuntu/Debian)"
 
-# Eigen tijdelijke map (alleen root, willekeurige naam) voor de downloads; ze verdwijnt aan het einde. Het logboek van pg_restore
-# blijft staan, zodat u het na een mislukt herstel kunt lezen. Geen vaste namen in /tmp meer.
-if [ "$PROEF" -eq 1 ]; then WERK="<tijdelijke map>"; PG_LOG="<tijdelijk logboek pg_restore>"
+WERK="$(mktemp -d "${TMPDIR:-/tmp}/mijn-ruimte-herstel.XXXXXX")"
+chmod 0700 "$WERK"
+WERKMAP="$WERK"
+trap 'rm -rf -- "$WERK"' EXIT
+if [ "$PROEF" -eq 1 ]; then
+  PG_LOG="$WERK/pg_restore.proef.log"
 else
-  WERK="$(mktemp -d "${TMPDIR:-/tmp}/mijn-ruimte-herstel.XXXXXX")"
-  trap 'rm -rf -- "$WERK"' EXIT
   PG_LOG="$(mktemp "${TMPDIR:-/tmp}/mijn-ruimte-pg_restore.XXXXXX")"
+  chmod 0600 "$PG_LOG"
 fi
 
 stap "1/10 Controlesommen"
 ( cd "$HIER" && sha256sum -c SHA256SUMS --quiet ) || fout "controlesommen kloppen niet: het archief is beschadigd of gewijzigd"
 echo "  alle bestanden kloppen"
 MANIFEST="$HIER/manifest.json"
-NODE_VERSIE="$(sed -n 's/.*"node":"v\{0,1\}\([0-9][0-9.]*\)".*/\1/p' "$MANIFEST" | head -1)"; NODE_VERSIE="${NODE_VERSIE:-24.0.0}"
+NODE_RUW="$(sed -nE 's/.*"node"[[:space:]]*:[[:space:]]*"v?([^"]*)".*/\1/p' "$MANIFEST" | head -1)"
+if [ -n "$NODE_RUW" ] && [ "$NODE_RUW" != "onbekend" ]; then NODE_VERSIE="$NODE_RUW"; else NODE_VERSIE="24.0.0"; fi
+[[ "$NODE_VERSIE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fout "ongeldige Node-versie in manifest: $NODE_VERSIE"
 ARCH="$(uname -m)"
 case "$ARCH" in x86_64|amd64) NODE_ARCH=x64; DEB_ARCH=amd64 ;; aarch64|arm64) NODE_ARCH=arm64; DEB_ARCH=arm64 ;; *) fout "architectuur $ARCH wordt niet ondersteund (x86-64 en ARM64 wel)" ;; esac
 echo "  architectuur: $ARCH, Node ${NODE_VERSIE}"
-# Geen cloudflared op de opdrachtregel vastgezet: dan de waarden die met dit script zijn meegekomen (bovenaan), als ze er zijn.
 if [ -z "$CF_VERSIE" ] && [ -n "$CF_VERSIE_VAST" ]; then
   CF_VERSIE="$CF_VERSIE_VAST"
   if [ "$DEB_ARCH" = amd64 ]; then CF_SHA256="$CF_SHA256_AMD64_VAST"; else CF_SHA256="$CF_SHA256_ARM64_VAST"; fi
@@ -180,7 +291,7 @@ export DEBIAN_FRONTEND=noninteractive
 doe apt-get update -y
 doe apt-get install -y ca-certificates curl gnupg rsync git unzip xz-utils age postgresql-common
 if ! dpkg -s postgresql-17 >/dev/null 2>&1; then
-  doe_sh '/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && apt-get install -y postgresql-17 postgresql-client-17'
+  doe_fn "/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && apt-get install -y postgresql-17 postgresql-client-17" stap_pg17_installeren
 fi
 if [ "$PROEF" -eq 0 ]; then command -v age >/dev/null || fout "age is niet geïnstalleerd"; fi
 
@@ -193,23 +304,20 @@ else echo "  Node is al aanwezig"; fi
 
 stap "4/10 Code uitpakken"
 BRON=/var/lib/mijn-ruimte-herstel
-doe_sh 'rm -rf -- "$1" && mkdir -p -- "$1" && tar -xzf "$2" -C "$1" && ls -- "$1"' "$BRON" "$HIER/kod/release.tar.gz"
+doe_fn "$BRON vrijmaken en $HIER/kod/release.tar.gz uitpakken" stap_code_uitpakken "$BRON" "$HIER/kod/release.tar.gz"
 CODE="$BRON/mijn-ruimte-code"
 
 stap "5/10 Geheimen ontsleutelen en terugzetten (/etc/mijn-ruimte, tunnel-sleutels)"
-doe_sh 'age --decrypt -i "$1" "$2" | tar -xpf - -C /' "$SLEUTEL" "$HIER/sekrety/sekrety.tar.age"
+doe_fn "geheimen ontsleutelen en uitpakken naar /" stap_geheimen_terugzetten "$SLEUTEL" "$HIER/sekrety/sekrety.tar.age"
 if [ "$PROEF" -eq 0 ]; then [ -s /etc/mijn-ruimte/geheimen.env ] || fout "geheimen.env is niet teruggezet (verkeerde sleutel?)"; fi
 
 stap "6/10 Gebruiker, mappen en systemd-units (installeer-app.sh inrichten)"
 doe bash "$CODE/deploy/installeer-app.sh" inrichten "$CODE"
-# eigen hulpscripts en sudo-regels uit het systeemarchief (de MCP-brug en de archiefknop gebruiken ze)
-doe_sh 'T=$(mktemp -d) && tar -xzpf "$1" -C "$T" && for f in "$T"/usr/local/sbin/*; do [ -e "$f" ] && install -m 0755 -o root -g root "$f" /usr/local/sbin/; done; for f in "$T"/etc/sudoers.d/*; do [ -e "$f" ] && visudo -cf "$f" >/dev/null && install -m 0440 -o root -g root "$f" /etc/sudoers.d/; done; [ -e "$T/etc/cloudflared/config.yml" ] && install -d /etc/cloudflared && install -m 0644 "$T/etc/cloudflared/config.yml" /etc/cloudflared/config.yml; [ -e "$T/etc/systemd/system/cloudflared.service" ] && install -m 0644 "$T/etc/systemd/system/cloudflared.service" /etc/systemd/system/cloudflared.service; rm -rf "$T"; systemctl daemon-reload; true' "$HIER/systeem/systeem.tar.gz"
+doe_fn "systeem.tar.gz uitpakken en hulpscripts/systemd installeren" stap_systeem_inrichten "$HIER/systeem/systeem.tar.gz"
 
 stap "7/10 Database en rollen terugzetten"
 doe systemctl enable --now postgresql
-doe_sh 'age --decrypt -i "$1" "$2" | runuser -u postgres -- psql -q -v ON_ERROR_STOP=0 postgres >/dev/null 2>&1; true' "$SLEUTEL" "$HIER/baza/globals.sql.age"
-doe_sh 'runuser -u postgres -- psql -Atc "drop database if exists $1" postgres && runuser -u postgres -- createdb "$1"' "$DB_NAAM"
-doe_sh 'age --decrypt -i "$1" "$2" | runuser -u postgres -- pg_restore --dbname="$3" --exit-on-error=0 2>"$4"; true' "$SLEUTEL" "$HIER/baza/database.dump.age" "$DB_NAAM" "$PG_LOG"
+doe_fn "rollen terugzetten, database $DB_NAAM aanmaken en database.dump.age herstellen" stap_database_herstellen "$SLEUTEL" "$HIER/baza/globals.sql.age" "$HIER/baza/database.dump.age" "$DB_NAAM" "$PG_LOG"
 if [ "$PROEF" -eq 0 ]; then
   N="$(runuser -u postgres -- psql -d "$DB_NAAM" -Atc "select count(*) from information_schema.tables where table_schema='app'" 2>/dev/null || echo 0)"
   [ "${N:-0}" -gt 0 ] || fout "de database lijkt leeg na het terugzetten (zie $PG_LOG)"
@@ -217,10 +325,8 @@ if [ "$PROEF" -eq 0 ]; then
 fi
 
 stap "8/10 Bestanden terugzetten"
-doe_sh 'install -d /srv/data && age --decrypt -i "$1" "$2" | tar -xzpf - -C /srv/data && chown -R mijnruimte:mijnruimte /srv/data/uploads' "$SLEUTEL" "$HIER/fajly/uploads.tar.gz.age"
+doe_fn "uploads terugzetten naar /srv/data/uploads" stap_uploads_terugzetten "$SLEUTEL" "$HIER/fajly/uploads.tar.gz.age"
 
-# Git-opslagplaatsen (kod/repos/*.bundle, index in INDEX.tsv) terugzetten op hun eigen pad onder /srv/mijn-ruimte.
-# Bestaat het pad al, dan wordt er niets overschreven. Een mislukte bundel stopt het herstel niet; het wordt wel gemeld.
 if [ -f "$HIER/kod/repos/INDEX.tsv" ]; then
   while IFS=$'\t' read -r naam rel; do
     [ -n "${naam:-}" ] && [ -n "${rel:-}" ] || continue
@@ -233,9 +339,8 @@ if [ -f "$HIER/kod/repos/INDEX.tsv" ]; then
   done < "$HIER/kod/repos/INDEX.tsv"
 fi
 
-stap "9/10 Site bouwen en starten (voor deze architectuur, zonder extra back-up: dit archief is de back-up)"
-doe_sh 'ZONDER_BACKUP=1 NODE=/usr/bin/node bash "$1/deploy/installeer-app.sh" installeren "$1"' "$CODE"
-doe_sh 'if [ -f "$1" ]; then tar -xzpf "$1" -C /srv/mijn-ruimte && chown -R mijnruimte:mijnruimte /srv/mijn-ruimte/mcp 2>/dev/null; if [ -f /etc/systemd/system/mijn-ruimte-mcp.service ]; then systemctl enable --now mijn-ruimte-mcp.service || true; fi; fi; true' "$HIER/kod/mcp.tar.gz"
+stap "9/10 Site bouwen en starten (voor deze architectuur, zonder extra reservekopie: dit archief is de reservekopie)"
+doe_fn "site bouwen en starten via installeer-app.sh (+ mcp.tar.gz indien aanwezig)" stap_site_bouwen "$CODE" "$HIER/kod/mcp.tar.gz"
 
 stap "10/10 Tunnel en gezondheidscontrole"
 if [ "$TUNNEL" -eq 1 ]; then
@@ -249,4 +354,4 @@ if [ "$PROEF" -eq 0 ]; then
   [ "${GEZOND:-0}" = 1 ] || fout "de site is niet gezond na het herstellen; kijk met: journalctl -u mijn-ruimte -n 80"
 fi
 echo
-echo "KLAAR. Controleer daarna: de tunnel (systemctl status cloudflared), DNS naar deze machine, en maak een verse back-up (systemctl start mijn-ruimte-backup)."
+echo "KLAAR. Controleer daarna: de tunnel (systemctl status cloudflared), DNS naar deze machine, en maak een verse reservekopie (systemctl start mijn-ruimte-backup)."

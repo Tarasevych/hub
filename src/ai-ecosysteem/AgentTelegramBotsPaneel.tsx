@@ -56,7 +56,7 @@ function botFoutTekst(e: unknown, tr: Tr): string {
   const { code } = foutCode(e);
   if (code === BOT_FOUTEN.sleutelGesloten) {
     return tr(
-      'Сховище ключів у цій сесії закрите. Розблокуйте ключ доступу в налаштуваннях, щоб зберігати або розшифровувати токени ботів.',
+      'Сховище ключів у цій сесії закрите. Розблокуйте ключ доступу в налаштуваннях, щоб зберігати або розшифровувати ключі ботів.',
       'Uw sleutelkluis is in deze sessie vergrendeld. Ontgrendel uw sleutel om botsleutels te bewaren of te lezen.',
     );
   }
@@ -440,7 +440,7 @@ export default function AgentTelegramBotsPaneel({ tr, onStroomBijgewerkt }: Prop
           </strong>
           <p className='gs-subtekst'>
             {tr(
-              'Кожен помічник може мати власного бота та тему в групі-форумі. Токени шифруються Сховищем ключів, ніколи не повертаються на екран і не додають агентам нових прав на сайті.',
+              'Кожен помічник може мати власного бота та тему в групі-форумі. Ключі ботів шифруються Сховищем ключів, ніколи не повертаються на екран і не додають агентам нових прав на сайті.',
               'Elke assistent kan een eigen bot en onderwerp in een forumgroep krijgen. Sleutels worden via de sleutelkluis versleuteld, nooit teruggetoond en geven agenten geen extra rechten op de site.',
             )}
           </p>
@@ -495,7 +495,7 @@ export default function AgentTelegramBotsPaneel({ tr, onStroomBijgewerkt }: Prop
             />
           </label>
           <label className='gs-veld'>
-            <span>{tr('Відображуване ім’я', 'Weergavenaam')}</span>
+            <span>{tr('Показуване ім’я', 'Weergavenaam')}</span>
             <input
               type='text'
               className='gs-invoer'
@@ -508,7 +508,7 @@ export default function AgentTelegramBotsPaneel({ tr, onStroomBijgewerkt }: Prop
         <div className='gs-grid-3'>
           <label className='gs-veld'>
             <span>
-              {tr('Токен бота від @BotFather (лише для оновлення)', 'Botsleutel van @BotFather (alleen bij invullen gewijzigd)')}
+              {tr('Ключ бота від @BotFather (лише для оновлення)', 'Botsleutel van @BotFather (alleen bij invullen gewijzigd)')}
             </span>
             <input
               type='password'
@@ -664,7 +664,7 @@ export default function AgentTelegramBotsPaneel({ tr, onStroomBijgewerkt }: Prop
                   {' · '}
                   {tr('Тема', 'Onderwerp')}: <code>{bot.threadId != null ? String(bot.threadId) : '—'}</code>
                   {' · '}
-                  {tr('Токен', 'Sleutel')}: <code>{bot.sleutelAanwezig ? bot.sleutelMasker : tr('відсутній', 'ontbreekt')}</code>
+                  {tr('Ключ', 'Sleutel')}: <code>{bot.sleutelAanwezig ? bot.sleutelMasker : tr('відсутній', 'ontbreekt')}</code>
                   {bot.laatsteBerichtId != null ? ` · ${tr('Останнє ID', 'Laatste ID')}: ${bot.laatsteBerichtId}` : ''}
                 </p>
                 {bot.laatsteFout ? (
@@ -680,7 +680,7 @@ export default function AgentTelegramBotsPaneel({ tr, onStroomBijgewerkt }: Prop
             <Bot size={22} aria-hidden='true' />
             <p className='gs-subtekst'>
               {tr(
-                'У цьому просторі ще немає налаштованих ботів агентів. Оберіть профіль вище й додайте токен від @BotFather.',
+                'У цьому просторі ще немає налаштованих ботів агентів. Оберіть профіль вище й додайте ключ від @BotFather.',
                 'Er zijn in deze ruimte nog geen agentbots ingesteld. Kies hierboven een profiel en vul een sleutel van @BotFather in.',
               )}
             </p>

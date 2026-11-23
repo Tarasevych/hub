@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "id": "CONSOL-001/20261123-090000-m4-antigravity",
+  "taakId": "CONSOL-001",
+  "tijd": "2026-11-23T09:00:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Claude Opus 4.6",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Завершено Віху M4 консолідації (міграції 0319..0320 та 0324..0329): робочий стіл Werkblad v3 зі збереженням власних ярликів між пристроями та перейменуванням тек, прикладна служба «Соціальні мережі» (social), зашифроване збереження підключень перехідників у Майстрі інтеграцій (0324), справжні дії керування у Центрі підключень, повне оснащення картотеки «Звірка» (Afstemming vNext), вибір цільового пристрою у вікні розмови ШІ, три області машинного читання платформи програмних інтерфейсів, живий стан джерел на панелі знарядь ШІ, розбір посилання на тему групи та пояснення випуску в архіві Telegram, зшивання спільних точок стику в backend/index.ts, shared/vlaggen.ts, shared/sleutelkluis.ts та shared/beheer-journaal.ts.",
+    "nl": "Mijlpaal M4 van de consolidatie voltooid (migraties 0319..0320 en 0324..0329): Werkblad v3 met synchronisatie van eigen snelkoppelingen en maphernoeming, dienst «Sociale netwerken» (social), versleutelde opslag van adapterkoppelingen in de koppelwizard (0324), echte beheeracties in het Verbindingencentrum, volledige uitrusting van Afstemming vNext, keuze van doelapparaat in het AI-gespreksvenster, drie machineleesscopes op het programmaverbindingsplatform, actuele koppelingsstatus van bronnen in het AI-hulpmiddelenpaneel, ontleding van Telegram-topiclink en tweetalige uitgave-uitleg, en aansluiting van gedeelde raakvlakken in backend/index.ts, shared/vlaggen.ts, shared/sleutelkluis.ts en shared/beheer-journaal.ts."
+  },
+  "waarom": {
+    "uk": "Виконання обсягу робіт Віхи M4 (SCOPE.md) у межах єдиної консолідації CONSOL-001 із проходженням усіх сторожів складання, перевірки типів та Абсолютного мовного закону.",
+    "nl": "Uitvoering van het werkpakket van Mijlpaal M4 (SCOPE.md) binnen CONSOL-001 met geslaagde bouwwachters, typecontroles en de Absolute Taalwet."
+  },
+  "bouwtVoortOp": [
+    "CONSOL-001/20261122-225105-antigravity"
+  ],
+  "tak": "feature/consol-m4-20261123",
+  "pr": null,
+  "commits": [
+    "ed24b33513af8fd99fbf189b5bf6a21afa5987c2"
+  ],
+  "onderwerpen": [
+    "werkblad",
+    "integraties",
+    "afstemming",
+    "ai-ecosysteem"
+  ]
+}

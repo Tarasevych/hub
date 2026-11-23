@@ -5,7 +5,7 @@
 // gewijzigd, dan laat de server dat weten (AGENDA_CONFLICT) en toont dit venster de ECHTE Google-versie naast de
 // eigen wijziging. Pas dan kan de gebruiker kiezen: overnemen of bewust overschrijven.
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarClock, Check, Repeat, Trash2, UserPlus, X } from 'lucide-react';
+import { AlertTriangle, BookUser, CalendarClock, Check, Download, Mail, Repeat, Trash2, UserPlus, X } from 'lucide-react';
 import {
   ANTWOORDEN, ANTWOORD_LABEL, EPOST, FREQUENTIES, FREQUENTIE_LABEL, HERINNERING_KEUZES, HERINNERING_METHODE_LABEL,
   MAX_DEELNEMERS, MAX_HERINNERINGEN, TIJDZONES, VORM_FOUTEN, WEEKDAGEN, WEEKDAG_LABEL,
@@ -17,6 +17,15 @@ import { weigeringZin } from '../../shared/weigering-tekst';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+const canoniekPad = (dienst: 'hub' | 'mail', tab: string, lang: Lang, terugval: string): string =>
+  (typeof window !== 'undefined' && window.__TSV_CANONICAL_SERVICE__?.canonicalUrl(dienst, tab, lang, { explicitTab: true })) || terugval;
+
+const VENSTER_TEKSTEN = {
+  brievenVanGast: { uk: 'Листи учасника', nl: 'Berichten van deelnemer' },
+  contactVanGast: { uk: 'Контакт учасника', nl: 'Contact van deelnemer' },
+  notitiesOpenen: { uk: 'Нотатка до події', nl: 'Notitie bij afspraak' },
+  exportIcs: { uk: 'Вивантажити .ics', nl: 'Exporteer .ics' },
+} as const;
 
 export const FOUT_TEKST: Record<string, [string, string]> = {
   [VORM_FOUTEN.titel]: ['Вкажіть назву події.', 'Geef de afspraak een titel.'],
@@ -31,6 +40,13 @@ export const FOUT_TEKST: Record<string, [string, string]> = {
   AGENDA_GEEN_DEELNEMER: ['Ви не учасник цієї події, тому відповісти не можна.', 'U bent geen gast van deze afspraak, dus antwoorden kan niet.'],
   AGENDA_BEZIG: ['Такий самий запит ще виконується. Нічого не подвоїлося — спробуйте за мить ще раз.', 'Hetzelfde verzoek loopt nog. Er is niets dubbel gedaan — probeer het over een moment opnieuw.'],
   AGENDA_SCHRIJVEN_MISLUKT: ['Google не прийняв зміну.', 'Google heeft de wijziging niet aangenomen.'],
+  CALDAV_GEEN_SCHRIJFRECHT: ['Цей зовнішній календар доступний лише для читання: збережіть подію у файл .ics.', 'Deze externe agenda is alleen leesbaar: sla de afspraak op als .ics-bestand.'],
+  CALDAV_VLAG_UIT: ['Двосторонній запис у зовнішній календар CalDAV наразі вимкнено.', 'Tweerichtingsschrijven naar een externe CalDAV-agenda staat momenteel uit.'],
+  CALDAV_SCHRIJVEN_MISLUKT: ['Сервер CalDAV не прийняв зміну події.', 'De CalDAV-server heeft de wijziging niet aangenomen.'],
+  CALDAV_OMLEIDING_NIET_GEVOLGD: ['Сервер CalDAV відповів перенаправленням — з міркувань безпеки запис зупинено.', 'De CalDAV-server stuurde een omleiding — uit veiligheid is het schrijven gestopt.'],
+  CALDAV_ADRES_GEWEIGERD: ['Адресу ресурсу CalDAV відхилено захистом безпеки.', 'Het CalDAV-bronadres is geweigerd door de beveiligingsgrens.'],
+  CALDAV_AGENDA_ONBEKEND: ['Вибраний календар CalDAV не знайдено у поточному просторі.', 'De gekozen CalDAV-agenda is niet gevonden in de huidige ruimte.'],
+  BEVESTIGING_VEREIST: ['Підтвердьте дію перед збереженням зв’язку.', 'Bevestig eerst de handeling voordat de koppeling wordt opgeslagen.'],
 };
 export const foutTekst = (code: string, lang: Lang) => {
   const paar = FOUT_TEKST[code];
@@ -89,6 +105,27 @@ export default function AgendaVenster(props: Props) {
     if (vorm.herinneringen.length >= MAX_HERINNERINGEN) return;
     const nieuw: Herinnering = { methode: 'popup', minuten: 10 };
     zet({ standaardHerinneringen: false, herinneringen: [...vorm.herinneringen, nieuw] });
+  };
+  const openGastSprong = async (email: string, doel: 'mail' | 'contact') => {
+    try {
+      const { deelnemerSprong } = await import('./agenda-client');
+      const r = await deelnemerSprong(email, doel);
+      if (!r.ok) return;
+      if (doel === 'mail') {
+        const basis = canoniekPad('mail', 'all', lang, '/');
+        location.assign(`${basis}?resume_context=1`);
+      } else if (r.sprongId) {
+        const basis = canoniekPad('mail', 'contacts', lang, '/contacten');
+        location.assign(`${basis}?contact_sprong=${encodeURIComponent(r.sprongId)}`);
+      }
+    } catch { /* stil bij netwerkonderbreking */ }
+  };
+  const haalIcsOp = async () => {
+    try {
+      const { downloadIcsBestand, exporteerAfspraakIcs } = await import('./agenda-client');
+      const uit = await exporteerAfspraakIcs({ vorm });
+      if (uit.ok && uit.ics) downloadIcsBestand(uit.bestandsnaam, uit.ics);
+    } catch { /* stil */ }
   };
 
   return (
@@ -195,6 +232,12 @@ export default function AgendaVenster(props: Props) {
               <li key={d.email} data-agenda-gast={d.email} data-agenda-gast-antwoord={d.antwoord}>
                 <span>{d.naam || d.email}</span>
                 <small>{agendaTekst(ANTWOORD_LABEL[d.antwoord], lang)}{d.optioneel ? tr(lang, ' · не обов’язково', ' · optioneel') : ''}{d.zelf ? tr(lang, ' · це ви', ' · dat bent u') : ''}</small>
+                <button type='button' className='ghost' onClick={() => void openGastSprong(d.email, 'mail')} data-agenda-gast-mail={d.email}>
+                  <Mail aria-hidden='true' />{VENSTER_TEKSTEN.brievenVanGast[lang]}
+                </button>
+                <button type='button' className='ghost' onClick={() => void openGastSprong(d.email, 'contact')} data-agenda-gast-contact={d.email}>
+                  <BookUser aria-hidden='true' />{VENSTER_TEKSTEN.contactVanGast[lang]}
+                </button>
                 <button type='button' className='ghost' aria-label={tr(lang, 'Прибрати', 'Verwijderen')}
                   onClick={() => zet({ deelnemers: vorm.deelnemers.filter((x) => x.email !== d.email) })}><X aria-hidden='true' /></button>
               </li>
@@ -329,8 +372,16 @@ export default function AgendaVenster(props: Props) {
           ) : null}
           <div className='agenda-venster-knoppen'>
             {!bedoeling.nieuw ? (
-              <button type='button' className='ghost agenda-gevaar' data-agenda-verwijderen='1' disabled={bezig || !schrijfbaar}
-                onClick={() => void props.onVerwijderen(vorm, meld)}><Trash2 aria-hidden='true' />{tr(lang, 'Видалити', 'Verwijderen')}</button>
+              <>
+                <button type='button' className='ghost' onClick={() => void haalIcsOp()} data-agenda-export-ics='1'>
+                  <Download aria-hidden='true' />{VENSTER_TEKSTEN.exportIcs[lang]}
+                </button>
+                <a className='ghost' href={canoniekPad('hub', 'notes', lang, '/notities')} data-agenda-naar-notities='1'>
+                  {VENSTER_TEKSTEN.notitiesOpenen[lang]}
+                </a>
+                <button type='button' className='ghost agenda-gevaar' data-agenda-verwijderen='1' disabled={bezig || !schrijfbaar}
+                  onClick={() => void props.onVerwijderen(vorm, meld)}><Trash2 aria-hidden='true' />{tr(lang, 'Видалити', 'Verwijderen')}</button>
+              </>
             ) : null}
             <button type='button' className='ghost' onClick={props.onSluiten}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
             <button type='button' className='primary' data-agenda-bewaren='1' disabled={bezig || Boolean(fouten.length) || !schrijfbaar}

@@ -15,7 +15,7 @@
 set -euo pipefail
 KIT="${HERSTEL_MAP:-/home/beheer/herstel}"
 WERK=/root/herstel
-HOSTS=(hub id mail cloud ai github huis api admin dashboard)
+HOSTS=(hub id mail cloud ai github crm huis api admin dashboard)
 DOMEIN=tarasevych.com
 stap="${1:?stap ontbreekt}"
 [ "$(id -u)" -eq 0 ] || { echo "als root (sudo) uitvoeren" >&2; exit 1; }

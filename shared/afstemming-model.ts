@@ -10,15 +10,17 @@
 import type { Tweetalig } from './cloud-vnext-model';
 
 export const AFSTEMMING_VLAG = 'afstemming-vnext';
+export const AFSTEMMING_VOLLEDIG_VLAG = 'afstemming-volledig-v1';
 
 export const AFSTEMMING_LIMIETEN = Object.freeze({
   titelMax: 160, samenvattingMax: 400, tekstMax: 20000,
   criteriaMax: 40, criteriumMax: 500,
   koppelingenMax: 120, bewijsMax: 200, bijlagenMax: 24,
   lijstPagina: 100, zoekMin: 2, zoekMax: 80,
-  importBytesMax: 512 * 1024,           // .json/.md/.txt in deze golf; PDF/beeld = gepland (aparte parser/quarantaine)
+  importBytesMax: 512 * 1024,           // .json/.md/.txt прямий текстовий імпорт
+  bijlageBytesMax: 10 * 1024 * 1024,    // .pdf та зображення (.png/.jpg/.webp) для безпечного вилучення тексту в пам’яті
   gebeurtenissenPagina: 200,
-  gezondheidVerouderdDagen: 30,         // bewijs ouder dan dit heet in de UI eerlijk «застаріла перевірка»
+  gezondheidVerouderdDagen: 30,         // доказ старіший за цей поріг чесно позначається як «застаріла перевірка»
 });
 
 // ---------------------------------------------------------------- de twee assen (§5 van het dossier)
@@ -101,14 +103,73 @@ export type ReleaseKoppeling = {
 
 // ---------------------------------------------------------------- import (§3B) en scan (§8)
 export type ImportVoorbeeld = {
-  invoerHash: string; formaat: 'json' | 'md' | 'txt';
+  invoerHash: string; formaat: 'json' | 'md' | 'txt' | 'pdf' | 'afbeelding';
   kaart: { externId?: string; titel: Tweetalig; samenvatting: Tweetalig; dienst: string; categorie: string; prioriteit: 'P0' | 'P1' | 'P2' | 'P3'; bedoeling: string; criteria: Array<{ id: string; tekst: string; verificatie: Criterium['verificatie'] }> };
-  onzeker: string[];                            // velden die de parser niet zeker wist — de mens bevestigt
-  bestaand?: { kaartId: string; externId: string } | null;  // zelfde invoerHash of externId → idempotent, geen duplicaat
+  onzeker: string[];                            // поля, у яких розбірник не впевнений — підтверджує людина
+  bestaand?: { kaartId: string; externId: string } | null;  // той самий invoerHash або externId → повторостійкість без дубля
   vergelijkbaar: Array<{ kaartId: string; externId: string; titel: Tweetalig; reden: string }>;
   waarschuwingen: string[];
 };
 export type ScanBevinding = { soort: 'zonder_kaart' | 'kaart_zonder_spoor' | 'vlag' | 'route' | 'tab'; sleutel: string; detail: string; kaartId?: string };
+
+export type OntleedVoorstel = {
+  titel: Tweetalig;
+  samenvatting: Tweetalig;
+  dienst: string;
+  categorie: string;
+  prioriteit: 'P0' | 'P1' | 'P2' | 'P3';
+  verwachtGedrag: string;
+  criteria: Array<{ id: string; tekst: string; verificatie: Criterium['verificatie'] }>;
+  bron: 'ai-motor' | 'lokaal-heuristiek';
+  gekuisteGeheimen: number;
+};
+
+export type BijlageTekstUit = {
+  ok: boolean;
+  status: string;
+  herkomst: string;
+  sha256: string;
+  bytes: number;
+  paginas: number;
+  tekst: string;
+  voorstel: ImportVoorbeeld | null;
+};
+
+export type RouteProefItem = {
+  id: string;
+  dienst: string;
+  naam: Tweetalig;
+  status: 'ok' | 'let_op' | 'fout';
+  detail: string;
+  duurMs: number;
+};
+
+export type RouteProefUit = {
+  ok: boolean;
+  omgeving: 'lokaal' | 'staging' | 'production';
+  op: string;
+  controles: RouteProefItem[];
+  bewijsId?: string;
+};
+
+export type OrchestratieMatch = {
+  bronSoort: 'taak' | 'verwijzing' | 'uitrol';
+  sleutel: string;
+  titel: string;
+  kaartId: string;
+  externId: string;
+  kaartTitel: Tweetalig;
+  reden: string;
+  zekerheid: number;
+};
+
+export type OrchestratieKoppelingUit = {
+  ok: boolean;
+  op: string;
+  gelezen: { taken: number; verwijzingen: number; releases: number };
+  matches: OrchestratieMatch[];
+  aangemaakt: number;
+};
 
 // ---------------------------------------------------------------- API-contract (alle POST, eigenaar + hub-sessie; fouten {error:CODE})
 // backend/afstemming-kern.ts (kern) en backend/afstemming-koppel.ts (koppelingen/releases/scan/rapporten) implementeren dit;

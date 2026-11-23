@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle2, ExternalLink, Info, Power, RefreshCw, ShieldChe
 import { api } from '../platform/client';
 import { CATEGORIEEN, METHODE_LABEL, STATUS_LABEL, type Integratie } from '../../shared/integraties-catalogus';
 import { codeTekst, detailVan } from '../../shared/integraties-detail';
+import { registerVan } from '../../shared/integraties-register';
 import Logo from '../merk/MerkLogo';
 import HulpVraag from '../hulp/HulpVraag';
 
@@ -32,22 +33,27 @@ const FOUTEN: Record<string, readonly [string, string]> = {
   OWNER_ADMIN_REQUIRED: ['Потрібні права адміністратора.', 'Beheerdersrechten zijn nodig.'],
   BEVESTIGING_VEREIST: ['Потрібне підтвердження.', 'Bevestiging is vereist.'],
   LOSKOPPELEN_NIET_MOGELIJK: ['Цю інтеграцію не можна відключити звідси.', 'Deze integratie kan hier niet worden losgekoppeld.'],
+  KOPPELING_NIET_GEVONDEN: ['Збережене підключення у цьому просторі не знайдено.', 'Geen opgeslagen koppeling gevonden in deze ruimte.'],
+  SLEUTELKLUIS_GESLOTEN: ['Сховище ключів зачинене. Відімкніть свій ключ у налаштуваннях безпеки.', 'De sleutelkluis is gesloten. Ontgrendel uw sleutel bij Beveiliging.'],
 };
 const STAND_TEKST: Record<string, readonly [string, string]> = {
   ok: ['Усе гаразд', 'In orde'], 'let-op': ['Потрібна увага', 'Let op'], fout: ['Помилка', 'Fout'], onbekend: ['Невідомо', 'Onbekend'],
 };
 const datum = (ms: number, lang: Lang) => new Date(ms).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { dateStyle: 'medium', timeStyle: 'short' });
 
-/** Detailvenster van één integratie: rechten, stappen, documentatie, controle, loskoppelen en beschikbaarheid voor gebruikers. */
+/** Вікно подробиць однієї інтеграції: права, кроки, документація, перевірка, відключення та доступність для користувачів. */
 export default function Detail({ i, lang, context, stand, levend, href, onClose, onVernieuw, onMappen }: Props) {
   const tr = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const t = (x: readonly [string, string]) => x[lang === 'uk' ? 0 : 1];
   const d = detailVan(i);
+  const reg = registerVan(i.id);
+  const isAdapter = Boolean(reg?.adapter);
   const cat = CATEGORIEEN.find((c) => c.id === i.cat)!;
   const [bezig, setBezig] = useState<'' | 'test' | 'los' | 'beleid'>('');
   const [bericht, setBericht] = useState<{ soort: 'ok' | 'fout'; tekst: string } | null>(null);
   const [controle, setControle] = useState<ServerControle | null>(stand?.controles?.[i.id] ?? null);
   const [voorGebruikers, setVoorGebruikers] = useState<boolean>(Boolean(stand?.beleid?.[i.id]?.voorGebruikers));
+  const [bevestigOpen, setBevestigOpen] = useState(false);
   const sluitRef = useRef<HTMLButtonElement>(null);
   const vorige = useRef<Element | null>(null);
   const dialoogRef = useRef<HTMLDivElement>(null);
@@ -60,13 +66,13 @@ export default function Detail({ i, lang, context, stand, levend, href, onClose,
     return () => { document.body.style.overflow = vorigeOverflow; (vorige.current as HTMLElement | null)?.focus?.(); };
   }, []);
 
-  // Escape werkt ook als de focus op <body> staat (bv. nadat een bedieningselement tijdens een actie even uitgeschakeld was).
+  // Клавіша Escape закриває вікно, навіть коли фокус тимчасово на <body> після вимкнення кнопки під час запиту.
   useEffect(() => {
     const f = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } };
     document.addEventListener('keydown', f);
     return () => document.removeEventListener('keydown', f);
   }, [onClose]);
-  // Na een actie de focus in het venster houden (een uitgeschakelde knop of schakelaar verliest haar).
+  // Після завершення дії утримуємо фокус усередині діалогу.
   useEffect(() => {
     if (!bezig && dialoogRef.current && (!document.activeElement || document.activeElement === document.body)) dialoogRef.current.focus();
   }, [bezig]);
@@ -81,7 +87,7 @@ export default function Detail({ i, lang, context, stand, levend, href, onClose,
   }, []);
 
   const fout = (e: unknown) => {
-    const code = String((e as Error)?.message || '');
+    const code = String(((e as { response?: { data?: { error?: string } } }).response?.data?.error) || (e as Error)?.message || '');
     return FOUTEN[code] ? t(FOUTEN[code]) : tr('Не вдалося виконати дію. Спробуйте ще раз.', 'De actie is niet gelukt. Probeer het opnieuw.');
   };
   const post = (pad: string, extra: Record<string, unknown> = {}) => api.post(`/api/owner/admin/integraties/${pad}`, { ...context, id: i.id, ...extra });
@@ -89,17 +95,21 @@ export default function Detail({ i, lang, context, stand, levend, href, onClose,
   const controleer = async () => {
     setBezig('test'); setBericht(null);
     try {
-      const r = (await post('controleer')).data as { stand: ServerControle['stand']; code: string; detail: string; op: number };
+      const doelPad = isAdapter && (levend === 'verbonden' || levend === 'fout')
+        ? 'adapter-koppelingen/controleer'
+        : 'controleer';
+      const r = (await post(doelPad)).data as { stand: ServerControle['stand']; code: string; detail: string; op: number };
       setControle({ stand: r.stand, code: r.code, detail: r.detail, op: r.op, door: '' });
       onVernieuw();
     } catch (e) { setBericht({ soort: 'fout', tekst: fout(e) }); }
     setBezig('');
   };
   const loskoppelen = async () => {
-    if (!window.confirm(tr(`Відключити «${i.naam}»? Дію буде записано в журнал.`, `«${i.naam}» loskoppelen? De actie komt in het logboek.`))) return;
     setBezig('los'); setBericht(null);
     try {
-      await post('loskoppelen', { bevestig: true });
+      const doelPad = isAdapter ? 'adapter-koppelingen/loskoppelen' : 'loskoppelen';
+      await post(doelPad, { bevestig: true });
+      setBevestigOpen(false);
       setBericht({ soort: 'ok', tekst: tr('Відключено. Запис додано до журналу.', 'Losgekoppeld. Een regel is aan het logboek toegevoegd.') });
       onVernieuw();
     } catch (e) { setBericht({ soort: 'fout', tekst: fout(e) }); }
@@ -119,7 +129,7 @@ export default function Detail({ i, lang, context, stand, levend, href, onClose,
 
   const echt = i.status !== 'binnenkort';
   const sl = stand?.levend?.[i.id];
-  const kanLos = echt && (Boolean(d.loskoppelbaar) || (i.levend?.startsWith('agent:') ?? false)) && (levend === 'verbonden' || levend === 'ingesteld');
+  const kanLos = echt && (isAdapter || Boolean(d.loskoppelbaar) || (i.levend?.startsWith('agent:') ?? false)) && (levend === 'verbonden' || levend === 'ingesteld' || (isAdapter && levend === 'fout'));
   const levendTekst = levend === 'verbonden' ? tr('Підключено', 'Gekoppeld') : levend === 'ingesteld' ? tr('Налаштовано, не перевірено', 'Ingesteld, niet geverifieerd') : levend === 'fout' ? tr('Помилка підключення', 'Fout in koppeling') : levend === 'niet' ? tr('Не підключено', 'Niet gekoppeld') : '';
 
   return (
@@ -168,8 +178,21 @@ export default function Detail({ i, lang, context, stand, levend, href, onClose,
             {controle ? (
               <p className='il-d-controle' data-stand={controle.stand}><b>{t(STAND_TEKST[controle.stand] ?? STAND_TEKST.onbekend)}</b> · {datum(controle.op, lang)}<br />{codeTekst(controle.code, lang, undefined, controle.detail)}</p>
             ) : <p className='il-d-noot'>{echt ? tr('Ще не перевіряли.', 'Nog niet gecontroleerd.') : tr('Перевірка недоступна: підключення ще не існує.', 'Controleren kan niet: de koppeling bestaat nog niet.')}</p>}
-            {echt ? <p className='il-d-noot'>{tr('Це перевірка конфігурації на сайті — до зовнішнього сервісу запит не надсилається.', 'Dit is een controle van de configuratie op de site; er gaat geen verzoek naar de externe dienst.')}</p> : null}
+            {echt ? <p className='il-d-noot'>{isAdapter && (levend === 'verbonden' || levend === 'fout') ? tr('Для збереженого перехідника сервер перевіряє підключення наживо із зашифрованим ключем простору без розкриття пароля.', 'Voor een bewaarde adapterkoppeling controleert de server de verbinding live met de versleutelde ruimtesleutel zonder het wachtwoord vrij te geven.') : tr('Це перевірка налаштувань на сайті — до зовнішнього сервісу запит не надсилається.', 'Dit is een controle van de instellingen op de site; er gaat geen verzoek naar de externe dienst.')}</p> : null}
           </section>
+
+          {bevestigOpen ? (
+            <div className='il-d-bericht' data-soort='fout' role='region' aria-label={tr('Підтвердження відключення', 'Bevestiging van loskoppelen')} data-detail-bevestig-los=''>
+              <TriangleAlert aria-hidden />
+              <div style={{ display: 'grid', gap: 8, flex: 1 }}>
+                <span>{tr(`Відключити «${i.naam}»? Дію буде записано в журнал.`, `«${i.naam}» loskoppelen? De actie komt in het logboek.`)}</span>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type='button' className='il-knop is-gevaar' data-detail-bevestig-ja='' onClick={() => void loskoppelen()} disabled={bezig === 'los'}>{tr('Підтвердити відключення', 'Loskoppelen bevestigen')}</button>
+                  <button type='button' className='il-knop' onClick={() => setBevestigOpen(false)} disabled={bezig === 'los'}>{tr('Скасувати', 'Annuleren')}</button>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {bericht ? <p className='il-d-bericht' data-soort={bericht.soort} role='status'>{bericht.soort === 'fout' ? <TriangleAlert aria-hidden /> : <CheckCircle2 aria-hidden />}{bericht.tekst}</p> : null}
         </div>
@@ -178,7 +201,7 @@ export default function Detail({ i, lang, context, stand, levend, href, onClose,
           {i.status === 'klaar' && href ? <a className={`il-knop ${levend === 'verbonden' ? '' : 'is-primair'}`} href={href}>{levend === 'verbonden' ? tr('Налаштувати', 'Instellen') : tr('Підключити', 'Koppelen')}</a> : null}
           {i.status === 'instellen' && i.doel?.soort === 'directory' ? <button type='button' className='il-knop is-primair' onClick={onMappen}>{tr('Налаштувати', 'Instellen')}</button> : null}
           {echt ? <button type='button' className='il-knop' onClick={() => void controleer()} disabled={bezig === 'test'}><RefreshCw className={bezig === 'test' ? 'spin' : ''} aria-hidden />{tr('Перевірити стан', 'Status controleren')}</button> : null}
-          {kanLos ? <button type='button' className='il-knop is-gevaar' onClick={() => void loskoppelen()} disabled={bezig === 'los'}><Power aria-hidden />{tr('Відключити', 'Loskoppelen')}</button> : null}
+          {kanLos ? <button type='button' className='il-knop is-gevaar' onClick={() => setBevestigOpen(true)} disabled={bezig === 'los' || bevestigOpen}><Power aria-hidden />{tr('Відключити', 'Loskoppelen')}</button> : null}
           <a className='il-knop is-stil' href={d.docs} target='_blank' rel='noopener noreferrer'><ExternalLink aria-hidden />{tr('Документація', 'Documentatie')}</a>
         </footer>
       </div>

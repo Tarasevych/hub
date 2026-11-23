@@ -62,7 +62,7 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
       throw Object.assign(e as object, { message: (e as Error)?.message, gelukt: n });
     }
     await naActie();
-    return tr(`Відкликано всі доступи ШІ (${n}). Жоден ШІ-клієнт чи агент із токеном більше не має доступу; історія — у «Відкликані» та в журналі.`, `Alle AI-toegang ingetrokken (${n}). Geen AI-client of agent met token heeft nog toegang; de geschiedenis staat bij "Ingetrokken" en in het logboek.`);
+    return tr(`Відкликано всі доступи ШІ (${n}). Жоден клієнт ШІ чи агент із маркером доступу більше не має доступу; історія — у «Відкликані» та в журналі.`, `Alle AI-toegang ingetrokken (${n}). Geen AI-client of agent met token heeft nog toegang; de geschiedenis staat bij "Ingetrokken" en in het logboek.`);
   }, ['Не вдалося відкликати всі (уже відкликані лишаються відкликаними; див. «Відкликані»)', 'Alles intrekken mislukt (wat al is ingetrokken blijft ingetrokken; zie "Ingetrokken")']);
 
   const kopieer = async () => { try { await navigator.clipboard?.writeText(overzicht?.mcpUrl ?? ''); setGekopieerd(true); window.setTimeout(() => setGekopieerd(false), 2000); } catch { /* geen klembord */ } };
@@ -70,7 +70,7 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
   const rij = (x: Item, historisch = false) => {
     const g = x.oauth, t = x.token;
     const eigenaar = aiEigenaar(x.naam);
-    const methode = x.soort === 'oauth' ? 'OAuth' : tr('MCP-токен', 'MCP-token');
+    const methode = x.soort === 'oauth' ? 'OAuth' : tr('маркер доступу MCP', 'MCP-token');
     const status = historisch
       ? <>{statusHistorie(x, tr)} · {methode}</>
       : <>{gebruiktBinnen(x.laatst, tr)} · {methode}{eigenaar ? ` · ${tr('від', 'van')} ${eigenaar}` : ''}</>;
@@ -83,27 +83,27 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
         status={status}
         acties={historisch ? undefined : (
           <GevaarKnop tr={tr} sleutel={x.sleutel} label={tr('Відкликати', 'Intrekken')} ja={tr('Так, відкликати', 'Ja, intrekken')} acties={acties} icoon={<Trash2 />} klein
-            vraag={x.soort === 'oauth' ? tr(`«${x.naam}» одразу втратить доступ до сайту й ваших пристроїв.`, `«${x.naam}» verliest meteen de toegang tot de site en uw apparaten.`) : tr(`Агент із токеном «${x.naam}» більше не пройде двері.`, `Een agent met token «${x.naam}» komt niet meer door de deur.`)}
+            vraag={x.soort === 'oauth' ? tr(`«${x.naam}» одразу втратить доступ до сайту й ваших пристроїв.`, `«${x.naam}» verliest meteen de toegang tot de site en uw apparaten.`) : tr(`Агент із маркером доступу «${x.naam}» більше не пройде двері.`, `Een agent met token «${x.naam}» komt niet meer door de deur.`)}
             onJa={() => void intrekken(x)} />
         )}>
         {g ? (
           <Tech rijen={[
-            [tr('Метод', 'Methode'), tr('OAuth 2.1 + PKCE (MCP-конектор, без пароля)', 'OAuth 2.1 + PKCE (MCP-connector, zonder wachtwoord)')],
+            [tr('Метод', 'Methode'), tr('OAuth 2.1 + PKCE (з’єднувач MCP, без пароля)', 'OAuth 2.1 + PKCE (MCP-connector, zonder wachtwoord)')],
             [tr('ID підключення', 'Verbindings-id'), <code>{g.id}</code>],
             ['Client ID', <code>{g.clientId}</code>],
             [tr('Дозволи (scope)', 'Rechten (scope)'), <code>{g.scope || '—'}</code>],
             [tr('Що саме дозволено', 'Wat precies mag'), tr('інструменти сайту за налаштуваннями нижче («Що ШІ може робити»); дії на пристроях — лише за дозволами пристрою', 'hulpmiddelen van de site volgens de instellingen hieronder ("Wat de AI mag"); acties op apparaten alleen met de toestemmingen van het apparaat')],
             [tr('Підключено', 'Verbonden'), exact(g.createdAt)],
             [tr('Остання активність', 'Laatste activiteit'), g.lastUsedAt ? <>{exact(g.lastUsedAt)} (<Tijd ms={g.lastUsedAt} tr={tr} />)</> : tr('ще ні разу', 'nog nooit')],
-            [tr('Токен доступу діє до', 'Toegangstoken geldig tot'), exact(g.accessExpiresAt)],
+            [tr('Маркер доступу діє до', 'Toegangstoken geldig tot'), exact(g.accessExpiresAt)],
             [tr('Підключення діє до', 'Verbinding geldig tot'), exact(g.expiresAt)],
             g.revokedAt ? [tr('Відкликано', 'Ingetrokken'), exact(g.revokedAt)] : null,
             [tr('Стан', 'Stand'), g.status === 'active' ? tr('активне', 'actief') : g.status === 'revoked' ? tr('відкликано', 'ingetrokken') : g.status === 'expired' ? tr('строк минув', 'verlopen') : g.status],
           ]} />
         ) : t ? (
           <Tech rijen={[
-            [tr('Метод', 'Methode'), tr('MCP-токен (Bearer) для дверей /Grok', 'MCP-token (Bearer) voor de deur /Grok')],
-            [tr('ID токена', 'Token-id'), <code>{t.id}</code>],
+            [tr('Метод', 'Methode'), tr('Маркер доступу MCP (Bearer) для дверей /Grok', 'MCP-token (Bearer) voor de deur /Grok')],
+            [tr('Ідентифікатор маркера', 'Token-id'), <code>{t.id}</code>],
             [tr('Префікс', 'Voorvoegsel'), <code>{t.prefix}…</code>],
             [tr('Дозволи', 'Rechten'), <code>{Array.isArray(t.scopes) ? t.scopes.join(' ') : String(t.scopes ?? '—')}</code>],
             [tr('Викликів', 'Aanroepen'), String(t.calls)],
@@ -144,7 +144,7 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
             <option value='datum'>{tr('Дата підключення', 'Datum van verbinden')}</option>
           </select>
         </label>
-        {actief.length > 1 ? <GevaarKnop tr={tr} sleutel='alles' label={tr('Відкликати всі', 'Alles intrekken')} ja={tr('Так, відкликати всі', 'Ja, alles intrekken')} acties={acties} icoon={<Trash2 />} vraag={tr(`Відкликати доступ усіх ${actief.length} ШІ та токенів?`, `Toegang van alle ${actief.length} AI's en tokens intrekken?`)} onJa={() => void allesIntrekken()} /> : null}
+        {actief.length > 1 ? <GevaarKnop tr={tr} sleutel='alles' label={tr('Відкликати всі', 'Alles intrekken')} ja={tr('Так, відкликати всі', 'Ja, alles intrekken')} acties={acties} icoon={<Trash2 />} vraag={tr(`Відкликати доступ усіх ${actief.length} ШІ та маркерів доступу?`, `Toegang van alle ${actief.length} AI's en tokens intrekken?`)} onJa={() => void allesIntrekken()} /> : null}
       </div>
       <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
       {overzicht === null && tokens === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? <ul className='ag-lijst' data-lijst='ai'>{actief.map((x) => rij(x))}</ul> : <p className='ag-leeg'>{tr('Підключіть Claude чи інший ШІ нижче — він з’явиться тут.', 'Verbind Claude of een andere AI hieronder — hij verschijnt dan hier.')}</p>}
@@ -155,16 +155,16 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
       <section className='ag-blok' id='ag-ai-verbinden' data-ai-wizard='methode'>
         <header className='ag-blok-kop'>
           <h3 className='ag-blok-titel'><KeyRound aria-hidden='true' /> {tr('Підключити новий ШІ', 'Een nieuwe AI koppelen')}</h3>
-          <p className='ag-blok-uitleg'>{tr('Оберіть один зі способів; найпростіше — власна адреса-конектор для кожного ШІ.', 'Kies een van de manieren; het eenvoudigst is een eigen connectoradres per AI.')}</p>
+          <p className='ag-blok-uitleg'>{tr('Оберіть один зі способів; найпростіше — власна адреса-з’єднувач для кожного ШІ.', 'Kies een van de manieren; het eenvoudigst is een eigen connectoradres per AI.')}</p>
         </header>
           <div className='ag-methoden' role='list'>
             <a role='listitem' className='ag-kaart ag-methode' href='#connectors' data-ai-methode='connectors'>
-              <b>{tr('Окремий конектор для ШІ', 'Eigen connector per AI')}</b> <span className='ag-badge'>{tr('рекомендовано', 'aanbevolen')}</span>
+              <b>{tr('Окремий з’єднувач для ШІ', 'Eigen connector per AI')}</b> <span className='ag-badge'>{tr('рекомендовано', 'aanbevolen')}</span>
               <small>{tr('Claude, ChatGPT, Grok, Cursor… — своя адреса й свої права; підключення, перепідключення й відкликання — у блоці «Конектори».', 'Claude, ChatGPT, Grok, Cursor… — eigen adres en eigen rechten; koppelen, opnieuw verbinden en intrekken in het blok «Connectors».')}</small>
             </a>
             <a role='listitem' className='ag-kaart ag-methode' href='#tokens' data-ai-methode='tokens'>
-              <b>{tr('Токен або «в один клік»', 'Token of «in één klik»')}</b>
-              <small>{tr('Для агентів без OAuth: отримати токен тут і вставити в клієнт (вкладка «Токени»).', 'Voor agents zonder OAuth: hier een token halen en in de client plakken (tabblad «Tokens»).')}</small>
+              <b>{tr('Маркер доступу або «в один дотик»', 'Token of «in één klik»')}</b>
+              <small>{tr('Для агентів без OAuth: отримати маркер доступу тут і вставити у клієнтську програму (вкладка «Маркери доступу»).', 'Voor agents zonder OAuth: hier een token halen en in de client plakken (tabblad «Tokens»).')}</small>
             </a>
             <details className='ag-kaart ag-methode' data-ai-methode='mcp'>
               <summary><b>{tr('Стара спільна адреса', 'Het oude gedeelde adres')}</b> <small>{tr('працює для вже підключених ШІ й перенаправляє (308) на адресу агента; для нового підключення беріть адресу свого ШІ з «Конекторів»', 'blijft werken voor al gekoppelde AI en leidt door (308) naar het adres van de agent; neem voor een nieuwe koppeling het adres van uw AI uit «Connectors»')}</small></summary>
@@ -192,7 +192,7 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
           <header className='ag-blok-kop'>
             <h3 className='ag-blok-titel'><SlidersHorizontal aria-hidden='true' /> {tr('Що ШІ може робити', 'Wat de AI mag')}</h3>
             <div className='ag-knoppen'><a href={canonicalNavigationUrl('admin', 'ai', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')} className='ag-link' data-beleid-link='admin'>{tr('Доступ ШІ за підписом (технічний профіль)', 'AI-toegang met handtekening (technisch profiel)')} <ExternalLink size={14} aria-hidden='true' /></a></div>
-            <p className='ag-blok-uitleg'>{tr('Інструменти сайту (режими «завжди/питати/вимкнено») визначає підписана політика в Адміністрування → «Доступ ШІ» (технічний профіль, лише з вашим passkey); на цій вкладці їх не перемикають. Права кожного окремого ШІ — на вкладці «Конектори».', 'De hulpmiddelen van de site (standen «altijd/vragen/uit») bepaalt het ondertekende beleid in Beheer → «AI-toegang» (technisch profiel, alleen met uw passkey); op dit tabblad schakelt u ze niet. De rechten van elke afzonderlijke AI staan op het tabblad «Connectors».')}</p>
+            <p className='ag-blok-uitleg'>{tr('Інструменти сайту (режими «завжди/питати/вимкнено») визначає підписана політика в Адміністрування → «Доступ ШІ» (технічний профіль, лише з вашим ключем доступу); на цій вкладці їх не перемикають. Права кожного окремого ШІ — на вкладці «Конектори».', 'De hulpmiddelen van de site (standen «altijd/vragen/uit») bepaalt het ondertekende beleid in Beheer → «AI-toegang» (technisch profiel, alleen met uw passkey); op dit tabblad schakelt u ze niet. De rechten van elke afzonderlijke AI staan op het tabblad «Connectors».')}</p>
           </header>
         </section>
       ) : (

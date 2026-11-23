@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 174,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:04.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Вершина гілки вже на 100% входить в історію integratie через спільний випуск UPD-006.",
+    "nl": "De top van de tak maakt via UPD-006 al volledig deel uit van de geschiedenis van integratie."
+  },
+  "titel": {
+    "uk": "MOBIEL-002: безпечна вузька верстка на телефоні за прапорцем mobiel-breedte-veilig-v1",
+    "nl": "MOBIEL-002: veilige smalle opmaak op de telefoon achter vlag mobiel-breedte-veilig-v1"
+  },
+  "laatsteCommit": "0a9c8e0524ec3b0e8a49fb26f98ea7041fb17636",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "MOBIEL-002",
+    "UPD-006",
+    "CONSOL-001"
+  ]
+}

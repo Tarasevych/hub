@@ -215,7 +215,7 @@ export default function BevestigingenPaneel({ tr, agent }: { tr: Tr; agent?: str
                 <div className='ab-acties' {...geenAi}>
                   <button type='button' className={`ab-knop ab-knop-hoofd risico-${item.risico}`} data-ab-bevestig={item.id} disabled={!!bezig || item.gesloten || !b || !keuzeKlaar} onClick={alleenMens(() => void besluit(item, true))}>
                     {bezig === item.id ? <Loader2 size={16} className='spin' aria-hidden='true' /> : item.stapOp ? <KeyRound size={16} aria-hidden='true' /> : <Check size={16} aria-hidden='true' />}
-                    {item.stapOp ? tr('Підтвердити з passkey', 'Bevestigen met passkey') : tr('Підтвердити', 'Bevestigen')}
+                    {item.stapOp ? tr('Підтвердити ключем доступу', 'Bevestigen met passkey') : tr('Підтвердити', 'Bevestigen')}
                   </button>
                   <button type='button' className='ab-knop' data-ab-weiger={item.id} disabled={!!bezig} onClick={alleenMens(() => void besluit(item, false))}><X size={16} aria-hidden='true' />{tr('Відхилити', 'Weigeren')}</button>
                 </div>

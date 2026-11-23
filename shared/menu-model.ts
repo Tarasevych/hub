@@ -9,7 +9,7 @@ import { normaliseerMeldingen, standaardMeldingen, type MeldingVoorkeuren } from
 import { normaliseerSnelheid, standaardSnelheid, type SnelheidVoorkeuren } from './menu-snelheid';
 import { normaliseerPlaatsing, standaardPlaatsing, type PlaatsingVoorkeur } from './plaatsing';
 
-export const DIENST_IDS = ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'tasks', 'calendar', 'notes', 'identity', 'api', 'admin', 'social'] as const;
+export const DIENST_IDS = ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'mcp', 'tasks', 'calendar', 'notes', 'identity', 'api', 'admin', 'social'] as const;
 export type DienstId = typeof DIENST_IDS[number];
 
 /** Pagina's per dienst — moet gelijk blijven aan `tabs` in public/canonical-service.js (eenheidstest controleert dat). */
@@ -19,8 +19,9 @@ export const MENU_PAGINAS: Record<string, readonly string[]> = {
   mail: ['inbox', 'starred', 'snoozed', 'sent', 'drafts', 'archive', 'labels', 'accounts', 'local', 'unread', 'all', 'important', 'spam', 'trash', 'subscriptions', 'scheduled', 'settings', 'contacts'],
   cloud: ['overview', 'files', 'shared', 'workspaces', 'capture', 'inbox', 'search', 'recent', 'calendar', 'photos', 'accounts', 'google', 'onedrive', 'dropbox'],
   github: ['overview', 'repositories', 'code', 'issues', 'pulls', 'actions', 'releases', 'sync', 'projects', 'documentation', 'research', 'activity', 'accounts'],
+  crm: ['overview', 'klanten', 'overeenkomsten', 'tasks', 'inzichten', 'assistenten', 'koppelingen'],
   huis: ['overview', 'rooms', 'devices', 'scenes', 'automations', 'security', 'energy', 'activity', 'integrations', 'assistant', 'settings', 'showroom', 'planner'], // huis vNext (0128)
-  identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'melding', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery'],
+  identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'melding', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery', 'netwerken'],
   api: ['verbindingen', 'vault', 'access', 'reconciliation'], // A10 (19.10.2026): oauth/webhooks/events/logs/import weg — ze toonden hetzelfde paneel als «access»
   admin: ['overview', 'access', 'ai', 'contour', 'updates', 'apps', 'devices', 'sso', 'directories', 'roles', 'diagnostics', 'audit'],
   mcp: ['overview', 'dashboard', 'services', 'tools', 'board', 'agents', 'apps', 'playground', 'traffic', 'connect', 'roadmap', 'download', 'verbindingen'],
@@ -31,10 +32,10 @@ export const MENU_PAGINAS: Record<string, readonly string[]> = {
  *  zijn HERKOMST (dienst), ook als het later (fase 2) verplaatst of gekopieerd wordt: zo zie je aan de kleur waar het vandaan komt.
  *  `hoofd` = hoofditem, `sub` = pagina's in het submenu (zelfde tint, licht: lichter / donker: zachter). Eenheidstest bewaakt:
  *  contrast ≥ 3:1 (WCAG 1.4.11, licht én donker), onderlinge afstand (CIEDE2000) en gelijkheid met het palet in src/menu-v2.css. */
-export const ACCENTEN = ['teal', 'violet', 'blauw', 'hemel', 'grafiet', 'oranje', 'groen', 'limoen', 'indigo', 'oker', 'grijs', 'roze', 'rood', 'bruin'] as const;
+export const ACCENTEN = ['teal', 'violet', 'blauw', 'hemel', 'grafiet', 'oranje', 'groen', 'limoen', 'indigo', 'oker', 'grijs', 'roze', 'rood', 'bruin', 'wijnrood'] as const;
 export type Accent = typeof ACCENTEN[number];
 export const DIENST_ACCENT: Record<DienstId, Accent> = {
-  hub: 'teal', ai: 'violet', mail: 'blauw', cloud: 'hemel', github: 'grafiet', huis: 'oranje', mcp: 'groen', tasks: 'limoen', calendar: 'indigo', notes: 'oker', identity: 'grijs', api: 'roze', admin: 'rood', social: 'bruin',
+  hub: 'teal', ai: 'violet', mail: 'blauw', cloud: 'hemel', github: 'grafiet', crm: 'wijnrood', huis: 'oranje', mcp: 'groen', tasks: 'limoen', calendar: 'indigo', notes: 'oker', identity: 'grijs', api: 'roze', admin: 'rood', social: 'bruin',
 };
 export type AccentKleur = { hoofd: string; sub: string };
 export const ACCENT_KLEUREN: Record<Accent, { licht: AccentKleur; donker: AccentKleur }> = {
@@ -52,9 +53,10 @@ export const ACCENT_KLEUREN: Record<Accent, { licht: AccentKleur; donker: Accent
   roze: { licht: { hoofd: '#be185d', sub: '#d0598a' }, donker: { hoofd: '#f9a8d4', sub: '#bc84a5' } },
   rood: { licht: { hoofd: '#dc2626', sub: '#e35151' }, donker: { hoofd: '#fca5a5', sub: '#be8183' } },
   bruin: { licht: { hoofd: '#8b5a2b', sub: '#a27b55' }, donker: { hoofd: '#d6b48f', sub: '#a38c74' } },
+  wijnrood: { licht: { hoofd: '#641131', sub: '#913b57' }, donker: { hoofd: '#e05a81', sub: '#c85574' } },
 };
 /** Diensten die standaard (of voor de eigenaar altijd) in het menu staan: hun kleuren moeten het duidelijkst verschillen. */
-export const HOOFD_DIENSTEN: readonly DienstId[] = ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'identity', 'api', 'admin'];
+export const HOOFD_DIENSTEN: readonly DienstId[] = ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'mcp', 'identity', 'api', 'admin'];
 /** Accent van een item-id (ook van een kopie 'k-…:svc:mail'): altijd dat van de dienst waar het item vandaan komt. */
 export function itemAccent(id: string): Accent | undefined {
   const m = /(?:^|:)(?:svc:([a-z]{2,12})|pg:([a-z]{2,12})\/[a-z-]{2,24})$/.exec(String(id));

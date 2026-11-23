@@ -163,6 +163,12 @@ const DEFS: readonly Def[] = [
   { id: 'photos_picked_media', essentie: 'tonen_fotos', weergave: 'tonen foto\'s', sub: 'cloud', dienst: 'gphotos', kanten: G, soort: 'lezen', groep: 'bestanden', risico: 'hoog', gevoelig: true,
     uk: ['Фото, які ви вибрали', 'Лише ті фото з Google Photos, які ви самі вибрали на сайті у вікні Google, коли ШІ попросив.', 'ШІ бачить лише вибрані фото, а не всю бібліотеку. На фото — люди, місця й документи.', 'Ви вибираєте й підтверджуєте фото самі.'],
     nl: ['Foto\'s die u koos', 'Alleen de foto\'s uit Google Photos die u zelf op de site in het venster van Google koos toen de AI erom vroeg.', 'De AI ziet alleen de gekozen foto\'s, niet de hele bibliotheek. Op foto\'s staan mensen, plaatsen en documenten.', 'U kiest en bevestigt de foto\'s zelf.'] },
+  { id: 'cloud_eigen_lijst', essentie: 'tonen_eigen_schijf', weergave: 'tonen eigen schijf', sub: 'cloud', kanten: G, soort: 'lezen', groep: 'bestanden', risico: 'laag',
+    uk: ['Переглядати внутрішній диск сайту', 'Список тек і файлів внутрішнього диска «Мого простору» з відбором за назвою чи мітками.', 'ШІ бачить лише метадані та будову тек вашого простору, без вмісту файлів.'],
+    nl: ['Interne schijf bekijken', 'Overzicht van mappen en bestanden op de interne schijf van Mijn Ruimte met zoeken op naam of labels.', 'De AI ziet uitsluitend metadata en mappenstructuur van uw ruimte, geen bestandsinhoud.'] },
+  { id: 'cloud_koppelingen_lijst', essentie: 'tonen_wolk_diensten', weergave: 'tonen wolkdiensten', sub: 'cloud', kanten: G, soort: 'lezen', groep: 'bestanden', risico: 'laag',
+    uk: ['Переглядати зовнішні хмарні диски', 'Стан підключених хмарних сховищ Microsoft та Google у вашому просторі без ключів доступу.', 'ШІ бачить, які зовнішні диски під’єднано й готові до роботи.'],
+    nl: ['Gekoppelde externe schijven bekijken', 'Stand van gekoppelde opslagdiensten van Microsoft en Google in uw ruimte zonder toegangssleutels.', 'De AI ziet welke externe schijven verbonden en gereed zijn.'] },
 
   // ---------------------------------------------------------------- bord en notities (hub)
   { id: 'search_board', essentie: 'zoeken_taken_bord', sub: 'hub', kanten: G, soort: 'lezen', groep: 'bord', risico: 'laag',
@@ -192,6 +198,9 @@ const DEFS: readonly Def[] = [
   { id: 'manage_hub_notes', essentie: 'beheren_notities', sub: 'hub', kanten: G, soort: 'schrijven', groep: 'bord', risico: 'midden',
     uk: ['Керувати нотатками', 'Читати, створювати, змінювати й видаляти нотатки хабу.', 'ШІ бачить ваші нотатки й може їх змінити.'],
     nl: ['Notities beheren', 'Notities van de hub lezen, maken, wijzigen en verwijderen.', 'De AI ziet uw notities en kan ze wijzigen.'] },
+  { id: 'comment_board_item', essentie: 'reageren_bord_item', weergave: 'reageren op borditem', sub: 'hub', kanten: G, soort: 'schrijven', groep: 'bord', risico: 'laag',
+    uk: ['Коментувати запис на дошці', 'Додає окремий коментар до наявного завдання або нотатки на вашій дошці.', 'Коментар з’являється на дошці з прив’язкою до цільового запису; основний зміст картки не змінюється.'],
+    nl: ['Opmerking op bord plaatsen', 'Voegt een losse opmerking toe bij een bestaande taak of notitie op uw bord.', 'De opmerking verschijnt op het bord bij het doelitem; de hoofdinhoud van de kaart verandert niet.'] },
 
   // ---------------------------------------------------------------- zoeken en diensten
   { id: 'site_search', essentie: 'zoeken_in_ruimte', sub: 'hub', kanten: G, soort: 'lezen', groep: 'ruimte', risico: 'laag',

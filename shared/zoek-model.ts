@@ -63,7 +63,7 @@ export const ZOEK_FORMATEN = ['pdf', 'docx', 'xlsx', 'pptx', 'txt', 'csv', 'md',
  * (id.*): de UI-catalogus (backend/zoek/catalogus-ui.ts) schrijft de dienst-id, de oudere bronnen 'id'. 'huis', 'api' en 'admin'
  * ontbraken tot 05.11.2026, waardoor de client elk catalogusobject van die diensten zonder link toonde (ORCH-001, oude fout).
  */
-export const ZOEK_ROUTE_HOSTS = ['hub', 'mail', 'cloud', 'id', 'identity', 'mcp', 'ai', 'github', 'huis', 'api', 'admin'] as const;
+export const ZOEK_ROUTE_HOSTS = ['hub', 'mail', 'cloud', 'id', 'identity', 'mcp', 'ai', 'github', 'crm', 'huis', 'api', 'admin'] as const;
 /**
  * Veilige overgang: host = dienst van de site, pad = waar binnen die dienst. Nooit een vrije URL.
  * `pad` is een pad («/instellingen») OF een tabblad-id van die dienst («account», «local»: zo schrijven de UI-catalogus en de

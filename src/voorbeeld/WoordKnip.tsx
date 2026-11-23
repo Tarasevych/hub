@@ -6,6 +6,8 @@ import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { knipOpWoord, voorbeeldProfiel, type Dichtheid } from '../../shared/mail-uittreksel';
 import { pasOpWoorden } from './voorbeeld-hulp';
 import './voorbeeld.css';
+import { useVlag } from '../functievlag-lezen';
+import { POSTA_VENSTERS_VLAG } from '../mail/posta-vensters';
 export { pasOpWoorden };
 
 let doek: CanvasRenderingContext2D | null | undefined;
@@ -36,6 +38,9 @@ export default function WoordKnip({ tekst, dichtheid = 'normal', max, regels, me
   const basis = useMemo(() => knipOpWoord(volledig, max ?? profiel.tekens), [volledig, max, profiel.tekens]);
   const [zicht, setZicht] = useState(basis);
   const ref = useRef<HTMLSpanElement | null>(null);
+  // posta-vensters-herstel-v1 (Grok: hub.tarasevych.com): meten één beeld later, anders verandert setZicht de tekst in
+  // dezelfde ResizeObserver-ronde en stroomt de lusfout (tientallen keren per lijst)
+  const rustig = useVlag(POSTA_VENSTERS_VLAG, false);
 
   useLayoutEffect(() => {
     setZicht(basis);
@@ -51,10 +56,11 @@ export default function WoordKnip({ tekst, dichtheid = 'normal', max, regels, me
       setZicht(pasOpWoorden(basis, ruimte, (t) => maat(font, t)));
     };
     pas();
-    const ro = new ResizeObserver(pas);
+    let raf = 0;
+    const ro = new ResizeObserver(() => { if (!rustig) { pas(); return; } cancelAnimationFrame(raf); raf = requestAnimationFrame(pas); });
     ro.observe(el);
-    return () => ro.disconnect();
-  }, [basis, meten, r]);
+    return () => { ro.disconnect(); cancelAnimationFrame(raf); };
+  }, [basis, meten, r, rustig]);
 
   return (
     <span ref={ref} className={`woord-knip${meten ? ' woord-knip-gemeten' : ''} ${className}`.trim()} data-regels={r} style={{ ['--woord-knip-regels' as string]: r }}

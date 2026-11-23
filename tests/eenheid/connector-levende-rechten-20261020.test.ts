@@ -30,6 +30,7 @@ import * as v2st from '../../backend/connector-v2-opslag';
 import * as tp from '../../backend/tech-profiel';
 import * as store from '../../backend/connectors-opslag';
 import { sha256 } from '../../backend/connectors-crypto';
+import { beginV1TechKader } from './hulp/v1-tech-kader';
 
 type Antw = { status: number; body: string; kop: (n: string) => string };
 function verzoek(poort: number, methode: string, pad: string, body = ''): Promise<Antw> {
@@ -140,6 +141,7 @@ export async function main(): Promise<number> {
     return { token: String(t.access_token || ''), grantId: '' };
   }
 
+  const herstelV1 = await beginV1TechKader();
   try {
     server = (await import('../../server/start')).createServer();
     await new Promise<void>((r) => server!.listen(0, '127.0.0.1', () => r()));
@@ -360,6 +362,7 @@ export async function main(): Promise<number> {
     await sys.query('DELETE FROM app.audit WHERE owner_id = ANY($1)', [ids]).catch(() => undefined);
     if (eigenaarWasRol !== null) await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{entitlements}', $2::jsonb) WHERE tbl = 'users' AND id = $1`, [eigenaarId, eigenaarWasRol]).catch(() => undefined);
     await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)", [vorigeEigenaar ? [M] : ids]).catch(() => undefined);
+    await herstelV1();
   }
   await closePool();
   return einde();

@@ -1,11 +1,10 @@
-// Afstemming vNext — «Можливості» (uitvoerder D3, §2.6): de MENSELIJKE gids over wat de site vandaag kan en hoe je het
-// gebruikt. De stand komt van de server en wordt hier nooit opgeplust: «перевірено» (groen) bestaat alleen met productie­-
-// bewijs achter de kaart; al het andere heet neutraal «не перевірено» met de eerlijke uitleg waarom. Geen technische
-// geheimen — alleen uitleg en de route.
+// Afstemming vNext — «Можливості» (§2.6): людський довідник того, що сайт уміє сьогодні та як перейти просто до служби чи Календаря.
+// Стан іде з сервера й ніколи не завищується: зелене «перевірено» з’являється виключно за наявності доказу на production.
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { CalendarPlus, ExternalLink, Search, Sparkles } from 'lucide-react';
 import { afstemmingTekst } from '../../../shared/afstemming-model';
 import { afstemmingClient, AfstemmingFout, type MogelijkhedenUit } from '../afstemming-client';
+import { agendaUrlVoorKaart, dienstUrlVoorKaart } from '../hulp';
 import { filterMogelijkheden } from '../zvirka-kern';
 import { foutTekst, tr } from '../tekst';
 import type { OnderdeelProps } from '../AfstemmingPagina';
@@ -15,9 +14,10 @@ const S: Record<string, CSSProperties> = {
   kop: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   badge: { display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: 999, fontSize: 'var(--tekst-mini)', fontWeight: 650 },
   zoek: { position: 'relative', display: 'flex', alignItems: 'center', maxWidth: 420 },
+  acties: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 },
 };
 
-export default function Mogelijkheden({ lang }: OnderdeelProps) {
+export default function Mogelijkheden({ lang, openKaart }: OnderdeelProps) {
   const [uit, setUit] = useState<MogelijkhedenUit | null>(null);
   const [laden, setLaden] = useState(true);
   const [fout, setFout] = useState('');
@@ -61,19 +61,27 @@ export default function Mogelijkheden({ lang }: OnderdeelProps) {
         <section key={r.dienst} className='afv-blok' data-afv-mogelijkheden-rubriek={r.dienst}>
           <h3>{r.dienst}</h3>
           <div style={{ display: 'grid', gap: 8 }} role='list'>
-            {r.items.map((i) => (
-              <article key={i.externId} style={S.item} role='listitem' data-afv-mogelijkheid={i.externId}>
-                <div style={S.kop}>
-                  <strong style={{ overflowWrap: 'anywhere' }}>{afstemmingTekst(i.titel, lang)}</strong>
-                  {i.stand === 'перевірено'
-                    ? <span style={{ ...S.badge, background: 'var(--ok-zacht)', color: 'var(--ok)' }} data-afv-stand='перевірено'>{tr(lang, 'перевірено', 'gecontroleerd')}</span>
-                    : <span style={{ ...S.badge, background: 'var(--surface)', color: 'var(--muted)' }} data-afv-stand='не перевірено' title={tr(lang, 'Потрібен доказ із production', 'Productiebewijs vereist')}>{tr(lang, 'не перевірено', 'niet gecontroleerd')}</span>}
-                </div>
-                <p style={{ margin: 0, overflowWrap: 'anywhere' }}>{i.uitleg}</p>
-                <p className='afv-hint' style={{ margin: 0 }}>{tr(lang, 'Де:', 'Waar:')} <code>{i.route}</code></p>
-                {i.stand !== 'перевірено' ? <p className='afv-hint' style={{ margin: 0 }}>{tr(lang, 'Стане «перевірено» після доказу з production (розділ «Перевірки»).', 'Wordt «gecontroleerd» na productiebewijs (onderdeel «Controles»).')}</p> : null}
-              </article>
-            ))}
+            {r.items.map((i) => {
+              const kaartItem = i as { kaartId?: string; externId: string; titel: readonly [string, string] | { uk: string; nl?: string }; uitleg: string; route: string; stand: 'перевірено' | 'не перевірено' };
+              return (
+                <article key={i.externId} style={S.item} role='listitem' data-afv-mogelijkheid={i.externId}>
+                  <div style={S.kop}>
+                    <strong style={{ overflowWrap: 'anywhere' }}>{afstemmingTekst(i.titel, lang)}</strong>
+                    {i.stand === 'перевірено'
+                      ? <span style={{ ...S.badge, background: 'var(--ok-zacht)', color: 'var(--ok)' }} data-afv-stand='перевірено'>{tr(lang, 'перевірено', 'gecontroleerd')}</span>
+                      : <span style={{ ...S.badge, background: 'var(--surface)', color: 'var(--muted)' }} data-afv-stand='не перевірено' title={tr(lang, 'Потрібен доказ із production', 'Productiebewijs vereist')}>{tr(lang, 'не перевірено', 'niet gecontroleerd')}</span>}
+                  </div>
+                  <p style={{ margin: 0, overflowWrap: 'anywhere' }}>{i.uitleg}</p>
+                  <p className='afv-hint' style={{ margin: 0 }}>{tr(lang, 'Де:', 'Waar:')} <code>{i.route || '/'}</code></p>
+                  <div style={S.acties}>
+                    <a className='afv-knop is-klein' href={dienstUrlVoorKaart(r.dienst, lang, i.route)} data-afv-mogelijkheid-dienst={r.dienst}><ExternalLink aria-hidden='true' />{tr(lang, 'Відкрити службу', 'Dienst openen')}</a>
+                    <a className='afv-knop is-klein' href={agendaUrlVoorKaart({ externId: i.externId, titel: i.titel }, lang)} data-afv-mogelijkheid-agenda={i.externId}><CalendarPlus aria-hidden='true' />{tr(lang, 'У Календар', 'Naar Agenda')}</a>
+                    {kaartItem.kaartId ? <button type='button' className='afv-knop is-klein is-stil' onClick={() => openKaart(kaartItem.kaartId!)}>{tr(lang, 'До картки', 'Naar kaart')}</button> : null}
+                  </div>
+                  {i.stand !== 'перевірено' ? <p className='afv-hint' style={{ margin: 0 }}>{tr(lang, 'Стане «перевірено» після доказу з production (розділ «Перевірки»).', 'Wordt «gecontroleerd» na productiebewijs (onderdeel «Controles»).')}</p> : null}
+                </article>
+              );
+            })}
           </div>
         </section>
       ))}

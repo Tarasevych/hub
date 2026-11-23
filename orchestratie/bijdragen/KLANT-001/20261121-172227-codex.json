@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "id": "KLANT-001/20261121-172227-codex",
+  "taakId": "KLANT-001",
+  "tijd": "2026-11-21T17:22:27.411Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "codex",
+    "platform": "Codex",
+    "model": {
+      "id": "GPT-6",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Створення середовища клієнтських взаємин і проєктування обміну між службами."
+  },
+  "waarom": {
+    "uk": "Робота з клієнтом має продовжуватися в одному досьє та використовувати вже надані права."
+  },
+  "tak": "feature/klant-001-klantrelatiebeheer-20261121-181800",
+  "pr": null
+}

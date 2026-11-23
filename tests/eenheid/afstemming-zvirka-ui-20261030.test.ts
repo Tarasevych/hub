@@ -154,7 +154,7 @@ export async function main(): Promise<number> {
 
   const brn = inhoud.get(MIJN.bronnen)!;
   check('B Bronnen: agent-API met de drie echte routes en de mensenregel AGENT_MAG_NIET', brn.includes('/api/owner/afstemming/voorstel') && brn.includes('/api/owner/afstemming/bewijs') && brn.includes("actie: 'stel-voor'") && brn.includes('AGENT_MAG_NIET'));
-  check('B Bronnen: precies 3 bronnen «werkt» (de echte routes) en 4 «gepland» — niets doet alsof het gekoppeld is', (brn.match(/'werkt', '/g) || []).length === 3 && (brn.match(/'gepland', '/g) || []).length === 4 && brn.includes('заплановано'));
+  check('B Bronnen: alle 6 bronnen «werkt» (nul «gepland»/«заплановано») en levende orchestratie-koppeling', (brn.match(/'werkt', '/g) || []).length === 6 && !brn.includes("'gepland'") && !brn.includes('заплановано') && brn.includes('afstemmingClient.orchestratieKoppeling('));
   check('B Bronnen: rapport op aanvraag (week/maand) met cijfers en de servertekst', brn.includes("data-afv-rapport='week'") && brn.includes("data-afv-rapport='maand'") && brn.includes('afstemmingClient.rapport(') && brn.includes("data-afv-rapport-uit=''"));
 
   // ================================================================ C. mobiel css

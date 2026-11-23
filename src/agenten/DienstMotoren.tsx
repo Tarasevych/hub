@@ -517,7 +517,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                 {bezig === 'bewaar' || opslaan.bezig ? <Loader2 className='ag-spin' aria-hidden='true' /> : null}{tr('Зберегти', 'Bewaren')}
               </button>
               <button type='button' className='ag-knop dm-knop' disabled={bezig === 'bewaar' || opslaan.bezig} onClick={sluitFormulier}>{tr('Скасувати', 'Annuleren')}</button>
-              <span className='dm-hint'>{tr('Збереження підтверджується вашим passkey.', 'Bewaren bevestigt u met uw passkey.')}</span>
+              <span className='dm-hint'>{tr('Збереження підтверджується вашим ключем доступу.', 'Bewaren bevestigt u met uw passkey.')}</span>
             </div>
           </form>
         ) : null}

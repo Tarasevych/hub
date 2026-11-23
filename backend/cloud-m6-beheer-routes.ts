@@ -1,6 +1,6 @@
-/** Staging-only administrator routes, wrapped by the existing Cloud ladePoort.
- * NEVER trust role, technical status, provider evidence or policy state from the browser.
- * Admin controls are NOT wired into public Cloud UI.
+/** Маршрути політик керування постачальниками Хмари M6 за воротами ladePoort('cloud').
+ * Повноваження власника та активної технічної вкладки перевіряються виключно на сервері.
+ * Beheerroutes voor cloudaanbieders (M6) achter ladePoort('cloud') en vlag cloud-m6-beheer-v1.
  */
 import {json,error} from '../server/platform';
 import {getPool} from '../server/platform/pg';
@@ -28,30 +28,45 @@ const defaults=():AdminDeps=>({
 });
 const bodyObject=(x:unknown):Record<string,unknown>=>x&&typeof x==='object'&&!Array.isArray(x)?x as Record<string,unknown>:{};
 const staging=()=>process.env.CLOUD_M6_ADMIN_STAGING==='enabled';
+async function m6VlagAan(userId?:string):Promise<boolean>{
+ if(staging())return true;
+ try{
+  const {berekenen}=await import('./vlaggen');
+  const id=typeof userId==='string'&&userId.trim()?userId.trim():'__cloud_poort__';
+  return (await berekenen({id} as never,['cloud-m6-beheer-v1']))[0]?.value===true;
+ }catch{return false;}
+}
 function caught(e:unknown){if(e instanceof CloudTransportError)return error(e.code,e.status);return error('CLOUD_M6_ADMIN_UNAVAILABLE',503);}
 export function createCloudM6AdminRoutes(authorize:Authorize,deps:AdminDeps=defaults()){
- async function actor(ctx:Context){
+ async function poort(ctx:Context):Promise<{open:boolean;voorafAuth?:Auth}>{
+  if(await m6VlagAan())return{open:true};
   const auth=await authorize(ctx.event,ctx.body);
+  if(!('errorCode' in auth)&&auth.user?.id&&await m6VlagAan(auth.user.id))return{open:true,voorafAuth:auth};
+  return{open:false,voorafAuth:auth};
+ }
+ async function actor(ctx:Context,vorigeAuth?:Auth){
+  const auth=vorigeAuth??await authorize(ctx.event,ctx.body);
   if('errorCode' in auth||auth.service!=='cloud'||auth.user.status!=='approved'||!auth.user.id)return null;
   const b=bodyObject(ctx.body),tab=typeof b.tabContext==='string'?b.tabContext:'';
   if(!TAB_RE.test(tab))return null;
-  // A session's email/role in client JSON MUST NOT grant admin access.
   const current=await deps.liveOwner(auth.user.id);
   if(!current||!isEigenaar(current)||!(await deps.technicalTabActive(current.id,tab)))return null;
   return {userId:current.id,isSiteOwner:true,isTechnicalSession:true,reason:''};
  }
  return {
  'POST /api/owner/cloud/integrations/v1/admin/policies/list':[async(ctx:Context)=>{
-  if(!staging())return error('CLOUD_M6_NOT_RELEASED',404);
-  try{if(!await actor(ctx))return error('CLOUD_M6_OWNER_TECH_REQUIRED',403);
-   const providers=await Promise.all(FIRST_WAVE_PROVIDERS.map(p=>deps.governor.status(p)));
-   return json({schema:'cloud-governance-m6',release:'STAGING_ONLY',providers});
+  const p=await poort(ctx);
+  if(!p.open)return error('CLOUD_M6_NOT_RELEASED',404);
+  try{if(!await actor(ctx,p.voorafAuth))return error('CLOUD_M6_OWNER_TECH_REQUIRED',403);
+   const providers=await Promise.all(FIRST_WAVE_PROVIDERS.map(k=>deps.governor.status(k)));
+   return json({schema:'cloud-governance-m6',release:'ACTIEF',providers});
   }catch(e){return caught(e);}
  }],
  'POST /api/owner/cloud/integrations/v1/admin/policies/change':[async(ctx:Context)=>{
-  if(!staging())return error('CLOUD_M6_NOT_RELEASED',404);
+  const p=await poort(ctx);
+  if(!p.open)return error('CLOUD_M6_NOT_RELEASED',404);
   try{
-   const a=await actor(ctx);if(!a)return error('CLOUD_M6_OWNER_TECH_REQUIRED',403);
+   const a=await actor(ctx,p.voorafAuth);if(!a)return error('CLOUD_M6_OWNER_TECH_REQUIRED',403);
    const b=bodyObject(ctx.body),provider=b.provider,revision=b.expectedRevision,reason=b.reason;
    if(typeof provider!=='string'||!FIRST_WAVE_PROVIDERS.includes(provider as WaveOneProvider)||
       typeof reason!=='string'||reason.length<8||reason.length>500||/[\u0000-\u001f]/.test(reason)||

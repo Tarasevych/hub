@@ -45,6 +45,10 @@
 .bib-map-icoon{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:6px;box-sizing:border-box;background:color-mix(in srgb,currentColor 18%,transparent);color:inherit}
 .bib-map-icoon svg{width:16px;height:16px}
 .bib-map-paneel{position:absolute;top:100%;left:50%;transform:translateX(-50%);z-index:40;min-width:240px;max-width:min(92vw,420px);padding:.6rem;border-radius:16px;background:var(--surface,Canvas);color:var(--text,CanvasText);border:1px solid color-mix(in srgb,currentColor 16%,transparent);box-shadow:0 12px 32px rgba(0,0,0,.25);animation:bib-in .14s ease-out}
+.bib-map-kop{display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.4rem}
+.bib-map-titel{font-size:.9rem;line-height:1.25;overflow-wrap:anywhere}
+.bib-map-hernoem{display:flex;align-items:center;gap:.25rem;width:100%}
+.bib-map-hernoem input{flex:1;min-width:0;min-height:38px;padding:0 .55rem;border-radius:10px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit;font:inherit}
 .bib-map-paneel ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:.25rem}
 .bib-map-paneel li{height:100px}
 @keyframes bib-in{from{opacity:0;transform:translate(-50%,-4px)}to{opacity:1;transform:translate(-50%,0)}}

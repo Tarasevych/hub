@@ -29,11 +29,11 @@ export async function main(): Promise<number> {
     WERKBLAD_WIDGETS.every((w) => KOLOMMEN.includes(w.k as never) && RIJEN.includes(w.r as never) && w.k >= w.minK && w.r >= w.minR && w.k <= 12));
   const klaar = WERKBLAD_WIDGETS.filter((w) => w.stand === 'klaar'), binnenkort = WERKBLAD_WIDGETS.filter((w) => w.stand === 'binnenkort');
   check('eerlijk: elke «klaar»-widget met bron noemt een route (POST /api/… of GET /__…) en geen «ontbreekt»', klaar.every((w) => (w.bron === '' || /^(POST \/api\/[a-z0-9/_-]+|GET \/__[a-z]+)$/.test(w.bron)) && !w.ontbreekt));
-  check('eerlijk: «binnenkort» (GitHub) heeft geen bron, zegt in beide talen wat ontbreekt en is nergens plaatsbaar',
-    binnenkort.length === 1 && binnenkort[0].id === 'github' && binnenkort[0].bron === '' && binnenkort[0].ontbreekt![0].length > 20 && !toegestaan('github', P) && !toegestaan('github', T));
-  const backend = lees('backend/index.ts') + lees('backend/mcp-console.ts') + lees('backend/beheer-diagnostiek.ts') + lees('backend/hub-blok-gegevens.ts') + lees('backend/zoek-geschiedenis.ts') + lees('backend/werkblad.ts') + lees('server/start.ts');
+  check('eerlijk: geen «binnenkort»-widgets meer; GitHub is klaar in beide ruimtes via de veilige hub-route',
+    binnenkort.length === 0 && werkbladWidget('github')!.bron === 'POST /api/owner/hub/werkblad/github' && toegestaan('github', P) && toegestaan('github', T));
+  const backend = lees('backend/index.ts') + lees('backend/mcp-console.ts') + lees('backend/beheer-diagnostiek.ts') + lees('backend/hub-blok-gegevens.ts') + lees('backend/zoek-geschiedenis.ts') + lees('backend/werkblad.ts') + lees('backend/ai-werkruimte.ts') + lees('server/start.ts');
   check('eerlijk: elke genoemde route bestaat echt in de backend', klaar.filter((w) => w.bron).every((w) => backend.includes(w.bron.replace(/^(POST|GET) /, ''))));
-  check('eerlijk: de GitHub-route accepteert nog steeds alleen de dienst github (daarom «binnenkort»)', /auth\.service !== 'github'/.test(lees('backend/github-platform.ts')));
+  check('eerlijk: de GitHub-schrijf/platformroute accepteert nog steeds alleen de dienst github (hub leest eigen samenvatting)', /auth\.service !== 'github'/.test(lees('backend/github-platform.ts')));
   check('weer: er is GEEN weerwidget (geen externe cloud); «systeem» vervangt het en zegt dat in de uitleg', !WERKBLAD_WIDGET_IDS.some((id) => /weer|weather|pogoda/.test(id)) && /погоди/.test(werkbladWidget('systeem')!.uitleg[0]));
   check('rechten: technische widgets alleen in de technische lade; gewone in beide', ['tech-server', 'tech-updates', 'tech-diagnostiek'].every((id) => !toegestaan(id, P) && toegestaan(id, T)) && ['post', 'agenda', 'taken', 'zoek-recent', 'systeem'].every((id) => toegestaan(id, P) && toegestaan(id, T)));
   check('rechten: onbekend id nooit toegestaan', !toegestaan('bestaat-niet', P) && !toegestaan(null, T));
@@ -48,10 +48,10 @@ export async function main(): Promise<number> {
     { tid: 'w11', id: 'snelkoppeling', k: -5, r: 0, inst: { url: 'https://voorbeeld.test', titel: 'X' } },
   ] }, P);
   const post = vuil.items.find((t) => t.id === 'post')!, sk = vuil.items.find((t) => t.id === 'snelkoppeling')!;
-  check('normaliseren: onbekend, «binnenkort», technisch-in-prive en dubbele enkel-widgets vallen weg', ids(vuil) === 'post,taken,notities,begroeting,snelkoppeling');
+  check('normaliseren: onbekend, technisch-in-prive en dubbele enkel-widgets vallen weg; github blijft', ids(vuil) === 'post,taken,notities,github,begroeting,snelkoppeling');
   check('normaliseren: formaten op toegestane waarden, nooit onder het minimum', KOLOMMEN.includes(post.k as never) && post.k === 7 && post.r === 6 && sk.k === 2 && sk.r === 1);
   check('normaliseren: instellingen plat en begrensd (slechte sleutel en object weg, tekst ≤ 1600)', post.inst?.weergave === 'tellers' && !('slecht sleutel' in (post.inst || {})) && !('diep' in (post.inst || {})) && String(post.inst?.lang).length === 1600);
-  check('normaliseren: id\'s uniek en geldig; achtergrond overgenomen', new Set(vuil.items.map((t) => t.tid)).size === 5 && vuil.items.every((t) => TID.test(t.tid)) && vuil.achtergrond === 'zee');
+  check('normaliseren: id\'s uniek en geldig; achtergrond overgenomen', new Set(vuil.items.map((t) => t.tid)).size === 6 && vuil.items.every((t) => TID.test(t.tid)) && vuil.achtergrond === 'zee');
   check('normaliseren: stabiel (tweede keer verandert niets)', gelijkWerkblad(normaliseerWerkblad(vuil, P), vuil));
   check(`normaliseren: nooit meer dan ${MAX_ITEMS}`, normaliseerWerkblad({ items: Array.from({ length: MAX_ITEMS + 9 }, () => ({ id: 'post' })) }, P).items.length === MAX_ITEMS);
   check('normaliseren: ongeldige achtergrond → nacht; eigen blijft eigen', normaliseerWerkblad({ achtergrond: 'http://x' }, P).achtergrond === 'nacht' && normaliseerWerkblad({ achtergrond: 'eigen' }, P).achtergrond === 'eigen' && ACHTERGRONDEN.includes('eigen'));
@@ -61,7 +61,7 @@ export async function main(): Promise<number> {
   const leeg = leegWerkblad();
   let w = voegToe(voegToe(voegToe(leeg, 'post', P), 'agenda', P), 'taken', P);
   check('toevoegen: drie widgets, elk met een eigen id (w1,w2,w3)', ids(w) === 'post,agenda,taken' && w.items.map((t) => t.tid).join(',') === 'w1,w2,w3' && nieuweTid(w) === 'w4');
-  check('toevoegen: geweigerd — onbekend, «binnenkort», technisch in prive, tweede «enkel» → zelfde object', voegToe(w, 'x', P) === w && voegToe(w, 'github', P) === w && voegToe(w, 'tech-server', P) === w && voegToe(voegToe(w, 'begroeting', P), 'begroeting', P).items.length === 4);
+  check('toevoegen: geweigerd — onbekend, technisch in prive, tweede «enkel» → zelfde object', voegToe(w, 'x', P) === w && voegToe(w, 'tech-server', P) === w && voegToe(voegToe(w, 'begroeting', P), 'begroeting', P).items.length === 4);
   check('toevoegen: op een plek (index 0) en met instellingen', ids(voegToe(w, 'begroeting', P, undefined, 0)) === 'begroeting,post,agenda,taken' && voegToe(w, 'snelkoppeling', P, { url: 'https://a.test', titel: 'A' }).items[3].inst?.url === 'https://a.test');
   let vol = leeg; for (let i = 0; i < MAX_ITEMS + 3; i += 1) vol = voegToe(vol, 'post', P);
   check('toevoegen: stopt bij de grens', vol.items.length === MAX_ITEMS);
@@ -108,7 +108,7 @@ export async function main(): Promise<number> {
   const vb = vanBureau(oud, P);
   check('overzetting bureau: 5 tegels → 5 widgets in volgorde met formaat en instellingen (tellers/vandaag/vast)',
     ids(vb) === 'post,agenda,taken,notities,diensten' && vb.items[0].inst?.weergave === 'tellers' && vb.items[0].k === 3 && vb.items[0].r === 1 && vb.items[1].inst?.filter === 'vandaag' && vb.items[3].inst?.filter === 'vast' && vb.items[4].k === 6);
-  check('overzetting bureau: onzin → leeg', leegIs(vanBureau(null, P)) && leegIs(vanBureau({ tegels: [{ id: 'github-activiteit' }] }, P)));
+  check('overzetting bureau: onzin → leeg; github-activiteit → github', leegIs(vanBureau(null, P)) && leegIs(vanBureau({ tegels: [{ id: 'bestaat-niet' }] }, P)) && ids(vanBureau({ tegels: [{ id: 'github-activiteit' }] }, P)) === 'github');
 
   // ---------------------------------------------------------------- overzetting van de oude blokken
   const blokken: OudBlok[] = [

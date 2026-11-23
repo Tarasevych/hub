@@ -457,7 +457,7 @@ export function GeheimFormulier({
         <Lock aria-hidden='true' />
         {tr(
           lang,
-          'Значення шифрується на сервері (AES-256-GCM) після підтвердження Passkey або кодом і ніколи не передається відкритим текстом.',
+          'Значення шифрується на сервері (AES-256-GCM) після підтвердження ключем доступу або кодом і ніколи не передається відкритим текстом.',
           'De waarde wordt op de server versleuteld (AES-256-GCM) na bevestiging met Passkey of code en nooit onversleuteld teruggegeven.',
         )}
       </p>
@@ -475,7 +475,7 @@ export function GeheimFormulier({
           disabled={bezig || !vaultKlaar}
         >
           {bezig ? <RefreshCw className='spin' aria-hidden='true' /> : <Lock aria-hidden='true' />}
-          {tr(lang, 'Зберегти зашифровано (Passkey)', 'Versleuteld opslaan (Passkey)')}
+          {tr(lang, 'Зберегти зашифровано (ключ доступу)', 'Versleuteld opslaan (Passkey)')}
         </button>
       </div>
     </form>

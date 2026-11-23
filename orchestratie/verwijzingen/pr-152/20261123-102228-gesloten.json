@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 152,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:28.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Повністю поглинуто новішим випуском розширення 0.9.7 у канонічній гілці integratie (14dbcb3a).",
+    "nl": "Volledig opgenomen en uitgebreid in extensieversie 0.9.7 op de canonieke tak integratie (14dbcb3a)."
+  },
+  "titel": {
+    "uk": "LOKAI-001: розширення оглядача 0.9.3, автоматичний підпис CRX3 та підтримка вбудованого ШІ Chrome",
+    "nl": "LOKAI-001: browserextensie 0.9.3, automatische CRX3-ondertekening en ingebouwde Chrome-AI"
+  },
+  "laatsteCommit": "f79f14e72aa5e24c60906e449e9cd693c6d46933",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "LOKAI-001",
+    "CONSOL-001"
+  ]
+}

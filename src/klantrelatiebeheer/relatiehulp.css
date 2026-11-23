@@ -1,0 +1,14 @@
+.relatiehulp { display: grid; gap: 1rem; min-inline-size: 0; }
+.relatiehulp h3, .relatiehulp p { margin: 0; }
+.relatiehulp-feiten, .relatiehulp-keuzen, .relatiehulp-bedragen { display: flex; flex-wrap: wrap; gap: .65rem 1rem; align-items: center; }
+.relatiehulp-feiten strong { margin-inline-start: .25rem; }
+.relatiehulp-keuzen button[aria-pressed="true"] { font-weight: 700; text-decoration: underline; text-underline-offset: .3em; }
+.relatiehulp form, .relatiehulp-voorstel, .relatiehulp label { display: grid; gap: .5rem; }
+.relatiehulp form, .relatiehulp-voorstel { gap: .85rem; }
+.relatiehulp textarea, .relatiehulp input, .relatiehulp select { box-sizing: border-box; width: 100%; min-width: 0; padding: .5rem; font: inherit; color: inherit; background: var(--panel, Canvas); border: 1px solid currentColor; border-radius: .4rem; }
+.relatiehulp textarea { resize: vertical; }
+.relatiehulp button { justify-self: start; }
+.relatiehulp summary { cursor: pointer; font-weight: 600; }
+.relatiehulp details[open] > * + * { margin-block-start: .7rem; }
+.relatiehulp-bedragen label { flex: 1 1 9rem; }
+.relatiehulp :focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

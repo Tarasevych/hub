@@ -166,13 +166,13 @@ export default function AiToegangTab({ verbinding, tr, metBeheer }: { verbinding
   }
   // Wat «Зберегти доступи» precies raakt, per soort verbinding (backend/mcp-connector-routes.ts, /api/owner/ai-toegang/zet).
   const bewaarUitleg = bord
-    ? t('Зберігає вибір приватного простору цього ШІ: діє для всіх його приватних підключень через спільну адресу /mcp і для нових таких підключень. Не змінює технічних підключень, підключень через власну адресу ШІ (вони на сторінці ШІ) і MCP-токенів.',
+    ? t('Зберігає вибір приватного простору цього ШІ: діє для всіх його приватних підключень через спільну адресу /mcp і для нових таких підключень. Не змінює технічних підключень, підключень через власну адресу ШІ (вони на сторінці ШІ) і ключів підключення MCP.',
       'Bewaart de keuze voor de privéruimte van deze AI: geldt voor al zijn privéverbindingen via het gedeelde adres /mcp en voor nieuwe zulke verbindingen. Verandert geen technische verbindingen, verbindingen via het eigen adres van de AI (die staan op de pagina van de AI) en MCP-tokens.')
     : technisch
       ? t('Зберігає доступи лише цього технічного підключення; діє з наступного виклику, перепідключати не треба. Приватний «Доступ ШІ» та інші підключення не змінюються.',
         'Bewaart de toegang van alleen deze technische verbinding; geldt vanaf de volgende aanroep, opnieuw verbinden is niet nodig. De privé «AI-toegang» en andere verbindingen veranderen niet.')
       : verbinding.soort === 'oauth' && isBordKlant(klant)
-        ? t('Зберігає доступи цього приватного підключення й водночас робить їх вибором «Доступ ШІ» цього ШІ: нові приватні підключення через /mcp отримають те саме. Інші наявні підключення, технічні й MCP-токени не змінюються.',
+        ? t('Зберігає доступи цього приватного підключення й водночас робить їх вибором «Доступ ШІ» цього ШІ: нові приватні підключення через /mcp отримають те саме. Інші наявні підключення, технічні й ключі підключення MCP не змінюються.',
           'Bewaart de toegang van deze privéverbinding en maakt hem meteen de keuze «AI-toegang» van deze AI: nieuwe privéverbindingen via /mcp krijgen hetzelfde. Andere bestaande verbindingen, technische verbindingen en MCP-tokens veranderen niet.')
         : t('Зберігає доступи лише цього підключення; діє з наступного виклику ШІ, перепідключати не треба. Інші підключення не змінюються.',
           'Bewaart de toegang van alleen deze verbinding; geldt vanaf de volgende aanroep van de AI, opnieuw verbinden is niet nodig. Andere verbindingen veranderen niet.');

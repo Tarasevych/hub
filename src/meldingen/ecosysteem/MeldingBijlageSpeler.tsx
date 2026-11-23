@@ -41,6 +41,15 @@ import {
   type MeldingBijlage,
 } from '../../../shared/meldingen-ecosysteem';
 import type { MailAttachmentPreview } from '../../MailBijlageVoorbeeld';
+import type { ContextActie } from '../../bijlage-weergave/Weergave';
+import { useVlag } from '../../functievlag-lezen';
+import { WEERGAVE_VLAG } from '../../bijlage-weergave/soort';
+
+// SPIL-WEERGAVE етап 4, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Antigravity): за прапорцем bijlage-weergave-gedeeld-v1
+// замість власної шапки програвача — спільна шапка переглядача й стрічка вкладень (окремим шматком; поки вантажиться — стара шапка).
+// Без прапорця все як раніше. Тіло (рушії форматів) не змінюється.
+const WeergaveKopLui = lazy(() => import('../../bijlage-weergave/Weergave').then((m) => ({ default: m.WeergaveKop })));
+const WeergaveStrookLui = lazy(() => import('../../bijlage-weergave/Weergave').then((m) => ({ default: m.WeergaveStrook })));
 
 const LazyMailPreviewContent = lazy(() =>
   import('../../MailBijlageVoorbeeld').then((m) => ({ default: m.MailAttachmentPreviewContent })),
@@ -163,6 +172,8 @@ type Props = {
   onSelectIndex?: (idx: number) => void;
   onSluiten?: () => void;
   onToggleModaal?: () => void;
+  /** етап 4 (НЕ ПЕРЕВІРЕНО): дії сповіщення для спільної шапки (наприклад «Прочитано», швидка дія); лише з увімкненим прапорцем */
+  contextActies?: ContextActie[] | null;
 };
 
 export default function MeldingBijlageSpeler({
@@ -174,6 +185,7 @@ export default function MeldingBijlageSpeler({
   onSelectIndex,
   onSluiten,
   onToggleModaal,
+  contextActies,
 }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const bijlage = bijlagen[actieveIndex] ?? bijlagen[0];
@@ -192,6 +204,9 @@ export default function MeldingBijlageSpeler({
   const [laden, setLaden] = useState(false);
   const [fout, setFout] = useState('');
   const mailPreviewRef = useRef<MailAttachmentPreview | null>(null);
+  // етап 4: сам файл для позначки довіри й «Подробиць» спільної шапки (раніше зберігалося лише посилання)
+  const [bronBlob, setBronBlob] = useState<Blob | null>(null);
+  const gedeeld = useVlag(WEERGAVE_VLAG, false);
   const copyTimerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => () => {
@@ -211,6 +226,7 @@ export default function MeldingBijlageSpeler({
     setMailVoorbeeld(null);
     setHexDump('');
     setObjectUrl('');
+    setBronBlob(null);
     setTekstInhoud(bijlage.tekstVoorbeeld || '');
 
     const prepareer = async () => {
@@ -286,6 +302,7 @@ export default function MeldingBijlageSpeler({
       if (blob) {
         lokaalUrl = URL.createObjectURL(blob);
         setObjectUrl(lokaalUrl);
+        setBronBlob(blob);
 
         if ((info.weergave === 'code' || info.weergave === 'tekst' || info.weergave === 'agenda' || info.weergave === 'contact' || (info.weergave === 'werkblad' && (bijlage.naam.endsWith('.csv') || bijlage.naam.endsWith('.tsv')))) && !bijlage.tekstVoorbeeld) {
           try {
@@ -567,13 +584,7 @@ export default function MeldingBijlageSpeler({
     );
   };
 
-  const inhoud = (
-    <div
-      className={`mel-speler${modaal ? ' is-modaal' : ''}`}
-      data-testid='mel-bijlage-speler'
-      data-weergave={info.weergave}
-      onClick={(e) => e.stopPropagation()}
-    >
+  const oudeKop = (
       <div className='mel-speler-kop'>
         <div className='mel-speler-titel'>
           <span className='mel-speler-badge' style={{ borderColor: info.kleur, color: info.kleur }}>
@@ -664,8 +675,50 @@ export default function MeldingBijlageSpeler({
           )}
         </div>
       </div>
+  );
+  // етап 4: дії, які спільна шапка не знає сама — копіювання, розгортання — йдуть як контекстні; дії сповіщення приходять ззовні
+  const melActies: ContextActie[] = [
+    ...(contextActies || []),
+    ...((tekstInhoud || hexDump) ? [{ sleutel: 'kopieer', label: ['Копіювати вміст', 'Inhoud kopiëren'] as [string, string], icoon: Copy, uitvoeren: () => void kopieerTekst() }] : []),
+    ...(onToggleModaal && !modaal ? [{ sleutel: 'groot', label: ['Розгорнути переглядач', 'Volledig tonen'] as [string, string], icoon: Maximize2, uitvoeren: onToggleModaal }] : []),
+  ];
+  const gedeeldeKop = (
+    <WeergaveKopLui
+      taal={lang}
+      bron='melding'
+      kopElement='div'
+      naam={bijlage.naam}
+      contentType={info.mime}
+      grootte={Number(bijlage.grootteBytes || 0)}
+      blob={bronBlob}
+      nav={bijlagen.length > 1 ? { index: actieveIndex, totaal: bijlagen.length } : null}
+      beschikbaar={{
+        ...(objectUrl ? { download: () => { const a = document.createElement('a'); a.href = objectUrl; a.download = bijlage.naam; document.body.appendChild(a); a.click(); a.remove(); } } : {}),
+        ...(onToggleModaal && modaal ? { minimaliseer: onToggleModaal } : {}),
+      }}
+      contextActies={melActies}
+      zonderSluiten={!onSluiten}
+      onSluit={onSluiten || (() => undefined)}
+    />
+  );
+
+  const inhoud = (
+    <div
+      className={`mel-speler${modaal ? ' is-modaal' : ''}`}
+      data-weergave-drager={gedeeld ? 'melding' : undefined}
+      data-testid='mel-bijlage-speler'
+      data-weergave={info.weergave}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {gedeeld ? <Suspense fallback={oudeKop}>{gedeeldeKop}</Suspense> : oudeKop}
 
       <div className='mel-speler-lichaam'>{renderInhoud()}</div>
+      {gedeeld && bijlagen.length > 1 && onSelectIndex && (
+        <Suspense fallback={null}>
+          <WeergaveStrookLui taal={lang} bron='melding' index={actieveIndex} onKies={onSelectIndex}
+            items={bijlagen.map((b) => ({ naam: b.naam, contentType: b.mime || '', grootte: Number(b.grootteBytes || 0) }))} />
+        </Suspense>
+      )}
     </div>
   );
 

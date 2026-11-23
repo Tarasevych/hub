@@ -57,7 +57,7 @@ function bepaalAuteur(opgegeven, git) {
  * Чиста функція: { beleid, manifest, paden (змінені файли), lees(pad) → вміст|null, versie } → zaken.
  */
 export const VLAG_SLEUTEL = /^[a-z0-9][a-z0-9-]{2,79}$/;
-export function controleerFunctievlaggen({ beleid, manifest, paden, lees, versie }) {
+export function controleerFunctievlaggen({ beleid, manifest, paden, lees, versie, nu, migraties }) {
   const z = []; const b = beleid?.functievlaggen;
   if (!b?.verplicht) return z;
   // Лише для нових пакетів: старі випуски й тестові зразки не змінюються.
@@ -66,6 +66,52 @@ export function controleerFunctievlaggen({ beleid, manifest, paden, lees, versie
   const zonder = (b.uitgezonderdePaden ?? ['tests/', 'docs/']);
   const gedragPaden = (paden ?? []).filter((p) => gedrag.some((g) => p.startsWith(g)) && !zonder.some((u) => p.startsWith(u)) && !/\.md$/i.test(p));
   if (!gedragPaden.length) return z;
+
+  // VLAG_OPRUIMEN: незаборонне попередження для прапорців, що перебувають в архіві понад opruimenNaDagen (30 днів) і досі згадуються у змінених файлах коду.
+  const opruimenDagen = Number(b.opruimenNaDagen) > 0 ? Number(b.opruimenNaDagen) : 30;
+  const opruimenMs = opruimenDagen * 24 * 3600_000;
+  const nuMs = (() => {
+    if (nu && !Number.isNaN(Date.parse(nu))) return Date.parse(nu);
+    const vm = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(String(versie || ''));
+    if (vm) return Date.UTC(Number(vm[1]), Number(vm[2]) - 1, Number(vm[3]), Number(vm[4]), Number(vm[5]), Number(vm[6]));
+    return Date.now();
+  })();
+  const archiefDatums = new Map();
+  const neemDatum = (sl, ruw) => {
+    if (!VLAG_SLEUTEL.test(String(sl || ''))) return;
+    const ts = Date.parse(String(ruw || ''));
+    if (!Number.isFinite(ts)) return;
+    const al = archiefDatums.get(sl);
+    if (al === undefined || ts < al) archiefDatums.set(sl, ts);
+  };
+  for (const lijst of [manifest?.functievlaggen, manifest?.archiefVlaggen, manifest?.verouderdeVlaggen]) {
+    if (!Array.isArray(lijst)) continue;
+    for (const item of lijst) neemDatum(item?.sleutel, item?.gearchiveerdOp ?? item?.gearchiveerd_op ?? item?.sinds);
+  }
+  const migPaden = new Set([
+    ...(paden ?? []).filter((p) => /^migrations\/.*\.sql$/i.test(p)),
+    ...((Array.isArray(manifest?.functievlaggen) ? manifest.functievlaggen : []).map((v) => v?.migratie ? `migrations/${String(v.migratie).replace(/^migrations\//, '')}` : '').filter(Boolean)),
+    ...(migraties ?? []),
+  ]);
+  for (const mp of migPaden) {
+    const sql = lees(mp);
+    if (!sql || !/gearchiveerd_op/i.test(sql)) continue;
+    for (const m of sql.matchAll(/UPDATE\s+app\.feature_flags\s+SET[\s\S]*?gearchiveerd_op\s*=\s*'([^']+)'[\s\S]*?WHERE\s+sleutel\s*=\s*'([a-z0-9-]+)'/gi)) {
+      neemDatum(m[2], m[1]);
+    }
+    for (const m of sql.matchAll(/INSERT\s+INTO\s+app\.feature_flags\s*\([^)]*gearchiveerd_op[^)]*\)\s*VALUES\s*\(\s*'([a-z0-9-]+)'[\s\S]*?'(\d{4}-\d{2}-\d{2}[^']*)'\s*\)/gi)) {
+      neemDatum(m[1], m[2]);
+    }
+  }
+  for (const [sl, ts] of archiefDatums) {
+    if (nuMs - ts >= opruimenMs && gedragPaden.some((p) => (lees(p) || '').includes(sl))) {
+      const dagen = Math.floor((nuMs - ts) / (24 * 3600_000));
+      z.push(waarsch('VLAG_OPRUIMEN',
+        `прапорець ${sl} перебуває в архіві понад ${opruimenDagen} дн. (${dagen} дн.), але досі згадується у змінених файлах коду — переведіть перевірену можливість у постійний стан`,
+        `vlag ${sl} staat al meer dan ${opruimenDagen} dagen (${dagen} d.) in het archief maar komt nog voor in gewijzigde codebestanden — zet om naar vaste code`));
+    }
+  }
+
   const vlaggen = Array.isArray(manifest?.functievlaggen) ? manifest.functievlaggen : [];
   const uitz = manifest?.zonderVlag;
   if (!vlaggen.length) {
@@ -215,7 +261,8 @@ export function maakOverdrachtPakket(o) {
       let mVlag = null; if (manifestBron) { try { mVlag = JSON.parse(readFileSync(manifestBron, 'utf8')); } catch { mVlag = null; } }
       const padenVlag = (git('diff', '--name-only', `${takBasis}..${head}`) || '').split('\n').filter(Boolean);
       const lees = (p) => { try { return readFileSync(join(o.wortel, p), 'utf8'); } catch { return null; } };
-      const vz = controleerFunctievlaggen({ beleid: o.beleid, manifest: mVlag, paden: padenVlag, lees, versie });
+      const migraties = existsSync(join(o.wortel, 'migrations')) ? readdirSync(join(o.wortel, 'migrations')).filter((f) => f.endsWith('.sql')).map((f) => `migrations/${f}`) : [];
+      const vz = controleerFunctievlaggen({ beleid: o.beleid, manifest: mVlag, paden: padenVlag, lees, versie, nu, migraties });
       z.push(...vz);
       if (vz.some((x) => x.ernst === 'fout')) return { zaken: z };
     }

@@ -1,29 +1,53 @@
-// UI-002: twee vlaggen (migratie 0153, standaard UIT), zelfde patroon als src/cloud-vnext/cloud-vlag.ts:
-//   • foto-dienst              — de nieuwe fotodienst «Фото» in «Мій простір» (hub/photos);
-//   • menu-kalender-foto-eigen — Календар en Фото weg uit het menu «Хмарне сховище», zelfstandig in «Мій простір»;
-//                                oude adressen cloud/calendar en cloud/photos sturen door naar hub/calendar en hub/photos.
-// Eén OFREP-verzoek per vlag per tabblad; de uitkomst staat in sessionStorage zodat het menu (dat synchroon tekent) haar
-// meteen kan lezen. Fout of geen antwoord = UIT = precies het oude gedrag.
+// Прапорці служби «Фото» (`foto-dienst`, `menu-kalender-foto-eigen`, `foto-google-drive-v1`):
+// читання через OFREP із збереженням у sessionStorage та реактивним оновленням за подією `mr:vlaggen-vernieuwd`.
+// Vlaggen van de fotodienst met sessionStorage en directe vernieuwing bij `mr:vlaggen-vernieuwd`.
 import { useEffect, useState } from 'react';
 import { api } from '../platform/client';
 import { vlagBody } from '../tech/ruimtes/ruimtes-vlag';
 
 export const FOTO_VLAG = 'foto-dienst';
 export const MENU_VLAG = 'menu-kalender-foto-eigen';
+export const FOTO_DRIVE_VLAG = 'foto-google-drive-v1';
 export const FOTO_VLAG_EVENT = 'mr:foto-vlaggen';
 const sleutel = (v: string) => `mr-vlag:${v}`;
 
 export function vlagGecachet(v: string): boolean { try { return sessionStorage.getItem(sleutel(v)) === '1'; } catch { return false; } }
 
 const lopend = new Map<string, Promise<boolean>>();
-export function laadVlag(v: string): Promise<boolean> {
-  try { const c = sessionStorage.getItem(sleutel(v)); if (c === '1') return Promise.resolve(true); if (c === '0') return Promise.resolve(false); } catch { /* geen opslag */ }
-  const al = lopend.get(v); if (al) return al;
+export function laadVlag(v: string, opnieuw = false): Promise<boolean> {
+  let vorig: string | null = null;
+  try { vorig = sessionStorage.getItem(sleutel(v)); } catch { /* проміжне сховище недоступне */ }
+  if (opnieuw) {
+    lopend.delete(v);
+    try { sessionStorage.removeItem(sleutel(v)); } catch { /* проміжне сховище недоступне */ }
+  } else {
+    if (vorig === '1') return Promise.resolve(true);
+    if (vorig === '0') return Promise.resolve(false);
+    const al = lopend.get(v); if (al) return al;
+  }
   const p = api.post(`/api/ofrep/v1/evaluate/flags/${v}`, vlagBody())
-    .then((r) => { const aan = (r.data as { value?: boolean })?.value === true; try { sessionStorage.setItem(sleutel(v), aan ? '1' : '0'); } catch { /* geen opslag */ } if (aan) window.dispatchEvent(new CustomEvent(FOTO_VLAG_EVENT)); return aan; })
+    .then((r) => {
+      const aan = (r.data as { value?: boolean })?.value === true;
+      const nieuw = aan ? '1' : '0';
+      try { sessionStorage.setItem(sleutel(v), nieuw); } catch { /* проміжне сховище недоступне */ }
+      if (opnieuw || nieuw !== vorig) {
+        try { window.dispatchEvent(new CustomEvent(FOTO_VLAG_EVENT)); } catch { /* поза оглядачем */ }
+      }
+      return aan;
+    })
     .catch(() => false);
   lopend.set(v, p);
   return p;
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', () => {
+    for (const k of [FOTO_VLAG, MENU_VLAG, FOTO_DRIVE_VLAG]) {
+      lopend.delete(k);
+      try { sessionStorage.removeItem(sleutel(k)); } catch { /* проміжне сховище недоступне */ }
+    }
+    void Promise.all([laadVlag(FOTO_VLAG, true), laadVlag(MENU_VLAG, true)]);
+  });
 }
 
 /** Synchroon (voor het menu): moet deze pagina verborgen worden? Alleen de drie pagina's van UI-002 worden hier geraakt. */
@@ -46,10 +70,21 @@ export function useFotoVlaggen(): { foto: boolean; menu: boolean } {
   const [st, setSt] = useState(() => ({ foto: vlagGecachet(FOTO_VLAG), menu: vlagGecachet(MENU_VLAG) }));
   useEffect(() => {
     let actief = true;
-    void Promise.all([laadVlag(FOTO_VLAG), laadVlag(MENU_VLAG)]).then(([foto, menu]) => { if (actief) setSt({ foto, menu }); });
-    const opnieuw = () => setSt({ foto: vlagGecachet(FOTO_VLAG), menu: vlagGecachet(MENU_VLAG) });
-    window.addEventListener(FOTO_VLAG_EVENT, opnieuw);
-    return () => { actief = false; window.removeEventListener(FOTO_VLAG_EVENT, opnieuw); };
+    const ververs = (opnieuw: boolean) => {
+      void Promise.all([laadVlag(FOTO_VLAG, opnieuw), laadVlag(MENU_VLAG, opnieuw)]).then(([foto, menu]) => {
+        if (actief) setSt({ foto, menu });
+      });
+    };
+    ververs(false);
+    const uitCache = () => setSt({ foto: vlagGecachet(FOTO_VLAG), menu: vlagGecachet(MENU_VLAG) });
+    const opGlobaalVernieuwd = () => ververs(true);
+    window.addEventListener(FOTO_VLAG_EVENT, uitCache);
+    window.addEventListener('mr:vlaggen-vernieuwd', opGlobaalVernieuwd);
+    return () => {
+      actief = false;
+      window.removeEventListener(FOTO_VLAG_EVENT, uitCache);
+      window.removeEventListener('mr:vlaggen-vernieuwd', opGlobaalVernieuwd);
+    };
   }, []);
   return st;
 }

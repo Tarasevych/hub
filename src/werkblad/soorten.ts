@@ -3,7 +3,7 @@ import type { HubTabId } from '../canoniek-navigatie';
 import type { WerkbladContext, WerkbladItem } from '../../shared/werkblad-indeling';
 
 export type Lang = 'uk' | 'nl';
-export type Dienst = 'ai' | 'mail' | 'cloud' | 'github' | 'huis' | 'identity' | 'api' | 'admin' | 'mcp';
+export type Dienst = 'ai' | 'mail' | 'cloud' | 'github' | 'crm' | 'huis' | 'identity' | 'api' | 'admin' | 'mcp';
 /** Wat een widget mag doen buiten zichzelf: een hub-tab openen, een andere dienst openen, zoeken. Nooit zelf location.* . */
 export type Acties = {
   hubTab: (tab: HubTabId) => void;

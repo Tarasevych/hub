@@ -28,7 +28,7 @@ export async function main(): Promise<number> {
   check('Стоп alleen met verbinding en niet geblokkeerd; pair alleen zonder koppeling', views.every((x, i) => (!x.actions.includes('stop') || (all[i].online && all[i].paired && !all[i].blocked)) && (!x.actions.includes('pair') || !all[i].paired)));
   // 0.6: slot «як користувач» heeft eigen teksten waar de oorzaak anders is (geen passkey, wel bevestigen); technisch = 0.5-tekst.
   const dicht = v({ ontgrendeling: 'vergrendeld' });
-  check('0.6: vergrendeld prive-slot → tekst zonder Passkey, met «підтвердити доступ»; technisch → Passkey', !/Passkey/i.test(extTekst(dicht, 'prive')[0]) && /підтвердити доступ/.test(extTekst(dicht, 'prive')[0]) && /Passkey/.test(extTekst(dicht, 'technisch')[0]) && extTekst(dicht)[0] === EXT_TEXT.locked[0]);
+  check('0.6: vergrendeld prive-slot → tekst zonder sleutel, met «підтвердити доступ»; technisch → ключем доступу', !/Passkey|ключ(?:ем)? доступу/i.test(extTekst(dicht, 'prive')[0]) && /підтвердити доступ/.test(extTekst(dicht, 'prive')[0]) && /ключем доступу/i.test(extTekst(dicht, 'technisch')[0]) && extTekst(dicht)[0] === EXT_TEXT.locked[0]);
   check('0.6: redenen zonder eigen prive-tekst vallen terug op de gewone', extTekst(v({ blocked: true }), 'prive')[0] === EXT_TEXT.blocked[0]);
 
   // ---- E-01 (audit fase 2): «Готово: ШІ активний» alleen bij een echte overgang naar aan, niet bij elke statuswissel

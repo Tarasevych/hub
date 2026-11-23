@@ -73,7 +73,7 @@ export default function McpServerBeheerCard({ tr }: { tr: Tr }) {
       <button type="button" className="mcp-btn ghost" disabled={!!busy} onClick={() => void doe('/api/mcp/server/uitrol-nu', 'uitrol')}>{busy === 'uitrol' ? <Loader2 size={14} className="mbk-spin" /> : <Rocket size={14} />}{tr('Перевірити підписані випуски', 'Op ondertekende releases controleren')}</button>
       <button type="button" className="mcp-btn ghost" disabled={!!busy} onClick={terug} data-besluit-open="terugdraaien"><Undo2 size={14} />{tr('Відкат до попереднього', 'Terug naar de vorige')}</button>
     </form>
-    <p className="mbk-note">{tr('Резервна копія і перевірка випусків вмикаються у файлі /etc/mijn-ruimte/mcp-rechten.json на сервері. Відкат — рішення з підписом вашого passkey: root перевіряє підпис сам (RUNBOOK §15).', 'Back-up en releasecontrole worden aangezet in /etc/mijn-ruimte/mcp-rechten.json op de server. Terugdraaien is een besluit met uw passkey-handtekening: root controleert die zelf (RUNBOOK §15).')}</p>
+    <p className="mbk-note">{tr('Резервна копія і перевірка випусків вмикаються у файлі /etc/mijn-ruimte/mcp-rechten.json на сервері. Відкат — рішення з підписом вашого ключа доступу: root перевіряє підпис сам (RUNBOOK §15).', 'Back-up en releasecontrole worden aangezet in /etc/mijn-ruimte/mcp-rechten.json op de server. Terugdraaien is een besluit met uw passkey-handtekening: root controleert die zelf (RUNBOOK §15).')}</p>
     <TerugdraaiMeester tr={tr} ctx={besluitCtx} open={terugOpen} onSluit={() => setTerugOpen(false)} onKlaar={() => { void load(); setMsg(tr('Відкат виконано. Стан сервера оновлено.', 'Terugdraaien uitgevoerd. De serverstand is vernieuwd.')); }} />
     </div>
   </section>;

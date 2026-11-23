@@ -18,7 +18,7 @@ const DUREN = [15, 30, 60, 120, 240, 480];
 const duurTekst = (lang: Lang, m: number) => (m < 60 ? tr(lang, `${m} хв`, `${m} min`) : tr(lang, `${m / 60} год`, `${m / 60} u`));
 const tijd = (lang: Lang, ms: number | null) => (ms ? new Date(ms).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { dateStyle: 'short', timeStyle: 'short' }) : '—');
 const FOUT: Record<string, [string, string]> = {
-  STEP_UP_REQUIRED: ['Потрібне підтвердження passkey.', 'Bevestiging met passkey nodig.'],
+  STEP_UP_REQUIRED: ['Потрібне підтвердження ключем доступу.', 'Bevestiging met passkey nodig.'],
   NAMENS_OMVANG_LEEG: ['Оберіть хоча б один розділ.', 'Kies minstens één onderdeel.'],
   NAMENS_AGENT_ONGELDIG: ['Невідомий агент.', 'Onbekende agent.'],
   NAMENS_NIET_GEVONDEN: ['Дозвіл уже завершено.', 'De toestemming is al beëindigd.'],
@@ -73,7 +73,7 @@ export default function NamensSessies({ lang, context, alleenLezen = false }: { 
     <section className='ns' data-namens-sessies='' aria-labelledby='ns-titel'>
       <header className='ns-kop'>
         <div><h2 id='ns-titel'><UserCheck aria-hidden='true' />{tr(lang, 'Агенти від імені власника', 'Agents namens de eigenaar')}</h2>
-          <p>{tr(lang, 'Тимчасовий дозвіл агенту читати адмін-розділи від вашого імені. Лише з passkey, до 8 годин. Агент не отримує вашої сесії чи cookie, усі його дії видно в журналі як дії агента. Змінювати ваш акаунт, ролі, доступи, політику ШІ чи секрети агент не може ніколи.', 'Tijdelijke toestemming voor een agent om beheerweergaven namens u te lezen. Alleen met passkey, maximaal 8 uur. De agent krijgt uw sessie of cookie niet; al zijn acties staan in het logboek als acties van de agent. Uw account, rollen, toegang, AI-beleid of geheimen kan een agent nooit wijzigen.')}</p></div>
+          <p>{tr(lang, 'Тимчасовий дозвіл агенту читати адмін-розділи від вашого імені. Лише з ключем доступу, до 8 годин. Агент не отримує вашої сесії чи cookie, усі його дії видно в журналі як дії агента. Змінювати ваш акаунт, ролі, доступи, політику ШІ чи секрети агент не може ніколи.', 'Tijdelijke toestemming voor een agent om beheerweergaven namens u te lezen. Alleen met passkey, maximaal 8 uur. De agent krijgt uw sessie of cookie niet; al zijn acties staan in het logboek als acties van de agent. Uw account, rollen, toegang, AI-beleid of geheimen kan een agent nooit wijzigen.')}</p></div>
         <div className='ns-knoppen'>
           <button type='button' onClick={() => void laden()} aria-label={tr(lang, 'Оновити', 'Vernieuwen')}><RefreshCw aria-hidden='true' /></button>
           {!alleenLezen ? <button type='button' className='ns-hoofd' onClick={() => setNieuw(true)}><Plus aria-hidden='true' />{tr(lang, 'Надати дозвіл', 'Toestemming geven')}</button> : null}
@@ -112,7 +112,7 @@ export default function NamensSessies({ lang, context, alleenLezen = false }: { 
           {data.spoken.length ? (
             <div className='ns-spoken' data-spoken={data.spoken.length}>
               <h3><Ghost aria-hidden='true' />{tr(lang, `Примарні сесії (знешкоджено): ${data.spoken.length}`, `Spooksessies (onschadelijk gemaakt): ${data.spoken.length}`)}</h3>
-              <p>{tr(lang, 'Ці записи створили старі інструменти auto_session / exchange_session (аудит 18.10.2026). Вони вже не дають доступу: сайт їх ігнорує. Їх можна видалити назавжди — з passkey.', 'Deze rijen maakten de oude instrumenten auto_session / exchange_session (audit 18.10.2026). Ze geven geen toegang meer: de site negeert ze. Definitief verwijderen kan met passkey.')}</p>
+              <p>{tr(lang, 'Ці записи створили старі інструменти auto_session / exchange_session (аудит 18.10.2026). Вони вже не дають доступу: сайт їх ігнорує. Їх можна видалити назавжди — з ключем доступу.', 'Deze rijen maakten de oude instrumenten auto_session / exchange_session (audit 18.10.2026). Ze geven geen toegang meer: de site negeert ze. Definitief verwijderen kan met passkey.')}</p>
               <ul>{data.spoken.slice(0, 10).map((s) => <li key={s.id}><code>{s.id.slice(0, 8)}</code> · {tr(lang, 'створено', 'aangemaakt')} {tijd(lang, s.createdAt)} · {s.verwijderdOp ? tr(lang, `знешкоджено ${tijd(lang, s.verwijderdOp)}`, `onschadelijk ${tijd(lang, s.verwijderdOp)}`) : tr(lang, 'ігнорується', 'genegeerd')}</li>)}</ul>
               {!alleenLezen ? <button type='button' disabled={bezig === 'spoken'} onClick={() => void spokenOpruimen()}><Eraser aria-hidden='true' />{tr(lang, 'Очистити назавжди', 'Definitief opruimen')}</button> : null}
             </div>
@@ -141,7 +141,7 @@ export default function NamensSessies({ lang, context, alleenLezen = false }: { 
             <p className='ns-klein'>{tr(lang, 'Ніколи, навіть із дозволом: зміни акаунта власника, ролей, доступів, passkey, політики ШІ, секретів, видача дозволів іншим.', 'Nooit, ook niet met toestemming: wijzigingen aan het eigenaarsaccount, rollen, toegang, passkeys, AI-beleid, geheimen, rechten aan anderen geven.')}</p>
             <div className='ns-knoppen'>
               <button type='button' onClick={() => setNieuw(false)}><X aria-hidden='true' />{tr(lang, 'Скасувати', 'Annuleren')}</button>
-              <button type='button' className='ns-hoofd' disabled={bezig === 'maak' || !omvang.length} onClick={() => void aanmaken()}><Fingerprint aria-hidden='true' />{tr(lang, `Підтвердити passkey і дозволити на ${duurTekst(lang, minuten)}`, `Met passkey bevestigen en ${duurTekst(lang, minuten)} toestaan`)}</button>
+              <button type='button' className='ns-hoofd' disabled={bezig === 'maak' || !omvang.length} onClick={() => void aanmaken()}><Fingerprint aria-hidden='true' />{tr(lang, `Підтвердити ключем доступу і дозволити на ${duurTekst(lang, minuten)}`, `Met passkey bevestigen en ${duurTekst(lang, minuten)} toestaan`)}</button>
             </div>
           </div>
         </Venster>

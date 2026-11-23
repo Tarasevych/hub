@@ -10,7 +10,7 @@
 .diag-oordeel{display:grid;gap:6px;padding:12px 14px;border-radius:12px;border:2px solid var(--line,#d0d7de);background:var(--panel,#fff)}
 .diag-oordeel h3{margin:0;font-size:1.05rem}
 .diag-oordeel.is-iedereen,.diag-oordeel.is-beide{border-color:var(--fout)}
-.diag-oordeel.is-alleen-ik{border-color:#b54708}
+.diag-oordeel.is-alleen-ik{border-color:var(--warn)}
 .diag-oordeel.is-alles-ok{border-color:var(--ok)}
 .diag-stappen{margin:4px 0 0;padding-left:20px;display:grid;gap:4px;font-weight:600}
 .diag-kolommen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -20,7 +20,7 @@
 .diag-kolom li{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:4px 8px}
 .diag-kolom li svg{width:18px;height:18px}
 .diag-kolom li.is-ok svg{color:var(--ok)}
-.diag-kolom li.is-let-op svg{color:#b54708}
+.diag-kolom li.is-let-op svg{color:var(--warn)}
 .diag-kolom li.is-fout svg{color:var(--fout)}
 .diag-kolom li.is-onbekend svg{color:var(--muted,#57606a)}
 .diag-stand{font-size:.85rem;color:var(--muted,#57606a);white-space:nowrap}
@@ -39,7 +39,7 @@
 .diag .tech-vraag-knop{width:22px;height:22px;min-width:22px;min-height:22px;padding:0;border-radius:50%;justify-content:center}
 .diag button:focus-visible,.diag textarea:focus-visible{outline:3px solid var(--accent,#1d4ed8);outline-offset:2px}
 .diag-melding{padding:8px 10px;border-radius:8px;background:var(--fout-zacht);color:var(--fout)}
-.diag-melding.is-ok{background:#e7f6ec;color:var(--ok)}
+.diag-melding.is-ok{background:var(--ok-zacht);color:var(--ok)}
 .diag-verslagen{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .diag-verslagen li{display:grid;gap:6px;padding:10px 12px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line,#d0d7de)}
 .diag-verslagen li.is-gelezen{opacity:.65}
@@ -52,20 +52,20 @@
 .diag-rls{display:grid;gap:10px}
 .diag-rls-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .diag-rls-lijst>li{display:grid;gap:6px;padding:10px 12px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line,#d0d7de)}
-.diag-rls-lijst>li.is-aan{box-shadow:inset 0 0 0 2px #067647}
+.diag-rls-lijst>li.is-aan{box-shadow:inset 0 0 0 2px var(--ok-vlak,var(--ok))}
 .diag-rls-lijst>li.is-volgende{box-shadow:inset 0 0 0 2px var(--accent,#1d4ed8)}
 .diag-rls-kop{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 .diag-rls-stand,.diag-rls-volgende{font-size:.78rem;padding:2px 8px;border-radius:999px;background:var(--surface,#eef1f4);font-weight:650}
-.diag-rls-lijst>li.is-aan .diag-rls-stand{background:#e7f6ec;color:var(--ok)}
+.diag-rls-lijst>li.is-aan .diag-rls-stand{background:var(--ok-zacht);color:var(--ok)}
 .diag-rls-volgende{background:var(--accent,#1d4ed8);color:var(--accentText,#fff)}
 .diag-rls-oordeel{font-weight:600}
 .diag-rls-oordeel.is-ok{color:var(--ok)}
-.diag-rls-oordeel.is-let-op{color:#b54708}
+.diag-rls-oordeel.is-let-op{color:var(--warn)}
 .diag-rls-routes{margin:0;padding-left:18px;font-size:.82rem;overflow-wrap:anywhere}
 .diag-rls-cmd{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .diag-rls-cmd code{flex:1 1 260px;padding:6px 8px;border-radius:6px;background:var(--surface,#eef1f4);font-size:.78rem;overflow-wrap:anywhere}
-html.theme-dark .diag-rls-oordeel.is-ok{color:#6ce9a6}
-html.theme-dark .diag-rls-oordeel.is-let-op{color:#fdb022}
+html.theme-dark .diag-rls-oordeel.is-ok{color:var(--ok)}
+html.theme-dark .diag-rls-oordeel.is-let-op{color:var(--warn)}
 .diag-beleid{display:grid;gap:10px}
 .diag-beleid-tabel{width:100%;border-collapse:collapse;font-size:.88rem}
 .diag-beleid-tabel th,.diag-beleid-tabel td{padding:6px 8px;border-bottom:1px solid var(--line,#d0d7de);text-align:right}

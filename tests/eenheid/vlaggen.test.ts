@@ -45,6 +45,8 @@ export async function main(): Promise<number> {
   const beh = await mk(`vlag-beh-${sfx}@eenheid.test`), tes = await mk(`vlag-tes-${sfx}@eenheid.test`), klant = await mk(`vlag-klant-${sfx}@eenheid.test`);
   const users = [beh.id, tes.id, klant.id];
   const sleutel = `proef-${sfx}`;
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     const tE = tab(), tB = tab(), tT = tab();
     await tp.activeren(eig, tE, 60, 'vlaggen');
@@ -137,6 +139,7 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
+    await herstelV1Kader();
     await sys.query('DELETE FROM app.feature_flags WHERE sleutel = $1', [sleutel]).catch(() => undefined);
     await sys.query('DELETE FROM app.tech_activaties WHERE user_id = ANY($1)', [eigProfielVooraf ? users : [...users, eig.id]]).catch(() => undefined);
     await sys.query('DELETE FROM app.tech_profielen WHERE user_id = ANY($1)', [eigProfielVooraf ? users : [...users, eig.id]]).catch(() => undefined);

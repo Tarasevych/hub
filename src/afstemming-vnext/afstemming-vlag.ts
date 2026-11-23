@@ -8,16 +8,32 @@ import { AFSTEMMING_VLAG } from '../../shared/afstemming-model';
 
 const SLEUTEL = `mr-vlag:${AFSTEMMING_VLAG}`;
 
-export function laadAfstemmingVlag(): Promise<boolean> {
-  try { const c = sessionStorage.getItem(SLEUTEL); if (c === '1') return Promise.resolve(true); if (c === '0') return Promise.resolve(false); } catch { /* geen opslag */ }
+export function laadAfstemmingVlag(opnieuw = false): Promise<boolean> {
+  if (opnieuw) {
+    try { sessionStorage.removeItem(SLEUTEL); } catch { /* geen opslag */ }
+  } else {
+    try { const c = sessionStorage.getItem(SLEUTEL); if (c === '1') return Promise.resolve(true); if (c === '0') return Promise.resolve(false); } catch { /* geen opslag */ }
+  }
   return api.post(`/api/ofrep/v1/evaluate/flags/${AFSTEMMING_VLAG}`, vlagBody())
     .then((r) => { const aan = (r.data as { value?: boolean })?.value === true; try { sessionStorage.setItem(SLEUTEL, aan ? '1' : '0'); } catch { /* geen opslag */ } return aan; })
     .catch(() => false);
 }
 
-/** true zodra de vlag aan staat; begint met de gecachete waarde (of UIT) en verifieert één keer. */
+/** true zodra de vlag aan staat; begint met de gecachete waarde (of UIT) en reageert op mr:vlaggen-vernieuwd. */
 export function useAfstemmingVnext(): boolean {
   const [aan, setAan] = useState(() => { try { return sessionStorage.getItem(SLEUTEL) === '1'; } catch { return false; } });
-  useEffect(() => { let actief = true; void laadAfstemmingVlag().then((v) => { if (actief) setAan(v); }); return () => { actief = false; }; }, []);
+  useEffect(() => {
+    let actief = true;
+    const herlaad = (opnieuw: boolean) => {
+      void laadAfstemmingVlag(opnieuw).then((v) => { if (actief) setAan(v); });
+    };
+    herlaad(false);
+    const opVernieuwd = () => herlaad(true);
+    window.addEventListener('mr:vlaggen-vernieuwd', opVernieuwd);
+    return () => {
+      actief = false;
+      window.removeEventListener('mr:vlaggen-vernieuwd', opVernieuwd);
+    };
+  }, []);
   return aan;
 }

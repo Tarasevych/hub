@@ -69,6 +69,8 @@ export async function main(): Promise<number> {
   const reset = () => sys.query("DELETE FROM app.rate_limits WHERE bucket LIKE 'ext-ontgrendel%' AND bucket LIKE $1", [`%${U}`]).catch(() => undefined);
   const audits = async (actie: string, uid = U) => Number((await sys.query('SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = $2', [uid, actie])).rows[0].n);
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1 = await beginV1TechKader();
   try {
     // ---------------------------------------------------------------- gebruikers, profiel, browser
     for (const [id, mail] of [[U, `ext-u-${T}@example.test`], [N, `ext-n-${T}@example.test`]]) {
@@ -482,6 +484,7 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
+    await herstelV1();
     await aiDienstOpruimen([U, N]);
     for (const s of sockets) { try { s.terminate(); } catch { /* al dicht */ } }
     eo._testReset();

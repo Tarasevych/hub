@@ -46,9 +46,9 @@ export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, n
         <XCircle aria-hidden='true' />{tr(lang, `Джерела статусу розходяться (${data.stand.afwijkingen.length}) — відкрити «Діагностика»`, `Statusbronnen lopen uiteen (${data.stand.afwijkingen.length}) — open «Діагностика»`)}</button>}
       {(versie?.samenvatting || versie?.manifest) && <details><summary>{tr(lang, 'Про цей випуск', 'Over deze release')}</summary><UitgaveBeschrijving lang={lang} manifest={versie.manifest} samenvatting={versie.samenvatting} kort />{versie.manifest && <Deelnemers lang={lang} m={versie.manifest} account={data.ik} accounts={data.kandidaten.accounts} />}</details>}
       <ul className='ut-checks'>
-        <Rij ok={data.schakelaar}>{data.schakelaar ? tr(lang, 'Схвалення passkey увімкнено', 'Goedkeuren met passkey staat aan') : tr(lang, 'Схвалення passkey вимкнено на сервері', 'Goedkeuren met passkey staat uit')}</Rij>
+        <Rij ok={data.schakelaar}>{data.schakelaar ? tr(lang, 'Схвалення ключ доступу увімкнено', 'Goedkeuren met passkey staat aan') : tr(lang, 'Схвалення ключ доступу вимкнено на сервері', 'Goedkeuren met passkey staat uit')}</Rij>
         <Rij ok={data.passkeys.length > 0}>{tr(lang, `Passkey, що схвалюють: ${data.passkeys.length}`, `Passkeys die goedkeuren: ${data.passkeys.length}`)}{data.wachtend.length ? tr(lang, ` (+${data.wachtend.length} чекає)`, ` (+${data.wachtend.length} wacht)`) : ''}</Rij>
-        {!kanPasskey && <Rij ok={false}>{tr(lang, 'Цей браузер без passkey', 'Deze browser zonder passkey')}</Rij>}
+        {!kanPasskey && <Rij ok={false}>{tr(lang, 'Цей браузер без ключа доступу', 'Deze browser zonder passkey')}</Rij>}
         <Rij ok={root ? pathOk : null}>{root ? (pathOk ? tr(lang, 'Спостерігач inbox активний', 'Inbox-bewaker actief') : tr(lang, 'Спостерігач inbox НЕ активний', 'Inbox-bewaker NIET actief')) : tr(lang, 'Діагностика root: ще немає даних', 'Root-diagnose: nog geen gegevens')}</Rij>
         <Rij ok={vers}>{root ? tr(lang, `Дані root свіжі: ${duur(root.leeftijdSec * 1000, lang)} тому`, `Root-gegevens vers: ${duur(root.leeftijdSec * 1000, lang)} geleden`) : tr(lang, 'Встановіть цей випуск через SSH один раз', 'Installeer deze release één keer via SSH')}</Rij>
         {vrij !== null && <Rij ok={vrij >= 800}>{tr(lang, `Вільно на диску: ${mb(vrij * 1048576)}`, `Vrij op schijf: ${mb(vrij * 1048576)}`)}</Rij>}
@@ -63,7 +63,7 @@ export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, n
         <button type='button' className='ut-knop' onClick={naarLog}><ScrollText aria-hidden='true' />{tr(lang, 'Журнал', 'Logboek')}</button>
         <button type='button' className='ut-knop' onClick={naarDiagnose}><Stethoscope aria-hidden='true' />{tr(lang, 'Діагностика', 'Diagnose')}</button>
         <button type='button' className='ut-knop' onClick={naarInstellen}><Settings2 aria-hidden='true' />{tr(lang, 'Налаштування', 'Instellingen')}</button>
-        <a className='ut-knop' href={canonicalNavigationUrl('identity', 'methods', lang)}><Fingerprint aria-hidden='true' />{tr(lang, 'Мої passkey', 'Mijn passkeys')}<ExternalLink aria-hidden='true' /></a>
+        <a className='ut-knop' href={canonicalNavigationUrl('identity', 'methods', lang)}><Fingerprint aria-hidden='true' />{tr(lang, 'Мої ключі доступу', 'Mijn passkeys')}<ExternalLink aria-hidden='true' /></a>
       </div>
     </section>
 

@@ -398,7 +398,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     setNieuwId(id); onNieuwId(id);
     await laden();
     void verversServerAchtergrondStand();
-    return tr(lang, `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його passkey.`, `Pakket ${a.info.versie} geüpload en door de site gecontroleerd. Het installeert niets tot u het met uw passkey goedkeurt.`);
+    return tr(lang, `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його ключ доступу.`, `Pakket ${a.info.versie} geüpload en door de site gecontroleerd. Het installeert niets tot u het met uw passkey goedkeurt.`);
     } finally { lopend.current = null; zetLokaalDeel({ bezigUpload: false }); meldLokaleUploadVoortgang(null); }
   }).finally(() => setVoortgang(null)); };
   const githubAchtergrondOphalen = () => { void doe('gh-achtergrond', async () => {
@@ -435,7 +435,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     setHersteldBanner(null);
     setNieuwId(kl.id); onNieuwId(kl.id);
     await laden();
-    return tr(lang, `Архів ${v.versie} узято з сервера без повторного завантаження і перевірено. Схваліть його passkey — і встановлення продовжиться.`, `Archief ${v.versie} is van de server genomen zonder nieuwe upload en gecontroleerd. Keur het goed met uw passkey — dan gaat de installatie verder.`);
+    return tr(lang, `Архів ${v.versie} узято з сервера без повторного завантаження і перевірено. Схваліть його ключ доступу — і встановлення продовжиться.`, `Archief ${v.versie} is van de server genomen zonder nieuwe upload en gecontroleerd. Keur het goed met uw passkey — dan gaat de installatie verder.`);
   }); };
   const pakketVerwijderen = (id: string) => void doe(`pakket-weg-${id}`, async () => { await api.post('/api/uitrol/voorstel/pakket-verwijderen', { ...context, id }); return tr(lang, 'Збережений архів прибрано з сервера.', 'Het bewaarde archief is van de server verwijderd.'); });
   // «Продовжити з місця зупинки» uit de geschiedenis/lijst: meteen hervatten als het archief er nog ligt.
@@ -504,7 +504,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
 
   return <section className='ut-kaart ut-wiz' id='uitrol-upload-anchor' data-ut-wizard data-actief={actief} aria-labelledby='ut-wiz-titel'>
     <header className='ut-kaart-kop'><div><h2 id='ut-wiz-titel'><Package aria-hidden='true' /> {tr(lang, 'Нове оновлення', 'Nieuwe update')}</h2>
-      <p className='ut-sub'>{tr(lang, 'Оберіть пакет .tar.gz — сайт сам проведе вас крок за кроком: перевірить вміст, прочитає опис змін з архіву, завантажить і попросить схвалення passkey.', 'Kies een .tar.gz-pakket — de site leidt u stap voor stap: inhoud controleren, de beschrijving uit het archief lezen, uploaden en om uw passkey vragen.')}</p></div>
+      <p className='ut-sub'>{tr(lang, 'Оберіть пакет .tar.gz — сайт сам проведе вас крок за кроком: перевірить вміст, прочитає опис змін з архіву, завантажить і попросить схвалення ключ доступу.', 'Kies een .tar.gz-pakket — de site leidt u stap voor stap: inhoud controleren, de beschrijving uit het archief lezen, uploaden en om uw passkey vragen.')}</p></div>
       {bestand && <button type='button' className='ut-knop' disabled={busy === 'pakket'} onClick={wis}><RotateCcw aria-hidden='true' />{tr(lang, 'Почати спочатку', 'Opnieuw beginnen')}</button>}
     </header>
 
@@ -552,7 +552,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         {/* Geen accept-filter: Android-bestandskiezers grijzen «.tar.gz» vaak uit; het type wordt hieronder op de inhoud gecontroleerd. */}
         <input ref={invoer} type='file' hidden data-meester-bestand onChange={(e) => void kies(e.target.files?.[0] || null)} disabled={!!busy} />
         <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie disabled={!!busy} onClick={() => invoer.current?.click()}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати файл', 'Bestand kiezen')}</button>
-        <ul className='ut-chips' aria-label={tr(lang, 'Підтримується', 'Ondersteund')}><li><FileArchive aria-hidden='true' />.tar.gz / .tgz</li><li><HardDrive aria-hidden='true' />{tr(lang, 'до', 'tot')} {mb(maxBytes)}</li><li><ShieldCheck aria-hidden='true' />{tr(lang, 'нічого не запускається без вашого passkey', 'niets draait zonder uw passkey')}</li></ul>
+        <ul className='ut-chips' aria-label={tr(lang, 'Підтримується', 'Ondersteund')}><li><FileArchive aria-hidden='true' />.tar.gz / .tgz</li><li><HardDrive aria-hidden='true' />{tr(lang, 'до', 'tot')} {mb(maxBytes)}</li><li><ShieldCheck aria-hidden='true' />{tr(lang, 'нічого не запускається без вашого ключа доступу', 'niets draait zonder uw passkey')}</li></ul>
       </div>}
       {!bestand && <div className='ut-gh-achtergrond' data-ut-gh-achtergrond>
         <div className='ut-gh-achtergrond-kop'><CloudDownload aria-hidden='true' /><div><b>{tr(lang, 'Або завантажити з GitHub у фоні на сервер', 'Of op de achtergrond uit GitHub op de server ophalen')}</b><small>{tr(lang, 'Триває на сервері навіть після переходу на іншу вкладку, інший піддомен чи закриття браузера.', 'Loopt op de server door, ook als u naar een ander tabblad of subdomein gaat of de browser sluit.')}</small></div></div>
@@ -574,10 +574,10 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       {/* UITROL-002: archieven van mislukte/verlopen/afgebroken pogingen die nog op de server liggen — hervatten zonder upload. */}
       {!bestand && hervatLijst.length > 0 && <div className='ut-hervat-lijst' data-meester-hervatbaar={hervatLijst.length}>
         <h4><PackageCheck aria-hidden='true' />{tr(lang, 'Невдалі спроби, чий архів ще на сервері', 'Mislukte pogingen waarvan het archief nog op de server ligt')}</h4>
-        <p className='ut-sub'>{tr(lang, 'Повторно завантажувати не треба: сервер ще раз звірить контрольну суму збереженого файлу, повторить перевірку й попросить ваш passkey. Root пропустить копіювання, npm ci і збірку, якщо вони вже були виконані для цього самого архіву.', 'Opnieuw uploaden is niet nodig: de server vergelijkt de controlesom van het bewaarde bestand opnieuw, herhaalt de controle en vraagt uw passkey. Root slaat kopie, npm ci en bouwen over als die voor ditzelfde archief al gedaan waren.')}</p>
+        <p className='ut-sub'>{tr(lang, 'Повторно завантажувати не треба: сервер ще раз звірить контрольну суму збереженого файлу, повторить перевірку й попросить ваш ключ доступу. Root пропустить копіювання, npm ci і збірку, якщо вони вже були виконані для цього самого архіву.', 'Opnieuw uploaden is niet nodig: de server vergelijkt de controlesom van het bewaarde bestand opnieuw, herhaalt de controle en vraagt uw passkey. Root slaat kopie, npm ci en bouwen over als die voor ditzelfde archief al gedaan waren.')}</p>
         <ul className='ut-lijst'>{hervatLijst.map((v) => <li key={v.id} data-ut-hervatbaar={v.id}><span><b className='ut-mono'>{hervatTekst(v)}</b><small className='ut-sub'> · {mb(v.bytes)}{(lang === 'uk' ? v.uitkomst?.uk : v.uitkomst?.nl) ? ` · ${lang === 'uk' ? v.uitkomst?.uk : v.uitkomst?.nl}` : ''}</small></span>
           <span className='ut-acties'>
-            <button type='button' className='ut-knop ut-knop-primair' data-ut-hervat-knop disabled={!!busy || !data.ik} onClick={() => hervatten(v)} title={tr(lang, 'Узяти збережений архів із сервера, повторити перевірку й перейти до схвалення passkey — без повторного завантаження', 'Het bewaarde archief van de server nemen, de controle herhalen en naar de passkey-goedkeuring gaan — zonder nieuwe upload')}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити встановлення', 'Installatie hervatten')}</button>
+            <button type='button' className='ut-knop ut-knop-primair' data-ut-hervat-knop disabled={!!busy || !data.ik} onClick={() => hervatten(v)} title={tr(lang, 'Узяти збережений архів із сервера, повторити перевірку й перейти до схвалення ключ доступу — без повторного завантаження', 'Het bewaarde archief van de server nemen, de controle herhalen en naar de passkey-goedkeuring gaan — zonder nieuwe upload')}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити встановлення', 'Installatie hervatten')}</button>
             <button type='button' className='ut-knop' disabled={!!busy} onClick={() => pakketVerwijderen(v.id)} title={tr(lang, 'Видалити збережений архів із сервера (наступна спроба потребуватиме повного завантаження)', 'Het bewaarde archief van de server verwijderen (de volgende poging vraagt dan een volledige upload)')}><X aria-hidden='true' />{tr(lang, 'Прибрати архів', 'Archief verwijderen')}</button>
           </span></li>)}</ul>
       </div>}
@@ -662,7 +662,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => annuleren(nieuw.id)}><X aria-hidden='true' />{tr(lang, 'Скасувати пакет', 'Pakket annuleren')}</button>
       </div>}
       {nieuw.status === 'wacht-op-goedkeuring' && andereInstallatie && <p className='ut-hint' data-ut-samenloop-hint><Activity aria-hidden='true' /> {lopendTekst(lang, andereInstallatie)} {tr(lang, 'Схвалення стане доступним, щойно воно завершиться.', 'Goedkeuren kan zodra die klaar is.')}</p>}
-      {nieuw.status === 'wacht-op-goedkeuring' && !klaar && <p className='ut-hint'>{tr(lang, 'Щоб схвалити, налаштуйте passkey у вкладці «Налаштування». Пакет чекатиме до 7 днів.', 'Stel een passkey in via het tabblad «Instellingen» om goed te keuren. Het pakket wacht tot 7 dagen.')}</p>}
+      {nieuw.status === 'wacht-op-goedkeuring' && !klaar && <p className='ut-hint'>{tr(lang, 'Щоб схвалити, налаштуйте ключ доступу у вкладці «Налаштування». Пакет чекатиме до 7 днів.', 'Stel een passkey in via het tabblad «Instellingen» om goed te keuren. Het pakket wacht tot 7 dagen.')}</p>}
     </section>}
 
     {/* 5. Встановлення */}
@@ -671,7 +671,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       {!eindStand ? <>
         <p className='ut-wacht' role='status'><Loader2 aria-hidden='true' className='ut-draai' />{nieuw.status === 'goedgekeurd' ? tr(lang, 'Схвалено. Сервер встановлює пакет — хід і термінал у реальному часі нижче.', 'Goedgekeurd. De server installeert het pakket — voortgang en terminal live hieronder.') : tr(lang, 'Стан: ', 'Status: ') + nieuw.status}</p>
         <div className='ut-acties'><button type='button' className='ut-knop' data-ut-hoofdactie onClick={naarLive}><ArrowRight aria-hidden='true' />{tr(lang, 'До ходу встановлення', 'Naar de voortgang')}</button>
-          <button type='button' className='ut-knop ut-knop-gevaar' data-ut-stop-wizard onClick={() => { naarLive(); window.setTimeout(() => window.dispatchEvent(new Event('ut-stop-open')), 250); }} title={tr(lang, 'Перервати встановлення (до перемикання). Потрібні підтвердження passkey/step-up і причина.', 'De installatie afbreken (vóór het overschakelen). Vraagt passkey/step-up en een reden.')}><X aria-hidden='true' />{tr(lang, 'Зупинити встановлення', 'Installatie stoppen')}</button></div></>
+          <button type='button' className='ut-knop ut-knop-gevaar' data-ut-stop-wizard onClick={() => { naarLive(); window.setTimeout(() => window.dispatchEvent(new Event('ut-stop-open')), 250); }} title={tr(lang, 'Перервати встановлення (до перемикання). Потрібні підтвердження ключем доступу/step-up і причина.', 'De installatie afbreken (vóór het overschakelen). Vraagt passkey/step-up en een reden.')}><X aria-hidden='true' />{tr(lang, 'Зупинити встановлення', 'Installatie stoppen')}</button></div></>
         : <div className='ut-uitkomst' data-staat={nieuw.status === 'geinstalleerd' ? 'klaar' : 'mislukt'}>
           {nieuw.status === 'geinstalleerd' ? <CheckCircle2 aria-hidden='true' /> : <XCircle aria-hidden='true' />}
           <div><b>{nieuw.status === 'geinstalleerd' ? tr(lang, `Версію ${nieuw.versie} встановлено`, `Versie ${nieuw.versie} is geïnstalleerd`) : tr(lang, `Версію ${nieuw.versie} не встановлено`, `Versie ${nieuw.versie} is niet geïnstalleerd`)}</b>

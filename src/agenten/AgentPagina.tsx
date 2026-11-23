@@ -383,17 +383,17 @@ function AgentToegangGereedheid({
                       });
                     }
                     return tr(
-                      `Політику «Доступ ШІ» підписано Passkey${uit.getekend ? ` (версія ${uit.seq})` : ''} — інструменти ${naam} розблоковано прямо тут.`,
+                      `Політику «Доступ ШІ» підписано ключем доступу${uit.getekend ? ` (версія ${uit.seq})` : ''} — інструменти ${naam} розблоковано прямо тут.`,
                       `Beleid «AI-toegang» met Passkey getekend${uit.getekend ? ` (versie ${uit.seq})` : ''} — hulpmiddelen van ${naam} direct hier vrijgegeven.`,
                     );
                   })}
                 >
                   <Fingerprint size={14} aria-hidden='true' />
                   {diag.aiPolicyState === 'agent-onbekend'
-                    ? tr(`Додати ${naam} у Доступ ШІ та підписати Passkey`, `${naam} toevoegen aan AI-toegang en met Passkey ondertekenen`)
+                    ? tr(`Додати ${naam} у Доступ ШІ та підписати ключем доступу`, `${naam} toevoegen aan AI-toegang en met Passkey ondertekenen`)
                     : diag.aiPolicyState === 'verlopen'
-                      ? tr(`Подовжити ${naam} у Доступ ШІ та підписати Passkey`, `${naam} verlengen in AI-toegang en met Passkey ondertekenen`)
-                      : tr(`Увімкнути ${naam} у Доступ ШІ та підписати Passkey`, `${naam} aanzetten in AI-toegang en met Passkey ondertekenen`)}
+                      ? tr(`Подовжити ${naam} у Доступ ШІ та підписати ключем доступу`, `${naam} verlengen in AI-toegang en met Passkey ondertekenen`)
+                      : tr(`Увімкнути ${naam} у Доступ ШІ та підписати ключем доступу`, `${naam} aanzetten in AI-toegang en met Passkey ondertekenen`)}
                 </button>
               ) : null}
               <a className={`ag-knop${beleidBlokkeert && (!diag.eigenaar || diag.aiPolicyState === 'ongeldig') ? ' ag-knop-primary' : ''}`} href={adminAiHref} data-diagnose-actie='open_ai_beleid'>

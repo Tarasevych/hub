@@ -10,14 +10,27 @@ let waarde: boolean | null = (() => { try { const v = sessionStorage.getItem(OPS
 let bezig: Promise<boolean> | null = null;
 const luisteraars = new Set<(v: boolean) => void>();
 
-export function laadAgendaVlag(): Promise<boolean> {
-  if (bezig) return bezig;
+export function laadAgendaVlag(opnieuw = false): Promise<boolean> {
+  if (opnieuw) {
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+  } else if (bezig) {
+    return bezig;
+  }
   bezig = api.post(`/api/ofrep/v1/evaluate/flags/${AGENDA_V3_VLAG}`, vlagBody()).then((r) => r.data?.value === true, () => null).then((x) => {
     const v = x === true;
     if (x === null) bezig = null; else { try { sessionStorage.setItem(OPSLAG, v ? '1' : '0'); } catch { /* geen opslag */ } }
     waarde = v; luisteraars.forEach((f) => f(v)); return v;
   });
   return bezig;
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', () => {
+    waarde = null;
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+    if (luisteraars.size > 0) void laadAgendaVlag(true);
+  });
 }
 export function useAgendaV3(): boolean {
   const [v, setV] = useState(waarde === true);

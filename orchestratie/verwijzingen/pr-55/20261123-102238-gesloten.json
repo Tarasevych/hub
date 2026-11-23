@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 55,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:38.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі 14 файлів включно з правкою fed7a741 у shared/tech-bundels.ts на 100% інтегровані в гілці integratie.",
+    "nl": "Alle 14 bestanden inclusief vastlegging fed7a741 in shared/tech-bundels.ts zitten al volledig in integratie."
+  },
+  "titel": {
+    "uk": "PERF-001: прискорення старту сторінок, попереднє стиснення статики та зменшення початкового пакунка",
+    "nl": "PERF-001: snellere paginastart, voorafgaande compressie van statische bestanden en kleinere startbundel"
+  },
+  "laatsteCommit": "fed7a7413af148354481e1c794c5286027920a13",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "PERF-001",
+    "CONSOL-001"
+  ]
+}

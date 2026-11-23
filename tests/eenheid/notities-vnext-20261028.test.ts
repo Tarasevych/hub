@@ -74,7 +74,7 @@ export async function main(): Promise<number> {
       o0?.soort === 'lijst' && o0?.kleur === 'geel' && Boolean(o0?.vast_sinds) && JSON.stringify(o0?.etiketten) === '["huis"]' && o0?.titel === 'Oud boodschappen' && o0?.inhoud_md === '- [ ] melk\n- [x] brood'
       && String(o0?.herkomst?.bron) === 'legacy-bord' && o0?.herkomst?.legacy_sha256 === sha('Oud boodschappen\n- [ ] melk\n- [x] brood'));
     check('de ruimte reist mee: de technische hub-notitie blijft technisch, de persoonlijke persoonlijk', over.find((r) => String(r.id) === legacyIds[2])?.ruimte === 'technisch' && o0?.ruimte === 'prive');
-    check('de vlag notities-vnext bestaat en staat UIT (standaard de oude pagina)', (await pool.query(`SELECT aan, standaard FROM app.feature_flags WHERE sleutel = 'notities-vnext'`)).rows[0]?.aan === false);
+    check('de vlag notities-vnext bestaat (in 0127 uit bij aanmaak, in 0335 ingeschakeld)', Boolean((await pool.query(`SELECT 1 FROM app.feature_flags WHERE sleutel = 'notities-vnext'`)).rows[0]) && /'notities-vnext'[\s\S]*?false\s*,\s*false/.test(mig));
     check('de vlag heeft een uitleg in gewone woorden (shared/vlaggen.ts)', Boolean(VLAG_UITLEG['notities-vnext']?.wat[0]) && Boolean(VLAG_UITLEG['notities-vnext']?.gevolg[1]));
 
     // ================================================================ 2. lijst, spiegel

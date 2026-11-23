@@ -55,8 +55,8 @@ export async function main(): Promise<number> {
 
   // ---------------------------------------------------------------- privé/technisch
   const tech = { items: [{ instanceId: 'a', itemId: 'wdg:tech-server', kind: 'widget' }, { instanceId: 'b', itemId: 'svc:tech-diagnose', kind: 'shortcut' }, { instanceId: 'c', itemId: 'wdg:github', kind: 'widget' }, { instanceId: 'd', itemId: 'wdg:post', kind: 'widget' }] };
-  check('persoonlijke lade: technische widget/ярлик en «binnenkort» vallen weg', normaliseerLaag(tech, 'computer', P).items.map((i) => i.instanceId).join(',') === 'd');
-  check('technische lade: technische dingen blijven', normaliseerLaag(tech, 'computer', T).items.map((i) => i.instanceId).join(',') === 'a,b,d', normaliseerLaag(tech, 'computer', T).items.map((i) => i.instanceId).join(','));
+  check('persoonlijke lade: technische widget/ярлик vallen weg; gewone widgets (github, post) blijven', normaliseerLaag(tech, 'computer', P).items.map((i) => i.instanceId).join(',') === 'c,d');
+  check('technische lade: technische én gewone dingen blijven', normaliseerLaag(tech, 'computer', T).items.map((i) => i.instanceId).join(',') === 'a,b,c,d', normaliseerLaag(tech, 'computer', T).items.map((i) => i.instanceId).join(','));
   check('registerhaak itemToegestaan beslist (planned/denied → weg)', normaliseerLaag(tech, 'computer', { ...P, itemToegestaan: (id) => id === 'wdg:post' }).items.length === 1);
 
   // ---------------------------------------------------------------- volledige v3 + overzetting

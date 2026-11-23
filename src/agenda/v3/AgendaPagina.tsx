@@ -5,9 +5,10 @@
 // RSVP, tijdzones, ETag en idempotentie blijven precies zoals ze waren. Koppelingen staan in «Календарі та сервіси».
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, List, Plus, Settings2, Sun } from 'lucide-react';
-import { huidigeTijdzone, weekDagen, type AgendaItem, type AgendaVorm } from '../../../shared/agenda-model';
+import { herhalingUitRrule, huidigeTijdzone, normaliseerVorm, weekDagen, type AgendaItem, type AgendaVorm } from '../../../shared/agenda-model';
 import { foutTekst, nieuweVorm, plaatselijk } from '../AgendaVenster';
 import * as client from '../agenda-client';
+import { useVlag } from '../../functievlag-lezen';
 import { agendaSleutel, dagVanItem, filterItems, itemsOpDag, kleurVoor, vandaagPlaatselijk } from './agenda-tijd';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../../shared/zoek-diepe-link';
 import { gebruikAgendaGegevens } from './haken/gebruikAgendaGegevens';
@@ -42,7 +43,10 @@ export default function AgendaPagina({ lang, ownerUserId }: { lang: Lang; ownerU
   const [verborgen, setVerborgen] = useState(leesVerborgen);
   const [melding, setMelding] = useState<{ ok: boolean; tekst: string } | null>(null);
   const [detail, setDetail] = useState<AgendaItem | null>(null);
-  const [bewerk, setBewerk] = useState<{ vorm: AgendaVorm; nieuw: boolean } | null>(null);
+  const [bewerk, setBewerk] = useState<{ vorm: AgendaVorm; nieuw: boolean; caldavBronHref?: string } | null>(null);
+  const [caldavBezig, setCaldavBezig] = useState(false);
+  const [caldavFout, setCaldavFout] = useState('');
+  const [caldavConflict, setCaldavConflict] = useState<AgendaVorm | null>(null);
   const [lade, setLade] = useState<LadeDeel | null>(() => (typeof location !== 'undefined' && location.hash === '#icloud' ? 'caldav' : null));
   const [koppelVenster, setKoppelVenster] = useState(() => typeof location !== 'undefined' && location.hash === '#koppelen');
   // Google koppelt in een apart venstertje; zodra de server «lezen» bevestigt, ververst de agenda zichzelf (geen navigatie weg).
@@ -50,8 +54,10 @@ export default function AgendaPagina({ lang, ownerUserId }: { lang: Lang; ownerU
   // Dit tabblad IS het Google-venstertje (na de toestemming stuurt Google terug naar returnTo = deze pagina): meteen sluiten.
   useEffect(() => { if (typeof window !== 'undefined' && window.opener && window.name === 'agenda-google-koppeling') window.close(); }, []);
   const w = gebruikAgendaWijzigingen(() => { setMelding({ ok: true, tekst: tr(lang, 'Збережено в Google.', 'Bewaard in Google.') }); void g.verversen(); });
+  const vlagKoppelingen = useVlag('agenda-koppelingen-v1', false);
   const vandaag = vandaagPlaatselijk();
   const data = g.data;
+  const caldavSchrijvenAan = vlagKoppelingen || Boolean(data?.agendaKoppelingenVlag);
   const t = data?.toegang;
   const schrijfrecht = Boolean(t?.schrijven);
   const tijdzone = data?.standaardTijdzone || huidigeTijdzone();
@@ -60,7 +66,7 @@ export default function AgendaPagina({ lang, ownerUserId }: { lang: Lang; ownerU
   useEffect(() => { try { localStorage.setItem(VERBORGEN, JSON.stringify([...verborgen])); } catch { /* geen opslag */ } }, [verborgen]);
   useEffect(() => { if (!melding) return; const i = window.setTimeout(() => setMelding(null), 5000); return () => window.clearTimeout(i); }, [melding]);
 
-  // Een mislukte actie uit het voorbeeld (wissen, antwoorden) zonder open formulier: als melding tonen.
+  // Een mislukte actie uit het paneel (wissen, antwoorden) zonder open formulier: als melding tonen.
   useEffect(() => { if (w.fout && !bewerk) setMelding({ ok: false, tekst: foutTekst(w.fout, lang) }); }, [w.fout]); // eslint-disable-line react-hooks/exhaustive-deps
   // ZOEKDIEP-001 (05.11.2026): diepe link uit de zoekpagina (?open_event_id=google:<agenda>:<gebeurtenis>, shared/zoek-diepe-link.ts).
   // Zodra het overzicht er is: naar de dag van de afspraak en haar detail openen; niet gevonden → eerlijke melding. Eén keer.
@@ -84,17 +90,57 @@ export default function AgendaPagina({ lang, ownerUserId }: { lang: Lang; ownerU
 
   const geenKoppeling = Boolean(data) && !t?.lezen && !data?.abonnementen.ics.length && !data?.abonnementen.caldav.length && !alle.length;
 
+  const bewerkbareAgendas = useMemo<client.AgendaKop[]>(() => {
+    const googleAgendas = (data?.agendas || []).map((a) => ({ ...a, schrijfbaar: a.schrijfbaar && schrijfrecht }));
+    if (!caldavSchrijvenAan) return googleAgendas;
+    const caldavAgendas: client.AgendaKop[] = [];
+    for (const acc of data?.abonnementen.caldav || []) {
+      for (const ag of acc.agendas || []) {
+        caldavAgendas.push({
+          id: `caldav:${acc.id}:${ag.url}`,
+          naam: `${ag.naam || acc.naam || 'CalDAV'} (CalDAV)`,
+          primair: false,
+          rol: 'writer',
+          schrijfbaar: true,
+          tijdzone,
+          kleur: ag.kleur || '',
+        });
+      }
+    }
+    return [...googleAgendas, ...caldavAgendas];
+  }, [data?.agendas, data?.abonnementen.caldav, schrijfrecht, caldavSchrijvenAan, tijdzone]);
+
   // Toestemming uitbreiden (schrijven) gaat sinds 29.10.2026 óók via het venstertje van gebruikGoogleKoppeling: de mens
   // verlaat de agenda niet meer, en de pagina ververst zichzelf zodra Google het schrijven bevestigt.
   const toestaan = () => google.start('schrijven');
+  const wisAlleFouten = () => { w.wisFout(); setCaldavFout(''); setCaldavConflict(null); };
   const nieuw = (dag = v.datum, uur?: number) => {
-    w.wisFout();
-    const vorm = nieuweVorm(dag, data?.agendas || [], tijdzone);
+    wisAlleFouten();
+    const vorm = nieuweVorm(dag, bewerkbareAgendas, tijdzone);
     if (uur !== undefined) { const b = `${dag}T${String(uur).padStart(2, '0')}:00`; const e = new Date(b); e.setHours(e.getHours() + 1); vorm.begin = b; vorm.einde = plaatselijk(e); }
     setDetail(null); setBewerk({ vorm, nieuw: true });
   };
   const wijzig = async (item: AgendaItem) => {
-    w.wisFout();
+    wisAlleFouten();
+    if (item.bron === 'caldav' && caldavSchrijvenAan && item.caldavAbonnementId) {
+      const snij = (iso: string) => (item.heleDag ? String(iso || '').slice(0, 10) : String(iso || '').replace(/Z$/i, '').slice(0, 16));
+      const vorm = normaliseerVorm({
+        agendaId: `caldav:${item.caldavAbonnementId}:${item.agendaId}`,
+        gebeurtenisId: item.caldavUid || item.id.split(':').slice(3).join(':'),
+        etag: item.caldavEtag || '',
+        titel: item.titel,
+        beschrijving: item.beschrijving,
+        locatie: item.locatie,
+        heleDag: item.heleDag,
+        begin: snij(item.begin),
+        einde: snij(item.einde || item.begin),
+        tijdzone,
+        herhaling: herhalingUitRrule(item.herhaling),
+      });
+      setDetail(null);
+      setBewerk({ vorm, nieuw: false, caldavBronHref: item.caldavHref });
+      return;
+    }
     const id = item.id.split(':').slice(2).join(':');
     try {
       const vers = await client.leesGebeurtenis(item.agendaId, id);
@@ -103,6 +149,112 @@ export default function AgendaPagina({ lang, ownerUserId }: { lang: Lang; ownerU
     } catch { setMelding({ ok: false, tekst: tr(lang, 'Немає зв’язку з сервером. Спробуйте ще раз.', 'Geen verbinding met de server. Probeer het opnieuw.') }); }
   };
   const vormVan = (item: AgendaItem): AgendaVorm => ({ agendaId: item.agendaId, gebeurtenisId: item.id.split(':').slice(2).join(':'), etag: item.etag } as AgendaVorm);
+
+  const ontleedCaldavDoel = (agendaId: string): { accountId: string; agendaUrl: string } | null => {
+    if (!agendaId.startsWith('caldav:')) return null;
+    const rest = agendaId.slice('caldav:'.length);
+    const snede = rest.indexOf(':');
+    if (snede < 1) return null;
+    return { accountId: rest.slice(0, snede), agendaUrl: rest.slice(snede + 1) };
+  };
+
+  const verwijderItem = async (item: AgendaItem): Promise<boolean> => {
+    if (item.bron === 'caldav' && caldavSchrijvenAan && item.caldavAbonnementId) {
+      setCaldavBezig(true);
+      setCaldavFout('');
+      try {
+        const uit = await client.caldavWisItem({
+          sleutel: client.nieuweSleutel(),
+          accountId: item.caldavAbonnementId,
+          agendaUrl: item.agendaId,
+          uid: item.caldavUid || item.id.split(':').slice(3).join(':'),
+          bronHref: item.caldavHref,
+          etag: item.caldavEtag,
+        });
+        if (uit.ok) {
+          setMelding({ ok: true, tekst: tr(lang, 'Подію видалено із зовнішнього календаря CalDAV.', 'Afspraak verwijderd uit de externe CalDAV-agenda.') });
+          void g.verversen();
+          return true;
+        }
+        setMelding({ ok: false, tekst: foutTekst(uit.fout || 'CALDAV_SCHRIJVEN_MISLUKT', lang) });
+        return false;
+      } catch {
+        setMelding({ ok: false, tekst: tr(lang, 'Немає зв’язку з сервером.', 'Geen verbinding met de server.') });
+        return false;
+      } finally {
+        setCaldavBezig(false);
+      }
+    }
+    return w.verwijderen(vormVan(item), 'none');
+  };
+
+  const gecombineerdeWijzigingen = {
+    bezig: w.bezig || caldavBezig,
+    fout: caldavFout || w.fout,
+    conflict: caldavConflict || w.conflict,
+    wisFout: wisAlleFouten,
+    bewaren: async (vorm: AgendaVorm, meld: string, negeer: boolean): Promise<boolean> => {
+      const dav = ontleedCaldavDoel(vorm.agendaId);
+      if (!dav) return w.bewaren(vorm, meld, negeer);
+      setCaldavBezig(true);
+      setCaldavFout('');
+      try {
+        const uit = await client.caldavBewaarItem({
+          sleutel: client.nieuweSleutel(),
+          accountId: dav.accountId,
+          agendaUrl: dav.agendaUrl,
+          uid: vorm.gebeurtenisId || undefined,
+          bronHref: bewerk?.caldavBronHref,
+          etag: vorm.etag || undefined,
+          negeerVersie: negeer,
+          vorm: { ...vorm, agendaId: dav.agendaUrl },
+        });
+        if (uit.ok) {
+          setCaldavConflict(null);
+          setMelding({ ok: true, tekst: tr(lang, 'Збережено у зовнішньому календарі CalDAV.', 'Bewaard in de externe CalDAV-agenda.') });
+          void g.verversen();
+          return true;
+        }
+        setCaldavConflict(uit.google ? { ...uit.google, agendaId: vorm.agendaId } : null);
+        setCaldavFout(uit.fout || 'CALDAV_SCHRIJVEN_MISLUKT');
+        return false;
+      } catch {
+        setCaldavFout('CALDAV_SCHRIJVEN_MISLUKT');
+        return false;
+      } finally {
+        setCaldavBezig(false);
+      }
+    },
+    verwijderen: async (vorm: AgendaVorm, meld: string): Promise<boolean> => {
+      const dav = ontleedCaldavDoel(vorm.agendaId);
+      if (!dav) return w.verwijderen(vorm, meld);
+      setCaldavBezig(true);
+      setCaldavFout('');
+      try {
+        const uit = await client.caldavWisItem({
+          sleutel: client.nieuweSleutel(),
+          accountId: dav.accountId,
+          agendaUrl: dav.agendaUrl,
+          uid: vorm.gebeurtenisId,
+          bronHref: bewerk?.caldavBronHref,
+          etag: vorm.etag,
+        });
+        if (uit.ok) {
+          void g.verversen();
+          return true;
+        }
+        setCaldavFout(uit.fout || 'CALDAV_SCHRIJVEN_MISLUKT');
+        return false;
+      } catch {
+        setCaldavFout('CALDAV_SCHRIJVEN_MISLUKT');
+        return false;
+      } finally {
+        setCaldavBezig(false);
+      }
+    },
+    verplaatsen: w.verplaatsen,
+    antwoorden: w.antwoorden,
+  };
 
   // Toetsenbord (buiten invoervelden): T = vandaag, N = nieuw, M/W/D/L = weergave, ←/→ = vorige/volgende.
   useEffect(() => {
@@ -175,13 +327,13 @@ export default function AgendaPagina({ lang, ownerUserId }: { lang: Lang; ownerU
       ) : null}
 
       {detail ? (
-        <GebeurtenisDetail lang={lang} item={detail} smal={smal} schrijfrecht={schrijfrecht} bezig={w.bezig} onSluit={() => setDetail(null)}
+        <GebeurtenisDetail lang={lang} item={detail} smal={smal} schrijfrecht={schrijfrecht} caldavSchrijvenAan={caldavSchrijvenAan} bezig={w.bezig || caldavBezig} onSluit={() => setDetail(null)}
           onWijzig={() => void wijzig(detail)} onToestaan={() => void toestaan()}
-          onVerwijder={() => w.verwijderen(vormVan(detail), 'none')} onAntwoord={(a) => void w.antwoorden(vormVan(detail), a).then((ok) => { if (ok) setDetail(null); })} />
+          onVerwijder={() => verwijderItem(detail)} onAntwoord={(a) => void w.antwoorden(vormVan(detail), a).then((ok) => { if (ok) setDetail(null); })} />
       ) : null}
       {bewerk ? (
-        <GebeurtenisBewerker key={`${bewerk.vorm.gebeurtenisId}-${bewerk.vorm.begin}`} lang={lang} begin={bewerk.vorm} nieuw={bewerk.nieuw} agendas={data?.agendas || []} tijdzone={tijdzone}
-          schrijfrecht={schrijfrecht} smal={smal} w={w} onSluit={() => setBewerk(null)} onToestaan={() => void toestaan()} />
+        <GebeurtenisBewerker key={`${bewerk.vorm.gebeurtenisId}-${bewerk.vorm.begin}`} lang={lang} begin={bewerk.vorm} nieuw={bewerk.nieuw} agendas={bewerkbareAgendas} tijdzone={tijdzone}
+          schrijfrecht={schrijfrecht} smal={smal} w={gecombineerdeWijzigingen} onSluit={() => setBewerk(null)} onToestaan={() => void toestaan()} />
       ) : null}
       {lade ? (
         <VerbindingenLade lang={lang} data={data} smal={smal} deel={lade} laatstGelukt={g.laatstGelukt} synchroniseren={g.synchroniseren} google={google}

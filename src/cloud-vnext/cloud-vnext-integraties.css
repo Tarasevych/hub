@@ -104,6 +104,19 @@
   .cvi-account-status, .cvi-check span { margin-left: 0; flex-basis: 100%; }
   .cvi-werkbalk-rechts { margin-left: 0; }
 }
+.cvi-stand.is-webdav { background: var(--info-zacht); color: var(--info); border-color: transparent; }
 .cvi-stand.is-register { background: transparent; border-style: dashed; } /* UI-013 fase 2 */
 /* REESTR-LOGO-001: met een merk uit het register geen eigen rand of vlak — de tegel van <Merk> is de rand. */
 .cvi-monogram.is-merk { border: 0; background: none; }
+
+/* ---- WebDAV-koppelpaneel en automatiseringsregels ---- */
+.cvi-webdav, .cvi-auto, .cvi-auto-taken { display: grid; gap: var(--ruimte-2); min-width: 0; }
+.cvi-subkop { margin: 0; display: flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-basis); }
+.cvi-webdav-kop { display: grid; gap: 2px; min-width: 0; flex: 1 1 180px; }
+.cvi-webdav-mappen { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-2); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); }
+.cvi-webdav-form { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); }
+.cvi-webdav-velden { display: grid; gap: var(--ruimte-2); grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.cvi-veld { display: grid; gap: 4px; min-width: 0; font-size: var(--tekst-klein); }
+.cvi-veld span { color: var(--muted); font-size: var(--tekst-mini); }
+.cvi-veld input, .cvi-veld select { width: 100%; min-width: 0; min-height: var(--tik-hoogte); padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); color: var(--text); font: inherit; }
+.cvi-veld input:focus-visible, .cvi-veld select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

@@ -35,7 +35,9 @@ test('catalogussoort: niets «verbonden» zonder levende controle', () => {
   assert.equal(soortVan(A('google-drive'), { ...leeg, google: { gekoppeld: true, accounts: [] } } as never), 'verbonden');
   assert.equal(soortVan(A('onedrive'), leeg as never), 'beperkt');
   assert.equal(soortVan(A('icloud-drive'), leeg as never), 'onmogelijk');
-  assert.equal(soortVan(A('nextcloud'), leeg as never), 'gepland');
+  assert.equal(soortVan(A('mega'), leeg as never), 'gepland');
+  assert.equal(soortVan(A('nextcloud'), leeg as never), 'beschikbaar');
+  assert.equal(isLevend(A('nextcloud'), { ...leeg, webdav: { koppelingen: [{ aanbieder: 'nextcloud', status: 'connected' }] } } as never), true);
   assert.equal(isLevend(A('onedrive'), { ...leeg, m4: { stagingAan: true, aanbieders: [{ id: 'onedrive', sleutelsAanwezig: true, accounts: [{ id: 'm', label: 'l', status: 'connected' }] }] } } as never), true);
   for (const a of CLOUD_VNEXT_AANBIEDERS) assert.notEqual(soortVan(a, leeg as never), 'verbonden', a.id);
 });

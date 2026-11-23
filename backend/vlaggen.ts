@@ -24,6 +24,7 @@ const vlagUit = (r: any): Vlag => ({
 });
 /** Alleen weergave (migratie 0124): evalueer leest dit nooit. */
 const gearchiveerd = new Map<string, boolean>();
+const gearchiveerdOp = new Map<string, string | null>();
 /** «Voor iedereen aan»: hoofdschakelaar aan en (100 % of standaard aan zonder procent-uitrol). Zelfde regel als evalueer. */
 export const voorIedereen = (v: Vlag) => v.aan && (v.percentage >= 100 || (v.percentage === 0 && v.standaard));
 
@@ -33,20 +34,40 @@ export const voorIedereen = (v: Vlag) => v.aan && (v.percentage >= 100 || (v.per
 // навантажувати сервер — таблиця прапорців береться з пам'яті процесу (до 15 с), а не окремим запитом до бази на кожне звертання.
 // Будь-яка зміна через це вікно (zetten, standZetten, archiveren, verwijderen) одразу очищає пам'ять, тож власник бачить зміну відразу.
 // Особисті перевірки (feature_flag_tests) — як і раніше, з бази: вони стосуються однієї людини й рідкісні.
-const VLAG_GEHEUGEN_MS = 15_000;
-let vlagGeheugen: { tot: number; rows: Record<string, unknown>[] } | null = null;
-export const vlagGeheugenLeeg = () => { vlagGeheugen = null; };
+import {
+  alleGecacheteVlagRijen,
+  registreerVlagGeheugenLuisteraar as registreerGeheugenLuisteraar,
+  wisVlagGeheugen,
+} from './vlaggen-geheugen';
+
+export const registreerVlagGeheugenLuisteraar = registreerGeheugenLuisteraar;
+export const vlagGeheugenLeeg = (): void => { wisVlagGeheugen(); };
 async function alleVlagRijen(): Promise<Record<string, unknown>[]> {
-  if (vlagGeheugen && vlagGeheugen.tot > Date.now()) return vlagGeheugen.rows;
-  const rows = (await sys().query('SELECT * FROM app.feature_flags ORDER BY sleutel')).rows as Record<string, unknown>[];
-  vlagGeheugen = { tot: Date.now() + VLAG_GEHEUGEN_MS, rows };
-  return rows;
+  return alleGecacheteVlagRijen();
+}
+
+/** Публічна перевірка «увімкнено хоч для когось» із того самого 15-секундного сховища в пам'яті (для способів входу без активного сеансу). */
+export async function vlagPubliekActief(sleutel: string): Promise<boolean> {
+  try {
+    const alle = await alleVlagRijen();
+    const r = alle.find((x) => String(x.sleutel) === sleutel);
+    if (!r) return false;
+    const v = vlagUit(r);
+    return v.aan && (v.standaard || v.percentage > 0 || v.gebruikers.length > 0);
+  } catch {
+    return false;
+  }
 }
 
 async function vlaggen(sleutels?: string[]): Promise<Map<string, Vlag>> {
   const alle = await alleVlagRijen();
   const rows = sleutels ? alle.filter((r) => sleutels.includes(String(r.sleutel))) : alle;
-  for (const r of rows) gearchiveerd.set(String(r.sleutel), !!r.gearchiveerd_op);
+  for (const r of rows) {
+    const sl = String(r.sleutel);
+    const op = r.gearchiveerd_op ? new Date(String(r.gearchiveerd_op)).toISOString() : null;
+    gearchiveerd.set(sl, !!op);
+    gearchiveerdOp.set(sl, op);
+  }
   return new Map(rows.map((r) => [String(r.sleutel), vlagUit(r)]));
 }
 
@@ -103,6 +124,7 @@ export async function beheerLijst(u: Gebruiker, tab: string) {
       mijnTestTot: t.get(x.sleutel)?.tot ?? null,
       ikInLijst: x.gebruikers.includes(u.id), alleenIk: x.gebruikers.length === 1 && x.gebruikers[0] === u.id,
       voorIedereen: voorIedereen(x), gearchiveerd: gearchiveerd.get(x.sleutel) === true,
+      gearchiveerd_op: gearchiveerdOp.get(x.sleutel) ?? null,
     })),
   };
 }
@@ -210,7 +232,7 @@ async function verwijderenIntern(u: Gebruiker, tab: string, sleutel: unknown) {
 }
 
 /** Test voor zichzelf (flags.test): waarde true/false tot het einde van de activering; null = test weg. */
-export async function testen(u: Gebruiker, tab: string, sleutel: unknown, waarde: unknown) {
+async function testenIntern(u: Gebruiker, tab: string, sleutel: unknown, waarde: unknown) {
   const { a, testen: mag } = await rechten(u, tab);
   // Geen lopend technisch profiel in dit tabblad (verlopen, gepauzeerd, verlaten): dat is iets anders dan «rol mist het recht».
   if (!a) fout('TECH_PROFIEL_NIET_ACTIEF', 403);
@@ -288,4 +310,9 @@ export async function archiveren(...a: Parameters<typeof archiverenIntern>): Ret
 /** VLAG-001: після зміни прапорця пам'ять прапорців очищається (навіть якщо зміна не вдалася). */
 export async function verwijderen(...a: Parameters<typeof verwijderenIntern>): ReturnType<typeof verwijderenIntern> {
   try { return await verwijderenIntern(...a); } finally { vlagGeheugenLeeg(); }
+}
+
+/** VLAG-001: після зміни особистої перевірки пам'ять прапорців очищається. */
+export async function testen(...a: Parameters<typeof testenIntern>): ReturnType<typeof testenIntern> {
+  try { return await testenIntern(...a); } finally { vlagGeheugenLeeg(); }
 }

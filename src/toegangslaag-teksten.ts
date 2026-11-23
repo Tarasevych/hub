@@ -20,7 +20,7 @@ const COPY: Record<string, Row> = {
     nl: 'De wijziging kon niet worden opgeslagen. Probeer opnieuw.'
   },
   t17: {
-    uk: 'Цей браузер не підтримує passkey.',
+    uk: 'Цей браузер не підтримує ключ доступу.',
     nl: 'Deze browser ondersteunt geen passkey.'
   },
   t18: {
@@ -28,7 +28,7 @@ const COPY: Record<string, Row> = {
     nl: 'Passkey'
   },
   t19: {
-    uk: 'Passkey не підтверджено. Спробуйте ще раз або введіть код.',
+    uk: 'Ключ доступу не підтверджено. Спробуйте ще раз або введіть код.',
     nl: 'Passkey niet bevestigd. Probeer opnieuw of voer de code in.'
   },
   t20: {

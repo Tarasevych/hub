@@ -26,7 +26,7 @@ const INFO: Record<Kaart['sleutel'], { icoon: typeof Shield; naam: [string, stri
   rls: { icoon: Database, naam: ['RLS через роль застосунку', 'RLS via de rol van de app'], wat: ['База даних сама не віддає застосунку чужих рядків (політики на рівні рядків для mijnruimte_app). Зараз — режим аудиту.', 'De database geeft de app zelf geen rijen van anderen (rijbeveiliging voor mijnruimte_app). Nu: audit-modus.'] },
 };
 const FOUT: Record<string, [string, string]> = {
-  STEP_UP_REQUIRED: ['Потрібне підтвердження passkey.', 'Bevestiging met passkey nodig.'],
+  STEP_UP_REQUIRED: ['Потрібне підтвердження ключем доступу.', 'Bevestiging met passkey nodig.'],
   TECH_PROFIEL_VEREIST: ['Спершу активуйте технічний профіль у цій вкладці.', 'Activeer eerst een technisch profiel in dit tabblad.'],
   OWNER_REQUIRED: ['Лише власник.', 'Alleen de eigenaar.'],
   NIET_KLAAR: ['Не всі перевірки готовності пройдено — увімкнення відхилено сервером.', 'Niet alle gereedheidscontroles slagen — de server weigert het aanzetten.'],
@@ -83,7 +83,7 @@ export default function Beveiliging({ lang, ctx }: { lang: Lang; ctx: Ctx }) {
   return (
     <section className='bvs' aria-label={tr(lang, 'Захист', 'Bescherming')}>
       <div className='bvs-kop'>
-        <p>{tr(lang, 'Три захисти, які досі вмикалися лише через SSH. Кожен можна безпечно увімкнути одним рішенням: спершу сервер перевіряє готовність на живій базі й службах, після увімкнення 10 хвилин стежить за помилками і в разі сплеску сам вимикає. Вимкнути можна будь-коли, без passkey.',
+        <p>{tr(lang, 'Три захисти, які досі вмикалися лише через SSH. Кожен можна безпечно увімкнути одним рішенням: спершу сервер перевіряє готовність на живій базі й службах, після увімкнення 10 хвилин стежить за помилками і в разі сплеску сам вимикає. Вимкнути можна будь-коли, без ключа доступу.',
           'Drie beschermingen die tot nu toe alleen via SSH aan konden. Elk kan veilig met één beslissing aan: eerst controleert de server de gereedheid op de echte database en diensten, na het aanzetten bewaakt hij 10 minuten de fouten en zet hij bij een piek zelf uit. Uitzetten kan altijd, zonder passkey.')}</p>
         <div className='bvs-kop-knoppen'>
           <label>{tr(lang, 'Період', 'Periode')}

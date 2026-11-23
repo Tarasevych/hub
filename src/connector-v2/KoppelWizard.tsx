@@ -151,7 +151,7 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
 
         {stap === 'beveiliging' ? (
           <section className='v2-wizard-deel'>
-            <p className='v2-uitleg'><KeyRound size={16} aria-hidden='true' />{tr('У налаштуваннях ви ввімкнули додаткове підтвердження для кожного нового підключення. Підтвердіть passkey або кодом із застосунку.', 'In de instellingen zette u extra bevestiging aan voor elke nieuwe koppeling. Bevestig met een passkey of een code uit de app.')}</p>
+            <p className='v2-uitleg'><KeyRound size={16} aria-hidden='true' />{tr('У налаштуваннях ви ввімкнули додаткове підтвердження для кожного нового підключення. Підтвердіть ключ доступу або кодом із застосунку.', 'In de instellingen zette u extra bevestiging aan voor elke nieuwe koppeling. Bevestig met een passkey of een code uit de app.')}</p>
             {bevestigd ? <p className='v2-ok'><Check size={16} />{tr('Підтверджено', 'Bevestigd')}</p> : <button type='button' className='mcp-consent-primary' onClick={() => void bevestigNu()}><ShieldCheck size={16} />{tr('Підтвердити зараз', 'Nu bevestigen')}</button>}
           </section>
         ) : null}
@@ -162,7 +162,7 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
             <button type='button' className='mcp-consent-secondary' disabled={pauze.actief} onClick={anderAccount}><LogIn size={16} />{pauze.actief && pauzeTekst ? pauzeTekst.knop : tr('Підключити інший обліковий запис', 'Ander account koppelen')}</button>
             <p className='v2-uitleg'>{tr('Запит збережеться: після входу вікно відкриється знову. Також можна перемкнути обліковий запис у меню вгорі праворуч.', 'Het verzoek blijft bewaard: na het aanmelden opent dit venster opnieuw. U kunt ook van account wisselen in het menu rechtsboven.')}</p>
             {!v.methoden.passkey && !v.methoden.totp ? (
-              <p className='v2-let' role='note'><ShieldQuestion size={16} aria-hidden='true' />{tr('У вас немає ні passkey, ні застосунку-автентифікатора. Ми радимо додати їх у «Налаштування → Безпека» і ввімкнути «Додаткове підтвердження підключень» у вкладці «Конектори»: тоді навіть викрадена сесія не зможе непомітно підключити ШІ до вашого простору.', 'U hebt geen passkey en geen authenticator-app. We raden aan ze toe te voegen onder «Instellingen → Beveiliging» en «Extra bevestiging van koppelingen» aan te zetten op het tabblad «Connectors»: dan kan zelfs een gestolen sessie niet ongemerkt een AI aan uw ruimte koppelen.')}</p>
+              <p className='v2-let' role='note'><ShieldQuestion size={16} aria-hidden='true' />{tr('У вас немає ні ключ доступу, ні застосунку-автентифікатора. Ми радимо додати їх у «Налаштування → Безпека» і ввімкнути «Додаткове підтвердження підключень» у вкладці «Конектори»: тоді навіть викрадена сесія не зможе непомітно підключити ШІ до вашого простору.', 'U hebt geen passkey en geen authenticator-app. We raden aan ze toe te voegen onder «Instellingen → Beveiliging» en «Extra bevestiging van koppelingen» aan te zetten op het tabblad «Connectors»: dan kan zelfs een gestolen sessie niet ongemerkt een AI aan uw ruimte koppelen.')}</p>
             ) : null}
           </section>
         ) : null}

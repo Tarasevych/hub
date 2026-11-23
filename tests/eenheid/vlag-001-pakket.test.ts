@@ -60,5 +60,24 @@ export async function main(): Promise<number> {
   const z9b = controleerFunctievlaggen({ beleid, manifest: { zonderVlag: { reden: 'herstel', toelichting: 'коротко' } }, paden: ['src/proef/Functie.tsx'], lees, versie }) as Zaak[];
   check('zonderVlag met ongeldige reden of te korte toelichting → VLAG_ONTBREEKT', heeftFout(z9, 'VLAG_ONTBREEKT') && heeftFout(z9b, 'VLAG_ONTBREEKT'), `${codes(z9)} | ${codes(z9b)}`);
 
+  // 10. Архівний прапорець (> 30 днів), який досі згадується у змінених файлах коду → лише попередження VLAG_OPRUIMEN (не блокує випуск).
+  const oudBestanden: Record<string, string> = {
+    ...bestanden,
+    'migrations/0996_archief.sql': "UPDATE app.feature_flags SET gearchiveerd_op = '2026-10-01T00:00:00Z' WHERE sleutel = 'oude-archief-vlag';",
+    'src/proef/Oud.tsx': "const v = useVlag('proef-functie-v1', false) || useVlag('oude-archief-vlag', false);",
+  };
+  const z10 = controleerFunctievlaggen({
+    beleid,
+    manifest: { functievlaggen: [{ sleutel: 'proef-functie-v1', migratie: '0999_proef.sql' }] },
+    paden: ['src/proef/Oud.tsx', 'migrations/0996_archief.sql'],
+    lees: (p: string) => oudBestanden[p] ?? null,
+    versie: '20261124-100000',
+  }) as Zaak[];
+  check(
+    'gearchiveerde vlag (> 30 dagen) nog in gewijzigde code → niet-blokkerende waarschuwing VLAG_OPRUIMEN',
+    z10.length === 1 && z10[0].ernst === 'waarschuwing' && z10[0].code === 'VLAG_OPRUIMEN' && !heeftFout(z10, 'VLAG_OPRUIMEN'),
+    codes(z10),
+  );
+
   return einde();
 }

@@ -29,7 +29,7 @@ export const CATEGORIEEN: readonly Categorie[] = [
   { id: 'toegang', uk: 'Способи входу та доступ', nl: 'Aanmeldmethoden en toegang', patroon: '^(access\\.|aanmeld\\.|aanmelden\\.|bevestigen\\.|beveiliging\\.|code\\.|inlog\\.|koppelen\\.|koppeling\\.|matrix\\.gewijzigd$|niet-ik$|fout-symbool$|plaats-eis\\.|stap-op$|telegram-sterk$|telegram\\.|venster\\.geopend$|widget\\.|wijziging\\.|owner\\.step_up|passkey_|toegang|toegangscode_|gast_)' },
   { id: 'sessie', uk: 'Входи та сесії', nl: 'Aanmeldingen en sessies', patroon: '^(sign_in|owner_sign_in_|sessie\\.|identity_linked|email_conflict|service_handoff|owner\\.(session|tab|redirect|auth|account|account-menu|security|browser)\\.|owner\\.browser\\.|GOOGLE_|LOGIN_|TRANSACTION_|PRIMARY_REDIRECT_|POPUP_|IDENTITY_|SERVICE_SESSION_)' },
   { id: 'mail', uk: 'Пошта', nl: 'E-mail', patroon: '^(owner\\.mail\\.|mail\\.)' },
-  { id: 'integraties', uk: 'Інтеграції', nl: 'Integraties', patroon: '^(integration\\.|owner\\.(connectors|github|cloud|google|calendar|hub)|cloud\\.|agenda\\.|huis\\.|notitie\\.|connector_|connectors\\.)' },
+  { id: 'integraties', uk: 'Інтеграції', nl: 'Integraties', patroon: '^(integration\\.|owner\\.(connectors|github|cloud|google|calendar|hub|klantrelatie|social)|cloud\\.|agenda\\.|huis\\.|notitie\\.|connector_|connectors\\.)' },
   { id: 'privacy', uk: 'Приватність', nl: 'Privacy', patroon: '^(owner\\.privacy|privacy\\.|owner\\.profile|owner\\.notifications|owner\\.meldingen\\.|owner\\.ui)' },
 ];
 export const CATEGORIE_OVERIG: Categorie = { id: 'overig', uk: 'Інше', nl: 'Overig', patroon: '' };
@@ -49,7 +49,7 @@ export function categorieSql(kolom = 'action'): string {
 }
 
 /** Technische ruis: gebeurtenissen die elke paginalading of aanmeldstap schrijft. Standaard verborgen, nooit verwijderd. */
-export const RUIS_PATROON = '^(owner\\.admin\\.bootstrap|owner\\.admin\\.audit\\.viewed|owner\\.notifications\\.read|owner\\.meldingen\\.ecosysteem\\.(actie|profiel)|owner\\.session\\.rotated|owner\\.session\\.refresh|owner\\.browser\\.grant\\.(used|cookie)|owner\\.diagnose\\.gelezen|owner\\.admin\\.diagnostics\\.read|owner\\.mcp\\.tools\\.list|owner\\.extensie\\.beheer\\.bekeken|owner\\.terminal\\.opdrachten\\.bekeken|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)|owner\\.ui\\.|GOOGLE_REDIRECT|GOOGLE_CALLBACK|LOGIN_CLICK|POPUP_|PRIMARY_REDIRECT_|TRANSACTION_|IDENTITY_LOADED|SERVICE_SESSION_CREATED|owner\\.redirect\\.session)';
+export const RUIS_PATROON = '^(owner\\.admin\\.bootstrap|owner\\.admin\\.audit\\.viewed|owner\\.notifications\\.read|owner\\.meldingen\\.(ecosysteem\\.(actie|profiel)|bijlage\\.telegram)|owner\\.session\\.rotated|owner\\.session\\.refresh|owner\\.browser\\.grant\\.(used|cookie)|owner\\.diagnose\\.gelezen|owner\\.admin\\.diagnostics\\.read|owner\\.mcp\\.tools\\.list|owner\\.extensie\\.beheer\\.bekeken|owner\\.terminal\\.opdrachten\\.bekeken|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)|owner\\.ui\\.|GOOGLE_REDIRECT|GOOGLE_CALLBACK|LOGIN_CLICK|POPUP_|PRIMARY_REDIRECT_|TRANSACTION_|IDENTITY_LOADED|SERVICE_SESSION_CREATED|owner\\.redirect\\.session)';
 const RUIS_RE = new RegExp(RUIS_PATROON);
 export const isRuis = (action: string) => RUIS_RE.test(action);
 
@@ -380,7 +380,10 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'access.step-up.onthouden': ['Додаткове підтвердження запам’ятовано для цього пристрою', 'Extra bevestiging onthouden voor dit apparaat'],
   'admin_user_deleted': ['Обліковий запис користувача видалено адміністратором', 'Gebruikersaccount verwijderd door beheerder'],
   'agenda.caldav.afgekapt': ['Синхронізацію CalDAV обмежено через надмірний розмір відповіді', 'CalDAV-synchronisatie begrensd wegens te groot antwoord'],
+  'agenda.caldav.opgeslagen': ['Збережено подію у зовнішньому календарі CalDAV', 'Afspraak opgeslagen in externe CalDAV-agenda'],
+  'agenda.caldav.verwijderd': ['Видалено подію із зовнішнього календаря CalDAV', 'Afspraak verwijderd uit externe CalDAV-agenda'],
   'agenda.extern.status_ongeldig': ['Зовнішній календар повернув неочікуваний стан', 'Externe agenda gaf een ongeldige status terug'],
+  'agenda.ics.geexporteerd': ['Вивантажено файл події календаря (ICS)', 'Agendabestand (ICS) uitgevoerd'],
   'agenda.tempo.geweigerd': ['Занадто часті запити до календаря призупинено', 'Te frequente agendaverzoeken tijdelijk begrensd'],
   'apparaat.gedeblokkeerd': ['Знято блокування пристрою після перевірки власником', 'Blokkering van apparaat opgeheven na controle door eigenaar'],
   'beveiliging.json-vereist': ['Запит відхилено захистом формату даних (очікувався JSON)', 'Verzoek geweigerd door formaatbeveiliging (JSON vereist)'],
@@ -389,11 +392,16 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'bevestigen.fout-symbool': ['Підтвердження дії відхилено: обрано хибний символ', 'Actiebevestiging geweigerd: onjuist symbool gekozen'],
   'bevestigen.niet-ik': ['Тривога безпеки: чужу спробу дії заблоковано кнопкою «Це не я»', 'Beveiligingsalarm: poging geblokkeerd via «Dit ben ik niet»'],
   'bevestigen.telegram': ['Чутливу дію підтверджено через Telegram', 'Gevoelige handeling bevestigd via Telegram'],
+  'cloud.automatisering.aangemaakt': ['Створено правило автоматичного впорядкування файлів у сховищі', 'Automatiseringsregel voor bestanden in opslag aangemaakt'],
+  'cloud.automatisering.uitgevoerd': ['Виконано правило автоматичного впорядкування файлів у сховищі', 'Automatiseringsregel voor bestanden in opslag uitgevoerd'],
+  'cloud.automatisering.verwijderd': ['Видалено правило автоматичного впорядкування файлів у сховищі', 'Automatiseringsregel voor bestanden uit opslag verwijderd'],
   'cloud.google-drive.account.selected': ['Обрано обліковий запис Google Диску для сховища', 'Google Drive-account gekozen voor opslag'],
   'cloud.google-drive.disconnected': ['Google Диск від’єднано від сховища', 'Google Drive losgekoppeld van opslag'],
   'cloud.google-suite.consent.completed': ['Надано дозвіл доступу до служб Google', 'Toestemming voor Google-diensten voltooid'],
   'cloud.google-suite.consent.started': ['Розпочато підключення служб Google', 'Koppeling van Google-diensten gestart'],
   'cloud.google-suite.legacy-refresh-copies.removed': ['Очищено застарілі дублікати маркерів оновлення Google', 'Verouderde kopieën van Google-vernieuwingstokens verwijderd'],
+  'cloud.webdav.gekoppeld': ['Підключено зовнішнє хмарне сховище за захищеним протоколом', 'Externe cloudopslag via beveiligd protocol gekoppeld'],
+  'cloud.webdav.ontkoppeld': ['Від’єднано зовнішнє хмарне сховище', 'Externe cloudopslag losgekoppeld'],
   'code.alarm': ['Спрацювало попередження безпеки для персонального коду', 'Beveiligingswaarschuwing voor persoonlijke code geactiveerd'],
   'code.hersteld': ['Персональний код безпеки відновлено', 'Persoonlijke beveiligingscode hersteld'],
   'code.in-chat': ['Виявлено спробу передати код у відкритій бесіді — захист спрацював', 'Poging om code in chat te delen gedetecteerd — bescherming actief'],
@@ -432,7 +440,11 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'mcp_console_legacy_imported': ['Перенесено попередні ключі доступу консолі MCP', 'Eerdere MCP-consolesleutels overgezet'],
   'niet-ik': ['Тривога пристрою: невідому спробу відхилено кнопкою «Це не я»', 'Apparaatalarm: onbekende poging afgewezen met «Dit ben ik niet»'],
   'notitie.aangemaakt': ['Створено нову нотатку', 'Nieuwe notitie aangemaakt'],
+  'notitie.agenda.afspraak_gemaakt': ['Створено подію календаря з нотатки за підтвердженням', 'Agenda-afspraak vanuit notitie na bevestiging aangemaakt'],
+  'notitie.agenda.gekoppeld': ['Пов’язано нотатку з подією календаря', 'Notitie gekoppeld aan agenda-afspraak'],
+  'notitie.agenda.ontkoppeld': ['Від’єднано нотатку від події календаря', 'Notitie losgekoppeld van agenda-afspraak'],
   'notitie.import': ['Імпортовано набір нотаток', 'Notities geïmporteerd'],
+  'notitie.taak.aangemaakt': ['Створено завдання простору з нотатки', 'Ruimtetaak vanuit notitie aangemaakt'],
   'notitie.zoeken.te_zwaar': ['Пошуковий запит у нотатках обмежено через надмірну складність', 'Zoekopdracht in notities begrensd wegens omvang'],
   'orch_inlevering': ['Координація ШІ: прийнято передачу роботи агента в чергу', 'AI-coördinatie: werkoverdracht van agent in wachtrij geplaatst'],
   'orch_inlevering_begonnen': ['Координація ШІ: розпочато перевірку передачі агента', 'AI-coördinatie: controle van werkoverdracht gestart'],
@@ -587,6 +599,25 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'workspace_share_rate_limited': ['Тимчасово обмежено занадто часті запрошення до спільного простору', 'Uitnodigingen voor gedeelde ruimte tijdelijk begrensd'],
   'zoek.index.starten': ['Запущено оновлення пошукового покажчика', 'Opbouw van zoekindex gestart'],
   'zoek.index.stoppen': ['Зупинено фонову побудову пошукового покажчика', 'Opbouw van zoekindex gestopt'],
+  'owner.meldingen.bijlage.telegram': ['Надіслано картку вкладення у Telegram', 'Bijlagekaart naar Telegram verzonden'],
+  'owner.klantrelatie.klant': ['Створено досьє клієнта', 'Klantdossier aangemaakt'],
+  'owner.klantrelatie.aanvraag': ['Зафіксовано нове звернення клієнта', 'Nieuwe klantaanvraag vastgelegd'],
+  'owner.klantrelatie.wijzig': ['Оновлено досьє клієнта', 'Klantdossier bijgewerkt'],
+  'owner.klantrelatie.wissen': ['Видалено досьє клієнта', 'Klantdossier verwijderd'],
+  'owner.klantrelatie.kans': ['Створено угоду в клієнтських взаєминах', 'Verkoopkans aangemaakt'],
+  'owner.klantrelatie.fase': ['Змінено етап угоди з клієнтом', 'Fase van verkoopkans gewijzigd'],
+  'owner.klantrelatie.contact': ['Записано взаємодію з клієнтом', 'Contactmoment vastgelegd'],
+  'owner.klantrelatie.taak': ['Додано завдання щодо клієнта', 'Vervolgtaak voor klant toegevoegd'],
+  'owner.klantrelatie.afronden': ['Завершено завдання щодо клієнта', 'Vervolgtaak voor klant afgerond'],
+  'owner.klantrelatie.afspraak': ['Заплановано зустріч із клієнтом у календарі', 'Afspraak met klant ingepland in agenda'],
+  'owner.klantrelatie.hulp': ['Підготовлено чернетку за досьє клієнта', 'Tekstvoorstel voor klantdossier voorbereid'],
+  'integration.adapter.bewaard': ['Збережено зашифроване підключення перехідника зовнішньої служби', 'Versleutelde adapterkoppeling van externe dienst opgeslagen'],
+  'owner.cloud.verbinding.gecontroleerd': ['Перевірено стан хмарного підключення у Центрі підключень', 'Status van cloudkoppeling gecontroleerd in Verbindingencentrum'],
+  'owner.cloud.verbinding.ontkoppeld': ['Від’єднано хмарне підключення у Центрі підключень', 'Cloudkoppeling losgekoppeld in Verbindingencentrum'],
+  'owner.social.profiel.opslaan': ['Збережено канал або профіль у службі «Соціальні мережі»', 'Kanaal of profiel opgeslagen in dienst «Sociale netwerken»'],
+  'owner.social.profiel.verwijderen': ['Видалено канал або профіль у службі «Соціальні мережі»', 'Kanaal of profiel verwijderd in dienst «Sociale netwerken»'],
+  'owner.social.bericht.opslaan': ['Збережено чернетку або допис у службі «Соціальні мережі»', 'Concept of bericht opgeslagen in dienst «Sociale netwerken»'],
+  'owner.social.bericht.verwijderen': ['Видалено чернетку або допис у службі «Соціальні мережі»', 'Concept of bericht verwijderd in dienst «Sociale netwerken»'],
 };
 
 const TOKEN_UK: Record<string, string> = { owner: '', admin: 'Адмін', mcp: 'ШІ', tool: 'інструмент', grant: 'дозвіл', created: 'створено', updated: 'змінено', deleted: 'видалено', revoked: 'відкликано', approved: 'схвалено', denied: 'відхилено', opened: 'відкрито', closed: 'закрито', login: 'вхід', logout: 'вихід' };

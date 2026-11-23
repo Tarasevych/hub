@@ -227,8 +227,8 @@ export async function main(): Promise<number> {
     JSON.stringify(in_('Звичайна пошта', 'src/MailFunctioneelWeergave.tsx')) === '["mail/local"]' && in_('Відкласти без провини', 'src/MailFunctioneelWeergave.tsx').includes('mail/local') && in_('Поштові акаунти', 'src/MailFunctioneelWeergave.tsx').includes('mail/accounts'));
   check('6f GitHub: «Шукати» → research, «Проєкти GitHub» → projects, «Повторити» (na de accounts-return) niet op accounts',
     in_('Шукати', 'src/GitHubWeergave.tsx').includes('github/research') && in_('Проєкти GitHub', 'src/GitHubWeergave.tsx').includes('github/projects') && !in_('Повторити', 'src/GitHubWeergave.tsx').includes('github/accounts'));
-  check('6a «Підтвердити видалення» (Instellingen) → identity/account, niet personalization', JSON.stringify(echt('Підтвердити видалення')) === '["identity/account"]', echt('Підтвердити видалення').join(','));
-  check('6b «Видалити поточний акаунт» (kop) → identity/account', UI_ELEMENTEN.some((e) => e.soort === 'sectie' && e.uk === 'Видалити поточний акаунт' && e.tab === 'account'));
+  check('6a «Підтвердити видалення» (Instellingen) → identity/account, niet personalization', JSON.stringify(in_('Підтвердити видалення', 'src/InstellingencentrumWeergave.tsx')) === '["identity/account"]' && !echt('Підтвердити видалення').includes('identity/personalization'), echt('Підтвердити видалення').join(','));
+  check('6b «Видалити поточний обліковий запис» (kop) → identity/account', UI_ELEMENTEN.some((e) => e.soort === 'sectie' && e.uk === 'Видалити поточний обліковий запис' && e.tab === 'account'));
   check('6c «Зберегти меню» → identity/menu; «Додати свій сервіс» → identity/widgets', echt('Зберегти меню').includes('identity/menu') && echt('Додати свій сервіс').includes('identity/widgets'));
   check('6d «Перейменувати» van de sleutelkluis (API-platform) → api/vault', UI_ELEMENTEN.some((e) => e.uk === 'Перейменувати' && e.bestand === 'src/ApiPlatformWeergave.tsx' && e.dienst === 'api' && e.tab === 'vault'));
   const BC = 'src/BeheerConsoleWeergave.tsx';

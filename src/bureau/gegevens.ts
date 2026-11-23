@@ -55,5 +55,91 @@ export function haalDiensten(force = false): Promise<TabelRij[]> {
   return verzoek;
 }
 
+export type BureauGithub = {
+  ruimte: string;
+  gekoppeld: boolean;
+  kluisGesloten: boolean;
+  accounts: Array<{ pad: 'oauth' | 'app'; login: string; repoAantal: number; bijgewerktOp: number }>;
+  opslagplaatsen: string[];
+  recenteActies: Array<{ id: string; actie: string; resultaat: string; op: number }>;
+};
+export type BureauAiToegang = {
+  ruimte: string;
+  samenvatting: {
+    verbindingen: number;
+    toestemmingen: number;
+    apparaten: number;
+    apparatenVerbonden: number;
+    browsersActief: number;
+  };
+  verbindingen: Array<{ id: string; naam: string; scope: string; laatstGebruiktOp: number }>;
+  toestemmingen: Array<{ id: string; agentId: string; mogelijkheid: string; altijd: boolean; verlooptOp: number }>;
+  apparaten: Array<{ id: string; naam: string; platform: string; online: boolean; laatstGezienOp: number }>;
+};
+
+const githubBureauBak = bak<BureauGithub>();
+const aiBureauBak = bak<BureauAiToegang>();
+
+export function haalBureauGithub(force = false): Promise<BureauGithub> {
+  if (!force && githubBureauBak.waarde && Date.now() - githubBureauBak.op < VERS) return Promise.resolve(githubBureauBak.waarde);
+  if (githubBureauBak.lopend) return githubBureauBak.lopend;
+  const verzoek = api.post('/api/owner/hub/werkblad/github', hubAuthBody()).then((r) => {
+    const d = (r.data ?? {}) as Record<string, unknown>;
+    const waarde: BureauGithub = {
+      ruimte: tekst(d.ruimte, 20) || 'prive',
+      gekoppeld: d.gekoppeld === true,
+      kluisGesloten: d.kluisGesloten === true,
+      accounts: rij(d.accounts).map((x) => {
+        const o = (x || {}) as Record<string, unknown>;
+        return { pad: o.pad === 'app' ? 'app' : 'oauth', login: tekst(o.login, 80), repoAantal: Number(o.repoAantal || 0), bijgewerktOp: Number(o.bijgewerktOp || 0) };
+      }),
+      opslagplaatsen: rij(d.opslagplaatsen).map((x) => tekst(x, 140)).filter(Boolean),
+      recenteActies: rij(d.recenteActies).map((x) => {
+        const o = (x || {}) as Record<string, unknown>;
+        return { id: tekst(o.id, 80), actie: tekst(o.actie, 120), resultaat: tekst(o.resultaat, 40), op: Number(o.op || 0) };
+      }),
+    };
+    githubBureauBak.waarde = waarde; githubBureauBak.op = Date.now();
+    return waarde;
+  }).finally(() => { githubBureauBak.lopend = null; });
+  githubBureauBak.lopend = verzoek;
+  return verzoek;
+}
+
+export function haalBureauAiToegang(force = false): Promise<BureauAiToegang> {
+  if (!force && aiBureauBak.waarde && Date.now() - aiBureauBak.op < VERS) return Promise.resolve(aiBureauBak.waarde);
+  if (aiBureauBak.lopend) return aiBureauBak.lopend;
+  const verzoek = api.post('/api/owner/hub/werkblad/ai-toegang', hubAuthBody()).then((r) => {
+    const d = (r.data ?? {}) as Record<string, unknown>;
+    const s = (d.samenvatting && typeof d.samenvatting === 'object' ? d.samenvatting : {}) as Record<string, unknown>;
+    const waarde: BureauAiToegang = {
+      ruimte: tekst(d.ruimte, 20) || 'prive',
+      samenvatting: {
+        verbindingen: Number(s.verbindingen || 0),
+        toestemmingen: Number(s.toestemmingen || 0),
+        apparaten: Number(s.apparaten || 0),
+        apparatenVerbonden: Number(s.apparatenVerbonden || 0),
+        browsersActief: Number(s.browsersActief || 0),
+      },
+      verbindingen: rij(d.verbindingen).map((x) => {
+        const o = (x || {}) as Record<string, unknown>;
+        return { id: tekst(o.id, 80), naam: tekst(o.naam, 80), scope: tekst(o.scope, 120), laatstGebruiktOp: Number(o.laatstGebruiktOp || 0) };
+      }),
+      toestemmingen: rij(d.toestemmingen).map((x) => {
+        const o = (x || {}) as Record<string, unknown>;
+        return { id: tekst(o.id, 80), agentId: tekst(o.agentId, 80), mogelijkheid: tekst(o.mogelijkheid, 48), altijd: o.altijd === true, verlooptOp: Number(o.verlooptOp || 0) };
+      }),
+      apparaten: rij(d.apparaten).map((x) => {
+        const o = (x || {}) as Record<string, unknown>;
+        return { id: tekst(o.id, 80), naam: tekst(o.naam, 80), platform: tekst(o.platform, 32), online: o.online === true, laatstGezienOp: Number(o.laatstGezienOp || 0) };
+      }),
+    };
+    aiBureauBak.waarde = waarde; aiBureauBak.op = Date.now();
+    return waarde;
+  }).finally(() => { aiBureauBak.lopend = null; });
+  aiBureauBak.lopend = verzoek;
+  return verzoek;
+}
+
 export { loadHubBlockData, readHubBlockDataCache };
 export type { HubBlockDataPayload };

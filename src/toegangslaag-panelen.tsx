@@ -152,7 +152,7 @@ export function AccessPlanePanels(p:Props){
       gevolgen={[
         tr(lang,'Коди зі старого застосунку діятимуть, доки ви не підтвердите новий (щонайбільше 15 хвилин).','Codes uit de oude app blijven werken tot u de nieuwe bevestigt (hoogstens 15 minuten).'),
         tr(lang,'Після підтвердження буде створено нові коди відновлення, а старі перестануть діяти.','Na bevestiging worden nieuwe herstelcodes gemaakt en werken de oude niet meer.'),
-        tr(lang,'Для другого підтвердження оберіть passkey або код відновлення: той самий код із застосунку двічі не приймається.','Kies voor de tweede bevestiging een passkey of herstelcode: dezelfde app-code wordt geen twee keer aanvaard.'),
+        tr(lang,'Для другого підтвердження оберіть ключ доступу або код відновлення: той самий код із застосунку двічі не приймається.','Kies voor de tweede bevestiging een passkey of herstelcode: dezelfde app-code wordt geen twee keer aanvaard.'),
       ]}
       bevestigTekst={tr(lang,'Так, замінити','Ja, vervangen')}
       onAnnuleer={()=>setVervangVraag(false)}
@@ -189,7 +189,7 @@ export function AccessPlanePanels(p:Props){
               ?tr(lang,'Вхід паролем вимкнув власник сайту, тож задати пароль зараз не можна.','De eigenaar van de site heeft aanmelden met een wachtwoord uitgezet; een wachtwoord instellen kan nu niet.')
               :tr(lang,'Пароля немає. Якщо задати його, з’явиться ще один спосіб входу — на випадок, коли Google недоступний.','Er is geen wachtwoord. Stelt u er een in, dan krijgt u een extra manier om aan te melden — voor als Google niet beschikbaar is.')}</small>}
             {wachtwoordOpen&&!wachtwoordUit&&<div className='access-plane-inline-form'>
-              {!heeftWachtwoord&&!sterkAanwezig&&<small className='access-plane-warn' data-wachtwoord-sterk-nodig>{tr(lang,'Перед збереженням сайт попросить сильне підтвердження: passkey, код із застосунку або код відновлення. Якщо жодного ще немає, спершу додайте passkey або автентифікатор у розділі «Безпека».','Voor het opslaan vraagt de site een sterke bevestiging: passkey, app-code of herstelcode. Heeft u er nog geen, voeg dan eerst een passkey of authenticator toe bij «Beveiliging».')}</small>}
+              {!heeftWachtwoord&&!sterkAanwezig&&<small className='access-plane-warn' data-wachtwoord-sterk-nodig>{tr(lang,'Перед збереженням сайт попросить сильне підтвердження: passkey, код із застосунку або код відновлення. Якщо жодного ще немає, спершу додайте ключ доступу або автентифікатор у розділі «Безпека».','Voor het opslaan vraagt de site een sterke bevestiging: passkey, app-code of herstelcode. Heeft u er nog geen, voeg dan eerst een passkey of authenticator toe bij «Beveiliging».')}</small>}
               <GeheimInvoer lang={lang} value={password} onChange={setPassword} autoComplete='new-password' autoFocus placeholder={heeftWachtwoord?tr(lang,'Новий пароль, мін. 10 символів','Nieuw wachtwoord, min. 10 tekens'):tr(lang,'Пароль: від 10 до 1024 символів','Wachtwoord: 10 tot 1024 tekens')} minLength={WACHTWOORD_MIN} max={WACHTWOORD_MAX} soort='wachtwoord'/>
               <button type='button' disabled={busy||!wachtwoordGeldig} onClick={()=>void write('/api/owner/access/password/set',{password})}><Check/>{tr(lang,'Зберегти','Opslaan')}</button>
               {heeftWachtwoord&&<button type='button' className='secondary' disabled={busy||data.lockout.protected} onClick={()=>setWachtwoordWeg(true)}><Trash2/>{tr(lang,'Прибрати пароль','Wachtwoord verwijderen')}</button>}

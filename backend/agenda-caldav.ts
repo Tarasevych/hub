@@ -286,6 +286,7 @@ export async function caldavOphalen(ownerUserId: string, id: string): Promise<Ca
             einde: gebeurtenis.einde, heleDag: gebeurtenis.heleDag, tijdzone: gebeurtenis.tijdzone,
             rrule: gebeurtenis.rrule, status: gebeurtenis.status, reeks: gebeurtenis.reeks,
             gewijzigdOp: gebeurtenis.gewijzigdOp, url: gebeurtenis.url,
+            bronHref: caldavAbsoluut(agenda.url, bron.href), etag: bron.etag,
           });
         }
       }
@@ -385,6 +386,41 @@ export async function caldavCronRonde(limiet = 5) {
  * er zodat een aanroeper (de AI, een route) nooit kan denken dat schrijven stil mislukte.
  */
 export const caldavSchrijven = () => ({ ok: false as const, fout: 'CALDAV_SCHRIJVEN_NIET_GEBOUWD', ontbreekt: AGENDA_CALDAV_SCHRIJVEN_ONTBREEKT });
+
+export type CaldavGeheimVoorLade =
+  | { ok: true; id: string; naam: string; adres: string; gebruikersnaam: string; wachtwoord: string; agendas: CaldavAgenda[]; ruimte: AiRuimte }
+  | { ok: false; fout: string };
+
+/** Hulplezer binnen dezelfde lade: opent de versleutelde aanmeldgegevens van één gekoppeld CalDAV-account. */
+export async function leesCaldavGeheimVoorLade(ownerUserId: string, accountId: string): Promise<CaldavGeheimVoorLade> {
+  const lade = ladeOf(ownerUserId);
+  const schoonId = kort(accountId, 120);
+  if (!schoonId) return { ok: false, fout: 'CALDAV_ACCOUNT_ONBEKEND' };
+  const q = await sys().query(
+    `SELECT * FROM app.agenda_abonnement WHERE ${sqlLadeWaar('ruimte', lade, 1)} AND id = $2 AND bron = 'caldav' LIMIT 1`,
+    [ownerUserId, schoonId],
+  );
+  const rij = q.rows[0] as Record<string, unknown> | undefined;
+  if (!rij) return { ok: false, fout: 'CALDAV_ACCOUNT_ONBEKEND' };
+  const adres = kort(rij.adres, 2000);
+  const gebruikersnaam = kort(rij.gebruikersnaam, 320);
+  let wachtwoord = '';
+  try {
+    wachtwoord = await ontzegel(lade, 'app.agenda_abonnement', String(rij.geheim || ''), aad(ownerUserId, adres, lade.ruimte), CALDAV_SLEUTEL_NAAM);
+  } catch (e) {
+    return { ok: false, fout: isGeslotenFout(e) ? SLEUTEL_GESLOTEN_CODE : 'CALDAV_GEHEIM_ONLEESBAAR' };
+  }
+  return {
+    ok: true,
+    id: schoonId,
+    naam: kort(rij.naam, 200),
+    adres,
+    gebruikersnaam,
+    wachtwoord,
+    agendas: Array.isArray(rij.agendas) ? (rij.agendas as CaldavAgenda[]) : [],
+    ruimte: lade.ruimte,
+  };
+}
 
 // Sleutelkluis (0092): oude v1-wachtwoorden van déze lade onder de DEK zetten («перешифрувати зараз»).
 registreerHerversleutelaar('app.agenda_abonnement', async (lade, dek) => {

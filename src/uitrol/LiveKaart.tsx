@@ -121,8 +121,8 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
   const lopendeDeel = DEELSTAPPEN.find((d) => delen[d.id] === 'bezig');
   const faseSub = (f: Fase): string => {
     if (fasen[f] !== 'actief') return '';
-    if (nieuweFlow) return f === 'voorbereiding' ? (flow!.detail || tr(lang, 'пакет готується', 'pakket wordt voorbereid')) : tr(lang, 'чекає вашого passkey', 'wacht op uw passkey');
-    if (f === 'goedkeuring') return tr(lang, 'чекає вашого passkey', 'wacht op uw passkey');
+    if (nieuweFlow) return f === 'voorbereiding' ? (flow!.detail || tr(lang, 'пакет готується', 'pakket wordt voorbereid')) : tr(lang, 'чекає вашого ключа доступу', 'wacht op uw passkey');
+    if (f === 'goedkeuring') return tr(lang, 'чекає вашого ключа доступу', 'wacht op uw passkey');
     if (f === 'controles' && !run) return tr(lang, 'сервер підхоплює пакет…', 'de server pakt het pakket op…');
     return lopendeDeel ? tr(lang, lopendeDeel.uk, lopendeDeel.nl) : '';
   };
@@ -178,7 +178,7 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
                 <button type='button' className='ut-knop ut-knop-gevaar' disabled={stopBezig || [...stopReden.trim()].length < 10} onClick={() => { stoppen({ ...doel, reden: stopReden.trim().slice(0, 300) }); setStopVeld(false); setStopReden(''); }} data-ut-stop-bevestig><OctagonX aria-hidden='true' />{stopBezig ? tr(lang, 'Зупиняю…', 'Stoppen…') : tr(lang, 'Так, зупинити', 'Ja, stoppen')}</button>
                 <button type='button' className='ut-knop' disabled={stopBezig} onClick={() => { setStopVeld(false); setStopReden(''); }}>{tr(lang, 'Не зупиняти', 'Niet stoppen')}</button>
               </div>
-              <small className='ut-stop-uitleg'>{tr(lang, `Пакет ${doel.versie}: сервер отримає запит і перерве встановлення до перемикання. Запит підтверджується passkey/step-up і фіксується в аудиті.`, `Pakket ${doel.versie}: de server krijgt het verzoek en breekt de installatie vóór het overschakelen af. Het verzoek wordt met passkey/step-up bevestigd en in de audit vastgelegd.`)}</small>
+              <small className='ut-stop-uitleg'>{tr(lang, `Пакет ${doel.versie}: сервер отримає запит і перерве встановлення до перемикання. Запит підтверджується ключ доступу/step-up і фіксується в аудиті.`, `Pakket ${doel.versie}: de server krijgt het verzoek en breekt de installatie vóór het overschakelen af. Het verzoek wordt met passkey/step-up bevestigd en in de audit vastgelegd.`)}</small>
             </div>}
       </div>; })()}
 
@@ -197,8 +197,8 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
         const schakels: Array<[string, string, string, boolean]> = [
           ['browser', tr(lang, 'SHA-256 пораховано в браузері', 'SHA-256 in de browser berekend'), tr(lang, 'Відбиток архіву рахується на вашому пристрої до завантаження; проба міграцій прив’язана до нього.', 'De vingerafdruk van het archief wordt op uw apparaat berekend vóór het uploaden; de migratieproef is eraan gebonden.'), true],
           ['server', tr(lang, 'Сервер звірив після завантаження', 'Server vergeleek na de upload'), tr(lang, 'Сайт перерахував SHA-256 отриманого файлу; інший файл під тим самим описом неможливий.', 'De site berekende de SHA-256 van het ontvangen bestand opnieuw; een ander bestand onder dezelfde beschrijving kan niet.'), true],
-          ['passkey', tr(lang, 'Схвалення passkey прив’язане до sha256', 'Passkey-goedkeuring gebonden aan de sha256'), tr(lang, 'Підпис passkey містить ідентифікатор пропозиції, версію, sha256 і одноразовий nonce; діє 5 хвилин.', 'De passkey-handtekening bevat voorstel-id, versie, sha256 en een eenmalige nonce; geldig 5 minuten.'), true],
-          ['root', tr(lang, 'Root перевірив сам', 'Root controleerde zelf'), tr(lang, 'Root перерахував sha256 своєї копії й перевірив підпис passkey власним ключем — сайт нічого не може схвалити.', 'Root berekende de sha256 van zijn eigen kopie en controleerde de passkey met eigen sleutels — de site kan niets goedkeuren.'), run.stappen.some((s) => s.stap === 'echtheid' && s.staat === 'ok')],
+          ['passkey', tr(lang, 'Схвалення ключ доступу прив’язане до sha256', 'Passkey-goedkeuring gebonden aan de sha256'), tr(lang, 'Підпис ключа доступу містить ідентифікатор пропозиції, версію, sha256 і одноразовий nonce; діє 5 хвилин.', 'De passkey-handtekening bevat voorstel-id, versie, sha256 en een eenmalige nonce; geldig 5 minuten.'), true],
+          ['root', tr(lang, 'Root перевірив сам', 'Root controleerde zelf'), tr(lang, 'Root перерахував sha256 своєї копії й перевірив підпис ключа доступу власним ключем — сайт нічого не може схвалити.', 'Root berekende de sha256 van zijn eigen kopie en controleerde de passkey met eigen sleutels — de site kan niets goedkeuren.'), run.stappen.some((s) => s.stap === 'echtheid' && s.staat === 'ok')],
           ['terugdraai', tr(lang, 'Відкат напоготові', 'Terugdraai staat klaar'), tr(lang, 'Резервна копія бази й попередній випуск лишаються; збій перевірки здоров’я → автоматичний відкат.', 'Back-up van de database en de vorige release blijven; mislukt de gezondheidscontrole → automatische terugdraai.'), true],
         ];
         return <details className='ut-keten' data-ut-keten><summary><Link2 aria-hidden='true' />{tr(lang, 'Ланцюг довіри', 'Vertrouwensketen')}{kort ? <code className='ut-mono'>{kort}</code> : null}<small>{tr(lang, 'кожна ланка перевіряє попередню — підмінити пакет непомітно неможливо', 'elke schakel controleert de vorige — een pakket ongemerkt verwisselen kan niet')}</small></summary>

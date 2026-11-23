@@ -1,0 +1,947 @@
+/* Віха M2 (UI-015A, №167): стилі карткового подання розділу «Способи входу».
+   Побудовано виключно на змінних канонічної оболонки (.canonical-chrome) та сталих кольорах станів (staat-kleuren.css / tokens.css).
+   Жодних нових правил position: fixed (шар подробиць відкривається через спільний компонент Laag). */
+
+.amv2 {
+  --a-bg: var(--bg, #f4f6fb);
+  --a-vl: var(--panel, #ffffff);
+  --a-tk: var(--text, #18243d);
+  --a-zw: var(--muted, #62708a);
+  --a-ac: var(--accent, #2458c8);
+  --a-ac-tk: var(--accentText, #ffffff);
+  --a-lijn: var(--line, rgba(24, 36, 61, 0.12));
+  --a-goed: var(--staat-goed);
+  --a-goed-bg: var(--staat-goed-zacht);
+  --a-let: var(--staat-let);
+  --a-let-bg: var(--staat-let-zacht);
+  --a-fout: var(--staat-fout);
+  --a-fout-bg: var(--staat-fout-zacht);
+  --a-info: var(--accent, #2458c8);
+  --a-info-bg: color-mix(in srgb, var(--accent, #2458c8) 13%, transparent);
+  --a-stil-bg: var(--surface2, rgba(24, 36, 61, 0.06));
+  --a-schaduw: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.05);
+  --a-r: 20px;
+
+  container-type: inline-size;
+  container-name: amv2;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--a-tk);
+  min-width: 0;
+  max-width: 1220px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.amv2 * {
+  box-sizing: border-box;
+}
+
+.amv2 svg {
+  flex: none;
+}
+
+/* Перемикач подання («Огляд» ↔ «Карткова сітка») */
+.amv-weergave-balk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: var(--panel, #ffffff);
+  border: 1px solid var(--line, rgba(24, 36, 61, 0.12));
+}
+
+.amv-weergave-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted, #62708a);
+  padding-left: 4px;
+}
+
+.amv-weergave-knoppen {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface2, rgba(24, 36, 61, 0.06));
+}
+
+.amv-weergave-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--muted, #62708a);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.amv-weergave-knop svg {
+  width: 15px;
+  height: 15px;
+}
+
+.amv-weergave-knop.is-actief {
+  background: var(--accent, #2458c8);
+  color: var(--accentText, #ffffff);
+}
+
+/* Шапка */
+.amv2-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  min-height: 196px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  isolation: isolate;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--a-ac) 14%, var(--a-vl)) 0%,
+    var(--a-vl) 75%
+  );
+  border: 1px solid var(--a-lijn);
+}
+
+.amv2-hero-beeld {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: min(340px, 52%);
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.amv2-hero-tekst {
+  padding: 26px clamp(18px, 4cqw, 40px);
+  max-width: 560px;
+}
+
+.amv2-hero h2 {
+  margin: 0 0 6px;
+  font-size: clamp(22px, 3.2cqw, 30px);
+  line-height: 1.18;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--a-tk);
+}
+
+.amv2-hero p {
+  margin: 0 0 16px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--a-zw);
+}
+
+.amv2-hero-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--a-ac);
+  color: var(--a-ac-tk);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.amv2-hero-knop svg {
+  width: 18px;
+  height: 18px;
+}
+
+.amv2-hero-knop:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Фільтр */
+.amv2-filter {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--a-vl);
+  border: 1px solid var(--a-lijn);
+  border-radius: var(--a-r);
+  padding: 8px;
+  box-shadow: var(--a-schaduw);
+}
+
+.amv2-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px;
+}
+
+.amv2-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.amv2-chip {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--a-zw);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.amv2-chip:hover {
+  background: var(--a-stil-bg);
+  color: var(--a-tk);
+}
+
+.amv2-chip.actief {
+  background: var(--a-ac);
+  color: var(--a-ac-tk);
+}
+
+.amv2-zoek {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 240px;
+  min-width: 160px;
+  min-height: 44px;
+  padding: 0 6px 0 12px;
+  border-radius: 999px;
+  background: var(--a-stil-bg);
+  color: var(--a-zw);
+}
+
+.amv2-zoek svg {
+  width: 16px;
+  height: 16px;
+}
+
+.amv2-zoek input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--a-tk);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  min-height: 40px;
+}
+
+.amv2-zoek input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.amv2-zoek-wis {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--a-zw);
+  cursor: pointer;
+}
+
+/* Групи */
+.amv2-groep {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.amv2-groep-kop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.amv2-groep-kop h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.amv2-teller {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--a-stil-bg);
+  color: var(--a-zw);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.groep-verbonden .amv2-teller {
+  background: var(--a-goed-bg);
+  color: var(--a-goed);
+}
+
+.amv2-inklap {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--a-zw);
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.amv2-inklap:hover {
+  background: var(--a-stil-bg);
+}
+
+.amv2-inklap svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s;
+}
+
+.amv2-inklap[aria-expanded='false'] svg {
+  transform: rotate(-90deg);
+}
+
+.amv2-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.amv2-raster.tegels {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+/* Картка */
+.amv2-kaart {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 18px;
+  border-radius: var(--a-r);
+  background: var(--a-vl);
+  border: 1px solid var(--a-lijn);
+  box-shadow: var(--a-schaduw);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s;
+  min-width: 0;
+}
+
+.amv2-kaart:hover {
+  transform: translateY(-2px);
+}
+
+.amv2-kaart[data-access-actief] {
+  border-color: var(--a-ac);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--a-ac) 25%, transparent), var(--a-schaduw);
+}
+
+.amv2-kaart-open {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  border-radius: inherit;
+  cursor: pointer;
+  z-index: 0;
+}
+
+.amv2-kaart-open:focus-visible,
+.amv2 button:focus-visible,
+.amv2 a:focus-visible,
+.amv2-paneel-inhoud button:focus-visible,
+.amv2-paneel-inhoud a:focus-visible {
+  outline: 2px solid var(--a-ac);
+  outline-offset: 2px;
+}
+
+.amv2-kaart > *:not(.amv2-kaart-open) {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.amv2-kaart .amv2-actie {
+  pointer-events: auto;
+}
+
+.amv2-kaart-tekst {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.amv2-kaart-titel {
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.amv2-kaart-regel {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--a-zw);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
+.amv2-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.3;
+  max-width: 100%;
+}
+
+.amv2-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.amv2-status svg {
+  width: 12px;
+  height: 12px;
+}
+
+.amv2-status.toon-goed {
+  background: var(--a-goed-bg);
+  color: var(--a-goed);
+}
+
+.amv2-status.toon-info {
+  background: var(--a-info-bg);
+  color: var(--a-info);
+}
+
+.amv2-status.toon-let {
+  background: var(--a-let-bg);
+  color: var(--a-let);
+}
+
+.amv2-status.toon-stil {
+  background: var(--a-stil-bg);
+  color: var(--a-zw);
+}
+
+.amv2-actie {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--a-lijn);
+  background: var(--a-vl);
+  color: var(--a-ac);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.amv2-actie svg {
+  width: 18px;
+  height: 18px;
+}
+
+.amv2-actie:hover {
+  background: var(--a-info-bg);
+}
+
+.amv2-actie.hoofd {
+  background: var(--a-ac);
+  color: var(--a-ac-tk);
+  border-color: transparent;
+}
+
+/* Піктограми */
+.amv2-icoon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--a-stil-bg);
+  color: var(--a-ac);
+}
+
+.amv2-icoon.groot {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+}
+
+.amv2-icoon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.amv2-icoon.logo {
+  background: var(--surface, var(--a-vl));
+  border: 1px solid var(--a-lijn);
+}
+
+.amv2-icoon.tint-groen {
+  background: var(--a-goed-bg);
+  color: var(--a-goed);
+}
+
+.amv2-icoon.tint-amber {
+  background: var(--a-let-bg);
+  color: var(--a-let);
+}
+
+.amv2-icoon.tint-blauw,
+.amv2-icoon.tint-violet,
+.amv2-icoon.tint-indigo,
+.amv2-icoon.tint-roze {
+  background: var(--a-info-bg);
+  color: var(--a-ac);
+}
+
+/* Компактні плитки «Доступні» */
+.amv2-raster.tegels .amv2-kaart {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 150px;
+}
+
+.amv2-raster.tegels .amv2-actie {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  padding: 0;
+  width: 44px;
+}
+
+.amv2-raster.tegels .amv2-kaart-tekst {
+  padding-right: 52px;
+}
+
+.amv2-raster.tegels .amv2-actie span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.amv2-kaart.staat-not-configured,
+.amv2-kaart.staat-unavailable {
+  background: color-mix(in srgb, var(--a-vl) 75%, var(--a-bg));
+}
+
+.amv2-kaart.staat-not-configured .amv2-icoon.logo,
+.amv2-kaart.staat-unavailable .amv2-icoon.logo {
+  opacity: 0.78;
+}
+
+/* Скелети завантаження */
+.amv2-kaart.laden {
+  pointer-events: none;
+}
+
+.amv2-skelet {
+  display: block;
+  height: 10px;
+  width: 70%;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--a-stil-bg),
+    color-mix(in srgb, var(--a-stil-bg) 40%, var(--a-vl)),
+    var(--a-stil-bg)
+  );
+  background-size: 200% 100%;
+  animation: amv2-glans 1.4s linear infinite;
+}
+
+.amv2-skelet.kort {
+  width: 40%;
+}
+
+@keyframes amv2-glans {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Повідомлення та додаткові картки */
+.amv2-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--a-r);
+  background: var(--a-vl);
+  border: 1px solid var(--a-lijn);
+  flex-wrap: wrap;
+}
+
+.amv2-banner > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--a-let);
+}
+
+.amv2-banner span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.amv2-banner small {
+  color: var(--a-zw);
+  font-size: 13px;
+}
+
+.amv2-banner.fout {
+  background: var(--a-let-bg);
+  border-color: transparent;
+}
+
+.amv2-melding {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--a-let-bg);
+  color: var(--a-tk);
+  font-size: 14px;
+}
+
+.amv2-leeg {
+  margin: 8px 0;
+  color: var(--a-zw);
+  text-align: center;
+}
+
+.amv2-extras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.amv2-extra {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border-radius: var(--a-r);
+  background: var(--a-vl);
+  border: 1px solid var(--a-lijn);
+  color: var(--a-tk);
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.amv2-extra.info {
+  cursor: default;
+}
+
+.amv2-pijl {
+  width: 20px;
+  height: 20px;
+  color: var(--a-zw);
+  margin-left: auto;
+}
+
+/* Вміст панелі подробиць усередині Laag */
+.amv2-paneel-inhoud {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.amv2-paneel-inhoud.access-plane {
+  max-width: none;
+}
+
+.amv2-knoppen {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.amv2-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line, rgba(24, 36, 61, 0.14));
+  background: var(--panel, #ffffff);
+  color: var(--text, #18243d);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.amv2-knop svg {
+  width: 18px;
+  height: 18px;
+}
+
+.amv2-knop.hoofd {
+  background: var(--accent, #2458c8);
+  color: var(--accentText, #ffffff);
+  border-color: transparent;
+}
+
+.amv2-knop.gevaar {
+  color: var(--staat-fout);
+  border-color: color-mix(in srgb, var(--staat-fout) 35%, transparent);
+}
+
+.amv2-knop:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.amv2-feiten {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.amv2-feiten div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface2, rgba(24, 36, 61, 0.06));
+}
+
+.amv2-feiten dt {
+  color: var(--muted, #62708a);
+  font-size: 13px;
+}
+
+.amv2-feiten dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 550;
+  text-align: right;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.amv2-uitleg {
+  margin: 4px 0;
+  color: var(--muted, #62708a);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.amv2-let {
+  margin: 4px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--staat-let-zacht);
+  color: var(--text, #18243d);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.amv2-stappen {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.amv2-formulier {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.amv2-code {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--line, rgba(24, 36, 61, 0.14));
+  background: var(--bg, #f4f6fb);
+  color: var(--text, #18243d);
+  padding: 0 14px;
+  font-size: 18px;
+  letter-spacing: 0.2em;
+  max-width: 220px;
+}
+
+@container amv2 (max-width: 599px) {
+  .amv2 {
+    gap: 14px;
+  }
+  .amv2-hero {
+    min-height: 164px;
+    border-radius: 20px;
+  }
+  .amv2-hero-tekst {
+    padding: 20px 18px;
+    max-width: 82%;
+  }
+  .amv2-hero p {
+    font-size: 13.5px;
+    margin-bottom: 14px;
+  }
+  .amv2-filter {
+    padding: 6px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .amv2-zoek {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+  .amv2-raster {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .amv2-kaart {
+    min-height: 76px;
+    padding: 12px 12px 12px 14px;
+    gap: 12px;
+  }
+  .amv2-icoon.groot {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+  .amv2-kaart-titel {
+    font-size: 15px;
+  }
+  .amv2-kaart:not(.compact) .amv2-actie span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .amv2-kaart:not(.compact) .amv2-actie {
+    padding: 0;
+    width: 44px;
+  }
+  .amv2-raster.tegels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .amv2-raster.tegels .amv2-kaart {
+    min-height: 136px;
+    padding: 12px;
+  }
+  .amv2-raster.tegels .amv2-kaart-tekst {
+    padding-right: 0;
+  }
+  .amv2-raster.tegels .amv2-kaart-regel {
+    display: none;
+  }
+  .amv2-raster.tegels .amv2-status {
+    margin-right: 46px;
+  }
+  .amv2-raster.tegels .amv2-actie {
+    right: 10px;
+    bottom: 10px;
+  }
+  .amv2-groep-kop h3 {
+    font-size: 17px;
+  }
+  .amv2-extras {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container amv2 (max-width: 359px) {
+  .amv2-raster.tegels {
+    grid-template-columns: 1fr;
+  }
+  .amv2-hero-tekst {
+    max-width: 100%;
+  }
+  .amv2-chip {
+    padding: 0 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amv2 * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .amv2-kaart:hover {
+    transform: none;
+  }
+}

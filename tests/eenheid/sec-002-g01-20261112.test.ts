@@ -423,6 +423,8 @@ console.log('UITKOMST ' + JSON.stringify(uit));
             const ws = new WebSocket(`ws://127.0.0.1:${poort}${rb.REMOTE_WS_PATH}`, 'guacamole', { headers: { origin: `http://127.0.0.1:${poort}`, ...koppen } });
             ws.on('open', () => res(ws)); ws.on('error', (e) => res((e as Error).message)); ws.on('unexpected-response', (_q, r) => res(`HTTP ${r.statusCode}`));
           });
+          const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+          const herstelV1Kader = await beginV1TechKader();
           try {
             await tp.beeindigenBijIntrekken(uid, 'handmatig');
             await tp.profielVan(eig as never);
@@ -464,6 +466,7 @@ console.log('UITKOMST ' + JSON.stringify(uit));
             await wacht(200);
             check('uitrol-03/n4: hoogstens één melding per minuut per eigenaar (geen vloed)', meldingen.filter((x) => x.userId === uid).length === voorAantal, `meldingen=${meldingen.filter((x) => x.userId === uid).length}`);
           } finally {
+            await herstelV1Kader();
             for (const ws of anoniem) ws.terminate();
             rb._sessies.clear();
             await tp.beeindigenBijIntrekken(uid, 'handmatig').catch(() => 0);

@@ -228,3 +228,18 @@ export function ontleedCaldavGegevens(xml: unknown): CaldavResource[] {
   }
   return uit;
 }
+
+export const CALDAV_VOORRECHT_LICHAAM = `${XML_KOP}<d:propfind xmlns:d="DAV:"><d:prop><d:current-user-privilege-set/></d:prop></d:propfind>`;
+
+/**
+ * Onderzoekt <current-user-privilege-set> uit een PROPFIND Depth:0 op een CalDAV-agenda.
+ * Geeft `null` als de server deze eigenschap niet terugstuurde, `true` als schrijven/invoegen toegestaan is,
+ * en `false` als het rechtenblok wel aanwezig is maar geen schrijfrecht bevat (alleen-lezen agenda).
+ */
+export function heeftCaldavSchrijfrecht(xml: unknown): boolean | null {
+  const blokken = caldavWaarden(xml, 'current-user-privilege-set');
+  if (!blokken.length) return null;
+  const samengevoegd = blokken.join(' ');
+  if (!samengevoegd.trim()) return false;
+  return /<(?:[A-Za-z0-9_.-]+:)?(?:write|write-content|bind|all)(?:\s|\/|>)/i.test(samengevoegd);
+}

@@ -89,7 +89,7 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
   void AI_TERMIJNEN; void actieveAiKeuzeId;
   const s = r.status;
   const aiMag = !!s && s.actief === 'technisch' && !!s.sessie;
-  const aiReden = uk ? 'Давати чи змінювати доступ ШІ можна лише в технічному просторі (не на паузі) і з Passkey. Зняти доступ можна будь-коли.' : 'AI-toegang geven of wijzigen kan alleen in de technische ruimte (niet gepauzeerd) en met Passkey. Intrekken kan altijd.';
+  const aiReden = uk ? 'Давати чи змінювати доступ ШІ можна лише в технічному просторі (не на паузі) і з ключем доступу. Зняти доступ можна будь-коли.' : 'AI-toegang geven of wijzigen kan alleen in de technische ruimte (niet gepauzeerd) en met Passkey. Intrekken kan altijd.';
   return (
     <Venster id='tech-ruimte-toegang' titel={WOORDEN.toegangPagina[taal]} breedte={820} onSluit={sluit}>
       <div className='tech-venster rt' data-tech-venster='toegang'>

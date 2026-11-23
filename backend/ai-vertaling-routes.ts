@@ -23,11 +23,12 @@ import { klantVan } from '../shared/ai-verbinding';
 import { actiesHints, actiesPunten, type ActiesModelAntwoord } from '../shared/ai-acties-model';
 import {
   akkoordSleutel, dienstAgentId, dienstFuncties, dienstIdVan, dienstIsExtern, dienstKlaar, dienstPubliek, dienstWaarheen,
-  gebruikSleutelDienst, gebruikSleutelEigen, isDienstAgentId, standaardPrivacyModus, type DienstFunctie,
+  gebruikSleutelDienst, gebruikSleutelEigen, isDienstAgentId, standaardPrivacyModus, type DienstFunctie, type UitgebreideDienstSoort,
 } from '../shared/ai-dienst-motor';
 import {
-  VertaalAdapterFout, vertaalDeepLReeks, vertaalEigenKnoopReeks, vertaalGoogleTranslateReeks,
+  VertaalAdapterFout, vertaalDeepLReeks, vertaalEigenKnoopReeks, vertaalGoogleTranslateReeks, vertaalMicrosoftTranslateReeks,
 } from './vertaal-adapters';
+import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-kluis';
 import {
   AI_AANBIEDERS,
   AI_AANBIEDER_BIJ_ID,
@@ -61,6 +62,7 @@ import {
   type AiVertalingScope,
   type AiVertalingSegment,
   type AiVertalingSummaryDepth,
+  type EigenVertaalSleutels,
   type RelatedMailCitation,
   type StoredMailContextItem,
 } from '../shared/ai-vertaling';
@@ -88,7 +90,54 @@ export type AiVertalingDeps = {
     accounts: Array<{ id: string; email: string }>;
     items: StoredMailContextItem[];
   }>;
+  loadEigenVertaalSleutels?: (userId: string) => Promise<EigenVertaalSleutels>;
+  getVertaalSleutel?: (userId: string, motorId: keyof EigenVertaalSleutels) => Promise<{ sleutel: string; regio?: string; url?: string } | null>;
 };
+
+const EIGEN_VERTAAL_SLEUTEL_NAMEN: Readonly<Record<keyof EigenVertaalSleutels, readonly string[]>> = Object.freeze({
+  'google-vertaling': ['GOOGLE_TRANSLATE_API_KEY', 'google-translate-api-key', 'GOOGLE_CLOUD_TRANSLATION_KEY'],
+  deepl: ['DEEPL_API_KEY', 'deepl-api-key', 'DEEPL_AUTH_KEY'],
+  'microsoft-vertaling': ['MICROSOFT_TRANSLATOR_KEY', 'microsoft-translator-key', 'AZURE_TRANSLATOR_KEY', 'azure-translator-key'],
+  libretranslate: ['LIBRETRANSLATE_URL', 'libretranslate-url'],
+});
+
+async function leesEigenVertaalSleutels(userId: string): Promise<EigenVertaalSleutels> {
+  if (customDeps?.loadEigenVertaalSleutels) return customDeps.loadEigenVertaalSleutels(userId);
+  try {
+    const items = await apiPlatformVaultItems(userId);
+    const namen = new Set(items.map((it) => String(it.keyName || '').trim().toLowerCase()).filter((n) => n && !n.startsWith('gedeeld-')));
+    const uit: EigenVertaalSleutels = {};
+    for (const [motorId, kandidaten] of Object.entries(EIGEN_VERTAAL_SLEUTEL_NAMEN) as Array<[keyof EigenVertaalSleutels, readonly string[]]>) {
+      if (kandidaten.some((k) => namen.has(k.toLowerCase()))) uit[motorId] = true;
+    }
+    return uit;
+  } catch {
+    return {};
+  }
+}
+
+async function openEigenVertaalSleutel(
+  userId: string,
+  motorId: keyof EigenVertaalSleutels,
+): Promise<{ sleutel: string; regio?: string; url?: string } | null> {
+  if (customDeps?.getVertaalSleutel) return customDeps.getVertaalSleutel(userId, motorId);
+  try {
+    const items = await apiPlatformVaultItems(userId);
+    const kandidaten = EIGEN_VERTAAL_SLEUTEL_NAMEN[motorId].map((k) => k.toLowerCase());
+    const gevonden = items.find((it) => kandidaten.includes(String(it.keyName || '').trim().toLowerCase()));
+    if (!gevonden) return null;
+    const waarde = (await readOwnerVaultPlaintext(userId, gevonden.keyName)).trim();
+    if (!waarde) return null;
+    if (motorId === 'libretranslate') return { sleutel: '', url: waarde };
+    const regioItem = motorId === 'microsoft-vertaling'
+      ? items.find((it) => ['microsoft_translator_region', 'azure_translator_region', 'microsoft-translator-region'].includes(String(it.keyName || '').trim().toLowerCase()))
+      : undefined;
+    const regio = regioItem ? (await readOwnerVaultPlaintext(userId, regioItem.keyName).catch(() => '')).trim() || undefined : undefined;
+    return { sleutel: waarde, regio };
+  } catch {
+    return null;
+  }
+}
 
 let customDeps: AiVertalingDeps | null = null;
 
@@ -811,18 +860,21 @@ async function vertaalViaVertaalAdapter(
   if ((await reserveerGebruik(userId, teller, rij.limietPerDag)) === null) { melding.status = 429; melding.dienstLimiet = true; return null; }
   const fetchFn = customDeps?.fetch ?? fetch;
   try {
+    const rijSoort = rij.soort as UitgebreideDienstSoort;
     const apiSleutel = await dienstSleutel(rij);
-    if ((rij.soort === 'google-translate' || rij.soort === 'deepl') && !apiSleutel) {
+    if ((rijSoort === 'google-translate' || rijSoort === 'deepl' || rijSoort === 'microsoft-translate') && !apiSleutel) {
       melding.status = 401;
       await geefGebruikTerug(userId, teller);
       return null;
     }
     const teksten = segmenten.map((x) => x.text);
-    const uit = rij.soort === 'google-translate'
+    const uit = rijSoort === 'google-translate'
       ? await vertaalGoogleTranslateReeks({ teksten, bronTaal, doelTaal: doel, apiSleutel: apiSleutel!, url: rij.url, privacyModus, fetchFn })
-      : rij.soort === 'deepl'
+      : rijSoort === 'deepl'
         ? await vertaalDeepLReeks({ teksten, bronTaal, doelTaal: doel, apiSleutel: apiSleutel!, url: rij.url, privacyModus, fetchFn })
-        : await vertaalEigenKnoopReeks({ teksten, bronTaal, doelTaal: doel, url: rij.url || '', apiSleutel: apiSleutel ?? undefined, privacyModus, fetchFn });
+        : rijSoort === 'microsoft-translate'
+          ? await vertaalMicrosoftTranslateReeks({ teksten, bronTaal, doelTaal: doel, apiSleutel: apiSleutel!, regio: rij.model, url: rij.url, privacyModus, fetchFn })
+          : await vertaalEigenKnoopReeks({ teksten, bronTaal, doelTaal: doel, url: rij.url || '', apiSleutel: apiSleutel ?? undefined, privacyModus, fetchFn });
     const translations: Record<string, string> = {};
     segmenten.forEach((seg, i) => { if (uit.vertaald[i]?.trim()) translations[seg.id] = uit.vertaald[i]; });
     return { detectedSourceLang: uit.bronTaal, translations };
@@ -1131,8 +1183,35 @@ async function executeAiVertalingRunKern(
 
   // MAILAI-003: спільний рушій сайту. Явний вибір людини ніколи не підмінюється іншим рушієм: вимкнено, не вміє цю функцію чи
   // немає згоди — чесна відмова з поясненням, і текст листа нікуди не йде.
+  const EIGEN_VERTAAL_IDS: readonly (keyof EigenVertaalSleutels)[] = ['google-vertaling', 'microsoft-vertaling', 'deepl', 'libretranslate'];
+  const gevraagdeEigenVertaler = (() => {
+    const zonderVoorvoegsel = requestedAgentId.startsWith('vertaal:') ? requestedAgentId.slice('vertaal:'.length) : requestedAgentId;
+    return EIGEN_VERTAAL_IDS.find((id) => id === zonderVoorvoegsel) ?? null;
+  })();
+  let eigenVertaalGeheim: { motorId: keyof EigenVertaalSleutels; sleutel: string; regio?: string; url?: string } | null = null;
+
   let dienstRij: DienstRij | null = null;
-  if (isDienstAgentId(requestedAgentId)) {
+  if (gevraagdeEigenVertaler) {
+    if (mode !== 'translate') {
+      return { status: 400, body: { ok: false, error: 'DIENST_FUNCTIE',
+        messageUk: 'Обрана служба перекладу вміє лише перекладати текст. Для підсумку й контексту оберіть ШІ-агента.',
+        messageNl: 'De gekozen vertaaldienst kan alleen tekst vertalen. Kies een AI-agent voor samenvatting en context.' } };
+    }
+    const geheim = await openEigenVertaalSleutel(userId, gevraagdeEigenVertaler);
+    if (!geheim || (gevraagdeEigenVertaler === 'libretranslate' ? !geheim.url : !geheim.sleutel)) {
+      return { status: 409, body: { ok: false, error: 'VERTAAL_SLEUTEL_ONTBREEKT',
+        messageUk: 'Для обраної служби перекладу у вашому сховищі ще не додано ключ або адресу сервера. Текст листа нікуди не надіслано.',
+        messageNl: 'Voor de gekozen vertaaldienst ontbreekt nog een sleutel of serveradres in uw kluis. De tekst is nergens heen gestuurd.',
+        actionLabelUk: 'Відкрити «Доступ ШІ»', actionHref: AI_TOEGANG_HREF } };
+    }
+    eigenVertaalGeheim = { motorId: gevraagdeEigenVertaler, ...geheim };
+    const mInfo = vertaalMotorVan(gevraagdeEigenVertaler);
+    chosenAgent = {
+      id: gevraagdeEigenVertaler, name: mInfo.naam, platform: gevraagdeEigenVertaler, source: 'vault', ruimte: 'prive',
+      scopes: ['mail.read', 'files.read'], allowedMailRead: true, allowedFilesRead: true,
+      statusUk: 'Особистий ключ перекладу', heeftSleutel: true,
+    };
+  } else if (isDienstAgentId(requestedAgentId)) {
     dienstRij = await dienstMotor(dienstIdVan(requestedAgentId)).catch(() => null);
     if (!dienstRij || !dienstKlaar(dienstRij)) {
       return { status: 409, body: { ok: false, error: 'DIENST_UIT',
@@ -1314,6 +1393,13 @@ async function executeAiVertalingRunKern(
     baseResponse.privacy.privacyModus = dienstRij.privacyModus ?? standaardPrivacyModus(dienstRij.soort);
   }
 
+  if (eigenVertaalGeheim) {
+    const eigenMotor = vertaalMotorVan(eigenVertaalGeheim.motorId);
+    baseResponse.motorId = eigenMotor.id;
+    baseResponse.motorNaam = eigenMotor.naam;
+    baseResponse.privacy.privacyModus = eigenVertaalGeheim.motorId === 'libretranslate' ? 'eigen-server' : 'extern-gezuiverd';
+  }
+
   if (mode === 'translate') {
     const toTranslate = sanitizedSegments.length
       ? sanitizedSegments
@@ -1322,22 +1408,42 @@ async function executeAiVertalingRunKern(
           ...(sanitizedBody.text ? [{ id: 'body:0', text: sanitizedBody.text }] : []),
         ];
 
-    const llmResult = dienstRij?.soort === 'libretranslate'
-      ? await vertaalViaLibre(userId, dienstRij, toTranslate, targetLang, melding)
-      : (dienstRij?.soort === 'google-translate' || dienstRij?.soort === 'deepl' || dienstRij?.soort === 'eigen-vertaal-knoop')
-        ? await vertaalViaVertaalAdapter(userId, dienstRij, toTranslate, detectedSourceLang, targetLang, melding)
-        : await vraagAanbieder<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
-            userId,
-            UNTRUSTED_GUARD_SYSTEM,
-            [
-              `Translate each segment into language "${targetLang}" (${targetLangLabel}).`,
-              'Preserve formatting, tone, numbers, dates, and meaning. Do not merge or drop segment IDs.',
-              'Return JSON: { "detectedSourceLang": "<iso>", "translations": { "<id>": "<translated text>" } }',
-              wrapUntrusted(JSON.stringify(toTranslate), 22_000),
-            ].join('\n'),
-            2200,
-            chosenAgent,
-          );
+    const llmResult = eigenVertaalGeheim
+      ? await (async () => {
+          const fetchFn = customDeps?.fetch ?? fetch;
+          const teksten = toTranslate.map((x) => x.text);
+          try {
+            const uit = eigenVertaalGeheim.motorId === 'google-vertaling'
+              ? await vertaalGoogleTranslateReeks({ teksten, bronTaal: detectedSourceLang, doelTaal: targetLang, apiSleutel: eigenVertaalGeheim.sleutel, privacyModus: 'extern-gezuiverd', fetchFn })
+              : eigenVertaalGeheim.motorId === 'deepl'
+                ? await vertaalDeepLReeks({ teksten, bronTaal: detectedSourceLang, doelTaal: targetLang, apiSleutel: eigenVertaalGeheim.sleutel, privacyModus: 'extern-gezuiverd', fetchFn })
+                : eigenVertaalGeheim.motorId === 'microsoft-vertaling'
+                  ? await vertaalMicrosoftTranslateReeks({ teksten, bronTaal: detectedSourceLang, doelTaal: targetLang, apiSleutel: eigenVertaalGeheim.sleutel, regio: eigenVertaalGeheim.regio, privacyModus: 'extern-gezuiverd', fetchFn })
+                  : await vertaalEigenKnoopReeks({ teksten, bronTaal: detectedSourceLang, doelTaal: targetLang, url: eigenVertaalGeheim.url || '', privacyModus: 'eigen-server', fetchFn });
+            const vertalingen: Record<string, string> = {};
+            toTranslate.forEach((seg, i) => { if (uit.vertaald[i]?.trim()) vertalingen[seg.id] = uit.vertaald[i]; });
+            return { detectedSourceLang: uit.bronTaal, translations: vertalingen };
+          } catch (err) {
+            if (err instanceof VertaalAdapterFout) melding.status = err.status;
+            return null;
+          }
+        })()
+      : dienstRij?.soort === 'libretranslate'
+        ? await vertaalViaLibre(userId, dienstRij, toTranslate, targetLang, melding)
+        : (dienstRij && ['google-translate', 'deepl', 'microsoft-translate', 'eigen-vertaal-knoop'].includes(dienstRij.soort as UitgebreideDienstSoort))
+          ? await vertaalViaVertaalAdapter(userId, dienstRij, toTranslate, detectedSourceLang, targetLang, melding)
+          : await vraagAanbieder<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
+              userId,
+              UNTRUSTED_GUARD_SYSTEM,
+              [
+                `Translate each segment into language "${targetLang}" (${targetLangLabel}).`,
+                'Preserve formatting, tone, numbers, dates, and meaning. Do not merge or drop segment IDs.',
+                'Return JSON: { "detectedSourceLang": "<iso>", "translations": { "<id>": "<translated text>" } }',
+                wrapUntrusted(JSON.stringify(toTranslate), 22_000),
+              ].join('\n'),
+              2200,
+              chosenAgent,
+            );
 
     // Schone vertaling: alleen wat de motor echt teruggaf. Een fragment zonder antwoord blijft het ORIGINEEL — geen markering
     // in de brieftekst. Hoeveel er onvertaald bleef, zegt het antwoord erbij; de balk toont dat eerlijk.
@@ -1729,11 +1835,16 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
         const priveAgents = agents.filter(a => a.ruimte === 'prive');
         // MAILAI-003: спільні рушії сайту (лише ввімкнені й готові), лічильник на сьогодні й орієнтовні ціни.
         const gebruik = await gebruikVan(userId).catch(() => ({}) as Awaited<ReturnType<typeof gebruikVan>>);
-        const dienstMotoren = (await leesDienstMotoren().catch(() => [] as DienstRij[])).filter(dienstKlaar)
+        const [dienstLijst, eigenSleutels] = await Promise.all([
+          leesDienstMotoren().catch(() => [] as DienstRij[]),
+          leesEigenVertaalSleutels(userId),
+        ]);
+        const dienstMotoren = dienstLijst.filter(dienstKlaar)
           .map((r) => dienstPubliek(r, gebruik[gebruikSleutelDienst(r.id)]?.vandaag || 0, settings.dienstAkkoord));
         return json({
           ok: true,
           dienstMotoren,
+          eigenVertaalSleutels: eigenSleutels,
           gebruik,
           prijzen: leesPrijzen(),
           agents: priveAgents,
@@ -1744,9 +1855,8 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
           summaryDepths: AI_VERTALING_SUMMARY_DEPTHS,
           policyCeiling: ceiling,
           aiToegangHref: AI_TOEGANG_HREF,
-          // Punt 16: de catalogus van vertaalmotoren met hun ECHTE stand (werkt / moet gekoppeld worden / nog niet geschreven).
-          // De server bepaalt die stand, zodat de balk nooit «працює» kan tonen voor iets wat niet gekoppeld is.
-          motoren: motorenMetStand(priveAgents),
+          // Punt 16 + CONSOL-001 (З-11): каталог перекладачів зі справжнім живим станом спільних рушіїв і особистих ключів.
+          motoren: motorenMetStand(priveAgents, false, dienstMotoren, eigenSleutels),
         });
       },
     ],

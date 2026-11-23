@@ -30,7 +30,7 @@ export async function main(): Promise<number> {
   const ids = WERKBLAD_REGISTER.map((r) => r.id);
 
   check('id\'s uniek en met een bekend voorvoegsel', new Set(ids).size === ids.length && ids.every((id) => /^(svc:[a-z]+|pg:[a-z]+\/[a-z-]+|cmd:[a-z-]+|wdg:[a-z-]+|map:[a-z-]+)$/.test(id)));
-  check('elke dienst (14) staat erin', DIENST_IDS.length === 14 && DIENST_IDS.every((d) => ids.includes(`svc:${d}`)));
+  check('elke dienst (15) staat erin', DIENST_IDS.length === 15 && DIENST_IDS.every((d) => ids.includes(`svc:${d}`)));
   const paginas = Object.entries(MENU_PAGINAS).flatMap(([d, ps]) => ps.map((p) => `pg:${d}/${p}`));
   check(`elke menupagina (${paginas.length}) staat erin, en geen verzonnen pagina`, paginas.every((id) => ids.includes(id)) && ids.filter((i) => i.startsWith('pg:')).length === paginas.length && paginas.length >= 85);
   check('elke widget (21) staat erin met dezelfde id', WERKBLAD_WIDGETS.length === 21 && WERKBLAD_WIDGETS.every((w) => ids.includes(`wdg:${w.id}`)));
@@ -60,7 +60,7 @@ export async function main(): Promise<number> {
   check('BIB-002: gewone items krijgen geen deur-vlag', WERKBLAD_REGISTER.filter((r) => r.categorie !== 'technisch').every((r) => !r.techDeur));
   check('mcp: zonder api-platform geweigerd in privé, mét toegestaan', !toegestaanVoor(svc('svc:mcp'), P).ok && toegestaanVoor(svc('svc:mcp'), PA).ok && !toegestaanVoor(svc('cmd:bord-openen'), P).ok);
   check('gewone dienst in privé toegestaan, en beperking via ctx.diensten', toegestaanVoor(svc('svc:mail'), P).ok && !toegestaanVoor(svc('svc:mail'), { ...P, diensten: ['ai'] }).ok);
-  check('planned (social, GitHub-widget) zichtbaar met reden, nooit startbaar', beschikbaarheidVoor(svc('svc:social'), PA) === 'planned' && !launchDoel(svc('svc:social')) && beschikbaarheidVoor(svc('wdg:github'), PA) === 'planned' && !!svc('wdg:github').reden?.uk);
+  check('social en GitHub-widget nu echt ready: svc:social opent identity/netwerken, wdg:github leest de hub-samenvatting', beschikbaarheidVoor(svc('svc:social'), PA) === 'ready' && JSON.stringify(launchDoel(svc('svc:social'), PA)) === '{"dienst":"identity","tab":"netwerken"}' && beschikbaarheidVoor(svc('wdg:github'), PA) === 'ready' && svc('wdg:github').liveBron === 'POST /api/owner/hub/werkblad/github');
   check('legacy-widgets (oud-blok, snelkoppeling) niet nieuw toe te voegen en niet in de standaardzoeklijst', !toegestaanVoor(svc('wdg:oud-blok'), PA).ok && !zoekRegister('', 'uk').some((r) => r.legacy));
   check('launchDoel: widgets en mappen niet startbaar; pagina → {dienst, tab}', !launchDoel(svc('wdg:post')) && !launchDoel(svc('map:nieuw')) && JSON.stringify(launchDoel(svc('pg:mail/spam'))) === '{"dienst":"mail","tab":"spam"}');
   check('launchDoel met ctx weigert zonder recht', !launchDoel(svc('pg:admin/audit'), PA) && !!launchDoel(svc('pg:admin/audit'), T));

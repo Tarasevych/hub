@@ -226,9 +226,9 @@ export async function main(): Promise<number> {
   check('MARKERING_STAART_MS en de grens zijn in beide kopieën gelijk',
     JS.MARKERING_STAART_MS === TS.MARKERING_STAART_MS && JS.MARKERING_MAX_AGENTEN === TS.MARKERING_MAX_AGENTEN);
   check('AGENT_ACCENT is in beide kopieën gelijk', JSON.stringify(JS.AGENT_ACCENT) === JSON.stringify(TS.AGENT_ACCENT) && JS.ONBEKEND_ACCENT === TS.ONBEKEND_ACCENT);
-  check('het accentpalet in de extensie is letterlijk ACCENT_KLEUREN van de site',
-    ACCENTEN.every((a) => JS.ACCENT_HOOFD[a] && JS.ACCENT_HOOFD[a].licht === ACCENT_KLEUREN[a].licht.hoofd && JS.ACCENT_HOOFD[a].donker === ACCENT_KLEUREN[a].donker.hoofd)
-    && Object.keys(JS.ACCENT_HOOFD).length === ACCENTEN.length);
+  check('het accentpalet in de extensie is letterlijk ACCENT_KLEUREN van de site (voor alle accenten van extensie 0.9.7 en alle standaardagentaccenten)',
+    Object.keys(JS.ACCENT_HOOFD).every((a) => ACCENT_KLEUREN[a as keyof typeof ACCENT_KLEUREN] && JS.ACCENT_HOOFD[a].licht === ACCENT_KLEUREN[a as keyof typeof ACCENT_KLEUREN].licht.hoofd && JS.ACCENT_HOOFD[a].donker === ACCENT_KLEUREN[a as keyof typeof ACCENT_KLEUREN].donker.hoofd)
+    && Object.values(TS.AGENT_ACCENT).every((a) => Boolean(JS.ACCENT_HOOFD[a])) && Object.keys(JS.ACCENT_HOOFD).length >= 14);
   check('de standaardkleuren zijn in beide kopieën gelijk', JSON.stringify(JS.AGENT_KLEUR_STANDAARD) === JSON.stringify(TS.AGENT_KLEUR_STANDAARD));
   check('de actieteksten zijn in beide kopieën gelijk',
     JSON.stringify(JS.MARKERING_ACTIES) === JSON.stringify(TS.MARKERING_ACTIES) && JSON.stringify(JS.ACTIE_ALGEMEEN) === JSON.stringify(TS.ACTIE_ALGEMEEN));

@@ -21,6 +21,9 @@ export type VersieVergelijkProps = {
   /** Account en cache van het gesprek (bijlagen lezen), zoals ContextPaneel ze krijgt. */
   bron: { context: Record<string, string>; accountId: string; cacheAccountId: string };
   groep: VersieGroep;
+  /** Спільний перегляд вкладень, етап 3 (НЕ ПЕРЕВІРЕНО, Claude Opus 5.5 (High) через Antigravity): які версії порівняти одразу —
+   *  відкрите у переглядачі вкладення проти попередньої. Без поля — як раніше (дві найновіші). */
+  beginKeuze?: { oud: number; nieuw: number } | null;
   onSluit: () => void;
 };
 export type VergelijkStand =
@@ -311,7 +314,7 @@ export function VersieVergelijkLaag(p: VersieVergelijkLaagProps) {
 // ------------------------------------------------------------------ het venster zelf
 export default function VersieVergelijk(p: VersieVergelijkProps) {
   const versies = useMemo(() => versiesVan(p.groep), [p.groep]);
-  const [keuze, setKeuze] = useState(() => standaardKeuze(versies));
+  const [keuze, setKeuze] = useState(() => (p.beginKeuze && versies.some((v) => v.nummer === p.beginKeuze!.oud) && versies.some((v) => v.nummer === p.beginKeuze!.nieuw) ? p.beginKeuze : standaardKeuze(versies)));
   const [poging, setPoging] = useState(0);
   const [stand, setStand] = useState<VergelijkStand>({ soort: 'laden' });
   const laagRef = useRef<HTMLDivElement | null>(null), vensterRef = useRef<HTMLDivElement | null>(null);

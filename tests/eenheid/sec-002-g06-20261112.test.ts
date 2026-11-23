@@ -42,8 +42,8 @@ export async function main(): Promise<number> {
     try {
       check('server-uitrol-10: het script is geldige bash (bash -n)', spawnSync('bash', ['-n', script]).status === 0);
       check('server-uitrol-10: geen vaste namen in /tmp (node.tar.xz, cf.deb, pg_restore.log)', !/\/tmp\/(node\.tar\.xz|cf\.deb|pg_restore\.log)/.test(bron));
-      check('server-uitrol-10: geen opdrachttekst met ingeplakte paden (doe_sh krijgt een vaste tekst; paden gaan als $1, $2 … mee)',
-        !/^\s*doe_sh\s+"/m.test(bron) && !/bash -c "\$1"\s*;/.test(bron) && /bash -c "\$tekst" herstel "\$@"/.test(bron));
+      check('server-uitrol-10: geen bash -c of opdrachttekst met ingeplakte paden (alle stappen lopen via benoemde functies en doe_fn)',
+        !bron.includes('bash -c') && !/\bdoe_sh\b/.test(bron) && /doe_fn\(\)/.test(bron));
       check('server-uitrol-10: «latest» van cloudflared alleen achter de uitdrukkelijke keuze --tunnel-ongecontroleerd; Node met SHASUMS256',
         bron.includes('--tunnel-ongecontroleerd') && bron.includes('SHASUMS256.txt') && !/releases\/latest\/download\/cloudflared-linux-\$\{DEB_ARCH\}\.deb -o \/tmp/.test(bron));
 
@@ -88,8 +88,8 @@ export async function main(): Promise<number> {
 
       // Een pad met een aanhalingsteken en $(…) is gewoon een pad: het komt als argument aan en wordt nooit uitgevoerd.
       const kwaad = `x'; touch '${join(werk, 'GEKRAAKT')}'; echo '$(touch ${join(werk, 'GEKRAAKT2')})`;
-      const d1 = functie('PROEF=0', 'doe_sh', 'printf %s "$1" > "$2"', kwaad, join(werk, 'uit.txt'));
-      check('server-uitrol-10: doe_sh geeft paden als losse argumenten door (aanhalingsteken en $(…) worden niet uitgevoerd)',
+      const d1 = functie('PROEF=0', 'doe_fn', 'proef pad schrijven', 'stap_pad_schrijven_proef', kwaad, join(werk, 'uit.txt'));
+      check('server-uitrol-10: doe_fn geeft paden als losse argumenten door aan benoemde functies (aanhalingsteken en $(…) worden niet uitgevoerd)',
         d1.status === 0 && existsSync(join(werk, 'uit.txt')) && readFileSync(join(werk, 'uit.txt'), 'utf8') === kwaad && !existsSync(join(werk, 'GEKRAAKT')) && !existsSync(join(werk, 'GEKRAAKT2')), `${d1.status} ${d1.uit.slice(0, 200)}`);
 
       // Proefrun van het hele script in een nagebootste archiefmap; de sleutel staat in een map met een aanhalingsteken in de naam.
@@ -190,6 +190,8 @@ export async function main(): Promise<number> {
     // De eigenaar heeft een passkey (sterke manier); de beheerder niet (dan is een gewone bevestiging de sterkste die er is).
     registreerMethodenBron(async (userId) => ({ passkey: userId === E, totp: false, herstelcode: false }));
     const verplaatst = (await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner-tijdelijk\"') WHERE tbl = 'users' AND data->>'role' = 'owner' RETURNING id")).rows.map((r: { id: string }) => r.id);
+    const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+    const herstelV1Kader = await beginV1TechKader();
     try {
       for (const id of ALLE) await sys.query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3)', ['users', id, { email: mail(id), role: id === E ? 'owner' : 'user', status: 'approved', name: id }]);
       const g = (id: string) => ({ id, email: mail(id), role: id === E ? 'owner' : 'user', status: 'approved' });
@@ -399,6 +401,7 @@ export async function main(): Promise<number> {
     } catch (e) {
       check('extensie-05: onverwachte fout', false, String((e as Error)?.stack || e));
     } finally {
+      await herstelV1Kader();
       await aiDienstOpruimen(ALLE);
       eo._testReset();
       for (const tabel of ['extensie_ontgrendelingen', 'extensie_beleid', 'ai_grants', 'agents', 'tech_activaties', 'tech_profielen']) await sys.query(`DELETE FROM app.${tabel} WHERE user_id = ANY($1)`, [ALLE]).catch(() => undefined);

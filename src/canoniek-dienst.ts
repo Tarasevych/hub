@@ -1,5 +1,5 @@
-export type CanonicalService='hub'|'ai'|'mail'|'cloud'|'github'|'huis'|'identity'|'api'|'admin'|'mcp';
-export type PublicService='hub'|'ai'|'mail'|'cloud'|'github'|'huis'|'mcp';
+export type CanonicalService='hub'|'ai'|'mail'|'cloud'|'github'|'crm'|'huis'|'identity'|'api'|'admin'|'mcp';
+export type PublicService='hub'|'ai'|'mail'|'cloud'|'github'|'crm'|'huis'|'mcp';
 export type ServiceId=Exclude<CanonicalService,'hub'>;
 export type CanonicalLang='uk'|'nl';
 export type CanonicalRoute={service:CanonicalService;tab:string;lang:CanonicalLang;explicitLang?:string;host:string;path:string;pathTab?:string;production:boolean;/** pad is geen tabblad van deze dienst → 404-pagina (public/canonical-service.js) */onbekend?:boolean};

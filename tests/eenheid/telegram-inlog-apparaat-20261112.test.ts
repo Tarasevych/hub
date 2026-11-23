@@ -159,7 +159,9 @@ export async function main(): Promise<number> {
     // De vlag regelt alleen de MELDING «nieuw apparaat»; welke browser bekend is, moet ook zonder de vlag onthouden worden — anders
     // kreeg elk verzoek, ook uit de eigen browser, de (onware) waarschuwing «⚠️ НОВИЙ пристрій … tik Це не я» en wende de mens eraan.
     {
+      const { vlagGeheugenLeeg } = await import('../../backend/vlaggen');
       await sql("UPDATE app.feature_flags SET aan = false, standaard = false WHERE sleutel = 'meldingen-uitleg-v3'");
+      vlagGeheugenLeeg();
       const voorRijen = Number((await sql('SELECT count(*)::int AS n FROM app.bekende_apparaten WHERE user_id = $1', [uid]))[0].n);
       const V3 = G.browser();
       await V3.aanmelden(sub, email, { intent: 'login', service: 'identity', ua: SAFARI_IOS });
@@ -176,6 +178,7 @@ export async function main(): Promise<number> {
       const meldingenNa = Number((await sql(`SELECT count(*)::int AS n FROM app.records WHERE data::text LIKE '%Новий вхід на новому пристрої%' AND data::text LIKE $1`, [`%${uid}%`]).catch(() => [{ n: 0 }]))[0].n);
       check('g10h-toets-3: met de vlag UIT geen melding «Новий вхід на новому пристрої» (de vlag regelt alleen de melding)', meldingenNa === meldingenVoor, `${meldingenVoor} → ${meldingenNa}`);
       await sql("UPDATE app.feature_flags SET aan = true, standaard = true WHERE sleutel = 'meldingen-uitleg-v3'");
+      vlagGeheugenLeeg();
     }
 
     // ============================================================== 4. aanmelden-04: aanmeldvenster alleen voor de browser die begon

@@ -36,11 +36,11 @@ export async function sshCertificaatAanvragen(basis: Record<string, unknown>, pu
 // Ook gebruikt door de kaart «SSH-сертифікати» (SshBeheer): één bron voor de teksten van de uitgifte.
 export const FOUTEN: Record<string, [string, string]> = {
   // SEC-002 (зауваження 1): passkey voor de SSH-CA alleen op admin/id; elders een uitleg met de weg erheen, geen algemene fout.
-  SSH_CA_ORIGIN: ['Видача сертифіката з passkey можлива лише на https://admin.tarasevych.com або https://id.tarasevych.com. Відкрийте технічний шар там і повторіть — нічого не витрачено.', 'Een certificaat met passkey kan alleen op https://admin.tarasevych.com of https://id.tarasevych.com. Open daar de technische laag en probeer opnieuw — er is niets verbruikt.'],
-  PASSKEY_ORIGIN_ONJUIST: ['Passkey підтверджено не на тій адресі: root приймає його лише на https://admin.tarasevych.com або https://id.tarasevych.com. Повторіть видачу там.', 'De passkey is op het verkeerde adres bevestigd: root aanvaardt hem alleen op https://admin.tarasevych.com of https://id.tarasevych.com. Vraag het certificaat daar opnieuw aan.'],
-  SSH_CA_PASSKEY_VEREIST: ['Потрібне підтвердження passkey саме для цього ключа — сертифікат не видано.', 'Een bevestiging met passkey voor precies deze sleutel is nodig — geen certificaat uitgegeven.'],
-  SSH_CA_PASSKEY: ['Root не підтвердив passkey власника — сертифікат не підписано.', 'Root heeft de passkey van de eigenaar niet bevestigd — geen certificaat getekend.'],
-  GEEN_PASSKEY: ['На сервері ще немає passkey власника для схвалень. Додайте його в розділі оновлень (або root: mijn-ruimte-passkey toevoegen).', 'Er staat nog geen passkey van de eigenaar voor goedkeuringen op de server. Voeg hem toe bij de updates (of root: mijn-ruimte-passkey toevoegen).'],
+  SSH_CA_ORIGIN: ['Видача сертифіката з ключем доступу можлива лише на https://admin.tarasevych.com або https://id.tarasevych.com. Відкрийте технічний шар там і повторіть — нічого не витрачено.', 'Een certificaat met passkey kan alleen op https://admin.tarasevych.com of https://id.tarasevych.com. Open daar de technische laag en probeer opnieuw — er is niets verbruikt.'],
+  PASSKEY_ORIGIN_ONJUIST: ['Ключ доступу підтверджено не на тій адресі: root приймає його лише на https://admin.tarasevych.com або https://id.tarasevych.com. Повторіть видачу там.', 'De passkey is op het verkeerde adres bevestigd: root aanvaardt hem alleen op https://admin.tarasevych.com of https://id.tarasevych.com. Vraag het certificaat daar opnieuw aan.'],
+  SSH_CA_PASSKEY_VEREIST: ['Потрібне підтвердження ключем доступу саме для цього ключа — сертифікат не видано.', 'Een bevestiging met passkey voor precies deze sleutel is nodig — geen certificaat uitgegeven.'],
+  SSH_CA_PASSKEY: ['Root не підтвердив ключ доступу власника — сертифікат не підписано.', 'Root heeft de passkey van de eigenaar niet bevestigd — geen certificaat getekend.'],
+  GEEN_PASSKEY: ['На сервері ще немає ключа доступу власника для схвалень. Додайте його в розділі оновлень (або root: mijn-ruimte-passkey toevoegen).', 'Er staat nog geen passkey van de eigenaar voor goedkeuringen op de server. Voeg hem toe bij de updates (of root: mijn-ruimte-passkey toevoegen).'],
   UITDAGING_ONGELDIG: ['Підтвердження застаріло або вже використане. Спробуйте ще раз.', 'De bevestiging is verlopen of al gebruikt. Probeer het opnieuw.'],
   TECH_SSH_CA_VEREIST: ['Сертифікат SSH на сервер видається лише з активного технічного профілю Власника.', 'Een SSH-certificaat voor de server krijgt alleen een actief technisch profiel van de eigenaar.'],
   SSH_CA_SLEUTEL: ['Вставте один публічний ключ ssh-ed25519, без коментаря й без налаштувань.', 'Plak één publieke ssh-ed25519-sleutel, zonder commentaar en zonder opties.'],
@@ -55,7 +55,7 @@ const foutTekst = (e: unknown, uk: boolean) => {
   const c = foutCode(e) || String((e as Error)?.message || 'FOUT'); const f = FOUTEN[c];
   if (f) return uk ? f[0] : f[1];
   if (/STEP_UP|STAP_OP/.test(c)) return uk ? 'Вхід не підтверджено — сертифікат не видано.' : 'Aanmelding niet bevestigd — geen certificaat uitgegeven.';
-  if (/^PASSKEY_|NotAllowedError|AbortError|TimeoutError/.test(c)) return uk ? 'Passkey не підтверджено — сертифікат не видано.' : 'Passkey niet bevestigd — geen certificaat uitgegeven.';
+  if (/^PASSKEY_|NotAllowedError|AbortError|TimeoutError/.test(c)) return uk ? 'Ключ доступу не підтверджено — сертифікат не видано.' : 'Passkey niet bevestigd — geen certificaat uitgegeven.';
   return `${uk ? 'Не вдалося' : 'Mislukt'} (${c}).`;
 };
 
@@ -81,7 +81,7 @@ export default function SshCertificaat({ sluit }: { sluit: () => void }) {
     <Venster id='ssh-certificaat' titel={uk ? 'Сертифікат SSH' : 'SSH-certificaat'} breedte={560} onSluit={sluit}>
       <form className='tech-venster' data-ssh-venster='1' onSubmit={(e) => { e.preventDefault(); if (!bezig && geldig) void doe(); }}>
         <p className='tech-lead'>{uk
-          ? 'Вхід по SSH на цей сервер на одну годину, без постійного ключа. Приватний ключ лишається у вас. Перед видачею сервер попросить ваш passkey саме для цього ключа: без нього root сертифікат не підпише.'
+          ? 'Вхід по SSH на цей сервер на одну годину, без постійного ключа. Приватний ключ лишається у вас. Перед видачею сервер попросить ваш ключ доступу саме для цього ключа: без нього root сертифікат не підпише.'
           : 'SSH naar deze server voor één uur, zonder vaste sleutel. De privésleutel blijft bij u. Vóór de uitgifte vraagt de server uw passkey voor precies deze sleutel: zonder die tekent root het certificaat niet.'} <Vraag help={HELP_SSH} uk={uk} label={uk ? 'Сертифікат SSH' : 'SSH-certificaat'} /></p>
         {uit ? (
           <>

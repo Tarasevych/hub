@@ -73,6 +73,15 @@ export function vlagFout(v: Partial<Vlag>): string | null {
   return null;
 }
 
+export const OPRUIMEN_NA_DAGEN = 30;
+export const OPRUIMEN_NA_MS = OPRUIMEN_NA_DAGEN * 24 * 3600_000;
+/** Архівний прапорець, який перебуває в архіві понад 30 днів і готовий до переведення у постійний стан коду (VLAG_OPRUIMEN). */
+export function moetVlagOpruimen(v: { gearchiveerd?: boolean; gearchiveerd_op?: string | null }, nu = Date.now()): boolean {
+  if (!v.gearchiveerd || !v.gearchiveerd_op) return false;
+  const ts = Date.parse(v.gearchiveerd_op);
+  return Number.isFinite(ts) && nu - ts >= OPRUIMEN_NA_MS;
+}
+
 /**
  * Uitleg in gewone woorden per bekende schakelaar (20261028, vraag van Pavlo: «що і для чого незрозуміло»).
  * [wat het doet, wanneer aanzetten, wat er gebeurt] — Oekraïens en Nederlands apart, zonder vreemde woorden.
@@ -104,11 +113,54 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Спершу тільки для себе: увімкніть, відкрийте сайт на телефоні й перевірте сторінки за списком з інструкції. Потім — для всіх.', 'Eerst alleen voor uzelf: zet aan, open de site op de telefoon en controleer de pagina’s volgens de lijst uit de instructie. Daarna voor iedereen.'],
     gevolg: ['Вимкнення після перезавантаження сторінки повертає попередню верстку без змін. Дані, права й налаштування не змінюються.', 'Uitschakelen brengt na het herladen van de pagina de vorige opmaak ongewijzigd terug. Gegevens, rechten en instellingen veranderen niet.'],
   },
+  // POSTA-LEZER (21.11.2026, migratie 0307): drie vlaggen, alle standaard UIT.
+  'lezer-fout-blijft-open-v1': {
+    naam: ['Лист, що не відкрився, лишає вікно відкритим', 'Leesvenster blijft open bij een laadfout'],
+    wat: ['Якщо лист не завантажився, вікно читання більше не зникає саме. У ньому видно причину (наприклад, Google відповідав надто довго або не дав доступу) і кнопку «Спробувати ще раз». Сервер повідомляє зрозумілу причину замість загальної помилки.', 'Kan een bericht niet geladen worden, dan verdwijnt het leesvenster niet meer vanzelf. Het toont de reden (bijvoorbeeld: Google antwoordde te traag of gaf geen toegang) en de knop «Opnieuw proberen». De server meldt een duidelijke reden in plaats van een algemene fout.'],
+    wanneer: ['Спершу тільки для себе: увімкніть, відкрийте кілька листів і перевірте за списком з інструкції. Потім — для всіх.', 'Eerst alleen voor uzelf: zet aan, open een paar berichten en controleer met de lijst uit de instructie. Daarna voor iedereen.'],
+    gevolg: ['Вимкнення після перезавантаження сторінки повертає попередню поведінку: вікно закривається й угорі видно коротку примітку. Дані не змінюються.', 'Uitschakelen brengt na het herladen het vorige gedrag terug: het venster sluit en bovenaan staat een korte melding. Gegevens veranderen niet.'],
+  },
+  'mail-tekst-utf8-terugval-v1': {
+    naam: ['Правильні літери в листах із хибним кодуванням', 'Juiste letters in berichten met een verkeerde tekenset'],
+    wat: ['Деякі відправники пишуть лист у UTF-8, але позначають його як західноєвропейське кодування. Тоді замість «möchten» видно «mÃ¶chten». З прапорцем сервер розпізнає такий лист і показує правильні літери. Звичайні листи не змінюються.', 'Sommige afzenders schrijven in UTF-8 maar melden een West-Europese tekenset. Dan staat er «mÃ¶chten» in plaats van «möchten». Met de vlag herkent de server zo’n bericht en toont de juiste letters. Gewone berichten veranderen niet.'],
+    wanneer: ['Цей прапорець діє для всього сервера одразу (не для окремої людини): увімкніть його загалом. Сервер перевіряє стан раз на хвилину. Уже збережені в оглядачі листи можуть лишитися старими, доки їх не завантажено знову.', 'Deze vlag geldt voor de hele server tegelijk (niet per persoon): zet hem algemeen aan. De server kijkt elke minuut. Berichten die al in de browser bewaard zijn, kunnen oud blijven tot ze opnieuw geladen worden.'],
+    gevolg: ['Вимкнення протягом хвилини повертає попереднє читання листів. Дані не змінюються.', 'Uitschakelen brengt binnen een minuut het vorige lezen van berichten terug. Gegevens veranderen niet.'],
+  },
+  'maquette-zwevend-rail-verbergen-v1': {
+    naam: ['«Макет»: смуга розділів не закриває «вікно у вікні»', '«Макет»: ankerrail bedekt het zwevende venster niet'],
+    wat: ['В оформленні «Макет» праворуч є смуга «На цій сторінці». Коли лист відкрито зменшеним вікном поверх пошти, ця смуга лежала над кнопками вікна. З прапорцем смуга в цьому режимі ховається.', 'In de vormgeving «Макет» staat rechts de rail «Op deze pagina». Bij een verkleind venster boven de post lag die rail over de knoppen van het venster. Met de vlag verdwijnt de rail in die stand.'],
+    wanneer: ['Спершу тільки для себе: увімкніть, оберіть «Макет», відкрийте лист зменшеним вікном і перевірте кнопки. Потім — для всіх.', 'Eerst alleen voor uzelf: zet aan, kies «Макет», open een bericht in een verkleind venster en controleer de knoppen. Daarna voor iedereen.'],
+    gevolg: ['Вимкнення після перезавантаження сторінки повертає смугу в усіх режимах. Дані не змінюються.', 'Uitschakelen brengt na het herladen de rail in alle standen terug. Gegevens veranderen niet.'],
+  },
+  'posta-vensters-herstel-v1': {
+    naam: ['Перегляд вкладень і вікно листа без накладок', 'Bijlageviewer en leesvenster zonder overlappingen'],
+    wat: ['Перегляд вкладення на телефоні займає весь екран, і кнопку «Закрити» завжди видно. Назва вкладення більше не скорочується до однієї літери. Текстовий файл показується на всю висоту. Кнопка «Назад» спершу закриває лише перегляд, а лист лишається відкритим. Після закриття курсор повертається до картки вкладення. Архів чи невідомий файл більше не позначається хибно як «JWK». У зменшеному вікні листа смуга «Оригінал / Переклад / Порівняти» стоїть окремим рядком і не закриває кнопок.', 'De bijlageviewer vult op de telefoon het hele scherm en «Sluiten» blijft zichtbaar. De naam van de bijlage krimpt niet meer tot één letter. Een tekstbestand krijgt de volle hoogte. «Terug» sluit eerst alleen de viewer; het bericht blijft open. Na het sluiten keert de focus terug naar de kaart van de bijlage. Een archief of onbekend bestand heet niet meer ten onrechte «JWK». In het verkleinde leesvenster staat de strook «Origineel / Vertaling / Vergelijken» op een eigen regel en bedekt geen knoppen.'],
+    wanneer: ['Спершу тільки для себе: увімкніть, відкрийте лист із кількома вкладеннями на телефоні й на комп’ютері, натисніть «Назад» і перевірте кнопки. Потім — для всіх.', 'Eerst alleen voor uzelf: zet aan, open een bericht met meerdere bijlagen op de telefoon en de computer, druk op «Terug» en controleer de knoppen. Daarna voor iedereen.'],
+    gevolg: ['Вимкнення після перезавантаження сторінки повертає попередній вигляд і поведінку. Дані не змінюються.', 'Uitschakelen brengt na het herladen het vorige uiterlijk en gedrag terug. Gegevens veranderen niet.'],
+  },
+  'bijlage-weergave-gedeeld-v1': {
+    naam: ['Новий спільний перегляд вкладень (етап 1)', 'Nieuwe gedeelde bijlageviewer (fase 1)'],
+    wat: ['Вкладення відкривається в новій рамці: зверху видно, що це за файл, його розмір і місце серед вкладень листа; одна кольорова позначка довіри каже, чи справжній тип збігається з назвою і чи немає макросів або прихованих дій; одна головна кнопка під тип файлу, решта — під «⋯»; технічні дані — під «Подробиці»; унизу стрічка всіх вкладень листа. Якщо файл не завантажився, вікно не зникає, а пояснює причину й пропонує «Спробувати ще раз». «Назад» закриває лише перегляд.', 'Een bijlage opent in een nieuwe omlijsting: bovenaan staat wat het bestand is, de grootte en de plaats tussen de bijlagen; één gekleurd vertrouwenslabel zegt of de echte soort bij de naam past en of er geen macro’s of verborgen acties zijn; één hoofdknop per soort, de rest onder «⋯»; technische gegevens onder «Подробиці»; onderaan een strook met alle bijlagen. Laadt het bestand niet, dan blijft het venster open met de reden en «Opnieuw proberen». «Terug» sluit alleen de viewer.'],
+    wanneer: ['Спершу тільки для себе: увімкніть, відкрийте лист із кількома вкладеннями (рахунок, фото, архів) на комп’ютері й телефоні, перевірте позначку довіри, кнопки, стрічку й «Назад». Потім — для всіх. Концепція: docs/concept/bijlage-weergave/CONCEPT.md.', 'Eerst alleen voor uzelf: zet aan, open een bericht met meerdere bijlagen (rekening, foto, archief) op de computer en de telefoon, controleer het label, de knoppen, de strook en «Terug». Daarna voor iedereen. Concept: docs/concept/bijlage-weergave/CONCEPT.md.'],
+    gevolg: ['Вимкнення після перезавантаження сторінки повертає попередній перегляд. Дані й файли не змінюються.', 'Uitschakelen brengt na het herladen de vorige viewer terug. Gegevens en bestanden veranderen niet.'],
+  },
   'telegram-aanmelden-v1': {
     naam: ['Вхід і підтвердження через Telegram', 'Aanmelden en bevestigen via Telegram'],
     wat: ['Офіційна кнопка Telegram на сторінці входу, прив’язка Telegram з обов’язковим власним номером телефону, підтвердження дій у боті @MijnRuimte_Bot, гарні картки сповіщень, таблиця «що чим підтверджувати», таємний код і чесна служба стану. В адмінці з’являється розділ «Способи входу» → Telegram.', 'Officiële Telegram-knop op het aanmeldscherm, Telegram koppelen met verplicht eigen telefoonnummer, handelingen bevestigen in de bot @MijnRuimte_Bot, mooie meldingskaarten, een tabel «wat waarmee bevestigen», een geheime code en een eerlijke statusdienst. In het beheer verschijnt «Aanmeldmethoden» → Telegram.'],
     wanneer: ['Спершу тільки для себе: у адмінці введіть ключ бота й натисніть «Налаштувати бота», прив’яжіть свій Telegram і перевірте. Потім — для частини людей або всіх.', 'Eerst alleen voor uzelf: voer in het beheer de botsleutel in en kies «Bot instellen», koppel uw eigen Telegram en test. Daarna voor een deel van de mensen of iedereen.'],
     gevolg: ['Вимкнення одразу ховає кнопку Telegram і зупиняє бота; прив’язки, коди й налаштування зберігаються до наступного вмикання. Інші способи входу не змінюються.', 'Uitschakelen verbergt de Telegram-knop meteen en zet de bot stil; koppelingen, codes en instellingen blijven bewaard tot de volgende inschakeling. Andere aanmeldmethoden veranderen niet.'],
+  },
+  'telegram-v2': {
+    naam: ['Захищене вікно входу й підтвердження Telegram', 'Beveiligd Telegram-venster voor aanmelden en bevestigen'],
+    wat: ['Показує однакові контрольні піктограми на сайті та у захищеному вікні Telegram, приймає таємний код лише у вікні поза перепискою бота й зберігає історію світлин профілю для перевірки безпеки.', 'Toont dezelfde controlepictogrammen op de site en in het beveiligde Telegram-venster, vraagt de geheime code uitsluitend in het venster buiten het gesprek en bewaart de geschiedenis van profielfoto’s voor veiligheidscontrole.'],
+    wanneer: ['Увімкніть після налаштування ключа бота та таємного ключа приймача подій, щоб посилити захист входу й підтвердження чутливих дій.', 'Zet aan nadat de botsleutel en het ontvangstgeheim zijn ingesteld om aanmelden en het bevestigen van gevoelige handelingen sterker te beveiligen.'],
+    gevolg: ['Вимкнення повертає класичне підтвердження кнопкою в боті без втрати прив’язок, кодів чи збереженої історії світлин.', 'Uitschakelen brengt het klassieke bevestigen met een knop in de bot terug zonder koppelingen, codes of fotogeschiedenis te verliezen.'],
+  },
+  'telegram-aanmeld-maket-v1': {
+    naam: ['Наочний вигляд вікна входу через Telegram', 'Visuele weergave van het Telegram-aanmeldvenster'],
+    wat: ['Додає у відкриту панель входу через Telegram живу шкалу залишку часу, наочні кроки перевірки, зразок очікуваного повідомлення від бота з попередженням про підозрілий запит і перемикач між компактним та студійним поданням.', 'Voegt aan het geopende Telegram-aanmeldvenster een tijdsbalk, duidelijke stappen, een voorbeeld van het verwachte botbericht met waarschuwing bij een verdacht verzoek en een keuze tussen compact en uitgebreid uiterlijk toe.'],
+    wanneer: ['Увімкніть спершу для себе, перевірте компактний і студійний режими на телефоні та комп’ютері, а потім відкрийте для всіх.', 'Zet eerst voor uzelf aan, controleer de compacte en uitgebreide stand op telefoon en computer, en open daarna voor iedereen.'],
+    gevolg: ['Вимкнення залишає компактний вигляд вікна входу без зміни протоколу перевірки чи збережених прив’язок.', 'Uitschakelen houdt het compacte aanmeldvenster aan zonder het controleprotocol of bestaande koppelingen te wijzigen.'],
   },
   // IDENTITEIT-015 (aanmelden): чотири окремі шляхи без Google; міграція 0275 ставить кожен на «Тільки я» (лише власник сайту).
   'aanmelden-passkey': {
@@ -148,6 +200,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Вмикайте, щоб отримати нове подання; стара форма завжди доступна вимкненням прапорця.', 'Zet aan voor de nieuwe weergave; het oude formulier blijft via de vlag altijd beschikbaar.'],
     gevolg: ['Вимкнено — стара сторінка без змін. «Безпека» і «Відновлення» в обох станах лишаються на чинній формі.', 'Uit = de huidige pagina, ongewijzigd. «Beveiliging» en «Herstel» blijven in beide standen op het bestaande formulier.'],
   },
+  'aanmeldmethoden-kaart-v2': {
+    naam: ['Картковий режим розділу «Способи входу»', 'Kaartweergave van «Aanmeldmethoden»'],
+    wat: ['Додає перемикач карткового подання способів входу поруч із поточним оглядом: згортані групи з лічильниками, компактні плитки постачальників, двомовний пошук і бічну панель подробиць.', 'Voegt naast het huidige overzicht een kaartweergave van aanmeldmethoden toe: inklapbare groepen met tellers, aanbiedertegels, tweetalig zoeken en een zijpaneel met gegevens.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте перемикання між оглядом та картковою сіткою, а далі відкрийте для всіх.', 'Zet eerst alleen voor uzelf aan, controleer het wisselen tussen overzicht en kaartweergave, en zet daarna voor iedereen aan.'],
+    gevolg: ['Типовим залишається поточний огляд; вимкнення прибирає картковий перемикач без зміни жодного налаштованого способу входу.', 'Het huidige overzicht blijft standaard; uitschakelen verbergt de kaartkeuze zonder ingestelde aanmeldmethoden te veranderen.'],
+  },
   'afstemming-vnext': {
     naam: ['Нова «Звірка» (UI-014, Afstemming vNext)', 'Nieuwe afstemming (UI-014, Afstemming vNext)'],
     wat: ['Розумна картотека розвитку продукту на api/afstemming: картки з життєвим циклом і ЧЕСНИМ станом придатності, незмінна історія рішень, зв’язки/дублікати/конфлікти з рішенням власника, прив’язка до реальних випусків, звіти.', 'Slimme productkartotheek op api/afstemming: kaarten met levensloop en EERLIJKE gezondheid, onveranderlijke beslisgeschiedenis, relaties/duplicaten/conflicten met eigenaarsbesluit, koppeling aan echte releases, rapporten.'],
@@ -166,6 +224,60 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу лише для себе. Фото з «Хмарного сховища» з’являться без копіювання.', 'Zet eerst alleen voor uzelf aan. Foto’s uit «Cloudopslag» verschijnen zonder kopie.'],
     gevolg: ['Нічого не видаляється із зовнішніх сервісів. Вимкнено — розділу немає, імпортовані фото лишаються на сервері.', 'Er wordt niets uit externe diensten verwijderd. Uit = geen onderdeel, geïmporteerde foto’s blijven op de server.'],
   },
+  'cloud-m4-koppelingen-v1': {
+    naam: ['Підключення зовнішніх хмарних сховищ за OAuth', 'Koppeling van externe cloudopslag via OAuth'],
+    wat: ['Дозволяє підключати зовнішні хмарні сховища до власного або технічного простору через захищений контур OAuth без розкриття ключів.', 'Maakt het mogelijk externe cloudopslag per eigen of technische ruimte via een beveiligde OAuth-stroom te koppelen zonder sleutels bloot te geven.'],
+    wanneer: ['Увімкніть спершу лише для себе після додавання клієнтських ключів зовнішніх постачальників у сховище власника.', 'Zet eerst uitsluitend voor uzelf aan nadat de clientsleutels van de externe aanbieders in de kluis van de eigenaar zijn geplaatst.'],
+    gevolg: ['Вимкнення зупиняє нові підключення та звернення до зовнішніх сховищ без видалення збережених прив’язок. Прав доступу не додає.', 'Uitschakelen stopt nieuwe koppelingen en aanroepen naar externe opslag zonder bewaarde koppelingen te wissen. Geeft geen extra rechten.'],
+  },
+  'cloud-m5-catalogus-v1': {
+    naam: ['Каталог готовності зовнішніх хмарних постачальників', 'Gereedheidscatalogus van externe cloudaanbieders'],
+    wat: ['Показує схваленому сеансу хмарного сховища чесний стан готовності кожного зовнішнього постачальника та наявність серверних налаштувань.', 'Toont binnen een goedgekeurde cloudsessie de eerlijke gereedheidsstatus van elke externe aanbieder en de aanwezigheid van serverinstellingen.'],
+    wanneer: ['Увімкніть спершу для себе під час перевірки центру підключень хмарного сховища, а потім відкрийте іншим.', 'Zet eerst voor uzelf aan bij het controleren van het integratiecentrum van de cloudopslag en open daarna voor anderen.'],
+    gevolg: ['Вимкнення приховує розширений каталог готовності без зміни підключених облікових записів чи файлів.', 'Uitschakelen verbergt de uitgebreide gereedheidscatalogus zonder gekoppelde accounts of bestanden te wijzigen.'],
+  },
+  'cloud-m6-beheer-v1': {
+    naam: ['Керування політиками зовнішніх хмарних постачальників', 'Beheerbeleid voor externe cloudaanbieders'],
+    wat: ['Відкриває власнику в активному технічному профілі налаштування доступності та обмежень для зовнішніх хмарних постачальників.', 'Opent voor de eigenaar in een actief technisch profiel de instellingen voor beschikbaarheid en grenzen van externe cloudaanbieders.'],
+    wanneer: ['Увімкніть для себе, коли потрібно керувати правилами підключення зовнішніх хмарних служб.', 'Zet voor uzelf aan wanneer de koppelregels van externe clouddiensten beheerd moeten worden.'],
+    gevolg: ['Вимкнення закриває адміністративні маршрути керування політиками хмари без зміни раніше збережених правил.', 'Uitschakelen sluit de beheerroutes voor cloudbeleid zonder eerder opgeslagen regels te veranderen.'],
+  },
+  'cloud-m8-mappen-v1': {
+    naam: ['Єдиний перегляд тек підключених хмарних сховищ', 'Uniform mappenoverzicht van gekoppelde cloudopslag'],
+    wat: ['Забезпечує перегляд тек і переліку об’єктів підключених зовнішніх хмарних сховищ із захищеним серверним вказівником сторінки.', 'Biedt mappenweergave en objectoverzicht van gekoppelde externe cloudopslag met een versleutelde paginawijzer op de server.'],
+    wanneer: ['Увімкніть разом із середовищем виконання зовнішньої хмари після підключення першого сховища.', 'Zet samen met de serveromgeving voor externe cloudopslag aan zodra de eerste opslag is gekoppeld.'],
+    gevolg: ['Вимкнення припиняє читання тек зовнішніх сховищ без жодних змін у самих файлах.', 'Uitschakelen stopt het uitlezen van externe mappen zonder enige wijziging aan de bestanden zelf.'],
+  },
+  'cloud-m10-beheer-v1': {
+    naam: ['Адміністративний міст керування хмарними постачальниками', 'Beheerbrug voor cloudaanbieders'],
+    wat: ['Дозволяє власнику з посиленим підтвердженням особи перевіряти та перемикати готовність контурів зовнішніх хмарних постачальників.', 'Stelt de eigenaar na sterke identiteitsbevestiging in staat de gereedheid van externe cloudaanbieders te controleren en te schakelen.'],
+    wanneer: ['Увімкніть лише для власника під час налаштування зовнішніх хмарних підключень.', 'Zet uitsluitend voor de eigenaar aan tijdens het inrichten van externe cloudkoppelingen.'],
+    gevolg: ['Вимкнення закриває адміністративний міст керування без втрати збережених налаштувань.', 'Uitschakelen sluit de beheerbrug zonder opgeslagen instellingen te verliezen.'],
+  },
+  'cloud-m10-omgeving-v1': {
+    naam: ['Серверне середовище огляду тек і попереднього перегляду хмари', 'Serveromgeving voor mappen en voorbeeldweergave in de cloud'],
+    wat: ['Вмикає робоче серверне середовище для живого читання тек і безпечного попереднього перегляду файлів із підключених зовнішніх хмар.', 'Schakelt de actieve serveromgeving in voor het uitlezen van mappen en beveiligde voorbeeldweergave van bestanden uit gekoppelde cloudopslag.'],
+    wanneer: ['Увімкніть після перевірки ключів шифрування та підключення зовнішнього сховища.', 'Zet aan nadat de versleutelingssleutels en de koppeling met externe opslag zijn gecontroleerd.'],
+    gevolg: ['Вимкнення переводить зовнішні маршрути читання тек і перегляду у вимкнений стан без втрати підключень.', 'Uitschakelen zet de externe routes voor mappen en voorbeeldweergave stil zonder verlies van koppelingen.'],
+  },
+  'cloud-m11-voorbeeld-v1': {
+    naam: ['Захищений попередній перегляд файлів зовнішніх хмар', 'Beveiligde voorbeeldweergave van externe cloudbestanden'],
+    wat: ['Відкриває попередній перегляд підтримуваних файлів із підключених зовнішніх сховищ із перевіркою версії та контрольної суми.', 'Opent een voorbeeldweergave van ondersteunde bestanden uit gekoppelde externe opslag met revisie- en somcontrole.'],
+    wanneer: ['Увімкніть спершу лише для себе разом із серверним середовищем хмари, перевірте перегляд документів і світлин, а потім відкрийте іншим.', 'Zet eerst uitsluitend voor uzelf aan samen met de cloudomgeving, controleer documenten en afbeeldingen, en open daarna voor anderen.'],
+    gevolg: ['Вимкнення вимикає попередній перегляд зовнішніх файлів без зміни самих файлів.', 'Uitschakelen stopt de voorbeeldweergave van externe bestanden zonder de bestanden zelf aan te raken.'],
+  },
+  'cloud-webdav-v1': {
+    naam: ['Підключення власних мережевих сховищ за HTTPS', 'Koppeling van eigen netwerkopslag via HTTPS'],
+    wat: ['Дозволяє підключати власну хмару чи домашнє мережеве сховище NAS за захищеним з’єднанням HTTPS із шифруванням пароля застосунку у сховищі ключів та захистом від звернень до внутрішньої мережі.', 'Maakt het mogelijk een eigen cloud of netwerkopslag via HTTPS te koppelen met versleuteling van het toepassingswachtwoord in de sleutelkluis en bescherming tegen interne netwerkadressen.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте з’єднання з власним сервером хмари й огляд тек, а далі відкрийте іншим за потреби.', 'Zet eerst uitsluitend voor uzelf aan, controleer de verbinding met de eigen opslagserver en het mappenoverzicht, en open daarna zo nodig voor anderen.'],
+    gevolg: ['Вимкнення приховує підключення мережевих сховищ і зупиняє запити до них; зашифровані записи залишаються незмінними.', 'Uitschakelen verbergt de netwerkopslag en stopt verzoeken ernaartoe; versleutelde koppelingen blijven ongewijzigd bewaard.'],
+  },
+  'foto-google-drive-v1': {
+    naam: ['Показ світлин із Google Drive та підключених сховищ у «Фото»', 'Foto’s uit Google Drive en gekoppelde opslag in «Foto’s»'],
+    wat: ['Додає за явною згодою людини пряме відображення світлин із підключеного Google Drive та власних мережевих сховищ у службі «Фото» в межах поточного простору.', 'Voegt na uitdrukkelijke toestemming rechtstreekse weergave van foto’s uit gekoppelde Google Drive en eigen netwerkopslag toe aan de dienst «Foto’s» binnen dezelfde ruimte.'],
+    wanneer: ['Потребує увімкненого розділу «Фото». Увімкніть спершу для себе, надайте згоду на обране джерело й перевірте стрічку світлин.', 'Vereist de dienst «Foto’s». Zet eerst voor uzelf aan, geef toestemming voor een bron en controleer de fotostroom.'],
+    gevolg: ['Вимкнення припиняє завантаження зовнішніх світлин у стрічку без видалення жодного знімка у джерелі чи локальних альбомів.', 'Uitschakelen stopt het ophalen van externe foto’s zonder opnamen bij de bron of lokale albums te wissen.'],
+  },
   'menu-kalender-foto-eigen': {
     naam: ['Календар і Фото в «Моєму просторі»', 'Agenda en Foto’s in «Mijn ruimte»'],
     wat: ['Прибирає «Календар» і «Фото» з меню «Хмарне сховище» і показує їх у «Моєму просторі». Старі адреси переводять на нові.', 'Haalt «Agenda» en «Foto’s» uit het menu «Cloudopslag» en toont ze in «Mijn ruimte». Oude adressen sturen door.'],
@@ -183,6 +295,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wat: ['Нова сторінка «Нотатки»: теки, теги, закріплення, архів і кошик, редактор Markdown із чеклістами, імпорт/експорт файлів.', 'Nieuwe pagina «Notities»: mappen, etiketten, vastzetten, archief en prullenbak, Markdown-editor met checklists, bestandsimport/-export.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати нові нотатки.', 'Zet eerst alleen voor uzelf aan om de nieuwe notities te proberen.'],
     gevolg: ['Записи ті самі (старі нотатки перенесено без втрат, дошка й інструмент manage_hub_notes працюють як раніше). Вимкнено — стара сторінка, усі нотатки на місці.', 'Dezelfde notities (oude zijn zonder verlies overgezet; het bord en manage_hub_notes werken als voorheen). Uit = de oude pagina, alle notities blijven.'],
+  },
+  'notities-agenda-brug-v1': {
+    naam: ['Двосторонній зв’язок нотаток із календарем, завданнями та сховищем', 'Tweerichtingskoppeling van notities met agenda, taken en opslag'],
+    wat: ['Дозволяє прив’язувати нотатку до події календаря за підтвердженням людини, переходити між нотаткою й зустріччю в один натиск, створювати завдання простору з нотатки та прикріплювати власні файли зі сховища.', 'Maakt het mogelijk een notitie na bevestiging aan een agenda-afspraak te koppelen, met één klik heen en weer te springen, ruimtetaken te maken en eigen opslagbestanden te koppelen.'],
+    wanneer: ['Потребує увімкнених нових нотаток. Увімкніть спершу лише для себе, перевірте створення зв’язку з подією календаря, а потім відкрийте для всіх.', 'Vereist de nieuwe notities. Zet eerst uitsluitend voor uzelf aan, controleer de koppeling met een afspraak en open daarna voor iedereen.'],
+    gevolg: ['Вимкнення ховає блок міжслужбових зв’язків у нотатці; збережені нотатки та події календаря залишаються на місці.', 'Uitschakelen verbergt het koppelblok in de notitie; bewaarde notities en agenda-afspraken blijven intact.'],
   },
   'bijlage-viewer-v2': {
     naam: ['Новий перегляд вкладень у пошті', 'Nieuwe bijlageviewer in mail'],
@@ -226,11 +344,23 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий пошук.', 'Zet eerst alleen voor uzelf aan om het nieuwe zoeken te proberen.'],
     gevolg: ['Умови пошуку, збережені пошуки й результати ті самі; змінюється лише панель. Вимкнено — стара панель фільтрів і «Ще умови».', 'Zoekvoorwaarden, opgeslagen zoekopdrachten en resultaten blijven gelijk; alleen het paneel verandert. Uit = het oude filterpaneel en «Meer voorwaarden».'],
   },
+  'mail-dienstbruggen-v1': {
+    naam: ['Швидкі міжслужбові дії з листа та вкладень у Пошті', 'Snelle dienstbruggen vanuit berichten en bijlagen in E-mail'],
+    wat: ['Додає у відкритому листі та переглядачі вкладень швидкі дії створення нотатки, завдання простору, переходу до звірки, події в календарі та картки клієнта без передавання приватного тексту в адресу сторінки.', 'Voegt in het geopende bericht en de bijlageweergave snelle acties toe voor een notitie, ruimtetaak, afstemming, agenda-afspraak en klantkaart zonder privégegevens in het webadres.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте переходи з листа у нотатки, календар і картку клієнта в обох просторах, а потім відкрийте іншим.', 'Zet eerst uitsluitend voor uzelf aan, controleer de acties vanuit een bericht naar notities, agenda en klantkaart in beide ruimtes, en open daarna voor anderen.'],
+    gevolg: ['Вимкнення прибирає кнопки міжслужбових дій із пошти; раніше створені нотатки, завдання, події й досьє клієнтів зберігаються.', 'Uitschakelen verbergt de brugknoppen in de post; eerder aangemaakte notities, taken, afspraken en klantdossiers blijven bewaard.'],
+  },
   'agenda-v3': {
     naam: ['Новий календар (Agenda v3)', 'Nieuwe agenda (Agenda v3)'],
     wat: ['Нова сторінка «Календар»: великий календар, мінікалендар, список календарів, зручний вигляд на телефоні.', 'Nieuwe pagina «Agenda»: grote agenda, minikalender, lijst met agenda’s, prettig op de telefoon.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий вигляд календаря.', 'Zet eerst alleen voor uzelf aan om de nieuwe agenda te proberen.'],
     gevolg: ['Події, підключення й дозволи ті самі; змінюється лише вигляд. Вимкнено — старий календар без змін.', 'Afspraken, koppelingen en rechten blijven gelijk; alleen het uiterlijk verandert. Uit = de oude agenda, ongewijzigd.'],
+  },
+  'agenda-koppelingen-v1': {
+    naam: ['Двосторонній запис CalDAV, вивантаження ICS і переходи в Календарі', 'Tweerichtings-CalDAV, ICS-uitvoer en sprongen in de Agenda'],
+    wat: ['Вмикає збереження й видалення подій у зовнішніх календарях CalDAV із перевіркою прав запису та версії, вивантаження події у файл ICS для календарів лише для читання та швидкі переходи до листів, контакту й нотатки зустрічі.', 'Schakelt opslaan en wissen in externe CalDAV-agenda’s met rechten- en versiecontrole in, biedt ICS-uitvoer voor alleen-lezen agenda’s en voegt snelle sprongen naar berichten, contact en gespreksnotitie toe.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте запис у підключений календар CalDAV або завантаження ICS та переходи з картки події, а потім відкрийте для всіх.', 'Zet eerst uitsluitend voor uzelf aan, controleer het schrijven naar een gekoppelde CalDAV-agenda of ICS-uitvoer en de sprongen vanuit een afspraak, en open daarna voor iedereen.'],
+    gevolg: ['Вимкнення залишає зовнішні календарі CalDAV у режимі читання й ховає додаткові переходи без втрати підписок чи подій.', 'Uitschakelen houdt externe CalDAV-agenda’s op alleen-lezen en verbergt de extra sprongen zonder abonnementen of afspraken te verliezen.'],
   },
   'meldingen-v2': {
     naam: ['Новий центр сповіщень', 'Nieuw meldingencentrum'],
@@ -279,6 +409,67 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wat: ['Значки можна групувати в блоки (і блок у блоці) з власним розміром.', 'Pictogrammen in blokken groeperen (ook blok in blok) met een eigen grootte.'],
     wanneer: ['Увімкніть, щоб спробувати блоки.', 'Zet aan om blokken te proberen.'],
     gevolg: ['Вимкнення ховає блоки, але не видаляє їх. Прав не додає.', 'Uitzetten verbergt de blokken maar wist ze niet. Geeft geen rechten.'],
+  },
+  'klantrelatiebeheer-v1': {
+    naam: ['Клієнтські взаємини', 'Klantrelatiebeheer'],
+    wat: ['Середовище клієнтських взаємин: зашифровані власним ключем досьє клієнтів, угоди за етапами, історія взаємодій, подальші завдання, розрахунок кошторису та безпечний зв’язок із поштою, хмарним сховищем і календарем.', 'Klantrelatiebeheer: met uw eigen gegevenssleutel versleutelde klantdossiers, verkoopkansen per fase, contactgeschiedenis, vervolgtaken, begroting en veilige koppeling met e-mail, cloudopslag en agenda.'],
+    wanneer: ['Увімкніть спершу лише для себе в «Перемикачах функцій», перевірте досьє клієнтів, угоди й завдання за відкритого сховища ключів, а потім відкрийте для вибраних людей або всіх.', 'Zet eerst alleen voor uzelf aan bij «Functieschakelaars», controleer klantdossiers, verkoopkansen en taken met geopende sleutelkluis, en open daarna voor gekozen mensen of iedereen.'],
+    gevolg: ['Вимкнення негайно закриває доступ до маршрутів та екрана клієнтських взаємин без втрати чи зміни збережених зашифрованих досьє. Прав доступу перемикач не додає.', 'Uitschakelen sluit meteen de routes en het scherm van klantrelatiebeheer zonder verlies of wijziging van de versleutelde dossiers. De schakelaar geeft geen extra rechten.'],
+  },
+  // CONSOL-001 / Віха M4 (0319..0320, 0324..0329): робочий стіл, соцмережі, перехідники, картотека «Звірка», ШІ, програмні інтерфейси, MCP та архів Telegram.
+  'werkblad-snelkoppelingen-v1': {
+    naam: ['Власні ярлики на робочому столі між пристроями', 'Eigen snelkoppelingen op het werkblad tussen apparaten'],
+    wat: ['Зберігає власні ярлики користувача на робочому столі в поточному просторі та синхронізує їх між комп’ютером, планшетом і телефоном.', 'Bewaart eigen snelkoppelingen op het werkblad binnen de huidige ruimte en synchroniseert ze tussen computer, tablet en telefoon.'],
+    wanneer: ['Потребує увімкненого «Нового робочого столу». Увімкніть спершу для себе та перевірте додавання й перейменування ярликів.', 'Vereist «Nieuw werkblad». Zet eerst voor uzelf aan en controleer het toevoegen en hernoemen van snelkoppelingen.'],
+    gevolg: ['Вимкнення зупиняє серверну синхронізацію нових ярликів без видалення вже збережених записів у просторі. Прав доступу перемикач не змінює.', 'Uitschakelen stopt de serversynchronisatie van nieuwe snelkoppelingen zonder reeds bewaarde items in de ruimte te wissen. Verandert geen rechten.'],
+  },
+  'social-overzicht-v1': {
+    naam: ['Служба «Соціальні мережі»', 'Dienst «Sociale netwerken»'],
+    wat: ['Відкриває єдиний огляд підключених каналів Telegram, Discord і GitHub, метаданих імпортованих архівів світлин та власних профілів і чернеток публікацій у межах простору.', 'Opent één overzicht van gekoppelde Telegram-, Discord- en GitHub-kanalen, metadata van geïmporteerde fotoarchieven en eigen profielen en publicatieconcepten binnen de ruimte.'],
+    wanneer: ['Увімкніть спершу лише для себе в «Перемикачах функцій», перевірте відображення каналів і збереження чернеток, а потім за потреби відкрийте іншим.', 'Zet eerst alleen voor uzelf aan bij «Functieschakelaars», controleer kanalen en concepten en stel daarna zo nodig open voor anderen.'],
+    gevolg: ['Вимкнення негайно закриває маршрути й екран служби «Соціальні мережі», зберігаючи всі створені профілі та чернетки в просторі.', 'Uitschakelen sluit meteen de routes en het scherm van «Sociale netwerken», terwijl alle aangemaakte profielen en concepten bewaard blijven.'],
+  },
+  'integraties-adapter-opslaan-v1': {
+    naam: ['Збереження підключень перехідників у Майстрі інтеграцій', 'Adapterkoppelingen bewaren in de koppelwizard'],
+    wat: ['Дозволяє після успішної живої перевірки зашифровано зберегти підключення Nextcloud (WebDAV), S3 або MQTT у вашому просторі та показувати службу серед під’єднаних.', 'Maakt het mogelijk om na een geslaagde verbindingstest een Nextcloud- (WebDAV), S3- of MQTT-koppeling versleuteld in uw ruimte te bewaren en bij «Gekoppeld» te tonen.'],
+    wanneer: ['Увімкніть спершу для себе, перевірте збереження, повторну перевірку стану та від’єднання перехідника в каталозі інтеграцій.', 'Zet eerst voor uzelf aan en controleer bewaren, opnieuw testen en loskoppelen van een adapter in de integratiecatalogus.'],
+    gevolg: ['Вимкнення прибирає дію збереження нових перехідників у майстрі без видалення чи розшифрування вже збережених підключень.', 'Uitschakelen verbergt het bewaren van nieuwe adapters in de wizard zonder bestaande versleutelde koppelingen te wissen.'],
+  },
+  'afstemming-volledig-v1': {
+    naam: ['Повне оснащення картотеки «Звірка»', 'Volledige uitrusting van kartotheek «Afstemming»'],
+    wat: ['Додає загальну стрічку подій усіх карток, розбір чернетки задуму за згодою людини, читання вкладень PDF і зображень, безпечні внутрішні проби маршрутів та зіставлення з координацією.', 'Voegt de gezamenlijke gebeurtenissenstroom, idee-ontleding na toestemming, tekstlezing uit PDF- en beeldbijlagen, veilige interne routecontroles en afstemming met orchestratie toe.'],
+    wanneer: ['Потребує увімкненої «Нової Звірки». Увімкніть для себе, щоб користуватися повним набором інструментів картотеки розвитку.', 'Vereist «Nieuwe afstemming». Zet voor uzelf aan om alle hulpmiddelen van de ontwikkelkartotheek te gebruiken.'],
+    gevolg: ['Вимкнення повертає базовий набір вкладок без видалення створених карток, доказів, вкладень чи історії подій.', 'Uitschakelen keert terug naar de basisweergave zonder aangemaakte kaarten, bewijsstukken, bijlagen of geschiedenis te wissen.'],
+  },
+  'ai-chat-apparaatkeuze-v1': {
+    naam: ['Вибір цільового пристрою у вікні розмови ШІ', 'Keuze van doelapparaat in het AI-gespreksvenster'],
+    wat: ['Показує у вікні розмови «ШІ для вас» зручний вибір під’єднаного комп’ютера в поточному просторі, щоб команди виконувалися саме на обраному пристрої.', 'Toont in het gespreksvenster «AI voor u» een duidelijke keuze van de verbonden computer in de huidige ruimte, zodat opdrachten op het gekozen apparaat lopen.'],
+    wanneer: ['Увімкніть, коли до облікового запису під’єднано один або кілька комп’ютерів і потрібно явно обирати цільовий пристрій.', 'Zet aan wanneer één of meer computers aan het account gekoppeld zijn en u het doelapparaat uitdrukkelijk wilt kiezen.'],
+    gevolg: ['Вимкнення ховає перемикач пристрою у вікні розмови; дозволи й підключення комп’ютерів не змінюються.', 'Uitschakelen verbergt de apparaatkiezer in het gespreksvenster; toestemmingen en apparaatkoppelingen blijven ongewijzigd.'],
+  },
+  'api-platform-lees-v1': {
+    naam: ['Області машинного читання платформи програмних інтерфейсів', 'Machineleesscopes op het programmaverbindingsplatform'],
+    wat: ['Дозволяє випускати машинні ключі доступу з трьома областями лише для читання у власному просторі: пошта, події календаря та метадані файлів без вмісту.', 'Maakt het mogelijk om machinesleutels uit te geven met drie alleen-lezen scopes binnen de eigen ruimte: e-mail, agenda-afspraken en bestandsmetadata zonder inhoud.'],
+    wanneer: ['Увімкніть лише тоді, коли зовнішньому сценарію власника потрібен контрольований доступ на читання з миттєвим відкликанням ключа.', 'Zet alleen aan wanneer een eigen extern script gecontroleerde leestoegang met onmiddellijke intrekking nodig heeft.'],
+    gevolg: ['Руйнівні області залишаються суворо забороненими. Вимкнення приховує вибір нових областей читання в інтерфейсі без зміни прав облікового запису.', 'Ingrijpende schrijfbereiken blijven strikt verboden. Uitschakelen verbergt de keuze van nieuwe leesscopes in het scherm zonder accountrechten te wijzigen.'],
+  },
+  'mcp-bronnen-live-v1': {
+    naam: ['Живий стан джерел на панелі знарядь ШІ', 'Actuele koppelingsstatus van bronnen in het AI-hulpmiddelenpaneel'],
+    wat: ['Показує на панелі знарядь ШІ справжній стан підключення внутрішнього диска сайту, пошти Microsoft Outlook та сховища OneDrive у поточному просторі.', 'Toont in het AI-hulpmiddelenpaneel de werkelijke koppelingsstatus van de interne siteschijf, Microsoft Outlook-post en OneDrive-opslag in de huidige ruimte.'],
+    wanneer: ['Увімкніть спершу для себе, щоб бачити на панелі знарядь актуальну готовність підключених служб.', 'Zet eerst voor uzelf aan om in het hulpmiddelenpaneel direct de actuele gereedheid van gekoppelde diensten te zien.'],
+    gevolg: ['Вимкнення повертає статичні позначки джерел без жодного впливу на дозволи інструментів чи підключення пошти й хмари.', 'Uitschakelen toont weer de vaste bronlabels zonder invloed op hulpmiddelrechten of e-mail- en cloudkoppelingen.'],
+  },
+  'ai-prijzen-ophalen': {
+    naam: ['Орієнтовні ціни рушіїв ШІ з відкритого переліку моделей', 'Richtprijzen van AI-motoren uit openbare modellenlijst'],
+    wat: ['Раз на добу у фоновому режимі оновлює орієнтовні розцінки спільних і особистих рушіїв ШІ для пошти за відкритим переліком моделей OpenRouter без ключа та без передавання жодних даних користувачів чи листів.', 'Haalt één keer per dag op de achtergrond richtprijzen van gedeelde en persoonlijke AI-motoren voor e-mail op uit de openbare modellenlijst van OpenRouter, zonder sleutel en zonder gebruikers- of berichtgegevens mee te sturen.'],
+    wanneer: ['Типово увімкнено для зручності власника й користувачів. Вимкніть, якщо сервер не повинен робити навіть цього знеособленого зовнішнього запиту.', 'Standaard ingeschakeld voor het gemak van eigenaar en gebruikers. Zet uit als de server ook dit anonieme externe verzoek niet mag uitvoeren.'],
+    gevolg: ['Вимкнення припиняє зовнішні запити за цінами та залишає поруч із кожним постачальником лише прямі посилання на офіційні сторінки тарифів. Робота самих рушіїв не змінюється.', 'Uitschakelen stopt het ophalen van prijzen en toont bij elke aanbieder uitsluitend rechtstreekse verwijzingen naar de officiële tariefpagina’s. De werking van de motoren verandert niet.'],
+  },
+  'uitrol-telegram-koppeling-v1': {
+    naam: ['Посилання на тему групи та пояснення випуску в архіві Telegram', 'Groepstopiclink en uitgave-uitleg in het Telegram-archief'],
+    wat: ['Дозволяє вставити посилання на повідомлення в групі Telegram для автоматичного заповнення ідентифікатора групи й теми, надсилає пробний файл під час перевірки зв’язку та додає двомовне пояснення випуску.', 'Ontleedt een geplakte Telegram-berichtlink automatisch naar groeps- en topic-id, stuurt een proefbestand bij de verbindingstest en voegt tweetalige uitgave-uitleg toe.'],
+    wanneer: ['Увімкніть для адміністратора оновлень під час налаштування захищеного архівування випусків у групу Telegram із темами.', 'Zet aan voor het inrichten van het versleutelde releasearchief in een Telegram-groep met onderwerpen.'],
+    gevolg: ['Вимкнення ховає допоміжне поле розбору посилання на сторінці налаштувань без зміни збережених ключів, архівів чи приймача подій.', 'Uitschakelen verbergt het hulpveld voor linkontleding zonder bewaarde sleutels, archieven of de webhook te veranderen.'],
   },
 };
 

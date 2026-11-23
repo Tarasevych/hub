@@ -959,7 +959,7 @@ export default function McpServiceView({ lang, tab }: Props) {
           <PageHead
             icon={<Server />}
             title={t("Панель розгортання", "Deploy-dashboard")}
-            lead={t("Стан сервера, історія випусків і відкат однією кнопкою. Дії, що щось змінюють, вимагають підтвердження passkey. Сервер встановлює лише випуски, підписані вашим ключем.", "Serverstatus, releasegeschiedenis en terugdraaien met één knop. Acties die iets wijzigen vragen een passkey-bevestiging. De server installeert alleen releases die met uw sleutel zijn ondertekend.")}
+            lead={t("Стан сервера, історія випусків і відкат однією кнопкою. Дії, що щось змінюють, вимагають підтвердження ключем доступу. Сервер встановлює лише випуски, підписані вашим ключем.", "Serverstatus, releasegeschiedenis en terugdraaien met één knop. Acties die iets wijzigen vragen een passkey-bevestiging. De server installeert alleen releases die met uw sleutel zijn ondertekend.")}
           />
           <div id="mcp-blok-serverbeheer"><McpServerBeheerCard tr={t} /></div>
           <div id="mcp-blok-schakelaars"><DeurSchakelaars tr={t} /></div>

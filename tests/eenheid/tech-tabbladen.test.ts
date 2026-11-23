@@ -44,6 +44,8 @@ export async function main(): Promise<number> {
   const S = (s: { id: string; createdAt: number }) => ({ id: s.id, createdAt: s.createdAt });
   const audits = async (actie: string) => Number((await pool.query('SELECT count(*)::int AS n FROM app.audit WHERE owner_id=$1 AND action=$2', [uid, actie])).rows[0].n);
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     await tp.profielVan(eig);
     await tp.beeindigenBijIntrekken(uid, 'handmatig');
@@ -148,6 +150,7 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
+    await herstelV1Kader();
     await pool.query('DELETE FROM app.tech_activaties WHERE user_id=$1 AND sessie_id = ANY($2)', [uid, sessies]).catch(() => undefined);
     if (sessies.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id = ANY($1)`, [sessies]).catch(() => undefined);
     if (!bestaand) { await pool.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [uid]).catch(() => undefined); await pool.query(`DELETE FROM app.records WHERE tbl='users' AND id=$1`, [uid]).catch(() => undefined); }

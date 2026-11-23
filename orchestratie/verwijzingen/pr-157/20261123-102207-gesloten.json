@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 157,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:07.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Проміжна збірна гілка на 100% є прямим предком integratie через UPD-004 та UPD-005.",
+    "nl": "Tussentijdse verzameltak is via UPD-004 en UPD-005 al volledig voorouder van integratie."
+  },
+  "titel": {
+    "uk": "UPD-004: об’єднання незібраних розробок поверх версії 20261117-190154",
+    "nl": "UPD-004: bundeling van ontwikkelingen boven op versie 20261117-190154"
+  },
+  "laatsteCommit": "558681dc8b508e9cbde76dba3967306f30721995",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "UPD-004",
+    "LOKAI-001",
+    "CONSOL-001"
+  ]
+}

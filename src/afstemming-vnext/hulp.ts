@@ -58,10 +58,77 @@ export function criteriaNaarTekst(criteria: Criterium[], lang: Lang): string {
   return criteria.map((c) => `${c.id} | ${afstemmingTekst(c.tekst, lang)} | ${c.verificatie}`).join('\n');
 }
 
-/** Bestandsformaat voor de import — alléén de drie veilige tekstformaten van deze golf. */
-export function bronFormaat(naam: string): 'json' | 'md' | 'txt' | null {
+/** Дозволені формати імпорту чернеток і вкладень: текстові файли (.json/.md/.txt), документи PDF та зображення. */
+export function bronFormaat(naam: string): 'json' | 'md' | 'txt' | 'pdf' | 'afbeelding' | null {
   const m = /\.([a-z0-9]+)$/i.exec(String(naam || '').toLowerCase());
-  return m && (m[1] === 'json' || m[1] === 'md' || m[1] === 'txt') ? (m[1] as 'json' | 'md' | 'txt') : null;
+  if (!m) return null;
+  const ext = m[1];
+  if (ext === 'json' || ext === 'md' || ext === 'txt') return ext;
+  if (ext === 'pdf') return 'pdf';
+  if (ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'webp') return 'afbeelding';
+  return null;
+}
+
+const DIENST_HOST_MAP: Record<string, { dienst: string; tab?: string; host: string }> = {
+  hub: { dienst: 'hub', host: 'hub.tarasevych.com' },
+  mail: { dienst: 'mail', host: 'mail.tarasevych.com' },
+  cloud: { dienst: 'cloud', host: 'cloud.tarasevych.com' },
+  agenda: { dienst: 'cloud', tab: 'calendar', host: 'cloud.tarasevych.com' },
+  calendar: { dienst: 'cloud', tab: 'calendar', host: 'cloud.tarasevych.com' },
+  huis: { dienst: 'huis', host: 'huis.tarasevych.com' },
+  github: { dienst: 'github', host: 'github.tarasevych.com' },
+  crm: { dienst: 'crm', host: 'crm.tarasevych.com' },
+  ai: { dienst: 'ai', host: 'ai.tarasevych.com' },
+  mcp: { dienst: 'mcp', host: 'mcp.tarasevych.com' },
+  admin: { dienst: 'admin', host: 'admin.tarasevych.com' },
+  identity: { dienst: 'identity', host: 'id.tarasevych.com' },
+  api: { dienst: 'api', host: 'api.tarasevych.com' },
+  site: { dienst: 'hub', host: 'hub.tarasevych.com' },
+};
+
+type CanoniekRuntime = {
+  canonicalUrl?: (service: string, tab: string | null, lang: Lang, opts?: { explicitTab?: boolean }) => string;
+};
+
+const leesCanoniekRuntime = (): CanoniekRuntime | null => {
+  const g = globalThis as { window?: { __TSV_CANONICAL_SERVICE__?: CanoniekRuntime } };
+  return g.window?.__TSV_CANONICAL_SERVICE__ ?? null;
+};
+
+/** Канонічна адреса переходу з картки узгодження до її цільової служби (працює і в оглядачі, і в Node-випробуваннях). */
+export function dienstUrlVoorKaart(dienst: string, lang: Lang, route = ''): string {
+  const sleutel = String(dienst || 'hub').trim().toLowerCase();
+  const doel = DIENST_HOST_MAP[sleutel] || DIENST_HOST_MAP.hub;
+  const rt = leesCanoniekRuntime();
+  if (rt?.canonicalUrl && !route) {
+    try {
+      const gebouwd = rt.canonicalUrl(doel.dienst, doel.tab || null, lang, doel.tab ? { explicitTab: true } : undefined);
+      if (gebouwd) return gebouwd;
+    } catch {
+      /* перехід до прямого формування адреси */
+    }
+  }
+  const pad = route && route.startsWith('/') ? route : doel.tab === 'calendar' ? '/agenda' : '/';
+  return `https://${doel.host}${pad}`;
+}
+
+/** Канонічне посилання переходу з картки узгодження до Календаря (agenda / calendar) з підготовленою темою події. */
+export function agendaUrlVoorKaart(
+  kaart: { externId: string; titel: readonly [string, string] | { uk: string; nl?: string } },
+  lang: Lang,
+): string {
+  const rt = leesCanoniekRuntime();
+  let basis = 'https://cloud.tarasevych.com/agenda';
+  if (rt?.canonicalUrl) {
+    try {
+      basis = rt.canonicalUrl('cloud', 'calendar', lang, { explicitTab: true }) || basis;
+    } catch {
+      basis = 'https://cloud.tarasevych.com/agenda';
+    }
+  }
+  const onderwerp = `${kaart.externId}: ${afstemmingTekst(kaart.titel, lang)}`.trim().slice(0, 140);
+  const scheiding = basis.includes('?') ? '&' : '?';
+  return `${basis}${scheiding}actie=nieuw&onderwerp=${encodeURIComponent(onderwerp)}`;
 }
 
 export const GEBEURTENIS_TEKST: Record<GebeurtenisSoort, [string, string]> = {
@@ -84,3 +151,4 @@ export const kleineDatum = (lang: Lang, iso: string): string => {
 };
 
 export const PRIORITEITEN = ['P0', 'P1', 'P2', 'P3'] as const;
+export { AFSTEMMING_VOLLEDIG_VLAG } from '../../shared/afstemming-model';

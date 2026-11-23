@@ -15,8 +15,8 @@ export const KNOPEN: Array<{ id: KnoopId; uk: string; nl: string; hulpUk: string
   { id: 'vereisten', uk: 'Вимоги', nl: 'Vereisten', hulpUk: 'Браузер читає архів, рахує SHA-256; сервер перевіряє вимоги; root пробує нові міграції на копії схеми — до завантаження', hulpNl: 'De browser leest het archief en berekent SHA-256; de server controleert de vereisten; root probeert nieuwe migraties op een kopie — vóór het uploaden' },
   { id: 'upload', uk: 'Заванта­ження', nl: 'Upload', hulpUk: 'Архів частинами на сервер; обрив мережі не страшний — продовжиться з місця зупинки', hulpNl: 'Het archief in stukken naar de server; een netwerkonderbreking is niet erg — het gaat verder waar het stopte' },
   { id: 'controle', uk: 'Перевірка сайту', nl: 'Controle site', hulpUk: 'SHA-256 звірено; структура, метадані, маніфест, міграції; SQL збігається з перевіреним пробою', hulpNl: 'SHA-256 vergeleken; structuur, metadata, manifest, migraties; SQL gelijk aan wat de proef controleerde' },
-  { id: 'goedkeuring', uk: 'Схвалення', nl: 'Goed­keuring', hulpUk: 'Passkey власника; схвалення прив’язане до sha256 цього пакета й діє 5 хвилин', hulpNl: 'Passkey van de eigenaar; de goedkeuring is gebonden aan de sha256 van dit pakket en geldt 5 minuten' },
-  { id: 'voorbereiding', uk: 'Підго­товка', nl: 'Voor­bereiding', hulpUk: 'Root: копія, перевірка passkey і вмісту, проба міграцій, npm ci, збірка — у новій теці, сайт працює далі', hulpNl: 'Root: kopie, passkey- en inhoudscontrole, migratieproef, npm ci, bouwen — in een nieuwe map, de site draait door' },
+  { id: 'goedkeuring', uk: 'Схвалення', nl: 'Goed­keuring', hulpUk: 'Ключ доступу власника; схвалення прив’язане до sha256 цього пакета й діє 5 хвилин', hulpNl: 'Passkey van de eigenaar; de goedkeuring is gebonden aan de sha256 van dit pakket en geldt 5 minuten' },
+  { id: 'voorbereiding', uk: 'Підго­товка', nl: 'Voor­bereiding', hulpUk: 'Root: копія, перевірка ключа доступу і вмісту, проба міграцій, npm ci, збірка — у новій теці, сайт працює далі', hulpNl: 'Root: kopie, passkey- en inhoudscontrole, migratieproef, npm ci, bouwen — in een nieuwe map, de site draait door' },
   { id: 'database', uk: 'База даних', nl: 'Database', hulpUk: 'Версія PostgreSQL, резервна копія, міграції (кожна в окремій транзакції)', hulpNl: 'PostgreSQL-versie, back-up, migraties (elk in een eigen transactie)' },
   { id: 'overschakelen', uk: 'Переми­кання', nl: 'Over­schakelen', hulpUk: 'Символьне посилання на новий випуск і перезапуск служби — з цього моменту зупинити вже не можна', hulpNl: 'Symlink naar de nieuwe release en herstart van de dienst — vanaf hier kan niet meer gestopt worden' },
   { id: 'gezondheid', uk: 'Здоров’я', nl: 'Gezondheid', hulpUk: 'Перевірка роботи сайту й нагляд; у разі збою — автоматичний відкат на попередній випуск', hulpNl: 'Gezondheidscontrole en nabewaking; bij een storing automatische terugdraai naar de vorige release' },
@@ -38,7 +38,7 @@ export const ONDERDELEN: Record<string, { uk: string; nl: string; knoop: KnoopId
 };
 export const ROOT_STAPPEN: Record<string, { uk: string; nl: string }> = {
   ontvangen: { uk: 'пакет отримано', nl: 'pakket ontvangen' }, kopie: { uk: 'копія в робочу теку root', nl: 'kopie naar de werkmap van root' },
-  echtheid: { uk: 'перевірка passkey і sha256', nl: 'passkey en sha256 controleren' }, inhoud: { uk: 'перевірка вмісту', nl: 'inhoud controleren' },
+  echtheid: { uk: 'перевірка ключа доступу і sha256', nl: 'passkey en sha256 controleren' }, inhoud: { uk: 'перевірка вмісту', nl: 'inhoud controleren' },
 };
 const STAP_REGEL = /^\[installeer\] stap: (\S+) \((\d+)%\)/;
 const VOLGORDE: KnoopId[] = KNOPEN.map((k) => k.id);

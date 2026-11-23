@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 158,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:06.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі зміни вже повністю увійшли в історію integratie через спільний випуск UPD-005.",
+    "nl": "Alle wijzigingen zijn via UPD-005 al volledig opgenomen in de geschiedenis van integratie."
+  },
+  "titel": {
+    "uk": "UPD-004: спільний випуск оновлень (меню якорів, сповіщення, ярлики, знаки місць та безпека)",
+    "nl": "UPD-004: gezamenlijke uitgave (ankermenu, meldingen, snelkoppelingen, plaatstekens en beveiliging)"
+  },
+  "laatsteCommit": "697c73743723c472be25ad2cf4923b29c36864bc",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "UPD-004",
+    "UPD-005",
+    "CONSOL-001"
+  ]
+}

@@ -55,7 +55,7 @@ export default function PakketActies({ lang, context, run, onGewijzigd }: { lang
       const code = (e as { message?: string })?.message || '';
       setMelding({ soort: 'fout', tekst: code === 'ARCHIEF_NIET_BEWAARD'
         ? tr(lang, 'Архів цього випуску на сервері не знайдено.', 'Het archief van deze release staat niet op de server.')
-        : tr(lang, 'Не вдалося завантажити (потрібне підтвердження passkey; посилання діє 5 хвилин).', 'Downloaden mislukt (bevestiging met passkey nodig; de link geldt 5 minuten).') });
+        : tr(lang, 'Не вдалося завантажити (потрібне підтвердження ключем доступу; посилання діє 5 хвилин).', 'Downloaden mislukt (bevestiging met passkey nodig; de link geldt 5 minuten).') });
     } finally { setBezig(''); }
   };
 
@@ -74,7 +74,7 @@ export default function PakketActies({ lang, context, run, onGewijzigd }: { lang
   return <section className='ut-pakket-acties' data-ut-pakket={bewaard ? 'bewaard' : 'ontbreekt'}>
     <h3><Archive aria-hidden='true' />{tr(lang, 'Архів випуску', 'Archief van de release')}</h3>
     {bewaard
-      ? <p className='ut-sub'>{tr(lang, `Збережено на сервері${run.pakket?.grootte ? ` · ${mb(run.pakket.grootte)}` : ''}. Завантаження — з підтвердженням passkey і записом у журнал.`, `Bewaard op de server${run.pakket?.grootte ? ` · ${mb(run.pakket.grootte)}` : ''}. Downloaden met bevestiging (passkey) en een regel in het logboek.`)}</p>
+      ? <p className='ut-sub'>{tr(lang, `Збережено на сервері${run.pakket?.grootte ? ` · ${mb(run.pakket.grootte)}` : ''}. Завантаження — з підтвердженням ключ доступу і записом у журнал.`, `Bewaard op de server${run.pakket?.grootte ? ` · ${mb(run.pakket.grootte)}` : ''}. Downloaden met bevestiging (passkey) en een regel in het logboek.`)}</p>
       : <p className='ut-hint' data-ut-geen-archief>{run.staat === 'klaar'
         ? tr(lang, 'Архів цього випуску не збережено: до виправлення 18.10.2026 сервер не зберігав пакети (шукав файл не там). Нові випуски зберігаються автоматично.', 'Het archief van deze release is niet bewaard: vóór de reparatie van 18.10.2026 bewaarde de server geen pakketten (zocht het bestand op de verkeerde plek). Nieuwe releases worden automatisch bewaard.')
         : tr(lang, 'Архів зберігається лише для успішно встановлених випусків.', 'Een archief wordt alleen bewaard voor geslaagde installaties.')}</p>}

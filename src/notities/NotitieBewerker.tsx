@@ -10,6 +10,7 @@ import {
 import Laag from './Laag';
 import { veiligeHtml } from './NotitieKaart';
 import { NotitiesFout, kladBewarenVoor, kladLezen, kladScopeNu, kladWissenVoor, notitiesClient, type KladScope } from './notities-client';
+import NotitieKoppelingenBlok from './NotitieKoppelingenBlok';
 import { KLEUR_LABEL_VN, SOORT_LABEL, datumTekst, foutTekst, tr, type Lang } from './tekst';
 
 type Props = {
@@ -218,6 +219,8 @@ export default function NotitieBewerker({ lang, smal, notitie, mappen, startMap,
         </div>
 
         <label className='vn-schakel'><input type='checkbox' checked={v.vast} onChange={(e) => zet({ vast: e.target.checked })} /><Pin aria-hidden='true' />{tr(lang, 'Закріпити зверху', 'Bovenaan vastzetten')}</label>
+
+        <NotitieKoppelingenBlok lang={lang} notitie={notitie} inhoud={v.inhoud} soort={v.soort} onVervers={onMappen} />
 
         {notitie ? (
           <details className='vn-geschiedenis' onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open && !geschiedenis) void laadGeschiedenis(); }}>

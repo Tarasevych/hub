@@ -186,7 +186,7 @@ export function AiEditor({ taal, groep, nu, bezig, onOpslaan, onAnnuleer }: { ta
           <div>
             <b>{t('Ви свідомо вибираєте ширший доступ', 'U kiest bewust voor ruimere toegang', taal)}</b>
             <ul>{risico.map((r) => <li key={r}>{GEVAAR_UITLEG[r][taal]}</li>)}</ul>
-            <small>{t('Кожна видача, зміна й скидання записуються в журнал і центр сповіщень. Зберегти можна лише з підтвердженням Passkey.', 'Elke toekenning, wijziging en intrekking komt in het journaal en het meldingencentrum. Opslaan vraagt een Passkey-bevestiging.', taal)}</small>
+            <small>{t('Кожна видача, зміна й скидання записуються в журнал і центр сповіщень. Зберегти можна лише з підтвердженням ключ доступу.', 'Elke toekenning, wijziging en intrekking komt in het journaal en het meldingencentrum. Opslaan vraagt een Passkey-bevestiging.', taal)}</small>
           </div>
         </div>
       ) : null}

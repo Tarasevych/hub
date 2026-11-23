@@ -340,7 +340,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     ...agents.map((a) => ({ id: a.id, naam: a.name, groep: tr('Пристрої й браузери', 'Apparaten en browsers') })),
     ...(overzicht?.losgekoppeld ?? []).map((a) => ({ id: a.id, naam: `${a.name} (${tr('відключено', 'losgekoppeld')} ${a.revokedAt ? new Date(a.revokedAt).toLocaleDateString() : ''})`, groep: tr('Пристрої й браузери', 'Apparaten en browsers') })),
     ...(overzicht?.oauth ?? []).map((g) => ({ id: g.id, naam: `${g.clientName} · ${new Date(g.createdAt).toLocaleDateString()}`, groep: tr('Підключені ШІ', 'Verbonden AI') })),
-    ...(tokens ?? []).map((t) => ({ id: t.id, naam: `${t.name} (${t.prefix}…)`, groep: tr('Токени', 'Tokens') })),
+    ...(tokens ?? []).map((t) => ({ id: t.id, naam: `${t.name} (${t.prefix}…)`, groep: tr('Маркери доступу', 'Toegangsbewijzen') })),
   ], [agents, overzicht, tokens, tr]);
 
   // Technische ruimte (alleen voor de technische sectie van «Розширення браузера» en de matrix; lijsten blijven privé).
@@ -376,7 +376,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     extensie: { uk: 'Розширення браузера', nl: 'Browserextensie', icoon: <Puzzle /> },
     browser: { uk: 'Браузер і агенти', nl: 'Browser en agenten', icoon: <Globe /> },
     apparaten: { uk: 'Пристрої', nl: 'Apparaten', icoon: <Monitor />, teller: apparaten.length },
-    tokens: { uk: 'Токени', nl: 'Tokens', icoon: <KeyRound />, teller: tokensActief },
+    tokens: { uk: 'Маркери доступу', nl: 'Toegangsbewijzen', icoon: <KeyRound />, teller: tokensActief },
     toegang: { uk: 'Доступи', nl: 'Toegang', icoon: <ListChecks /> },
     agent: { uk: 'Один ШІ', nl: 'Eén AI', icoon: <Sparkles /> },
     technisch: { uk: 'Технічне', nl: 'Technisch', icoon: <Wrench /> },

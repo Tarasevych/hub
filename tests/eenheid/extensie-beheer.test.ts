@@ -21,6 +21,7 @@ import { ontgrendelVoorTest } from './hulp/extensie-ontgrendeling';
 import { nieuwePasskey, registreer } from './hulp/nep-toegangssleutel';
 import { checker } from './hulp/nep-google';
 import { aiDienstAan, aiDienstOpruimen } from './hulp/ruimte-ai';
+import { beginV1TechKader } from './hulp/v1-tech-kader';
 
 const code = async (p: Promise<unknown>): Promise<string> => p.then(() => 'OK', (e) => (e instanceof eo.Weigering ? e.code : `ANDERS:${(e as Error).message}`));
 
@@ -37,6 +38,7 @@ export async function main(): Promise<number> {
 
   // Gedeelde test-DB: een eventuele bestaande eigenaarsrij (andere tests) tijdelijk degraderen (unieke index records_een_eigenaar).
   const verplaatst = (await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner-tijdelijk\"') WHERE tbl = 'users' AND data->>'role' = 'owner' RETURNING id")).rows.map((r: { id: string }) => r.id);
+  const herstelV1 = await beginV1TechKader();
   try {
     const mail = (id: string) => (id === E ? (process.env.OWNER_EMAIL || 'eigenaar@test.invalid') : `${id}@example.test`);
     for (const id of ALLE) {
@@ -219,6 +221,7 @@ export async function main(): Promise<number> {
     await sys.query('DELETE FROM app.tech_profielen WHERE user_id = ANY($1)', [ALLE]).catch(() => undefined);
     await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)", [ALLE]).catch(() => undefined);
     if (verplaatst.length) await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl = 'users' AND id = ANY($1)", [verplaatst]).catch(() => undefined);
+    await herstelV1();
   }
   await closePool();
   return einde();

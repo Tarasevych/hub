@@ -64,7 +64,7 @@ export const EXT_TEXT: Record<ExtState | DisabledReason, [string, string]> = {
   connected: ['З’єднано із сервером.', 'Verbonden met de server.'],
   enabled: ['Працює: ШІ може робити лише те, що ви дозволили нижче.', 'Actief: de AI kan alleen wat u hieronder toestaat.'],
   disabled: ['Вимкнено.', 'Uit.'],
-  locked: ['Розширення заблоковане: ШІ нічого не може й нічого не збирається. Розблокуйте його з Passkey нижче.', 'De extensie is vergrendeld: de AI kan niets en er wordt niets verzameld. Ontgrendel hieronder met een passkey.'],
+  locked: ['Розширення заблоковане: ШІ нічого не може й нічого не збирається. Розблокуйте його з ключем доступу нижче.', 'De extensie is vergrendeld: de AI kan niets en er wordt niets verzameld. Ontgrendel hieronder met een passkey.'],
   unlocked: ['Доступ відкрито: ШІ може лише те, що дозволено, і лише до кінця розблокування.', 'Toegang open: de AI kan alleen wat is toegestaan, en alleen tot het einde van de ontgrendeling.'],
   agent: ['ШІ-агент підключено й зараз працює з цим браузером.', 'Een AI-agent is verbonden en werkt nu met deze browser.'],
   blocked: ['Доступ ШІ для цього облікового запису заблоковано.', 'AI-toegang voor dit account is geblokkeerd.'],

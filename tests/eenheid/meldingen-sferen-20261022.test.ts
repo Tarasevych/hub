@@ -36,6 +36,7 @@ import { MELDING_TABEL, meldingenLade, sfeerVoorNieuweMelding } from '../../back
 import { siteEventsFromAudit } from '../../backend/site-activiteit';
 import { ALLEEN_BEHEER_HULPMIDDELEN } from '../../backend/connectors-routes';
 import { V2_OPTIES } from '../../shared/connector-v2/catalogus';
+import { beginV1TechKader } from './hulp/v1-tech-kader';
 
 const sha = (v: string) => createHash('sha256').update(v).digest('hex');
 const tab = () => randomBytes(24).toString('hex');
@@ -108,6 +109,7 @@ export async function main(): Promise<number> {
     return { status: r.statusCode, data };
   };
 
+  const herstelV1 = await beginV1TechKader();
   try {
     // ------------------------------------------------------------------ 1. register volledig
     const ontbreekt = ontbrekendeSoorten();
@@ -302,6 +304,7 @@ export async function main(): Promise<number> {
       await pool.query(`DELETE FROM app.records WHERE tbl='users' AND id=$1`, [uid]).catch(() => undefined);
     }
     if (sessies.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id = ANY($1)`, [sessies]).catch(() => undefined);
+    await herstelV1();
   }
   // ---------------------------------------------------------------- 23.10 (integratie): nieuwe acties van de andere zones
   // De stand H-EIND vond «Дія на сайті: extensie matrix» in de bel van de mens: de matrix «Браузер і агенти» (zone E) is beheer van AI-toegang.

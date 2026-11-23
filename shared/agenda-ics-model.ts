@@ -180,6 +180,13 @@ export function vorigeIcsDag(datum: string): string {
   return d.toISOString().slice(0, 10);
 }
 
+export function volgendeIcsDag(datum: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) return datum;
+  const d = new Date(`${datum}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Buiten het venster houden we niets bij: een rooster van 1998 hoeft niet in de spiegel. */
 export function binnenIcsVenster(gebeurtenis: Pick<IcsGebeurtenis, 'begin' | 'einde' | 'rrule'>, nu: number): boolean {
   if (gebeurtenis.rrule) return true; // een reeks kan tot in de toekomst doorlopen: altijd bewaren
@@ -189,4 +196,207 @@ export function binnenIcsVenster(gebeurtenis: Pick<IcsGebeurtenis, 'begin' | 'ei
   if (!Number.isFinite(begin)) return false;
   const vanaf = nu - ICS_VENSTER_TERUG_DAGEN * 86400000, tot = nu + ICS_VENSTER_VOORUIT_DAGEN * 86400000;
   return (Number.isFinite(einde) ? einde : begin) >= vanaf && begin <= tot;
+}
+
+// ---------------------------------------------------------------------------------------------- opbouwen (RFC 5545)
+import { EPOST, rruleUitHerhaling, type AgendaVorm, type Deelnemer, type Herinnering } from './agenda-model';
+
+/** RFC 5545 §3.3.11: tekstwaarden ontsnappen (\, ;, , en regeleinden). */
+export function ontsnapIcsTekst(tekst: unknown): string {
+  return String(tekst ?? '')
+    .replace(/\u0000/g, '')
+    .replace(/\r\n|\r/g, '\n')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+}
+
+const utf8BytesVanCodePunt = (cp: number): number => (cp <= 0x7f ? 1 : cp <= 0x7ff ? 2 : cp <= 0xffff ? 3 : 4);
+
+/** RFC 5545 §3.1: regels vouwen op hoogstens 75 UTF-8-octetten zonder een meerbytes-teken middendoor te breken. */
+export function vouwIcsRegel(regel: string): string {
+  const schoon = String(regel ?? '').replace(/[\r\n]+/g, '');
+  const delen: string[] = [];
+  let huidig = '';
+  let octetten = 0;
+  let grens = 75;
+  for (const teken of schoon) {
+    const cp = teken.codePointAt(0) ?? 0;
+    const maat = utf8BytesVanCodePunt(cp);
+    if (octetten + maat > grens && huidig.length > 0) {
+      delen.push(huidig);
+      huidig = ` ${teken}`;
+      octetten = 1 + maat;
+      grens = 75;
+    } else {
+      huidig += teken;
+      octetten += maat;
+    }
+  }
+  if (huidig.length > 0 || delen.length === 0) delen.push(huidig);
+  return delen.join('\r\n');
+}
+
+const naarUtcStempel = (isoOfMs?: unknown): string => {
+  if (typeof isoOfMs === 'string' && /^\d{8}T\d{6}Z$/.test(isoOfMs.trim())) return isoOfMs.trim();
+  const d = isoOfMs ? new Date(String(isoOfMs)) : new Date();
+  const geldig = Number.isNaN(d.getTime()) ? new Date() : d;
+  return geldig.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+};
+
+const icsTijdRegel = (naam: 'DTSTART' | 'DTEND', waarde: string, heleDag: boolean, tijdzone: string): string => {
+  const ruw = kort(waarde, 60);
+  if (heleDag || /^\d{4}-\d{2}-\d{2}$/.test(ruw)) {
+    const dag = ruw.slice(0, 10);
+    const doel = naam === 'DTEND' ? volgendeIcsDag(dag) : dag;
+    return `${naam};VALUE=DATE:${doel.replace(/-/g, '')}`;
+  }
+  if (/Z$/i.test(ruw) || /[+-]\d{2}:\d{2}$/.test(ruw)) {
+    const d = new Date(ruw);
+    if (!Number.isNaN(d.getTime())) {
+      return `${naam}:${d.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}`;
+    }
+  }
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(ruw);
+  if (m) {
+    const stempel = `${m[1]}${m[2]}${m[3]}T${m[4]}${m[5]}${m[6] || '00'}`;
+    const zone = kort(tijdzone, 80);
+    if (!zone) return `${naam}:${stempel}`;
+    if (zone.toUpperCase() === 'UTC') return `${naam}:${stempel}Z`;
+    const veiligeZone = zone.replace(/[;:",\r\n]/g, '');
+    return veiligeZone ? `${naam};TZID=${veiligeZone}:${stempel}` : `${naam}:${stempel}`;
+  }
+  return `${naam}:${naarUtcStempel(ruw)}`;
+};
+
+const PARTSTAT_VAN: Record<string, string> = {
+  accepted: 'ACCEPTED',
+  declined: 'DECLINED',
+  tentative: 'TENTATIVE',
+  needsAction: 'NEEDS-ACTION',
+};
+
+export type BouwIcsInvoer = {
+  uid: string;
+  vorm: AgendaVorm;
+  dtstamp?: string;
+  sequence?: number;
+  organisatorEmail?: string;
+  naam?: string;
+};
+
+type RuweIcsGebeurtenis = Record<string, unknown>;
+
+function bouwEnkeleVevent(invoer: RuweIcsGebeurtenis): string[] {
+  const heeftVorm = Boolean(invoer.vorm && typeof invoer.vorm === 'object');
+  const bron = (heeftVorm ? (invoer.vorm as Record<string, unknown>) : invoer) as Record<string, unknown>;
+  const uidRuw = kort(invoer.uid ?? bron.uid ?? bron.gebeurtenisId, 500).replace(/[\r\n]/g, '');
+  const uid = uidRuw || `afspraak-${Date.now()}@tarasevych.com`;
+  const titel = kort(bron.titel ?? bron.summary, 300);
+  const beschrijving = kort(bron.beschrijving ?? bron.description, 4000);
+  const locatie = kort(bron.locatie ?? bron.plaats ?? bron.location, 500);
+  const begin = kort(bron.begin ?? bron.start, 60);
+  const einde = kort(bron.einde ?? bron.eind ?? bron.end ?? begin, 60) || begin;
+  const heleDag = Boolean(bron.heleDag) || (/^\d{4}-\d{2}-\d{2}$/.test(begin) && !begin.includes('T'));
+  const tijdzone = kort(bron.tijdzone, 80);
+  const reeksGetal = Number(invoer.sequence ?? invoer.reeks ?? bron.reeks ?? bron.sequence ?? 0);
+  const reeks = Number.isFinite(reeksGetal) ? Math.max(0, Math.min(99999, Math.trunc(reeksGetal))) : 0;
+  const dtstamp = naarUtcStempel(invoer.dtstamp ?? bron.gewijzigdOp ?? bron.dtstamp);
+  const statusRuw = kort(bron.status, 40).toUpperCase();
+  const status = statusRuw === 'CANCELLED' || statusRuw === 'TENTATIVE' ? statusRuw : 'CONFIRMED';
+
+  let rrule = kort(bron.rrule, 500);
+  if (!rrule && bron.herhaling && typeof bron.herhaling === 'object') {
+    rrule = rruleUitHerhaling(bron.herhaling);
+  }
+  const rruleWaarde = rrule.replace(/^RRULE:/i, '').replace(/[\r\n]/g, '').trim();
+
+  const organisator = kort(invoer.organisatorEmail ?? bron.organisator, 320).replace(/^mailto:/i, '');
+  const url = kort(bron.url ?? bron.koppeling, 1600);
+
+  const regels: string[] = [
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `SEQUENCE:${reeks}`,
+    icsTijdRegel('DTSTART', begin, heleDag, tijdzone),
+    icsTijdRegel('DTEND', einde, heleDag, tijdzone),
+    `SUMMARY:${ontsnapIcsTekst(titel)}`,
+    `STATUS:${status}`,
+  ];
+  if (beschrijving) regels.push(`DESCRIPTION:${ontsnapIcsTekst(beschrijving)}`);
+  if (locatie) regels.push(`LOCATION:${ontsnapIcsTekst(locatie)}`);
+  if (rruleWaarde) regels.push(`RRULE:${rruleWaarde}`);
+  if (organisator && EPOST.test(organisator.toLowerCase())) {
+    regels.push(`ORGANIZER:mailto:${organisator.toLowerCase()}`);
+  }
+  if (/^https:\/\//i.test(url)) {
+    regels.push(`URL:${url.replace(/[\r\n]/g, '')}`);
+  }
+
+  const deelnemers = Array.isArray(bron.deelnemers) ? (bron.deelnemers as Deelnemer[]) : [];
+  for (const d of deelnemers.slice(0, 50)) {
+    const email = kort(d?.email, 320).toLowerCase();
+    if (!EPOST.test(email)) continue;
+    const cn = kort(d?.naam, 200).replace(/[";:\r\n]/g, '');
+    const partstat = PARTSTAT_VAN[String(d?.antwoord || '')] || 'NEEDS-ACTION';
+    const role = d?.optioneel ? ';ROLE=OPT-PARTICIPANT' : ';ROLE=REQ-PARTICIPANT';
+    regels.push(`ATTENDEE${cn ? `;CN="${cn}"` : ''};PARTSTAT=${partstat}${role}:mailto:${email}`);
+  }
+
+  const standaardHerinneringen = bron.standaardHerinneringen !== false;
+  const herinneringen = !standaardHerinneringen && Array.isArray(bron.herinneringen) ? (bron.herinneringen as Herinnering[]) : [];
+  for (const h of herinneringen.slice(0, 5)) {
+    const min = Math.max(0, Math.min(40320, Math.trunc(Number(h?.minuten) || 0)));
+    regels.push(
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      `DESCRIPTION:${ontsnapIcsTekst(titel || 'Afspraak')}`,
+      `TRIGGER:-PT${min}M`,
+      'END:VALARM',
+    );
+  }
+
+  regels.push('END:VEVENT');
+  return regels;
+}
+
+/**
+ * Volledig iCalendar-bestand (RFC 5545) bouwen uit één afspraak (`{ uid, vorm }`, platte afspraak),
+ * een lijst afspraken of `{ naam, gebeurtenissen }`. Altijd ontvouwbaar door `ontleedIcs()`.
+ */
+export function bouwIcsGebeurtenis(invoer: BouwIcsInvoer | Record<string, unknown> | ReadonlyArray<Record<string, unknown>>, kalenderNaam?: string): string {
+  let lijst: RuweIcsGebeurtenis[] = [];
+  let naam = kort(kalenderNaam, 200);
+  let tijdzone = '';
+
+  if (Array.isArray(invoer)) {
+    lijst = invoer.filter((x): x is RuweIcsGebeurtenis => Boolean(x && typeof x === 'object'));
+  } else if (invoer && typeof invoer === 'object') {
+    const obj = invoer as Record<string, unknown>;
+    if (Array.isArray(obj.gebeurtenissen)) {
+      lijst = (obj.gebeurtenissen as unknown[]).filter((x): x is RuweIcsGebeurtenis => Boolean(x && typeof x === 'object'));
+      if (!naam) naam = kort(obj.naam, 200);
+      tijdzone = kort(obj.tijdzone, 80);
+    } else {
+      lijst = [obj];
+      if (!naam) naam = kort(obj.naam, 200);
+    }
+  }
+
+  const kop: string[] = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Mijn Ruimte//Agenda//NL',
+    'CALSCALE:GREGORIAN',
+  ];
+  if (naam) kop.push(`X-WR-CALNAME:${ontsnapIcsTekst(naam)}`);
+  if (tijdzone) kop.push(`X-WR-TIMEZONE:${tijdzone.replace(/[\r\n]/g, '')}`);
+
+  for (const item of lijst.slice(0, ICS_MAX_GEBEURTENISSEN)) {
+    kop.push(...bouwEnkeleVevent(item));
+  }
+  kop.push('END:VCALENDAR');
+  return `${kop.map(vouwIcsRegel).join('\r\n')}\r\n`;
 }

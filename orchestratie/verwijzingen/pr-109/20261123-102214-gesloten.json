@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 109,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:14.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Проміжна випускна гілка на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "Tussentijdse uitgavetak is al een directe voorouder van de canonieke tak integratie."
+  },
+  "titel": {
+    "uk": "CENTR-001: центрування центру облікового запису та відокремлена навігація якорів",
+    "nl": "CENTR-001: centrering van het accountcentrum en afzonderlijke ankernavigatie"
+  },
+  "laatsteCommit": "932e601d8c15c5ec9b26be8d4888c46952b4b3b0",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CENTR-001",
+    "UPD-001",
+    "CONSOL-001"
+  ]
+}

@@ -3,8 +3,9 @@ import {KeyRound,Layers,Lock,Plug,Plus,RefreshCw,ShieldAlert,ShieldCheck,Sparkle
 import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import {useCatalogusV2} from './integraties/catalogus-vlag';
+import {useVlag} from './functievlag-lezen';
 import {api} from './platform/client';
-import {API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
+import {API_PLATFORM_LEES_VLAG,API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
 import {ecosystemTabContext} from './tab-context';
 import {VaultMetaBewerker,VaultMetaRegel} from './KluisMeta';
 import type {VaultMeta,VaultStaat} from '../shared/kluis-meta';
@@ -24,6 +25,12 @@ type Contract=ReturnType<typeof apiPlatformContractPayload>;
 type TokenItem={id:string;prefix:string;display:string;scopes:string[];label:string;createdAt:number;expiresAt:number;lastUsedAt:number|null;revokedAt:number|null;status:'active'|'expired'|'revoked'};
 type VaultItem={id:string;name:string;purpose:string;usedBy:string;updatedAt:number;createdAt:number;hasValue:boolean;meta?:VaultMeta;staat?:VaultStaat};
 type ConnectionItem={id:string;kind:'google-link'|'vault-secret';labelUk:string;labelNl:string;noteUk:string;noteNl:string;status:'not_connected'|'configured'|'error'|'revoked';source:string;hasVaultSecret:boolean;vaultName:string;lastError:string;nextStep:{href:string;labelUk:string;labelNl:string};canMarkStatus:boolean;oauthSecondPass:boolean};
+const LEES_SCOPES_KEUZES:ReadonlyArray<{id:string;pad:string;uk:string;nl:string;toelichtingUk:string;toelichtingNl:string}>=[
+  {id:'identity.me.read',pad:'/api/v1/me',uk:'Профіль ключа (identity.me.read)',nl:'Sleutelprofiel (identity.me.read)',toelichtingUk:'Читає ідентифікатор власника та видані області.',toelichtingNl:'Leest eigenaar-id en verleende scopes.'},
+  {id:'mail.read',pad:'/api/v1/mail/messages',uk:'Читання пошти (mail.read)',nl:'E-mail lezen (mail.read)',toelichtingUk:'Лише читання тем і коротких уривків у приватному просторі.',toelichtingNl:'Alleen lezen van onderwerpen en korte fragmenten in de privéruimte.'},
+  {id:'calendar.read',pad:'/api/v1/calendar/events',uk:'Читання календаря (calendar.read)',nl:'Agenda lezen (calendar.read)',toelichtingUk:'Лише читання подій календаря у приватному просторі.',toelichtingNl:'Alleen lezen van agenda-afspraken in de privéruimte.'},
+  {id:'files.metadata.read',pad:'/api/v1/files/metadata',uk:'Метадані файлів (files.metadata.read)',nl:'Bestandsmetadata (files.metadata.read)',toelichtingUk:'Назви, розмір і контрольна сума SHA-256 без вмісту файлів.',toelichtingNl:'Namen, grootte en SHA-256-controlesom zonder bestandsinhoud.'}
+];
 const canoniekeStapHref=(rawHref:string,lang:'uk'|'nl'):string=>{
   if(!rawHref)return rawHref;
   try{
@@ -89,6 +96,8 @@ const apiFout=(e:unknown)=>String((e as {response?:{data?:{error?:unknown;reason
 export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const isMaquette=useIsMaquette();
   const catalogusV2Aan=useCatalogusV2()===true;
+  const apiLeesVlagAan=useVlag('api-platform-lees-v1',false);
+  const zichtbareLeesScopes=useMemo(()=>apiLeesVlagAan?LEES_SCOPES_KEUZES:LEES_SCOPES_KEUZES.filter(k=>k.id==='identity.me.read'),[apiLeesVlagAan]);
   const actieveTab:ApiActieveTab=tab==='vault'?'vault':tab==='verbindingen'?'verbindingen':'access';
   const[actiefAnker,setActiefAnker]=useState<string>(() => actieveTab==='vault'?'api-vault-panel':actieveTab==='verbindingen'?'api-connections-panel':'api-access-panel');
   const[laagOpen,setLaagOpen]=useState(false);
@@ -98,6 +107,8 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const[connections,setConnections]=useState<ConnectionItem[]>([]);
   const[vaultReady,setVaultReady]=useState(false);
   const[plaintext,setPlaintext]=useState('');
+  const[gekozenScopes,setGekozenScopes]=useState<string[]>(['identity.me.read']);
+  const[laatstUitgegevenScopes,setLaatstUitgegevenScopes]=useState<string[]>(['identity.me.read']);
   const lang=tr('uk','nl')==='uk'?'uk' as const:'nl' as const;
   const gaNaarApiTab=useCallback((doelTab:string)=>{
     location.assign(canonicalNavigationUrl('api',doelTab,lang));
@@ -152,7 +163,14 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
     {waarde:versleutelStaat,label:lang==='uk'?'Шифрування сховища':'Kluisversleuteling'}
   ],[connections.length,lang,liveCount,vault.length,versleutelStaat]);
   const held=API_HELD_TEKSTEN[actieveTab];
-  const create=useCallback(async()=>{if(busy)return;setBusy(true);setNotice('');try{const response=await api.post('/api/owner/api-platform/tokens/create',{...sessionBody(),label:tr('Ключ API','API-sleutel'),scopes:['identity.me.read'],expiresInDays:90});const key=String(response?.data?.plaintext||'');if(!key)throw new Error('empty');setPlaintext(key);setNotice(tr('Ключ показано один раз. Скопіюйте зараз. Backend зберіг лише hash.','Sleutel één keer getoond. Kopieer nu. Backend bewaart alleen de hash.'));await load();}catch{setNotice(tr('Не вдалося створити ключ.','Sleutel aanmaken mislukt.'))}setBusy(false);},[busy,load,tr]);
+  const wisselScope=(scopeId:string)=>{
+    setGekozenScopes(huidig=>{
+      const heeft=huidig.includes(scopeId);
+      const volgende=heeft?huidig.filter(s=>s!==scopeId):[...huidig,scopeId];
+      return volgende.length?volgende:['identity.me.read'];
+    });
+  };
+  const create=useCallback(async()=>{if(busy)return;setBusy(true);setNotice('');try{const toegestaan=gekozenScopes.filter(s=>apiLeesVlagAan||s==='identity.me.read');const scopes=toegestaan.length?toegestaan:['identity.me.read'];const response=await api.post('/api/owner/api-platform/tokens/create',{...sessionBody(),label:tr('Ключ API','API-sleutel'),scopes,expiresInDays:90});const key=String(response?.data?.plaintext||'');if(!key)throw new Error('empty');setPlaintext(key);setLaatstUitgegevenScopes(Array.isArray(response?.data?.item?.scopes)?response.data.item.scopes:scopes);setNotice(tr('Ключ показано один раз. Скопіюйте зараз. Сервер зберіг лише незворотний відбиток.','Sleutel één keer getoond. Kopieer nu. De server bewaart alleen de onomkeerbare vingerafdruk.'));await load();}catch{setNotice(tr('Не вдалося створити ключ.','Sleutel aanmaken mislukt.'))}setBusy(false);},[apiLeesVlagAan,busy,gekozenScopes,load,tr]);
   const ankerItems=useMemo<ReadonlyArray<MaquetteAnkerItem>>(()=>{
     const ververs:MaquetteAnkerItem={id:'api-actie-vernieuw',label:tr('Оновити дані','Gegevens verversen'),icoon:RefreshCw,soort:'actie',onActie:()=>void load()};
     if(actieveTab==='vault'){
@@ -241,8 +259,9 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
       }
     ];
   },[actieveTab,capabilities.length,catalogusV2Aan,connections.length,create,forbidden.length,liveCount,load,tr,vault.length]);
-  const revoke=async(id:string)=>{if(busy||!window.confirm(tr('Відкликати ключ одразу?','Sleutel nu intrekken?')))return;setBusy(true);try{await api.post(`/api/owner/api-platform/tokens/${id}/revoke`,sessionBody());if(plaintext)setPlaintext('');await load();setNotice(tr('Ключ відкликано. GET /api/v1/me більше не прийме.','Sleutel ingetrokken. GET /api/v1/me weigert hem nu.'))}catch{setNotice(tr('Не вдалося відкликати.','Intrekken mislukt.'))}setBusy(false);};
-  const verify=async()=>{if(!plaintext||busy)return;setBusy(true);try{const response=await api.post('/api/owner/api-platform/tokens/verify',{...sessionBody(),plaintext});setNotice(tr(`Перевірка успішна. owner id: ${response.data.ownerId}. scopes: ${(response.data.scopes||[]).join(', ')}`,`Controle geslaagd. owner-id: ${response.data.ownerId}. scopes: ${(response.data.scopes||[]).join(', ')}`));}catch{setNotice(tr('Ключ недійсний, прострочений або відкликаний.','Sleutel ongeldig, verlopen of ingetrokken.'))}setBusy(false);};
+  const revoke=async(id:string)=>{if(busy||!window.confirm(tr('Відкликати ключ одразу?','Sleutel nu intrekken?')))return;setBusy(true);try{await api.post(`/api/owner/api-platform/tokens/${id}/revoke`,sessionBody());if(plaintext)setPlaintext('');await load();setNotice(tr('Ключ відкликано. Маршрути /api/v1/* більше його не приймуть.','Sleutel ingetrokken. De routes onder /api/v1/* weigeren hem direct.'))}catch{setNotice(tr('Не вдалося відкликати.','Intrekken mislukt.'))}setBusy(false);};
+  const verify=async()=>{if(!plaintext||busy)return;setBusy(true);try{const response=await api.post('/api/owner/api-platform/tokens/verify',{...sessionBody(),plaintext});setNotice(tr(`Перевірка успішна. Ідентифікатор власника: ${response.data.ownerId}. Області: ${(response.data.scopes||[]).join(', ')}`,`Controle geslaagd. Eigenaar-id: ${response.data.ownerId}. Scopes: ${(response.data.scopes||[]).join(', ')}`));}catch{setNotice(tr('Ключ недійсний, прострочений або відкликаний.','Sleutel ongeldig, verlopen of ingetrokken.'))}setBusy(false);};
+  const proefLeesPad=async(pad:string)=>{if(!plaintext||busy)return;setBusy(true);try{const res=await fetch(pad,{method:'GET',headers:{Authorization:`Bearer ${plaintext}`}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(String((data as {error?:unknown})?.error||res.status));const aantal=typeof (data as {count?:unknown})?.count==='number'?Number((data as {count?:number}).count):null;setNotice(aantal!==null?tr(`Читання ${pad} успішне: записів у приватному просторі — ${aantal}.`,`Lezen van ${pad} geslaagd: ${aantal} items in de privéruimte.`):tr(`Читання ${pad} успішне.`,`Lezen van ${pad} geslaagd.`));}catch(e){const foutCode=String((e as Error)?.message||'');setNotice(`${tr(`Читання ${pad} відхилено: `,`Lezen van ${pad} geweigerd: `)}${foutCode}`);}setBusy(false);};
   const renameVault=async(id:string)=>{const name=String(renameDraft[id]||'').trim();if(busy||!name)return;setBusy(true);try{const response=await api.post(`/api/owner/api-platform/vault/${id}/rename`,{...sessionBody(),name});if(response?.data?.plaintext||response?.data?.value)throw new Error('leak');await load();setNotice(tr('Назву оновлено. Значення лишилось зашифрованим.','Naam bijgewerkt. De waarde blijft versleuteld.'));}catch(e){setNotice(`${tr('Не вдалося перейменувати: ','Hernoemen mislukt: ')}${foutTekst(apiFout(e),lang)}`)}setBusy(false);};
   const deleteVault=async(id:string,name:string)=>{if(busy||!window.confirm(tr(`Видалити секрет «${name}» без відновлення?`,`Geheim «${name}» definitief verwijderen?`)))return;setBusy(true);try{await api.post(`/api/owner/api-platform/vault/${id}/delete`,sessionBody());await load();setNotice(tr('Секрет видалено.','Geheim verwijderd.'));}catch(e){setNotice(`${tr('Не вдалося видалити: ','Verwijderen mislukt: ')}${foutTekst(apiFout(e),lang)}`)}setBusy(false);};
   const markConnection=async(id:string,status:ConnectionItem['status'])=>{if(busy)return;setBusy(true);try{await api.post(`/api/owner/api-platform/connections/${id}/status`,{...sessionBody(),status});await load();setNotice(tr('Статус підключення оновлено.','Koppelingsstatus bijgewerkt.'));}catch{setNotice(tr('Не вдалося оновити статус.','Status bijwerken mislukt.'))}setBusy(false);};
@@ -281,19 +300,36 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
       <a href={canonicalNavigationUrl('api','vault',lang)} data-api-tab-link='vault' aria-current={actieveTab==='vault'?'page':undefined}>{tr('Сховище секретів','Geheimenkluis')}</a>
       <a href={canonicalNavigationUrl('api','verbindingen',lang)} data-api-tab-link='verbindingen' aria-current={actieveTab==='verbindingen'?'page':undefined}>{tr('Підключення','Koppelingen')}</a>
     </nav>
-    {tab!=='vault'&&tab!=='verbindingen'?<article id='api-access-panel' className='api-platform-panel' data-api-access-panel='true'>
-      <strong>{tr('Машинні токени','Machinetokens')}</strong>
+    {tab!=='vault'&&tab!=='verbindingen'?<article id='api-access-panel' className='api-platform-panel' data-api-access-panel='true' data-vlag={API_PLATFORM_LEES_VLAG}>
+      <strong>{tr('Машинні ключі доступу','Machinesleutels')}</strong>
       <div className='api-platform-meta'>
-        <span data-api-token-count-value={String(liveCount)}>{tr('Живі токени','Actieve tokens')}: {liveCount}</span>
-        <span>{tr('Базовий шлях /api/v1 live','Basispad /api/v1 live')}</span>
-        <span>{tr('Видається лише identity.me.read','Alleen identity.me.read wordt uitgegeven')}</span>
+        <span data-api-token-count-value={String(liveCount)}>{tr('Живі ключі','Actieve sleutels')}: {liveCount}</span>
+        <span>{tr('Базовий шлях /api/v1 активний','Basispad /api/v1 actief')}</span>
+        <span>{tr('Області лише для читання (запис заборонено)','Alleen-lezen scopes (schrijven verboden)')}</span>
       </div>
+      <fieldset className='api-platform-scopes' data-api-scope-kiezer='true'>
+        <legend>{tr('Області читання для нового ключа','Leesscopes voor nieuwe sleutel')}</legend>
+        {zichtbareLeesScopes.map(keuze=>(
+          <label key={keuze.id} data-api-scope-optie={keuze.id}>
+            <input
+              type='checkbox'
+              checked={gekozenScopes.includes(keuze.id)}
+              disabled={busy}
+              onChange={()=>wisselScope(keuze.id)}
+            />
+            <span><b>{tr(keuze.uk,keuze.nl)}</b> — <small>{tr(keuze.toelichtingUk,keuze.toelichtingNl)}</small></span>
+          </label>
+        ))}
+      </fieldset>
       <button type='button' onClick={()=>void create()} disabled={busy} data-api-create-token-button='enabled'>{tr('Створити ключ','Sleutel maken')}</button>
       {plaintext?<div className='api-platform-secret' data-api-plaintext-once='true' {...verborgenVoorAi}>
         <code>{plaintext}</code>
         <div className='api-platform-secret-actions'>
           <button type='button' onClick={()=>void navigator.clipboard?.writeText(plaintext)}>{tr('Скопіювати','Kopiëren')}</button>
           <button type='button' onClick={()=>void verify()}>{tr('Перевірити /api/v1/me','/api/v1/me controleren')}</button>
+          {zichtbareLeesScopes.filter(k=>k.id!=='identity.me.read'&&laatstUitgegevenScopes.includes(k.id)).map(k=>(
+            <button key={k.id} type='button' onClick={()=>void proefLeesPad(k.pad)} disabled={busy}>{tr(`Перевірити ${k.pad}`,`${k.pad} testen`)}</button>
+          ))}
           <button type='button' onClick={()=>setPlaintext('')}>{tr('Приховати','Verbergen')}</button>
         </div>
         <small>{tr('Цей рядок більше не з’явиться. Для машини: Authorization: Bearer tsv_...','Deze waarde verschijnt niet opnieuw. Voor machines: Authorization: Bearer tsv_...')}</small>

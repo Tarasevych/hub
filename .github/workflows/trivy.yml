@@ -4,9 +4,9 @@ name: trivy
 
 on:
   push:
-    branches: [ "voornaamst" ]
+    branches: [ "voornaamst", "integratie", "feature/consolidatie-*" ]
   pull_request:
-    branches: [ "voornaamst" ]
+    branches: [ "voornaamst", "integratie", "feature/consolidatie-*" ]
   schedule:
     - cron: '26 19 * * 4'
 

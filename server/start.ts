@@ -51,6 +51,7 @@ import { statischDoel } from './platform/statisch-pad'; /* SEC-002 http-rand-04 
 import { limietSleutel } from '../shared/ip-limiet';
 import { leesBodyBegrensd, zetAanmeldControle } from './platform/tekst-budget';
 import { aanmeldingEcht } from './platform/tekst-aanmelding';
+import { startMailUtf8TerugvalVlag } from '../backend/mail-utf8-terugval-vlag'; /* MAIL-TEKST-UTF8-TERUGVAL v1 */
 // SEC-002 (toets g10e-toets-2): ruimere grenzen voor lichamen alleen bij een ECHTE sessie of een echt token (niet «Cookie: x=1»).
 zetAanmeldControle(aanmeldingEcht);
 
@@ -729,6 +730,8 @@ if (isMain) {
     .catch((err) => console.error('[telegram-aanmelden] ronde mislukt:', (err as Error).message));
   setTimeout(telegramRonde, 30_000).unref();
   setInterval(telegramRonde, 60_000).unref();
+  // MAIL-TEKST-UTF8-TERUGVAL v1 (vlag mail-tekst-utf8-terugval-v1, standaard UIT): algemene stand elke minuut lezen; fout = uit.
+  startMailUtf8TerugvalVlag();
   // APPARAAT-001: verlopen verzoeken «Це ви?» sluiten en oude rijen (30 dagen) opruimen. Niets anders.
   const apparaatRonde = () => achtergrond('apparaat-bevestiging', () => apparaatOpruimen())
     .catch((err) => console.error('[apparaat-bevestiging] opruimen mislukt:', (err as Error).message));

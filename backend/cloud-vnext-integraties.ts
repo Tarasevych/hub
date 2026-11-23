@@ -12,30 +12,31 @@
 //   • geen merkafbeeldingen uit src/merk in de cloudbundel (monogrammen, zoals agenda).
 import { db, error, json } from '../server/platform';
 import { hoortBij, ladeFilter } from '../shared/ruimte-scheiding';
+import type { CloudWebdavKoppeling } from '../shared/cloud-vnext-model';
 import type { RouterMiddleware } from '../server/platform/router';
 import { googleSuiteDriveProviderSnapshot, googleSuiteFotoScopeStatus } from './google-suite-inrichting';
 import { PostgresCloudConnections } from './cloud-verbinding-m4-pg';
 import { ladeOf } from './ruimte-cloud-agenda';
 import { INDEX_BRONNEN } from './zoek/bronnen';
 import { veiligeFoutcode, vnextFoutAntwoord } from './cloud-vnext-fout';
+import { cloudVlagAan } from './cloud-vlaggen-poort';
+import { afhandelenCloudAutomatiseringen, afhandelenCloudWebdav, webdavOverzichtDeel } from './cloud-vnext-webdav';
 
-type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
+type SessionOk = { user: { id: string; email?: string; role?: string; status?: string; accessLevel?: string }; service: string };
 type SessionFail = { errorCode: string };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | SessionFail>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 type Resp = ReturnType<typeof json>;
 const DIENSTEN = ['cloud', 'hub'] as const;
 
-// Spiegel van IntegratiesUit in src/cloud-vnext/cloud-client.ts (de browser is de bron van het contract; hier alleen de vorm).
 type IntegratiesUit = {
   google: { gekoppeld: boolean; accounts: Array<{ id: string; email: string; actief: boolean; status: string; principalId?: string; sync?: SyncFeit }>; fout?: string };
   photos: { gekoppeld: boolean };
   m4: { stagingAan: boolean; aanbieders: Array<{ id: string; sleutelsAanwezig: boolean; accounts: Array<{ id: string; label: string; status: string }> }> };
+  webdav: { koppelingen: CloudWebdavKoppeling[] };
   zoekIndex: { cloud: boolean; drive: boolean };
 };
 
-/** UI-003 (verbindingen-centrum-v2): de ECHTE syncstand per Drive-account uit google_suite_sync_state_v1 (alleen-lezen, additief
- * veld; oude clients negeren het). Tijden in ms sinds epoch; 0 = nooit. Geen tokens, alleen de foutcode van de planner. */
 type SyncFeit = { laatstGeluktOp: number; laatstPogingOp: number; foutCode: string; herstelNodig: boolean };
 export async function syncFeiten(ownerUserId: string): Promise<Map<string, SyncFeit>> {
   const uit = new Map<string, SyncFeit>();
@@ -44,18 +45,19 @@ export async function syncFeiten(ownerUserId: string): Promise<Map<string, SyncF
     const rows = await db.list<Record<string, unknown>>('google_suite_sync_state_v1', { filter: { service: 'drive', ...ladeFilter(lade) } });
     const lijst = (rows.items as Array<Record<string, unknown>>).filter((r) => hoortBij(r, lade)).sort((a, b) => Number(a.updatedAt || 0) - Number(b.updatedAt || 0));
     for (const r of lijst) uit.set(String(r.accountId || ''), { laatstGeluktOp: Number(r.lastSuccessAt || 0), laatstPogingOp: Number(r.lastAttemptAt || 0), foutCode: String(r.errorCode || '').slice(0, 80), herstelNodig: Boolean(r.recoveryRequired) });
-  } catch { /* tabel (nog) niet leesbaar: geen syncfeiten, de rest antwoordt gewoon */ }
+  } catch { /* таблиця ще не читається: решта відповідає штатно */ }
   return uit;
 }
 
-// Catalogus-id (shared/cloud-vnext-model.ts) → env-voorvoegsel (backend/cloud-verbinding-m4-config.ts bepaalt het gezaghebbend:
-// onedrive*/sharepoint → CLOUD_MICROSOFT, dropbox → CLOUD_DROPBOX, box → CLOUD_BOX) en de M4-providernamen die eronder vallen.
 const M4_FAMILIES = [
   { id: 'onedrive', envPrefix: 'CLOUD_MICROSOFT', providers: ['onedrive-personal', 'onedrive-business', 'sharepoint'] },
   { id: 'dropbox', envPrefix: 'CLOUD_DROPBOX', providers: ['dropbox'] },
   { id: 'box', envPrefix: 'CLOUD_BOX', providers: ['box'] },
 ] as const;
 const envAanwezig = (naam: string) => Boolean(String(process.env[naam] || '').trim());
+const heeftAanbiederSleutels = (id: string, envPrefix: string) =>
+  (id === 'onedrive' && envAanwezig('ONEDRIVE_CLIENT_ID') && envAanwezig('ONEDRIVE_CLIENT_SECRET')) ||
+  (envAanwezig(`${envPrefix}_CLIENT_ID`) && envAanwezig(`${envPrefix}_CLIENT_SECRET`));
 
 type SnapshotAccount = { id: string; email: string; status: string } | null;
 type Snapshot = { id: string; accounts: Array<{ id: string; email: string; status: string; principalId?: string }>; activeAccountId?: string };
@@ -68,14 +70,12 @@ async function googleDeel(ownerUserId: string): Promise<IntegratiesUit['google']
     const actiefId = String(google.activeAccountId || '');
     const accounts = (google.accounts || []).map((item) => ({
       id: String(item.id || ''), email: String(item.email || ''), actief: item.id === actiefId && item.status === 'connected', status: String(item.status || ''),
-      // ZOEKDIEP-001: de diepe link van een Drive-treffer noemt het account met principalId (open_drive_principal).
       ...(item.principalId ? { principalId: String(item.principalId).slice(0, 120) } : {}),
     }));
     const feiten = await syncFeiten(ownerUserId);
     const metSync = accounts.map((item) => { const f = feiten.get(item.id); return f ? { ...item, sync: f } : item; });
     return { gekoppeld: accounts.some((item) => item.status === 'connected'), accounts: metSync };
   } catch (caught) {
-    // SEC-002 (wolk-10): alleen een vaste code naar de client; een vrije fouttekst (pad, SQL) blijft in het serverlogboek.
     const fout = veiligeFoutcode(caught, 'CLOUD_GOOGLE_STATUS_ONBESCHIKBAAR');
     if (fout === 'CLOUD_GOOGLE_STATUS_ONBESCHIKBAAR') console.error('[cloud-vnext-integraties] google:', String((caught as Error)?.message || caught).slice(0, 500));
     return { gekoppeld: false, accounts: [], fout };
@@ -85,16 +85,13 @@ async function googleDeel(ownerUserId: string): Promise<IntegratiesUit['google']
 async function photosDeel(ownerUserId: string, email: string): Promise<IntegratiesUit['photos']> {
   if (!email) return { gekoppeld: false };
   try {
-    // Bestaande scope-controle van de Photos Picker (photospicker.mediaitems.readonly): gekoppeld = grant actief ÉN scope verleend.
     const stand = await googleSuiteFotoScopeStatus(ownerUserId, email);
     return { gekoppeld: Boolean(stand.gekoppeld && stand.lezen) };
   } catch { return { gekoppeld: false }; }
 }
 
 async function m4Deel(ownerUserId: string): Promise<IntegratiesUit['m4']> {
-  const stagingAan = process.env.CLOUD_M4_CONNECTIONS_STAGING === 'enabled';
-  // Alleen-lezen accountslijst uit de stagingtabel (geen tokens: list() ontsleutelt niets). Bestaat de tabel nog niet of is
-  // Postgres even weg, dan blijft de lijst eerlijk leeg — de sleutels-booleans hieronder blijven dan gewoon kloppen.
+  const stagingAan = (process.env.CLOUD_M4_CONNECTIONS_STAGING === 'enabled') || (await cloudVlagAan('cloud-m4-koppelingen-v1', ownerUserId));
   let accounts: Array<{ id: string; provider: string; label: string; displayName: string; email: string; status: string }> = [];
   try {
     const rows = await new PostgresCloudConnections().list({ owner: ownerUserId, space: ladeOf(ownerUserId).ruimte });
@@ -104,7 +101,7 @@ async function m4Deel(ownerUserId: string): Promise<IntegratiesUit['m4']> {
     stagingAan,
     aanbieders: M4_FAMILIES.map((familie) => ({
       id: familie.id,
-      sleutelsAanwezig: envAanwezig(`${familie.envPrefix}_CLIENT_ID`) && envAanwezig(`${familie.envPrefix}_CLIENT_SECRET`),
+      sleutelsAanwezig: heeftAanbiederSleutels(familie.id, familie.envPrefix),
       accounts: accounts
         .filter((row) => (familie.providers as readonly string[]).includes(row.provider))
         .map((row) => ({ id: row.id, label: row.label || row.displayName || row.email || familie.id, status: row.status })),
@@ -112,11 +109,6 @@ async function m4Deel(ownerUserId: string): Promise<IntegratiesUit['m4']> {
   };
 }
 
-/**
- * SEC-002 (wolk-05): `vlagAan` = mag DEZE mens dit overzicht zien (backend/index.ts: vlag cloud-vnext of verbindingen-centrum-v2).
- * Zonder vlag 404 CLOUD_VNEXT_UIT; kan de vlag niet bepaald worden, dan is het antwoord «uit» (veilige kant).
- * Zonder opties (eenheidstests, oude aanroepers) blijft de route open zoals voorheen.
- */
 export function cloudVnextIntegratiesRoutes(requireSession: RequireSession, opties: { vlagAan?: (u: SessionOk['user']) => Promise<boolean> } = {}): Record<string, RouterMiddleware[]> {
   const route = (run: (ctx: Ctx, auth: SessionOk) => Promise<Resp>): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as unknown as Ctx;
@@ -130,16 +122,19 @@ export function cloudVnextIntegratiesRoutes(requireSession: RequireSession, opti
   }) as unknown as RouterMiddleware];
   return {
     'POST /api/owner/cloud/vnext/integraties': route(async (_ctx, auth) => {
-      const [google, photos, m4] = await Promise.all([
+      const [google, photos, m4, webdav] = await Promise.all([
         googleDeel(auth.user.id),
         photosDeel(auth.user.id, String(auth.user.email || '')),
         m4Deel(auth.user.id),
+        webdavOverzichtDeel(auth.user.id),
       ]);
       const uit: IntegratiesUit = {
-        google, photos, m4,
+        google, photos, m4, webdav,
         zoekIndex: { cloud: (INDEX_BRONNEN as readonly string[]).includes('cloud'), drive: (INDEX_BRONNEN as readonly string[]).includes('drive') },
       };
       return json(uit);
     }),
+    'POST /api/owner/cloud/vnext/webdav': route((ctx, auth) => afhandelenCloudWebdav(ctx.body, auth)),
+    'POST /api/owner/cloud/vnext/automatiseringen': route((ctx, auth) => afhandelenCloudAutomatiseringen(ctx.body, auth)),
   };
 }

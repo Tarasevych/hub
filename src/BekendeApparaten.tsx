@@ -6,12 +6,13 @@
 // з нового пристрою лишається завжди. Без прапорця власника `meldingen-uitleg-v3` спливне сповіщення не надходить — це сказано прямо.
 // Keuze «Altijd / Uit» voor de waarschuwing bij een nieuw apparaat, lijst van bekende apparaten, «Dit was ik» en «Apparaat vergeten».
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BellRing, CheckCircle2, Laptop, Trash2 } from 'lucide-react';
+import { BellRing, CheckCircle2, Laptop, ShieldAlert, Trash2 } from 'lucide-react';
 import { api } from './platform/client';
 import { BevestigDialoog } from './platform/BevestigDialoog';
 import { ecosystemTabContext } from './tab-context';
 import { foutNaarTekst, type Paar } from './weigeringen';
 import { alleenMens, geenAi } from './menselijke-actie';
+import { meldNietIk, NIET_IK_TEKST } from './sessies/niet-ik-actie';
 import { apparaatTekst } from './ToegangContext';
 import './bekende-apparaten.css';
 
@@ -58,7 +59,7 @@ export const apparatenActies = (post: Post) => ({
   bevestigen: async (id: string) => standVan((await post(APPARATEN_ROUTES.bevestigen, { ...context(), id })).data),
 });
 
-export default function BekendeApparaten({ lang, beginStand = null, post = (u, b) => api.post(u, b) }: { lang: Lang; beginStand?: ApparatenStand | null; post?: Post }) {
+export default function BekendeApparaten({ lang, beginStand = null, post = (u, b) => api.post(u, b), onNietIk }: { lang: Lang; beginStand?: ApparatenStand | null; post?: Post; onNietIk?: () => void }) {
   const tr = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [stand, setStand] = useState<ApparatenStand | null>(beginStand);
   const [fout, setFout] = useState<Paar | null>(null);
@@ -66,6 +67,7 @@ export default function BekendeApparaten({ lang, beginStand = null, post = (u, b
   const [bezig, setBezig] = useState(false);
   const [vraagUit, setVraagUit] = useState(false);
   const [vergeetVraag, setVergeetVraag] = useState<BekendApparaat | null>(null);
+  const [nietIkVraag, setNietIkVraag] = useState<BekendApparaat | null>(null);
   const loopt = useRef(false); // повторне натискання під час запиту нічого не надсилає вдруге
   const acties = useRef(apparatenActies(post)).current;
   const doe = useCallback(async (f: () => Promise<ApparatenStand>, gelukt?: (s: ApparatenStand) => string) => {
@@ -121,6 +123,8 @@ export default function BekendeApparaten({ lang, beginStand = null, post = (u, b
         <div className='bekend-apparaat-acties'>
           {!a.bevestigdOp && <button type='button' className='sessies-secundair' data-apparaat-bevestigen={a.id} disabled={bezig} {...geenAi} onClick={alleenMens(() => void doe(() => acties.bevestigen(a.id), () => tr('Позначено: це були ви. Запис додано до центру сповіщень.', 'Gemarkeerd: dit was u. Er staat een melding in het meldingencentrum.')))}
             title={tr('Позначити цей пристрій як ваш. Нічого не завершує й не видаляє.', 'Dit apparaat als het uwe markeren. Beëindigt en verwijdert niets.')}>{tr('Це був я', 'Dit was ik')}</button>}
+          {!a.bevestigdOp && !a.ditApparaat && <button type='button' className='security-revoke' data-apparaat-niet-ik={a.id} disabled={bezig} {...geenAi} onClick={alleenMens(() => setNietIkVraag(a))}
+            title={tr('Негайно вилучити чужий пристрій і припинити всі його сеанси.', 'Dit vreemde apparaat direct verwijderen en alle sessies erop beëindigen.')}><ShieldAlert aria-hidden='true' />{tr('Це був не я', 'Dit was ik niet')}</button>}
           <button type='button' className='security-revoke' data-apparaat-vergeten={a.id} disabled={bezig} {...geenAi} onClick={alleenMens(() => setVergeetVraag(a))}
             title={tr('Пристрій зникне з відомих: наступний вхід із нього знову дасть попередження. Сеанси на ньому не завершуються.', 'Het apparaat verdwijnt uit de bekende: de volgende aanmelding ermee geeft weer een waarschuwing. Sessies erop worden niet beëindigd.')}><Trash2 aria-hidden='true' />{tr('Забути пристрій', 'Apparaat vergeten')}</button>
         </div>
@@ -140,5 +144,21 @@ export default function BekendeApparaten({ lang, beginStand = null, post = (u, b
       bevestigTekst={tr('Так, забути', 'Ja, vergeten')}
       onAnnuleer={() => setVergeetVraag(null)}
       onBevestig={async () => { const a = vergeetVraag; if (!a) return; await doe(() => acties.vergeten(a.id), () => tr('Пристрій забуто.', 'Het apparaat is vergeten.')); setVergeetVraag(null); }} />
+    <BevestigDialoog open={!!nietIkVraag} id='apparaat-niet-ik' lang={lang} gevaarlijk bezig={bezig}
+      titel={tr('Це був не я — заблокувати пристрій?', 'Dit was ik niet — apparaat blokkeren?')}
+      uitleg={nietIkVraag ? tr(NIET_IK_TEKST.vraagApparaat[0], NIET_IK_TEKST.vraagApparaat[1]) : ''}
+      gevolgen={[tr(NIET_IK_TEKST.adviesTekst[0], NIET_IK_TEKST.adviesTekst[1])]}
+      bevestigTekst={tr(NIET_IK_TEKST.bevestigKnop[0], NIET_IK_TEKST.bevestigKnop[1])}
+      onAnnuleer={() => setNietIkVraag(null)}
+      onBevestig={async () => {
+        const a = nietIkVraag;
+        if (!a) return;
+        await doe(
+          async () => { await meldNietIk({ apparaatId: a.id }, post); return acties.lijst(); },
+          () => tr(`${NIET_IK_TEKST.adviesKop[0]} ${NIET_IK_TEKST.adviesTekst[0]}`, `${NIET_IK_TEKST.adviesKop[1]} ${NIET_IK_TEKST.adviesTekst[1]}`),
+        );
+        setNietIkVraag(null);
+        onNietIk?.();
+      }} />
   </section>;
 }

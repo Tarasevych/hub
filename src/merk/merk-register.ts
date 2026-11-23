@@ -331,7 +331,7 @@ export function merkTint(id: string): number {
  *  `panel` = waarop een tegel ligt (de tegel is `panel` met 12% merkkleur), `vlak` = bg/panel/surface/surface2 (los gliefje).
  *  De eenheidstest contrast-knoppen-logos-20261021 rekent deze grenzen na tegen src/thema/paletten.ts + canoniek-omlijsting.css. */
 export const MERK_GRENZEN = Object.freeze({
-  licht: { panel: ['#fbfbfb', '#ffffff'], vlak: ['#d4d8dc', '#ffffff'] },
+  licht: { panel: ['#fcfafb', '#ffffff'], vlak: ['#dad5dc', '#ffffff'] },
   donker: { panel: ['#000000', '#2c3239'], vlak: ['#000000', '#47515c'] },
 } as const);
 /** Aandeel van de merkkleur in de tint van een tegel zonder eigen merkvlak (merk.css: color-mix … 12%, var(--panel)). */

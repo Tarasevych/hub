@@ -185,7 +185,7 @@ export async function main(): Promise<number> {
       ecoBron.includes('sfeerVanRij(s)') &&
       ecoBron.includes('zichtbaarVoor(s.kind, opties.ontvanger)') &&
       ecoBron.includes("ESCAPE '\\\\'") &&
-      backendIdx.includes('meldingEcosysteemRoutes({ requireSession: ownerRequireSession as never, ontvanger: meldingOntvanger as never })'),
+      /meldingEcosysteemRoutes\(\{ requireSession: ownerRequireSession as never, ontvanger: meldingOntvanger as never\b/.test(backendIdx),
   );
 
   // 5. Маскування деталей аудиту в adminBootstrapData і перевірка URL у directory-connectors/save

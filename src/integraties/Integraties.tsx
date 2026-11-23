@@ -119,7 +119,18 @@ export default function Integraties({ lang, context, ssoActief, directories, map
       } catch { setSuite(null); setSuiteFout(true); }
     }
     setSuiteCode(code);
-    try { setServerStand((await api.post('/api/owner/admin/integraties/stand', context)).data as ServerStand); } catch { setServerStand(null); }
+    try {
+      const [basisAntw, adapterAntw] = await Promise.all([
+        api.post('/api/owner/admin/integraties/stand', context),
+        api.post('/api/owner/admin/integraties/adapter-koppelingen/stand', context).catch(() => null),
+      ]);
+      const basisStand = basisAntw.data as ServerStand;
+      const adapterLevend = ((adapterAntw?.data as { levend?: ServerStand['levend'] } | undefined)?.levend) || {};
+      setServerStand({
+        ...basisStand,
+        levend: { ...(basisStand?.levend || {}), ...adapterLevend },
+      });
+    } catch { setServerStand(null); }
     setGelezenOp(Date.now());
     setLaden(false);
     // Andere open tabbladen van deze catalogus lezen de stand ook opnieuw (geen gegevens in het bericht, alleen «vernieuw»).

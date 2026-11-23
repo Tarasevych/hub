@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 91,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:22.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Вершина гілки 1ba927aa вже на 100% входить у предковість гілки integratie.",
+    "nl": "De top 1ba927aa maakt al volledig deel uit van de voorouders van integratie."
+  },
+  "titel": {
+    "uk": "ZIJMENU-001: праве бічне меню розділів оформлення «Макет» на телефоні",
+    "nl": "ZIJMENU-001: rechter zijmenu van onderdelen in vormgeving «Ontwerp» op de telefoon"
+  },
+  "laatsteCommit": "1ba927aac171dab3026ca49b64b828dcdadd7542",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "ZIJMENU-001",
+    "CONSOL-001"
+  ]
+}

@@ -56,7 +56,7 @@ export async function main(): Promise<number> {
     && w1.zijbalk.find((r) => r.item === 'svc:hub')?.accent === DIENST_ACCENT.hub
     && w1.snelbalk.find((r) => r.kopie === 'k-kl000001')?.accent === 'limoen'
     && w1.snelbalk.find((r) => r.kopie === 'k-kl000002')?.accent === DIENST_ACCENT.hub);
-  check('elke accentkleur van het palet is te kiezen (14 kleuren, zelfde palet als de diensten)', ACCENTEN.length === 14 && ACCENTEN.every((a) => !!normaliseerZijbalk({ items: { 'svc:mail': { kleur: a } } }).items['svc:mail']?.kleur));
+  check('elke accentkleur van het palet is te kiezen (15 kleuren, zelfde palet als de diensten)', ACCENTEN.length === 15 && ACCENTEN.every((a) => !!normaliseerZijbalk({ items: { 'svc:mail': { kleur: a } } }).items['svc:mail']?.kleur));
   const kleurUit = itemKleurZetten(k1, 'svc:mail', undefined);
   check('kleur terugzetten → weer de kleur van het onderdeel', kleurUit.ok && !kleurUit.v.items['svc:mail']?.kleur && menuWeergave(kleurUit.v, basis).zijbalk.find((r) => r.item === 'svc:mail')?.accent === DIENST_ACCENT.mail);
   const kopieKleur = itemKleurZetten(k1, 'k-kl000002:pg:hub/notes', 'indigo');

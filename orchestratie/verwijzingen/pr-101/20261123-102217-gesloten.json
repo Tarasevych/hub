@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 101,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:17.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі фіксації змін повністю увійшли в integratie через спільний випуск TELEGRAM-003.",
+    "nl": "Alle vastleggingen zijn via TELEGRAM-003 volledig opgenomen in integratie."
+  },
+  "titel": {
+    "uk": "TELEGRAM-002: набір із 96 змістовних кольорових піктограм три в ряд без повторів",
+    "nl": "TELEGRAM-002: reeks van 96 gekleurde pictogrammen zonder herhaling op één rij van drie"
+  },
+  "laatsteCommit": "f65f8e35dbef3e75bc99a5d4491c5b77cfca5434",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "TELEGRAM-002",
+    "TELEGRAM-003",
+    "CONSOL-001"
+  ]
+}

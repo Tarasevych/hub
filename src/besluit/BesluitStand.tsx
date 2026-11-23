@@ -18,7 +18,7 @@ export default function BesluitStand({ tr, stand }: { tr: Tr; stand: LeefStand }
     <p className='bsl-stand-kop'><Icoon size={18} className={b.staat === 'ondertekend' ? 'bsl-spin' : undefined} aria-hidden='true' /><b>{tr(BESLUIT_STAAT_TEKST[b.staat][0], BESLUIT_STAAT_TEKST[b.staat][1])}</b></p>
     {b.staat === 'ondertekend' && <p className='bsl-stand-tekst'>{stand.pauze
       ? tr('Сайт перезапускається або тимчасово не відповідає — це очікувано під час відкату. Чекаю далі…', 'De site herstart of antwoordt tijdelijk niet — dat hoort bij terugdraaien. Ik wacht verder…')
-      : tr('Root перевіряє підпис passkey своїми ключами і лише після цього виконує рішення. Можна не закривати цю сторінку.', 'Root controleert de passkey-handtekening met zijn eigen sleutels en voert het besluit pas daarna uit. U hoeft deze pagina niet te sluiten.')}</p>}
+      : tr('Root перевіряє підпис ключа доступу своїми ключами і лише після цього виконує рішення. Можна не закривати цю сторінку.', 'Root controleert de passkey-handtekening met zijn eigen sleutels en voert het besluit pas daarna uit. U hoeft deze pagina niet te sluiten.')}</p>}
     {uitleg && b.staat !== 'ondertekend' && <p className='bsl-stand-tekst'>{uitleg}</p>}
     {b.code && b.staat !== 'klaar' && b.staat !== 'ondertekend' && <p className='bsl-stand-code'><code>{b.code}</code>{b.passkey ? <> · passkey <code>{b.passkey}</code></> : null}</p>}
     {b.uitkomst?.detail && <details className='bsl-stand-detail'><summary>{tr('Подробиці від root', 'Details van root')}</summary><pre>{b.uitkomst.detail}</pre></details>}

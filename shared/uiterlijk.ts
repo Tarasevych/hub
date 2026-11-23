@@ -25,7 +25,7 @@ import { DIENST_IDS, MENU_PAGINAS, MENU_RUIMTES, type MenuRuimte } from './menu-
 
 // ------------------------------------------------------------------------------------------------ velden en grenzen
 /** Diensten (subdomeinen) waarvoor een laatste pad en een routebeeld bewaard worden; gelijk aan `services` in src/gedeelde-voorkeuren.ts. */
-export const UITERLIJK_DIENSTEN = ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin', 'mcp'] as const;
+export const UITERLIJK_DIENSTEN = ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'identity', 'api', 'admin', 'mcp'] as const;
 export type UiterlijkDienst = typeof UITERLIJK_DIENSTEN[number];
 export const UITERLIJK_TALEN = ['uk', 'nl'] as const;
 export type UiterlijkTaal = typeof UITERLIJK_TALEN[number];

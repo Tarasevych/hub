@@ -28,8 +28,8 @@ const datum = (ms: number, lang: Lang) => new Date(ms).toLocaleString(lang === '
 const STAND_TEKST: Record<Stand, readonly [string, string]> = { ok: ['Підключено', 'Gekoppeld'], 'let-op': ['Потрібна увага', 'Let op'], fout: ['Помилка', 'Fout'], onbekend: ['Невідомо', 'Onbekend'] };
 const KLUIS_FOUTEN: Record<string, readonly [string, string]> = {
   OWNER_VAULT_ENCRYPTION_UNAVAILABLE: ['Сховище недоступне: на сервері немає OWNER_VAULT_ENCRYPTION_KEY_V1. Запустіть «mijn-ruimte-installeer geheimen».', 'Kluis niet beschikbaar: OWNER_VAULT_ENCRYPTION_KEY_V1 ontbreekt op de server. Voer «mijn-ruimte-installeer geheimen» uit.'],
-  STEP_UP_REQUIRED: ['Потрібне підтвердження (passkey або код). Спробуйте ще раз.', 'Bevestiging nodig (passkey of code). Probeer het opnieuw.'],
-  STEP_UP_STRONG_REQUIRED: ['Потрібне сильне підтвердження (passkey або код з застосунку).', 'Sterke bevestiging nodig (passkey of app-code).'],
+  STEP_UP_REQUIRED: ['Потрібне підтвердження (ключ доступу або код). Спробуйте ще раз.', 'Bevestiging nodig (passkey of code). Probeer het opnieuw.'],
+  STEP_UP_STRONG_REQUIRED: ['Потрібне сильне підтвердження (ключ доступу або код з застосунку).', 'Sterke bevestiging nodig (passkey of app-code).'],
   OWNER_VAULT_LIMIT_REACHED: ['Сховище заповнене (ліміт записів).', 'De kluis is vol (limiet aan items).'],
   OWNER_REQUIRED: ['Лише власник може писати у сховище.', 'Alleen de eigenaar kan in de kluis schrijven.'],
 };
@@ -208,7 +208,7 @@ export default function Wizard({ lang, context, onGewijzigd }: Props) {
                             <label className='il-w-veld'><span>Client secret</span><GeheimInvoer lang={lang} value={v.secret} onChange={(secret) => setInvoer((x) => ({ ...x, [p.id]: { ...x[p.id], secret } }))} autoComplete='new-password' spellCheck={false} max={8192} soort='integratie' data={{ geheim: 'ja' }} /></label>
                           </>
                         )}
-                        <p className='il-d-noot'>{tr(`Записується у ваше зашифроване сховище (призначення «${p.kluisDoel}», назва «${p.kluisNaam}»); при збереженні сайт попросить passkey або код. Діє одразу, без перезапуску сервера.`, `Gaat naar uw versleutelde kluis (doel «${p.kluisDoel}», naam «${p.kluisNaam}»); bij het opslaan vraagt de site een passkey of code. Werkt meteen, zonder herstart.`)}{p.id === 'google' ? ` ${tr('Виняток: кнопка «Увійти через Google» підхоплює нового клієнта протягом 5 хвилин. Якщо на сервері задано env-змінні GOOGLE_OAUTH_CLIENT_ID/SECRET, вони мають пріоритет над сховищем.', 'Uitzondering: «Aanmelden met Google» pikt een nieuwe client binnen 5 minuten op. Staan GOOGLE_OAUTH_CLIENT_ID/SECRET als env op de server, dan winnen die van de kluis.')}` : ''}</p>
+                        <p className='il-d-noot'>{tr(`Записується у ваше зашифроване сховище (призначення «${p.kluisDoel}», назва «${p.kluisNaam}»); при збереженні сайт попросить ключ доступу або код. Діє одразу, без перезапуску сервера.`, `Gaat naar uw versleutelde kluis (doel «${p.kluisDoel}», naam «${p.kluisNaam}»); bij het opslaan vraagt de site een passkey of code. Werkt meteen, zonder herstart.`)}{p.id === 'google' ? ` ${tr('Виняток: кнопка «Увійти через Google» підхоплює нового клієнта протягом 5 хвилин. Якщо на сервері задано env-змінні GOOGLE_OAUTH_CLIENT_ID/SECRET, вони мають пріоритет над сховищем.', 'Uitzondering: «Aanmelden met Google» pikt een nieuwe client binnen 5 minuten op. Staan GOOGLE_OAUTH_CLIENT_ID/SECRET als env op de server, dan winnen die van de kluis.')}` : ''}</p>
                         <button type='submit' className='il-knop is-primair' disabled={bezig !== ''}>{bezig === `save:${p.id}` ? tr('Зберігаємо…', 'Opslaan…') : tr('Зберегти у сховищі', 'In de kluis opslaan')}</button>
                       </form>
                     ) : (

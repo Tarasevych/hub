@@ -112,7 +112,7 @@ async function stilMetApparaat(s: Stand): Promise<boolean> {
     await postNu(`${P}/apparaat/ontgrendelen`, lichaam(deel));
     const label = s.omslagen.apparaten?.find((a) => a.id === deel.apparaatId)?.label || '';
     melden(tr('Дані розшифровано автоматично на цьому пристрої.', 'Gegevens automatisch ontsleuteld op dit apparaat.'), 'success',
-      tr(`Цей браузер${label ? ` (${label})` : ''} уже розшифровував ваші дані, тож повторний вхід чи оновлення сервера не вимагають passkey. Забути пристрій можна в Налаштування → Способи входу → Шифрування моїх даних.`,
+      tr(`Цей браузер${label ? ` (${label})` : ''} уже розшифровував ваші дані, тож повторний вхід чи оновлення сервера не вимагають ключ доступу. Забути пристрій можна в Налаштування → Способи входу → Шифрування моїх даних.`,
         `Deze browser${label ? ` (${label})` : ''} ontsleutelde uw gegevens al eerder, dus opnieuw aanmelden of een serverupdate vraagt geen passkey. Het apparaat vergeten kan bij Instellingen → Aanmeldmethoden → Versleuteling van mijn gegevens.`));
     return true;
   } catch { return false; }
@@ -196,7 +196,7 @@ function KluisKaart() {
       } catch { onthoudenGelukt = false; }
     }
     melden(tr('Дані розшифровано.', 'Gegevens ontsleuteld.'), 'success',
-      onthoudenGelukt ? tr('Цей пристрій запам’ятано на 30 днів: повторний вхід і оновлення сервера більше не питатимуть passkey.', 'Dit apparaat is 30 dagen onthouden: opnieuw aanmelden en serverupdates vragen geen passkey meer.')
+      onthoudenGelukt ? tr('Цей пристрій запам’ятано на 30 днів: повторний вхід і оновлення сервера більше не питатимуть ключ доступу.', 'Dit apparaat is 30 dagen onthouden: opnieuw aanmelden en serverupdates vragen geen passkey meer.')
         : tr('Ключ відкрито до виходу з акаунта або перезапуску сервера.', 'De sleutel is open tot afmelden of een herstart van de server.'));
     const herladen = geopend(true);
     setKlaar({ herladen, onthouden: onthoudenGelukt });
@@ -265,8 +265,8 @@ function KluisKaart() {
     {!klaar && <>
       <div className='kluis-poort-knoppen'>
         {metPasskey && <button ref={knop} type='button' className='kluis-poort-primair' disabled={!!bezig} onClick={() => void ontgrendelPasskey(false)}
-          title={tr('Ваш passkey відкриває ключ прямо в браузері; сервер ніколи не бачить секрет passkey.', 'Uw passkey opent de sleutel in de browser zelf; de server ziet het geheim van de passkey nooit.')}>
-          <Fingerprint aria-hidden='true' />{bezig === 'passkey' ? tr('Чекаємо на passkey…', 'Wachten op passkey…') : tr('Розшифрувати passkey', 'Ontsleutelen met passkey')}</button>}
+          title={tr('Ваш ключ доступу відкриває ключ прямо в браузері; сервер ніколи не бачить секрет ключ доступу.', 'Uw passkey opent de sleutel in de browser zelf; de server ziet het geheim van de passkey nooit.')}>
+          <Fingerprint aria-hidden='true' />{bezig === 'passkey' ? tr('Чекаємо на ключ доступу…', 'Wachten op passkey…') : tr('Розшифрувати ключем доступу', 'Ontsleutelen met passkey')}</button>}
         {metCode && <button ref={metPasskey ? undefined : knop} type='button' className={metPasskey ? 'kluis-poort-tweede' : 'kluis-poort-primair'} disabled={!!bezig} aria-expanded={toonCode} onClick={() => setToonCode((v) => !v)}
           title={tr('Код із 20 символів, який ви зберегли при ввімкненні шифрування. Після використання він заміниться новим.', 'De code van 20 tekens die u bewaarde bij het inschakelen. Na gebruik wordt hij vervangen door een nieuwe.')}>
           <KeyRound aria-hidden='true' />{tr('Код відновлення', 'Herstelcode')}</button>}
@@ -292,7 +292,7 @@ function KluisKaart() {
 
     {nieuweCode && <div className='kluis-poort-nieuw' data-kluis-nieuwe-code>
       <strong>{tr('Збережіть новий код відновлення', 'Bewaar de nieuwe herstelcode')}</strong>
-      <small>{tr('Новий показуємо лише зараз: без нього й без passkey дані не відновити. Використаний код діятиме, доки ви не натиснете «Готово».', 'De nieuwe tonen we alleen nu: zonder hem én zonder passkey zijn de gegevens niet terug te halen. De gebruikte code blijft werken tot u op «Klaar» drukt.')}</small>
+      <small>{tr('Новий показуємо лише зараз: без нього й без ключа доступу дані не відновити. Використаний код діятиме, доки ви не натиснете «Готово».', 'De nieuwe tonen we alleen nu: zonder hem én zonder passkey zijn de gegevens niet terug te halen. De gebruikte code blijft werken tot u op «Klaar» drukt.')}</small>
       <code>{opmaakHerstelcode(nieuweCode)}</code>
       <div className='kluis-poort-knoppen'>
         <button type='button' className='kluis-poort-tweede' onClick={downloaden}><Download aria-hidden='true' />{tr('Завантажити', 'Downloaden')}</button>

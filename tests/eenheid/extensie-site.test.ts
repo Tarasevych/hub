@@ -260,7 +260,7 @@ export async function main(): Promise<number> {
       const knop = (h: string) => /<button[^>]*data-eo-knop="ontgrendelen"[^>]*>/.exec(h)?.[0] ?? '';
 
       let h = html();
-      check('render: geen recht → knop «Розблокувати з Passkey» uit', / disabled=""/.test(knop(h)) && h.includes('Розблокувати з Passkey'), knop(h));
+      check('render: geen recht → knop «Розблокувати ключем доступу» uit', / disabled=""/.test(knop(h)) && h.includes('Розблокувати ключем доступу'), knop(h));
       check('render: geen recht → uitleg waarom (GEEN_TECH_PROFIEL, uk)', h.includes('data-eo-weigering="GEEN_TECH_PROFIEL"') && h.includes(WEIGER_UITLEG.GEEN_TECH_PROFIEL.uk.slice(0, 40)));
       check('render: staat vergrendeld = «Очікування Passkey» met aria-live', h.includes('data-eo-staat="vergrendeld"') && h.includes(STAAT_TEKST.vergrendeld[0]) && /aria-live="polite"/.test(h));
       check('render: standaard admin + mcp aangevinkt, andere hosts niet', /data-eo-domein="admin.tarasevych.com"[^>]*checked|checked=""[^>]*data-eo-domein="admin.tarasevych.com"/.test(h) && !/checked=""[^>]*data-eo-domein="mail.tarasevych.com"/.test(h));

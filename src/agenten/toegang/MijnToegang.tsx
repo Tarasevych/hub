@@ -188,7 +188,7 @@ function HeropenPaneel({ r, tr, uk, recht, blok, soort, bezig, onSluit, onGa }: 
       <p className='tg-noot'>{beperk
         ? tr('Звузити чинний доступ на місці не можна: спершу його буде відкликано, потім відкрито заново з меншими правами — з підтвердженням, як «Продовжити».', 'De huidige toegang ter plekke verkleinen kan niet: hij wordt eerst ingetrokken en daarna opnieuw geopend met minder rechten — met bevestiging zoals «Verlengen».')
         : prive ? tr('Сайт попросить підтвердити вхід (passkey, код із застосунку або Google). Можливості беруться з ваших дозволів «Що може ШІ».', 'De site vraagt een bevestiging van de aanmelding (passkey, app-code of Google). De mogelijkheden komen uit uw toestemmingen «Wat mag de AI».')
-          : tr('Потрібен ваш passkey і активний технічний профіль у цій вкладці.', 'Uw passkey en een actief technisch profiel in dit tabblad zijn nodig.')}</p>
+          : tr('Потрібен ваш ключ доступу і активний технічний профіль у цій вкладці.', 'Uw passkey en een actief technisch profiel in dit tabblad zijn nodig.')}</p>
       {beperk && d.soort === 'ontgrendeling' ? (
         <fieldset className='tg-veldset'>
           <legend>{tr('Залишити адреси', 'Adressen behouden')} <HulpVraag k='toegang.domeinen' meer={[['toegang.lokaal', 'Локальний агент (лише читання)', 'Lokale agent (alleen lezen)']]} uk={uk} label={tr('Адреси', 'Adressen')} /></legend>
@@ -225,7 +225,7 @@ function HeropenPaneel({ r, tr, uk, recht, blok, soort, bezig, onSluit, onGa }: 
       <div className='tg-knoppen'>
         <Knop toon={beperk ? 'danger' : 'primary'} bezig={bezig} disabled={!!blok || geenKeuze || leeg} data={`tg-ga:${soort}:${r.sleutel}`}
           onClick={() => onGa({ domeinen, lokaal, ...(prive ? { dagen: dag } : { minuten: min }) })}>
-          {beperk ? tr('Відкликати й відкрити з меншими правами', 'Intrekken en opnieuw openen met minder') : prive ? tr('Підтвердити й продовжити', 'Bevestigen en verlengen') : tr('Підтвердити passkey', 'Bevestigen met passkey')}
+          {beperk ? tr('Відкликати й відкрити з меншими правами', 'Intrekken en opnieuw openen met minder') : prive ? tr('Підтвердити й продовжити', 'Bevestigen en verlengen') : tr('Підтвердити ключем доступу', 'Bevestigen met passkey')}
         </Knop>
         <Knop onClick={onSluit} disabled={bezig}>{tr('Скасувати', 'Annuleren')}</Knop>
       </div>

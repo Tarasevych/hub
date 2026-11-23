@@ -11,7 +11,7 @@ import type { DesktopEntry } from '../../../shared/werkblad-v3-types';
 
 export const SNEL_TOEGANG = 'wdg:snel-toegang';
 /** Tegels van «Швидкий доступ» (src/werkblad/widgets/Start.tsx, TEGELS) als register-ids, zelfde volgorde. Houd gelijk. */
-export const SNEL_TOEGANG_ITEMS: readonly string[] = ['mail', 'calendar', 'cloud', 'github', 'tasks', 'notes', 'ai', 'mcp', 'huis', 'identity', 'api', 'admin'].map((d) => `svc:${d}`);
+export const SNEL_TOEGANG_ITEMS: readonly string[] = ['mail', 'calendar', 'crm', 'cloud', 'github', 'tasks', 'notes', 'ai', 'mcp', 'huis', 'identity', 'api', 'admin'].map((d) => `svc:${d}`);
 export const STIJL_SLEUTEL = 'blokStijl';
 export const SCHEIDER = '~';
 

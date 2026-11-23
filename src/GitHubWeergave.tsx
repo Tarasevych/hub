@@ -235,7 +235,7 @@ function InstelBlok({ feiten, tr }: { feiten: GithubKoppelingFeiten | null; tr: 
       <li>{tr('OAuth: github.com → Settings → Developer settings → OAuth Apps → «New OAuth App». GitHub App: там само → «GitHub Apps» → «New GitHub App».',
         'OAuth: github.com → Settings → Developer settings → OAuth Apps → «New OAuth App». GitHub App: daar → «GitHub Apps» → «New GitHub App».')}</li>
       <li>{tr('Впишіть два значення нижче (скопіюйте їх — вони мають збігатися символ у символ).', 'Vul de twee waarden hieronder in (kopieer ze — ze moeten teken voor teken kloppen).')}</li>
-      <li>{tr('Створіть client secret (OAuth) або приватний ключ (GitHub App) і покладіть його у сховище ключів — значення вводиться лише там, із підтвердженням passkey або TOTP.',
+      <li>{tr('Створіть client secret (OAuth) або приватний ключ (GitHub App) і покладіть його у сховище ключів — значення вводиться лише там, із підтвердженням ключ доступу або TOTP.',
         'Maak een client secret (OAuth) of een persoonlijke sleutel (GitHub App) en zet die in de sleutelkluis — de waarde voert u alleen daar in, met passkey of TOTP.')}</li>
       <li>{tr('Поверніться сюди й натисніть «Увійти через GitHub» або «Під’єднати застосунок».', 'Kom hier terug en klik op «Aanmelden met GitHub» of «App verbinden».')}</li>
     </ol>
@@ -446,7 +446,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
     <p className='gh-sub'>{staat.via === 'oauth' || staat.via === 'app'
       ? tr('«Відключити» справді відкликає токен на GitHub (для OAuth — через DELETE /applications/{client_id}/token) і видаляє запис на сервері. Саме встановлення GitHub App прибирають на github.com.',
         '«Ontkoppelen» trekt de token echt in bij GitHub (bij OAuth via DELETE /applications/{client_id}/token) en verwijdert het record op de server. De installatie van een GitHub App haalt u weg op github.com.')
-      : tr('Персональний токен уводиться лише в безпечному полі сховища ключів (Кабінет → API-платформа → Сховище ключів), із підтвердженням passkey або TOTP. Значення ніколи не потрапляє в цей браузер.',
+      : tr('Персональний токен уводиться лише в безпечному полі сховища ключів (Кабінет → API-платформа → Сховище ключів), із підтвердженням ключ доступу або TOTP. Значення ніколи не потрапляє в цей браузер.',
         'Een persoonlijke token voert u alleen in het beveiligde veld van de sleutelkluis in (Account → API-platform → Sleutelkluis), met passkey of TOTP. De waarde komt nooit in deze browser.')}</p>
 
     <InstelBlok feiten={feiten} tr={tr} />

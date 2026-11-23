@@ -51,6 +51,16 @@ export function installeerMobielVeilig(): void {
     });
   };
   vraag();
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('mr:vlaggen-vernieuwd', () => {
+      try { localStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+      void vraagMobielVeilig().then((v) => {
+        if (v === null) return;
+        try { localStorage.setItem(OPSLAG, v ? '1' : '0'); } catch { /* geen opslag */ }
+        zet(v);
+      });
+    });
+  }
 }
 
 const abonneer = (f: () => void) => { luisteraars.add(f); return () => { luisteraars.delete(f); }; };

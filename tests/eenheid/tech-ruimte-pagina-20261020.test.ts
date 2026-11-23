@@ -201,6 +201,9 @@ export async function main(): Promise<number> {
       'backend/ruimte-cloud-agenda.ts': 'de poort van hmara en agenda zelf (en de uitvoerders bij overdragen/wissen)',
       'backend/google-suite-sync.ts': 'cron zonder sessie: adresseert rijen op (ownerUserId, principalId, bestand) en zet geen «ruimte», dus schrijft en leest alleen de persoonlijke lade',
       'backend/agenda-spiegel.ts': 'spiegel van de agenda: elke rij draagt haar eigen lade (ladeOf + ladeVelden) en wordt gelezen met hoortBij/sqlLadeWaar',
+      'backend/api-platform-tokens.ts': 'machinetoken /api/v1/{mail,calendar,files}: vaste persoonlijke lade (ruimte = prive, set_config app.ruimte=prive + hoortBij op elke rij)',
+      'backend/cloud-vnext-webdav.ts': 'routes onder /api/owner/cloud/ — gepoort door ladePoort/ladeOf en gefilterd met ladeFilter + hoortBij + ladeVelden',
+      'backend/mcp-connector-routes.ts': 'koppelingsteller voor de AI-poort van nu (aiPoortNu + hoortBij op mail_accounts_v1, geeft enkel gekoppeld:boolean zonder inhoud)',
     };
     const { execSync } = await import('node:child_process');
     const gevonden = execSync(`grep -rl "${PROJECTIES.join('\\|')}" backend/*.ts || true`, { cwd: W, encoding: 'utf8' })
@@ -235,6 +238,8 @@ export async function main(): Promise<number> {
   const ONDERWERP_PRIVE = `prive-geheim-${sfx}`;
   const ONDERWERP_TECH = `technisch-geheim-${sfx}`;
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1 = await beginV1TechKader();
   try {
     for (const naam of ['0082_ruimte_scheiding.sql', '0083_mail_contacten_ruimte.sql', '0084_ruimte_cloud_agenda.sql']) {
       const mig = readFileSync(join(W, 'migrations', naam), 'utf8');
@@ -343,6 +348,7 @@ export async function main(): Promise<number> {
     check('alle diensten van de catalogus hebben een stand in de database staan (niets is vergeten)',
       (await pool.query('SELECT count(*)::int AS n FROM app.ruimte_dienst_stand WHERE user_id=$1', [mens])).rows[0].n === DEELBARE_DIENSTEN.length);
   } finally {
+    await herstelV1();
     await pool.query(`DELETE FROM app.tech_activaties WHERE user_id=$1`, [mens]).catch(() => undefined);
     await pool.query(`DELETE FROM app.tech_profielen WHERE user_id=$1`, [mens]).catch(() => undefined);
     await pool.query(`DELETE FROM app.ruimte_dienst_stand WHERE user_id=$1`, [mens]).catch(() => undefined);

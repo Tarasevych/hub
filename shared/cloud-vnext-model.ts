@@ -269,17 +269,56 @@ export function schoneTag(raw: unknown): string {
 //            SHA_MISMATCH, UPLOAD_ONBEKEND, PRULLENBAK_ALLEEN, NIET_IN_PRULLENBAK, MIME_NIET_TOEGESTAAN, LIMIET_BEREIKT,
 //            SCHIJF_VOL, SESSIE_VERLOPEN, DEEL_BUITEN_BEREIK. Uploadsessies leven op de serverschijf (herstart-bestendig).
 
-// ------------------------------------------------------------------------------- integratiecatalogus (eerlijk, 29.10.2026)
+// // ------------------------------------------------------------------------------- integratiecatalogus (eerlijk, bijgewerkt in M3)
 // stand:
-//   'werkt'            vandaag in production te koppelen én te gebruiken; `levend` zegt welke servercontrole dat bevestigt.
-//   'sleutels-nodig'   de code (OAuth + lijst/preview) staat in het repo, maar de EIGENAAR moet eerst app-sleutels aanmaken en
-//                      als omgeving zetten (`vereist` noemt ze) en de staging-vlag aanzetten; daarna werkt het echt.
-//   'gepland'          er is hoogstens transport-/lijstcode zonder onboarding of routes — niet te koppelen, knop bestaat niet.
-//   'niet-mogelijk'    de aanbieder heeft geen publieke web-API (of versleutelt aan de clientzijde): een site KAN dit niet,
-//                      en dat staat op de kaart, met de eerlijke omweg erbij.
-export type CloudAanbiederStand = 'werkt' | 'sleutels-nodig' | 'gepland' | 'niet-mogelijk';
+//   'werkt'            vandaag gekoppeld én te gebruiken; `levend` zegt welke servercontrole dat bevestigt.
+//   'webdav'           eigen HTTPS-WebDAV-koppeling (Nextcloud / NAS) met app-wachtwoord in de sleutelkluis en PROPFIND-mappenlijst.
+//   'sleutels-nodig'   de OAuth- en lijstcode staat klaar, maar de EIGENAAR moet eerst toepassingsgegevens op de server instellen (`vereist`).
+//   'gepland'          er is hoogstens transportcode zonder gebruikersroutes — niet te koppelen, knop bestaat niet.
+//   'niet-mogelijk'    de aanbieder heeft geen openbare webkoppeling (of versleutelt aan de clientzijde): met eerlijke omweg.
+export type CloudAanbiederStand = 'werkt' | 'webdav' | 'sleutels-nodig' | 'gepland' | 'niet-mogelijk';
 export type CloudRichting = 'lezen' | 'lezen-en-schrijven' | 'importeren' | 'geen';
-export type CloudLevend = 'google' | 'm4' | 'photos';
+export type CloudLevend = 'google' | 'm4' | 'photos' | 'webdav';
+export type CloudWebdavAanbieder = 'nextcloud' | 'nas-webdav';
+
+export type CloudWebdavKoppeling = {
+  id: string;
+  aanbieder: CloudWebdavAanbieder;
+  naam: string;
+  origin: string;
+  padVoorvoegsel: string;
+  gebruikersnaam: string;
+  status: 'connected' | 'reauth_required' | 'revoked';
+  laatstGecontroleerdOp: string | null;
+  bijgewerktOp: string;
+};
+
+export type CloudWebdavIngang = {
+  pad: string;
+  naam: string;
+  map: boolean;
+  bytes: number | null;
+  mime: string;
+  revisie: string;
+};
+
+export type CloudAutomatiseringRichting = 'eigen-naar-drive' | 'drive-naar-eigen';
+export type CloudAutomatiseringRegel = {
+  id: string;
+  naam: string;
+  actief: boolean;
+  richting: CloudAutomatiseringRichting;
+  soortActie: 'kopie' | 'verplaats';
+  filterSoort: CloudSoort | 'alle';
+  bronMapId: string | null;
+  doelMapId: string | null;
+  driveAccountId: string;
+  laatstUitgevoerdOp: string | null;
+  laatstTakenAantal: number;
+  aangemaaktOp: string;
+  bijgewerktOp: string;
+};
+
 export type CloudVnextAanbieder = {
   id: string; naam: string; monogram: string; site: string;
   /** REESTR-LOGO-001: sleutel in het ene merkregister (src/merk); zonder = monogram (geen logo met eerlijke herkomst). */
@@ -288,7 +327,7 @@ export type CloudVnextAanbieder = {
   uitleg: Tweetalig;
   /** Wat er vandaag ECHT werkt zodra gekoppeld (of waarom niet). Verplicht. */
   detail: Tweetalig;
-  /** Alleen bij 'sleutels-nodig': de omgevingsvariabelen/vlaggen die de eigenaar moet zetten. */
+  /** Alleen bij 'sleutels-nodig': de omgevingsvariabelen die de eigenaar moet instellen. */
   vereist?: readonly string[];
   /** Alleen bij 'niet-mogelijk' of 'gepland': de eerlijke omweg die vandaag al kan. */
   omweg?: Tweetalig;
@@ -296,52 +335,52 @@ export type CloudVnextAanbieder = {
 };
 export const CLOUD_VNEXT_AANBIEDERS: readonly CloudVnextAanbieder[] = Object.freeze([
   { id: 'google-drive', merk: 'googledrive', naam: 'Google Drive', monogram: 'G', site: 'https://drive.google.com', stand: 'werkt', richting: 'lezen-en-schrijven', levend: 'google',
-    uitleg: ['Повне підключення через Google-доступ: перегляд тек, пошук, завантаження, перейменування, переміщення, кошик, зірочки; кілька акаунтів.', 'Volledige koppeling via Google-toegang: mappen, zoeken, uploaden, hernoemen, verplaatsen, prullenbak, sterren; meerdere accounts.'],
-    detail: ['Межі сьогодні: завантаження на Drive до 5 МБ за раз, прев’ю до 32 МБ (відео 128 МБ), спільні диски не показуються.', 'Grenzen vandaag: upload naar Drive tot 5 MB per keer, preview tot 32 MB (video 128 MB), gedeelde schijven worden niet getoond.'] },
+    uitleg: ['Повне підключення через доступ Google: перегляд тек, пошук, завантаження, перейменування, переміщення, кошик, зірочки; кілька облікових записів.', 'Volledige koppeling via Google-toegang: mappen, zoeken, uploaden, hernoemen, verplaatsen, prullenbak, sterren; meerdere accounts.'],
+    detail: ['Межі сьогодні: вивантаження на Диск до 5 МБ за раз, попередній перегляд до 32 МБ (відео 128 МБ), спільні диски не показуються.', 'Grenzen vandaag: upload naar Drive tot 5 MB per keer, voorbeeldweergave tot 32 MB (video 128 MB), gedeelde schijven worden niet getoond.'] },
   { id: 'google-photos', merk: 'googlephotos', naam: 'Google Photos', monogram: 'GP', site: 'https://photos.google.com', stand: 'werkt', richting: 'importeren', levend: 'photos',
-    uitleg: ['Офіційний Picker: ви обираєте фото у вікні Google, до 10 за раз зберігаються у вашу хмару.', 'De officiële Picker: u kiest foto’s in het Google-venster; tot 10 per keer worden in uw cloud bewaard.'],
-    detail: ['Лише імпорт за вашим вибором — Google не дає сайтам читати всю бібліотеку.', 'Alleen import op uw keuze — Google laat sites niet de hele bibliotheek lezen.'] },
+    uitleg: ['Офіційне вікно вибору Google: ви самі обираєте світлини, до 10 за раз зберігаються у ваше сховище.', 'De officiële kiezer van Google: u kiest zelf foto’s in het Google-venster; tot 10 per keer worden in uw opslag bewaard.'],
+    detail: ['Лише перенесення за вашим вибором — Google не дає зовнішнім сайтам читати всю бібліотеку.', 'Alleen import op uw keuze — Google laat externe sites niet de hele bibliotheek lezen.'] },
   { id: 'onedrive', merk: 'microsoftonedrive', naam: 'Microsoft OneDrive', monogram: '1D', site: 'https://onedrive.live.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
-    uitleg: ['OAuth, список тек і безпечне прев’ю вже в коді (особистий і робочий OneDrive).', 'OAuth, mappenlijst en veilige preview staan al in de code (persoonlijke én werk-OneDrive).'],
-    detail: ['Щоб увімкнути: зареєструйте застосунок у Microsoft Entra і задайте CLOUD_MICROSOFT_CLIENT_ID/SECRET + CLOUD_M4_CONNECTIONS_STAGING; поки що лише читання+прев’ю, запис/синхронізація — наступний крок.', 'Aanzetten: registreer een app in Microsoft Entra en zet CLOUD_MICROSOFT_CLIENT_ID/SECRET + CLOUD_M4_CONNECTIONS_STAGING; voorlopig lezen+preview, schrijven/synchronisatie is de volgende stap.'],
-    vereist: ['CLOUD_MICROSOFT_CLIENT_ID', 'CLOUD_MICROSOFT_CLIENT_SECRET', 'CLOUD_M4_CONNECTIONS_STAGING', 'CLOUD_M10_STAGING_RUNTIME', 'CLOUD_M8_DIRECTORY_STAGING'] },
+    uitleg: ['Підключення OAuth, перегляд тек і захищений попередній перегляд для особистого та робочого сховища.', 'OAuth-koppeling, mappenlijst en veilige voorbeeldweergave voor persoonlijke én zakelijke opslag.'],
+    detail: ['Щоб увімкнути: зареєструйте застосунок у Microsoft Entra і задайте ONEDRIVE_CLIENT_ID та ONEDRIVE_CLIENT_SECRET у налаштуваннях сервера.', 'Om in te schakelen: registreer een toepassing in Microsoft Entra en stel ONEDRIVE_CLIENT_ID en ONEDRIVE_CLIENT_SECRET op de server in.'],
+    vereist: ['ONEDRIVE_CLIENT_ID', 'ONEDRIVE_CLIENT_SECRET'] },
   { id: 'dropbox', merk: 'dropbox', naam: 'Dropbox', monogram: 'Dx', site: 'https://www.dropbox.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
-    uitleg: ['OAuth (PKCE), список тек і прев’ю в коді; чанкові завантаження підготовлені.', 'OAuth (PKCE), mappenlijst en preview in de code; upload in stukken is voorbereid.'],
-    detail: ['Щоб увімкнути: створіть застосунок у Dropbox App Console і задайте CLOUD_DROPBOX_CLIENT_ID/SECRET + ті самі staging-прапорці.', 'Aanzetten: maak een app in de Dropbox App Console en zet CLOUD_DROPBOX_CLIENT_ID/SECRET + dezelfde staging-vlaggen.'],
-    vereist: ['CLOUD_DROPBOX_CLIENT_ID', 'CLOUD_DROPBOX_CLIENT_SECRET', 'CLOUD_M4_CONNECTIONS_STAGING', 'CLOUD_M10_STAGING_RUNTIME', 'CLOUD_M8_DIRECTORY_STAGING'] },
+    uitleg: ['Підключення OAuth із захистом коду обміну, список тек і попередній перегляд файлів; підготовлено передавання частинами.', 'OAuth-koppeling met PKCE, mappenlijst en voorbeeldweergave; overdracht in delen is voorbereid.'],
+    detail: ['Щоб увімкнути: створіть застосунок у панелі розробника Dropbox і задайте CLOUD_DROPBOX_CLIENT_ID та CLOUD_DROPBOX_CLIENT_SECRET на сервері.', 'Om in te schakelen: maak een toepassing in het ontwikkelaarspaneel van Dropbox en stel CLOUD_DROPBOX_CLIENT_ID en CLOUD_DROPBOX_CLIENT_SECRET in.'],
+    vereist: ['CLOUD_DROPBOX_CLIENT_ID', 'CLOUD_DROPBOX_CLIENT_SECRET'] },
   { id: 'box', merk: 'box', naam: 'Box', monogram: 'Bx', site: 'https://www.box.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
-    uitleg: ['OAuth, список і прев’ю в коді (Box API).', 'OAuth, lijst en preview in de code (Box API).'],
-    detail: ['Щоб увімкнути: застосунок у Box Developer Console і CLOUD_BOX_CLIENT_ID/SECRET + staging-прапорці.', 'Aanzetten: een app in de Box Developer Console en CLOUD_BOX_CLIENT_ID/SECRET + staging-vlaggen.'],
-    vereist: ['CLOUD_BOX_CLIENT_ID', 'CLOUD_BOX_CLIENT_SECRET', 'CLOUD_M4_CONNECTIONS_STAGING', 'CLOUD_M10_STAGING_RUNTIME', 'CLOUD_M8_DIRECTORY_STAGING'] },
+    uitleg: ['Підключення OAuth, перегляд тек і захищений попередній перегляд файлів через інтерфейс Box.', 'OAuth-koppeling, mappenlijst en veilige voorbeeldweergave via de programmaverbinding van Box.'],
+    detail: ['Щоб увімкнути: створіть застосунок у панелі розробника Box і задайте CLOUD_BOX_CLIENT_ID та CLOUD_BOX_CLIENT_SECRET на сервері.', 'Om in te schakelen: maak een toepassing in het ontwikkelaarspaneel van Box en stel CLOUD_BOX_CLIENT_ID en CLOUD_BOX_CLIENT_SECRET in.'],
+    vereist: ['CLOUD_BOX_CLIENT_ID', 'CLOUD_BOX_CLIENT_SECRET'] },
   { id: 'icloud-drive', merk: 'icloud', naam: 'iCloud Drive', monogram: 'iC', site: 'https://www.icloud.com/iclouddrive', stand: 'niet-mogelijk', richting: 'geen',
-    uitleg: ['Файли iCloud Drive з вебсайту недоступні.', 'iCloud Drive-bestanden zijn vanaf een website niet bereikbaar.'],
-    detail: ['Apple не має публічного API для iCloud Drive (CloudKit працює лише всередині застосунків розробника). Жоден сайт не може чесно «підключити iCloud Drive».', 'Apple heeft geen publieke API voor iCloud Drive (CloudKit werkt alleen binnen de apps van de ontwikkelaar). Geen enkele site kan iCloud Drive eerlijk «koppelen».'],
-    omweg: ['Обхід: на iPhone/iPad поділіться файлом у цю хмару (Завантажити тут) або тримайте файли в теці, яку синхронізує інший сервіс. Календар iCloud — підключається (див. Агенду).', 'Omweg: deel op iPhone/iPad het bestand naar deze cloud (hier uploaden) of bewaar bestanden in een map die een andere dienst synchroniseert. De iCloud-agenda koppelt wél (zie Agenda).'] },
+    uitleg: ['Файли сховища Apple з вебсайту напряму недоступні.', 'Bestanden uit Apple-opslag zijn vanaf een website niet rechtstreeks bereikbaar.'],
+    detail: ['Компанія Apple не надає відкритого мережевого інтерфейсу для цього сховища (внутрішній набір працює лише у власних застосунках розробника). Жоден сайт не може чесно підключити його напряму.', 'Apple biedt geen openbare netwerkverbinding voor deze opslag (het interne raamwerk werkt alleen binnen de eigen toepassingen van de ontwikkelaar). Geen enkele site kan dit eerlijk rechtstreeks koppelen.'],
+    omweg: ['Обхідний шлях: на телефоні чи планшеті поділіться файлом у це сховище або тримайте файли в теці іншої підключеної служби. Календар підключається окремо у розділі Календаря.', 'Omweg: deel op telefoon of tablet het bestand naar deze opslag of bewaar bestanden in een map van een andere gekoppelde dienst. De agenda koppelt afzonderlijk via Agenda.'] },
   { id: 'mega', merk: 'mega', naam: 'MEGA', monogram: 'M', site: 'https://mega.io', stand: 'gepland', richting: 'geen',
-    uitleg: ['Сховище з наскрізним шифруванням.', 'Opslag met end-to-end-versleuteling.'],
-    detail: ['Адаптера в коді немає: у MEGA власний протокол шифрування на боці клієнта; чесна інтеграція вимагає окремого клієнта, якого ще не збудовано.', 'Er is geen adapter in de code: MEGA versleutelt met een eigen protocol aan de clientzijde; een eerlijke integratie vraagt een aparte cliënt die nog niet gebouwd is.'],
-    omweg: ['Обхід: експортуйте потрібні файли з MEGA і завантажте сюди.', 'Omweg: exporteer de bestanden uit MEGA en upload ze hier.'] },
-  { id: 'nextcloud', merk: 'nextcloud', naam: 'Nextcloud', monogram: 'N', site: 'https://nextcloud.com', stand: 'gepland', richting: 'geen',
-    uitleg: ['Self-hosted сховище з відкритим WebDAV.', 'Self-hosted opslag met open WebDAV.'],
-    detail: ['У коді вже є читання списків через WebDAV PROPFIND (модуль M9), але немає підключення акаунта (адреса+пароль застосунку), маршрутів і UI — тому чесно «заплановано», без кнопки.', 'De code leest al lijsten via WebDAV PROPFIND (module M9), maar er is geen accountkoppeling (adres+app-wachtwoord), geen routes en geen UI — dus eerlijk «gepland», zonder knop.'],
-    omweg: ['Обхід: синхронізуйте теку Nextcloud на ПК і завантажуйте звідти.', 'Omweg: synchroniseer de Nextcloud-map op de pc en upload van daaruit.'] },
+    uitleg: ['Хмарне сховище з наскрізним шифруванням на боці клієнта.', 'Cloudopslag met eind-tot-eind-versleuteling aan de clientzijde.'],
+    detail: ['Окремого перехідника в коді ще немає: служба використовує власний протокол шифрування на боці клієнта, тож чесна інтеграція потребує окремого перевіреного модуля.', 'Er zit nog geen aparte koppeling in de code: de dienst versleutelt met een eigen protocol aan de clientzijde, dus een eerlijke integratie vraagt een afzonderlijk getoetste module.'],
+    omweg: ['Обхідний шлях: вивантажте потрібні файли на пристрій і додайте їх у своє сховище.', 'Omweg: bewaar de gewenste bestanden op uw apparaat en voeg ze hier toe.'] },
+  { id: 'nextcloud', merk: 'nextcloud', naam: 'Nextcloud', monogram: 'N', site: 'https://nextcloud.com', stand: 'webdav', richting: 'lezen', levend: 'webdav',
+    uitleg: ['Власне сховище з відкритим протоколом WebDAV поверх захищеного з’єднання HTTPS.', 'Eigen gehoste opslag met het open WebDAV-protocol over een beveiligde HTTPS-verbinding.'],
+    detail: ['Підключення за адресою сервера HTTPS та окремим паролем застосунку: перевірка зв’язку PROPFIND, перегляд тек у межах простору та шифрування пароля сховищем ключів.', 'Koppeling via een HTTPS-serveradres en een afzonderlijk toepassingswachtwoord: verbindingscontrole via PROPFIND, mappenoverzicht per ruimte en versleutelde wachtwoordopslag.'] },
   { id: 'pcloud', merk: 'pcloud', naam: 'pCloud', monogram: 'P', site: 'https://www.pcloud.com', stand: 'gepland', richting: 'geen',
-    uitleg: ['Європейське сховище з OAuth API.', 'Europese opslag met een OAuth-API.'],
-    detail: ['Транспорт і OAuth-ескіз є в модулі M5, але без онбордингу, маршрутів і сховища токенів — «заплановано».', 'Transport en een OAuth-schets staan in module M5, maar zonder onboarding, routes en tokenopslag — «gepland».'] },
+    uitleg: ['Європейське хмарне сховище з мережевим протоколом OAuth.', 'Europese cloudopslag met een OAuth-programmaverbinding.'],
+    detail: ['Передавач і заготовка OAuth закладені в модулі M5, але покрокове підключення, користувацькі маршрути та окреме сховище ключів доступу ще заплановані.', 'Vervoer en een OAuth-opzet zitten in module M5, maar stapsgewijze koppeling, gebruikersroutes en afzonderlijke sleutelopslag staan nog gepland.'] },
   { id: 'proton-drive', merk: 'protonmail', naam: 'Proton Drive', monogram: 'Pr', site: 'https://proton.me/drive', stand: 'niet-mogelijk', richting: 'geen',
-    uitleg: ['Сховище з наскрізним шифруванням від Proton.', 'End-to-end-versleutelde opslag van Proton.'],
-    detail: ['Proton не має публічного API для Drive: файли зашифровані на боці клієнта, сторонній сайт їх прочитати не може. Будь-яка кнопка «підключити Proton Drive» була б обманом.', 'Proton heeft geen publieke API voor Drive: bestanden zijn aan de clientzijde versleuteld; een site kan ze niet lezen. Elke knop «Proton Drive koppelen» zou bedrog zijn.'],
-    omweg: ['Обхід: завантажте файл з Proton і додайте сюди вручну.', 'Omweg: download het bestand uit Proton en voeg het hier handmatig toe.'] },
-  { id: 'nas-webdav', naam: 'NAS / WebDAV / SFTP', monogram: 'NAS', site: 'https://www.synology.com/en-global/dsm/feature/webdav', stand: 'gepland', richting: 'geen',
-    uitleg: ['Власний NAS (Synology, QNAP, TrueNAS…) через WebDAV або SFTP.', 'Een eigen NAS (Synology, QNAP, TrueNAS…) via WebDAV of SFTP.'],
-    detail: ['Той самий WebDAV-рушій, що для Nextcloud (M9), покриє NAS; SFTP-клієнта немає. Онбордингу й маршрутів ще немає — «заплановано». Порти NAS в інтернет не відкриваємо: лише вихідне з’єднання з сервера в LAN/VPN.', 'Dezelfde WebDAV-motor als voor Nextcloud (M9) dekt een NAS; een SFTP-cliënt is er niet. Onboarding en routes ontbreken nog — «gepland». NAS-poorten gaan niet open naar internet: alleen een uitgaande verbinding vanaf de server in LAN/VPN.'] },
+    uitleg: ['Хмарне сховище з наскрізним шифруванням від компанії Proton.', 'Eind-tot-eind-versleutelde cloudopslag van Proton.'],
+    detail: ['Компанія Proton не надає відкритого мережевого інтерфейсу для сховища: файли зашифровані на боці клієнта, сторонній вебсайт прочитати їх не може. Будь-яка кнопка прямого підключення була б неправдою.', 'Proton biedt geen openbare netwerkverbinding voor deze opslag: bestanden zijn aan de clientzijde versleuteld en een externe website kan ze niet lezen. Elke knop voor rechtstreeks koppelen zou misleidend zijn.'],
+    omweg: ['Обхідний шлях: збережіть файл на пристрій і завантажте його у власне сховище вручну.', 'Omweg: bewaar het bestand op uw apparaat en voeg het handmatig aan uw eigen opslag toe.'] },
+  { id: 'nas-webdav', naam: 'NAS / WebDAV', monogram: 'NAS', site: 'https://www.synology.com/en-global/dsm/feature/webdav', stand: 'webdav', richting: 'lezen', levend: 'webdav',
+    uitleg: ['Мережеве сховище (Synology, QNAP, TrueNAS) через захищений протокол WebDAV (HTTPS).', 'Eigen netwerkopslag (Synology, QNAP, TrueNAS) via het beveiligde WebDAV-protocol (HTTPS).'],
+    detail: ['Працює через перевірене зовнішнє з’єднання HTTPS та пароль застосунку з прив’язкою IP-адреси проти підроблення запитів і переглядом тек без розкриття пароля.', 'Werkt via een geverifieerde externe HTTPS-verbinding en toepassingswachtwoord met IP-vastzetting tegen verzoekvervalsing en mappenweergave zonder wachtwoordlek.'] },
   { id: 'gmail-bijlagen', merk: 'gmail', naam: 'Gmail-вкладення', monogram: '@', site: 'https://mail.google.com', stand: 'werkt', richting: 'importeren', levend: 'google',
-    uitleg: ['Вкладення з Пошти зберігаються у хмару через сторінку Пошти.', 'Bijlagen uit E-mail bewaart u in de cloud via de mailpagina.'],
-    detail: ['Працює з боку Пошти (вікно листа → вкладення → зберегти); окремого масового імпорту тут ще немає.', 'Werkt vanaf de mailkant (bericht → bijlage → bewaren); een aparte massa-import bestaat hier nog niet.'] },
+    uitleg: ['Вкладення з електронних листів зберігаються у хмарне сховище через розділ Пошти.', 'Bijlagen uit e-mailberichten bewaart u in de cloudopslag via de postpagina.'],
+    detail: ['Працює безпосередньо з вікна читання листа (вкладення → зберегти у сховище); окремого масового перенесення тут немає.', 'Werkt rechtstreeks vanuit het leesvenster van een bericht (bijlage → in opslag bewaren); een aparte bulkimport bestaat hier niet.'] },
 ]);
 export const cloudVnextAanbieder = (id: unknown) => CLOUD_VNEXT_AANBIEDERS.find((a) => a.id === id);
 export const CLOUD_STAND_LABEL: Record<CloudAanbiederStand, Tweetalig> = Object.freeze({
-  werkt: ['працює', 'werkt'], 'sleutels-nodig': ['потрібні ключі власника', 'sleutels van de eigenaar nodig'],
+  werkt: ['працює', 'werkt'], webdav: ['підключення WebDAV (HTTPS)', 'WebDAV-koppeling (HTTPS)'],
+  'sleutels-nodig': ['потрібні ключі власника', 'sleutels van de eigenaar nodig'],
   gepland: ['заплановано', 'gepland'], 'niet-mogelijk': ['неможливо з вебу', 'niet mogelijk vanaf het web'],
 });
 export const CLOUD_RICHTING_LABEL: Record<CloudRichting, Tweetalig> = Object.freeze({

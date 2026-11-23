@@ -332,9 +332,11 @@ export function heeftActiefUitrolProces(s: UitrolAchtergrondSnapshot): boolean {
   const srv = s.server;
   if (!srv) return false;
   if (srv.run && srv.run.staat === 'bezig') return true;
-  if (srv.goedgekeurd.length > 0) return true;
-  if (srv.lopendeUploads.length > 0) return true;
-  if (srv.githubBezig.length > 0) return true;
+  // Grok: hub.tarasevych.com, 22.11.2026: een onvolledig antwoord (oude server, proxy, proefomgeving) gaf
+  // «Cannot read properties of undefined (reading 'length')» in elke pagina; ontbrekende lijsten tellen als leeg.
+  if ((srv.goedgekeurd?.length ?? 0) > 0) return true;
+  if ((srv.lopendeUploads?.length ?? 0) > 0) return true;
+  if ((srv.githubBezig?.length ?? 0) > 0) return true;
   return false;
 }
 
@@ -566,7 +568,7 @@ export async function voerLokaleUploadUit(params: {
 
     const okMelding = {
       ok: true,
-      uk: `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його passkey.`,
+      uk: `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його ключ доступу.`,
       nl: `Pakket ${a.info.versie} geüpload en door de site gecontroleerd. Het installeert niets tot u het met uw passkey goedkeurt.`,
     };
     zetLokaalDeel({ nieuwId: id, melding: okMelding });

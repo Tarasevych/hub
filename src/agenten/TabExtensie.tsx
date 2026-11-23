@@ -107,8 +107,8 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
           <header className='ag-blok-kop'>
             <h3 className='ag-blok-titel' id='ag-ext-technisch'><ShieldCheck aria-hidden='true' /> {tr('Технічний профіль', 'Technisch profiel')}</h3>
             {actief
-              ? <p className='ag-blok-uitleg'>{tr('Окремий слот для адміністрування: власне підключення, розблокування вашим passkey на короткий час, лише в межах технічних ролей.', 'Een apart slot voor beheer: een eigen koppeling, ontgrendelen met uw passkey voor korte tijd, alleen binnen uw technische rollen.')}</p>
-              : <p className='ag-blok-uitleg' data-ext-tech-regel='1'>{tr('Активуйте технічний профіль, щоб підключити технічний слот розширення й розблокувати його своїм passkey.', 'Activeer het technisch profiel om het technische slot van de extensie te koppelen en met uw passkey te ontgrendelen.')}</p>}
+              ? <p className='ag-blok-uitleg'>{tr('Окремий слот для адміністрування: власне підключення, розблокування вашим ключем доступу на короткий час, лише в межах технічних ролей.', 'Een apart slot voor beheer: een eigen koppeling, ontgrendelen met uw passkey voor korte tijd, alleen binnen uw technische rollen.')}</p>
+              : <p className='ag-blok-uitleg' data-ext-tech-regel='1'>{tr('Активуйте технічний профіль, щоб підключити технічний слот розширення й розблокувати його своїм ключем доступу.', 'Activeer het technisch profiel om het technische slot van de extensie te koppelen en met uw passkey te ontgrendelen.')}</p>}
             {actief ? null : (
               <div className='ag-knoppen'>
                 <button type='button' className='ag-knop ag-knop-primary' data-ext-tech-aan='1' onClick={() => openTechVenster('activeren')}><ShieldCheck size={16} aria-hidden='true' />{tr('Активувати', 'Activeren')}</button>

@@ -3,8 +3,8 @@
 // запит не містить нічого про людину чи лист. Офіційні сторінки цін постачальників не мають машинного формату (перевірено 16.11.2026),
 // тому число тут ОРІЄНТОВНЕ, а поруч завжди посилання на офіційну сторінку. Раз на добу, у фоні; немає мережі = цін немає, решта працює.
 // Richtprijzen uit de openbare modellenlijst van OpenRouter; één keer per dag, op de achtergrond; uit te zetten met de vlag.
-import { getPool } from '../server/platform/pg';
 import { AI_AANBIEDERS, type AiAanbiederId } from '../shared/ai-aanbieders';
+import { leesGecacheteVlagRij, registreerVlagGeheugenLuisteraar, wisVlagGeheugen } from './vlaggen-geheugen';
 
 export const PRIJZEN_BRON = 'https://openrouter.ai/api/v1/models';
 export const PRIJZEN_VLAG = 'ai-prijzen-ophalen';
@@ -15,22 +15,35 @@ const VOORVOEGSEL: Record<AiAanbiederId, string> = { anthropic: 'anthropic/', ge
 const DAG = 24 * 3600_000;
 const UUR = 3600_000;
 
+const VLAG_GEHEUGEN_MS = 15_000;
 let cache: Prijzen | null = null;
+let vlagCache: { aan: boolean; tot: number } | null = null;
 let laatstePoging = 0;
 let bezig: Promise<void> | null = null;
 let fetchFn: typeof fetch = (...a) => fetch(...a);
-let vlagLezer: () => Promise<boolean> = async () => {
+
+export const prijzenVlagCacheWissen = (): void => { vlagCache = null; wisVlagGeheugen(); };
+registreerVlagGeheugenLuisteraar(() => { vlagCache = null; });
+
+const standaardVlagLezer = async (): Promise<boolean> => {
+  if (vlagCache && vlagCache.tot > Date.now()) return vlagCache.aan;
   try {
-    const { rows } = await getPool('systeem').query('SELECT aan FROM app.feature_flags WHERE sleutel = $1', [PRIJZEN_VLAG]);
-    return (rows[0] as { aan?: boolean } | undefined)?.aan === true;   // немає рядка (міграцію не застосовано) = не звертатися назовні
-  } catch { return false; }
+    const rij = await leesGecacheteVlagRij(PRIJZEN_VLAG);
+    const aan = rij?.aan === true; // немає рядка (міграцію не застосовано) = не звертатися назовні
+    vlagCache = { aan, tot: Date.now() + VLAG_GEHEUGEN_MS };
+    return aan;
+  } catch {
+    vlagCache = { aan: false, tot: Date.now() + VLAG_GEHEUGEN_MS };
+    return false;
+  }
 };
+let vlagLezer: () => Promise<boolean> = standaardVlagLezer;
 
 /** Лише для тестів. */
 export function setPrijzenDeps(d: { fetch?: typeof fetch; vlag?: () => Promise<boolean> } | null): void {
   fetchFn = d?.fetch ?? ((...a) => fetch(...a));
-  if (d?.vlag) vlagLezer = d.vlag;
-  cache = null; laatstePoging = 0; bezig = null;
+  vlagLezer = d?.vlag ?? standaardVlagLezer;
+  cache = null; vlagCache = null; laatstePoging = 0; bezig = null;
 }
 
 /** «claude-haiku-4-5-20251001» → «claude-haiku-4.5»: без дати, версія через крапку — так моделі називає OpenRouter. */
