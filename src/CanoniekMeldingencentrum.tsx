@@ -59,7 +59,7 @@ import { activityTitle, activiteitContext } from './connector-activiteit';
 import { SUBDOMEINEN, type MeldingSubdomein } from '../shared/meldingen-ecosysteem';
 import { detecteerLiveVoortgang, isInvoerElementActief, magToastNuTonen } from '../shared/meldingen-puls/kern';
 import { useVlag } from './functievlag-lezen';
-import { useMeldingWeergaveKeuze } from './meldingen/weergave-keuze';
+import { leesMeldingWeergaveKeuze, useMeldingWeergaveKeuze } from './meldingen/weergave-keuze';
 import Merk from './merk/Merk';
 
 const naarMeldingSubdomein = (dienst: string): MeldingSubdomein => {
