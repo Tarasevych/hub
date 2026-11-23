@@ -141,6 +141,18 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Спершу тільки для себе: у адмінці введіть ключ бота й натисніть «Налаштувати бота», прив’яжіть свій Telegram і перевірте. Потім — для частини людей або всіх.', 'Eerst alleen voor uzelf: voer in het beheer de botsleutel in en kies «Bot instellen», koppel uw eigen Telegram en test. Daarna voor een deel van de mensen of iedereen.'],
     gevolg: ['Вимкнення одразу ховає кнопку Telegram і зупиняє бота; прив’язки, коди й налаштування зберігаються до наступного вмикання. Інші способи входу не змінюються.', 'Uitschakelen verbergt de Telegram-knop meteen en zet de bot stil; koppelingen, codes en instellingen blijven bewaard tot de volgende inschakeling. Andere aanmeldmethoden veranderen niet.'],
   },
+  'telegram-v2': {
+    naam: ['Захищене вікно входу й підтвердження Telegram', 'Beveiligd Telegram-venster voor aanmelden en bevestigen'],
+    wat: ['Показує однакові контрольні піктограми на сайті та у захищеному вікні Telegram, приймає таємний код лише у вікні поза перепискою бота й зберігає історію світлин профілю для перевірки безпеки.', 'Toont dezelfde controlepictogrammen op de site en in het beveiligde Telegram-venster, vraagt de geheime code uitsluitend in het venster buiten het gesprek en bewaart de geschiedenis van profielfoto’s voor veiligheidscontrole.'],
+    wanneer: ['Увімкніть після налаштування ключа бота та таємного ключа приймача подій, щоб посилити захист входу й підтвердження чутливих дій.', 'Zet aan nadat de botsleutel en het ontvangstgeheim zijn ingesteld om aanmelden en het bevestigen van gevoelige handelingen sterker te beveiligen.'],
+    gevolg: ['Вимкнення повертає класичне підтвердження кнопкою в боті без втрати прив’язок, кодів чи збереженої історії світлин.', 'Uitschakelen brengt het klassieke bevestigen met een knop in de bot terug zonder koppelingen, codes of fotogeschiedenis te verliezen.'],
+  },
+  'telegram-aanmeld-maket-v1': {
+    naam: ['Наочний вигляд вікна входу через Telegram', 'Visuele weergave van het Telegram-aanmeldvenster'],
+    wat: ['Додає у відкриту панель входу через Telegram живу шкалу залишку часу, наочні кроки перевірки, зразок очікуваного повідомлення від бота з попередженням про підозрілий запит і перемикач між компактним та студійним поданням.', 'Voegt aan het geopende Telegram-aanmeldvenster een tijdsbalk, duidelijke stappen, een voorbeeld van het verwachte botbericht met waarschuwing bij een verdacht verzoek en een keuze tussen compact en uitgebreid uiterlijk toe.'],
+    wanneer: ['Увімкніть спершу для себе, перевірте компактний і студійний режими на телефоні та комп’ютері, а потім відкрийте для всіх.', 'Zet eerst voor uzelf aan, controleer de compacte en uitgebreide stand op telefoon en computer, en open daarna voor iedereen.'],
+    gevolg: ['Вимкнення залишає компактний вигляд вікна входу без зміни протоколу перевірки чи збережених прив’язок.', 'Uitschakelen houdt het compacte aanmeldvenster aan zonder het controleprotocol of bestaande koppelingen te wijzigen.'],
+  },
   // IDENTITEIT-015 (aanmelden): чотири окремі шляхи без Google; міграція 0275 ставить кожен на «Тільки я» (лише власник сайту).
   'aanmelden-passkey': {
     naam: ['! Вхід лише ключем доступу (без Google)', '! Aanmelden met alleen een toegangssleutel (zonder Google)'],
@@ -178,6 +190,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wat: ['Сучасна сторінка способів входу: банер, зрозумілі картки методів з однією дією, деталі в бокових панелях. Усі чинні механізми (Google, passkeys, TOTP, коди відновлення, шифрування, коди доступу, step-up) — ті самі, лише в новому поданні; плюс чесний каталог майбутніх провайдерів.', 'Moderne aanmeldmethoden-pagina: hero, duidelijke methodekaarten met één hoofdactie, details in zijpanelen. Alle bestaande mechanismen (Google, passkeys, TOTP, herstelcodes, versleuteling, toegangscodes, step-up) blijven dezelfde; plus een eerlijke catalogus van toekomstige aanbieders.'],
     wanneer: ['Вмикайте, щоб отримати нове подання; стара форма завжди доступна вимкненням прапорця.', 'Zet aan voor de nieuwe weergave; het oude formulier blijft via de vlag altijd beschikbaar.'],
     gevolg: ['Вимкнено — стара сторінка без змін. «Безпека» і «Відновлення» в обох станах лишаються на чинній формі.', 'Uit = de huidige pagina, ongewijzigd. «Beveiliging» en «Herstel» blijven in beide standen op het bestaande formulier.'],
+  },
+  'aanmeldmethoden-kaart-v2': {
+    naam: ['Картковий режим розділу «Способи входу»', 'Kaartweergave van «Aanmeldmethoden»'],
+    wat: ['Додає перемикач карткового подання способів входу поруч із поточним оглядом: згортані групи з лічильниками, компактні плитки постачальників, двомовний пошук і бічну панель подробиць.', 'Voegt naast het huidige overzicht een kaartweergave van aanmeldmethoden toe: inklapbare groepen met tellers, aanbiedertegels, tweetalig zoeken en een zijpaneel met gegevens.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте перемикання між оглядом та картковою сіткою, а далі відкрийте для всіх.', 'Zet eerst alleen voor uzelf aan, controleer het wisselen tussen overzicht en kaartweergave, en zet daarna voor iedereen aan.'],
+    gevolg: ['Типовим залишається поточний огляд; вимкнення прибирає картковий перемикач без зміни жодного налаштованого способу входу.', 'Het huidige overzicht blijft standaard; uitschakelen verbergt de kaartkeuze zonder ingestelde aanmeldmethoden te veranderen.'],
   },
   'afstemming-vnext': {
     naam: ['Нова «Звірка» (UI-014, Afstemming vNext)', 'Nieuwe afstemming (UI-014, Afstemming vNext)'],

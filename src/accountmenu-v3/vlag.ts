@@ -1,8 +1,7 @@
 // Єдине спадне меню облікового запису v3 (IDENTITEIT-008, перемикач `accountmenu-v3`).
-// Типово УВІМКНЕНО (STANDAARD_ACCOUNTMENU_V3 = true) в усіх станах — як до входу (екран входу, анонімний стан),
-// так і після входу на всіх піддоменах та розмірах екрана, щоб меню облікових записів завжди мало один цілісний вигляд.
-// Примусове вимкнення відбувається лише за активного персонального тесту тестувальника (`metadata.test === true && value === false`)
-// або в ізольованому локальному стенді старого меню v2 (`127.0.0.1`).
+// До першої відповіді сервера (або при мережевій відмові / анонімному стані) типово УВІМКНЕНО (STANDAARD_ACCOUNTMENU_V3 = true).
+// Коли сервер у відповіді `/api/flags` або OFREP явно повертає булеве значення `value` (зокрема `value: false`), читач чесно
+// поважає рішення сервера й миттєво оновлюється за подією `mr:vlaggen-vernieuwd`.
 import { useEffect, useState } from 'react';
 
 export const ACCOUNTMENU_V3_VLAG = 'accountmenu-v3';
@@ -12,7 +11,9 @@ const OPSLAG = `mr-vlag:${ACCOUNTMENU_V3_VLAG}`;
 let waarde: boolean = (() => {
   try {
     const v = sessionStorage.getItem(OPSLAG);
-    return v === '0' ? false : STANDAARD_ACCOUNTMENU_V3;
+    if (v === '0') return false;
+    if (v === '1') return true;
+    return STANDAARD_ACCOUNTMENU_V3;
   } catch {
     return STANDAARD_ACCOUNTMENU_V3;
   }
@@ -28,8 +29,7 @@ export function laadAccountmenuV3Vlag(opnieuw = false): Promise<boolean> {
     .then(async (m) => {
       if (m.has(ACCOUNTMENU_V3_VLAG)) {
         const uitkomst = m.get(ACCOUNTMENU_V3_VLAG);
-        if (uitkomst?.metadata?.test === true && uitkomst.value === false) return false;
-        return STANDAARD_ACCOUNTMENU_V3;
+        return uitkomst?.value === true;
       }
       // Перевірка поодинокого маршруту OFREP (зокрема для ізольованих локальних стендів на 127.0.0.1)
       try {
@@ -39,10 +39,7 @@ export function laadAccountmenuV3Vlag(opnieuw = false): Promise<boolean> {
         ]);
         const r = await api.post(`/api/ofrep/v1/evaluate/flags/${ACCOUNTMENU_V3_VLAG}`, vlagBody());
         const d = (r.data ?? {}) as { key?: string; value?: boolean; metadata?: { test?: boolean } };
-        if (d.metadata?.test === true && d.value === false) return false;
-        if (typeof window !== 'undefined' && window.location?.hostname === '127.0.0.1' && !d.key && d.value === false) {
-          return false;
-        }
+        if (typeof d.value === 'boolean') return d.value;
         return STANDAARD_ACCOUNTMENU_V3;
       } catch {
         return STANDAARD_ACCOUNTMENU_V3;
@@ -68,7 +65,7 @@ export function useAccountmenuV3(): boolean {
     luisteraars.add(setV);
     void laadAccountmenuV3Vlag();
     const bijVernieuwing = () => {
-      void laadAccountmenuV3Vlag(false);
+      void laadAccountmenuV3Vlag(true);
     };
     window.addEventListener('mr:vlaggen-vernieuwd', bijVernieuwing);
     return () => {
@@ -78,4 +75,3 @@ export function useAccountmenuV3(): boolean {
   }, []);
   return v;
 }
-

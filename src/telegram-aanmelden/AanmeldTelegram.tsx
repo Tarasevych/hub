@@ -17,7 +17,15 @@ import { ecosystemTabContext, setEcosystemSessionLikely } from '../tab-context';
 import { foutCode, foutTekst, openbaarPost, pauzeBericht, useTelegramPauze } from './api';
 import { laadAanmeldConfig } from './aanmeld-config';
 import TelegramLogo from './TelegramLogo';
+import {
+  TelegramBotVoorbeeld,
+  TelegramSlotBevestigd,
+  TelegramStappenBalk,
+  TelegramStijlKiezer,
+  TelegramTijdBalk,
+} from './TelegramInlogMaketHulp';
 import { useEenmalig } from './Bevestigen';
+import { useTelegramInlogStijl } from './vlag';
 import './telegram.css';
 import PictogramTegel from '../apparaat-bevestiging/PictogramTegel';
 import { pictogramTegel } from '../../shared/apparaat-bevestiging/symbolen';
@@ -96,6 +104,7 @@ export default function AanmeldTelegram({
   const [rest, setRest] = useState(0);
   const { bezig, doe } = useEenmalig();
   const pauze = useTelegramPauze();
+  const [inlogStijl, zetInlogStijl] = useTelegramInlogStijl();
   const klaar = useRef(false);
 
   useEffect(() => {
@@ -320,8 +329,21 @@ export default function AanmeldTelegram({
     {fout && <p className='tga-fout' role='alert'>{fout}</p>}
   </div>;
 
-  return <div className='tga-aanmeld tga-aanmeld-open' aria-live='polite'>
-    <h2 className='tga-kop'><TelegramLogo maat={24} /> {tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}</h2>
+  const huidigeStap: 1 | 2 | 3 | 4 =
+    stand === 'ingelogd' ? 4 : codeNodig || codeInVenster ? 3 : symboolOk || stand === 'goedgekeurd' ? 3 : 2;
+
+  return <div className='tga-aanmeld tga-aanmeld-open' data-tg-stijl={inlogStijl} aria-live='polite'>
+    <div className='tga-open-boven'>
+      <h2 className='tga-kop'>
+        <TelegramLogo maat={24} /> {tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}
+        {(stand === 'ingelogd' || stand === 'goedgekeurd') && <TelegramSlotBevestigd lang={lang} />}
+      </h2>
+      <TelegramStijlKiezer lang={lang} stijl={inlogStijl} onKies={zetInlogStijl} />
+    </div>
+    {stand !== 'ingelogd' && rest > 0 ? <TelegramTijdBalk lang={lang} restSec={rest} /> : null}
+    {inlogStijl === 'maket' ? (
+      <TelegramStappenBalk lang={lang} stap={huidigeStap} heeftCode={codeNodig || codeInVenster} />
+    ) : null}
     {stand === 'ingelogd' ? <p><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Готово — відкриваємо ваш простір…', 'Klaar — uw ruimte wordt geopend…')}</p> : pictogram !== null ? <div className='tg2-wacht'>
       <div className='tg2-held'><PictogramTegel index={pictogram} lang={lang} groot /></div>
       <p className='tg2-vraag'>{tr(lang, `Оберіть у Telegram таку саму піктограму «${tegelNaam}»`, `Kies in Telegram hetzelfde pictogram «${tegelNaam}»`)}</p>
@@ -382,6 +404,15 @@ export default function AanmeldTelegram({
       <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, `Чекаємо на підтвердження… залишилось ${mmss}`, `Wachten op bevestiging… nog ${mmss}`)}</p>
       <p className='tga-klein'>{tr(lang, 'Чому так: вхід підтверджується лише у вашому власному Telegram, тож пароль не потрібен, а чужий пристрій ви одразу побачите й заблокуєте.', 'Waarom zo: de aanmelding wordt alleen in uw eigen Telegram bevestigd, dus geen wachtwoord nodig, en een vreemd apparaat ziet en blokkeert u meteen.')}</p>
     </>}
+    {inlogStijl === 'maket' && stand !== 'ingelogd' ? (
+      <TelegramBotVoorbeeld
+        lang={lang}
+        bot={lopend.bot}
+        pictogram={pictogram}
+        tegelNaam={tegelNaam}
+        symbool={geldigSymbool(lopend.symbool) ? lopend.symbool : null}
+      />
+    ) : null}
     {pauzeTekst && <p className={pauze.actief ? 'tga-let' : 'tga-ok'} role='status' aria-live='polite'>
       {pauze.actief ? <><strong>{pauzeTekst.kop}.</strong> {pauzeTekst.uitleg}</> : pauzeTekst.vrij}
     </p>}

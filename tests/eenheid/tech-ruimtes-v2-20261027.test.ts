@@ -90,7 +90,9 @@ export async function main(): Promise<number> {
     await tp.beeindigenBijIntrekken(uid, 'handmatig');
 
     // ---------------------------------------------------------------- schaduwmodus (vlag uit): loggen, niets veranderen
-    process.env.TECH_RUIMTES_V2_SCHADUW = '1'; k._schaduwLeeg();
+    await pool.query(`UPDATE app.feature_flags SET aan = true, gebruikers = $1 WHERE sleutel = 'tech-ruimtes-v2-schaduw'`, [[uid]]);
+    k._vlagCacheLeeg();
+    k._schaduwLeeg();
     const tS = tab();
     const a = await tp.activeren(eig, tS, 30, 'schaduw zonder sessie'); // rij zonder sessie_id
     const voor = Number((await pool.query(`SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.tech.schaduw.verschil'`, [uid])).rows[0].n);
@@ -99,7 +101,8 @@ export async function main(): Promise<number> {
     const na = Number((await pool.query(`SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.tech.schaduw.verschil'`, [uid])).rows[0].n);
     check('schaduw: oud antwoord ongewijzigd (activering telt nog)', zonder?.id === a.id);
     check('schaduw: verschil (activering zonder sessie) staat in het logboek', na > voor, `${voor}→${na}`);
-    delete process.env.TECH_RUIMTES_V2_SCHADUW;
+    await pool.query(`UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2-schaduw'`);
+    k._vlagCacheLeeg();
     await tp.beeindigenBijIntrekken(uid, 'handmatig');
 
     // ---------------------------------------------------------------- vlag AAN voor beide gebruikers
@@ -251,6 +254,8 @@ export async function main(): Promise<number> {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
     await vlagZet(false, []).catch(() => undefined);
+    await pool.query(`UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2-schaduw'`).catch(() => undefined);
+    k._vlagCacheLeeg();
     await pool.query('DELETE FROM app.tech_ruimte_sessies WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
     await pool.query('DELETE FROM app.tech_ruimte_ai WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
     await pool.query('DELETE FROM app.tech_profielen WHERE user_id = $1', [uid2]).catch(() => undefined);

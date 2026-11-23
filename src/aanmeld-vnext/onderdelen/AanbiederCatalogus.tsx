@@ -12,7 +12,7 @@ import MethodeMerk from '../../merk/MethodeMerk'; // REESTR-LOGO-001: het merk u
 
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 
-type Levend = { id: string; stand: string; sleutels: Array<{ naam: string; aanwezig: boolean }>; zelftest: 'ok' | 'niet-uitgevoerd' | 'fout'; klaarVoorKoppeling: boolean; gekoppeld?: { label: string; op: string } | null; sleutelsCompleet?: boolean };
+type Levend = { id: string; stand: string; sleutels: Array<{ naam: string; aanwezig: boolean }>; vormFouten?: string[]; zelftest: 'ok' | 'niet-uitgevoerd' | 'fout'; klaarVoorKoppeling: boolean; gekoppeld?: { label: string; op: string } | null; sleutelsCompleet?: boolean };
 
 /** `zonder` — aanbieders die elders op dezelfde pagina al met hun LEVENDE stand staan (oude paneel: Telegram), zodat er geen tweede, tegenstrijdige stand komt. */
 /** `beheer` — IDENTITEIT-015 (aanmelden): власник/адміністратор бачить назви ключів і самоперевірку; схвалений не-власник — лише «готово / ще не налаштовано власником» і кнопку прив'язки (сервер тоді назв ключів і не надсилає). */
@@ -21,6 +21,7 @@ export default function AanbiederCatalogus({ lang, context, zonder = [], beheer 
   const [fout, setFout] = useState(false);
   const [melding, setMelding] = useState('');
   const [pauzeId, setPauzeId] = useState('');
+  const [zelftestBezigId, setZelftestBezigId] = useState('');
   const pauze = useTelegramPauze();
   const laad = useCallback(async () => {
     try { const r = await api.post('/api/owner/aanmeld/vnext/aanbieders', context); const lijst = (r.data as { aanbieders?: Levend[] })?.aanbieders; setLevend(Array.isArray(lijst) ? lijst : []); setFout(false); }
@@ -55,6 +56,26 @@ export default function AanbiederCatalogus({ lang, context, zonder = [], beheer 
       setMelding(tr(lang, 'Не вдалося почати підключення. Спробуйте ще раз.', 'Het koppelen kon niet starten. Probeer het opnieuw.'));
     }
   }, [context, lang, pauze]);
+
+  const voerZelftestUit = useCallback(async (id: string) => {
+    if (zelftestBezigId) return;
+    setZelftestBezigId(id);
+    setMelding('');
+    try {
+      const r = await api.post('/api/owner/aanmeld/vnext/zelftest', { ...context, id });
+      const uit = r.data as { zelftest?: string; details?: string[] } | undefined;
+      setMelding(
+        uit?.zelftest === 'ok'
+          ? tr(lang, `Самоперевірку контуру ${id} успішно пройдено.`, `Zelftest van contour ${id} geslaagd.`)
+          : tr(lang, `Самоперевірка контуру ${id} виявила зауваження.`, `Zelftest van contour ${id} meldde een aandachtspunt.`),
+      );
+      await laad();
+    } catch {
+      setMelding(tr(lang, 'Не вдалося виконати самоперевірку (потрібні права власника або адміністратора).', 'Zelftest kon niet worden uitgevoerd (rechten van eigenaar of beheerder vereist).'));
+    } finally {
+      setZelftestBezigId('');
+    }
+  }, [context, laad, lang, zelftestBezigId]);
 
   const pauzeTekst = pauze.actief || pauze.zojuistVrij ? pauzeBericht(Math.max(1, pauze.resterend), lang, 'koppelen') : null;
   const zichtbareMelding = pauze.actief && pauzeTekst
@@ -99,7 +120,18 @@ export default function AanbiederCatalogus({ lang, context, zonder = [], beheer 
                 </ul>
               ) : null}
               {!beheer && live && a.vereist?.length && !klaar ? <small className='amv-hint' data-amv-niet-ingesteld={a.id}>{tr(lang, 'Ще не налаштовано власником сайту — прив’язати поки не можна.', 'Nog niet ingesteld door de site-eigenaar — koppelen kan nog niet.')}</small> : null}
-              {beheer && live && a.vereist?.length ? <small className='amv-hint'>{tr(lang, 'Самотест:', 'Zelftest:')} {live.zelftest === 'ok' ? tr(lang, 'пройдено', 'geslaagd') : live.zelftest === 'fout' ? tr(lang, 'не пройдено', 'mislukt') : tr(lang, 'ще не виконувався', 'nog niet uitgevoerd')}</small> : null}
+              {beheer && Array.isArray(live?.vormFouten) && live.vormFouten.length > 0 ? (
+                <small className='amv-hint' role='status' data-amv-vormfouten={a.id}>
+                  {tr(lang, 'Попередження формату:', 'Formaatmelding:')} {live.vormFouten.join('; ')}
+                </small>
+              ) : null}
+              {beheer && live && a.vereist?.length ? <small className='amv-hint'>{tr(lang, 'Самоперевірка:', 'Zelftest:')} {live.zelftest === 'ok' ? tr(lang, 'пройдено', 'geslaagd') : live.zelftest === 'fout' ? tr(lang, 'не пройдено', 'mislukt') : tr(lang, 'ще не виконувався', 'nog niet uitgevoerd')}</small> : null}
+              {beheer && a.stand === 'sleutels-nodig' ? (
+                <button type='button' className='amv-knop is-klein' data-amv-zelftestknop={a.id} disabled={zelftestBezigId === a.id} onClick={() => void voerZelftestUit(a.id)}>
+                  <RefreshCw aria-hidden='true' />
+                  {tr(lang, 'Перевірити контур', 'Contour testen')}
+                </button>
+              ) : null}
               {klaar ? <button type='button' className='amv-knop is-hoofd is-klein' data-amv-koppelknop={a.id} disabled={pauze.actief} onClick={() => void koppel(a.id)}>{opPauze && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Підключити', 'Koppelen')}</button> : null}
               {live?.gekoppeld ? <small className='amv-hint' data-amv-gekoppeld={a.id}>{tr(lang, 'Прив’язано:', 'Gekoppeld:')} <code>{live.gekoppeld.label}</code></small> : null}
             </article>
