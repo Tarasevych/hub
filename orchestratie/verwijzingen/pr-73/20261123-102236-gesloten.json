@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 73,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:36.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі 14 файлів перших етапів R0+R1 разом із наступними етапами вже на 100% діють у гілці integratie.",
+    "nl": "Alle 14 bestanden van R0+R1 en de vervolgstappen zijn al volledig actief op de tak integratie."
+  },
+  "titel": {
+    "uk": "MCP-001: схеми оглядачевих знарядь, перевірка Origin, CIMD та план переходу до редакції 2026-07-28",
+    "nl": "MCP-001: schema’s voor browserhulpmiddelen, Origin-controle, CIMD en overstapplan naar 2026-07-28"
+  },
+  "laatsteCommit": "4a894c45bd1c2d6b70556548065d0ceecc2111e2",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "MCP-001",
+    "CONSOL-001"
+  ]
+}

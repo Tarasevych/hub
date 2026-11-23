@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 208,
+  "gebeurtenis": "samengevoegd",
+  "tijd": "2026-11-23T10:22:02.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Влито без втрат у збірну гілку CONSOL-001 зі збереженням міграцій 0307–0309 та повною інтеграцією переглядача.",
+    "nl": "Zonder verlies samengevoegd in CONSOL-001 met behoud van migraties 0307–0309 en volledige viewerintegratie."
+  },
+  "titel": {
+    "uk": "WEERGAVE-002: спільний переглядач вкладень, мініатюри, довіра та відновлення читача пошти",
+    "nl": "WEERGAVE-002: gedeelde bijlageweergave, miniaturen, vertrouwenslabel en herstel van de postlezer"
+  },
+  "laatsteCommit": "9e5a02770e257506c89af76d02665d23b8343063",
+  "opgenomenIn": "CONSOL-001",
+  "taken": [
+    "WEERGAVE-002",
+    "CONSOL-001"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 211,
+  "gebeurtenis": "samengevoegd",
+  "tijd": "2026-11-23T10:22:01.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Влито без втрат у збірну гілку CONSOL-001 із перенесенням міграції на 0310 та прапорцем klantrelatiebeheer-v1.",
+    "nl": "Zonder verlies samengevoegd in CONSOL-001 met migratie 0310 en functievlag klantrelatiebeheer-v1."
+  },
+  "titel": {
+    "uk": "KLANT-001: служба керування взаєминами з клієнтами",
+    "nl": "KLANT-001: dienst voor klantrelatiebeheer"
+  },
+  "laatsteCommit": "c85e5d73f104f555021c6a896ffecb70256588d3",
+  "opgenomenIn": "CONSOL-001",
+  "taken": [
+    "KLANT-001",
+    "CONSOL-001"
+  ]
+}

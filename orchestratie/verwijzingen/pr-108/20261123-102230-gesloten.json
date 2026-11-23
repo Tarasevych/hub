@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 108,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:30.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі 32 змінені файли на 100% інтегровані в канонічну гілку integratie через випуск UPD-001.",
+    "nl": "Alle 32 gewijzigde bestanden zijn via UPD-001 volledig opgenomen in de canonieke tak integratie."
+  },
+  "titel": {
+    "uk": "CENTR-001: центрування центру облікового запису на широкому екрані комп’ютера",
+    "nl": "CENTR-001: centrering van het accountcentrum op brede computerschermen"
+  },
+  "laatsteCommit": "ae7a8c05fe48df684723c2a00424bc23f4b83a7f",
+  "opgenomenIn": "UPD-001",
+  "taken": [
+    "CENTR-001",
+    "UPD-001",
+    "CONSOL-001"
+  ]
+}

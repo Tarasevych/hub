@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 1,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:52.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Модулі terminal.ts, Terminal.tsx та міграції 0036 і 0113 давно працюють в основі гілки integratie.",
+    "nl": "De modules terminal.ts, Terminal.tsx en migraties 0036 en 0113 draaien al in de basis van integratie."
+  },
+  "titel": {
+    "uk": "Оглядачевий термінал у технічному профілі, типово вимкнений",
+    "nl": "Browserterminal in het technisch profiel, standaard uitgeschakeld"
+  },
+  "laatsteCommit": "4c9d15f4e4ffa4a1133ec6abc676971d8c2abbd4",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

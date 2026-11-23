@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 94,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:20.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Вершина гілки a5c46dca вже на 100% входить в історію integratie через POSTVAK-001.",
+    "nl": "De top a5c46dca maakt via POSTVAK-001 al volledig deel uit van integratie."
+  },
+  "titel": {
+    "uk": "MAILHOEK-001: заокруглені кути поштових облікових записів без підміни після завантаження",
+    "nl": "MAILHOEK-001: stabiele afgeronde hoeken van e-mailaccounts zonder verspringen na laden"
+  },
+  "laatsteCommit": "a5c46dca8c3b0c54edb1cb46b3fec87676cd8a07",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "MAILHOEK-001",
+    "POSTVAK-001",
+    "CONSOL-001"
+  ]
+}

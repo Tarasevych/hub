@@ -27,7 +27,12 @@ export const ruimtesV2Nu = () => waarde === true;
 // Terugkeerpagina van Google: nog geen tabcontext → geen vlagverzoek (gaf een nutteloze 401).
 export function laadRuimtesVlag(opnieuw = false): Promise<boolean> {
   if (opGoogleTerugkeer()) return Promise.resolve(waarde === true);
-  if (bezig && !opnieuw) return bezig;
+  if (opnieuw) {
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+  } else if (bezig) {
+    return bezig;
+  }
   // IDENTITEIT-015: op de terugkeerpagina van Google is de tab nog niet aangemeld (401 OWNER_TAB_SIGNED_OUT) — «uit», niet onthouden.
   if (oauthTerugBezig()) return Promise.resolve(waarde === true);
   bezig = api.post(`/api/ofrep/v1/evaluate/flags/${RUIMTES_VLAG}`, vlagBody()).then((r) => r.data?.value === true, () => null).then((x) => {
@@ -40,19 +45,21 @@ export function laadRuimtesVlag(opnieuw = false): Promise<boolean> {
   });
   return bezig;
 }
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', () => {
+    waarde = null;
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* без сховища */ }
+    if (luisteraars.size > 0) void laadRuimtesVlag(true);
+  });
+}
 export function useRuimtesV2(): boolean {
   const [v, setV] = useState(waarde === true);
   useEffect(() => {
     luisteraars.add(setV);
     void laadRuimtesVlag();
-    const bijVernieuwing = () => {
-      try { sessionStorage.removeItem(OPSLAG); } catch { /* без сховища */ }
-      void laadRuimtesVlag(true);
-    };
-    window.addEventListener('mr:vlaggen-vernieuwd', bijVernieuwing);
     return () => {
       luisteraars.delete(setV);
-      window.removeEventListener('mr:vlaggen-vernieuwd', bijVernieuwing);
     };
   }, []);
   return v;

@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 27,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:40.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі компоненти MailOrbitIntro.tsx та модульне випробування mailfit-001.test.ts вже працюють у гілці integratie.",
+    "nl": "Alle onderdelen van MailOrbitIntro.tsx en eenheidstest mailfit-001.test.ts draaien al op integratie."
+  },
+  "titel": {
+    "uk": "MAILFIT-001: центрований адаптивний початковий стан порожньої поштової скриньки",
+    "nl": "MAILFIT-001: gecentreerde responsieve beginweergave van een leeg postvak"
+  },
+  "laatsteCommit": "024fa94eada86993ff1e66f7ff63c7af757fc8a4",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "MAILFIT-001",
+    "CONSOL-001"
+  ]
+}

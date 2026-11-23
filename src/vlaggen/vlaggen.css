@@ -40,7 +40,8 @@
 .vlag-tuimel[aria-pressed=true] span{left:21px}
 .vlag-tuimel:disabled{cursor:not-allowed;opacity:.5}
 .vlag-toast,.vlag-fout{font-size:13px}
-.vlag-rij .vlag-toast,.vlag-rij .vlag-fout{grid-column:1/-1;margin:-4px 0 4px}
+.vlag-rij .vlag-toast,.vlag-rij .vlag-fout,.vlag-rij .vlag-opruimen{grid-column:1/-1;margin:-4px 0 4px}
+.vlag-opruimen{display:inline-flex;align-items:center;gap:6px;justify-self:start;padding:3px 10px;border-radius:8px;background:var(--warn-zacht);color:var(--text);font-size:12px;line-height:1.35}
 .vlag-toast{color:var(--ok)}
 .vlag-fout{color:var(--fout)}
 .vlag-leeg{margin:24px 0;color:var(--muted);text-align:center}

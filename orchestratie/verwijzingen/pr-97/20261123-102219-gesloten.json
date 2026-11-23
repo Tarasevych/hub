@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 97,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:19.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Увесь вміст гілки eb1a08ba на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "De volledige inhoud van eb1a08ba is al een directe voorouder van integratie."
+  },
+  "titel": {
+    "uk": "POSTVAK-001: спільний випуск пошти 20261115-104817",
+    "nl": "POSTVAK-001: gezamenlijke e-mailuitgave 20261115-104817"
+  },
+  "laatsteCommit": "eb1a08ba6929e32b50adbdd7c37893bff87ef40c",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "POSTVAK-001",
+    "CONSOL-001"
+  ]
+}

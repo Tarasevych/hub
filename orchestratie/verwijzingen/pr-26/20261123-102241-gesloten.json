@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 26,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:41.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Увесь робочий код і випробування mailfix-001.test.ts на 100% збережені в основі канонічної гілки integratie.",
+    "nl": "Alle werkende code en eenheidstest mailfix-001.test.ts zijn volledig bewaard in de basis van integratie."
+  },
+  "titel": {
+    "uk": "MAILFIX-001: мобільна ширина поштових облікових записів, прибирання дубльованої смуги та діагностика Gmail OAuth",
+    "nl": "MAILFIX-001: mobiele breedte van e-mailaccounts, enkele dienststrook en diagnose van Gmail-OAuth"
+  },
+  "laatsteCommit": "2696c4fead71b3b81195b1e65415108c6da5e5f5",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "MAILFIX-001",
+    "CONSOL-001"
+  ]
+}

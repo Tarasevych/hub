@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 7,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:46.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Міграція 0044_ai_toegang.sql та вкладка AiToegangTab.tsx на 100% присутні в основі канонічної гілки integratie.",
+    "nl": "Migratie 0044_ai_toegang.sql en AiToegangTab.tsx zijn al volledig aanwezig in de basis van integratie."
+  },
+  "titel": {
+    "uk": "Гранулярні дозволи доступу ШІ для підключених агентів та чутливих даних",
+    "nl": "Fijnmazige AI-toegangsrechten voor gekoppelde agenten en gevoelige gegevens"
+  },
+  "laatsteCommit": "7d4a0616049b92ce06cee8fc89fa25bc6a78de7b",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

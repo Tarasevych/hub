@@ -15,18 +15,39 @@ export function vlagGecachet(v: string): boolean { try { return sessionStorage.g
 
 const lopend = new Map<string, Promise<boolean>>();
 export function laadVlag(v: string, opnieuw = false): Promise<boolean> {
+  let vorig: string | null = null;
+  try { vorig = sessionStorage.getItem(sleutel(v)); } catch { /* проміжне сховище недоступне */ }
   if (opnieuw) {
     lopend.delete(v);
     try { sessionStorage.removeItem(sleutel(v)); } catch { /* проміжне сховище недоступне */ }
   } else {
-    try { const c = sessionStorage.getItem(sleutel(v)); if (c === '1') return Promise.resolve(true); if (c === '0') return Promise.resolve(false); } catch { /* проміжне сховище недоступне */ }
+    if (vorig === '1') return Promise.resolve(true);
+    if (vorig === '0') return Promise.resolve(false);
     const al = lopend.get(v); if (al) return al;
   }
   const p = api.post(`/api/ofrep/v1/evaluate/flags/${v}`, vlagBody())
-    .then((r) => { const aan = (r.data as { value?: boolean })?.value === true; try { sessionStorage.setItem(sleutel(v), aan ? '1' : '0'); } catch { /* проміжне сховище недоступне */ } if (aan) window.dispatchEvent(new CustomEvent(FOTO_VLAG_EVENT)); return aan; })
+    .then((r) => {
+      const aan = (r.data as { value?: boolean })?.value === true;
+      const nieuw = aan ? '1' : '0';
+      try { sessionStorage.setItem(sleutel(v), nieuw); } catch { /* проміжне сховище недоступне */ }
+      if (opnieuw || nieuw !== vorig) {
+        try { window.dispatchEvent(new CustomEvent(FOTO_VLAG_EVENT)); } catch { /* поза оглядачем */ }
+      }
+      return aan;
+    })
     .catch(() => false);
   lopend.set(v, p);
   return p;
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', () => {
+    for (const k of [FOTO_VLAG, MENU_VLAG, FOTO_DRIVE_VLAG]) {
+      lopend.delete(k);
+      try { sessionStorage.removeItem(sleutel(k)); } catch { /* проміжне сховище недоступне */ }
+    }
+    void Promise.all([laadVlag(FOTO_VLAG, true), laadVlag(MENU_VLAG, true)]);
+  });
 }
 
 /** Synchroon (voor het menu): moet deze pagina verborgen worden? Alleen de drie pagina's van UI-002 worden hier geraakt. */

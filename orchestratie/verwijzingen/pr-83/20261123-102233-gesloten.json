@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 83,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:33.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Логіка leesBijTonen і випробування meldingen-beveiliging-bel-20261114.test.ts побайтово присутні в integratie.",
+    "nl": "De logica leesBijTonen en de bijbehorende eenheidstest zijn al identiek aanwezig op integratie."
+  },
+  "titel": {
+    "uk": "IDENTITEIT-015: збереження непрочитаного стану безпекових сповіщень про коди доступу в дзвіночку",
+    "nl": "IDENTITEIT-015: ongelezen status van beveiligingsmeldingen over toegangscodes in de bel bewaren"
+  },
+  "laatsteCommit": "8661f69a539c4dcaf206bb84ac95506b56209684",
+  "opgenomenIn": "IDENTITEIT-015",
+  "taken": [
+    "IDENTITEIT-015",
+    "CONSOL-001"
+  ]
+}

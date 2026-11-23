@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 8,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:45.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Архітектура 0045_connector_v2.sql, KoppelWizard.tsx і RechtenKiezer.tsx давно інтегрована в основі гілки integratie.",
+    "nl": "De architectuur van 0045_connector_v2.sql, KoppelWizard.tsx en RechtenKiezer.tsx zit al in de basis van integratie."
+  },
+  "titel": {
+    "uk": "Окремі адреси з’єднувачів ШІ, нідерландські назви та покрокове підключення з дозволами",
+    "nl": "Afzonderlijke adressen voor AI-connectoren, Nederlandse namen en stapsgewijze koppeling met rechten"
+  },
+  "laatsteCommit": "e3b82adff9d113de21d46d2f4165343f87f7f73e",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

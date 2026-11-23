@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 77,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:34.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Генератор kroniek.mjs, випробування та документи хронології вже повністю інтегровані в гілці integratie.",
+    "nl": "De generator kroniek.mjs, de eenheidstest en de kroniekdocumenten zijn al volledig opgenomen in integratie."
+  },
+  "titel": {
+    "uk": "HISTORIE-001: генератор хронології гілок із попередником і наступником та етап VII історії",
+    "nl": "HISTORIE-001: generator voor takkenkroniek met voorganger en opvolger en fase VII van de geschiedenis"
+  },
+  "laatsteCommit": "f0dc3b7e6afe02e9b5fe6cb55a4fe16540933ff1",
+  "opgenomenIn": "UPD-005",
+  "taken": [
+    "HISTORIE-001",
+    "UPD-005",
+    "CONSOL-001"
+  ]
+}

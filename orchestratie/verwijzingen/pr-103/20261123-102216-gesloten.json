@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 103,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:16.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Спільний поштовий випуск на 100% входить у предковість гілки integratie.",
+    "nl": "Gezamenlijke e-mailuitgave maakt al volledig deel uit van de voorouders van integratie."
+  },
+  "titel": {
+    "uk": "POSTVAK-002: кути поштових облікових записів, листи скриньок IMAP та захищене вікно Telegram",
+    "nl": "POSTVAK-002: afgeronde hoeken bij e-mailaccounts, IMAP-berichten en Telegram-venster"
+  },
+  "laatsteCommit": "b0943390a1f6eb4d7b16a09b0686bc8559c33b0b",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "POSTVAK-002",
+    "CONSOL-001"
+  ]
+}

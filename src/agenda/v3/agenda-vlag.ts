@@ -11,7 +11,12 @@ let bezig: Promise<boolean> | null = null;
 const luisteraars = new Set<(v: boolean) => void>();
 
 export function laadAgendaVlag(opnieuw = false): Promise<boolean> {
-  if (bezig && !opnieuw) return bezig;
+  if (opnieuw) {
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+  } else if (bezig) {
+    return bezig;
+  }
   bezig = api.post(`/api/ofrep/v1/evaluate/flags/${AGENDA_V3_VLAG}`, vlagBody()).then((r) => r.data?.value === true, () => null).then((x) => {
     const v = x === true;
     if (x === null) bezig = null; else { try { sessionStorage.setItem(OPSLAG, v ? '1' : '0'); } catch { /* geen opslag */ } }
@@ -21,6 +26,7 @@ export function laadAgendaVlag(opnieuw = false): Promise<boolean> {
 }
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('mr:vlaggen-vernieuwd', () => {
+    waarde = null;
     bezig = null;
     try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
     if (luisteraars.size > 0) void laadAgendaVlag(true);

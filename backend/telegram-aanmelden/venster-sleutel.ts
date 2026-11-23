@@ -20,13 +20,14 @@ export const VENSTER_VLAG = 'telegram-v2';
 // 15.11.2026 (eis van de eigenaar): drie kleinere tegels op één rij in plaats van vier. · три менші плитки в один ряд замість чотирьох.
 export const VENSTER_KANDIDATEN = 3;
 
+const VLAG_GEHEUGEN_MS = 15_000;
 let vlagCache: { aan: boolean; tot: number } | null = null;
 export const vensterCacheWissen = (): void => { vlagCache = null; };
 async function vlagAan(): Promise<boolean> {
   if (vlagCache && vlagCache.tot > Date.now()) return vlagCache.aan;
   let aan = false;
   try { const [r] = await sql<{ aan: boolean }>('SELECT aan FROM app.feature_flags WHERE sleutel = $1', [VENSTER_VLAG]); aan = r?.aan === true; } catch { aan = false; }
-  vlagCache = { aan, tot: Date.now() + 15_000 };
+  vlagCache = { aan, tot: Date.now() + VLAG_GEHEUGEN_MS };
   return aan;
 }
 

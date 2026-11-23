@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 159,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:26.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Повністю поглинуто й реалізовано в запитах №209 (MELDPANEEL-002) та №210 (MELDPANEEL-003) у гілці integratie.",
+    "nl": "Volledig opgenomen en uitgewerkt in PR #209 (MELDPANEEL-002) en #210 (MELDPANEEL-003) op integratie."
+  },
+  "titel": {
+    "uk": "MELDPANEEL-001: проєкт і досьє об’єднання двох панелей сповіщень в одну",
+    "nl": "MELDPANEEL-001: ontwerp en dossier voor samenvoeging van twee meldingenpanelen tot één"
+  },
+  "laatsteCommit": "d3bfeca5f77482617db427e4669cd3ff143e8230",
+  "opgenomenIn": "№209",
+  "taken": [
+    "MELDPANEEL-001",
+    "MELDPANEEL-002",
+    "CONSOL-001"
+  ]
+}

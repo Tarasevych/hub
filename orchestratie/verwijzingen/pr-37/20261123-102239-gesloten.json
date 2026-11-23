@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 37,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:39.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Повністю замінено й поглинуто виправленим злитим запитом №38 (20261106-092612) у гілці integratie.",
+    "nl": "Volledig vervangen en opgenomen via de herstelde samengevoegde PR #38 (20261106-092612) op integratie."
+  },
+  "titel": {
+    "uk": "UITGAVE-001: службові файли першої спроби випуску 20261106-081134",
+    "nl": "UITGAVE-001: uitgavebestanden van eerste poging 20261106-081134"
+  },
+  "laatsteCommit": "d969aa2855cdadace7725edf7374813f9bb1808a",
+  "opgenomenIn": "№38",
+  "taken": [
+    "UITGAVE-001",
+    "CONSOL-001"
+  ]
+}

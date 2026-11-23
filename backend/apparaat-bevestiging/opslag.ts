@@ -7,16 +7,35 @@ export const sql = async <T = Record<string, any>>(tekst: string, waarden: unkno
   (await getPool('systeem').query(tekst, waarden)).rows as T[];
 
 // ------------------------------------------------------------------------------------------------ vlag
+const VLAG_GEHEUGEN_MS = 15_000;
+let vlagCache: { aan: boolean; tot: number } | null = null;
+const gebruikerVlagCache = new Map<string, { aan: boolean; tot: number }>();
+export const vlagCacheWissen = (): void => { vlagCache = null; gebruikerVlagCache.clear(); };
 let beoordelaar: ((userId: string) => Promise<boolean>) | null = null;
-export const registreerVlagBeoordelaar = (f: ((userId: string) => Promise<boolean>) | null): void => { beoordelaar = f; };
+export const registreerVlagBeoordelaar = (f: ((userId: string) => Promise<boolean>) | null): void => { beoordelaar = f; vlagCacheWissen(); };
 /** Vlag `apparaat-bevestiging-v1` voor één gebruiker; geen beoordelaar geregistreerd (tests) = AAN als de rij het zegt, anders uit. */
 export async function vlagVoor(userId: string): Promise<boolean> {
   if (!userId) return false;
-  if (beoordelaar) { try { return (await beoordelaar(userId)) === true; } catch { return false; } }
+  const nu = Date.now();
+  if (beoordelaar) {
+    const c = gebruikerVlagCache.get(userId);
+    if (c && c.tot > nu) return c.aan;
+    try {
+      const aan = (await beoordelaar(userId)) === true;
+      gebruikerVlagCache.set(userId, { aan, tot: nu + VLAG_GEHEUGEN_MS });
+      return aan;
+    } catch { return false; }
+  }
+  if (vlagCache && vlagCache.tot > nu) return vlagCache.aan;
   try {
     const [r] = await sql<{ aan: boolean; standaard: boolean }>('SELECT aan, standaard FROM app.feature_flags WHERE sleutel = $1', [APPARAAT_VLAG]);
-    return !!r && r.aan === true && r.standaard === true;
-  } catch { return false; }
+    const aan = !!r && r.aan === true && r.standaard === true;
+    vlagCache = { aan, tot: nu + VLAG_GEHEUGEN_MS };
+    return aan;
+  } catch {
+    vlagCache = { aan: false, tot: nu + VLAG_GEHEUGEN_MS };
+    return false;
+  }
 }
 
 // ------------------------------------------------------------------------------------------------ instellingen (beheerder)

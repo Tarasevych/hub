@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 10,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:43.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Жовтневу чернетку замінено сучасною архітектурою connector-v2 і site-hulpmiddelen.ts та доповнено у Вісі M4 CONSOL-001.",
+    "nl": "Oktoberconcept is vervangen door connector-v2 en site-hulpmiddelen.ts en aangevuld in Mijlpaal M4 van CONSOL-001."
+  },
+  "titel": {
+    "uk": "Повний каталог дій з’єднувача ШІ без позначок незавершеної розробки",
+    "nl": "Volledige actiecatalogus van de AI-connector zonder onafgewerkte onderdelen"
+  },
+  "laatsteCommit": "538489ee9f722693f4f103063e38893327d0e078",
+  "opgenomenIn": "CONSOL-001",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

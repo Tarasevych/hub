@@ -18,7 +18,16 @@ let bezig: Promise<boolean> | null = null;
 const luisteraars = new Set<(v: boolean) => void>();
 
 export function laadAccountmenuV2Vlag(opnieuw = false): Promise<boolean> {
-  if (bezig && !opnieuw) return bezig;
+  if (opnieuw) {
+    bezig = null;
+    try {
+      sessionStorage.removeItem(OPSLAG);
+    } catch {
+      /* сховище сеансу недоступне */
+    }
+  } else if (bezig) {
+    return bezig;
+  }
   bezig = import('../functievlag-lezen')
     .then(({ laadVlaggen }) => laadVlaggen(opnieuw))
     .then(async (m) => {
@@ -53,23 +62,26 @@ export function laadAccountmenuV2Vlag(opnieuw = false): Promise<boolean> {
   return bezig;
 }
 
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', () => {
+    try {
+      sessionStorage.removeItem(OPSLAG);
+    } catch {
+      /* сховище сеансу недоступне */
+    }
+    waarde = null;
+    bezig = null;
+    if (luisteraars.size > 0) void laadAccountmenuV2Vlag(true);
+  });
+}
+
 export function useAccountmenuV2(): boolean {
   const [v, setV] = useState(waarde === true);
   useEffect(() => {
     luisteraars.add(setV);
     void laadAccountmenuV2Vlag();
-    const bijVernieuwing = () => {
-      try {
-        sessionStorage.removeItem(OPSLAG);
-      } catch {
-        /* сховище сеансу недоступне */
-      }
-      void laadAccountmenuV2Vlag(true);
-    };
-    window.addEventListener('mr:vlaggen-vernieuwd', bijVernieuwing);
     return () => {
       luisteraars.delete(setV);
-      window.removeEventListener('mr:vlaggen-vernieuwd', bijVernieuwing);
     };
   }, []);
   return v;

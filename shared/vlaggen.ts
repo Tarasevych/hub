@@ -73,6 +73,15 @@ export function vlagFout(v: Partial<Vlag>): string | null {
   return null;
 }
 
+export const OPRUIMEN_NA_DAGEN = 30;
+export const OPRUIMEN_NA_MS = OPRUIMEN_NA_DAGEN * 24 * 3600_000;
+/** Архівний прапорець, який перебуває в архіві понад 30 днів і готовий до переведення у постійний стан коду (VLAG_OPRUIMEN). */
+export function moetVlagOpruimen(v: { gearchiveerd?: boolean; gearchiveerd_op?: string | null }, nu = Date.now()): boolean {
+  if (!v.gearchiveerd || !v.gearchiveerd_op) return false;
+  const ts = Date.parse(v.gearchiveerd_op);
+  return Number.isFinite(ts) && nu - ts >= OPRUIMEN_NA_MS;
+}
+
 /**
  * Uitleg in gewone woorden per bekende schakelaar (20261028, vraag van Pavlo: «що і для чого незрозуміло»).
  * [wat het doet, wanneer aanzetten, wat er gebeurt] — Oekraïens en Nederlands apart, zonder vreemde woorden.
@@ -449,6 +458,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wat: ['Показує на панелі знарядь ШІ справжній стан підключення внутрішнього диска сайту, пошти Microsoft Outlook та сховища OneDrive у поточному просторі.', 'Toont in het AI-hulpmiddelenpaneel de werkelijke koppelingsstatus van de interne siteschijf, Microsoft Outlook-post en OneDrive-opslag in de huidige ruimte.'],
     wanneer: ['Увімкніть спершу для себе, щоб бачити на панелі знарядь актуальну готовність підключених служб.', 'Zet eerst voor uzelf aan om in het hulpmiddelenpaneel direct de actuele gereedheid van gekoppelde diensten te zien.'],
     gevolg: ['Вимкнення повертає статичні позначки джерел без жодного впливу на дозволи інструментів чи підключення пошти й хмари.', 'Uitschakelen toont weer de vaste bronlabels zonder invloed op hulpmiddelrechten of e-mail- en cloudkoppelingen.'],
+  },
+  'ai-prijzen-ophalen': {
+    naam: ['Орієнтовні ціни рушіїв ШІ з відкритого переліку моделей', 'Richtprijzen van AI-motoren uit openbare modellenlijst'],
+    wat: ['Раз на добу у фоновому режимі оновлює орієнтовні розцінки спільних і особистих рушіїв ШІ для пошти за відкритим переліком моделей OpenRouter без ключа та без передавання жодних даних користувачів чи листів.', 'Haalt één keer per dag op de achtergrond richtprijzen van gedeelde en persoonlijke AI-motoren voor e-mail op uit de openbare modellenlijst van OpenRouter, zonder sleutel en zonder gebruikers- of berichtgegevens mee te sturen.'],
+    wanneer: ['Типово увімкнено для зручності власника й користувачів. Вимкніть, якщо сервер не повинен робити навіть цього знеособленого зовнішнього запиту.', 'Standaard ingeschakeld voor het gemak van eigenaar en gebruikers. Zet uit als de server ook dit anonieme externe verzoek niet mag uitvoeren.'],
+    gevolg: ['Вимкнення припиняє зовнішні запити за цінами та залишає поруч із кожним постачальником лише прямі посилання на офіційні сторінки тарифів. Робота самих рушіїв не змінюється.', 'Uitschakelen stopt het ophalen van prijzen en toont bij elke aanbieder uitsluitend rechtstreekse verwijzingen naar de officiële tariefpagina’s. De werking van de motoren verandert niet.'],
   },
   'uitrol-telegram-koppeling-v1': {
     naam: ['Посилання на тему групи та пояснення випуску в архіві Telegram', 'Groepstopiclink en uitgave-uitleg in het Telegram-archief'],

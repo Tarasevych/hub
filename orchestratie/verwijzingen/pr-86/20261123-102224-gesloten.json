@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 86,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:24.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі фіксації змін 5c2cbb89 на 100% є прямими предками канонічної гілки integratie.",
+    "nl": "Alle vastleggingen van 5c2cbb89 zijn al directe voorouders van integratie."
+  },
+  "titel": {
+    "uk": "TELEGRAM-002: піктограма у захищеному вікні та світлина профілю в запитах підтвердження",
+    "nl": "TELEGRAM-002: pictogram in het beveiligde venster en profielfoto bij bevestigingsverzoeken"
+  },
+  "laatsteCommit": "5c2cbb8966309557cc20421e9291ba7a3e40c762",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "TELEGRAM-002",
+    "KLUIS-001",
+    "CONSOL-001"
+  ]
+}

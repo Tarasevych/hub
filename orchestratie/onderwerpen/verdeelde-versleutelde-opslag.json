@@ -103,6 +103,14 @@
       "model": "Gemini 3.1 Pro (Google Antigravity)",
       "datum": "2026-11-20",
       "uk": "Реалізовано Етап 4 маніфесту «Плющ»: перевірювані схеми поділу секретів Фельдмана та Педерсена над простою підгрупою кривої Ed25519, двофазне проактивне епохальне оновлення часток із захистом від перерваної ротації, бездилерський DKG та двораундові порогові цифрові підписи FROST(Ed25519, SHA-512) за стандартом RFC 9591 (shared/klimop/drempelsleutels.ts, backend/klimop-drempel-client.ts)."
+    },
+    {
+      "taakId": "CONSOL-001",
+      "tak": "feature/consol-m5b-20261123",
+      "agent": "antigravity",
+      "model": "Claude Opus 4.6",
+      "datum": "2026-11-23",
+      "uk": "Додано зворотно сумісне зміцнення рядкового захисту бази даних 0311_verdeelde_opslag_rls_herstel.sql та узгоджено перемикачі зовнішніх сховищ WebDAV і OAuth у загальному реєстрі прапорців (0335_vlaggen_consolidatie_aan.sql)."
     }
   ],
   "mogelijkheden": [
@@ -153,6 +161,12 @@
       "uk": "Перевірюваний поділ секретів Фельдмана і Педерсена над Ed25519, двофазні проактивні епохи, бездилерський DKG та порогові підписи FROST (RFC 9591), сумісні з node:crypto.verify (shared/klimop/drempelsleutels.ts, backend/klimop-drempel-client.ts)",
       "sinds": "KLIMOP-005",
       "staat": "actief"
+    },
+    {
+      "id": "verdeelde-opslag-rls-herstel-0311",
+      "uk": "Зміцнення рядкового захисту таблиць розподіленого зберігання (0311_verdeelde_opslag_rls_herstel.sql) та повне покриття прапорцями у Вісі M5-Б",
+      "sinds": "CONSOL-001",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -170,5 +184,5 @@
   "open": [
     "Підключити автоматичний фоновий планувальник доставки часток до обраних власником конкретних безкоштовних чи власних майданчиків S3 / WebDAV / rclone після додавання їхніх облікових записів у захищене сховище."
   ],
-  "bijgewerkt": "2026-11-20"
+  "bijgewerkt": "2026-11-23"
 }

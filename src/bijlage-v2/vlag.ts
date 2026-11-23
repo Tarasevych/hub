@@ -28,8 +28,13 @@ const OPSLAG = `mr-vlag:${BIJLAGE_V2_VLAG}`;
 let waarde: boolean | null = (() => { try { const v = sessionStorage.getItem(OPSLAG); return v === '1' ? true : v === '0' ? false : null; } catch { return null; } })();
 let bezig: Promise<boolean> | null = null;
 const luisteraars = new Set<(v: boolean) => void>();
-export function laadBijlageV2Vlag(): Promise<boolean> {
-  if (bezig) return bezig;
+export function laadBijlageV2Vlag(opnieuw = false): Promise<boolean> {
+  if (opnieuw) {
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+  } else if (bezig) {
+    return bezig;
+  }
   bezig = Promise.all([import('../platform/client'), import('../tech/ruimtes/ruimtes-vlag')])
     .then(([{ api }, { vlagBody }]) => api.post(`/api/ofrep/v1/evaluate/flags/${BIJLAGE_V2_VLAG}`, vlagBody()))
     .then((r) => r.data?.value === true, () => null).then((x) => {

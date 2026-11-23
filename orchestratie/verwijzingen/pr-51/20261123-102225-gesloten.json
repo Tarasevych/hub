@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 51,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:25.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Вершина гілки 9a040c6c уже на 100% входить в історію канонічної гілки integratie.",
+    "nl": "De top 9a040c6c maakt al volledig deel uit van de geschiedenis van integratie."
+  },
+  "titel": {
+    "uk": "Відтворення студійного оформлення центру облікового запису з чинними діями та перемикачем",
+    "nl": "Herstel van de studio-vormgeving van het accountcentrum met werkende acties en schakelaar"
+  },
+  "laatsteCommit": "9a040c6cd6450d0b63c47391fd9dc1972de33e70",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}
