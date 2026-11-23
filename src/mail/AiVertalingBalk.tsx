@@ -977,7 +977,7 @@ export default function AiVertalingBalk({
                 Мова: {lastResult.targetLangLabelUk} · Режим:{' '}
                 {AI_VERTALING_SUMMARY_DEPTHS.find(d => d.id === lastResult.summary?.depth)?.labelUk || 'Стисло'} · Агент:{' '}
                 {lastResult.agentName}
-                {lastResult.cached ? ' · миттєво з кешу' : ''}
+                {lastResult.cached ? ' · миттєво з проміжного сховища' : ''}
               </small>
             </div>
             <button type="button" className="ai-vb-close-btn" onClick={() => setActiveMode(null)} aria-label="Закрити підсумок">
@@ -1042,7 +1042,7 @@ export default function AiVertalingBalk({
               <strong>Що це за документ, про що, для чого і чому</strong>
               <small>
                 Мова: {lastResult.targetLangLabelUk} · Агент: {lastResult.agentName}
-                {lastResult.cached ? ' · миттєво з кешу' : ''}
+                {lastResult.cached ? ' · миттєво з проміжного сховища' : ''}
               </small>
             </div>
             <button type="button" className="ai-vb-close-btn" onClick={() => setActiveMode(null)} aria-label="Закрити пояснення">

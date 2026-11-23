@@ -62,7 +62,7 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
   const rij = (x: Item, historisch = false) => {
     const g = x.oauth, t = x.token;
     const eigenaar = aiEigenaar(x.naam);
-    const methode = x.soort === 'oauth' ? 'OAuth' : tr('MCP-токен', 'MCP-token');
+    const methode = x.soort === 'oauth' ? 'OAuth' : tr('маркер доступу MCP', 'MCP-token');
     return (
       <Rij key={x.sleutel} id={x.sleutel} open={item === x.sleutel} onToggle={() => kies(item === x.sleutel ? '' : x.sleutel)} gedimd={historisch}
         data={{ ai: x.soort, ruimte: 'technisch', status: historisch ? 'historie' : 'actief' }}
@@ -116,7 +116,7 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
         <ul className='ag2-regels' aria-label={tr('Принципи', 'Regels')}>
           <li><Lock size={16} aria-hidden='true' /><span>{tr('Простір фіксується на підключенні, коли ви його створюєте тут. ШІ не може змінити свій простір і не бачить інструментів іншого.', 'De ruimte staat vast op de verbinding zodra u ze hier maakt. De AI kan zijn ruimte niet veranderen en ziet de hulpmiddelen van de andere niet.')}</span></li>
           <li><Eye size={16} aria-hidden='true' /><span>{tr('Технічний ШІ бачить лише сайт і сервер: випуски, стан, двері, агентів на сервері. Жодної пошти, Drive, дошки чи ваших пристроїв.', 'Een technische AI ziet alleen de site en de server: releases, stand, deur, agenten op de server. Geen mail, Drive, bord of uw apparaten.')}</span></li>
-          <li><ShieldCheck size={16} aria-hidden='true' /><span>{tr('Підписана політика ШІ лишається стелею. Схвалення випуску, відкат, резервні копії й секрети — лише ви на сайті.', 'Het ondertekende AI-beleid blijft het plafond. Een release goedkeuren, terugdraaien, back-ups en geheimen — alleen u op de site.')}</span></li>
+          <li><ShieldCheck size={16} aria-hidden='true' /><span>{tr('Підписана політика ШІ лишається стелею. Схвалення випуску, повернення версії, резервні копії й секрети — лише ви на сайті.', 'Het ondertekende AI-beleid blijft het plafond. Een release goedkeuren, terugdraaien, back-ups en geheimen — alleen u op de site.')}</span></li>
           <li><KeyRound size={16} aria-hidden='true' /><span>{tr('Право «готувати оновлення» можна дати лише технічному підключенню: ', 'Het recht «updates voorbereiden» kan alleen naar een technische verbinding: ')}<a className='ag-link' href={canonicalNavigationUrl('admin', 'updates', lang)}>{tr('Адміністрування → Оновлення', 'Beheer → Updates')} <ArrowRight size={12} aria-hidden='true' /></a></span></li>
         </ul>
       </section>
@@ -136,7 +136,7 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
       <section className='ag-blok' data-ag-blok='tech-verbindingen' data-lijst='tech-verbindingen' aria-labelledby='ag2-tech-verb-kop'>
         <header className='ag-blok-kop'>
           <h3 className='ag-blok-titel' id='ag2-tech-verb-kop'><ShieldCheck aria-hidden='true' /> {tr('Технічні підключення ШІ', 'Technische AI-verbindingen')}</h3>
-          <p className='ag-blok-uitleg'>{tr('ШІ, підключені до технічного простору через OAuth або MCP-токен; відкликання діє одразу.', 'AI die via OAuth of een MCP-token aan de technische ruimte gekoppeld zijn; intrekken werkt meteen.')}</p>
+          <p className='ag-blok-uitleg'>{tr('ШІ, підключені до технічного простору через OAuth або маркер доступу MCP; відкликання діє одразу.', 'AI die via OAuth of een MCP-token aan de technische ruimte gekoppeld zijn; intrekken werkt meteen.')}</p>
         </header>
         <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
         {ov.data === null && tok.data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? (

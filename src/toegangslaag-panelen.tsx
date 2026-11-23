@@ -152,7 +152,7 @@ export function AccessPlanePanels(p:Props){
       gevolgen={[
         tr(lang,'Коди зі старого застосунку діятимуть, доки ви не підтвердите новий (щонайбільше 15 хвилин).','Codes uit de oude app blijven werken tot u de nieuwe bevestigt (hoogstens 15 minuten).'),
         tr(lang,'Після підтвердження буде створено нові коди відновлення, а старі перестануть діяти.','Na bevestiging worden nieuwe herstelcodes gemaakt en werken de oude niet meer.'),
-        tr(lang,'Для другого підтвердження оберіть passkey або код відновлення: той самий код із застосунку двічі не приймається.','Kies voor de tweede bevestiging een passkey of herstelcode: dezelfde app-code wordt geen twee keer aanvaard.'),
+        tr(lang,'Для другого підтвердження оберіть ключ доступу або код відновлення: той самий код із застосунку двічі не приймається.','Kies voor de tweede bevestiging een passkey of herstelcode: dezelfde app-code wordt geen twee keer aanvaard.'),
       ]}
       bevestigTekst={tr(lang,'Так, замінити','Ja, vervangen')}
       onAnnuleer={()=>setVervangVraag(false)}

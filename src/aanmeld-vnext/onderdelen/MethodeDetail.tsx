@@ -33,7 +33,7 @@ export default function MethodeDetail({ lang, kaart: k, p, smal, onSluit }: Prop
         <div className='amv-detail-google'>
           <p className='amv-rij'><strong>{tr(lang, 'Акаунт', 'Account')}</strong><span>{binding?.email || tr(lang, 'Google-акаунт', 'Google-account')}</span></p>
           <p className='amv-rij'><strong>{tr(lang, 'Стан', 'Status')}</strong><span>{aanmeldTekst(STAAT_LABEL[k.staat], lang)}</span></p>
-          {data.lockout.protected ? <p className='amv-melding is-info' data-google-enige=''>{tr(lang, 'Google — зараз ваш єдиний спосіб входу, тому його не можна вимкнути. Passkey поки що лише підтверджує важливі дії.', 'Google is nu uw enige aanmeldmethode en kan daarom niet worden uitgeschakeld. Een passkey bevestigt voorlopig alleen belangrijke acties.')}</p> : null}
+          {data.lockout.protected ? <p className='amv-melding is-info' data-google-enige=''>{tr(lang, 'Google — зараз ваш єдиний спосіб входу, тому його не можна вимкнути. Ключ доступу поки що лише підтверджує важливі дії.', 'Google is nu uw enige aanmeldmethode en kan daarom niet worden uitgeschakeld. Een passkey bevestigt voorlopig alleen belangrijke acties.')}</p> : null}
           <a className='amv-knop' href='https://myaccount.google.com/security' target='_blank' rel='noopener noreferrer'><ExternalLink aria-hidden='true' />{tr(lang, 'Керувати в Google', 'Beheren bij Google')}</a>
           <small className='amv-hint'>{tr(lang, 'Адресу можна змінити лише в Google.', 'Het adres wijzigen kan alleen bij Google.')}</small>
         </div>

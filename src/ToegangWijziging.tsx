@@ -21,7 +21,7 @@ const FOUT:Record<string,[string,string]>={
   ALLEEN_EIGENAAR_KAN_HERSTELLEN:['Повернути це право може лише власник. Зверніться до нього.','Alleen de eigenaar kan dit recht teruggeven. Neem contact met hem op.'],
   NIET_TERUG_TE_DRAAIEN:['Цю зміну не потрібно скасовувати.','Deze wijziging hoeft niet teruggedraaid te worden.'],
   OWNER_REQUIRED:['Це може лише власник.','Dit kan alleen de eigenaar.'],
-  STEP_UP_STRONG_REQUIRED:['Потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.','Bevestiging met passkey, app-code of herstelcode is nodig.'],
+  STEP_UP_STRONG_REQUIRED:['Потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.','Bevestiging met passkey, app-code of herstelcode is nodig.'],
   STEP_UP_REQUIRED:['Потрібне додаткове підтвердження. Спробуйте ще раз.','Extra bevestiging is nodig. Probeer het opnieuw.'],
   RATE_LIMITED:['Забагато спроб. Зачекайте кілька хвилин.','Te veel pogingen. Wacht een paar minuten.'],
 };
@@ -67,7 +67,7 @@ export function ToegangWijziging({lang,context,id,onChange}:{lang:Lang;context:R
           ?tr(lang,'Зміну скасовано: право схвалювати оновлення збережено.','Wijziging teruggedraaid: het recht om updates goed te keuren is behouden.')
           :uitkomst.recht==='ssh-nodig'?tr(lang,'Сервер уже відкликав право. Автоматично повернути його неможливо: це робиться лише на сервері командою нижче (через SSH).','De server had het recht al ingetrokken. Automatisch teruggeven kan niet: dat gebeurt alleen op de server met de opdracht hieronder (via SSH).')
           :tr(lang,'Право не відновлено.','Het recht is niet teruggezet.')}</p>
-        {uitkomst.passkeyTerug&&<p>{tr(lang,'Видалений passkey повернуто до вашого акаунта.','De verwijderde passkey staat weer in uw account.')}</p>}
+        {uitkomst.passkeyTerug&&<p>{tr(lang,'Видалений ключ доступу повернуто до вашого акаунта.','De verwijderde passkey staat weer in uw account.')}</p>}
         <p>{uitkomst.sessie==='ingetrokken'?tr(lang,'Сесію, з якої зробили зміну, завершено.','De sessie waarmee de wijziging gedaan is, is beëindigd.')
           :uitkomst.sessie==='huidige-sessie'?tr(lang,'Зміну зроблено з цієї ж сесії, тому її не завершено.','De wijziging is vanuit deze zelfde sessie gedaan; die is daarom niet beëindigd.')
           :tr(lang,'Сесія, з якої зробили зміну, уже завершена.','De sessie waarmee de wijziging gedaan is, was al beëindigd.')}</p>
@@ -75,7 +75,7 @@ export function ToegangWijziging({lang,context,id,onChange}:{lang:Lang;context:R
       {ssh&&<p className='access-plane-subrow'><small>{tr(lang,'Повернути право може лише сервер (root). Виконайте через SSH і звірте відбиток:','Alleen de server (root) kan het recht teruggeven. Voer via SSH uit en vergelijk de vingerafdruk:')}</small> <code className='access-plane-mono access-plane-ssh'>{ssh}</code></p>}
       {w&&w.soort==='voorbereider-ingetrokken'&&<p className='access-plane-subrow access-plane-hint-line'>{tr(lang,'Повернути право готувати оновлення може лише власник. Якщо це помилка — зверніться до нього.','Alleen de eigenaar kan het recht om updates voor te bereiden teruggeven. Is dit een vergissing, neem dan contact met hem op.')}</p>}
       {a?.kanTerugdraaien&&!uitkomst&&<div className='access-plane-subrow toegang-niet-ik'>
-        <p className='access-plane-hint-line'><TriangleAlert aria-hidden='true'/>{tr(lang,'Якщо це зробили не ви: ми скасуємо зміну, де це технічно можливо, і завершимо сесію, з якої її зробили. Якщо сервер уже відкликав право, повернути його можна лише SSH-командою (ми її покажемо). Потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.','Was u dit niet: we draaien de wijziging terug waar dat technisch kan en beëindigen de sessie waarmee ze gedaan is. Heeft de server het recht al ingetrokken, dan kan alleen een SSH-opdracht het teruggeven (we tonen die). Bevestiging met passkey, app-code of herstelcode is nodig.')}</p>
+        <p className='access-plane-hint-line'><TriangleAlert aria-hidden='true'/>{tr(lang,'Якщо це зробили не ви: ми скасуємо зміну, де це технічно можливо, і завершимо сесію, з якої її зробили. Якщо сервер уже відкликав право, повернути його можна лише SSH-командою (ми її покажемо). Потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.','Was u dit niet: we draaien de wijziging terug waar dat technisch kan en beëindigen de sessie waarmee ze gedaan is. Heeft de server het recht al ingetrokken, dan kan alleen een SSH-opdracht het teruggeven (we tonen die). Bevestiging met passkey, app-code of herstelcode is nodig.')}</p>
         <div className='access-plane-actions'>
           <button type='button' className='danger' data-niet-ik disabled={bezig} onClick={()=>void terugdraaien()}><ShieldAlert/>{tr(lang,'Це був не я — скасувати та захистити акаунт','Dit was ik niet — terugdraaien en mijn account beveiligen')}</button>
           <button type='button' className='secondary' disabled={bezig} onClick={sluiten}>{tr(lang,'Так, це був я','Ja, dit was ik')}</button>

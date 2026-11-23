@@ -48,12 +48,12 @@ html[data-tech-patroon=stippen] .tech-band{background-image:radial-gradient(rgba
 .tech-vraag-knop{width:22px;height:22px;min-width:22px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:inherit;font:700 13px/1 Inter,system-ui,sans-serif;cursor:help;opacity:.8}
 .tech-vraag-knop:hover,.tech-vraag-knop[aria-expanded=true]{opacity:1}
 .tech-vraag-uitleg{position:fixed;z-index:2147483000;width:min(340px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;box-sizing:border-box;display:grid;gap:8px;padding:12px 14px;border-radius:10px;
-  background:var(--panel);color:#1b1f24;border:1px solid var(--line);box-shadow:0 12px 32px rgba(0,0,0,.22);font:400 13.5px/1.45 Inter,system-ui,sans-serif;text-align:left;white-space:normal}
+  background:var(--panel);color:var(--text,#1b1f24);border:1px solid var(--line);box-shadow:0 12px 32px rgba(0,0,0,.22);font:400 13.5px/1.45 Inter,system-ui,sans-serif;text-align:left;white-space:normal}
 .tech-vraag-laag{display:grid;gap:2px}
 .tech-vraag-laag b{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
 .tech-vraag-laag.is-risico b{color:var(--fout);opacity:1}
 .tech-vraag-laag.is-dev{padding-top:8px;border-top:1px dashed var(--line,#d0d7de)}
-.tech-vraag-laag.is-dev b{color:#5b21b6;opacity:1}
+.tech-vraag-laag.is-dev b{color:var(--info);opacity:1}
 .tech-vraag-laag.is-dev > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
 .tech-vraag-laag.is-dev > summary::-webkit-details-marker{display:none}
 .tech-vraag-laag.is-dev > summary::after{display:none}
@@ -63,9 +63,9 @@ html[data-tech-patroon=stippen] .tech-band{background-image:radial-gradient(rgba
 .tech-vraag-laag.is-dev > summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
 .tech-vraag-bron{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tech-vraag-bron code{font:11.5px/1.4 ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,currentColor 10%,transparent);overflow-wrap:anywhere}
-html.theme-dark .tech-vraag-uitleg{background:#1d232a;color:var(--text);border-color:#3a434d}
+html.theme-dark .tech-vraag-uitleg{background:var(--panel);color:var(--text);border-color:var(--line)}
 html.theme-dark .tech-vraag-laag.is-risico b{color:var(--fout)}
-html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
+html.theme-dark .tech-vraag-laag.is-dev b{color:var(--info)}
 
 /* Vensters */
 .tech-venster{display:grid;gap:14px;padding:14px 16px 16px;font-size:14.5px}
@@ -90,7 +90,7 @@ html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
 .tech-venster button.is-gevaar{border-color:var(--fout);color:var(--fout)}
 .tech-venster button:disabled{opacity:.55;cursor:not-allowed}
 .tech-melding{margin:0;padding:8px 10px;border-radius:8px;background:var(--fout-zacht);color:var(--fout)}
-.tech-melding.is-ok{background:#e7f6ec;color:var(--ok)}
+.tech-melding.is-ok{background:var(--ok-zacht);color:var(--ok)}
 .tech-kleuren{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .tech-venster button.tech-kleur{min-height:44px;padding:0 6px;font-size:13px;border:2px solid transparent}
 .tech-venster button.tech-kleur[aria-checked=true]{outline:3px solid currentColor;outline-offset:2px}

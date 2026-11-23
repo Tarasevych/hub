@@ -153,7 +153,7 @@ export default function AanmeldVnextPanelen(p: PaneelProps) {
           <div className='amv-verwijzing is-stil'>
             <ShieldCheck aria-hidden='true' />
             <span><strong>{tr(lang, 'Підтвердження важливих дій', 'Bevestiging van belangrijke acties')}</strong>
-              <small>{tr(lang, 'Passkey, код автентифікатора, код відновлення або повторний вхід у Google — як і раніше.', 'Passkey, authenticatorcode, herstelcode of opnieuw aanmelden bij Google — zoals altijd.')}</small></span>
+              <small>{tr(lang, 'Ключ доступу, код автентифікатора, код відновлення або повторний вхід у Google — як і раніше.', 'Passkey, authenticatorcode, herstelcode of opnieuw aanmelden bij Google — zoals altijd.')}</small></span>
           </div>
         </div>
       </section>}
