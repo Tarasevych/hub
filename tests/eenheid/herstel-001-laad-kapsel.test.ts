@@ -275,10 +275,11 @@ export async function main(): Promise<number> {
       const bootCss = uit.files.find((f) => f.fileName === 'canonical-boot.css')?.source || '';
       const bootJs = uit.files.find((f) => f.fileName === 'canonical-boot.js')?.source || '';
 
-      assert.ok(bootCss.includes('#tsv-laad-kapsel{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px))'));
+      assert.ok(bootCss.includes('#tsv-laad-kapsel{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px))'));
       assert.ok(bootCss.includes('border-radius:999px'));
       assert.ok(bootCss.includes('pointer-events:none'));
-      assert.ok(bootCss.includes('@media(max-width:700px){#tsv-laad-kapsel{bottom:calc(20px + env(safe-area-inset-bottom,0px))}}'));
+      assert.ok(bootCss.includes('font-size:11px'));
+      assert.ok(bootCss.includes('@media(max-width:700px){#tsv-laad-kapsel{bottom:calc(12px + env(safe-area-inset-bottom,0px))}}'));
       assert.ok(bootCss.includes('@media print{#tsv-voortgang,#tsv-laad-kapsel{display:none!important}}'));
 
       // Перевірка синтаксичної коректності зовнішнього стартового скрипта
@@ -346,7 +347,8 @@ export async function main(): Promise<number> {
       assert.ok(kapsel, 'Стартова капсула повинна бути створена');
       assert.ok(balk, 'Стартова смужка повинна бути створена');
       assert.equal(kapsel.dataset.staat, 'bezig');
-      assert.equal(kapsel.querySelector('span')?.textContent, 'Laden: Instellingen…');
+      assert.equal(kapsel.querySelector('span')?.textContent, 'Laden…');
+      assert.equal(kapsel.getAttribute('aria-label'), 'Laden: Instellingen…');
       assert.equal(balk.dataset.staat, 'opstart');
 
       // Доки в .canonical-content стоїть порожній очікувач .ia-wacht — капсула лишається активною
@@ -443,7 +445,8 @@ export async function main(): Promise<number> {
         voortgangStart('identity', { direct: true, verzoekGestart: true });
         assert.equal(voortgangStaat(), 'bezig');
         assert.equal(laadKapselStaat(), 'bezig');
-        assert.equal(doc.getElementById('tsv-laad-kapsel')?.querySelector('span')?.textContent, 'Завантаження: Налаштування…');
+        assert.equal(doc.getElementById('tsv-laad-kapsel')?.querySelector('span')?.textContent, 'Завантаження…');
+        assert.equal(doc.getElementById('tsv-laad-kapsel')?.getAttribute('aria-label'), 'Завантаження: Налаштування…');
 
         // Звичайний перший pageshow (persisted=false) НЕ гасить капсулу на порожній сторінці
         for (const fn of vensterLuisteraars.get('pageshow') || []) fn({ persisted: false });
@@ -476,7 +479,8 @@ export async function main(): Promise<number> {
         // Явний перехід на інший розділ (навігація користувача): вмикається капсула цільового розділу!
         voortgangStart('mail', { extern: true, direct: true });
         assert.equal(laadKapselStaat(), 'bezig');
-        assert.equal(doc.getElementById('tsv-laad-kapsel')?.querySelector('span')?.textContent, 'Завантаження: Пошта…');
+        assert.equal(doc.getElementById('tsv-laad-kapsel')?.querySelector('span')?.textContent, 'Завантаження…');
+        assert.equal(doc.getElementById('tsv-laad-kapsel')?.getAttribute('aria-label'), 'Завантаження: Пошта…');
 
         // Повернення з bfcache (persisted=true) миттєво скидає обидва індикатори в "uit"
         for (const fn of vensterLuisteraars.get('pageshow') || []) fn({ persisted: true });

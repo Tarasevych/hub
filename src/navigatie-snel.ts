@@ -56,7 +56,14 @@ export const DIENST_LAAD_NAAM: Readonly<Record<string, { readonly uk: string; re
   social: { uk: 'Соціальні мережі', nl: 'Sociale netwerken' },
 };
 
-/** Формує зрозумілий напис спливної капсули завантаження мовою сайту (`uk` або `nl`). */
+/** Короткий лаконічний напис видимої мініатюрної капсули завантаження (`Завантаження…` / `Laden…`). */
+export function laadKapselKorteTekst(lang?: string): string {
+  const docTaal = typeof document !== 'undefined' ? document.documentElement?.lang : 'uk';
+  const taal = (lang || docTaal) === 'nl' ? 'nl' : 'uk';
+  return taal === 'nl' ? 'Laden…' : 'Завантаження…';
+}
+
+/** Повний опис стану завантаження мовою сайту (`uk` або `nl`) для доступності (`aria-label`). */
 export function laadKapselTekst(dienst: string, lang?: string): string {
   const docTaal = typeof document !== 'undefined' ? document.documentElement?.lang : 'uk';
   const taal = (lang || docTaal) === 'nl' ? 'nl' : 'uk';
@@ -170,8 +177,9 @@ function werkKapselBij(dienst: string, kleur: string) {
   if (kleur) k.style.setProperty('--tsv-voortgang-kleur', kleur);
   else k.style.removeProperty('--tsv-voortgang-kleur');
   k.dataset.dienst = dienst || '';
+  k.setAttribute('aria-label', laadKapselTekst(dienst));
   const tekst = k.querySelector('span');
-  if (tekst) tekst.textContent = laadKapselTekst(dienst);
+  if (tekst) tekst.textContent = laadKapselKorteTekst();
   return k;
 }
 
@@ -230,8 +238,9 @@ function startInhoudWaarnemer() {
       const el = kapsel && kapsel.isConnected ? kapsel : document.getElementById('tsv-laad-kapsel');
       if (el instanceof HTMLDivElement && el.dataset.staat === 'bezig') {
         const span = el.querySelector('span');
-        const nieuw = laadKapselTekst(el.dataset.dienst || '');
-        if (span && span.textContent !== nieuw) span.textContent = nieuw;
+        const kort = laadKapselKorteTekst();
+        if (span && span.textContent !== kort) span.textContent = kort;
+        el.setAttribute('aria-label', laadKapselTekst(el.dataset.dienst || ''));
       }
       if (paginaHeeftZichtbareInhoud()) {
         rondOpstartBalkAf();

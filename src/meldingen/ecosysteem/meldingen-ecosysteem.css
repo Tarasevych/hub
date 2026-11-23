@@ -2262,4 +2262,293 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   backdrop-filter: blur(14px);
 }
 
+/* ============================================================================
+   HERSTEL-001 (Частина 7Б): Компактні однорядкові піктограмні кнопки зі спливними
+   назвами на ПК (наведення) та смартфоні (перший дотик — підказка, другий — дія)
+   + людські назви схем MELDING_SCHEMAS та кольори станів із staat-kleuren.css.
+   ============================================================================ */
 
+.puls-icoon-knop .mr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.puls-icoon-knop.mel-ikoon-knop,
+.puls-portaal .puls-kaart .puls-icoon-knop.mel-ikoon-knop,
+.puls-kaart .puls-icoon-knop.mel-ikoon-knop,
+.puls-portaal .puls-voet .puls-icoon-knop.mel-ikoon-knop {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--icoon-knop-rand, color-mix(in srgb, var(--line) 86%, transparent));
+  border-radius: 9px;
+  background: var(--icoon-knop-achtergrond, color-mix(in srgb, var(--panel) 84%, var(--surface)));
+  color: var(--icoon-knop-kleur, var(--muted));
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.puls-portaal .mel-kop-gereedschap .puls-icoon-knop.mel-ikoon-knop {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 9px;
+}
+
+.puls-icoon-knop.heeft-teller {
+  margin-right: 3px;
+}
+
+.puls-icoon-symbool {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.puls-icoon-symbool > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.puls-icoon-knop.mel-ikoon-knop:hover:not(:disabled),
+.puls-icoon-knop.mel-ikoon-knop:focus-visible:not(:disabled) {
+  --icoon-knop-rand: color-mix(in srgb, var(--mel-accent, var(--accent)) 42%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--mel-accent, var(--accent)) 11%, var(--panel));
+  --icoon-knop-kleur: var(--text);
+}
+
+.puls-icoon-knop.is-toon-actief {
+  --icoon-knop-rand: color-mix(in srgb, var(--mel-accent, var(--accent)) 54%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--mel-accent, var(--accent)) 16%, var(--panel));
+  --icoon-knop-kleur: var(--mel-accent, var(--accent));
+}
+.puls-icoon-knop.is-toon-actief:hover:not(:disabled),
+.puls-icoon-knop.is-toon-actief:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--mel-accent, var(--accent));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--mel-accent, var(--accent)) 22%, var(--panel));
+  --icoon-knop-kleur: var(--mel-accent, var(--accent));
+}
+
+.puls-icoon-knop.is-toon-primair-let {
+  --icoon-knop-rand: color-mix(in srgb, var(--staat-let) 52%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-let) 16%, var(--panel));
+  --icoon-knop-kleur: var(--staat-let);
+}
+.puls-icoon-knop.is-toon-primair-let:hover:not(:disabled),
+.puls-icoon-knop.is-toon-primair-let:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--staat-let);
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-let) 24%, var(--panel));
+  --icoon-knop-kleur: var(--staat-let);
+}
+
+.puls-icoon-knop.is-toon-primair-goed {
+  --icoon-knop-rand: color-mix(in srgb, var(--staat-goed) 52%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-goed) 16%, var(--panel));
+  --icoon-knop-kleur: var(--staat-goed);
+}
+.puls-icoon-knop.is-toon-primair-goed:hover:not(:disabled),
+.puls-icoon-knop.is-toon-primair-goed:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--staat-goed);
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-goed) 24%, var(--panel));
+  --icoon-knop-kleur: var(--staat-goed);
+}
+
+.puls-icoon-knop.is-toon-primair-fout {
+  --icoon-knop-rand: color-mix(in srgb, var(--staat-fout) 54%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-fout) 16%, var(--panel));
+  --icoon-knop-kleur: var(--staat-fout);
+}
+.puls-icoon-knop.is-toon-primair-fout:hover:not(:disabled),
+.puls-icoon-knop.is-toon-primair-fout:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--staat-fout);
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-fout) 24%, var(--panel));
+  --icoon-knop-kleur: var(--staat-fout);
+}
+
+.puls-icoon-knop.is-tip-open {
+  --icoon-knop-rand: var(--mel-accent, var(--accent));
+  --icoon-knop-kleur: var(--text);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mel-accent, var(--accent)) 36%, transparent);
+}
+
+.puls-icoon-teller {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 1.5px solid var(--panel);
+  border-radius: 999px;
+  background: var(--mel-accent, var(--accent));
+  color: var(--accentText, #ffffff);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.puls-icoon-tip {
+  padding: 6px 11px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 96%, var(--surface));
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+  box-shadow: 0 12px 30px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+/* Однорядкова смуга 6 компактних піктограмних вкладок у .mel-filters */
+.mel-filters.puls-filters-slank {
+  padding: 6px 10px;
+}
+
+.puls-filters-slank .mel-tabs.puls-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.puls-filters-slank .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+/* Семантичні стани карток та індикатори типів MELDING_SCHEMAS (--staat-goed / --staat-let / --staat-fout) */
+.puls-kaart.is-staat-goed {
+  border-left: 4px solid var(--staat-goed);
+  background: color-mix(in srgb, var(--staat-goed) 5%, var(--surface));
+}
+
+.puls-kaart.is-staat-let {
+  border-left: 4px solid var(--staat-let);
+  background: color-mix(in srgb, var(--staat-let) 5%, var(--surface));
+}
+
+.puls-kaart.is-staat-fout {
+  border-left: 4px solid var(--staat-fout);
+  background: color-mix(in srgb, var(--staat-fout) 5%, var(--surface));
+}
+
+.puls-schema-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1.5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.puls-staat-stip {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--mel-accent, var(--accent));
+}
+
+.puls-schema-chip.is-staat-goed {
+  border-color: color-mix(in srgb, var(--staat-goed) 38%, var(--line));
+  background: color-mix(in srgb, var(--staat-goed) 9%, var(--panel));
+  color: var(--staat-goed);
+}
+.puls-schema-chip.is-staat-goed .puls-staat-stip {
+  background: var(--staat-goed);
+}
+
+.puls-schema-chip.is-staat-let {
+  border-color: color-mix(in srgb, var(--staat-let) 38%, var(--line));
+  background: color-mix(in srgb, var(--staat-let) 9%, var(--panel));
+  color: var(--staat-let);
+}
+.puls-schema-chip.is-staat-let .puls-staat-stip {
+  background: var(--staat-let);
+}
+
+.puls-schema-chip.is-staat-fout {
+  border-color: color-mix(in srgb, var(--staat-fout) 40%, var(--line));
+  background: color-mix(in srgb, var(--staat-fout) 9%, var(--panel));
+  color: var(--staat-fout);
+}
+.puls-schema-chip.is-staat-fout .puls-staat-stip {
+  background: var(--staat-fout);
+}
+
+/* Однорядкові смуги дій у картках першопричини й окремих сповіщень та підвал */
+.puls-portaal .puls-kaart .mel-kaart-acties.puls-kaart-acties,
+.puls-kaart .mel-kaart-acties.puls-kaart-acties {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.puls-kaart .puls-actie-groep.puls-keten-acties,
+.puls-kaart .puls-actie-groep.puls-kaart-knoppen-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-left: 0;
+}
+
+.puls-kaart .puls-keten-acties .puls-keten-rechts {
+  margin-left: auto;
+}
+
+.puls-voet-teller {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.puls-voet .puls-voet-rechts {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .puls-kop-alleen-pc {
+    display: none;
+  }
+}

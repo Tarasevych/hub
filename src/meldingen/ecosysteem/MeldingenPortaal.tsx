@@ -35,7 +35,6 @@ import {
   PinOff,
   RefreshCw,
   Search,
-  Settings,
   SlidersHorizontal,
   Sparkles,
   Undo2,
@@ -74,6 +73,7 @@ import {
 } from '../../../shared/meldingen-puls/kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
 import Merk from '../../merk/Merk';
+import IcoonActieKnop from '../IcoonActieKnop';
 import MeldingModusKiezer from '../MeldingModusKiezer';
 import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
 import PulsOorzaakKetenKaart from '../puls/PulsOorzaakKetenKaart';
@@ -87,7 +87,7 @@ import {
 import { usePulsSlimmeStaat } from '../puls/puls-opslag';
 import MeldingAiPaneel from './MeldingAiPaneel';
 import MeldingBijlageSpeler from './MeldingBijlageSpeler';
-import MeldingVeegKaart from './MeldingVeegKaart';
+import MeldingVeegKaart, { schoonKaartTitel } from './MeldingVeegKaart';
 
 const RANDEN: readonly RandRichting[] = ['n', 'z', 'w', 'o', 'nw', 'no', 'zw', 'zo'];
 const DND_KEUZES_MIN = [30, 60, 120, 480] as const;
@@ -1180,9 +1180,13 @@ export default function MeldingenPortaal({
             </div>
 
             <div className='mel-kop-gereedschap'>
-              <button
-                type='button'
-                className={`mel-ikoon-knop puls-filter-schakel${filterOpen || heeftActiefFilter ? ' is-actief' : ''}`}
+              <IcoonActieKnop
+                className='puls-filter-schakel'
+                toon={filterOpen || heeftActiefFilter ? 'actief' : 'standaard'}
+                stip={heeftActiefFilter}
+                icoon={<Search aria-hidden='true' />}
+                label={t('Пошук, канали та звук (клавіша /)', 'Zoeken, kanalen en geluid (toets /)')}
+                ariaLabel={t('Пошук і фільтри каналів', 'Zoeken en kanaalfilters')}
                 data-qa-id='puls-filter-knop'
                 aria-pressed={filterOpen || heeftActiefFilter}
                 aria-expanded={filterOpen}
@@ -1194,37 +1198,28 @@ export default function MeldingenPortaal({
                     return volgende;
                   });
                 }}
-                title={t('Пошук, канали та звук (клавіша /)', 'Zoeken, kanalen en geluid (toets /)')}
-                aria-label={t('Пошук і фільтри каналів', 'Zoeken en kanaalfilters')}
-              >
-                <Search aria-hidden='true' />
-                {heeftActiefFilter && <i className='puls-filter-stip' aria-hidden='true' />}
-              </button>
+              />
 
-              <button
-                type='button'
-                className={`mel-ikoon-knop${toonVoorkeuren ? ' is-actief' : ''}`}
-                onClick={() => setToonVoorkeuren((v) => !v)}
+              <IcoonActieKnop
+                toon={toonVoorkeuren ? 'actief' : 'standaard'}
+                icoon={<SlidersHorizontal aria-hidden='true' />}
+                label={t('Швидкі налаштування типів сповіщень', 'Snelle instellingen per soort')}
+                ariaLabel={t('Типи сповіщень', 'Soorten meldingen')}
                 aria-pressed={toonVoorkeuren}
-                title={t('Швидкі налаштування типів сповіщень', 'Snelle instellingen per soort')}
-                aria-label={t('Типи сповіщень', 'Soorten meldingen')}
-              >
-                <SlidersHorizontal aria-hidden='true' />
-              </button>
+                onClick={() => setToonVoorkeuren((v) => !v)}
+              />
 
               {onZetNietStoren && (
                 <div className='puls-uitstel-anker'>
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${dndActief ? ' is-actief' : ''}`}
+                  <IcoonActieKnop
+                    toon={dndActief ? 'actief' : 'standaard'}
+                    icoon={<Moon aria-hidden='true' />}
+                    label={t('Не турбувати (безпека все одно проходить)', 'Niet storen (beveiliging blijft zichtbaar)')}
+                    ariaLabel={t('Не турбувати', 'Niet storen')}
                     aria-pressed={dndActief}
                     aria-expanded={dndMenuOpen}
                     onClick={() => setDndMenuOpen((v) => !v)}
-                    title={t('Не турбувати (безпека все одно проходить)', 'Niet storen (beveiliging blijft zichtbaar)')}
-                    aria-label={t('Не турбувати', 'Niet storen')}
-                  >
-                    <Moon aria-hidden='true' />
-                  </button>
+                  />
                   {dndMenuOpen && (
                     <div className='puls-uitstel-menu puls-dnd-menu' role='menu' onClick={(e) => e.stopPropagation()}>
                       <div className='puls-uitstel-kop'>{t('Режим тиші (без звуку й спливання)', 'Stiltestand (geen geluid of pop-ups)')}</div>
@@ -1268,86 +1263,86 @@ export default function MeldingenPortaal({
                 </div>
               )}
 
-              {!compactBijBel && (
+              {!compactBijBel && !isMobielLangscroll && (
                 <>
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${geo.modus === 'breed' ? ' is-actief' : ''}`}
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    toon={geo.modus === 'breed' ? 'actief' : 'standaard'}
+                    icoon={<Columns2 aria-hidden='true' />}
+                    label={
+                      geo.modus === 'breed'
+                        ? t('Одна колонка', 'Eén kolom')
+                        : t('Дві колонки: список і подробиці поруч', 'Twee kolommen: lijst en details naast elkaar')
+                    }
+                    ariaLabel={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки', 'Twee kolommen')}
                     aria-pressed={geo.modus === 'breed'}
                     onClick={() => pasModusToe(geo.modus === 'breed' ? 'normaal' : 'breed')}
-                    title={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки: список і подробиці поруч', 'Twee kolommen: lijst en details naast elkaar')}
-                    aria-label={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки', 'Twee kolommen')}
-                  >
-                    <Columns2 aria-hidden='true' />
-                  </button>
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${geo.modus === 'volledig' ? ' is-actief' : ''}`}
+                  />
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    toon={geo.modus === 'volledig' ? 'actief' : 'standaard'}
+                    icoon={geo.modus === 'volledig' ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}
+                    label={
+                      geo.modus === 'volledig'
+                        ? t('Повернути звичайний розмір вікна', 'Terug naar de gewone venstergrootte')
+                        : t('На весь екран', 'Volledig scherm')
+                    }
+                    ariaLabel={geo.modus === 'volledig' ? t('Звичайний розмір', 'Gewone grootte') : t('На весь екран', 'Volledig scherm')}
                     aria-pressed={geo.modus === 'volledig'}
                     onClick={() => pasModusToe(geo.modus === 'volledig' ? 'normaal' : 'volledig')}
-                    title={geo.modus === 'volledig' ? t('Повернути звичайний розмір вікна', 'Terug naar de gewone venstergrootte') : t('На весь екран', 'Volledig scherm')}
-                    aria-label={geo.modus === 'volledig' ? t('Звичайний розмір', 'Gewone grootte') : t('На весь екран', 'Volledig scherm')}
-                  >
-                    {geo.modus === 'volledig' ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}
-                  </button>
+                  />
 
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${geo.vastgepind ? ' is-actief' : ''}`}
-                    onClick={toggleVastpinnen}
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    toon={geo.vastgepind ? 'actief' : 'standaard'}
+                    icoon={geo.vastgepind ? <Pin aria-hidden='true' /> : <PinOff aria-hidden='true' />}
+                    label={
+                      geo.vastgepind
+                        ? t('Відкріпити вікно', 'Venster losmaken')
+                        : t('Закріпити вікно поверх сайту', 'Vastpinnen boven de site')
+                    }
                     aria-pressed={geo.vastgepind}
-                    title={geo.vastgepind ? t('Відкріпити: вікно закриється після натискання поза ним', 'Losmaken: het venster sluit bij een klik erbuiten') : t('Закріпити: вікно лишається відкритим, коли працюєте на сторінці', 'Vastpinnen: het venster blijft open terwijl u op de pagina werkt')}
-                    aria-label={geo.vastgepind ? t('Відкріпити вікно', 'Venster losmaken') : t('Закріпити поверх сайту', 'Vastpinnen boven de site')}
-                  >
-                    {geo.vastgepind ? <Pin aria-hidden='true' /> : <PinOff aria-hidden='true' />}
-                  </button>
+                    onClick={toggleVastpinnen}
+                  />
 
-                  <button
-                    type='button'
-                    className='mel-ikoon-knop'
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    icoon={<Minus aria-hidden='true' />}
+                    label={t('Згорнути в рухому кнопку з лічильником', 'Minimaliseren naar zwevende knop met teller')}
+                    ariaLabel={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
                     onClick={() => togglePil(true)}
-                    title={t('Згорнути в маленьку рухому кнопку з лічильником', 'Minimaliseren naar een kleine zwevende knop met teller')}
-                    aria-label={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
-                  >
-                    <Minus aria-hidden='true' />
-                  </button>
+                  />
                 </>
               )}
 
               {compactBijBel && onOpenVensterModus ? (
-                <button
-                  type='button'
-                  className='mel-vorm-schakel'
+                <IcoonActieKnop
+                  className='mel-vorm-schakel-icoon'
+                  toon='actief'
+                  icoon={<AppWindow aria-hidden='true' />}
+                  label={t('Розгорнути у широке вікно з інспектором', 'Uitklappen naar breed venster met inspectie')}
+                  srTekst={t('Вікно', 'Venster')}
                   data-qa-id='melding-vorm-venster-puls'
                   onClick={openVensterVanuitCompact}
-                  title={t('Розгорнути цю ж панель у широке вікно з інспектором. Повернутися — кнопкою «Компактно» у вікні.', 'Dit paneel uitklappen naar een breed venster met inspectie. Terug met «Compact» in het venster.')}
-                >
-                  <AppWindow aria-hidden='true' />
-                  <span>{t('Вікно', 'Venster')}</span>
-                </button>
+                />
               ) : null}
 
-              <button
-                type='button'
-                className='mel-vorm-schakel'
+              <IcoonActieKnop
+                className='mel-vorm-schakel-icoon'
                 style={compactBijBel && onOpenVensterModus ? { display: 'none' } : undefined}
+                icoon={<PanelRightClose aria-hidden='true' />}
+                label={t('Компактна панель. Повернутися до вікна — кнопкою «Вікно».', 'Compact paneel bij de bel. Terug met «Venster».')}
+                srTekst={t('Компактно', 'Compact')}
                 data-qa-id='melding-vorm-compact'
                 onClick={onSwitchToClassic}
-                title={t('Показувати сповіщення компактною панеллю біля дзвіночка. Повернутися до вікна — кнопкою «Вікно» в тій панелі.', 'Meldingen tonen als compact paneel bij de bel. Terug naar het venster met de knop «Venster» in dat paneel.')}
-              >
-                <PanelRightClose aria-hidden='true' />
-                <span>{t('Компактно', 'Compact')}</span>
-              </button>
+              />
 
-              <button
-                type='button'
-                className='mel-ikoon-knop'
-                onClick={onSluiten}
-                title={t('Закрити', 'Sluiten')}
+              <IcoonActieKnop
+                icoon={<X aria-hidden='true' />}
+                label={t('Закрити', 'Sluiten')}
                 aria-label={t('Закрити', 'Sluiten')}
-              >
-                <X aria-hidden='true' />
-              </button>
+                onClick={onSluiten}
+              />
             </div>
           </header>
 
@@ -1371,30 +1366,39 @@ export default function MeldingenPortaal({
               <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
                 {(
                   [
-                    ['actief', t('Увага', 'Actief')],
-                    ['nieuw', tellers.nieuw > 0 ? t(`Нові (${tellers.nieuw})`, `Nieuw (${tellers.nieuw})`) : t('Нові', 'Nieuw')],
+                    ['actief', t('Увага · Потребують дії', 'Actief · Vragen aandacht'), undefined],
+                    [
+                      'nieuw',
+                      tellers.nieuw > 0
+                        ? t(`Нові сповіщення (${tellers.nieuw})`, `Nieuwe meldingen (${tellers.nieuw})`)
+                        : t('Нові сповіщення', 'Nieuwe meldingen'),
+                      tellers.nieuw > 0 ? tellers.nieuw : undefined,
+                    ],
                     [
                       'uitgesteld',
                       tellers.uitgesteld > 0
-                        ? t(`Умова (${tellers.uitgesteld})`, `Uitstel (${tellers.uitgesteld})`)
-                        : t('Умова', 'Uitstel'),
+                        ? t(`Відкладені за умовою (${tellers.uitgesteld})`, `Voorwaardelijk uitgesteld (${tellers.uitgesteld})`)
+                        : t('Відкладені за умовою', 'Voorwaardelijk uitgesteld'),
+                      tellers.uitgesteld > 0 ? tellers.uitgesteld : undefined,
                     ],
-                    ['opgelost', t('Вирішені', 'Opgelost')],
-                    ['archief', t('Журнал', 'Archief')],
-                    ['alle', t('Усі', 'Alle')],
+                    ['opgelost', t('Вирішені', 'Opgelost'), undefined],
+                    ['archief', t('Спокійний журнал', 'Rustig archief'), undefined],
+                    ['alle', t('Усі сповіщення', 'Alle meldingen'), undefined],
                   ] as const
-                ).map(([sleutel, tekst]) => (
-                  <button
+                ).map(([sleutel, tekst, tabTeller]) => (
+                  <IcoonActieKnop
                     key={sleutel}
-                    type='button'
+                    modus='tab'
                     role='tab'
+                    toon={statusFilter === sleutel ? 'actief' : 'standaard'}
                     aria-selected={statusFilter === sleutel}
                     className={`mel-tab puls-tab is-tab-${sleutel}${statusFilter === sleutel ? ' is-actief' : ''}`}
+                    icoon={<TabIcoon sleutel={sleutel} />}
+                    teller={tabTeller}
+                    label={tekst}
+                    data-qa-id={`puls-tab-${sleutel}`}
                     onClick={() => setStatusFilter(sleutel)}
-                  >
-                    <TabIcoon sleutel={sleutel} />
-                    <span>{tekst}</span>
-                  </button>
+                  />
                 ))}
               </div>
 
@@ -1437,25 +1441,19 @@ export default function MeldingenPortaal({
                   </label>
 
                   <div className='mel-werkbalk-knoppen'>
-                    <button
-                      type='button'
-                      className={`mel-ikoon-knop${laden ? ' is-laden' : ''}`}
+                    <IcoonActieKnop
+                      className={laden ? 'is-laden' : undefined}
+                      icoon={<RefreshCw className={laden ? 'mel-draai' : undefined} aria-hidden='true' />}
+                      label={t('Оновити потік', 'Stroom verversen')}
                       onClick={onVervers}
-                      title={t('Оновити потік', 'Stroom verversen')}
-                      aria-label={t('Оновити потік', 'Stroom verversen')}
-                    >
-                      <RefreshCw className={laden ? 'mel-draai' : undefined} aria-hidden='true' />
-                    </button>
+                    />
 
-                    <button
-                      type='button'
-                      className='mel-ikoon-knop'
+                    <IcoonActieKnop
+                      toon={sound ? 'actief' : 'standaard'}
+                      icoon={sound ? <Volume2 aria-hidden='true' /> : <VolumeX aria-hidden='true' />}
+                      label={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}
                       onClick={onToggleSound}
-                      title={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}
-                      aria-label={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}
-                    >
-                      {sound ? <Volume2 aria-hidden='true' /> : <VolumeX aria-hidden='true' />}
-                    </button>
+                    />
                   </div>
                 </div>
 
@@ -1662,7 +1660,7 @@ export default function MeldingenPortaal({
                             </span>
                             {geselecteerdVerrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} />}
                           </div>
-                          <strong>{geselecteerd.titel}</strong>
+                          <strong>{schoonKaartTitel(geselecteerd.titel)}</strong>
                           {geselecteerd.contextLabel && <small>{geselecteerd.contextLabel}</small>}
                         </div>
                       </div>
@@ -1745,39 +1743,35 @@ export default function MeldingenPortaal({
           )}
 
           <div className='mel-voet puls-voet' role='region' aria-label={t('Дії екосистеми', 'Ecosysteemacties')}>
-            <button
-              type='button'
-              className='mel-knop mel-knop-zacht puls-voet-knop'
-              disabled={tellers.nieuw === 0}
-              onClick={onMarkAll}
-              title={t('Позначити всі нові сповіщення прочитаними', 'Alle nieuwe meldingen als gelezen markeren')}
-            >
-              <CheckCheck aria-hidden='true' />
-              <span>{t('Прочитати всі', 'Alles gelezen')}</span>
-            </button>
+            <span className='puls-voet-teller'>
+              {t(`Подій: ${gefilterd.length}`, `Gebeurtenissen: ${gefilterd.length}`)}
+            </span>
 
             <span className='puls-toets-hints' aria-hidden='true'>
               <kbd>↑↓</kbd> {t('вибір', 'keuze')} · <kbd>{t('Пробіл', 'Spatie')}</kbd> {t('докази', 'bewijs')} · <kbd>/</kbd> {t('пошук', 'zoeken')} · <kbd>E</kbd> {t('архів', 'archief')}
             </span>
 
             <div className='puls-voet-rechts'>
-              <a
+              <IcoonActieKnop
+                icoon={<CheckCheck aria-hidden='true' />}
+                disabled={tellers.nieuw === 0}
+                label={t('Позначити всі прочитаними', 'Alles als gelezen markeren')}
+                data-qa-id='puls-markeer-alle'
+                onClick={onMarkAll}
+              />
+              <IcoonActieKnop
                 href={registerHref}
-                className='mel-knop mel-knop-zacht puls-voet-knop'
+                icoon={<BookOpen aria-hidden='true' />}
+                label={t('База всіх типів сповіщень', 'Register van alle meldingssoorten')}
                 data-qa-id='puls-open-register'
-                title={t('Відкрити живу базу всіх типів і кодів дій сповіщень', 'Open het levende register van alle meldingssoorten en actiecodes')}
-              >
-                <BookOpen aria-hidden='true' />
-                <span>{t('База типів', 'Register')}</span>
-              </a>
-              <a
+              />
+              <IcoonActieKnop
                 href={instellingenHref}
-                className='mel-knop puls-voet-accent puls-voet-knop'
-                title={t('Усі правила, тихі години та налаштування (/melding)', 'Alle regels, stille uren en instellingen (/melding)')}
-              >
-                <Settings aria-hidden='true' />
-                <span>{t('Правила', 'Regels')}</span>
-              </a>
+                toon='actief'
+                icoon={<SlidersHorizontal aria-hidden='true' />}
+                label={t('Правила та налаштування сповіщень', 'Regels en voorkeuren')}
+                data-qa-id='puls-open-regels'
+              />
             </div>
           </div>
         </section>

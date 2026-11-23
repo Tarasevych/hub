@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Clock3,
   ExternalLink,
-  Eye,
   KeyRound,
   Paperclip,
   RotateCcw,
@@ -21,6 +20,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react';
+import { MELDING_SCHEMAS, type MeldingNiveau } from '../../../shared/meldingen-catalogus';
 import {
   evalueerVeeg,
   prioriteitLabel,
@@ -40,6 +40,7 @@ import {
   type VoorwaardelijkUitstelSoort,
 } from '../../../shared/meldingen-puls/kern';
 import { voerPaginaSignaalActieUit } from '../../canoniek-meldingen';
+import IcoonActieKnop from '../IcoonActieKnop';
 import {
   PulsBestandChip,
   PulsBronTeken,
@@ -52,6 +53,41 @@ import MeldingAiPaneel from './MeldingAiPaneel';
 import MeldingBijlageSpeler from './MeldingBijlageSpeler';
 import { useVlag } from '../../functievlag-lezen';
 import { WEERGAVE_VLAG } from '../../bijlage-weergave/soort';
+
+export type PulsKaartStaat = 'goed' | 'let' | 'fout' | 'neutraal';
+
+/** Прибирає початкові службові емодзі стану з відображуваного заголовка, бо поруч уже стоїть офіційний знак із реєстру src/merk/. */
+export function schoonKaartTitel(titel: string): string {
+  const schoon = titel
+    .replace(/^(?:[\u2705\u26A0\u26D4\u2757\u{1F6A8}\u{1F4CD}\u{1F5BC}\u{1F514}\u{1F512}\u{1F511}]\uFE0F?\s*)+/u, '')
+    .trim();
+  return schoon || titel;
+}
+
+/** Визначає семантичний колір стану картки (--staat-goed, --staat-let, --staat-fout) за змістом події та рівнем. */
+export function bepaalKaartStaat(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'titel' | 'bericht' | 'prioriteit' | 'status'>,
+  niveau: MeldingNiveau,
+): PulsKaartStaat {
+  const ruw = `${geb.titel} ${geb.bericht}`;
+  const zonderOntkenning = ruw.replace(
+    /(?:без\s+(?:помилок|помилки|збоїв|збою|тривог)|zonder\s+(?:fout(?:en)?|storing(?:en)?)|geen\s+(?:fout(?:en)?|storing(?:en)?))/giu,
+    ' ',
+  );
+  const heeftFoutWoord =
+    /(тривога|заблоковано|відхилено|збій|помилка|не працює|недоступн|не вдалося|alarm|geblokkeerd|geweigerd|storing|fout|werkt niet|mislukt)/iu.test(
+      zonderOntkenning,
+    );
+  const heeftHerstelWoord =
+    !heeftFoutWoord &&
+    /(зв’язок відновлено|знову працює|прив’язано|успішно|виконано|завершено|синхронізовано|verbinding hersteld|werkt weer|gekoppeld|geslaagd|voltooid|gesynchroniseerd)/iu.test(
+      ruw,
+    );
+  if (heeftHerstelWoord || geb.status === 'opgelost') return 'goed';
+  if (niveau === 'gevaar' || geb.prioriteit === 'kritiek' || heeftFoutWoord) return 'fout';
+  if (niveau === 'besluit' || geb.prioriteit === 'hoog') return 'let';
+  return 'neutraal';
+}
 
 // SPIL-WEERGAVE етап 4, крок 4.6, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Google Antigravity):
 // картка вкладення підвантажується ліниво й лише за ввімкненого прапорця bijlage-weergave-gedeeld-v1;
@@ -293,6 +329,9 @@ export default function MeldingVeegKaart({
   const paginaLink = veiligeMeldingUrl(gebeurtenis.meta?.link, 500) || '';
   const primaireActieHref =
     gebeurtenis.acties.map((a) => veiligeMeldingUrl(a.href, 500)).find(Boolean) || paginaLink;
+  const kaartStaat = bepaalKaartStaat(gebeurtenis, verrijkt.niveau);
+  const schemaNaam = MELDING_SCHEMAS[verrijkt.schemaId]?.naam[lang === 'nl' ? 1 : 0] || verrijkt.schemaNaam;
+  const zichtbareTitel = schoonKaartTitel(gebeurtenis.titel);
 
   return (
     <div className='mel-veeg-houder' data-testid={`mel-kaart-${gebeurtenis.id}`}>
@@ -306,7 +345,7 @@ export default function MeldingVeegKaart({
       )}
 
       <article
-        className={`mel-kaart puls-kaart is-niveau-${verrijkt.niveau} is-prio-${gebeurtenis.prioriteit} is-status-${gebeurtenis.status}${geselecteerd ? ' is-geselecteerd' : ''}`}
+        className={`mel-kaart puls-kaart is-niveau-${verrijkt.niveau} is-staat-${kaartStaat} is-prio-${gebeurtenis.prioriteit} is-status-${gebeurtenis.status}${geselecteerd ? ' is-geselecteerd' : ''}`}
         style={offsetX ? { transform: `translate3d(${offsetX}px, 0, 0)` } : undefined}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -322,13 +361,21 @@ export default function MeldingVeegKaart({
 
           <div className='mel-kaart-hoofd'>
             <div className='mel-kaart-meta'>
+              <span
+                className={`puls-schema-chip is-staat-${kaartStaat}`}
+                data-puls-schema={verrijkt.schemaId}
+                data-puls-staat={kaartStaat}
+              >
+                <i className='puls-staat-stip' aria-hidden='true' />
+                <span>{schemaNaam}</span>
+              </span>
               <span className='mel-subdomein-chip puls-onderdeel-chip'>
                 <PulsIcoon soort={verrijkt.anker.icoon} />
                 <span>{subdomeinMenselijkLabel(gebeurtenis.subdomein, lang)}</span>
               </span>
               <span className='mel-kanaal-naam'>{verrijkt.anker.label}</span>
               {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} />}
-              {gebeurtenis.prioriteit !== 'normaal' && gebeurtenis.prioriteit !== 'laag' && (
+              {kaartStaat !== 'goed' && gebeurtenis.prioriteit !== 'normaal' && gebeurtenis.prioriteit !== 'laag' && (
                 <span className={`mel-prio is-${gebeurtenis.prioriteit}`}>
                   {prioriteitLabel(gebeurtenis.prioriteit, lang)}
                 </span>
@@ -353,7 +400,7 @@ export default function MeldingVeegKaart({
               }}
             >
               {gebeurtenis.status === 'nieuw' && <i className='mel-nieuw-stip' aria-hidden='true' />}
-              <strong>{gebeurtenis.titel}</strong>
+              <strong>{zichtbareTitel}</strong>
               <ChevronDown className={`mel-pijl-klap${open ? ' is-open' : ''}`} aria-hidden='true' />
             </button>
 
@@ -433,78 +480,41 @@ export default function MeldingVeegKaart({
         <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
           {verrijkt.gevolgHint ? <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span> : null}
 
-          <div className='puls-actie-groep'>
+          <div className='puls-actie-groep puls-kaart-knoppen-rij'>
             {verrijkt.niveau === 'gevaar' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
               <>
-                {primaireActieHref ? (
-                  <a
-                    href={primaireActieHref}
-                    className='mel-knop puls-knop-gevaar'
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ShieldAlert aria-hidden='true' />
-                    <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
-                  </a>
-                ) : (
-                  <button
-                    type='button'
-                    className='mel-knop puls-knop-gevaar'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpen(true);
-                    }}
-                  >
-                    <ShieldAlert aria-hidden='true' />
-                    <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
-                  </button>
-                )}
-                <button
-                  type='button'
-                  className='mel-knop puls-knop-bevestig'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void onStatus('opgelost');
-                  }}
-                >
-                  <ShieldCheck aria-hidden='true' />
-                  <span>{verrijkt.knoppenPaar?.[1] || t('Це мій вхід', 'Dit was ik')}</span>
-                </button>
+                <IcoonActieKnop
+                  href={primaireActieHref || undefined}
+                  toon='primair-fout'
+                  icoon={<ShieldAlert aria-hidden='true' />}
+                  label={verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}
+                  stopPropagatie
+                  onClick={primaireActieHref ? undefined : () => setOpen(true)}
+                />
+                <IcoonActieKnop
+                  toon='primair-goed'
+                  icoon={<ShieldCheck aria-hidden='true' />}
+                  label={verrijkt.knoppenPaar?.[1] || t('Це мій вхід', 'Dit was ik')}
+                  stopPropagatie
+                  onClick={() => void onStatus('opgelost')}
+                />
               </>
             ) : verrijkt.niveau === 'besluit' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
               <>
-                <button
-                  type='button'
-                  className='mel-knop mel-knop-zacht'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void onStatus('archief');
-                  }}
-                >
-                  <XCircle aria-hidden='true' />
-                  <span>{verrijkt.knoppenPaar?.[0] || t('Відхилити', 'Weigeren')}</span>
-                </button>
-                {primaireActieHref ? (
-                  <a
-                    href={primaireActieHref}
-                    className='mel-knop puls-knop-besluit'
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <KeyRound aria-hidden='true' />
-                    <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
-                  </a>
-                ) : (
-                  <button
-                    type='button'
-                    className='mel-knop puls-knop-besluit'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void onStatus('opgelost');
-                    }}
-                  >
-                    <KeyRound aria-hidden='true' />
-                    <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
-                  </button>
-                )}
+                <IcoonActieKnop
+                  icoon={<XCircle aria-hidden='true' />}
+                  label={verrijkt.knoppenPaar?.[0] || t('Відхилити', 'Weigeren')}
+                  stopPropagatie
+                  onClick={() => void onStatus('archief')}
+                />
+                <IcoonActieKnop
+                  href={primaireActieHref || undefined}
+                  toon='primair-let'
+                  icoon={<KeyRound aria-hidden='true' />}
+                  label={verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}
+                  stopPropagatie
+                  onClick={primaireActieHref ? undefined : () => void onStatus('opgelost')}
+                />
               </>
             ) : (
               <>
@@ -513,85 +523,83 @@ export default function MeldingVeegKaart({
                   .slice(0, 2)
                   .map((actie) => {
                     const veiligeHref = veiligeMeldingUrl(actie.href, 500);
+                    const actieLabel = lang === 'nl' ? actie.labelNl : actie.labelUk;
                     return veiligeHref ? (
-                      <a key={actie.id} href={veiligeHref} className='mel-knop mel-knop-zacht' onClick={(e) => e.stopPropagation()}>
-                        <ExternalLink aria-hidden='true' />
-                        <span>{lang === 'nl' ? actie.labelNl : actie.labelUk}</span>
-                      </a>
-                    ) : (
-                      <button
+                      <IcoonActieKnop
                         key={actie.id}
-                        type='button'
-                        className='mel-knop mel-knop-primair'
+                        href={veiligeHref}
+                        icoon={<ExternalLink aria-hidden='true' />}
+                        label={actieLabel}
+                        stopPropagatie
+                      />
+                    ) : (
+                      <IcoonActieKnop
+                        key={actie.id}
+                        toon='primair-let'
                         disabled={uitvoerBezig === actie.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void voerActie(actie);
-                        }}
-                      >
-                        <Check aria-hidden='true' />
-                        <span>{lang === 'nl' ? actie.labelNl : actie.labelUk}</span>
-                      </button>
+                        icoon={<Zap aria-hidden='true' />}
+                        label={actieLabel}
+                        stopPropagatie
+                        onClick={() => void voerActie(actie)}
+                      />
                     );
                   })}
 
                 {!gebeurtenis.acties.some((a) => a.href) && paginaLink && (
-                  <a href={paginaLink} className='mel-knop mel-knop-zacht' onClick={(e) => e.stopPropagation()}>
-                    <ExternalLink aria-hidden='true' />
-                    <span>{t('Перейти', 'Openen')}</span>
-                  </a>
+                  <IcoonActieKnop
+                    href={paginaLink}
+                    icoon={<ExternalLink aria-hidden='true' />}
+                    label={t('Перейти до сторінки', 'Pagina openen')}
+                    stopPropagatie
+                  />
                 )}
 
                 {gebeurtenis.bijlagen.length > 0 && inlineBijlageIdx === null && (
-                  <button
-                    type='button'
-                    className='mel-knop mel-knop-zacht'
-                    onClick={(e) => {
-                      e.stopPropagation();
+                  <IcoonActieKnop
+                    icoon={<Paperclip aria-hidden='true' />}
+                    teller={gebeurtenis.bijlagen.length > 1 ? gebeurtenis.bijlagen.length : undefined}
+                    label={t('Переглянути вкладення тут', 'Bijlage hier bekijken')}
+                    stopPropagatie
+                    onClick={() => {
                       setOpen(true);
                       setInlineBijlageIdx(0);
                     }}
-                  >
-                    <Eye aria-hidden='true' />
-                    <span>{t('Переглянути тут', 'Hier bekijken')}</span>
-                  </button>
+                  />
                 )}
               </>
             )}
 
-            <button
-              type='button'
-              className={`mel-knop mel-knop-zacht${aiOpen ? ' is-actief' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
+            <IcoonActieKnop
+              toon={aiOpen ? 'actief' : 'standaard'}
+              icoon={<Bot aria-hidden='true' />}
+              label={t('Швидкий розбір ШІ', 'Snelle AI-duiding')}
+              aria-pressed={aiOpen}
+              stopPropagatie
+              data-qa-id='puls-kaart-ai'
+              onClick={() => {
                 setOpen(true);
                 setAiOpen((v) => !v);
               }}
-            >
-              <Bot aria-hidden='true' />
-              <span>{t('ШІ', 'AI')}</span>
-            </button>
+            />
 
             {gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
               <>
                 <div className='puls-uitstel-anker'>
-                  <button
-                    type='button'
-                    className='mel-ikoon-knop'
+                  <IcoonActieKnop
+                    toon={uitstelMenuOpen ? 'actief' : 'standaard'}
+                    icoon={<Clock3 aria-hidden='true' />}
+                    label={t('Відкласти за умовою або часом', 'Uitstellen op voorwaarde of tijd')}
+                    ariaLabel={t('Розумне відкладення за умовою', 'Slim voorwaardelijk uitstel')}
                     aria-expanded={uitstelMenuOpen}
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    stopPropagatie
+                    onClick={() => {
                       if (onVoorwaardelijkUitstel) {
                         setUitstelMenuOpen((v) => !v);
                       } else {
                         void onStatus('uitgesteld', 30);
                       }
                     }}
-                    aria-label={t('Розумне відкладення за умовою', 'Slim voorwaardelijk uitstel')}
-                    title={t('Відкласти за умовою або часом (S)', 'Uitstellen op voorwaarde of tijd (S)')}
-                  >
-                    <Clock3 aria-hidden='true' />
-                  </button>
+                  />
                   {uitstelMenuOpen && onVoorwaardelijkUitstel ? (
                     <PulsUitstelMenu
                       lang={lang}
@@ -603,87 +611,53 @@ export default function MeldingVeegKaart({
                     />
                   ) : null}
                 </div>
-                <button
-                  type='button'
-                  className='mel-ikoon-knop'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void onStatus('opgelost');
-                  }}
-                  aria-label={t('Позначити виконаним', 'Als opgelost markeren')}
-                  title={t('Позначити виконаним', 'Als opgelost markeren')}
-                >
-                  <CheckCheck aria-hidden='true' />
-                </button>
-                <button
-                  type='button'
-                  className='mel-ikoon-knop'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void onStatus('archief');
-                  }}
-                  aria-label={t('Перенести в архів', 'Archiveren')}
-                  title={t('Перенести в архів (E)', 'Archiveren (E)')}
-                >
-                  <Archive aria-hidden='true' />
-                </button>
+                <IcoonActieKnop
+                  icoon={<CheckCheck aria-hidden='true' />}
+                  label={t('Позначити виконаним', 'Als opgelost markeren')}
+                  stopPropagatie
+                  onClick={() => void onStatus('opgelost')}
+                />
+                <IcoonActieKnop
+                  icoon={<Archive aria-hidden='true' />}
+                  label={t('Перенести в архів', 'Archiveren')}
+                  stopPropagatie
+                  onClick={() => void onStatus('archief')}
+                />
               </>
             ) : gebeurtenis.status === 'opgelost' ? (
-              <button
-                type='button'
-                className='mel-knop mel-knop-zacht'
+              <IcoonActieKnop
+                icoon={<RotateCcw aria-hidden='true' />}
+                label={t('Знову відкрити', 'Opnieuw openen')}
                 data-mel-heropenen='1'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void onStatus('nieuw');
-                }}
-              >
-                <RotateCcw aria-hidden='true' />
-                <span>{t('Знову відкрити', 'Opnieuw openen')}</span>
-              </button>
+                stopPropagatie
+                onClick={() => void onStatus('nieuw')}
+              />
             ) : (
-              <button
-                type='button'
-                className='mel-knop mel-knop-zacht'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void onStatus('gelezen');
-                }}
-              >
-                <RotateCcw aria-hidden='true' />
-                <span>{t('Повернути з архіву', 'Uit archief terugzetten')}</span>
-              </button>
+              <IcoonActieKnop
+                icoon={<RotateCcw aria-hidden='true' />}
+                label={t('Повернути з архіву', 'Uit archief terugzetten')}
+                stopPropagatie
+                onClick={() => void onStatus('gelezen')}
+              />
             )}
 
             {gebeurtenis.status === 'nieuw' && (
-              <button
-                type='button'
-                className='mel-ikoon-knop'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void onStatus('gelezen');
-                }}
-                aria-label={t('Позначити прочитаним', 'Als gelezen markeren')}
-                title={t('Позначити прочитаним', 'Als gelezen markeren')}
-              >
-                <Check aria-hidden='true' />
-              </button>
+              <IcoonActieKnop
+                icoon={<Check aria-hidden='true' />}
+                label={t('Позначити прочитаним', 'Als gelezen markeren')}
+                stopPropagatie
+                onClick={() => void onStatus('gelezen')}
+              />
             )}
 
             {gebeurtenis.status === 'gelezen' && (
-              <button
-                type='button'
-                className='mel-ikoon-knop'
+              <IcoonActieKnop
+                icoon={<BellDot aria-hidden='true' />}
+                label={t('Позначити як непрочитане', 'Als ongelezen markeren')}
                 data-mel-ongelezen='1'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void onStatus('nieuw');
-                }}
-                aria-label={t('Позначити як непрочитане', 'Als ongelezen markeren')}
-                title={t('Позначити як непрочитане', 'Als ongelezen markeren')}
-              >
-                <BellDot aria-hidden='true' />
-              </button>
+                stopPropagatie
+                onClick={() => void onStatus('nieuw')}
+              />
             )}
           </div>
         </div>

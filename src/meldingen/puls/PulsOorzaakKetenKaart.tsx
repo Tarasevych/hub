@@ -8,18 +8,25 @@ import {
   CheckCheck,
   ChevronDown,
   Clock3,
-  ExternalLink,
   Network,
   RefreshCw,
 } from 'lucide-react';
 import { veiligeMeldingUrl, type MeldingEcosysteemGebeurtenis, type MeldingGebeurtenisStatus } from '../../../shared/meldingen-ecosysteem';
 import type { PulsOorzaakKeten, Taal, VoorwaardelijkUitstelSoort } from '../../../shared/meldingen-puls/kern';
 import { groepeerOorzaakGevolgen, verrijkGebeurtenisVoorPuls } from '../../../shared/meldingen-puls/kern';
+import IcoonActieKnop from '../IcoonActieKnop';
 import { PulsBronTeken, PulsDienstChip, PulsKlimopZegel, PulsUitstelMenu } from './PulsVisueelAnker';
+
+function schoonKetenTitel(titel: string): string {
+  const schoon = titel
+    .replace(/^(?:[\u2705\u26A0\u26D4\u2757\u{1F6A8}\u{1F4CD}\u{1F5BC}\u{1F514}\u{1F512}\u{1F511}]\uFE0F?\s*)+/u, '')
+    .trim();
+  return schoon || titel;
+}
 
 type Props = {
   lang: Taal;
-  keten: PulsOorzaakKeten;
+  keten: PulsOorzaakKeten & { herstelActieLabel?: string };
   geselecteerd?: boolean;
   onSelect: (wortel: MeldingEcosysteemGebeurtenis) => void;
   onHerstelKeten: (keten: PulsOorzaakKeten, status: MeldingGebeurtenisStatus, uitstelSoort?: VoorwaardelijkUitstelSoort) => void;
@@ -45,6 +52,7 @@ export default function PulsOorzaakKetenKaart({
     keten.wortel.acties.map((a) => veiligeMeldingUrl(a.href, 500)).find(Boolean) ||
     veiligeMeldingUrl(keten.wortel.meta?.link, 500) ||
     '';
+  const herstelLabel = keten.herstelActieLabel || t('Відновити вхід', 'Aanmelding herstellen');
 
   return (
     <div className='mel-veeg-houder puls-keten-houder' data-puls-keten={keten.sleutel}>
@@ -64,7 +72,7 @@ export default function PulsOorzaakKetenKaart({
             </div>
 
             <div className='puls-keten-titel-rij'>
-              <strong>{keten.wortelTitel}</strong>
+              <strong>{schoonKetenTitel(keten.wortelTitel)}</strong>
             </div>
           </div>
         </div>
@@ -90,32 +98,34 @@ export default function PulsOorzaakKetenKaart({
             {t('Одне підтвердження закриє всі пов’язані збої', 'Één bevestiging sluit alle verbonden meldingen')}
           </span>
 
-          <div className='puls-actie-groep'>
-            {primaireHref ? (
-              <a
-                href={primaireHref}
-                className='mel-knop puls-knop-oorzaak'
-                onClick={(e) => e.stopPropagation()}
-              >
-                <RefreshCw aria-hidden='true' />
-                <span>{t('Відновити вхід', 'Toegang herstellen')}</span>
-                <ExternalLink aria-hidden='true' />
-              </a>
-            ) : null}
+          <div className='puls-actie-groep puls-keten-acties'>
+            <IcoonActieKnop
+              href={primaireHref || undefined}
+              toon='primair-let'
+              icoon={<RefreshCw aria-hidden='true' />}
+              label={herstelLabel}
+              stopPropagatie
+              data-qa-id='puls-keten-herstel'
+              onClick={
+                primaireHref
+                  ? undefined
+                  : () => {
+                      onSelect(keten.wortel);
+                      setToonAlleLeden(true);
+                    }
+              }
+            />
 
             <div className='puls-uitstel-anker'>
-              <button
-                type='button'
-                className='mel-knop mel-knop-zacht'
+              <IcoonActieKnop
+                toon={uitstelOpen ? 'actief' : 'standaard'}
+                icoon={<Clock3 aria-hidden='true' />}
+                label={t('Відкласти до відновлення (умова)', 'Uitstellen op voorwaarde')}
                 aria-expanded={uitstelOpen}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setUitstelOpen((v) => !v);
-                }}
-              >
-                <Clock3 aria-hidden='true' />
-                <span>{t('Умова', 'Voorwaarde')}</span>
-              </button>
+                stopPropagatie
+                data-qa-id='puls-keten-uitstel'
+                onClick={() => setUitstelOpen((v) => !v)}
+              />
               {uitstelOpen ? (
                 <PulsUitstelMenu
                   lang={lang}
@@ -128,44 +138,37 @@ export default function PulsOorzaakKetenKaart({
               ) : null}
             </div>
 
-            <button
-              type='button'
-              className='mel-knop mel-knop-zacht'
-              onClick={(e) => {
-                e.stopPropagation();
-                onHerstelKeten(keten, 'opgelost');
-              }}
-              title={t('Позначити весь ланцюжок вирішеним', 'Hele keten als opgelost markeren')}
-            >
-              <CheckCheck aria-hidden='true' />
-              <span>{t('Вирішено', 'Opgelost')}</span>
-            </button>
+            <IcoonActieKnop
+              icoon={<CheckCheck aria-hidden='true' />}
+              label={t('Позначити весь ланцюг вирішеним', 'Hele keten als opgelost markeren')}
+              stopPropagatie
+              data-qa-id='puls-keten-opgelost'
+              onClick={() => onHerstelKeten(keten, 'opgelost')}
+            />
 
-            <button
-              type='button'
-              className='mel-ikoon-knop'
-              onClick={(e) => {
-                e.stopPropagation();
-                onHerstelKeten(keten, 'archief');
-              }}
-              aria-label={t('Архівувати ланцюжок', 'Keten archiveren')}
-              title={t('Архівувати ланцюжок', 'Keten archiveren')}
-            >
-              <Archive aria-hidden='true' />
-            </button>
+            <IcoonActieKnop
+              icoon={<Archive aria-hidden='true' />}
+              label={t('Перенести ланцюг в архів', 'Keten archiveren')}
+              stopPropagatie
+              data-qa-id='puls-keten-archief'
+              onClick={() => onHerstelKeten(keten, 'archief')}
+            />
 
-            <button
-              type='button'
-              className='mel-knop mel-knop-zacht'
+            <IcoonActieKnop
+              className='puls-keten-rechts'
+              toon={toonAlleLeden ? 'actief' : 'standaard'}
+              icoon={<ChevronDown className={`mel-pijl-klap${toonAlleLeden ? ' is-open' : ''}`} aria-hidden='true' />}
+              teller={keten.alleIds.length}
+              label={
+                toonAlleLeden
+                  ? t(`Сховати пов’язані події (${keten.alleIds.length})`, `Gekoppelde gebeurtenissen verbergen (${keten.alleIds.length})`)
+                  : t(`Показати пов’язані події (${keten.alleIds.length})`, `Gekoppelde gebeurtenissen tonen (${keten.alleIds.length})`)
+              }
               aria-expanded={toonAlleLeden}
-              onClick={(e) => {
-                e.stopPropagation();
-                setToonAlleLeden((v) => !v);
-              }}
-            >
-              <ChevronDown className={`mel-pijl-klap${toonAlleLeden ? ' is-open' : ''}`} aria-hidden='true' />
-              <span>{t(`Події (${keten.alleIds.length})`, `Items (${keten.alleIds.length})`)}</span>
-            </button>
+              stopPropagatie
+              data-qa-id='puls-keten-leden-knop'
+              onClick={() => setToonAlleLeden((v) => !v)}
+            />
           </div>
         </div>
 
