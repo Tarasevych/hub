@@ -178,8 +178,8 @@ export async function main(): Promise<number> {
       'src/sessies/niet-ik-actie.ts',
       'src/accountmenu-v3/AccountMenuV3Instellingen.tsx',
     ];
-    const russischeTekens = gecontroleerdeBestanden.filter((p) => /[ЁёЪъЫыЭэ]/.test(lees(p)));
-    check('у жодному зі створених чи оновлених файлів Віхи M2 немає заборонених літер [ЁёЪъЫыЭэ]', russischeTekens.length === 0, russischeTekens.join(', '));
+    const russischeTekens = gecontroleerdeBestanden.filter((p) => /[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/.test(lees(p)));
+    check('у жодному зі створених чи оновлених файлів Віхи M2 немає заборонених російських літер', russischeTekens.length === 0, russischeTekens.join(', '));
   } finally {
     globalThis.fetch = echteFetch;
     if (oudeEnvSchaduw === undefined) delete process.env.TECH_RUIMTES_V2_SCHADUW;
