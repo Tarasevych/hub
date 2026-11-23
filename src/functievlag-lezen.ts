@@ -15,6 +15,23 @@ const luisteraars = new Set<() => void>();
 
 const meldLuisteraars = () => { luisteraars.forEach((f) => f()); };
 
+function wisVlagOpslag(): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const sleutels: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith('mr-vlag:')) sleutels.push(k);
+    }
+    for (const k of sleutels) sessionStorage.removeItem(k);
+  } catch { /* поза оглядачем або сховище недоступне */ }
+}
+
+function stuurVernieuwdEvent(): void {
+  wisVlagOpslag();
+  try { window.dispatchEvent(new CustomEvent('mr:vlaggen-vernieuwd', { detail: { intern: true } })); } catch { /* поза оглядачем */ }
+}
+
 /** Alle vlaggen voor deze gebruiker. Bij een fout of zonder sessie: leeg (alles «uit»), nooit een kapotte pagina of verzoeklus. */
 export function laadVlaggen(opnieuw = false): Promise<Map<string, Uitkomst>> {
   if (gebruikerId === null || (gebruikerId === undefined && typeof window !== 'undefined' && geenSessieVerwacht(location.pathname, ecosystemSessionHint()))) {
@@ -36,25 +53,41 @@ export function vlaggenGebruiker(userId: string | null): void {
   if (nieuw === gebruikerId) return;
   gebruikerId = nieuw;
   bezig = null;
+  wisVlagOpslag();
   if (nieuw === null) {
     cache = new Map();
     meldLuisteraars();
-    try { window.dispatchEvent(new CustomEvent('mr:vlaggen-vernieuwd')); } catch { /* поза оглядачем */ }
+    stuurVernieuwdEvent();
     return;
   }
   cache = null;
   if (luisteraars.size > 0) {
     void laadVlaggen(true).then(() => {
-      try { window.dispatchEvent(new CustomEvent('mr:vlaggen-vernieuwd')); } catch { /* поза оглядачем */ }
+      stuurVernieuwdEvent();
     });
+  } else {
+    stuurVernieuwdEvent();
   }
 }
 
 /** Na een wijziging in het venster: nieuwe waarden ophalen, alle pagina's bijwerken. */
-export const vlaggenVernieuwen = () => laadVlaggen(true).then((m) => {
-  try { window.dispatchEvent(new CustomEvent('mr:vlaggen-vernieuwd')); } catch { /* поза оглядачем */ }
-  return m;
-});
+export const vlaggenVernieuwen = () => {
+  wisVlagOpslag();
+  return laadVlaggen(true).then((m) => {
+    stuurVernieuwdEvent();
+    return m;
+  });
+};
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', (e: Event) => {
+    if ((e as CustomEvent<{ intern?: boolean }>)?.detail?.intern) return;
+    wisVlagOpslag();
+    cache = null;
+    bezig = null;
+    if (luisteraars.size > 0) void laadVlaggen(true);
+  });
+}
 
 /** Чи вже відомі прапорці (навіть після помилки — тоді всі «вимкнені»). Is de vlaggenlijst al opgehaald (ook na een fout)? */
 export const vlaggenBekend = () => cache !== null;

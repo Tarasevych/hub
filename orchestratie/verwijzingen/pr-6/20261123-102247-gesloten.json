@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 6,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:47.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі модулі та міграції 0043–0044 жовтневої серії повністю увійшли в основу гілки integratie.",
+    "nl": "Alle modules en migraties 0043–0044 uit deze reeks zitten al volledig in de basis van integratie."
+  },
+  "titel": {
+    "uk": "Дошка ШІ-агентів, перемикачі сайту, гранулярні дозволи та переклад листів",
+    "nl": "AI-agentenbord, siteschakelaars, fijnmazige rechten en berichtvertaling"
+  },
+  "laatsteCommit": "739fde5d8e6ae8db1105b91b59bcb7b98488b3ed",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

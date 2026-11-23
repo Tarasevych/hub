@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 104,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:15.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Вершина гілки 027324eb уже на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "De top 027324eb is al een directe voorouder van de canonieke tak integratie."
+  },
+  "titel": {
+    "uk": "TELEGRAM-003: кольорові піктограми за змістом (96 у наборі, без повторів, три в ряд)",
+    "nl": "TELEGRAM-003: inhoudelijk gekleurde pictogrammen (96 stuks, zonder herhaling, drie op een rij)"
+  },
+  "laatsteCommit": "027324eb3980b8717437b725d416a2ae4130d50e",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "TELEGRAM-003",
+    "CONSOL-001"
+  ]
+}

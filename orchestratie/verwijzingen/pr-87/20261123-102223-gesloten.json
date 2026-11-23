@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 87,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:23.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Випускна гілка 949cf178 на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "Uitgavetak 949cf178 is al een directe voorouder van de canonieke tak integratie."
+  },
+  "titel": {
+    "uk": "GEMINI-001: права панель якорів, вікно меню облікових записів, групування користувачів та адаптивність",
+    "nl": "GEMINI-001: rechter ankerpaneel, accountmenuportaal, gebruikersgroepering en responsiviteit"
+  },
+  "laatsteCommit": "949cf1787cf941e85f4433965269b38b24918f77",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "GEMINI-001",
+    "CONSOL-001"
+  ]
+}

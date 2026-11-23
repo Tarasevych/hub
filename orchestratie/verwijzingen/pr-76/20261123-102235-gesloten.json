@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 76,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:35.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Документ плану побайтово присутній у гілці integratie, а етапи IDENTITEIT-011..015 повністю втілені.",
+    "nl": "Het plandocument staat al identiek op integratie en de fasen IDENTITEIT-011..015 zijn volledig uitgevoerd."
+  },
+  "titel": {
+    "uk": "IDENTITEIT-011: план доопрацювання вигляду «Макет» центру облікового запису",
+    "nl": "IDENTITEIT-011: uitwerkingsplan voor weergave «Ontwerp» van het accountcentrum"
+  },
+  "laatsteCommit": "7ae8c40350f421795ec3a1f295ed9c354b5632be",
+  "opgenomenIn": "IDENTITEIT-015",
+  "taken": [
+    "IDENTITEIT-011",
+    "IDENTITEIT-015",
+    "CONSOL-001"
+  ]
+}

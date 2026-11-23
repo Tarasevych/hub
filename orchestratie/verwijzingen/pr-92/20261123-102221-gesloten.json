@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 92,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:21.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі зміни гілки d3461d75 на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "Alle wijzigingen van d3461d75 zijn al directe voorouders van integratie."
+  },
+  "titel": {
+    "uk": "Усунення дублікатів і зайвих блоків переходів у центрі облікового запису",
+    "nl": "Verwijderen van dubbele blokken en overbodige verwijsstroken in het accountcentrum"
+  },
+  "laatsteCommit": "d3461d755083e221d8901386608404d686ff1c7b",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

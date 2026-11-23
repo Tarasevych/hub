@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 134,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:11.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі фіксації змін спільного випуску UPD-002 вже на 100% є прямими предками integratie.",
+    "nl": "Alle vastleggingen van UPD-002 zijn al directe voorouders van integratie."
+  },
+  "titel": {
+    "uk": "UPD-002: спільне оновлення навичок агентів, приймання випусків, потоку пам’яті та вигляду",
+    "nl": "UPD-002: gezamenlijke uitgave voor agentvaardigheden, uitgave-ontvangst, geheugenstroom en vormgeving"
+  },
+  "laatsteCommit": "bf1571454017f1154fc0fb8625a93cdb17f6a073",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "UPD-002",
+    "CONSOL-001"
+  ]
+}

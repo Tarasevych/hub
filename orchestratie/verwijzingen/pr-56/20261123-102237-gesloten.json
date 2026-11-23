@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 56,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:37.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Міграція 0200 та журнал розробки вже побайтово застосовані в integratie через злитий запит №50.",
+    "nl": "Migratie 0200 en het ontwikkeldossier zijn via samenvoegingsverzoek nr. 50 al identiek opgenomen in integratie."
+  },
+  "titel": {
+    "uk": "IDENTITEIT-007: узгодження довжини опису перемикача в міграції 0200 з обмеженням таблиці (до 300 знаків)",
+    "nl": "IDENTITEIT-007: lengte van vlagomschrijving in migratie 0200 binnen tabelgrens van 300 tekens"
+  },
+  "laatsteCommit": "e0c8007fc4ec0011267e2d2c84015ba7f024d347",
+  "opgenomenIn": "№50",
+  "taken": [
+    "IDENTITEIT-007",
+    "CONSOL-001"
+  ]
+}

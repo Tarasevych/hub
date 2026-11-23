@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 126,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:12.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Вершина гілки c2455387 на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "De top c2455387 is al volledig voorouder van de canonieke tak integratie."
+  },
+  "titel": {
+    "uk": "Вікно підтвердження доступу з детальним описом кожної дії",
+    "nl": "Bevestigingsvenster met duidelijke beschrijving van elke handeling"
+  },
+  "laatsteCommit": "c24553872d48a1364aa6b47f923b4b97de183528",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "UPD-002",
+    "CONSOL-001"
+  ]
+}

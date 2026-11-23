@@ -16,14 +16,17 @@ import { api } from '../platform/client';
 import { routeLang, serviceFromLocation } from '../canoniek-navigatie';
 import { ecosystemTabContext } from '../tab-context';
 import { zijbalkServerDienst } from '../zijbalk-voorkeuren';
-import { SLEUTEL_RE, VLAG_UITLEG, type Uitkomst } from '../../shared/vlaggen';
+import { moetVlagOpruimen, OPRUIMEN_NA_DAGEN, OPRUIMEN_NA_MS, SLEUTEL_RE, VLAG_UITLEG, type Uitkomst } from '../../shared/vlaggen';
 import { vlaggenVernieuwen } from './vlaggen-api';
 import './vlaggen.css';
+
+export { moetVlagOpruimen, OPRUIMEN_NA_DAGEN, OPRUIMEN_NA_MS };
 
 const body = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 type Rij = {
   sleutel: string; omschrijving: string; aan: boolean; standaard: boolean; percentage: number; gebruikers: string[]; aantalGebruikers: number;
   voorMij: Uitkomst; mijnTest: boolean | null; mijnTestTot?: number | null; ikInLijst?: boolean; alleenIk?: boolean; voorIedereen?: boolean; gearchiveerd?: boolean;
+  gearchiveerd_op?: string | null;
 };
 type Lijst = { magBeheren: boolean; magTesten: boolean; testTot: number; rollen?: string[]; eigenaar?: boolean; vlaggen: Rij[] };
 type Stand = 'uit' | 'mij' | 'lijst' | 'deel' | 'alle';
@@ -165,7 +168,7 @@ export default function VlaggenVenster({ sluit }: { sluit: () => void }) {
             {zichtbaar.length === 0 ? <p className='vlag-leeg'>{zoek ? T(uk, 'Нічого не знайдено.', 'Niets gevonden.') : tab === 'archief' ? T(uk, 'В архіві поки нічого.', 'Nog niets in het archief.') : tab === 'alle' ? T(uk, 'Поки жодна функція не ввімкнена для всіх.', 'Nog geen functie voor iedereen aan.') : T(uk, 'Тут поки порожньо.', 'Hier is nog niets.')}</p> : (
               <ul className='vlag-rijen' data-vlaggen-lijst='1'>
                 {zichtbaar.map((v) => {
-                  const s = standVan(v); const ik = bezig === v.sleutel;
+                  const s = standVan(v); const ik = bezig === v.sleutel; const opruimen = moetVlagOpruimen(v);
                   return (
                     <li key={v.sleutel} className='vlag-rij' data-vlag={v.sleutel} data-vlag-stand={s}>
                       <button type='button' className='vlag-rij-hoofd' onClick={() => setOpen(v.sleutel)} data-vlag-knop='openen' aria-label={`${naamVan(v, uk)}: ${T(uk, 'налаштувати', 'instellen')}`}>
@@ -177,6 +180,11 @@ export default function VlaggenVenster({ sluit }: { sluit: () => void }) {
                         aria-label={s === 'alle' ? T(uk, `Вимкнути «${naamVan(v, uk)}» для всіх`, `«${naamVan(v, uk)}» voor iedereen uitzetten`) : T(uk, `Увімкнути «${naamVan(v, uk)}» для всіх`, `«${naamVan(v, uk)}» voor iedereen aanzetten`)}
                         onClick={() => setVraag({ sleutel: v.sleutel, stand: s === 'alle' ? 'uit' : 'alle' })} data-vlag-tuimel={s === 'alle' ? 'aan' : 'uit'}><span /></button>
                       <ChevronRight className='vlag-pijl' aria-hidden='true' />
+                      {opruimen ? (
+                        <span className='vlag-opruimen' data-vlag-opruimen='VLAG_OPRUIMEN'>
+                          <b>VLAG_OPRUIMEN</b> · {T(uk, 'Перевірено понад 30 днів тому — готово до переведення у постійний стан коду', 'Meer dan 30 dagen geleden bevestigd — klaar om vast in de code op te nemen')}
+                        </span>
+                      ) : null}
                       {melding?.sleutel === v.sleutel && !open ? <span className={melding.goed ? 'vlag-toast' : 'vlag-fout'} role={melding.goed ? 'status' : 'alert'} data-vlag-melding={melding.goed ? 'gelukt' : 'fout'}>{melding.tekst}</span> : null}
                     </li>
                   );
@@ -309,7 +317,14 @@ function Lade({ v, uk, lijst, tot, bezig, melding, doe, sluit }: {
 
       {mag && (huidig === 'alle' || v.gearchiveerd) ? (
         <section className='vlag-blok is-rij'>
-          <p className='vlag-klein'>{v.gearchiveerd ? T(uk, 'Ця функція в архіві й увімкнена для всіх.', 'Deze functie staat in het archief en is voor iedereen aan.') : T(uk, 'Готово для всіх? Приберіть з очей — функція лишиться ввімкненою.', 'Klaar voor iedereen? Haal het uit beeld — de functie blijft aan.')}</p>
+          <div>
+            <p className='vlag-klein'>{v.gearchiveerd ? T(uk, 'Ця функція в архіві й увімкнена для всіх.', 'Deze functie staat in het archief en is voor iedereen aan.') : T(uk, 'Готово для всіх? Приберіть з очей — функція лишиться ввімкненою.', 'Klaar voor iedereen? Haal het uit beeld — de functie blijft aan.')}</p>
+            {moetVlagOpruimen(v) ? (
+              <p className='vlag-opruimen' data-vlag-opruimen-lade='VLAG_OPRUIMEN'>
+                <b>VLAG_OPRUIMEN</b> · {T(uk, 'Перевірено понад 30 днів тому — готово до переведення у постійний стан коду', 'Meer dan 30 dagen geleden bevestigd — klaar om vast in de code op te nemen')}
+              </p>
+            ) : null}
+          </div>
           <button type='button' className='vlag-knop' disabled={ik} onClick={() => void doe(v.sleutel, '/api/beheer/flags/archief', { sleutel: v.sleutel, inArchief: !v.gearchiveerd })} data-vlag-knop={v.gearchiveerd ? 'uit-archief' : 'archief'}>{v.gearchiveerd ? T(uk, 'Повернути з архіву', 'Terug uit archief') : T(uk, 'У архів', 'Naar archief')}</button>
         </section>
       ) : null}

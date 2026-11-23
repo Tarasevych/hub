@@ -124,7 +124,12 @@ export async function main(): Promise<number> {
     await pool.query(`update app.records set data = data || $2::jsonb where tbl='users' and id=$1`, [id, JSON.stringify({ status: 'approved', name: `Проба ${naam}` })]);
     return { b, email, id, sub };
   };
-  const vlagZet = (sleutel: string, aan: boolean, gebruikers: string[]) => pool.query('UPDATE app.feature_flags SET aan = $2, standaard = false, percentage = 0, gebruikers = $3 WHERE sleutel = $1', [sleutel, aan, gebruikers]);
+  const vlagZet = async (sleutel: string, aan: boolean, gebruikers: string[]) => {
+    const r = await pool.query('UPDATE app.feature_flags SET aan = $2, standaard = false, percentage = 0, gebruikers = $3 WHERE sleutel = $1', [sleutel, aan, gebruikers]);
+    const { vlagGeheugenLeeg } = await import('../../backend/vlaggen');
+    vlagGeheugenLeeg();
+    return r;
+  };
   const ctx = (b: Browser, extra: Record<string, unknown> = {}) => ({ service: 'identity', tabContext: b.tab, sourceOrigin: 'https://id.tarasevych.com', returnTo: 'https://id.tarasevych.com/', locale: 'uk', remember: false, ...extra });
   // Власна IP-адреса на кожен запуск: ліміти на IP (rateLimit, вікно 10 хв) не накопичуються між запусками тесту.
   const IP = `198.51.100.${1 + Math.floor(Math.random() * 250)}`;

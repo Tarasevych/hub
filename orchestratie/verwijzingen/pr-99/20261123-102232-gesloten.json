@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 99,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:32.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Основа бібліотеки навичок на 100% увійшла до UPD-002 і розвинута до повного набору в integratie.",
+    "nl": "De basis van de vaardighedenbibliotheek is via UPD-002 volledig opgenomen en uitgebreid op integratie."
+  },
+  "titel": {
+    "uk": "VAARD-001: перші чотири спільні навички агентів та каталог автоматичного добору",
+    "nl": "VAARD-001: eerste vier gedeelde agentvaardigheden en keuzecatalogus"
+  },
+  "laatsteCommit": "30a9f5ff95f6be5876bffae2059fc349d5457c56",
+  "opgenomenIn": "UPD-002",
+  "taken": [
+    "VAARD-001",
+    "UPD-002",
+    "CONSOL-001"
+  ]
+}

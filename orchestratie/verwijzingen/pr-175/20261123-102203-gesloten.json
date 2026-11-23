@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 175,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:03.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі 100% фіксацій змін уже є прямим предком гілки integratie; окреме злиття у voornaamst не потрібне.",
+    "nl": "Alle vastleggingen zijn al voorouder van integratie; afzonderlijke samenvoeging in voornaamst is overbodig."
+  },
+  "titel": {
+    "uk": "UPD-006: центрування панелі оновлення, 96 кольорових піктограм підтвердження та безпечна верстка телефону",
+    "nl": "UPD-006: centrering van het updatepaneel, 96 gekleurde bevestigingspictogrammen en veilige mobiele opmaak"
+  },
+  "laatsteCommit": "210519f707830bc07b804813d8ed3548245d02c8",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "UPD-006",
+    "MOBIEL-002",
+    "CONSOL-001"
+  ]
+}

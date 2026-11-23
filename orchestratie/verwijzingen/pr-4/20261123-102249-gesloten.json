@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 4,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:49.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Міграція 0042_ai_ruimte.sql та шлюз ai-ruimte-poort.ts є фундаментальною частиною основи integratie.",
+    "nl": "Migratie 0042_ai_ruimte.sql en ai-ruimte-poort.ts vormen al het fundament van de ruimtescheiding op integratie."
+  },
+  "titel": {
+    "uk": "Розділення на особистий та технічний вебпростори облікового запису",
+    "nl": "Scheiding tussen persoonlijke en technische webruimte van het account"
+  },
+  "laatsteCommit": "b76f17dffd6fde0066d40d2397260f519e0cd078",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "CONSOL-001"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 154,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:09.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Вершина гілки dcfe31a4 вже на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "De top dcfe31a4 is al een directe voorouder van de canonieke tak integratie."
+  },
+  "titel": {
+    "uk": "База знаків місць, постачальників зв’язку, мереж, виробників і ключів доступу",
+    "nl": "Register van plaatstekens, netwerkaanbieders, fabrikanten en toegangssleutels"
+  },
+  "laatsteCommit": "dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "UPD-005",
+    "CONSOL-001"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 162,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:05.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Увесь вміст гілки вже на 100% є прямим предком канонічної гілки integratie.",
+    "nl": "De volledige inhoud van de tak is al een directe voorouder van de canonieke tak integratie."
+  },
+  "titel": {
+    "uk": "UPD-005: спільний випуск оновлень поверх версії 20261117-190154",
+    "nl": "UPD-005: gezamenlijke uitgave boven op versie 20261117-190154"
+  },
+  "laatsteCommit": "cab0acb9e23ceef5d17515bac5eba2f065101750",
+  "opgenomenIn": "integratie",
+  "taken": [
+    "UPD-005",
+    "CONSOL-001"
+  ]
+}

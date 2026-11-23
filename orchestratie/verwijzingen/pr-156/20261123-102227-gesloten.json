@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 156,
+  "gebeurtenis": "gesloten",
+  "tijd": "2026-11-23T10:22:27.000Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "antigravity",
+    "model": "Claude Opus 4.6"
+  },
+  "waarom": {
+    "uk": "Усі 100% можливостей і міграція 0301_tech_snelkoppelingen.sql вже перенесені до гілки integratie через UPD-005.",
+    "nl": "Alle mogelijkheden en migratie 0301_tech_snelkoppelingen.sql zijn via UPD-005 al opgenomen in integratie."
+  },
+  "titel": {
+    "uk": "FIX-001: перемикання облікових записів, сповіщення меню та ярлики технічного профілю",
+    "nl": "FIX-001: wisselen van accounts, menumeldingen en snelkoppelingen van het technisch profiel"
+  },
+  "laatsteCommit": "abd32f84ea6382e09f42f8deed06572a55bb255a",
+  "opgenomenIn": "UPD-005",
+  "taken": [
+    "FIX-001",
+    "UPD-005",
+    "CONSOL-001"
+  ]
+}
