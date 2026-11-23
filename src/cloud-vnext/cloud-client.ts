@@ -7,7 +7,7 @@ import { sessieDienst } from '../canoniek-navigatie';
 import type {
   CloudArchiefIngang, CloudBestand, CloudDeelBereik, CloudDeelDagStat, CloudDeelDeelSoort,
   CloudDeelDoelSoort, CloudDeelGebeurtenis, CloudDeelKoppeling, CloudDeelModus, CloudDeelOntvanger,
-  CloudDeelRechten, CloudGedeeldMetMij, CloudMap, CloudSoort, CloudSortering, CloudVersie,
+  CloudDeelRechten, CloudGedeeldMetMij, CloudMap, CloudSoort, CloudSortering, CloudVersie, CloudWebdavKoppeling,
 } from '../../shared/cloud-vnext-model';
 import type { CloudTaak, CloudTaakPunt, CloudTaakSoort } from '../../shared/cloud-overdracht-model';
 import { registreerVervoer, type Vervoer } from './overdracht-beheer';
@@ -198,6 +198,7 @@ export type IntegratiesUit = {
   google: { gekoppeld: boolean; accounts: Array<{ id: string; email: string; actief: boolean; status: string; principalId?: string; sync?: { laatstGeluktOp: number; laatstPogingOp: number; foutCode: string; herstelNodig: boolean } }>; fout?: string };
   photos: { gekoppeld: boolean };
   m4: { stagingAan: boolean; aanbieders: Array<{ id: string; sleutelsAanwezig: boolean; accounts: Array<{ id: string; label: string; status: string }> }> };
+  webdav?: { koppelingen: CloudWebdavKoppeling[] };
   zoekIndex: { cloud: boolean; drive: boolean };
 };
 

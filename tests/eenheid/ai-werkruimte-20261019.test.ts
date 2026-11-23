@@ -217,7 +217,7 @@ export async function main(): Promise<number> {
     check('7i: de stand is te verversen zonder de pagina te herladen (na het geven van het recht of het koppelen van iets)',
       pagina.includes("data-aiw-herlaad='1'") && pagina.includes('Перевірити ще раз') && pagina.includes('Я щось підключив — оновити стан'));
     const backend = readFileSync('backend/index.ts', 'utf8');
-    check('7h: de routes zijn in backend/index.ts geregistreerd', /\.\.\.aiWerkruimteRoutes\(\{ requireSession: ownerRequireSession as never \}\)/.test(backend));
+    check('7h: de routes zijn in backend/index.ts geregistreerd', /\.\.\.aiWerkruimteRoutes\(\{ requireSession: ownerRequireSession as never\b/.test(backend));
   }
 
   return einde();

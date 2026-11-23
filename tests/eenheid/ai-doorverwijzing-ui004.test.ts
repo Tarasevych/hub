@@ -56,7 +56,7 @@ export async function main(): Promise<number> {
     check('ai/verbindingen blijft een geldig adres (direct openen → hub)', nav.canonicalNavigationUrl('ai', 'verbindingen', 'uk').length > 0);
   } finally { herstel(); }
   const app = lees('src/VerenigdDienstApp.tsx');
-  check('bron: navigateMenu gebruikt navigate(target, tab, true) (herstel laatste tab blijft bestaan)', app.includes('navigate(item.target as TargetService,item.tab||\'\',true)'));
+  check('bron: navigateMenu gebruikt navigate(target, tab, !exactLeaf) waarbij ai exactLeaf=false heeft (herstel laatste tab blijft bestaan)', app.includes("navigate(item.target as TargetService,item.tab||'',!exactLeaf)") && !/exactLeaf[^\n]*'ai'/.test(app));
   const ai = lees('src/AIDienstWeergave.tsx');
   check('bron: NaarHub alleen voor tab verbindingen', ai.includes("if (tab === 'verbindingen') return <NaarHub tr={tr} />;"));
   check('bron: MENU_CATALOG ai → workspace', /id:'ai'[^}]*tab:'workspace'|id: 'ai'[^}]*tab: 'workspace'/.test(lees('src/menu-voorkeuren.tsx')));

@@ -28,6 +28,7 @@ import { meld } from '../../backend/melder';
 import { metLade as mailMetLade } from '../../backend/mail-ruimte';
 import { metLade as cloudMetLade } from '../../backend/ruimte-cloud-agenda';
 import { MELDING_TABEL, meldingenLade, ruimteVoorNieuweMelding } from '../../backend/meldingen-ruimte';
+import { beginV1TechKader } from './hulp/v1-tech-kader';
 
 const sha = (v: string) => createHash('sha256').update(v).digest('hex');
 const tab = () => randomBytes(24).toString('hex');
@@ -70,6 +71,7 @@ export async function main(): Promise<number> {
     return { status: r.statusCode, data };
   };
 
+  const herstelV1 = await beginV1TechKader();
   try {
     // ------------------------------------------------------------------ migratie 0091: idempotent, niets verhuist
     const mig = lees('migrations/0091_ruimte_meldingen.sql');
@@ -242,6 +244,7 @@ export async function main(): Promise<number> {
     for (const t of ['tech_activaties', 'tech_profielen', 'ruimte_dienst_stand', 'ruimte_keuze']) await pool.query(`DELETE FROM app.${t} WHERE user_id=$1`, [dev.id]).catch(() => undefined);
     await pool.query(`DELETE FROM app.records WHERE tbl='users' AND id=$1`, [dev.id]).catch(() => undefined);
     if (!bestaandeEigenaar) await pool.query(`DELETE FROM app.records WHERE tbl='users' AND id=$1`, [eigenaarId]).catch(() => undefined);
+    await herstelV1();
     const { closePool } = await import('../../server/platform/pg');
     await closePool().catch(() => undefined);
   }

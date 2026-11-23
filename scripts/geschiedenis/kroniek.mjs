@@ -51,7 +51,25 @@ export function leesArgumenten(argv) {
 // ───────── Git (лише читання) ─────────
 const git = (args, opts = {}) => execFileSync('git', args, { cwd: WORTEL, encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', opts.stil ? 'ignore' : 'pipe'] }).trim();
 const gitMag = (args) => { try { return git(args, { stil: true }); } catch { return null; } };
-const isVoorouder = (a, b) => { try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: WORTEL, stdio: 'ignore' }); return true; } catch { return false; } };
+const voorouderSetCache = new Map();
+const vooroudersVan = (b) => {
+  let s = voorouderSetCache.get(b);
+  if (!s) {
+    const out = gitMag(['rev-list', b]);
+    s = out ? new Set(out.split('\n')) : null;
+    voorouderSetCache.set(b, s);
+  }
+  return s;
+};
+const isVoorouder = (a, b) => {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (/^[0-9a-f]{40}$/.test(a)) {
+    const s = vooroudersVan(b);
+    return s ? s.has(a) : false;
+  }
+  try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: WORTEL, stdio: 'ignore' }); return true; } catch { return false; }
+};
 
 function verzamelTakken(remote) {
   const uit = git(['for-each-ref', '--format=%(refname)\t%(objectname)\t%(committerdate:iso-strict)', `refs/remotes/${remote}`]);
@@ -94,7 +112,7 @@ function verzamelTaken(takken) {
     for (const p of (lijst || '').split('\n').filter((x) => x.endsWith('.json'))) {
       const id = path.basename(p, '.json');
       const bestaand = taken.get(id);
-      if (bestaand && bestaand.bron === bestaand.tak) continue;
+      if (bestaand && (bestaand.bron === bestaand.tak || (bestaand.tak && t.naam !== bestaand.tak))) continue;
       const d = leesJson(gitMag(['show', `${t.sha}:${p}`]) || '');
       if (d && (!bestaand || d.tak === t.naam)) neem(d, t.naam);
     }

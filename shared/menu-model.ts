@@ -53,7 +53,7 @@ export const ACCENT_KLEUREN: Record<Accent, { licht: AccentKleur; donker: Accent
   roze: { licht: { hoofd: '#be185d', sub: '#d0598a' }, donker: { hoofd: '#f9a8d4', sub: '#bc84a5' } },
   rood: { licht: { hoofd: '#dc2626', sub: '#e35151' }, donker: { hoofd: '#fca5a5', sub: '#be8183' } },
   bruin: { licht: { hoofd: '#8b5a2b', sub: '#a27b55' }, donker: { hoofd: '#d6b48f', sub: '#a38c74' } },
-  wijnrood: { licht: { hoofd: '#641131', sub: '#913b57' }, donker: { hoofd: '#e05a81', sub: '#b74564' } },
+  wijnrood: { licht: { hoofd: '#641131', sub: '#913b57' }, donker: { hoofd: '#e05a81', sub: '#c85574' } },
 };
 /** Diensten die standaard (of voor de eigenaar altijd) in het menu staan: hun kleuren moeten het duidelijkst verschillen. */
 export const HOOFD_DIENSTEN: readonly DienstId[] = ['hub', 'ai', 'mail', 'cloud', 'github', 'crm', 'huis', 'mcp', 'identity', 'api', 'admin'];

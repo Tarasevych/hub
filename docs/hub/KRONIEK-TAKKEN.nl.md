@@ -10116,3 +10116,980 @@ Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie
 | [`herstel/posta-lezer-20261121`](https://github.com/Tarasevych/hub/tree/herstel/posta-lezer-20261121) <!-- b:herstel/posta-lezer-20261121@83c582be158641776c25b2e0ab40a0b3fdc63628 --> | [`83c582b`](https://github.com/Tarasevych/hub/commit/83c582be158641776c25b2e0ab40a0b3fdc63628) 2026-11-22 | [`ba289fa`](https://github.com/Tarasevych/hub/commit/ba289fa919c66765b6fc5565d340976994261c05) | nee | nee | — |
 
 > Aanvullingslogboek: 2026-11-22 — +2 / +2 / Δ
+
+## Momentopname 2026-11-23 · live versie `20261122-171856` · commit [`c85e5d7`](https://github.com/Tarasevych/hub/commit/c85e5d73f104f555021c6a896ffecb70256588d3) · takken op GitHub: 287
+
+### Achterstand `voornaamst` ↔ live versie <!-- r:c85e5d73f104f555021c6a896ffecb70256588d3:30edd5e3081ed53d6490a37d2270f4ac6b33cd46 -->
+
+De standaardtak `voornaamst` mist **876** commits van de live versie: **885** staan al in `integratie`, nog **3** liggen bovenop `integratie` in de releasetak. Alleen **de eigenaar** werkt `voornaamst` bij (fast-forward of samenvoegen met `integratie`); agenten wijzigen geen beschermde takken (AGENTS.md).
+
+<details>
+<summary>Commits per taak</summary>
+
+- **[AUDIT-001](#t-audit-001)** — 27 · 2026-11-05 → 2026-11-07
+  - [`09d618df`](https://github.com/Tarasevych/hub/commit/09d618df) 2026-11-05 AUDIT-001 (M5): додано TRACE-001 досьє розробки orchestratie/ontwikkelarchieven/AUDIT-001.json
+  - [`10b7de8c`](https://github.com/Tarasevych/hub/commit/10b7de8c) 2026-11-05 AUDIT-001: стан задачі та метадані пакета випуску 20261105-080000
+  - [`829e8223`](https://github.com/Tarasevych/hub/commit/829e8223) 2026-11-05 AUDIT-001 (M5): додано workflow публікації релізу .github/workflows/audit-001-release.yml
+  - [`bb53b659`](https://github.com/Tarasevych/hub/commit/bb53b659) 2026-11-05 AUDIT-001: зафіксовано реліз 20261105-080000 (sha256 bdc361778737…)
+  - [`6abe4367`](https://github.com/Tarasevych/hub/commit/6abe4367) 2026-11-05 AUDIT-001 (M5): запис фактичного продакшн-коміту 6e815a00 у UITROL-BASIS для встановлення на живому сервері
+  - [`9b1c02e2`](https://github.com/Tarasevych/hub/commit/9b1c02e2) 2026-11-05 AUDIT-001: оновлено фінальний SHA-256 пакета 20261105-080000 (d730256e62cd…)
+  - [`dfb67a9f`](https://github.com/Tarasevych/hub/commit/dfb67a9f) 2026-11-05 AUDIT-001 (M5): перевірка HEAD..integratie у doeVersheid після злиття в integratie
+  - [`f20df652`](https://github.com/Tarasevych/hub/commit/f20df652) 2026-11-05 AUDIT-001 (M5): оновлено версії у приймальному тесті orch-acceptatie під поріг TRACE-001
+  - [`f85afd07`](https://github.com/Tarasevych/hub/commit/f85afd07) 2026-11-05 AUDIT-001: фінальний стан задачі та пакет 20261105-080000 (sha256 4e5877bc5009…)
+  - [`360092fe`](https://github.com/Tarasevych/hub/commit/360092fe) 2026-11-05 AUDIT-001 (B-014): перебазування випуску 20261105-093500 на встановлену серверну версію 20261105-061659 (a318ba0b1c73)
+  - [`e8db2926`](https://github.com/Tarasevych/hub/commit/e8db2926) 2026-11-05 AUDIT-001: зафіксовано фінальний SHA-256 пакета 20261105-093500 (7ba843264e17…)
+  - [`53a7b918`](https://github.com/Tarasevych/hub/commit/53a7b918) 2026-11-05 AUDIT-001: тотожність BRON-COMMIT і HEAD гілки (commit == head) та стійка перевірка TRACE-001 (20261105-101500)
+  - [`b14a59e3`](https://github.com/Tarasevych/hub/commit/b14a59e3) 2026-11-06 AUDIT-001: повне мовне очищення української та нідерландської документації (0 росіянізмів/суржику/англіцизмів) та випуск 20261106-141500
+  - [`2c71d117`](https://github.com/Tarasevych/hub/commit/2c71d117) 2026-11-06 AUDIT-001: повне мовне очищення коду, каталогів пошуку й документації (uk + nl, 0 росіянізмів/суржику), інтеграція EXT090-001 та випуск 20261106-171500
+  - [`95a74039`](https://github.com/Tarasevych/hub/commit/95a74039) 2026-11-07 AUDIT-001: повне очищення всіх опублікованих статей і документації від русизмів, кальок та тех-сленгу (B-016, regelsVersie 1.4.11)
+  - [`3a569eaf`](https://github.com/Tarasevych/hub/commit/3a569eaf) 2026-11-07 AUDIT-001: оновлення випуску 20261106-180000 та досьє TRACE-001 (B-016)
+  - [`e1d8749c`](https://github.com/Tarasevych/hub/commit/e1d8749c) 2026-11-07 AUDIT-001 (B-017, 1.4.12): повне перейменування та очищення всіх статей (.md, .uk.md, .nl.md) і каталогів українською та нідерландською мовами
+  - [`a43d5977`](https://github.com/Tarasevych/hub/commit/a43d5977) 2026-11-07 [AUDIT-001] Випуск 20261106-190000 для перейменованих і очищених статей (B-017 · 1.4.12)
+  - [`d23f3a1a`](https://github.com/Tarasevych/hub/commit/d23f3a1a) 2026-11-07 [AUDIT-001] Випуск 20261106-193000 та повне очищення відмінюваних форм у всіх 455 статтях (B-018 · 1.4.13)
+  - [`6b6757e3`](https://github.com/Tarasevych/hub/commit/6b6757e3) 2026-11-07 [AUDIT-001] Випуск 20261107-114500: автоматичний обліковий запис автора, заборона псевдонімів та фіксована модель claude-opus-4-6 для antigravity
+  - [`c9c95eaa`](https://github.com/Tarasevych/hub/commit/c9c95eaa) 2026-11-07 AUDIT-001: фото профілю з особистого кабінету та логотипи агентів у меню оновлень (20261107-121500)
+  - [`bbf59c08`](https://github.com/Tarasevych/hub/commit/bbf59c08) 2026-11-07 AUDIT-001 · підтримка агента AutoClaw / GLM-5.3-flashX-Legal, правнича перевірка й реєстр доказів та випуск 20261107-130000 (regelsVersie 1.4.14, B-019)
+  - [`bd84ed2b`](https://github.com/Tarasevych/hub/commit/bd84ed2b) 2026-11-07 AUDIT-001 · виправлення JSON-маніфесту та оновлення бази на 20261107-121500 для випуску 20261107-130000
+  - [`bf3ca648`](https://github.com/Tarasevych/hub/commit/bf3ca648) 2026-11-07 AUDIT-001 · єдиний узгоджений випуск 20261107-164500 (AutoClaw / GLM-5.3-flashX-Legal + IDENTITEIT b581ea7)
+  - [`a31d21cb`](https://github.com/Tarasevych/hub/commit/a31d21cb) 2026-11-07 AUDIT-001 · усунення хибного NIET_NIEUWER у Upload.tsx після встановлення пакета та випуск 20261107-170000
+  - [`d166c7a1`](https://github.com/Tarasevych/hub/commit/d166c7a1) 2026-11-07 AUDIT-001 · злиття 20261107-172451 (dca8aa3), уточнення діагностики status.json у uitrol-bron.ts та випуск 20261107-180500
+  - [`7bb8765d`](https://github.com/Tarasevych/hub/commit/7bb8765d) 2026-11-07 AUDIT-001 · незалежне керування всіма ШІ-агентами (Claude, Gemini, ChatGPT, Grok, AutoClaw) за userId на базі 20261107-195618 та випуск 20261107-203000
+- **[DESIGN-002](#t-design-002)** — 6 · 2026-11-05 → 2026-11-05
+  - [`7216f70e`](https://github.com/Tarasevych/hub/commit/7216f70e) 2026-11-05 DESIGN-002: перевірка актуальної основи
+  - [`93cb30ee`](https://github.com/Tarasevych/hub/commit/93cb30ee) 2026-11-05 DESIGN-002: зареєстровано задачу на встановленій версії
+  - [`49cdf81a`](https://github.com/Tarasevych/hub/commit/49cdf81a) 2026-11-05 DESIGN-002: узгоджений адаптивний дизайн сторінок і стани без даних
+  - [`984d4e65`](https://github.com/Tarasevych/hub/commit/984d4e65) 2026-11-05 DESIGN-002: візуальна перевірка пошти та уточнення вигляду
+  - [`00ebc6da`](https://github.com/Tarasevych/hub/commit/00ebc6da) 2026-11-05 DESIGN-002: журнал розробки та передача перевірених змін
+  - [`0909950f`](https://github.com/Tarasevych/hub/commit/0909950f) 2026-11-05 DESIGN-002: підготовка перевірюваного кандидата пакета
+- **[ORCH-001](#t-orch-001)** — 25 · 2026-11-05 → 2026-11-06
+  - [`a6fe48b3`](https://github.com/Tarasevych/hub/commit/a6fe48b3) 2026-11-05 ORCH-001 (стара помилка): каталог пошуку — розділ кнопки лише з її власного дерева JSX
+  - [`c5de1fb0`](https://github.com/Tarasevych/hub/commit/c5de1fb0) 2026-11-05 ORCH-001 (стара помилка): каталог пошуку — лише досяжні місця: переадресаційні вкладки, мертві файли, технічний простір
+  - [`e807d3b6`](https://github.com/Tarasevych/hub/commit/e807d3b6) 2026-11-05 ORCH-001 (стара помилка): недавні пошуки окремо для приватного й технічного простору
+  - [`68d499e2`](https://github.com/Tarasevych/hub/commit/68d499e2) 2026-11-05 ORCH-001: журнал змін і власна декларація — повний SHA для черги, злиття 4db51b6, виправлення пошуку, відкриті питання
+  - [`f774752b`](https://github.com/Tarasevych/hub/commit/f774752b) 2026-11-06 ORCH-001 (стара помилка): uitrol на Python без filter="data" розпаковує так само безпечно
+  - [`cb30aea1`](https://github.com/Tarasevych/hub/commit/cb30aea1) 2026-11-06 ORCH-001 (стара помилка): тести без машинних припущень — часовий пояс, завантаження модулів, контракт раннера, playwright
+  - [`eac603bc`](https://github.com/Tarasevych/hub/commit/eac603bc) 2026-11-06 ORCH-001 (стара помилка): сирі кольори сторінкового CSS — на токени теми; радіуси DESIGN-001 у тесті фундаменту
+  - [`e209be72`](https://github.com/Tarasevych/hub/commit/e209be72) 2026-11-06 ORCH-001 (стара помилка): нові файли з англійськими назвами перейменовано нідерландською (правило власника, kaart-controle)
+  - [`05226a2e`](https://github.com/Tarasevych/hub/commit/05226a2e) 2026-11-06 ORCH-001 (стара помилка): mcp-console-c2 стереже умову SEC-001 «агент-токен лише для схваленого акаунта»
+  - [`8d708209`](https://github.com/Tarasevych/hub/commit/8d708209) 2026-11-06 ORCH-001 (стара помилка): uitrol без data-filter дає теки за umask, як і фільтр; поведінковий тест на «старому» Python
+  - [`87cde666`](https://github.com/Tarasevych/hub/commit/87cde666) 2026-11-06 ORCH-001 (стара помилка): раннер eenheidstests більше не каже «зелено», коли нічого не пройшло
+  - [`acdac9c2`](https://github.com/Tarasevych/hub/commit/acdac9c2) 2026-11-06 ORCH-001 (стара помилка): node-test-main рахує й помилки, що настають після кінця тесту
+  - [`ab87587d`](https://github.com/Tarasevych/hub/commit/ab87587d) 2026-11-06 ORCH-001 (стара помилка): canvas робочого аркуша й cloud на токенах теми; перевірка невизначених CSS-змінних
+  - [`39818348`](https://github.com/Tarasevych/hub/commit/39818348) 2026-11-06 ORCH-001 (стара помилка): сторінки-приклади mailfit/mailfix/mailpolish визначають --papier
+  - [`986fdede`](https://github.com/Tarasevych/hub/commit/986fdede) 2026-11-06 ORCH-001 (стара помилка): документація сторінки облікового запису вказує на нові шляхи src/identiteit
+  - [`e8b26514`](https://github.com/Tarasevych/hub/commit/e8b26514) 2026-11-06 ORCH-001 (стара помилка): гігієна тестів — pepper повертається, 0711 лише під root, сервер не отримує короткий pepper
+  - [`b392f462`](https://github.com/Tarasevych/hub/commit/b392f462) 2026-11-06 ORCH-001: журнал змін — 32 набори, червоні й на базі, і рев'ю цих виправлень (uk/nl)
+  - [`29e785fa`](https://github.com/Tarasevych/hub/commit/29e785fa) 2026-11-06 ORCH-001: стан координації — запис PR #11 у черзі закрито (integrated @ 4db51b6) · coördinatiestaat
+  - [`18e0b8cf`](https://github.com/Tarasevych/hub/commit/18e0b8cf) 2026-11-06 ORCH-001 (стара помилка): uitrol-deur перевіряє справжній виклик ssh-keygen і скидання власника під root
+  - [`1d6cbe9a`](https://github.com/Tarasevych/hub/commit/1d6cbe9a) 2026-11-06 ORCH-001 (стара помилка): раннер node:test пояснює пізні помилки, чекає на таймери й не зависає під mock.timers
+  - [`41b7807c`](https://github.com/Tarasevych/hub/commit/41b7807c) 2026-11-06 ORCH-001 (стара помилка): тимчасові теки ai-kluis-тесту під root більше не відкриті всім (0777 → nobody 0700)
+  - [`73652440`](https://github.com/Tarasevych/hub/commit/73652440) 2026-11-06 ORCH-001 (стара помилка): перевірка «var(--x) без визначення» більше не зараховує читання й коментарі
+  - [`17df4bbe`](https://github.com/Tarasevych/hub/commit/17df4bbe) 2026-11-06 ORCH-001 (стара помилка): сторінки-приклади пошти підключають токени сайту, тож справжній CSS компонентів працює
+  - [`b8f272da`](https://github.com/Tarasevych/hub/commit/b8f272da) 2026-11-06 ORCH-001: журнал змін — злиття PR #30, закриття черги й виправлення з перевірки перед злиттям (uk/nl)
+  - [`ec0bc10e`](https://github.com/Tarasevych/hub/commit/ec0bc10e) 2026-11-06 ORCH-001 (стара помилка): Chrome-перевірка «Координація агентів» бере версію правил із beleid.json
+- **ZOEKDIEP-001** — 7 · 2026-11-05 → 2026-11-06
+  - [`420e0946`](https://github.com/Tarasevych/hub/commit/420e0946) 2026-11-05 ZOEKDIEP-001: глибокі посилання пошуку відкривають сам лист, файл, подію, нотатку чи завдання
+  - [`6402a200`](https://github.com/Tarasevych/hub/commit/6402a200) 2026-11-05 ZOEKDIEP-001 (стара помилка): керування Gmail на вкладці «Акаунти» знову доступне
+  - [`ee54015f`](https://github.com/Tarasevych/hub/commit/ee54015f) 2026-11-05 ZOEKDIEP-001: каталог пошуку веде в потрібний підрозділ і враховує доступ кожного елемента
+  - [`9ad5ae8a`](https://github.com/Tarasevych/hub/commit/9ad5ae8a) 2026-11-05 ZOEKDIEP-001: глибокі посилання в новій хмарі й агенді v3, вкладення з пошуку в Gmail
+  - [`545e210a`](https://github.com/Tarasevych/hub/commit/545e210a) 2026-11-06 ZOEKDIEP-001: oude Drive-browser — diepe link niet overschreven door hervatting, principalId getypeerd
+  - [`c385b650`](https://github.com/Tarasevych/hub/commit/c385b650) 2026-11-06 ZOEKDIEP-001: oude cloudpagina opent ?open_item_id= ook buiten de bootstrap
+  - [`c5afcb62`](https://github.com/Tarasevych/hub/commit/c5afcb62) 2026-11-06 ZOEKDIEP-001: oude cloud wist het resume-item niet meer na een diepe link buiten de bootstrap
+- **[AGPLUGIN-001](#t-agplugin-001)** — 4 · 2026-11-06 → 2026-11-06
+  - [`d5fbd5cb`](https://github.com/Tarasevych/hub/commit/d5fbd5cb) 2026-11-06 AGPLUGIN-001: плагін і двосторонній конектор Google Antigravity (/antigravity) з UI-панеллю мосту
+  - [`1e3e03e1`](https://github.com/Tarasevych/hub/commit/1e3e03e1) 2026-11-06 AGPLUGIN-001: журнал TRACE-001, тест каталогу (161) і workflow випуску 20261106-101200 (antigravity + claude)
+  - [`0e9c653c`](https://github.com/Tarasevych/hub/commit/0e9c653c) 2026-11-06 AGPLUGIN-001: верифікація та синхронізація v2-імен у CLI mijn-ruimte для всіх 4 каналів
+  - [`78fdb9c2`](https://github.com/Tarasevych/hub/commit/78fdb9c2) 2026-11-06 AGPLUGIN-001: випуск 20261106-131500 з верифікованим CLI mijn-ruimte
+- **[DESIGN-003](#t-design-003)** — 4 · 2026-11-06 → 2026-11-06
+  - [`6f4af07e`](https://github.com/Tarasevych/hub/commit/6f4af07e) 2026-11-06 DESIGN-003: адаптивні картки ШІ та панель чотирьох каналів Antigravity
+  - [`b97365ab`](https://github.com/Tarasevych/hub/commit/b97365ab) 2026-11-06 DESIGN-003: перевірити кожен файл установленої версії та зібрати випуск 20261106-142434
+  - [`0550d072`](https://github.com/Tarasevych/hub/commit/0550d072) 2026-11-06 DESIGN-003: виправити синтаксис підстановок GitHub Actions перед збіркою
+  - [`3b64d1d3`](https://github.com/Tarasevych/hub/commit/3b64d1d3) 2026-11-06 DESIGN-003: враховувати попередні випуски GitHub при звірці встановленої версії
+- **[EXT090-001](#t-ext090-001)** — 4 · 2026-11-06 → 2026-11-06
+  - [`501f20a6`](https://github.com/Tarasevych/hub/commit/501f20a6) 2026-11-06 EXT090-001: розширення 0.9.1 — вбудований ШІ Chrome, під'єднання без F5, кнопка «Увійти»
+  - [`c6da7a34`](https://github.com/Tarasevych/hub/commit/c6da7a34) 2026-11-06 EXT090-001: стара вада тесту blok-2-8 — версія розширення числово ≥ 0.8.0 замість шаблону 0.8.x
+  - [`4db9fd19`](https://github.com/Tarasevych/hub/commit/4db9fd19) 2026-11-06 EXT090-001: розширення 0.9.2 — offscreen.html, доступ сторінок сайту до локального ШІ, стан моделі на сайті
+  - [`1b74a15b`](https://github.com/Tarasevych/hub/commit/1b74a15b) 2026-11-06 EXT090-001: перезбірка випуску 20261106-164109 на встановленій версії 20261106-142434 (DESIGN-003 @ 3b64d1d)
+- **[UITGAVE-001](#t-uitgave-001)** — 3 · 2026-11-06 → 2026-11-06
+  - [`a57595f8`](https://github.com/Tarasevych/hub/commit/a57595f8) 2026-11-06 UITGAVE-001: пакувальник більше не ріже кириличний список змін посеред символу
+  - [`f716d781`](https://github.com/Tarasevych/hub/commit/f716d781) 2026-11-06 UITGAVE-001: межа на кінці рядка, не-UTF-8 локаль і підсумок diff у пакувальнику
+  - [`49760d81`](https://github.com/Tarasevych/hub/commit/49760d81) 2026-11-06 UITGAVE-001: задача, журнал TRACE-001 і workflow випуску 20261106-092612 з integratie 413d726dba5a
+- **UTF8-001** — 1 · 2026-11-06 → 2026-11-06
+  - [`113df5a5`](https://github.com/Tarasevych/hub/commit/113df5a5) 2026-11-06 UITROL-UTF8-001: інсталятор обрізає AUTEUR/SAMENVATTING по цілому символу UTF-8
+- **zonder taak-ID** — 32 · 2026-11-07 → 2026-11-17
+  - [`f2eef2fd`](https://github.com/Tarasevych/hub/commit/f2eef2fd) 2026-11-07 ІДЕНТИТЕТ-ACCOUNT: прибрати останні англійські назви й оновити посилання
+  - [`2e9dcbd1`](https://github.com/Tarasevych/hub/commit/2e9dcbd1) 2026-11-07 ІДЕНТИТЕТ-ACCOUNT: журнал без англійських назв і сленгу
+  - [`c8cbdd54`](https://github.com/Tarasevych/hub/commit/c8cbdd54) 2026-11-07 ІДЕНТИТЕТ-ACCOUNT: вичистити журнал від сленгу й англійських слів
+  - [`4521e398`](https://github.com/Tarasevych/hub/commit/4521e398) 2026-11-07 ІДЕНТИТЕТ-ACCOUNT: виправити власні пошкодження під час вичистки журналу
+  - [`d9118a70`](https://github.com/Tarasevych/hub/commit/d9118a70) 2026-11-07 ІДЕНТИТЕТ-ACCOUNT: код завдання нідерландською та єдина робоча гілка
+  - [`84669ab2`](https://github.com/Tarasevych/hub/commit/84669ab2) 2026-11-07 ІДЕНТИТЕТ: упорядкувати назви минулих випусків українською
+  - [`ef28ed21`](https://github.com/Tarasevych/hub/commit/ef28ed21) 2026-11-07 ІДЕНТИТЕТ: прибрати одноразовий робочий процес упорядкування назв
+  - [`25033353`](https://github.com/Tarasevych/hub/commit/25033353) 2026-11-07 ІДЕНТИТЕТ: код другого завдання нідерландською
+  - [`b581ea79`](https://github.com/Tarasevych/hub/commit/b581ea79) 2026-11-07 ІДЕНТИТЕТ: останній файл з англійською назвою перейменовано
+  - [`dca8aa32`](https://github.com/Tarasevych/hub/commit/dca8aa32) 2026-11-07 ІДЕНТИТЕТ-ACCOUNT: випуск на основі останньої фіксації з даними про модель
+  - [`94fba81d`](https://github.com/Tarasevych/hub/commit/94fba81d) 2026-11-07 ІДЕНТИТЕТ-002: символи й журнали за мовним законом
+  - [`6b66f260`](https://github.com/Tarasevych/hub/commit/6b66f260) 2026-11-07 ІДЕНТИТЕТ-001: документи без застарілих назв і жаргону
+  - [`a2e46b8d`](https://github.com/Tarasevych/hub/commit/a2e46b8d) 2026-11-07 ІДЕНТИТЕТ-002: коментарі сторінки без англійської
+  - [`8ea676b3`](https://github.com/Tarasevych/hub/commit/8ea676b3) 2026-11-15 ДУБЛІ-001: власні піктограми груп у бічній навігації «Макета» замість піктограми першого розділу · eigen groepspictogrammen in de zijnavigatie
+  - [`b6fcd392`](https://github.com/Tarasevych/hub/commit/b6fcd392) 2026-11-15 ДУБЛІ-001: без розділів-переходів і неправдивих текстів; справжній вибір профілю в «Ідентичності»; єдині назви · geen doorverwijskaarten, echte profielkeuze, één naam per onderdeel
+  - [`5df84635`](https://github.com/Tarasevych/hub/commit/5df84635) 2026-11-15 ДУБЛІ-001: підвал і навігація «Макета» з назвами сайту; випробування правої навігації в браузері · voettekst en navigatie met de namen van de site, browsertest
+  - [`d3461d75`](https://github.com/Tarasevych/hub/commit/d3461d75) 2026-11-15 ДУБЛІ-001: налаштування сповіщень лише в розділі «Сповіщення» (рішення Павла) · meldingsinstellingen alleen onder «Meldingen»
+  - [`26b7d818`](https://github.com/Tarasevych/hub/commit/26b7d818) 2026-11-15 Сторінка оновлень: колонка по центру, заокруглені картки, компактне завантаження, правильне фото автора
+  - [`58aa9fec`](https://github.com/Tarasevych/hub/commit/58aa9fec) 2026-11-15 «Макет»: без зайвих підкладок під налаштуваннями розділу, колонка 1240 px по центру
+  - [`d9d7db01`](https://github.com/Tarasevych/hub/commit/d9d7db01) 2026-11-15 ACHTERGROND-001: «Живий фон» сторінок — розмиті плями непропорційних форм переливаються від краю до краю
+  - [`68a8c8de`](https://github.com/Tarasevych/hub/commit/68a8c8de) 2026-11-15 «Макет»: справжня панель налаштувань на всю ширину картки розділу
+  - [`a42ebcdf`](https://github.com/Tarasevych/hub/commit/a42ebcdf) 2026-11-15 ACHTERGROND-001: кнопка швидкого налаштування «Живого фону» вгорі сторінки (оболонка й «Макет»), рівні від ледь помітного до вражаючого
+  - [`8e77a7d4`](https://github.com/Tarasevych/hub/commit/8e77a7d4) 2026-11-15 «Макет»: підкладка розгорнутої справжньої панелі звужена до її блоків, а не блоки розтягнуті
+  - [`86103c81`](https://github.com/Tarasevych/hub/commit/86103c81) 2026-11-15 «Макет» 910 px по центру, справжній перемикач руху, ніжно-червоні небезпечні кнопки
+  - [`6e64507c`](https://github.com/Tarasevych/hub/commit/6e64507c) 2026-11-15 ACHTERGROND-001: тест zoek-in-menu враховує кнопку «Живий фон»; кольори й шрифт панелі за правилами токенів
+  - [`a80613aa`](https://github.com/Tarasevych/hub/commit/a80613aa) 2026-11-16 LAI-REDEN: PING lokaleAi.reden + redenen per API · kant-en-klare reden voor de site
+  - [`876a585e`](https://github.com/Tarasevych/hub/commit/876a585e) 2026-11-16 Меню «Макет» (телефон): кнопки рядка «Тема» ділять ширину рівномірно
+  - [`f2458324`](https://github.com/Tarasevych/hub/commit/f2458324) 2026-11-16 ACHTERGROND-002: компактна панель «Живого фону» і кнопка в шапці меню на телефоні в пошті
+  - [`a3baa210`](https://github.com/Tarasevych/hub/commit/a3baa210) 2026-11-16 AGENTSCHEIDING-001: «Керувати Claude» змінює лише Claude, назва — саме того ШІ, опис підтвердження завжди
+  - [`3e065c61`](https://github.com/Tarasevych/hub/commit/3e065c61) 2026-11-16 KLUIS-AANMELDEN: вхід паролем або passkey одразу розшифровує дані (міграція 0289)
+  - [`9c03ab34`](https://github.com/Tarasevych/hub/commit/9c03ab34) 2026-11-16 Telegram як «сильне» підтвердження — вибір людини (типово вимкнено)
+  - [`7311ee07`](https://github.com/Tarasevych/hub/commit/7311ee07) 2026-11-17 CRX3: автоматичний підпис розширення [skip ci]
+- **[IDENTITEIT-003](#t-identiteit-003)** — 2 · 2026-11-07 → 2026-11-07
+  - [`f88f1a9d`](https://github.com/Tarasevych/hub/commit/f88f1a9d) 2026-11-07 IDENTITEIT-003: новий вигляд облікового запису з безпечним перемикачем
+  - [`70d2d217`](https://github.com/Tarasevych/hub/commit/70d2d217) 2026-11-07 IDENTITEIT-003: виправлено обмеження довжини опису можливості
+- **[TRACE-001](#t-trace-001)** — 1 · 2026-11-07 → 2026-11-07
+  - [`fc8251be`](https://github.com/Tarasevych/hub/commit/fc8251be) 2026-11-07 TRACE-001: orch vergrendel/context/taak-herlees [skip ci]
+- **[IDENTITEIT-004](#t-identiteit-004)** — 6 · 2026-11-08 → 2026-11-08
+  - [`3dd0daaf`](https://github.com/Tarasevych/hub/commit/3dd0daaf) 2026-11-08 ІДЕНТИЧНІСТЬ-004: відтворено оформлення версії 49 з чинними діями та перемикачем
+  - [`5c1b5871`](https://github.com/Tarasevych/hub/commit/5c1b5871) 2026-11-08 ІДЕНТИЧНІСТЬ-004 · усунуто повтори входу, безпеки та відновлення
+  - [`1610efa5`](https://github.com/Tarasevych/hub/commit/1610efa5) 2026-11-08 ІДЕНТИЧНІСТЬ-004 · виправлено запис робочої гілки
+  - [`7935b80c`](https://github.com/Tarasevych/hub/commit/7935b80c) 2026-11-08 ІДЕНТИЧНІСТЬ-004 · звірено встановлену основу випуску 20261107-195618
+  - [`5cec9a84`](https://github.com/Tarasevych/hub/commit/5cec9a84) 2026-11-08 ІДЕНТИЧНІСТЬ-004 · додано журнал розробки й опис завдання перед об’єднанням
+  - [`26d705c8`](https://github.com/Tarasevych/hub/commit/26d705c8) 2026-11-08 ІДЕНТИЧНІСТЬ-004 · позначено успішне об’єднання в integratie
+- **[IDENTITEIT-005](#t-identiteit-005)** — 1 · 2026-11-08 → 2026-11-08
+  - [`f1eceebf`](https://github.com/Tarasevych/hub/commit/f1eceebf) 2026-11-08 ІДЕНТИЧНІСТЬ-005 · узгоджено шари оформлення з перевіркою складання
+- **[IDENTITEIT-006](#t-identiteit-006)** — 6 · 2026-11-08 → 2026-11-08
+  - [`5846625a`](https://github.com/Tarasevych/hub/commit/5846625a) 2026-11-08 IDENTITEIT-006 · «Студія»: новий дизайн центру налаштувань акаунта
+  - [`8d52b354`](https://github.com/Tarasevych/hub/commit/8d52b354) 2026-11-08 IDENTITEIT-006 · ілюстрації без обрізання, аркуш на всю ширину
+  - [`877406d4`](https://github.com/Tarasevych/hub/commit/877406d4) 2026-11-08 IDENTITEIT-006 · журнал розробки, задача і процес випуску
+  - [`ea351399`](https://github.com/Tarasevych/hub/commit/ea351399) 2026-11-08 IDENTITEIT-006 · модель ШІ для пакета задає власник змінною сховища
+  - [`3de2e714`](https://github.com/Tarasevych/hub/commit/3de2e714) 2026-11-08 IDENTITEIT-006 · журнал: пробне пакування пройшло перевірку
+  - [`9a040c6c`](https://github.com/Tarasevych/hub/commit/9a040c6c) 2026-11-08 IDENTITEIT-006 · нова група черги процесу випуску (завислий перезапуск блокував її)
+- **[IDENTITEIT-007](#t-identiteit-007)** — 18 · 2026-11-08 → 2026-11-09
+  - [`d693b8b7`](https://github.com/Tarasevych/hub/commit/d693b8b7) 2026-11-08 IDENTITEIT-007 · користувач сам обирає вигляд центру облікового запису («Студія» або класичний)
+  - [`a8dbe05b`](https://github.com/Tarasevych/hub/commit/a8dbe05b) 2026-11-08 IDENTITEIT-007: вигляд «Макет» центру облікового запису за дизайном власника
+  - [`4b56b720`](https://github.com/Tarasevych/hub/commit/4b56b720) 2026-11-08 IDENTITEIT-007: вигляд «Макет» один в один з макетом власника
+  - [`619450a9`](https://github.com/Tarasevych/hub/commit/619450a9) 2026-11-09 IDENTITEIT-007 · журнал розробки, задача і процес випуску
+  - [`8392ceb2`](https://github.com/Tarasevych/hub/commit/8392ceb2) 2026-11-09 IDENTITEIT-007 · журнал: пробне пакування пройшло перевірку
+  - [`14ef8dc6`](https://github.com/Tarasevych/hub/commit/14ef8dc6) 2026-11-09 IDENTITEIT-007 · перемикач вигляду видно з класичної сторінки
+  - [`d3d49286`](https://github.com/Tarasevych/hub/commit/d3d49286) 2026-11-09 IDENTITEIT-007 · на вузькому екрані компактний перемикач не дублює повний
+  - [`a714cc52`](https://github.com/Tarasevych/hub/commit/a714cc52) 2026-11-09 IDENTITEIT-007 · перемикач вигляду видно з класичної сторінки
+  - [`965f5199`](https://github.com/Tarasevych/hub/commit/965f5199) 2026-11-09 IDENTITEIT-007 · на вузькому екрані компактний перемикач не дублює повний
+  - [`4d71a818`](https://github.com/Tarasevych/hub/commit/4d71a818) 2026-11-09 IDENTITEIT-007 · друга гілка випуску від коміту першого випуску: перемикач вигляду в класичному вигляді
+  - [`fd95af01`](https://github.com/Tarasevych/hub/commit/fd95af01) 2026-11-09 IDENTITEIT-007 · «Макет» завжди в списку виглядів, перемикач функції створює міграція
+  - [`0f905e03`](https://github.com/Tarasevych/hub/commit/0f905e03) 2026-11-09 IDENTITEIT-007 · «Макет» завжди в списку виглядів, перемикач функції створює міграція
+  - [`bc16016a`](https://github.com/Tarasevych/hub/commit/bc16016a) 2026-11-09 IDENTITEIT-007 · третя гілка випуску від коміту другого випуску: «Макет» завжди в списку, перемикач функції з міграції
+  - [`4c9786c5`](https://github.com/Tarasevych/hub/commit/4c9786c5) 2026-11-09 orch: IDENTITEIT-007 released · три випуски (051901, 060206, 065647) опубліковано, код злито в integratie за дозволом власника
+  - [`c829351a`](https://github.com/Tarasevych/hub/commit/c829351a) 2026-11-09 IDENTITEIT-007 · міграція 0200: опис перемикача вкладається в межу CHECK (≤ 300 знаків)
+  - [`a92ef438`](https://github.com/Tarasevych/hub/commit/a92ef438) 2026-11-09 IDENTITEIT-007 · міграція 0200: опис перемикача вкладається в межу CHECK (≤ 300 знаків)
+  - [`681f5fdd`](https://github.com/Tarasevych/hub/commit/681f5fdd) 2026-11-09 IDENTITEIT-007 · журнал: збій встановлення 065647 на міграції 0200 і виправлення
+  - [`bf6c7a7d`](https://github.com/Tarasevych/hub/commit/bf6c7a7d) 2026-11-09 IDENTITEIT-007 · журнал: спільний випуск 20261109-083614 (PERF-001) містить виправлення міграції 0200
+- **[MOBIEL-001](#t-mobiel-001)** — 10 · 2026-11-08 → 2026-11-08
+  - [`f1526698`](https://github.com/Tarasevych/hub/commit/f1526698) 2026-11-08 MOBIEL-001 · виправлено відображення налаштувань на смартфоні
+  - [`2f793645`](https://github.com/Tarasevych/hub/commit/2f793645) 2026-11-08 MOBIEL-001 · додано перевірку смартфонів перед випуском
+  - [`45388921`](https://github.com/Tarasevych/hub/commit/45388921) 2026-11-08 MOBIEL-001 · діагностика відображення під час браузерної перевірки
+  - [`8b8aee15`](https://github.com/Tarasevych/hub/commit/8b8aee15) 2026-11-08 MOBIEL-001 · відтворено службовий модуль у браузерних перевірках
+  - [`974f9c85`](https://github.com/Tarasevych/hub/commit/974f9c85) 2026-11-08 MOBIEL-001 · відновлено пункти верхньої та нижньої навігації
+  - [`7abfa6ce`](https://github.com/Tarasevych/hub/commit/7abfa6ce) 2026-11-08 MOBIEL-001 · розгорнути всі групи навігації на телефоні
+  - [`ab684f7e`](https://github.com/Tarasevych/hub/commit/ab684f7e) 2026-11-08 MOBIEL-001 · зберігати точні відомості про невдалі натискання
+  - [`787613ad`](https://github.com/Tarasevych/hub/commit/787613ad) 2026-11-08 MOBIEL-001 · узгодити нижнє меню з висувною навігацією
+  - [`ee88cf97`](https://github.com/Tarasevych/hub/commit/ee88cf97) 2026-11-08 MOBIEL-001 · прибрати приховані зовнішні відступи нижнього меню
+  - [`944336a2`](https://github.com/Tarasevych/hub/commit/944336a2) 2026-11-08 MOBIEL-001 · перевірити також світле оформлення на смартфонах
+- **[TRACE-002](#t-trace-002)** — 1 · 2026-11-08 → 2026-11-08
+  - [`41d47ce8`](https://github.com/Tarasevych/hub/commit/41d47ce8) 2026-11-08 TRACE-002 · перевірка допустимої гілки перед пакуванням
+- **[APPARAAT-001](#t-apparaat-001)** — 3 · 2026-11-09 → 2026-11-09
+  - [`7006e93b`](https://github.com/Tarasevych/hub/commit/7006e93b) 2026-11-09 APPARAAT-001 · підтвердження з іншого пристрою: вкладки «Інший пристрій» і «У Telegram» у вікні «Підтвердіть доступ», плаваюче вікно «Це ви?» з тими самими символами, одна спроба, відлік, «Це не я» перемагає; четвертий метод «apparaat» у матриці TELEGRAM-001 і один поріг для step-up; символи в картці Telegram; налаштування користувача й адміністратора; прапорець apparaat-bevestiging-v1 типово увімкнено · bevestigen vanaf een ander apparaat: tabbladen in «Toegang bevestigen», zwevend venster «Bent u het?» met dezelfde symbolen, één poging, aftelling, «Dit ben ik niet» wint; vierde methode «apparaat» in de bevestigingstabel en één poort; symbolen in de Telegram-kaart; instellingen gebruiker en beheer; vlag standaard aan
+  - [`623da0f1`](https://github.com/Tarasevych/hub/commit/623da0f1) 2026-11-09 APPARAAT-001 · кольори стану з палітри (--ok/--fout/--waarschuwing) замість шістнадцяткових; процес випуску GitHub Actions за зразком UITROL-001 (перевірки, міграції на чистій базі, стрім-тести, пакет, оприлюднення без встановлення) · statuskleuren uit het palet; uitgaveproces in GitHub Actions
+  - [`29052626`](https://github.com/Tarasevych/hub/commit/29052626) 2026-11-09 APPARAAT-001 · таблиця apparaat_instellingen у реєстрі видалення облікового запису (стовпець door — рядок сайту, як tg_instellingen); журнал розробки доповнено результатами випуску · apparaat_instellingen in het register voor account wissen; ontwikkeldossier aangevuld
+- **[MAILBG-001](#t-mailbg-001)** — 7 · 2026-11-09 → 2026-11-10
+  - [`f0eee5a1`](https://github.com/Tarasevych/hub/commit/f0eee5a1) 2026-11-09 MAILBG-001 · рухоме тло пошти, лінза та налаштування
+  - [`01a6bca1`](https://github.com/Tarasevych/hub/commit/01a6bca1) 2026-11-09 MAILBG-001 · додати перевірене посилання на злиття №60
+  - [`7e7f606a`](https://github.com/Tarasevych/hub/commit/7e7f606a) 2026-11-09 MAILBG-001 · виправити двомовний підсумок для підготовки пакета
+  - [`2cc45b1f`](https://github.com/Tarasevych/hub/commit/2cc45b1f) 2026-11-09 MAILBG-001 · дотикова лінза й остаточні перевірки
+  - [`336e0f04`](https://github.com/Tarasevych/hub/commit/336e0f04) 2026-11-10 MAILBG-001 · зберегти виправлення дотику та походження випуску
+  - [`566a4ba1`](https://github.com/Tarasevych/hub/commit/566a4ba1) 2026-11-10 MAILBG-001 · зберегти виправлення дотику та походження випуску
+  - [`017b5a3d`](https://github.com/Tarasevych/hub/commit/017b5a3d) 2026-11-10 MAILBG-001 · зберегти виправлення дотику та походження випуску
+- **[PERF-001](#t-perf-001)** — 8 · 2026-11-09 → 2026-11-09
+  - [`5f451f8d`](https://github.com/Tarasevych/hub/commit/5f451f8d) 2026-11-09 PERF-001 · швидший старт сторінок: менший стартовий бандл, менше запитів, стиснення
+  - [`6729abb6`](https://github.com/Tarasevych/hub/commit/6729abb6) 2026-11-09 PERF-001 · гілка випуску від встановленого коміту bc16016a: процес випуску, журнал розробки, задача
+  - [`beebe27c`](https://github.com/Tarasevych/hub/commit/beebe27c) 2026-11-09 PERF-001 · стара вада: синтаксична помилка в presentation-init (апостроф у «під'єднань»)
+  - [`35373228`](https://github.com/Tarasevych/hub/commit/35373228) 2026-11-09 PERF-001 · випуск: стара вада presentation-init у журналі, ще три перевірки в процесі
+  - [`b31cea2d`](https://github.com/Tarasevych/hub/commit/b31cea2d) 2026-11-09 PERF-001 · смуга інтеграцій лишається публічною після лінивого завантаження
+  - [`0cd11723`](https://github.com/Tarasevych/hub/commit/0cd11723) 2026-11-09 PERF-001 · журнал розробки: перевірка технічних бандлів і виправлення
+  - [`2820fc4a`](https://github.com/Tarasevych/hub/commit/2820fc4a) 2026-11-09 PERF-001 · випуск: міграція 0200 виправлена (з IDENTITEIT-007), прогін усіх міграцій на чистій базі в процесі
+  - [`b025c713`](https://github.com/Tarasevych/hub/commit/b025c713) 2026-11-09 PERF-001 · процес випуску: запуск і при зміні стану задач
+- **[TELEGRAM-001](#t-telegram-001)** — 3 · 2026-11-09 → 2026-11-09
+  - [`7228a5e3`](https://github.com/Tarasevych/hub/commit/7228a5e3) 2026-11-09 TELEGRAM-001 · вхід і підтвердження через Telegram (@MijnRuimte_Bot), прапорець telegram-aanmelden-v1 типово вимкнено · aanmelden en bevestigen via Telegram, vlag standaard uit
+  - [`832b9ddb`](https://github.com/Tarasevych/hub/commit/832b9ddb) 2026-11-09 TELEGRAM-001 · мовна правка: без англіцизмів у текстах (адреса зворотного виклику, обліковий запис, ім’я користувача, випуск), читабельні назви кодів стану · taalcorrectie zonder anglicismen, leesbare namen voor statuscodes
+  - [`8fe8b97f`](https://github.com/Tarasevych/hub/commit/8fe8b97f) 2026-11-09 TELEGRAM-001 · розміщення способів входу адміністратором (0203), «Єдиний вхід» замість «SSO», без англійської в нових текстах, нідерландські префікси гілок · plaatsing van aanmeldmethoden door de beheerder, «Eenmalige aanmelding», geen Engels, Nederlandse takvoorvoegsels
+- **[UITROL-001](#t-uitrol-001)** — 8 · 2026-11-09 → 2026-11-09
+  - [`d28daa41`](https://github.com/Tarasevych/hub/commit/d28daa41) 2026-11-09 UITROL-001 · перевірка вимог до завантаження: проба нових міграцій на тимчасовій копії схеми
+  - [`55f543e0`](https://github.com/Tarasevych/hub/commit/55f543e0) 2026-11-09 UITROL-001 · перевірка вимог у браузері до завантаження: картка вимог, причина, журнал, звіт про проблему
+  - [`1ede6765`](https://github.com/Tarasevych/hub/commit/1ede6765) 2026-11-09 UITROL-001: зупинка власником, конвеєр етапів, термінал-вікно з мітками, прив'язка проби до sha256
+  - [`737d8796`](https://github.com/Tarasevych/hub/commit/737d8796) 2026-11-09 UITROL-001 · процес випуску, задача та досьє розробки · uitgaveproces, taak en ontwikkeldossier
+  - [`0f759afa`](https://github.com/Tarasevych/hub/commit/0f759afa) 2026-11-09 UITROL-001 · тест передперевірки: добрий пакет має пробу, прив'язану до SQL; без проби — попередження, чужа міграція — помилка
+  - [`4a371c64`](https://github.com/Tarasevych/hub/commit/4a371c64) 2026-11-09 UITROL-001 · тест передперевірки: добрий пакет має пробу, прив'язану до SQL; без проби — попередження, чужа міграція — помилка
+  - [`2a955243`](https://github.com/Tarasevych/hub/commit/2a955243) 2026-11-09 UITROL-001 · каталог елементів інтерфейсу оновлено (нові кнопки термінала й зупинки) · UI-catalogus bijgewerkt
+  - [`22742811`](https://github.com/Tarasevych/hub/commit/22742811) 2026-11-09 UITROL-001 · каталог елементів інтерфейсу оновлено (нові кнопки термінала й зупинки) · UI-catalogus bijgewerkt
+- **[HUIS-001](#t-huis-001)** — 18 · 2026-11-10 → 2026-11-12
+  - [`879d4fcb`](https://github.com/Tarasevych/hub/commit/879d4fcb) 2026-11-10 HUIS-001: старі помилки розділу «Дім» — підписи вкладок, часові пояси, сповіщення
+  - [`fa0b618a`](https://github.com/Tarasevych/hub/commit/fa0b618a) 2026-11-10 HUIS-001: змінні середовища розділу «Дім» у документах (uk + nl)
+  - [`09ae25ca`](https://github.com/Tarasevych/hub/commit/09ae25ca) 2026-11-10 HUIS-001: тести виправлень і запуск набору huis-vnext у хмарному контейнері
+  - [`ec5af93e`](https://github.com/Tarasevych/hub/commit/ec5af93e) 2026-11-10 HUIS-001: реєстрація задачі (розумний будинок, етап 0 — дизайн і макет)
+  - [`a8ceded7`](https://github.com/Tarasevych/hub/commit/a8ceded7) 2026-11-10 HUIS-001: дизайн-мова «Живий дім / Levend huis» — робоча версія
+  - [`0305f27e`](https://github.com/Tarasevych/hub/commit/0305f27e) 2026-11-10 HUIS-001: дизайн-мова — правки за зауваженнями перевірки (проміжний стан)
+  - [`0f8e95b5`](https://github.com/Tarasevych/hub/commit/0f8e95b5) 2026-11-10 HUIS-001: проміжний стан дизайн-мови та ядра макета
+  - [`fa7592aa`](https://github.com/Tarasevych/hub/commit/fa7592aa) 2026-11-10 HUIS-001: проміжний стан дизайн-мови та ядра макета
+  - [`edc95ca5`](https://github.com/Tarasevych/hub/commit/edc95ca5) 2026-11-10 HUIS-001: проміжний стан дизайн-мови та ядра макета
+  - [`43ac3bab`](https://github.com/Tarasevych/hub/commit/43ac3bab) 2026-11-10 HUIS-001: складальник макета — власні стилі екранів і збірка в окремий файл
+  - [`6f5a9a1f`](https://github.com/Tarasevych/hub/commit/6f5a9a1f) 2026-11-12 HUIS-001: макет «Живий дім» — екрани всіх зон, аркуші керування, специфікація двома мовами
+  - [`b9503ae1`](https://github.com/Tarasevych/hub/commit/b9503ae1) 2026-11-12 HUIS-001: макет «Живий дім» на сайті — «Вітрина» і статична сторінка /huis-maquette/
+  - [`fc7de141`](https://github.com/Tarasevych/hub/commit/fc7de141) 2026-11-12 HUIS-001: тест макета, журнал розробки, покажчик документації, каталог пошуку
+  - [`f9db5074`](https://github.com/Tarasevych/hub/commit/f9db5074) 2026-11-12 HUIS-001: робочий процес випуску (макет «Живий дім», специфікація, виправлення розділу «Дім»)
+  - [`06186dee`](https://github.com/Tarasevych/hub/commit/06186dee) 2026-11-12 HUIS-001: завершальна перевірка макета й специфікації — перше коло виправлень
+  - [`c612fd7c`](https://github.com/Tarasevych/hub/commit/c612fd7c) 2026-11-12 HUIS-001: завершальна перевірка — друге коло (залишки між файлами, перевірка змін, доопрацювання)
+  - [`8c98dc1a`](https://github.com/Tarasevych/hub/commit/8c98dc1a) 2026-11-12 HUIS-001: другий випуск — основа за встановленою версією, журнал розробки другого кола
+  - [`fd772f57`](https://github.com/Tarasevych/hub/commit/fd772f57) 2026-11-12 HUIS-001: основа другого випуску — встановлена версія 20261112-043627 (GITHUB-012)
+- **[MAILSCAN-002](#t-mailscan-002)** — 6 · 2026-11-10 → 2026-11-10
+  - [`427b300b`](https://github.com/Tarasevych/hub/commit/427b300b) 2026-11-10 MAILSCAN-002 · згода на перевірку й живе рідинне тло пошти
+  - [`e02ee8b8`](https://github.com/Tarasevych/hub/commit/e02ee8b8) 2026-11-10 MAILSCAN-002 · перевірити мобільне тло та пробну базу перед випуском
+  - [`7dedc366`](https://github.com/Tarasevych/hub/commit/7dedc366) 2026-11-10 MAILSCAN-002 · узгодити розміщення та каталог дій
+  - [`d01a7a60`](https://github.com/Tarasevych/hub/commit/d01a7a60) 2026-11-10 MAILSCAN-002 · Узгодити давні перевірки з добровільною згодою
+  - [`212749f8`](https://github.com/Tarasevych/hub/commit/212749f8) 2026-11-10 MAILSCAN-002 · Розділити перевірку вибору та згоди скриньок
+  - [`89a6b55f`](https://github.com/Tarasevych/hub/commit/89a6b55f) 2026-11-10 MAILSCAN-002 · Зберегти успішні перевірки та знімки випуску
+- **[GITHUB-010](#t-github-010)** — 1 · 2026-11-11 → 2026-11-11
+  - [`3e18d5b3`](https://github.com/Tarasevych/hub/commit/3e18d5b3) 2026-11-11 GITHUB-010: повноцінне двостороннє робоче середовище GitHub, однонатискове підключення та екосистемні мости · volledige tweerichtings-GitHub-werkruimte
+- **[IDENTITEIT-008](#t-identiteit-008)** — 5 · 2026-11-11 → 2026-11-11
+  - [`d24de76c`](https://github.com/Tarasevych/hub/commit/d24de76c) 2026-11-11 IDENTITEIT-008: спадне меню облікового запису v3 (орбіта світлин, палітра за Моделлю В, доступ і масштаб)
+  - [`b21dcae8`](https://github.com/Tarasevych/hub/commit/b21dcae8) 2026-11-11 IDENTITEIT-008: виправлення іменованого імпорту AccountMenuV3Instellingen для перевірки типів
+  - [`66cab752`](https://github.com/Tarasevych/hub/commit/66cab752) 2026-11-11 IDENTITEIT-008: розумний захист повноти застосованих міграцій (MIGRATIES_ONTBREKEN) та розпізнавання жовтневих перейменувань
+  - [`730d9f81`](https://github.com/Tarasevych/hub/commit/730d9f81) 2026-11-11 IDENTITEIT-008: незалежне поверхневе вікно AccountMenuV3 на всю ширину смартфона · onafhankelijk mobiel bovenvenster
+  - [`7734fc3b`](https://github.com/Tarasevych/hub/commit/7734fc3b) 2026-11-11 IDENTITEIT-008: виправлення входу пошти Google і меню v3 та відкрита агентна екосистема ШІ · open AI-ecosysteem
+- **[CLOUD-001](#t-cloud-001)** — 4 · 2026-11-12 → 2026-11-12
+  - [`036b7c06`](https://github.com/Tarasevych/hub/commit/036b7c06) 2026-11-12 CLOUD-001: виправлено перевірку діапазону хмарних міграцій 0117..0122 у тесті послідовності
+  - [`77747424`](https://github.com/Tarasevych/hub/commit/77747424) 2026-11-12 CLOUD-001: завантаження тек, архівів і будь-яких файлів у хмару, спільний доступ до папок, файлів і частин файла та керування посиланнями зі статистикою
+  - [`04178943`](https://github.com/Tarasevych/hub/commit/04178943) 2026-11-12 CLOUD-001: узгоджено назви колонок і порожнє значення wachtwoord_hash у маршрутах спільного доступу зі схемою 0210
+  - [`11e0aad8`](https://github.com/Tarasevych/hub/commit/11e0aad8) 2026-11-12 CLOUD-001: додано стійкість звірки основи випуску до тимчасової недоступності тунелю Cloudflare
+- **[GITHUB-011](#t-github-011)** — 1 · 2026-11-12 → 2026-11-12
+  - [`f2626def`](https://github.com/Tarasevych/hub/commit/f2626def) 2026-11-12 GITHUB-011: виправити зворотний виклик OAuth та однонатискове підключення GitHub при закритому сховищі ключів на основі 20261112-024707
+- **[GITHUB-012](#t-github-012)** — 1 · 2026-11-12 → 2026-11-12
+  - [`61cc2541`](https://github.com/Tarasevych/hub/commit/61cc2541) 2026-11-12 GITHUB-012: повна адаптація мобільної, планшетної та настільної версій розділу GitHub у всіх 13 підрозділах і просторах
+- **[IDENTITEIT-009](#t-identiteit-009)** — 1 · 2026-11-12 → 2026-11-12
+  - [`18262724`](https://github.com/Tarasevych/hub/commit/18262724) 2026-11-12 IDENTITEIT-009: повна мобільна адаптація всіх трьох режимів id.tarasevych.com та зміцнення безпеки, швидкодії й клієнтської стійкості поверх версії 20261112-090824
+- **[IDENTITEIT-010](#t-identiteit-010)** — 1 · 2026-11-12 → 2026-11-12
+  - [`2ee0cc3e`](https://github.com/Tarasevych/hub/commit/2ee0cc3e) 2026-11-12 IDENTITEIT-010: цілісний вхід на всіх піддоменах, єдиний сеанс простору, Telegram і сповіщення
+- **[MCP-001](#t-mcp-001)** — 2 · 2026-11-12 → 2026-11-12
+  - [`bfd4c5d8`](https://github.com/Tarasevych/hub/commit/bfd4c5d8) 2026-11-12 MCP-001: повна підтримка протоколу MCP 2026-07-28 + 2025-11-25, OAuth 2.1 (Origin, CIMD, RFC 9207) та вбудована студія-інспектор
+  - [`1f101224`](https://github.com/Tarasevych/hub/commit/1f101224) 2026-11-12 MCP-001: уточнення назви тесту connector-v2.test.ts у робочому процесі випуску
+- **[SEC-002](#t-sec-002)** — 6 · 2026-11-12 → 2026-11-13
+  - [`c3d64f1a`](https://github.com/Tarasevych/hub/commit/c3d64f1a) 2026-11-12 SEC-002: зареєстровано завдання — глибокий аудит безпеки всього сховища й патчі
+  - [`a85f7578`](https://github.com/Tarasevych/hub/commit/a85f7578) 2026-11-12 SEC-002: навичка й сценарій проєкту «beveiligingsaudit» для аудиту безпеки
+  - [`bff49658`](https://github.com/Tarasevych/hub/commit/bff49658) 2026-11-13 SEC-002: умови тестів у CI — тимчасова тека сховища, root-сценарії g09/g10f через sudo · CI-testomgeving
+  - [`705350c2`](https://github.com/Tarasevych/hub/commit/705350c2) 2026-11-13 SEC-002: тест g10f — копія помічника passkey у тимчасовій теці (CI: /home/runner 0750)
+  - [`22c3b73b`](https://github.com/Tarasevych/hub/commit/22c3b73b) 2026-11-13 SEC-002: журнал розробки — узгодження умов тестів із GitHub Actions
+  - [`5f2325d7`](https://github.com/Tarasevych/hub/commit/5f2325d7) 2026-11-13 SEC-002: справжній Chrome для перевірок інтерфейсу g10g у CI (закріплений playwright-core)
+- **[HISTORIE-001](#t-historie-001)** — 2 · 2026-11-13 → 2026-11-13
+  - [`c9de74dc`](https://github.com/Tarasevych/hub/commit/c9de74dc) 2026-11-13 HISTORIE-001: генератор хронології гілок із посиланнями на попередника й наступника
+  - [`735c4bbf`](https://github.com/Tarasevych/hub/commit/735c4bbf) 2026-11-13 HISTORIE-001: хронологія 48 робіт і 122 гілок, етап VII історії та доповнення оглядів
+- **[IDENTITEIT-011](#t-identiteit-011)** — 6 · 2026-11-13 → 2026-11-13
+  - [`c0fd4448`](https://github.com/Tarasevych/hub/commit/c0fd4448) 2026-11-13 IDENTITEIT-011: план доопрацювання вигляду «Макет» центру облікового запису
+  - [`8f85d179`](https://github.com/Tarasevych/hub/commit/8f85d179) 2026-11-13 IDENTITEIT-011: межі розділів «Макета», сталі контейнери порталів, коди після TOTP
+  - [`81a712ec`](https://github.com/Tarasevych/hub/commit/81a712ec) 2026-11-13 IDENTITEIT-011: «Можливості для доопрацювання» → жива карта розвитку
+  - [`6ac91d2e`](https://github.com/Tarasevych/hub/commit/6ac91d2e) 2026-11-13 IDENTITEIT-011: чесні демо-елементи, мобільна розкладка карти, e2e у Chromium
+  - [`1c81503a`](https://github.com/Tarasevych/hub/commit/1c81503a) 2026-11-13 IDENTITEIT-011: каталог елементів інтерфейсу з новою секцією «Ключі доступу»
+  - [`42693e06`](https://github.com/Tarasevych/hub/commit/42693e06) 2026-11-13 IDENTITEIT-011: журнал розробки та передавання
+- **[IDENTITEIT-012](#t-identiteit-012)** — 4 · 2026-11-13 → 2026-11-13
+  - [`4618fbdf`](https://github.com/Tarasevych/hub/commit/4618fbdf) 2026-11-13 IDENTITEIT-012: виправлення безпеки сервера, знайдені під час звірки «Макета»
+  - [`70517491`](https://github.com/Tarasevych/hub/commit/70517491) 2026-11-13 IDENTITEIT-012: тести, що відтворюють вади (5/21 на 5f2325d7, 21/21 з виправленнями)
+  - [`46ed83f1`](https://github.com/Tarasevych/hub/commit/46ed83f1) 2026-11-13 IDENTITEIT-012: опис завдання
+  - [`5fd9ae21`](https://github.com/Tarasevych/hub/commit/5fd9ae21) 2026-11-13 IDENTITEIT-012: журнал розробки та передавання
+- **[MAQUETTE-001](#t-maquette-001)** — 2 · 2026-11-13 → 2026-11-13
+  - [`39df3504`](https://github.com/Tarasevych/hub/commit/39df3504) 2026-11-13 MAQUETTE-001: ядро теми «Макет», спільна художня система та перевтілення центру ідентичності й входу
+  - [`86b38455`](https://github.com/Tarasevych/hub/commit/86b38455) 2026-11-13 MAQUETTE-001: захищений робочий процес оприлюднення випуску Хвилі 0
+- **[MAQUETTE-002](#t-maquette-002)** — 1 · 2026-11-13 → 2026-11-13
+  - [`5c181e68`](https://github.com/Tarasevych/hub/commit/5c181e68) 2026-11-13 MAQUETTE-002: студійне перевтілення поштового простору mail.tarasevych.com у темі «Макет»
+- **[MAQUETTE-003](#t-maquette-003)** — 1 · 2026-11-13 → 2026-11-13
+  - [`b83a9433`](https://github.com/Tarasevych/hub/commit/b83a9433) 2026-11-13 MAQUETTE-003: студійне перевтілення хмарного сховища cloud.tarasevych.com у темі «Макет»
+- **[MAQUETTE-004](#t-maquette-004)** — 1 · 2026-11-13 → 2026-11-13
+  - [`ded48f5a`](https://github.com/Tarasevych/hub/commit/ded48f5a) 2026-11-13 MAQUETTE-004: студійне перевтілення інженерного простору github.tarasevych.com у темі «Макет»
+- **[MAQUETTE-005](#t-maquette-005)** — 1 · 2026-11-13 → 2026-11-13
+  - [`32d52aa1`](https://github.com/Tarasevych/hub/commit/32d52aa1) 2026-11-13 MAQUETTE-005: студійне перевтілення головного простору hub.tarasevych.com у темі «Макет»
+- **[MAQUETTE-006](#t-maquette-006)** — 1 · 2026-11-13 → 2026-11-13
+  - [`eba4d0f7`](https://github.com/Tarasevych/hub/commit/eba4d0f7) 2026-11-13 MAQUETTE-006: студійне перевтілення простору штучного інтелекту ai.tarasevych.com у темі «Макет»
+- **[MAQUETTE-007](#t-maquette-007)** — 1 · 2026-11-13 → 2026-11-13
+  - [`5b4d4d4f`](https://github.com/Tarasevych/hub/commit/5b4d4d4f) 2026-11-13 MAQUETTE-007: студійне перевтілення розумної оселі huis.tarasevych.com у темі «Макет»
+- **[GEMINI-001](#t-gemini-001)** — 4 · 2026-11-14 → 2026-11-15
+  - [`5e79cb8b`](https://github.com/Tarasevych/hub/commit/5e79cb8b) 2026-11-14 GEMINI-001: усунено накладання меню на праву панель, перебудовано навігацію, групування користувачів, аудит та адаптивність / GEMINI-001: accountmenu-laag, ankerpaneel, groepering en controlelogboek hersteld
+  - [`864a9c6f`](https://github.com/Tarasevych/hub/commit/864a9c6f) 2026-11-15 GEMINI-001: точні назви тестів orch-*-20261031 у процесі випуску / exacte testnamen in het uitgaveproces
+  - [`f986ab0b`](https://github.com/Tarasevych/hub/commit/f986ab0b) 2026-11-15 GEMINI-001: ізоляція змінних BASIS_* у тестових кроках / isolatie van BASIS_*-variabelen in teststappen
+  - [`949cf178`](https://github.com/Tarasevych/hub/commit/949cf178) 2026-11-15 GEMINI-001: послідовність БД-тестів на чистій базі в процесі випуску / volgorde van databasetests in het uitgaveproces
+- **[IDENTITEIT-013](#t-identiteit-013)** — 6 · 2026-11-14 → 2026-11-14
+  - [`70c8f5d7`](https://github.com/Tarasevych/hub/commit/70c8f5d7) 2026-11-14 IDENTITEIT-013: реєстрація завдання (фаза 2 — підтвердження й правдиві тексти)
+  - [`8eff564d`](https://github.com/Tarasevych/hub/commit/8eff564d) 2026-11-14 IDENTITEIT-013: спільний діалог підтвердження, правдиві тексти видалення, зрозумілі відмови
+  - [`8271418e`](https://github.com/Tarasevych/hub/commit/8271418e) 2026-11-14 IDENTITEIT-013: автотема без неправди про «на сьогодні», «Забути місце», «не зберігати браузер» діє одразу
+  - [`ae9d2348`](https://github.com/Tarasevych/hub/commit/ae9d2348) 2026-11-14 IDENTITEIT-013: автозбереження меню, форма віджета, текст про втрату ключа, безпечне копіювання
+  - [`7c6f970f`](https://github.com/Tarasevych/hub/commit/7c6f970f) 2026-11-14 IDENTITEIT-013: тести фази 2, вигляд діалогу, давня вада синхронізації сповіщень
+  - [`d07ce6e5`](https://github.com/Tarasevych/hub/commit/d07ce6e5) 2026-11-14 IDENTITEIT-013: журнал розробки й передавання
+- **[IDENTITEIT-014](#t-identiteit-014)** — 12 · 2026-11-14 → 2026-11-14
+  - [`604211ab`](https://github.com/Tarasevych/hub/commit/604211ab) 2026-11-14 IDENTITEIT-014: реєстрація завдання (фаза 3 — під'єднати те, що вже працює деінде)
+  - [`f947cc25`](https://github.com/Tarasevych/hub/commit/f947cc25) 2026-11-14 IDENTITEIT-014: права в спільному просторі — одна таблиця ролей, роль у кожному просторі, step-up для «адміністратора», сповіщення
+  - [`c302b94a`](https://github.com/Tarasevych/hub/commit/c302b94a) 2026-11-14 IDENTITEIT-014: спільний доступ у hub і центрі налаштувань — роль у вибраному просторі, підтвердження, «Хто має доступ», посилання на hub
+  - [`cb0c30d7`](https://github.com/Tarasevych/hub/commit/cb0c30d7) 2026-11-14 IDENTITEIT-014: способи входу — каталог і Telegram у старій панелі, пароль без пароля, QR і заміна автентифікатора
+  - [`e9c4060d`](https://github.com/Tarasevych/hub/commit/e9c4060d) 2026-11-14 IDENTITEIT-014: відновлення доступу — огляд резерву, сценарії, наслідки втрати ключа
+  - [`87623603`](https://github.com/Tarasevych/hub/commit/87623603) 2026-11-14 IDENTITEIT-014: вивантаження даних у «Акаунті» і блок «Типи сповіщень» у меню
+  - [`2ce0337b`](https://github.com/Tarasevych/hub/commit/2ce0337b) 2026-11-14 IDENTITEIT-014: нагадування про резервний доступ і жива карта після фази 3
+  - [`6f99bde6`](https://github.com/Tarasevych/hub/commit/6f99bde6) 2026-11-14 IDENTITEIT-014: виправлення знахідок рецензії фази 3 — чесні сповіщення, права запрошень, Telegram/каталог, посилання на коди
+  - [`0d9a8a24`](https://github.com/Tarasevych/hub/commit/0d9a8a24) 2026-11-14 IDENTITEIT-014: перегенерований реєстр кнопок пошуку (нові блоки фази 3)
+  - [`51adc13f`](https://github.com/Tarasevych/hub/commit/51adc13f) 2026-11-14 IDENTITEIT-014: e2e нових блоків фази 3 і вигляд попередження вивантаження
+  - [`bd4fbc74`](https://github.com/Tarasevych/hub/commit/bd4fbc74) 2026-11-14 IDENTITEIT-014: два тести SEC-002 узгоджено з навмисними змінами фази 1
+  - [`6d430e15`](https://github.com/Tarasevych/hub/commit/6d430e15) 2026-11-14 IDENTITEIT-014: журнал розробки й передавання
+- **[IDENTITEIT-015](#t-identiteit-015)** — 71 · 2026-11-14 → 2026-11-14
+  - [`6be77a27`](https://github.com/Tarasevych/hub/commit/6be77a27) 2026-11-14 IDENTITEIT-015: реєстрація завдання (повна звірка центру облікового запису); виправлено basisVersie IDENTITEIT-014 (20261113-121403)
+  - [`5efa7f26`](https://github.com/Tarasevych/hub/commit/5efa7f26) 2026-11-14 IDENTITEIT-015: генератор відомості дій (156 позицій: 153 v49 + 3 живої карти) і спільний помічник приймальних e2e
+  - [`ee25e8be`](https://github.com/Tarasevych/hub/commit/ee25e8be) 2026-11-14 IDENTITEIT-015: початкова відомість дій — 156 позицій, 301 дія, стан до роботи з доказами в коді
+  - [`abbecd3f`](https://github.com/Tarasevych/hub/commit/abbecd3f) 2026-11-14 IDENTITEIT-015: крок risico — ризики втрати даних або доступу (етап 1)
+  - [`48e71279`](https://github.com/Tarasevych/hub/commit/48e71279) 2026-11-14 IDENTITEIT-015: відомість — versie кроку risico = abbecd3f
+  - [`12c48f20`](https://github.com/Tarasevych/hub/commit/12c48f20) 2026-11-14 IDENTITEIT-015: крок vormgeving — вигляд центру й демо-елементи «Макета» в обліковому записі (етап 2.1)
+  - [`329d87e2`](https://github.com/Tarasevych/hub/commit/329d87e2) 2026-11-14 IDENTITEIT-015: відомість — versie кроку vormgeving = 12c48f20
+  - [`1dae0b25`](https://github.com/Tarasevych/hub/commit/1dae0b25) 2026-11-14 IDENTITEIT-015: крок profiel-blokken — «Без фото», фото за посиланням через сервер, форма блоку, передача простору
+  - [`33680d6f`](https://github.com/Tarasevych/hub/commit/33680d6f) 2026-11-14 IDENTITEIT-015: відомість — versie кроку profiel-blokken = 1dae0b25
+  - [`ab27fdd6`](https://github.com/Tarasevych/hub/commit/ab27fdd6) 2026-11-14 IDENTITEIT-015: крок apparaten-uitvoer — попередження про новий пристрій (вибір, відомі пристрої) і вивантаження ZIP із CSV
+  - [`231ec81d`](https://github.com/Tarasevych/hub/commit/231ec81d) 2026-11-14 IDENTITEIT-015: відомість — versie кроку apparaten-uitvoer = ab27fdd6
+  - [`239bef74`](https://github.com/Tarasevych/hub/commit/239bef74) 2026-11-14 IDENTITEIT-015: крок aanmelden — вхід без Google (ключ доступу, пароль, Microsoft/Discord/Apple), SMS-підтвердження номера, «Повернути спосіб входу»
+  - [`4dfb747a`](https://github.com/Tarasevych/hub/commit/4dfb747a) 2026-11-14 IDENTITEIT-015: відомість — versie кроку aanmelden = 239bef74
+  - [`12531310`](https://github.com/Tarasevych/hub/commit/12531310) 2026-11-14 IDENTITEIT-015: крок sleutels-gasten — довіра до ключа доступу, гостьові коди для схвалених інших, переходи сценаріїв відновлення
+  - [`88addc17`](https://github.com/Tarasevych/hub/commit/88addc17) 2026-11-14 IDENTITEIT-015: відомість — versie кроку sleutels-gasten = 12531310
+  - [`899c96ad`](https://github.com/Tarasevych/hub/commit/899c96ad) 2026-11-14 IDENTITEIT-015: крок kaart-stille-uren — тихі години для всього центру сповіщень, зведення відомості, чесні підписи живої карти
+  - [`73a10b0d`](https://github.com/Tarasevych/hub/commit/73a10b0d) 2026-11-14 IDENTITEIT-015: відомість — versie кроку kaart-stille-uren = 899c96ad
+  - [`ca15a756`](https://github.com/Tarasevych/hub/commit/ca15a756) 2026-11-14 IDENTITEIT-015: крок herstel — виправлення підтверджених знахідок рецензії
+  - [`ddb6c74c`](https://github.com/Tarasevych/hub/commit/ddb6c74c) 2026-11-14 IDENTITEIT-015: відомість — versie кроку herstel = ca15a756
+  - [`3f7319ed`](https://github.com/Tarasevych/hub/commit/3f7319ed) 2026-11-14 IDENTITEIT-015: крок delen — перелік і відкликання приватних посилань, строк 1/7/30 днів, прив'язка до адреси (міграція 0273)
+  - [`e730aa4c`](https://github.com/Tarasevych/hub/commit/e730aa4c) 2026-11-14 IDENTITEIT-015: перегенерований реєстр кнопок пошуку після кроку delen
+  - [`a9d3452f`](https://github.com/Tarasevych/hub/commit/a9d3452f) 2026-11-14 IDENTITEIT-015: приймання delen — знахідки рецензії й «Вийти з простору» в центрі
+  - [`e593bd16`](https://github.com/Tarasevych/hub/commit/e593bd16) 2026-11-14 IDENTITEIT-015: приймання delen — відомість (versie a9d3452f)
+  - [`0f6becae`](https://github.com/Tarasevych/hub/commit/0f6becae) 2026-11-14 IDENTITEIT-015: приймання menu — e2e групи «menu» і знайдені вади
+  - [`f240f11b`](https://github.com/Tarasevych/hub/commit/f240f11b) 2026-11-14 IDENTITEIT-015: приймання menu — відомість (versie 0f6becae)
+  - [`d090cc65`](https://github.com/Tarasevych/hub/commit/d090cc65) 2026-11-14 IDENTITEIT-015: приймання thema — e2e групи «thema» і знайдені вади
+  - [`f00c41ee`](https://github.com/Tarasevych/hub/commit/f00c41ee) 2026-11-14 IDENTITEIT-015: приймання thema — відомість (versie d090cc65)
+  - [`da3bbfbc`](https://github.com/Tarasevych/hub/commit/da3bbfbc) 2026-11-14 IDENTITEIT-015: приймання blokken-profiel — e2e групи «blokken-profiel» і знайдені вади
+  - [`4e413452`](https://github.com/Tarasevych/hub/commit/4e413452) 2026-11-14 IDENTITEIT-015: приймання blokken-profiel — відомість (versie da3bbfbc)
+  - [`786d66db`](https://github.com/Tarasevych/hub/commit/786d66db) 2026-11-14 IDENTITEIT-015: генератор HTML-звіту для власника з відомості дій і знімків
+  - [`8a5861b5`](https://github.com/Tarasevych/hub/commit/8a5861b5) 2026-11-14 IDENTITEIT-015: відомість враховує доповнення паралельних ліній (aanvulling-*.json) без конфліктів злиття
+  - [`b4081d88`](https://github.com/Tarasevych/hub/commit/b4081d88) 2026-11-14 IDENTITEIT-015: журнал розробки й передавання для архіву поверх 20261114-111234
+  - [`807ef08c`](https://github.com/Tarasevych/hub/commit/807ef08c) 2026-11-14 IDENTITEIT-015: реєстр кнопок пошуку, перегенерований збіркою злитого коду
+  - [`87115463`](https://github.com/Tarasevych/hub/commit/87115463) 2026-11-14 IDENTITEIT-015: releaseVersie 20261114-163502 у задачі
+  - [`3046127e`](https://github.com/Tarasevych/hub/commit/3046127e) 2026-11-14 IDENTITEIT-015: приймання delen — e2e власника й другого облікового запису і знайдені вади
+  - [`038c4478`](https://github.com/Tarasevych/hub/commit/038c4478) 2026-11-14 IDENTITEIT-015: журнал і передавання для оновленого архіву (спільний доступ 80/80)
+  - [`56ca132d`](https://github.com/Tarasevych/hub/commit/56ca132d) 2026-11-14 IDENTITEIT-015: releaseVersie 20261114-164650 у задачі
+  - [`2b51d784`](https://github.com/Tarasevych/hub/commit/2b51d784) 2026-11-14 IDENTITEIT-015: приймання herstelcodes — e2e лінії C2 і виправлені вади
+  - [`d386d9a8`](https://github.com/Tarasevych/hub/commit/d386d9a8) 2026-11-14 IDENTITEIT-015: приймання herstelcodes — відомість лінії C2 (versie 2b51d78)
+  - [`d82895d0`](https://github.com/Tarasevych/hub/commit/d82895d0) 2026-11-14 IDENTITEIT-015: відомість після лінії C2
+  - [`2e40e236`](https://github.com/Tarasevych/hub/commit/2e40e236) 2026-11-14 IDENTITEIT-015: журнал і передавання для архіву з лінією C2
+  - [`b8c48161`](https://github.com/Tarasevych/hub/commit/b8c48161) 2026-11-14 IDENTITEIT-015: releaseVersie 20261114-165648 у задачі
+  - [`a0475404`](https://github.com/Tarasevych/hub/commit/a0475404) 2026-11-14 IDENTITEIT-015: приймання sessies — e2e групи «sessies» і знайдені вади
+  - [`c130d0b3`](https://github.com/Tarasevych/hub/commit/c130d0b3) 2026-11-14 IDENTITEIT-015: журнал і передавання для архіву з лінією B
+  - [`baf9a7f1`](https://github.com/Tarasevych/hub/commit/baf9a7f1) 2026-11-14 IDENTITEIT-015: releaseVersie у задачі (архів з лінією B)
+  - [`7344bfdf`](https://github.com/Tarasevych/hub/commit/7344bfdf) 2026-11-14 IDENTITEIT-015: приймання kluis-gast-herstel — e2e групи «kluis-gast-herstel» і знайдені вади
+  - [`8d991884`](https://github.com/Tarasevych/hub/commit/8d991884) 2026-11-14 IDENTITEIT-015: приймання kluis-gast-herstel — відомість (versie 7344bfdf)
+  - [`832d2449`](https://github.com/Tarasevych/hub/commit/832d2449) 2026-11-14 IDENTITEIT-015: знімки 12 розділів — «Макет» з відкритими «Чинними налаштуваннями»
+  - [`0c45863d`](https://github.com/Tarasevych/hub/commit/0c45863d) 2026-11-14 IDENTITEIT-015: тека знімків-015 (.gitkeep)
+  - [`c1e95d74`](https://github.com/Tarasevych/hub/commit/c1e95d74) 2026-11-14 IDENTITEIT-015: приймання gastcodes — e2e власника, гостя й не-власника; виправлено 4 вади
+  - [`ca08c0bb`](https://github.com/Tarasevych/hub/commit/ca08c0bb) 2026-11-14 IDENTITEIT-015: приймання gastcodes — відомість (versie c1e95d7)
+  - [`67f3649b`](https://github.com/Tarasevych/hub/commit/67f3649b) 2026-11-14 IDENTITEIT-015: приймання apparaten — e2e пристроїв і доступності «Макета», виправлення смуги розділів і зменшеного руху
+  - [`d219a21e`](https://github.com/Tarasevych/hub/commit/d219a21e) 2026-11-14 IDENTITEIT-015: журнал і передавання для архіву з лінією E
+  - [`fff90298`](https://github.com/Tarasevych/hub/commit/fff90298) 2026-11-14 IDENTITEIT-015: releaseVersie у задачі (архів з лінією E)
+  - [`f8f6c260`](https://github.com/Tarasevych/hub/commit/f8f6c260) 2026-11-14 IDENTITEIT-015: приймання aanmelden-sleutels — e2e групи і знайдені вади
+  - [`62b7265b`](https://github.com/Tarasevych/hub/commit/62b7265b) 2026-11-14 IDENTITEIT-015: приймання apparaten — правка смуги розділів через генератор, рух «Макета» — зона D1
+  - [`1fa62bef`](https://github.com/Tarasevych/hub/commit/1fa62bef) 2026-11-14 IDENTITEIT-015: приймання aanmelden-sleutels — перевірка «Керувати» (Google)
+  - [`5cca1ee5`](https://github.com/Tarasevych/hub/commit/5cca1ee5) 2026-11-14 IDENTITEIT-015: приймання aanmelden-sleutels — відомість (versie f8f6c26) і знімки
+  - [`b2c7f8a6`](https://github.com/Tarasevych/hub/commit/b2c7f8a6) 2026-11-14 IDENTITEIT-015: приймання vormgeving — e2e звірки з v49 (лінія D1) і знайдені вади
+  - [`01ea66b6`](https://github.com/Tarasevych/hub/commit/01ea66b6) 2026-11-14 IDENTITEIT-015: приймання vormgeving — відомість (versie b2c7f8a6)
+  - [`70f34de7`](https://github.com/Tarasevych/hub/commit/70f34de7) 2026-11-14 IDENTITEIT-015: сторінка повернення Google — позначка до очищення адреси (без 401 прапорця після злиття)
+  - [`4868f5d6`](https://github.com/Tarasevych/hub/commit/4868f5d6) 2026-11-14 IDENTITEIT-015: ui-audit-g HUB-03 — перевірка правила «custom → нотатки» через blokOpTab (застаріла після da3bbfb)
+  - [`a5ce2a84`](https://github.com/Tarasevych/hub/commit/a5ce2a84) 2026-11-14 IDENTITEIT-015: журнал і передавання для архіву з лініями C, C2, D1, D3, E2
+  - [`ef36c41e`](https://github.com/Tarasevych/hub/commit/ef36c41e) 2026-11-14 IDENTITEIT-015: releaseVersie у задачі (архів з усіма лініями, крім D2)
+  - [`b5720001`](https://github.com/Tarasevych/hub/commit/b5720001) 2026-11-14 IDENTITEIT-015: приймання apparaten — знімки, відомість, адреса розділу /themas у тесті
+  - [`7f0b29a9`](https://github.com/Tarasevych/hub/commit/7f0b29a9) 2026-11-14 IDENTITEIT-015: журнал і передавання для фінального архіву (усі 11 ліній)
+  - [`e2ee4592`](https://github.com/Tarasevych/hub/commit/e2ee4592) 2026-11-14 IDENTITEIT-015: releaseVersie у задачі (фінальний архів)
+  - [`3162e617`](https://github.com/Tarasevych/hub/commit/3162e617) 2026-11-14 IDENTITEIT-015: робочий процес випуску (GitHub Release) за зразком KLASSIEK-010
+  - [`987b81a5`](https://github.com/Tarasevych/hub/commit/987b81a5) 2026-11-14 IDENTITEIT-015: випуск лише вручну з моделлю як параметром; маніфест в архіві перевіряється валідатором інсталятора
+  - [`0b4db7b3`](https://github.com/Tarasevych/hub/commit/0b4db7b3) 2026-11-14 IDENTITEIT-015: заміна хибного випуску 20261114-175600 правильним 20261114-180411
+  - [`4b30bb05`](https://github.com/Tarasevych/hub/commit/4b30bb05) 2026-11-14 IDENTITEIT-015: безпекове сповіщення сервера не стає прочитаним від спливного вікна · beveiligingsmelding blijft «нова»
+- **[KLASSIEK-001](#t-klassiek-001)** — 2 · 2026-11-14 → 2026-11-14
+  - [`2b7073d5`](https://github.com/Tarasevych/hub/commit/2b7073d5) 2026-11-14 KLASSIEK-001: узгодження змінних мініпалітри v2 у agenten-kern-maquette.css
+  - [`4ec0f168`](https://github.com/Tarasevych/hub/commit/4ec0f168) 2026-11-14 KLASSIEK-001: запровадження ядра тем Біла класика і Чорна класика та паспорта id.tarasevych.com
+- **[KLASSIEK-002](#t-klassiek-002)** — 2 · 2026-11-14 → 2026-11-14
+  - [`1194d770`](https://github.com/Tarasevych/hub/commit/1194d770) 2026-11-14 KLASSIEK-002: відновлення ознаки сповіщення про помилку у MailKoppelVenster
+  - [`0b34e1f7`](https://github.com/Tarasevych/hub/commit/0b34e1f7) 2026-11-14 KLASSIEK-002: запровадження тем Біла класика і Чорна класика для пошти mail.tarasevych.com
+- **[KLASSIEK-003](#t-klassiek-003)** — 1 · 2026-11-14 → 2026-11-14
+  - [`d58955c2`](https://github.com/Tarasevych/hub/commit/d58955c2) 2026-11-14 KLASSIEK-003: запровадження тем Біла класика і Чорна класика для хмари cloud.tarasevych.com
+- **[KLASSIEK-004](#t-klassiek-004)** — 1 · 2026-11-14 → 2026-11-14
+  - [`323690cb`](https://github.com/Tarasevych/hub/commit/323690cb) 2026-11-14 KLASSIEK-004: запровадження тем Біла класика і Чорна класика для простору github.tarasevych.com
+- **[KLASSIEK-005](#t-klassiek-005)** — 1 · 2026-11-14 → 2026-11-14
+  - [`a35137f2`](https://github.com/Tarasevych/hub/commit/a35137f2) 2026-11-14 KLASSIEK-005: запровадження тем Біла класика і Чорна класика для простору hub.tarasevych.com
+- **[KLASSIEK-006](#t-klassiek-006)** — 1 · 2026-11-14 → 2026-11-14
+  - [`e8310fc7`](https://github.com/Tarasevych/hub/commit/e8310fc7) 2026-11-14 KLASSIEK-006: запровадження тем Біла класика і Чорна класика для простору ai.tarasevych.com та Werkblad v3
+- **[KLASSIEK-007](#t-klassiek-007)** — 1 · 2026-11-14 → 2026-11-14
+  - [`1394fa56`](https://github.com/Tarasevych/hub/commit/1394fa56) 2026-11-14 KLASSIEK-007: запроваджено теми Біла класика та Чорна класика для розумної оселі huis.tarasevych.com
+- **[KLASSIEK-008](#t-klassiek-008)** — 1 · 2026-11-14 → 2026-11-14
+  - [`4ec2cbe6`](https://github.com/Tarasevych/hub/commit/4ec2cbe6) 2026-11-14 KLASSIEK-008: Хвиля 7 тем «Біла класика» та «Чорна класика» для інженерного мосту й осередку агентів mcp.tarasevych.com
+- **[KLASSIEK-009](#t-klassiek-009)** — 1 · 2026-11-14 → 2026-11-14
+  - [`eccce6ad`](https://github.com/Tarasevych/hub/commit/eccce6ad) 2026-11-14 KLASSIEK-009: Хвиля 8 тем «Біла класика» та «Чорна класика» для програмної брами api.tarasevych.com, звірки продукту й технічного контуру
+- **[KLASSIEK-010](#t-klassiek-010)** — 1 · 2026-11-14 → 2026-11-14
+  - [`6e7dac3a`](https://github.com/Tarasevych/hub/commit/6e7dac3a) 2026-11-14 KLASSIEK-010: фінальна хвиля 9 тем «Біла класика» та «Чорна класика» для admin.tarasevych.com і всіх 10 піддоменів
+- **KLUIS-001** — 2 · 2026-11-14 → 2026-11-14
+  - [`7dbcaaca`](https://github.com/Tarasevych/hub/commit/7dbcaaca) 2026-11-14 KLUIS-001 · розшифрування даних на місці і пам'ять ключа на знайомому пристрої · ontsleutelen waar u bent en sleutelgeheugen per apparaat
+  - [`4216dc06`](https://github.com/Tarasevych/hub/commit/4216dc06) 2026-11-14 KLUIS-001 · розшифрування даних на місці і пам'ять ключа на знайомому пристрої · ontsleutelen waar u bent en sleutelgeheugen per apparaat
+- **[MAQUETTE-008](#t-maquette-008)** — 1 · 2026-11-14 → 2026-11-14
+  - [`c7d89542`](https://github.com/Tarasevych/hub/commit/c7d89542) 2026-11-14 MAQUETTE-008: студійне перевтілення інженерного мосту та агентів mcp.tarasevych.com у темі «Макет»
+- **[MAQUETTE-009](#t-maquette-009)** — 1 · 2026-11-14 → 2026-11-14
+  - [`fb350476`](https://github.com/Tarasevych/hub/commit/fb350476) 2026-11-14 MAQUETTE-009: хвиля 8 теми «Макет» для платформи API api.tarasevych.com та технічного контуру
+- **[MAQUETTE-010](#t-maquette-010)** — 1 · 2026-11-14 → 2026-11-14
+  - [`f07883bf`](https://github.com/Tarasevych/hub/commit/f07883bf) 2026-11-14 MAQUETTE-010: фінальна хвиля 9 теми «Макет» для admin.tarasevych.com та завершення всіх 10 піддоменів
+- **[TELEGRAM-002](#t-telegram-002)** — 8 · 2026-11-14 → 2026-11-15
+  - [`8ce7c925`](https://github.com/Tarasevych/hub/commit/8ce7c925) 2026-11-14 TELEGRAM-002 етап 1 · захищене вікно Telegram з однаковими піктограмами
+  - [`4ff503a1`](https://github.com/Tarasevych/hub/commit/4ff503a1) 2026-11-14 TELEGRAM-002 етап 1 · виправлення за повним прогоном тестів
+  - [`aad26e4a`](https://github.com/Tarasevych/hub/commit/aad26e4a) 2026-11-14 TELEGRAM-002: файли завдання, архів розробки і процес випуску (лише вручну, без встановлення)
+  - [`8c1e84c8`](https://github.com/Tarasevych/hub/commit/8c1e84c8) 2026-11-14 TELEGRAM-002: випробування, яким потрібна база, перенесено в крок із PostgreSQL
+  - [`352e5b8f`](https://github.com/Tarasevych/hub/commit/352e5b8f) 2026-11-14 TELEGRAM-002: набори сповіщень теж у кроці з PostgreSQL
+  - [`5c2cbb89`](https://github.com/Tarasevych/hub/commit/5c2cbb89) 2026-11-14 TELEGRAM-002: звірена встановлена основа 20261114-180411 у geinstalleerd.json; перевірка готовності бази на потрібній базі даних
+  - [`3dfdea15`](https://github.com/Tarasevych/hub/commit/3dfdea15) 2026-11-15 TELEGRAM-002: виправлено «Запит застарів» у вікні Telegram — поле signature входить до рядка перевірки initData
+  - [`f65f8e35`](https://github.com/Tarasevych/hub/commit/f65f8e35) 2026-11-15 TELEGRAM-002: піктограми — кольори за змістом, 96 у наборі, без повторів, три в ряд
+- **ACCENT-001** — 2 · 2026-11-15 → 2026-11-15
+  - [`2ab1e52a`](https://github.com/Tarasevych/hub/commit/2ab1e52a) 2026-11-15 ACCENT-001: улюблений відтінок — акцент у будь-якій палітрі; прозорий режим блоків
+  - [`ae7edf00`](https://github.com/Tarasevych/hub/commit/ae7edf00) 2026-11-15 ACCENT-001: технічна смужка меню облікового запису йде по заокругленому куту
+- **ANKERS-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`2156a240`](https://github.com/Tarasevych/hub/commit/2156a240) 2026-11-15 ANKERS-001: окремі положення й поведінка навігації якорів «Макета» і меню сайту · ankernavigatie los van het sitemenu
+- **[ANKERS-002](#t-ankers-002)** — 3 · 2026-11-15 → 2026-11-15
+  - [`08ead77b`](https://github.com/Tarasevych/hub/commit/08ead77b) 2026-11-15 ANKERS-002: заокруглені блоки й одне меню якорів на сторінці «Підключення ШІ»
+  - [`aeaf41f9`](https://github.com/Tarasevych/hub/commit/aeaf41f9) 2026-11-15 ANKERS-002: сітка розділів оселі (huis) заокруглена ззовні у класичних палітрах
+  - [`f18aafd4`](https://github.com/Tarasevych/hub/commit/f18aafd4) 2026-11-15 ANKERS-002: прокрутка меню якорів до активного пункту лише при зміні пункту чи довжини переліку, не на кожен рендер
+- **BIB-002** — 2 · 2026-11-15 → 2026-11-15
+  - [`614d4a2d`](https://github.com/Tarasevych/hub/commit/614d4a2d) 2026-11-15 BIB-002: ярлики технічних сторінок на приватному столі для людей із технічним доступом
+  - [`4561c2cd`](https://github.com/Tarasevych/hub/commit/4561c2cd) 2026-11-15 BIB-002: бібліотека «Все на сайті» як магазин — полиці з картками замість списку
+- **BLOKKEN-001** — 2 · 2026-11-15 → 2026-11-15
+  - [`84d2734c`](https://github.com/Tarasevych/hub/commit/84d2734c) 2026-11-15 BLOKKEN-001: браковані блоки центру облікового запису
+  - [`aeb4ada7`](https://github.com/Tarasevych/hub/commit/aeb4ada7) 2026-11-15 BLOKKEN-001: правки #128 і #130 перенесено в генератор «Макета» + тест-сторож
+- **BREEDTE-001** — 4 · 2026-11-15 → 2026-11-15
+  - [`b3d8d567`](https://github.com/Tarasevych/hub/commit/b3d8d567) 2026-11-15 BREEDTE-001: одна колонка 1180 px для всіх блоків сторінок служб і блок «Підключити» піктограмами
+  - [`b36610f2`](https://github.com/Tarasevych/hub/commit/b36610f2) 2026-11-15 BREEDTE-001: внутрішні обгортки колонки — width:100%, щоб панель із вузьким вмістом не стискалася у flex-стовпчику
+  - [`23238ca6`](https://github.com/Tarasevych/hub/commit/23238ca6) 2026-11-15 BREEDTE-001: тест — внутрішні обгортки займають усю колонку (width:100%)
+  - [`3a2e6bc8`](https://github.com/Tarasevych/hub/commit/3a2e6bc8) 2026-11-15 BREEDTE-001: заголовок «Підключити» через role=heading, не h2 — на ai/agents у каталозі пошуку лише вказівник (zoek-ui-tabblad 6j)
+- **BREEDTE-002** — 2 · 2026-11-15 → 2026-11-15
+  - [`50143673`](https://github.com/Tarasevych/hub/commit/50143673) 2026-11-15 BREEDTE-002: каталог карток ШІ на ai.*/agenten — одна картка на агента, «Підключити» і «Розгорнути»; ізольовані простори в «Розширених налаштуваннях»
+  - [`85b6ab22`](https://github.com/Tarasevych/hub/commit/85b6ab22) 2026-11-15 BREEDTE-002: справжні логотипи ШІ-агентів із вбудованої бази (CC0) мають перевагу над перемальованими фігурами
+- **[CENTR-001](#t-centr-001)** — 5 · 2026-11-15 → 2026-11-15
+  - [`e075aca6`](https://github.com/Tarasevych/hub/commit/e075aca6) 2026-11-15 CENTR-001: центр облікового запису по центру на широкому ПК · accountcentrum gecentreerd op brede pc
+  - [`5e65c2c9`](https://github.com/Tarasevych/hub/commit/5e65c2c9) 2026-11-15 CENTR-001: процес випуску, задача й архів розробки · uitgaveproces, taak en ontwikkelarchief
+  - [`acc07525`](https://github.com/Tarasevych/hub/commit/acc07525) 2026-11-15 CENTR-001: тести ANKERS-001 й IDENTITEIT-015 потребують бази — у блок БД-тестів процесу випуску
+  - [`e1abb341`](https://github.com/Tarasevych/hub/commit/e1abb341) 2026-11-15 CENTR-001: identiteit-015-vormgeving потребує Chrome (CHROME_PAD) — у процесі випуску не запускається, прогнано локально 54/54
+  - [`932e601d`](https://github.com/Tarasevych/hub/commit/932e601d) 2026-11-15 CENTR-001: identiteit-015-stille-uren потребує Chrome — у процесі випуску не запускається, прогнано локально 43/43
+- **[DUBLI-001](#t-dubli-001)** — 3 · 2026-11-15 → 2026-11-15
+  - [`aefa956a`](https://github.com/Tarasevych/hub/commit/aefa956a) 2026-11-15 DUBLI-001: процес спільного випуску PR #90 + #91 + #92 поверх 20261115-072353 · uitgaveproces
+  - [`934979e3`](https://github.com/Tarasevych/hub/commit/934979e3) 2026-11-15 DUBLI-001: статичну перевірку теми в «Макеті» узгоджено з ZAVYSANNIA-001 (zetLicht лише за справжньої зміни) · test volgt de nieuwe themawaarnemer
+  - [`468a2e8b`](https://github.com/Tarasevych/hub/commit/468a2e8b) 2026-11-15 DUBLI-001: identiteit-015-vormgeving потребує Chrome — поза БД-кроком процесу випуску (перевірено локально 54/54) · zonder Chrome-test in de pijplijn
+- **EXT094-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`ee6f8043`](https://github.com/Tarasevych/hub/commit/ee6f8043) 2026-11-15 EXT094-001: розширення 0.9.4 — активна вкладка більше не умова · actief tabblad geen voorwaarde meer
+- **EXTUI-001** — 12 · 2026-11-15 → 2026-11-16
+  - [`4e5e73f1`](https://github.com/Tarasevych/hub/commit/4e5e73f1) 2026-11-15 EXTUI-001 (макет): сучасний вигляд розділу «Розширення браузера» і розширення 0.9.5 · modern ontwerp extensieblok en extensie 0.9.5
+  - [`b8a387d2`](https://github.com/Tarasevych/hub/commit/b8a387d2) 2026-11-16 EXTUI-001: «Сайти ШІ» — опція в налаштуваннях розширення, типово «Вимкнено» · AI-sites als optie, standaard uit
+  - [`826011e8`](https://github.com/Tarasevych/hub/commit/826011e8) 2026-11-16 EXTUI-001: сайти ШІ — правила на сервері й у розширенні (лише читання)
+  - [`14940e64`](https://github.com/Tarasevych/hub/commit/14940e64) 2026-11-16 EXTUI-001: телефон — блок «Сайти ШІ» і «Ваші сторінки» не вилазять за рамку
+  - [`a6fcd670`](https://github.com/Tarasevych/hub/commit/a6fcd670) 2026-11-16 EXTUI-001: телефон — швидка розкладка сторінки «Агенти» і пласка картка браузера
+  - [`9b18823c`](https://github.com/Tarasevych/hub/commit/9b18823c) 2026-11-16 EXTUI-001: сторінки й сайти ШІ — рядки з логотипом, назвою й вмикачем
+  - [`f918be9a`](https://github.com/Tarasevych/hub/commit/f918be9a) 2026-11-16 EXTUI-001: строк доступу плитками, вмикачі в кольорі сервісу
+  - [`7c8f8547`](https://github.com/Tarasevych/hub/commit/7c8f8547) 2026-11-16 EXTUI-001: тест вмикача під нову щільність доріжки
+  - [`8548a157`](https://github.com/Tarasevych/hub/commit/8548a157) 2026-11-16 EXTUI-001: «До дати» — календар для строку доступу
+  - [`1023cc3e`](https://github.com/Tarasevych/hub/commit/1023cc3e) 2026-11-16 EXTUI-001: календар — помітний перехід до місяців і років; межа строку видна
+  - [`3faa7697`](https://github.com/Tarasevych/hub/commit/3faa7697) 2026-11-16 EXTUI-001: плитки строку в один ряд; власний вибір часу в календарі
+  - [`51770cef`](https://github.com/Tarasevych/hub/commit/51770cef) 2026-11-16 EXTUI-001: вибір часу — частини доби й колесо годин
+- **GEHEUGEN-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`8f646369`](https://github.com/Tarasevych/hub/commit/8f646369) 2026-11-15 GEHEUGEN-001: доповнити перевірки вибору навички пам’яті
+- **GEHEUGEN-002** — 5 · 2026-11-15 → 2026-11-15
+  - [`333bf1d9`](https://github.com/Tarasevych/hub/commit/333bf1d9) 2026-11-15 GEHEUGEN-002: Стрім пам’яті з графом знань, ізоляцією просторів, шифруванням і MCP-інструментами · Stroom van geheugen
+  - [`cdbd4f07`](https://github.com/Tarasevych/hub/commit/cdbd4f07) 2026-11-15 GEHEUGEN-002: ізоляція ruimte при схваленні MCP, захист статусів та темна тема Стріму пам’яті
+  - [`4ed9cf95`](https://github.com/Tarasevych/hub/commit/4ed9cf95) 2026-11-15 GEHEUGEN-002: оновлення вузлів за id, надійний RLS/DEK, журнал дій і наскрізні PG-тести · Geheugenknoop-updates en PG-RLS-verificatie
+  - [`2273d757`](https://github.com/Tarasevych/hub/commit/2273d757) 2026-11-15 GEHEUGEN-002: реєстр окремих Telegram-ботів агентів, перевірка прав, ідемпотентне доставлення й інтерфейс
+  - [`4fe285b0`](https://github.com/Tarasevych/hub/commit/4fe285b0) 2026-11-15 GEHEUGEN-002: розширення до 13 ШІ-агентів, міграції 0280–0284 і безперервний перехід задач між сесіями
+- **[GEMINI-002](#t-gemini-002)** — 3 · 2026-11-15 → 2026-11-15
+  - [`3aec3063`](https://github.com/Tarasevych/hub/commit/3aec3063) 2026-11-15 GEMINI-002: єдина екосистема споживчих сповіщень («застосунок у застосунку»), переглядач вкладень, ШІ-розбір та /melding · geïntegreerd meldingen-ecosysteem
+  - [`bcf77354`](https://github.com/Tarasevych/hub/commit/bcf77354) 2026-11-15 GEMINI-002 · узгодження живої основи 20261115-001744 у geinstalleerd.json та робочому процесі випуску
+  - [`dfdb7356`](https://github.com/Tarasevych/hub/commit/dfdb7356) 2026-11-15 GEMINI-002 · пробільний роздільник у BEKENDE_BASISSEN
+- **[GEMINI-003](#t-gemini-003)** — 4 · 2026-11-15 → 2026-11-15
+  - [`1988380d`](https://github.com/Tarasevych/hub/commit/1988380d) 2026-11-15 GEMINI-003: швидкодія режиму «Макет» на смартфонах, захист пошти та миттєві переходи · mobiele snelheid Maquette en herstel e-mailuitval
+  - [`8eac6259`](https://github.com/Tarasevych/hub/commit/8eac6259) 2026-11-15 GEMINI-003: виправлено перевірку scripts.build у tech-bundels.test.ts після huis-maquette
+  - [`918e9a8c`](https://github.com/Tarasevych/hub/commit/918e9a8c) 2026-11-15 GEMINI-003: оновлено доказове досьє TRACE-001
+  - [`d2fe6c57`](https://github.com/Tarasevych/hub/commit/d2fe6c57) 2026-11-15 GEMINI-003: упорядкування випробувань бази даних і очищення власника в tech-bundels
+- **HINT-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`151544c6`](https://github.com/Tarasevych/hub/commit/151544c6) 2026-11-15 HINT-001: одна підказка в навігації якорів «Макета», лише коли видно саму піктограму
+- **HOEK-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`ba014c35`](https://github.com/Tarasevych/hub/commit/ba014c35) 2026-11-15 WB-HOEK-001: «Налаштувати робочий стіл» — кругла піктограма в куті замість смуги з великою кнопкою
+- **KLAP-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`a52868fa`](https://github.com/Tarasevych/hub/commit/a52868fa) 2026-11-15 KLAP-001: «Згорнути все / Розгорнути все» в блоках «Приватний простір» і «Технічний доступ» на сторінці ШІ
+- **KLEUREN-001** — 2 · 2026-11-15 → 2026-11-16
+  - [`00c42b12`](https://github.com/Tarasevych/hub/commit/00c42b12) 2026-11-15 KLEUREN-001: один набір і одні назви відтінків у «Темах», меню облікового запису й «Макеті»
+  - [`15b70f77`](https://github.com/Tarasevych/hub/commit/15b70f77) 2026-11-16 KLEUREN-001: єдина зона «Вигляд і кольори» · één zone «Weergave en kleuren»
+- **KRUISJE-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`523edb0d`](https://github.com/Tarasevych/hub/commit/523edb0d) 2026-11-15 MENU-KRUISJE-001: «Прибрати запис» у меню облікових записів — простий хрестик замість квадратного боксу
+- **LEZEN-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`ad240215`](https://github.com/Tarasevych/hub/commit/ad240215) 2026-11-15 MAIL-IMAP-LEZEN-001: вибір Ukr.net (IMAP) у перемикачі показує листи цієї скриньки · IMAP-mailbox kiezen toont haar berichten
+- **MAILACC-002** — 1 · 2026-11-15 → 2026-11-15
+  - [`a2ad24dd`](https://github.com/Tarasevych/hub/commit/a2ad24dd) 2026-11-15 MAILACC-002: «Поштові акаунти» — без блимання й без дубля каталогу · zonder flits en zonder dubbele catalogus
+- **MAILAI-001** — 2 · 2026-11-15 → 2026-11-15
+  - [`caabe6af`](https://github.com/Tarasevych/hub/commit/caabe6af) 2026-11-15 MAILAI-001: панель «ШІ-аналіз і переклад» лише як опція й лише з робочим ШІ
+  - [`1d9a6838`](https://github.com/Tarasevych/hub/commit/1d9a6838) 2026-11-15 MAILAI-001: підказка «?» у пошті — без інвертованого тла; «Рушії перекладу» нідерландською
+- **MAILANKER-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`cb4675dd`](https://github.com/Tarasevych/hub/commit/cb4675dd) 2026-11-15 MAILANKER-001: розділи пошти в меню якорів, налаштування вигляду — у згорнутій групі
+- **MAILDOK-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`cac59f05`](https://github.com/Tarasevych/hub/commit/cac59f05) 2026-11-15 MAILDOK-001: смуга гортання над листами у «Макеті» — пігулки за розміром замість панелі на всю ширину
+- **MAILHOEK-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`a5c46dca`](https://github.com/Tarasevych/hub/commit/a5c46dca) 2026-11-15 MAILHOEK-001: «Поштові акаунти» — одна заокруглена картка до й після завантаження · één afgeronde kaart vóór en na het laden
+- **OMSCHR-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`c8c4193e`](https://github.com/Tarasevych/hub/commit/c8c4193e) 2026-11-15 STAPOP-OMSCHR-001: вікно «Підтвердіть доступ» описує кожну дію
+- **[POSTVAK-001](#t-postvak-001)** — 3 · 2026-11-15 → 2026-11-15
+  - [`685b4a05`](https://github.com/Tarasevych/hub/commit/685b4a05) 2026-11-15 POSTVAK-001: процес спільного випуску PR #94 + #93 + #95 поверх 20261115-094513 · uitgaveproces
+  - [`51cedaf8`](https://github.com/Tarasevych/hub/commit/51cedaf8) 2026-11-15 POSTVAK-001: model_id береться зі змінної сховища власника, якщо не задано під час запуску · model_id uit repo-variabele
+  - [`eb1a08ba`](https://github.com/Tarasevych/hub/commit/eb1a08ba) 2026-11-15 POSTVAK-001: zoek-ui-catalogus оновлено (нова кнопка «Підключено скриньок») · catalogus bijgewerkt
+- **[POSTVAK-002](#t-postvak-002)** — 1 · 2026-11-15 → 2026-11-15
+  - [`b0943390`](https://github.com/Tarasevych/hub/commit/b0943390) 2026-11-15 POSTVAK-002: процес випуску, задача й архів розробки · uitgaveproces, taak en ontwikkelarchief
+- **PRIJ-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`38419960`](https://github.com/Tarasevych/hub/commit/38419960) 2026-11-15 PRIJ-001: тонкі «⋮» у переліку листів, меню на всю доступну висоту · dunne «⋮», menu over de hele hoogte
+- **STROOK-001** — 2 · 2026-11-15 → 2026-11-15
+  - [`cad78cdb`](https://github.com/Tarasevych/hub/commit/cad78cdb) 2026-11-15 STROOK-001: хрестик на смугах «Мова листа» і «Зовнішні зображення приховано» у листі
+  - [`3f0051bb`](https://github.com/Tarasevych/hub/commit/3f0051bb) 2026-11-15 MENU-STROOK-001: спливне меню облікових записів без квадратної смуги тла до низу вікна
+- **[TELEGRAM-003](#t-telegram-003)** — 1 · 2026-11-15 → 2026-11-15
+  - [`027324eb`](https://github.com/Tarasevych/hub/commit/027324eb) 2026-11-15 TELEGRAM-003: процес випуску, задача й архів розробки · uitgaveproces, taak en ontwikkelarchief
+- **TERMIJN-001** — 2 · 2026-11-15 → 2026-11-15
+  - [`ebfba029`](https://github.com/Tarasevych/hub/commit/ebfba029) 2026-11-15 AI-TERMIJN-001: термін і правила скидання доступу ШІ задає власник
+  - [`0eec7722`](https://github.com/Tarasevych/hub/commit/0eec7722) 2026-11-15 AI-TERMIJN-001: тест ai-delegatie прибирає за собою спільний стан
+- **TOEGANG-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`666841fb`](https://github.com/Tarasevych/hub/commit/666841fb) 2026-11-15 TOEGANG-001: «Хто має доступ до підготовки» — вимкнення й термін справді зберігаються
+- **UITROL-002** — 3 · 2026-11-15 → 2026-11-16
+  - [`914b5268`](https://github.com/Tarasevych/hub/commit/914b5268) 2026-11-15 UITROL-002: автономний бот архіву Telegram із webhook (/status, /help) і приймання релізів GitHub · zelfstandige Telegram-archiefbot met webhook en GitHub-ontvangst
+  - [`8a216ae0`](https://github.com/Tarasevych/hub/commit/8a216ae0) 2026-11-15 UITROL-002 / VAARD-002 · мовне очищення інтерфейсу, перевірка group та оновлений каталог пошуку
+  - [`070e645a`](https://github.com/Tarasevych/hub/commit/070e645a) 2026-11-16 UITROL-002: продовження встановлення з місця обриву, термінал мовою сайту з ходом і темами, один запуск за раз
+- **[UPD-001](#t-upd-001)** — 10 · 2026-11-15 → 2026-11-15
+  - [`0e86616e`](https://github.com/Tarasevych/hub/commit/0e86616e) 2026-11-15 UPD-001: процес випуску, задача й архів розробки · uitgaveproces, taak en ontwikkelarchief
+  - [`bfd96776`](https://github.com/Tarasevych/hub/commit/bfd96776) 2026-11-15 UPD-001: у випуск додано живий фон (PR #112) і його тест · levende achtergrond toegevoegd
+  - [`52a8607a`](https://github.com/Tarasevych/hub/commit/52a8607a) 2026-11-15 UPD-001: архів розробки оновлено · ontwikkelarchief bijgewerkt
+  - [`2ad5c58b`](https://github.com/Tarasevych/hub/commit/2ad5c58b) 2026-11-15 UPD-001: тест zoek-in-menu враховує кнопку «Живий фон» у верхній смузі (ACHTERGROND-001)
+  - [`734caf20`](https://github.com/Tarasevych/hub/commit/734caf20) 2026-11-15 UPD-001: архів розробки · ontwikkelarchief
+  - [`30119943`](https://github.com/Tarasevych/hub/commit/30119943) 2026-11-15 UPD-001: архів розробки без повторів · ontwikkelarchief
+  - [`3cd3c555`](https://github.com/Tarasevych/hub/commit/3cd3c555) 2026-11-15 UPD-001: архів розробки · ontwikkelarchief
+  - [`99dbbf0c`](https://github.com/Tarasevych/hub/commit/99dbbf0c) 2026-11-15 UPD-001: тексти випуску — колонка 910 px, перемикач, небезпечні кнопки, швидке налаштування фону
+  - [`70f8648c`](https://github.com/Tarasevych/hub/commit/70f8648c) 2026-11-15 UPD-001: мітка стану «Налаштовано / Не налаштовано» для Passkeys, як в інших способів захисту
+  - [`07359e0e`](https://github.com/Tarasevych/hub/commit/07359e0e) 2026-11-15 UPD-001: тексти випуску — мітка стану Passkeys
+- **[UPD-002](#t-upd-002)** — 17 · 2026-11-15 → 2026-11-16
+  - [`23a0735d`](https://github.com/Tarasevych/hub/commit/23a0735d) 2026-11-15 UPD-002: розумний потік розгортання — нотатки, контекстні списки й докази · slimme uitrolstroom
+  - [`33b6ef83`](https://github.com/Tarasevych/hub/commit/33b6ef83) 2026-11-15 UPD-002: виправлення трьох виявлених вад основи (codex, afstemming_release_v1, тест SLEUTELKLUIS_GESLOTEN)
+  - [`38ac73b1`](https://github.com/Tarasevych/hub/commit/38ac73b1) 2026-11-15 UPD-002: оновлено docs/kaart/bestandskaart.json файлами з PR #114 та PR #115
+  - [`f5f5cdbc`](https://github.com/Tarasevych/hub/commit/f5f5cdbc) 2026-11-15 UPD-002: обмежити uitrol_github_ophalen рівнем v2 і узгодити тести MCP
+  - [`1a8775a7`](https://github.com/Tarasevych/hub/commit/1a8775a7) 2026-11-15 UPD-002: перевірка UUID для agent_namens_sessies, категорія ecosysteem_ruimte_uitbreiding, коментар 0282
+  - [`259b9835`](https://github.com/Tarasevych/hub/commit/259b9835) 2026-11-15 UPD-002: оновлено docs/kaart/bestandskaart.json новими файлами, міграціями й тестами
+  - [`3a46bea6`](https://github.com/Tarasevych/hub/commit/3a46bea6) 2026-11-15 UPD-002: вичищено текстові повідомлення й коментарі тестів за вимогами мовного закону
+  - [`680d732c`](https://github.com/Tarasevych/hub/commit/680d732c) 2026-11-15 UPD-002: синхронізовано висоту смуги шапки пошти R1 із динамічним відступом робочої області
+  - [`1240f7ff`](https://github.com/Tarasevych/hub/commit/1240f7ff) 2026-11-15 UPD-002: виправлено очищення власників та стану прапорців у 4 модульних тестах
+  - [`c9c71f95`](https://github.com/Tarasevych/hub/commit/c9c71f95) 2026-11-15 UPD-002: усунуто 5 причин збою у перевірках (RLS OAuth-стану, очищення власника, стан вкладки, CHECK команд, вивід orch, ROOK_CHROMIUM)
+  - [`171e6a88`](https://github.com/Tarasevych/hub/commit/171e6a88) 2026-11-15 UPD-002: виправлено локальний імпорт typescript та залежність beveiliging у 7 модульних тестах хмарного сховища (.test.mjs)
+  - [`b2e6634a`](https://github.com/Tarasevych/hub/commit/b2e6634a) 2026-11-15 UPD-002 (виправлення): контраст стилів, прив’язка входу Telegram, довідка «?» та чисті назви файлів
+  - [`e3d266ad`](https://github.com/Tarasevych/hub/commit/e3d266ad) 2026-11-15 UPD-002 (тести й карта файлів): узгодження карти файлів і тестів після перейменувань та 13 агентів
+  - [`aad22880`](https://github.com/Tarasevych/hub/commit/aad22880) 2026-11-16 UPD-002: консолідація випуску, доказове досьє TRACE-001, маршрути 13 агентів і мовно чистий інтерфейс
+  - [`5d870ef8`](https://github.com/Tarasevych/hub/commit/5d870ef8) 2026-11-16 UPD-002: процес складання й оприлюднення випуску GitHub Actions
+  - [`7ef66ad1`](https://github.com/Tarasevych/hub/commit/7ef66ad1) 2026-11-16 UPD-002: ізоляція таблиць перевірки кінцевих точок між тестами БД та оновлення досьє
+  - [`bf157145`](https://github.com/Tarasevych/hub/commit/bf157145) 2026-11-16 UPD-002: ізоляція даних власника в тесті telegram-venster-20261114 та оновлення досьє
+- **UX-001** — 4 · 2026-11-15 → 2026-11-16
+  - [`3765ae93`](https://github.com/Tarasevych/hub/commit/3765ae93) 2026-11-15 MELDINGEN-UX-001: плаваюче вікно сповіщень без стиснутих карток, однаковий перемикач «Вікно ↔ Компактно»
+  - [`3154588f`](https://github.com/Tarasevych/hub/commit/3154588f) 2026-11-15 MELDINGEN-UX-001: правила сповіщень картками, спливне сповіщення з логотипом
+  - [`2e641122`](https://github.com/Tarasevych/hub/commit/2e641122) 2026-11-16 MELDINGEN-UX-001: одне число на дзвіночку — те саме, що «Нові» у вибраному вигляді
+  - [`6e3c1316`](https://github.com/Tarasevych/hub/commit/6e3c1316) 2026-11-16 MELDINGEN-UX-001: мітки «Нове · 1 з N» і «Прочитане», цифра лише біля «Нові»
+- **VAARD-001** — 2 · 2026-11-15 → 2026-11-15
+  - [`921fe654`](https://github.com/Tarasevych/hub/commit/921fe654) 2026-11-15 VAARD-001: випробування добору навичок українською й нідерландською
+  - [`9d65eb5c`](https://github.com/Tarasevych/hub/commit/9d65eb5c) 2026-11-15 VAARD-001: додано випробування перевірки безпеки випуску
+- **[VAARD-002](#t-vaard-002)** — 3 · 2026-11-15 → 2026-11-15
+  - [`bf35a0d5`](https://github.com/Tarasevych/hub/commit/bf35a0d5) 2026-11-15 VAARD-002: навички агентів, двомовний добір і приклади · agentvaardigheden en voorbeelden
+  - [`e9f04ba9`](https://github.com/Tarasevych/hub/commit/e9f04ba9) 2026-11-15 VAARD-002: екосистема модульних навичок і профілів агентів · ecosysteem van modulaire vaardigheden
+  - [`fd0e0672`](https://github.com/Tarasevych/hub/commit/fd0e0672) 2026-11-15 VAARD-002: валідація 9 навичок, точні id:kant, SemVer та модульні випробування · vaardighedenvalidatie
+- **VEILIG-002** — 4 · 2026-11-15 → 2026-11-15
+  - [`ee60f03e`](https://github.com/Tarasevych/hub/commit/ee60f03e) 2026-11-15 VEILIG-002 (частина 1): захист URL/SVG сповіщень, ізоляція просторів і синхронізація центру сповіщень
+  - [`d22abb5f`](https://github.com/Tarasevych/hub/commit/d22abb5f) 2026-11-15 VEILIG-002 (частина 2): ізоляція аудиту й сповіщень, захист URL/XSS, HTTP 429 і схвалення Telegram
+  - [`90288ddd`](https://github.com/Tarasevych/hub/commit/90288ddd) 2026-11-15 VEILIG-002 (частина 3): посилення аварійної зупинки, захист підтвердження пристроїв, мобільне вікно Telegram, портали модалів та продуктивність живого фону
+  - [`b2de12b1`](https://github.com/Tarasevych/hub/commit/b2de12b1) 2026-11-15 VEILIG-002 (частина 4): аварійна зупинка SSE/ПК-агента, чесні збої БД, FPS живого фону, вузький екран пошти та каталог пошуку
+- **VELD-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`d2089447`](https://github.com/Tarasevych/hub/commit/d2089447) 2026-11-15 VELD-001: висота робочого стола змінюється ручкою знизу й кнопкою «Прибрати порожнє»
+- **WISSELAAR-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`b70696b8`](https://github.com/Tarasevych/hub/commit/b70696b8) 2026-11-15 MAIL-WISSELAAR-001: перемикач поштових скриньок показує всі сервіси (Google, Microsoft, IMAP) і оновлюється без перезавантаження · wisselaar toont alle diensten en ververst zonder herladen
+- **WOORDBREUK-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`762939ea`](https://github.com/Tarasevych/hub/commit/762939ea) 2026-11-15 WOORDBREUK-001: слова більше не розриваються у вузьких блоках
+- **ZAVYSANNIA-001** — 3 · 2026-11-15 → 2026-11-15
+  - [`2807f057`](https://github.com/Tarasevych/hub/commit/2807f057) 2026-11-15 ZAVYSANNIA-001: зміна теми без переходів, без розмиття тла в «Макеті» на сенсорних екранах, без зайвих перемальовувань · rustige themawissel op telefoons
+  - [`441a2a9a`](https://github.com/Tarasevych/hub/commit/441a2a9a) 2026-11-15 ZAVYSANNIA-001: класичний вигляд монтує розділи поступово; смуга техпрофілю не перераховує стилі на кожну зміну теми; на сенсорних екранах у «Макеті» без переходів кольору · lui monteren, minder stijlherberekening
+  - [`3c1b4a15`](https://github.com/Tarasevych/hub/commit/3c1b4a15) 2026-11-15 ZAVYSANNIA-001: «Макет» не перезаписує вже згорнуту навігацію й уже сховане вікно налаштувань рейки на кожне натискання · geen herschrijving bij elke klik
+- **ZIJMENU-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`1ba927aa`](https://github.com/Tarasevych/hub/commit/1ba927aa) 2026-11-15 ZIJMENU-001: праве бокове меню розділів «Макета» на телефоні закривається одним кадром
+- **ZOEK-002** — 1 · 2026-11-15 → 2026-11-15
+  - [`d279e229`](https://github.com/Tarasevych/hub/commit/d279e229) 2026-11-15 ZOEK-002: поле пошуку в панелі розгортається на місці, як у Google
+- **ZWEVEND-001** — 1 · 2026-11-15 → 2026-11-15
+  - [`f74ce711`](https://github.com/Tarasevych/hub/commit/f74ce711) 2026-11-15 ZWEVEND-001: спливні меню на робочому столі завжди поверх вмісту
+- **ANKER-001** — 2 · 2026-11-16 → 2026-11-16
+  - [`0bd6d503`](https://github.com/Tarasevych/hub/commit/0bd6d503) 2026-11-16 UNIF-ANKER-001: класичний центр облікового запису — спільне меню якорів
+  - [`e255f693`](https://github.com/Tarasevych/hub/commit/e255f693) 2026-11-16 UNIF-ANKER-001: вікно положення якорів — як у «Макеті», заокруглене
+- **ANTISPOOF-001** — 1 · 2026-11-16 → 2026-11-16
+  - [`c2455387`](https://github.com/Tarasevych/hub/commit/c2455387) 2026-11-16 ANTISPOOF-001: захист від підробки ШІ назвою чи чужим дозволом
+- **BREEDTE-003** — 7 · 2026-11-16 → 2026-11-16
+  - [`ebeaba4e`](https://github.com/Tarasevych/hub/commit/ebeaba4e) 2026-11-16 BREEDTE-003: справжні знаки AutoClaw і Windsurf (з власних сайтів) та Cline, Devin, OpenCode (пакет CC0) у вбудованій базі логотипів
+  - [`90aefa4e`](https://github.com/Tarasevych/hub/commit/90aefa4e) 2026-11-16 BREEDTE-003: чинні знаки Copilot (файл GitHub) і OpenCode (піктограма з opencode.ai) замість варіантів із пакета
+  - [`aa81bc41`](https://github.com/Tarasevych/hub/commit/aa81bc41) 2026-11-16 BREEDTE-003: картка «GitHub Copilot» у каталозі, чинний знак Cline із cline.bot
+  - [`56b86a2f`](https://github.com/Tarasevych/hub/commit/56b86a2f) 2026-11-16 BREEDTE-003: чотирнадцятий агент «Microsoft Copilot» через Copilot Studio (адреса /mscopilot, міграція 0297, власний знак)
+  - [`d3778213`](https://github.com/Tarasevych/hub/commit/d3778213) 2026-11-16 BREEDTE-003: тести під 14 агентів (шапка інструкцій з'єднувача, 168 записів каталогу інтеграцій)
+  - [`a67b74a0`](https://github.com/Tarasevych/hub/commit/a67b74a0) 2026-11-16 BREEDTE-003: адреса /copilot для Microsoft Copilot, GitHub Copilot переїжджає на /githubcopilot
+  - [`da4a9d5e`](https://github.com/Tarasevych/hub/commit/da4a9d5e) 2026-11-16 BREEDTE-003: тести під публічні адреси агентів
+- **CON-001** — 6 · 2026-11-16 → 2026-11-16
+  - [`eeb9a64a`](https://github.com/Tarasevych/hub/commit/eeb9a64a) 2026-11-16 LAI-CON-001 етап 1: політика «Локальний ШІ» — вимкнення лише з причиною, користувач бачить хто й чому · beleid lokale AI met verplichte reden
+  - [`d38df1a0`](https://github.com/Tarasevych/hub/commit/d38df1a0) 2026-11-16 LAI-CON-001 етап 2: інструмент конектора browser_local_ai — локальний ШІ Chrome на ПК користувача · connectortool lokale AI
+  - [`68316ad6`](https://github.com/Tarasevych/hub/commit/68316ad6) 2026-11-16 LAI-CON-001: зауваження перевірки PR #137 — результат не зберігається, доступно всім, квиток 10 хв, лічильники тестів
+  - [`313e1e09`](https://github.com/Tarasevych/hub/commit/313e1e09) 2026-11-16 LAI-CON-001: друга перевірка PR #137 — без тексту в помилках, без залишків у пам’яті, явне вимкнення поважається
+  - [`dac2c8b6`](https://github.com/Tarasevych/hub/commit/dac2c8b6) 2026-11-16 LAI-CON-001: міграція 0287 додає browser.lokale_ai до CHECK app.agent_commands + тест на справжній БД
+  - [`12aa6b66`](https://github.com/Tarasevych/hub/commit/12aa6b66) 2026-11-16 LAI-CON-001: LOKALE_AI modus 'prompt' — rauw, schema й systeem для окремого запиту (прохання PR #117)
+- **[ELDERS-001](#t-elders-001)** — 4 · 2026-11-16 → 2026-11-16
+  - [`70180182`](https://github.com/Tarasevych/hub/commit/70180182) 2026-11-16 ELDERS-001: дзвіночок показує запити ШІ, що чекають в іншому просторі
+  - [`bf130de0`](https://github.com/Tarasevych/hub/commit/bf130de0) 2026-11-16 ELDERS-001: ORCH-OVERDRACHT (передача)
+  - [`e411671e`](https://github.com/Tarasevych/hub/commit/e411671e) 2026-11-16 ELDERS-001: тест усього ланцюжка через справжні маршрути (запит у «Моєму просторі» → дзвіночок технічної вкладки)
+  - [`1469af9d`](https://github.com/Tarasevych/hub/commit/1469af9d) 2026-11-16 ELDERS-001: передача — оновлені результати тестів
+- **ICONEN-001** — 1 · 2026-11-16 → 2026-11-16
+  - [`57c324ff`](https://github.com/Tarasevych/hub/commit/57c324ff) 2026-11-16 ICONEN-001: третій стиль піктограм меню «У відтінку» · derde icoonstijl «In tint»
+- **LOGO-001** — 8 · 2026-11-16 → 2026-11-16
+  - [`6dad4f31`](https://github.com/Tarasevych/hub/commit/6dad4f31) 2026-11-16 REESTR-LOGO-001: єдиний реєстр логотипів і власний логотип користувача
+  - [`e5e5e402`](https://github.com/Tarasevych/hub/commit/e5e5e402) 2026-11-16 REESTR-LOGO-001: блок «Логотипи сервісів» — картка, як у сусідів; навичка в розділі навичок сайту
+  - [`c5dfa150`](https://github.com/Tarasevych/hub/commit/c5dfa150) 2026-11-16 REESTR-LOGO-001: кнопка «Типові значення» живого фону компактна, праворуч (стара вада: була на всю ширину)
+  - [`fb655da4`](https://github.com/Tarasevych/hub/commit/fb655da4) 2026-11-16 REESTR-LOGO-001: «Типові значення» живого фону — піктограма в заголовку «Живий фон»
+  - [`45bd7cb7`](https://github.com/Tarasevych/hub/commit/45bd7cb7) 2026-11-16 REESTR-LOGO-001: кожен блок має своє скидання в заголовку; спливаючі підказки в стилі сайту
+  - [`ed5fd353`](https://github.com/Tarasevych/hub/commit/ed5fd353) 2026-11-16 REESTR-LOGO-001: галерея всіх логотипів — один ряд, «Показати всі» розгортає, пошук фільтрує галерею
+  - [`52668222`](https://github.com/Tarasevych/hub/commit/52668222) 2026-11-16 REESTR-LOGO-001: галерея містить усі логотипи, згадані на сайті; календар, нотатки й сховища малюють знак із реєстру
+  - [`016cad13`](https://github.com/Tarasevych/hub/commit/016cad13) 2026-11-16 REESTR-LOGO-001: справжні знаки з офіційних сайтів замість плиток із літерами (12 сервісів)
+- **MAILAI-002** — 1 · 2026-11-16 → 2026-11-16
+  - [`558e10ed`](https://github.com/Tarasevych/hub/commit/558e10ed) 2026-11-16 MAILAI-002: вибір рушія ШІ в пошті, локальний ШІ Chrome, «сховати зараз / вимкнути зовсім»
+- **MAILAI-003** — 2 · 2026-11-16 → 2026-11-16
+  - [`733d57cd`](https://github.com/Tarasevych/hub/commit/733d57cd) 2026-11-16 MAILAI-003: спільні рушії ШІ власника, згода користувача, ліміти, ціни, «Що від вас потрібно?» обраним рушієм
+  - [`64370991`](https://github.com/Tarasevych/hub/commit/64370991) 2026-11-16 MAILAI-003: перевірка сховища спільних рушіїв на справжній PostgreSQL
+- **MAILAI-004** — 1 · 2026-11-16 → 2026-11-16
+  - [`3cae80f8`](https://github.com/Tarasevych/hub/commit/3cae80f8) 2026-11-16 MAILAI-004: простіший вигляд рушіїв ШІ — компактні картки, подробиці під «Докладніше»
+- **MAILAI-005** — 1 · 2026-11-16 → 2026-11-16
+  - [`341ee66d`](https://github.com/Tarasevych/hub/commit/341ee66d) 2026-11-16 MAILAI-005: панель ШІ над листом одним рядком «Рядок дій», вибір рушія з логотипами
+- **MAILBEELD-001** — 1 · 2026-11-16 → 2026-11-16
+  - [`e9c37093`](https://github.com/Tarasevych/hub/commit/e9c37093) 2026-11-16 MAILBEELD-001 + MAILPUSH-001: зображення «При отриманні (приватно)» і налаштування миттєвих сигналів Gmail
+- **MAILBEELD-002** — 1 · 2026-11-16 → 2026-11-16
+  - [`e6aab35b`](https://github.com/Tarasevych/hub/commit/e6aab35b) 2026-11-16 MAILBEELD-002: сучасний вигляд «Вигляд» → «Зовнішні зображення», плитки замість битих зображень, вади вікна листа
+- **MAILBEELD-003** — 2 · 2026-11-16 → 2026-11-16
+  - [`a1d24e9d`](https://github.com/Tarasevych/hub/commit/a1d24e9d) 2026-11-16 MAILBEELD-003: розміри показаних зображень на пристрої, плитка з точним місцем, піктограми на кнопках смуги зображень
+  - [`65078114`](https://github.com/Tarasevych/hub/commit/65078114) 2026-11-16 MAILBEELD-003: зауваження рецензії — плаваючі зображення, рамки, опис для читача екрана, вихід
+- **MAILBEELD-004** — 6 · 2026-11-16 → 2026-11-16
+  - [`0cdb7e83`](https://github.com/Tarasevych/hub/commit/0cdb7e83) 2026-11-16 MAILBEELD-004: режим «При отриманні» тепер «Завантажити наперед» — назва без двозначності
+  - [`e73133c8`](https://github.com/Tarasevych/hub/commit/e73133c8) 2026-11-16 MAILBEELD-004: кнопка «Вигляд» — піктограма вмісту (зображення + літера) замість загальних повзунків
+  - [`909e1179`](https://github.com/Tarasevych/hub/commit/909e1179) 2026-11-16 MAILBEELD-004: піктограма «Вигляд» кольорова й більша (20 px) — фото з небом, горою й сонцем + літера A
+  - [`e37aaf07`](https://github.com/Tarasevych/hub/commit/e37aaf07) 2026-11-16 MAILBEELD-004: піктограма «Вигляд» — велика літера A і третій елемент (глобус мови), 22 px
+  - [`79f82f26`](https://github.com/Tarasevych/hub/commit/79f82f26) 2026-11-16 MAILBEELD-004: піктограма «Вигляд» — одна фігура в кольорі сайту: пейзаж, де вершина — літера A, а сонце — глобус
+  - [`cc48ec5d`](https://github.com/Tarasevych/hub/commit/cc48ec5d) 2026-11-16 MAILBEELD-004: піктограма «Вигляд» — ніжки літери A трохи виступають за низ рамки
+- **MELDLINK-001** — 1 · 2026-11-16 → 2026-11-16
+  - [`aaf64eb4`](https://github.com/Tarasevych/hub/commit/aaf64eb4) 2026-11-16 MELDLINK-001: посилання в сповіщеннях ведуть на дійсні сторінки · links in meldingen openen een bestaande pagina
+- **[NAT-001](#t-nat-001)** — 2 · 2026-11-16 → 2026-11-16
+  - [`dd538f73`](https://github.com/Tarasevych/hub/commit/dd538f73) 2026-11-16 NAT-001: сторож мосту Windows для VM — автовідновлення після перезавантаження (помилка 1033)
+  - [`1fd009b2`](https://github.com/Tarasevych/hub/commit/1fd009b2) 2026-11-16 NAT-001: ORCH-OVERDRACHT (передача)
+- **OPSTELPIL-001** — 2 · 2026-11-16 → 2026-11-16
+  - [`a62cc4e0`](https://github.com/Tarasevych/hub/commit/a62cc4e0) 2026-11-16 OPSTELPIL-001: кнопка «Написати лист» у меню пошти має вигляд одразу, а не після лінивого вікна листа
+  - [`0c9bf84e`](https://github.com/Tarasevych/hub/commit/0c9bf84e) 2026-11-16 OPSTELPIL-001: «Написати лист» — конверт перетворюється на олівець, що пише, також під пальцем і з клавіатури
+- **PAKKET-001** — 20 · 2026-11-16 → 2026-11-16
+  - [`1f5a0a0f`](https://github.com/Tarasevych/hub/commit/1f5a0a0f) 2026-11-16 SEC-PAKKET-001: прибрати хибне «у пакеті є секрети» й посилити перевірку справжніх ключів
+  - [`343a1136`](https://github.com/Tarasevych/hub/commit/343a1136) 2026-11-16 SEC-PAKKET-001: прибрати застарілий .env.example зі старого хостингу AppDeploy
+  - [`8a4eeaaa`](https://github.com/Tarasevych/hub/commit/8a4eeaaa) 2026-11-16 SEC-PAKKET-001: пробний токен GitHub-OAuth — іменована стала з поясненням «не секрет»
+  - [`b85f8dd2`](https://github.com/Tarasevych/hub/commit/b85f8dd2) 2026-11-16 SEC-PAKKET-001: посилити старі процеси GitHub Actions і сторож werkstromen-veilig
+  - [`5d11c44c`](https://github.com/Tarasevych/hub/commit/5d11c44c) 2026-11-16 SEC-PAKKET-001: знайдений секрет блокує встановлення; понад 60 видів ключів
+  - [`27c6f106`](https://github.com/Tarasevych/hub/commit/27c6f106) 2026-11-16 SEC-PAKKET-001: точне число в описі перевірки (60 шаблонів, понад 45 сервісів)
+  - [`f6aa0f65`](https://github.com/Tarasevych/hub/commit/f6aa0f65) 2026-11-16 SEC-PAKKET-001: архів із випуску GitHub приймається лише, якщо його завантажив GitHub Actions
+  - [`ffe5ebf3`](https://github.com/Tarasevych/hub/commit/ffe5ebf3) 2026-11-16 SEC-PAKKET-001: червоні прапорці перед схваленням оновлення
+  - [`2cdb8410`](https://github.com/Tarasevych/hub/commit/2cdb8410) 2026-11-16 SEC-PAKKET-001: вручну завантажений архів не відхиляється, а дає червоний прапорець
+  - [`1dabf053`](https://github.com/Tarasevych/hub/commit/1dabf053) 2026-11-16 SEC-PAKKET-001 + UITROL-002: тест схвалення не витрачає ліміт спроб, потрібний перевіркам одночасного встановлення
+  - [`71af4e29`](https://github.com/Tarasevych/hub/commit/71af4e29) 2026-11-16 SEC-PAKKET-001: кожен червоний прапорець пояснено людською мовою з різницею «було → стане»
+  - [`f099eda5`](https://github.com/Tarasevych/hub/commit/f099eda5) 2026-11-16 SEC-PAKKET-001: червоні прапорці зрозумілі адміну без програмування
+  - [`57525bc4`](https://github.com/Tarasevych/hub/commit/57525bc4) 2026-11-16 SEC-PAKKET-001: обов'язкове пояснення автора до ризикованих змін і новий вигляд червоних прапорців
+  - [`68935613`](https://github.com/Tarasevych/hub/commit/68935613) 2026-11-16 SEC-PAKKET-001: відхилення оновлення лише з причиною, яка зберігається з акаунтом і публікується автоматично
+  - [`00abdc27`](https://github.com/Tarasevych/hub/commit/00abdc27) 2026-11-16 SEC-PAKKET-001: причина відхилення автоматично й на GitHub; кнопка «Назад, не відхиляти»
+  - [`5b1143f1`](https://github.com/Tarasevych/hub/commit/5b1143f1) 2026-11-16 SEC-PAKKET-001: вікно відхилення з готовими причинами одним дотиком
+  - [`38c2830f`](https://github.com/Tarasevych/hub/commit/38c2830f) 2026-11-16 SEC-PAKKET-001: причини відхилення плитками з кольоровими піктограмами
+  - [`b9f5ffc0`](https://github.com/Tarasevych/hub/commit/b9f5ffc0) 2026-11-16 SEC-PAKKET-001: «було → стане» компактно — модулі GitHub рядком, решта зі знаком
+  - [`6ff684c0`](https://github.com/Tarasevych/hub/commit/6ff684c0) 2026-11-16 SEC-PAKKET-001: перемикач файлів групи й рядки модулів, що розгортаються
+  - [`afbc933a`](https://github.com/Tarasevych/hub/commit/afbc933a) 2026-11-16 SEC-PAKKET-001: кнопка «Усі N» розгортає повний список файлів групи
+- **PRIJ-002** — 1 · 2026-11-16 → 2026-11-16
+  - [`8ff2e7bf`](https://github.com/Tarasevych/hub/commit/8ff2e7bf) 2026-11-16 PRIJ-002: швидкі дії рядка на ПК розгортаються з «⋮» · snelle acties klappen uit vanuit «⋮»
+- **PRIJ-003** — 1 · 2026-11-16 → 2026-11-16
+  - [`39773865`](https://github.com/Tarasevych/hub/commit/39773865) 2026-11-16 PRIJ-003: підказка «⋮» лише за правим кліком · tooltip van «⋮» alleen na rechtsklik
+- **STROOK-002** — 2 · 2026-11-16 → 2026-11-16
+  - [`4fc5f00a`](https://github.com/Tarasevych/hub/commit/4fc5f00a) 2026-11-16 STROOK-002: правила для смуг листа (мова, відправник, усі листи) і пропозиції після ✕
+  - [`2bffb74d`](https://github.com/Tarasevych/hub/commit/2bffb74d) 2026-11-16 STROOK-002: кнопка «Завжди показувати від цього відправника» замість неоднозначного «Завжди від цього відправника»
+- **TEKST-001** — 1 · 2026-11-16 → 2026-11-16
+  - [`b0b2ed2d`](https://github.com/Tarasevych/hub/commit/b0b2ed2d) 2026-11-16 MAIL-TEKST-001: під час завантаження пошти не писати «Gmail», якщо перевіряються всі скриньки · laadtekst noemt geen Gmail meer
+- **[TELEGRAM-004](#t-telegram-004)** — 8 · 2026-11-16 → 2026-11-16
+  - [`a0d8808f`](https://github.com/Tarasevych/hub/commit/a0d8808f) 2026-11-16 TELEGRAM-004: повна адреса облікового запису, час без назви міста, спосіб визначення місця у вікні Telegram
+  - [`68cab0f0`](https://github.com/Tarasevych/hub/commit/68cab0f0) 2026-11-16 TELEGRAM-004: місце пристрою за дозволом браузера поруч із місцем за IP у вході через Telegram
+  - [`ca425002`](https://github.com/Tarasevych/hub/commit/ca425002) 2026-11-16 TELEGRAM-004: «Вимагати місце пристрою» — вхід через Telegram лише з місцем пристрою (типово вимкнено)
+  - [`cd6a9da7`](https://github.com/Tarasevych/hub/commit/cd6a9da7) 2026-11-16 TELEGRAM-004: «Вимагати місце пристрою» — вибір окремо для кожного способу входу
+  - [`89672a8a`](https://github.com/Tarasevych/hub/commit/89672a8a) 2026-11-16 TELEGRAM-004: рядки «Вимагати місце пристрою» з логотипами способів входу й вмикачами в стилі сайту
+  - [`c79baa7e`](https://github.com/Tarasevych/hub/commit/c79baa7e) 2026-11-16 TELEGRAM-004: знак Discord на кнопці «Увійти через Discord» (стара вада) — спільний компонент MethodeMerk
+  - [`0e9264e7`](https://github.com/Tarasevych/hub/commit/0e9264e7) 2026-11-16 TELEGRAM-004: офіційний чотириколірний знак Google у всіх місцях сайту (стара вада)
+  - [`1333d5c3`](https://github.com/Tarasevych/hub/commit/1333d5c3) 2026-11-16 TELEGRAM-004: знак без плитки більше не обрізається рамкою (Google «G» мав зрізаний верх і низ)
+- **[UPD-003](#t-upd-003)** — 13 · 2026-11-16 → 2026-11-17
+  - [`8de78323`](https://github.com/Tarasevych/hub/commit/8de78323) 2026-11-16 UPD-003: стиль піктограм «tint» (#125) перенесено в генератор «Макета», двигун перегенеровано
+  - [`b70b9083`](https://github.com/Tarasevych/hub/commit/b70b9083) 2026-11-16 UPD-003: правки збирання — шлях підказки панелі ШІ через «Мова й ШІ» (#116+#117), Microsoft Copilot у джерелах сповіщень (#141+#143)
+  - [`11b7674c`](https://github.com/Tarasevych/hub/commit/11b7674c) 2026-11-16 UPD-003: опис вікна підтвердження для спільних рушіїв ШІ (#117 разом із реєстром описів #141)
+  - [`3a004c42`](https://github.com/Tarasevych/hub/commit/3a004c42) 2026-11-16 UPD-003: реєстр стирання акаунта знає нові колонки 0287 (lokale_ai_door) і таблицю 0295 (ai_dienst_motoren)
+  - [`3e08018f`](https://github.com/Tarasevych/hub/commit/3e08018f) 2026-11-16 UPD-003: читабельні заливки статусу у вікні прапорців ризику (#145) у темній темі
+  - [`0e4892a4`](https://github.com/Tarasevych/hub/commit/0e4892a4) 2026-11-16 UPD-003: довідка «?» для позначки підтвердження червоних прапорців (#145) за правилом реєстру довідок
+  - [`a90839aa`](https://github.com/Tarasevych/hub/commit/a90839aa) 2026-11-16 UPD-003: тести й посилання узгоджено після об'єднання PR
+  - [`9f5eaab7`](https://github.com/Tarasevych/hub/commit/9f5eaab7) 2026-11-16 UPD-003: завдання, досьє з поясненнями ризикованих змін, процес випуску, встановлена основа UPD-002
+  - [`b5d28771`](https://github.com/Tarasevych/hub/commit/b5d28771) 2026-11-16 UPD-003: виправлення після повного прогону 553 тестів
+  - [`0f230b1e`](https://github.com/Tarasevych/hub/commit/0f230b1e) 2026-11-16 UPD-003: тест sec-002-g08 під абсолютні посилання (#138); процес випуску запускає й виправлені тести
+  - [`e057d7cd`](https://github.com/Tarasevych/hub/commit/e057d7cd) 2026-11-16 UPD-003: «?» у червоних прапорцях ліниво (модуль імпортується поза оглядачем); тест mailai-003 не залежить від історії бази
+  - [`b00f4bd3`](https://github.com/Tarasevych/hub/commit/b00f4bd3) 2026-11-17 UPD-003: міграція 0299 лише додає; збірка вміщується в пам'ять інсталятора
+  - [`454b75bf`](https://github.com/Tarasevych/hub/commit/454b75bf) 2026-11-17 UPD-003: досьє — виправлення 17.11 (міграція 0299, пам'ять збірки), перевірки й коміти
+- **WEERGAVE-001** — 6 · 2026-11-16 → 2026-11-16
+  - [`edc19633`](https://github.com/Tarasevych/hub/commit/edc19633) 2026-11-16 RUIMTE-WEERGAVE-001: простір у вкладці ≠ пауза технічного сеансу; окремі «Пауза / Продовжити / Завершити»
+  - [`ea497d4c`](https://github.com/Tarasevych/hub/commit/ea497d4c) 2026-11-16 RUIMTE-WEERGAVE-001: «Пауза/Продовжити» і «Завершити» в справжньому меню облікового запису («Макет»)
+  - [`24c5fdda`](https://github.com/Tarasevych/hub/commit/24c5fdda) 2026-11-16 RUIMTE-WEERGAVE-001: дії технічного сеансу — дві піктограми всередині пігулки «Технічний»
+  - [`e2074f74`](https://github.com/Tarasevych/hub/commit/e2074f74) 2026-11-16 RUIMTE-WEERGAVE-001: на паузі кнопка «Технічний» показує позначку ⏸ (меню й бічний перемикач)
+  - [`1e9fc2a2`](https://github.com/Tarasevych/hub/commit/1e9fc2a2) 2026-11-16 RUIMTE-WEERGAVE-001: контраст позначки паузи й кнопки завершення
+  - [`3d41a07c`](https://github.com/Tarasevych/hub/commit/3d41a07c) 2026-11-16 RUIMTE-WEERGAVE-001: знак паузи суцільний, а не контурний (краще читається в малому розмірі)
+- **[GEMINI-004](#t-gemini-004)** — 2 · 2026-11-17 → 2026-11-17
+  - [`a54dc89c`](https://github.com/Tarasevych/hub/commit/a54dc89c) 2026-11-17 GEMINI-004: переведення /agenten на групове меню якорів MaquetteAnkerRail
+  - [`b43994f5`](https://github.com/Tarasevych/hub/commit/b43994f5) 2026-11-17 GEMINI-004: журнал походження TRACE-001 та пояснення ризиків
+- **[LOKAI-001](#t-lokai-001)** — 4 · 2026-11-17 → 2026-11-17
+  - [`663f47e9`](https://github.com/Tarasevych/hub/commit/663f47e9) 2026-11-17 LOKAI-001: розширення 0.9.7 (Chrome 157, Gemma 4, 9 API, WebMCP, PWA), помічник налаштування, extensie-bijwerken.ts та автопідпис CRX3
+  - [`49254ab4`](https://github.com/Tarasevych/hub/commit/49254ab4) 2026-11-17 LOKAI-001: журнал походження TRACE-001, оновлення тесту 0.9.7 та сценарій випуску на GitHub Actions
+  - [`a3c57045`](https://github.com/Tarasevych/hub/commit/a3c57045) 2026-11-17 LOKAI-001: перенесено extensie-debugger-markering-20261019 після складання застосунку
+  - [`14dbcb3a`](https://github.com/Tarasevych/hub/commit/14dbcb3a) 2026-11-17 LOKAI-001: виправлено data-hulp-vrij у панелі та безпеку onderteken-crx.yml
+- **MELDCAT-001** — 1 · 2026-11-17 → 2026-11-17
+  - [`bff39fde`](https://github.com/Tarasevych/hub/commit/bff39fde) 2026-11-17 MELDCAT-001: єдиний реєстр усіх сповіщень сайту + ревізія коду й сторож
+- **TEKENS-001** — 4 · 2026-11-17 → 2026-11-18
+  - [`e8f5468e`](https://github.com/Tarasevych/hub/commit/e8f5468e) 2026-11-17 PLAATS-TEKENS-001: база знаків місць і провайдерів (герби міст і провінцій Бельгії, прапори, провайдери, виробники, passkey)
+  - [`0d5f37ca`](https://github.com/Tarasevych/hub/commit/0d5f37ca) 2026-11-17 PLAATS-TEKENS-001: тип мережі запиту для емблеми «Мережа» і логотипи мереж
+  - [`a81725fa`](https://github.com/Tarasevych/hub/commit/a81725fa) 2026-11-17 PLAATS-TEKENS-001: знаки місць Нідерландів, України, Люксембургу, Німеччини, Франції й Польщі
+  - [`dcfe31a4`](https://github.com/Tarasevych/hub/commit/dcfe31a4) 2026-11-18 PLAATS-TEKENS-001: вигляд «Ланцюжок» і генератор для всього світу
+- **[UPD-004](#t-upd-004)** — 15 · 2026-11-17 → 2026-11-18
+  - [`f27d9b2b`](https://github.com/Tarasevych/hub/commit/f27d9b2b) 2026-11-17 UPD-004: перенесено SEC-003 (#151) з лінії voornaamst на лінію встановленої версії
+  - [`ec4477b2`](https://github.com/Tarasevych/hub/commit/ec4477b2) 2026-11-17 UPD-004: тест archief-herstellen-20261116 не переноситься
+  - [`bdb229c4`](https://github.com/Tarasevych/hub/commit/bdb229c4) 2026-11-17 UPD-004: досьє HISTORIE-001 з #77
+  - [`7aa136aa`](https://github.com/Tarasevych/hub/commit/7aa136aa) 2026-11-17 UPD-004: старий тест vaardigheden-20261115.test.mjs з #99/#105 не переноситься
+  - [`e0718014`](https://github.com/Tarasevych/hub/commit/e0718014) 2026-11-17 UPD-004: візуальний стенд mailfix-preview з #26/#27 (MAILFIX-001, MAILFIT-001)
+  - [`1cb4068e`](https://github.com/Tarasevych/hub/commit/1cb4068e) 2026-11-17 UPD-004: скасовано повторне додавання mailfix-preview
+  - [`89b5143e`](https://github.com/Tarasevych/hub/commit/89b5143e) 2026-11-17 UPD-004: процес спільного випуску upd-004-uitgave.yml
+  - [`50742ebb`](https://github.com/Tarasevych/hub/commit/50742ebb) 2026-11-17 UPD-004: виправлення після прогону тестів процесу випуску
+  - [`236af456`](https://github.com/Tarasevych/hub/commit/236af456) 2026-11-17 UPD-004: тест mail-accounts-beheer враховує офіційні знаки після #154
+  - [`0189d7d2`](https://github.com/Tarasevych/hub/commit/0189d7d2) 2026-11-17 UPD-004: картка задачі й доповнена хронологія гілок
+  - [`097aae51`](https://github.com/Tarasevych/hub/commit/097aae51) 2026-11-17 UPD-004: журнал розробки TRACE-001 (ontwikkelarchief)
+  - [`531b80c4`](https://github.com/Tarasevych/hub/commit/531b80c4) 2026-11-17 UPD-004: узгоджено PR № 156 (FIX-001), процеси безпеки, сповіщення, хронологію та сценарій випуску
+  - [`d16a966b`](https://github.com/Tarasevych/hub/commit/d16a966b) 2026-11-17 UPD-004: журнал походження TRACE-001 та пояснення до всіх прапорців ризику
+  - [`9f8bfcb6`](https://github.com/Tarasevych/hub/commit/9f8bfcb6) 2026-11-18 UPD-004: виправлено тести логотипів пошти й інтеграцій та додано довідку ярликів у TechLaag
+  - [`697c7374`](https://github.com/Tarasevych/hub/commit/697c7374) 2026-11-18 UPD-004: оновлено журнал походження TRACE-001 після усунення збоїв у тестах
+- **[WISSEL-001](#t-wissel-001)** — 4 · 2026-11-17 → 2026-11-17
+  - [`d3f94206`](https://github.com/Tarasevych/hub/commit/d3f94206) 2026-11-17 WISSEL-001: відновлено перемикання на технічний простір в оболонці та чесний перехід між обліковими записами в меню
+  - [`7118bc41`](https://github.com/Tarasevych/hub/commit/7118bc41) 2026-11-17 WISSEL-001: зафіксовано метадані випуску 20261117-204305 у картці завдання
+  - [`3f5f621e`](https://github.com/Tarasevych/hub/commit/3f5f621e) 2026-11-17 WISSEL-001: додано процес випуску wissel-001-uitgave.yml та пояснення risicoUitleg у журналі TRACE-001
+  - [`e543d013`](https://github.com/Tarasevych/hub/commit/e543d013) 2026-11-17 WISSEL-001: оновлено очікування R-01 у gebruiker-audit-2026-10-19.test.ts під підтримку технічної поверхні в Hub
+- **[BIJDRAGE-001](#t-bijdrage-001)** — 2 · 2026-11-18 → 2026-11-18
+  - [`fdd466c7`](https://github.com/Tarasevych/hub/commit/fdd466c7) 2026-11-18 BIJDRAGE-001: облік авторства, досьє функцій, старт сеансу й злиття без утрат
+  - [`453954d3`](https://github.com/Tarasevych/hub/commit/453954d3) 2026-11-18 BIJDRAGE-001: задачу перечитано за правилами 1.4.16
+- **[VERWIJZING-001](#t-verwijzing-001)** — 1 · 2026-11-18 → 2026-11-18
+  - [`558681dc`](https://github.com/Tarasevych/hub/commit/558681dc) 2026-11-18 VERWIJZING-001: посилання з назвою, підсумком і станом замість голих номерів
+- **MOBIEL-002** — 2 · 2026-11-19 → 2026-11-19
+  - [`d48c3904`](https://github.com/Tarasevych/hub/commit/d48c3904) 2026-11-19 MOBIEL-002 · безпечна вузька верстка на телефоні за прапорцем mobiel-breedte-veilig-v1 (типово вимкнено), перенесено на 20261119-072255 · veilige smalle opmaak achter vlag, overgezet naar 20261119-072255
+  - [`0a9c8e05`](https://github.com/Tarasevych/hub/commit/0a9c8e05) 2026-11-19 MOBIEL-002 · досьє, облік авторства, документи перевірок і стан роботи Grok · dossier, bijdrage, controledocumenten en stand van zaken
+- **[UPD-005](#t-upd-005)** — 3 · 2026-11-19 → 2026-11-19
+  - [`97ffca42`](https://github.com/Tarasevych/hub/commit/97ffca42) 2026-11-19 UPD-005: спільний випуск оновлень, облік авторства, реєстр посилань і хронологія гілок
+  - [`34f83796`](https://github.com/Tarasevych/hub/commit/34f83796) 2026-11-19 UPD-005: виправлення мобільного шару upload.css (ui-audit-g 8c) та реекспорт PlaatsKeten у Merk.tsx
+  - [`cab0acb9`](https://github.com/Tarasevych/hub/commit/cab0acb9) 2026-11-19 UPD-005: виправлення передавання risicoBevestigd із картки «Чекають схвалення» та регресійна перевірка
+- **[UPD-006](#t-upd-006)** — 1 · 2026-11-19 → 2026-11-19
+  - [`210519f7`](https://github.com/Tarasevych/hub/commit/210519f7) 2026-11-19 UPD-006: центрування панелі оновлення (940 px), 96/96 кольорових піктограм підтвердження (Варіант А), підлаштування Grok MOBIEL-002 та сценарій випуску
+- **[UPD-007](#t-upd-007)** — 2 · 2026-11-19 → 2026-11-19
+  - [`53c36501`](https://github.com/Tarasevych/hub/commit/53c36501) 2026-11-19 UPD-007: накладна бічна панель, компактна технічна смуга, локальні підказки кодів, виправлення просторів і меню якорів
+  - [`4a279ae4`](https://github.com/Tarasevych/hub/commit/4a279ae4) 2026-11-19 UPD-007: узгоджено перевірку A14 у beheer-overzicht.test.ts із локальними підказками технічних кодів
+- **[UPD-008](#t-upd-008)** — 2 · 2026-11-19 → 2026-11-19
+  - [`f097f08d`](https://github.com/Tarasevych/hub/commit/f097f08d) 2026-11-19 UPD-008: зсув пошти при фіксованому меню та ізоляція просторів «Звичайний / Технічний»
+  - [`5ad4afb1`](https://github.com/Tarasevych/hub/commit/5ad4afb1) 2026-11-19 UPD-008: журнал походження TRACE-001 із точною фіксацією змін
+- **[UPD-009](#t-upd-009)** — 2 · 2026-11-19 → 2026-11-19
+  - [`8827ef99`](https://github.com/Tarasevych/hub/commit/8827ef99) 2026-11-19 UPD-009: єдине симетричне центрування та стабільність усіх сторінок без совгання
+  - [`68c90588`](https://github.com/Tarasevych/hub/commit/68c90588) 2026-11-19 UPD-009: журнал походження TRACE-001 із точною фіксацією змін
+- **[UPD-010](#t-upd-010)** — 8 · 2026-11-19 → 2026-11-20
+  - [`7692f5ee`](https://github.com/Tarasevych/hub/commit/7692f5ee) 2026-11-19 UPD-010: компактний переглядач листа, фонове завантаження оновлень, кумулятивна черга та гнучкі права агентів
+  - [`9de93f60`](https://github.com/Tarasevych/hub/commit/9de93f60) 2026-11-19 UPD-010: журнал походження TRACE-001 із точною фіксацією змін
+  - [`f9bcbc3c`](https://github.com/Tarasevych/hub/commit/f9bcbc3c) 2026-11-19 UPD-010: перейменовано колонку ingehaald_door на ingehaald_door_versie для сумісності з account-wissen
+  - [`973ab6e7`](https://github.com/Tarasevych/hub/commit/973ab6e7) 2026-11-19 UPD-010: оновлено журнал походження TRACE-001 після узгодження міграції 0303 з account-wissen
+  - [`a7e43b9d`](https://github.com/Tarasevych/hub/commit/a7e43b9d) 2026-11-20 UPD-010: об’єднано монтування UitrolAchtergrondBand і NieuweVersieBand в один корінь (ліміт 5 createRoot у main.tsx)
+  - [`e1086176`](https://github.com/Tarasevych/hub/commit/e1086176) 2026-11-20 UPD-010: оновлено журнал походження TRACE-001 після узгодження main.tsx із maquette-mobiel-prestatie
+  - [`e4d9319e`](https://github.com/Tarasevych/hub/commit/e4d9319e) 2026-11-20 UPD-010: узгоджено hulp-register, mail-beeld-maten-20261116 та змінні оформлення ontwerp-fundament-20261020
+  - [`9e610a43`](https://github.com/Tarasevych/hub/commit/9e610a43) 2026-11-20 UPD-010: оновлено журнал походження TRACE-001 після узгодження hulp-register, mail-beeld-maten та ontwerp-fundament
+- **[KLIMOP-001](#t-klimop-001)** — 1 · 2026-11-20 → 2026-11-20
+  - [`2d8ca667`](https://github.com/Tarasevych/hub/commit/2d8ca667) 2026-11-20 KLIMOP-001 (B-024): двомовний Головний архітектурний маніфест «Плющ» / «Klimop», правила 1.5.0 та перехідники й навички всіх 14 ШІ-агентів
+- **[KLIMOP-002](#t-klimop-002)** — 1 · 2026-11-20 → 2026-11-20
+  - [`1bd343dd`](https://github.com/Tarasevych/hub/commit/1bd343dd) 2026-11-20 KLIMOP-002: Етап 0 (доказовий аудит дійсного стану) та Етап 1 (архітектурне ядро «Плющ», вибір технологій і план випусків)
+- **[KLIMOP-003](#t-klimop-003)** — 1 · 2026-11-20 → 2026-11-20
+  - [`8658f253`](https://github.com/Tarasevych/hub/commit/8658f253) 2026-11-20 KLIMOP-003: Етап 2 маніфесту «Плющ» — випробувальна мережа вузлів і протокол «Стебла» · Fase 2 beproevingsnetwerk en Stengels
+- **[KLIMOP-004](#t-klimop-004)** — 1 · 2026-11-20 → 2026-11-20
+  - [`4c3063fe`](https://github.com/Tarasevych/hub/commit/4c3063fe) 2026-11-20 KLIMOP-004: Етап 3 маніфесту «Плющ» — клієнтське шифрування, коди Ріда–Соломона й криптогнучкість · Fase 3 versleuteling en Reed-Solomon
+- **[KLIMOP-005](#t-klimop-005)** — 1 · 2026-11-20 → 2026-11-20
+  - [`611fc0d8`](https://github.com/Tarasevych/hub/commit/611fc0d8) 2026-11-20 KLIMOP-005: Етап 4 маніфесту «Плющ» — схеми Фельдмана/Педерсена, епохи й підписи ФРОСТ · Fase 4 drempelsleutels en FROST
+- **[KLIMOP-006](#t-klimop-006)** — 1 · 2026-11-20 → 2026-11-20
+  - [`5f4ad03e`](https://github.com/Tarasevych/hub/commit/5f4ad03e) 2026-11-20 KLIMOP-006: Етап 5 — самосуверенна ідентичність, довірені пристрої, законне відновлення та групові простори MLS (RFC 9420)
+- **[KLIMOP-007](#t-klimop-007)** — 1 · 2026-11-20 → 2026-11-20
+  - [`d95c1564`](https://github.com/Tarasevych/hub/commit/d95c1564) 2026-11-20 KLIMOP-007: Етап 6 «Плюща» — розподілене порогове керування та безпечні хвильові випуски · Fase 6 drempelbestuur en veilige uitgaven
+- **[KLIMOP-008](#t-klimop-008)** — 1 · 2026-11-20 → 2026-11-20
+  - [`3211fb68`](https://github.com/Tarasevych/hub/commit/3211fb68) 2026-11-20 KLIMOP-008: Етап 7 «Плюща» — імунна система, самовідновлення та 10 сценаріїв живучості · Fase 7 immuunsysteem en zelfherstel
+- **[KLIMOP-009](#t-klimop-009)** — 1 · 2026-11-20 → 2026-11-20
+  - [`fcc32e8c`](https://github.com/Tarasevych/hub/commit/fcc32e8c) 2026-11-20 KLIMOP-009: Етап 8 «Плюща» — ізоляція 11 служб, зашифровані CRDT, з'єднувачі та покрокове перенесення · Fase 8 «Klimop» — isolatie van 11 diensten, versleutelde CRDT, verbinders en gefaseerde overzetting
+- **[KLIMOP-010](#t-klimop-010)** — 1 · 2026-11-20 → 2026-11-20
+  - [`7196de6b`](https://github.com/Tarasevych/hub/commit/7196de6b) 2026-11-20 KLIMOP-010: Етап 9 «Плюща» — захист людини, протидія примусу та 8 сценаріїв §39 · Fase 9 «Klimop» — mensbescherming, dwangbestendigheid en 8 scenario's §39
+- **[UPD-011](#t-upd-011)** — 4 · 2026-11-20 → 2026-11-20
+  - [`b6da8953`](https://github.com/Tarasevych/hub/commit/b6da8953) 2026-11-20 UPD-011: фірмові картки Telegram із круглим фото ініціатора, 1-екранні вікна, персональні ключі 3F, вибіркове відкликання випусків та правила 1.4.18 (B-023)
+  - [`a7f61b3d`](https://github.com/Tarasevych/hub/commit/a7f61b3d) 2026-11-20 UPD-011: журнал походження TRACE-001 із точною фіксацією змін
+  - [`91c6d182`](https://github.com/Tarasevych/hub/commit/91c6d182) 2026-11-20 UPD-011: узгодити ім’я файла картки account.png та одноразове виведення міста у venster.ts (telegram-venster 99/99)
+  - [`ee794926`](https://github.com/Tarasevych/hub/commit/ee794926) 2026-11-20 UPD-011: оновлено журнал походження після узгодження telegram-venster
+- **[UPD-012](#t-upd-012)** — 2 · 2026-11-20 → 2026-11-20
+  - [`6f7cc69e`](https://github.com/Tarasevych/hub/commit/6f7cc69e) 2026-11-20 UPD-012: швидкодія, 60 профілів екранів, адаптивна мережа, аудит пошти й інтерфейсу, відновлення архіву, альтернативи підтверджень, повний цикл Telegram, переклад (0305) і розподілене зберігання Шаміра
+  - [`318ad561`](https://github.com/Tarasevych/hub/commit/318ad561) 2026-11-20 UPD-012: журнал походження TRACE-001 із точною фіксацією змін і поясненням ризику
+- **[UPD-013](#t-upd-013)** — 7 · 2026-11-20 → 2026-11-20
+  - [`cb15d68f`](https://github.com/Tarasevych/hub/commit/cb15d68f) 2026-11-20 UPD-013: розподілене зберігання Шаміра (0306), завершення аудиту клієнтського досвіду (2–9), перенесення MELDPANEEL-001 із втраченими діями сповіщень та ліниве розбиття пошти
+  - [`8187231f`](https://github.com/Tarasevych/hub/commit/8187231f) 2026-11-20 UPD-013: прибрати випадковий сміттєвий файл H2 із кореня сховища
+  - [`57eef333`](https://github.com/Tarasevych/hub/commit/57eef333) 2026-11-20 UPD-013: журнал походження TRACE-001 із точною фіксацією змін і поясненням ризику
+  - [`1f8dea68`](https://github.com/Tarasevych/hub/commit/1f8dea68) 2026-11-20 UPD-013: зберегти точну обгортку ag-lui-plaats ag-blok-skelet у BlokSkelet (agenten-pagina-blokken 37/37)
+  - [`12613898`](https://github.com/Tarasevych/hub/commit/12613898) 2026-11-20 UPD-013: оновлено журнал походження TRACE-001 після узгодження agenten-pagina-blokken (37/37)
+  - [`51ad9928`](https://github.com/Tarasevych/hub/commit/51ad9928) 2026-11-20 UPD-013: узгоджено перевірки gemini-004, levende-achtergrond, zoek-in-menu, hub-agenda-notities та ui-audit-g
+  - [`ba289fa9`](https://github.com/Tarasevych/hub/commit/ba289fa9) 2026-11-20 UPD-013: оновлено журнал походження TRACE-001 із живою основою 20261120-093715 і повною перевіркою
+- **[KLIMOP-011](#t-klimop-011)** — 2 · 2026-11-21 → 2026-11-21
+  - [`13bbbee1`](https://github.com/Tarasevych/hub/commit/13bbbee1) 2026-11-21 KLIMOP-011: суворе узгодження типів TypeScript у клієнті та випробуваннях Етапів 8–9 · strikte TypeScript-typeafstemming in Fasen 8–9
+  - [`6677ad95`](https://github.com/Tarasevych/hub/commit/6677ad95) 2026-11-21 KLIMOP-011: Етап 10 «Плюща» — кероване розширення («Вусики») та обмін ресурсами («Живлення») · Fase 10 «Klimop» — beheerste uitbreiding («Hechtranken») en middelenuitwisseling («Voeding»)
+- **[KLIMOP-012](#t-klimop-012)** — 1 · 2026-11-21 → 2026-11-21
+  - [`88ae3dc9`](https://github.com/Tarasevych/hub/commit/88ae3dc9) 2026-11-21 KLIMOP-012: Етап 11 «Плюща» — незалежний аудит безпеки, модель загроз (Документ №20) та постквантова готовність · Fase 11 onafhankelijke beveiligingsaudit, dreigingsmodel en hybride postkwantumcryptografie
+- **[KLIMOP-013](#t-klimop-013)** — 2 · 2026-11-21 → 2026-11-21
+  - [`03dc8990`](https://github.com/Tarasevych/hub/commit/03dc8990) 2026-11-21 KLIMOP-013: безпечне перехоплення обриву з'єднання у postJson та стійка перевірка досьє Етапу 11 · veilige verbindingsfoutafhandeling in postJson
+  - [`9cb0cf7f`](https://github.com/Tarasevych/hub/commit/9cb0cf7f) 2026-11-21 KLIMOP-013: Етап 12 «Плюща» — «Насіння» (Документ №19), спадкоємність (Документ №23) та постійний розвиток · Fase 12 Zaden, opvolging en duurzame doorontwikkeling
+- **[KLIMOP-014](#t-klimop-014)** — 1 · 2026-11-21 → 2026-11-21
+  - [`9389121f`](https://github.com/Tarasevych/hub/commit/9389121f) 2026-11-21 KLIMOP-014: Етап 13 «Плюща» — платформний міст, інструменти MCP для 14 агентів, вебпанель та Сходинка 1 звірки 11 служб · Fase 13 Platformintegratie en Stap-1-spiegelverificatie
+- **[KLIMOP-015](#t-klimop-015)** — 2 · 2026-11-21 → 2026-11-21
+  - [`35efc3e5`](https://github.com/Tarasevych/hub/commit/35efc3e5) 2026-11-21 KLIMOP-015: вилучення зі статей згадок про фінансові результати та грошові витрати · Verwijdering van financiële vermeldingen uit artikelen
+  - [`0e18f412`](https://github.com/Tarasevych/hub/commit/0e18f412) 2026-11-21 KLIMOP-015: Етап 14 «Плюща» — Сходинка 2 пасивного читання, журнал розбіжностей SHA-256 та перемикач повернення 11 служб · Fase 14 Stap 2 passief lezen en terugschakeling
+- **[KLIMOP-016](#t-klimop-016)** — 1 · 2026-11-21 → 2026-11-21
+  - [`ce94a998`](https://github.com/Tarasevych/hub/commit/ce94a998) 2026-11-21 KLIMOP-016: Етап 15 «Плюща» — Сходинка 3 контрольованого подвійного записування, звірка читання та повернення 11 служб · Fase 15 Stap 3 dubbel schrijven en terugval
+- **[KLIMOP-017](#t-klimop-017)** — 1 · 2026-11-21 → 2026-11-21
+  - [`76be84cc`](https://github.com/Tarasevych/hub/commit/76be84cc) 2026-11-21 KLIMOP-017: Етап 16 — Сходинка 4 кворумного атестата готовності та порогового допуску власника без вимкнення живої бази
+- **[KLIMOP-018](#t-klimop-018)** — 1 · 2026-11-21 → 2026-11-21
+  - [`9054a211`](https://github.com/Tarasevych/hub/commit/9054a211) 2026-11-21 KLIMOP-018: чисте складання клієнта, пошуковий покажчик панелі, навичка movnyi-zakon та виправний облік авторства
+- **[KLIMOP-019](#t-klimop-019)** — 1 · 2026-11-21 → 2026-11-21
+  - [`4ec0c22c`](https://github.com/Tarasevych/hub/commit/4ec0c22c) 2026-11-21 KLIMOP-019: друга хвиля виправлень — FROST за RFC 9591, адресне шифрування підчасток, стійкі епохи, Меркл v2, повний порядок CRDT
+- **[KLIMOP-020](#t-klimop-020)** — 2 · 2026-11-21 → 2026-11-21
+  - [`add014c5`](https://github.com/Tarasevych/hub/commit/add014c5) 2026-11-21 KLIMOP-020 (проміжно): межі довіри мандатів, сертифікат відновлення, права коренів; передача Gemini 4 Carbon (High)
+  - [`b4c7b3ac`](https://github.com/Tarasevych/hub/commit/b4c7b3ac) 2026-11-21 KLIMOP-020: завершення Хвилі 3 меж довіри (конституція, Насіння, імунітет, групове шифрування, локальні корені)
+- **[KLIMOP-021](#t-klimop-021)** — 2 · 2026-11-21 → 2026-11-21
+  - [`e7428656`](https://github.com/Tarasevych/hub/commit/e7428656) 2026-11-21 KLIMOP-021: транзакційна передача стану Сходинок 1–4, ізоляція вправ MCP, доступність панелі, доведені виміри та двомовна паритетність (Хвиля 4)
+  - [`f36be0b1`](https://github.com/Tarasevych/hub/commit/f36be0b1) 2026-11-21 KLIMOP-021: прив’язка номера запиту на злиття №203 у досьє та записі авторства · nl: koppeling van samenvoegingsverzoek nr. 203 in dossier en bijdrage
+- **[KLIMOP-022](#t-klimop-022)** — 2 · 2026-11-21 → 2026-11-22
+  - [`66f5cb14`](https://github.com/Tarasevych/hub/commit/66f5cb14) 2026-11-21 KLIMOP-022: закриття всіх 25 знахідок перевірки AUDIT-003 у коді, мандатах, сховищі та статтях (Хвиля 5) · nl: sluiting van alle 25 restbevindingen uit AUDIT-003 (Golf 5)
+  - [`66b1747e`](https://github.com/Tarasevych/hub/commit/66b1747e) 2026-11-22 KLIMOP-022: доповнення опису завдання у картці обліку · nl: aanvulling van taakomschrijving in KLIMOP-022.json
+- **[KLANT-001](#t-klant-001)** — 2 · 2026-11-22 → 2026-11-22
+  - [`9cd82138`](https://github.com/Tarasevych/hub/commit/9cd82138) 2026-11-22 KLANT-001 · Клієнтські взаємини, досьє, угоди та зв’язки між службами
+  - [`c85e5d73`](https://github.com/Tarasevych/hub/commit/c85e5d73) 2026-11-22 KLANT-001 · Походження та перевірка змін
+- **[KLIMOP-023](#t-klimop-023)** — 3 · 2026-11-22 → 2026-11-22
+  - [`a7deff03`](https://github.com/Tarasevych/hub/commit/a7deff03) 2026-11-22 KLIMOP-023: підготовка узгодженого випуску з походженням TRACE-001 та повним обліком моделей · nl: voorbereiding van afgestemde uitgave KLIMOP-023 met TRACE-001
+  - [`04793ce3`](https://github.com/Tarasevych/hub/commit/04793ce3) 2026-11-22 KLIMOP-023: збереження незмінності службового geinstalleerd.json у гілці завдання · nl: behoud van ongewijzigd geinstalleerd.json in taaktak
+  - [`55291902`](https://github.com/Tarasevych/hub/commit/55291902) 2026-11-22 KLIMOP-023: узгодження перевірки порядку kleur-contrast-controle перед vite build у ontwerp-fundament · nl: volgordecontrole in ontwerp-fundament
+- **[MELDPANEEL-002](#t-meldpaneel-002)** — 4 · 2026-11-22 → 2026-11-22
+  - [`a3bdcd0d`](https://github.com/Tarasevych/hub/commit/a3bdcd0d) 2026-11-22 MELDPANEEL-002: єдиний Пульт уваги, спокою та дії у двох розмірах з логотипами src/merk/, графом першопричини й умовним відкладенням · één Aandachtspuls in twee groottes
+  - [`0e71955e`](https://github.com/Tarasevych/hub/commit/0e71955e) 2026-11-22 MELDPANEEL-002: узгодження черги спливних вікон під час набору тексту з контрактом melding-soorten · wachtrijvolgorde voor typstroom
+  - [`f442919e`](https://github.com/Tarasevych/hub/commit/f442919e) 2026-11-22 MELDPANEEL-002: канонічні ключі галереї microsoftonedrive і googledrive у ядрі Пульта уваги · canonieke merksleutels uit src/merk
+  - [`6be83c13`](https://github.com/Tarasevych/hub/commit/6be83c13) 2026-11-22 MELDPANEEL-002: паритет пунктів uk/nl (4/3/1) у маніфесті випуску UITROL-MANIFEST.json · gelijke puntentelling uk/nl
+- **[MELDPANEEL-003](#t-meldpaneel-003)** — 5 · 2026-11-22 → 2026-11-22
+  - [`bdb9eb4b`](https://github.com/Tarasevych/hub/commit/bdb9eb4b) 2026-11-22 MELDPANEEL-003 · усунення старої вади REPO_ONGELDIG на сторінці оновлень: очищення пробілів у мітках випуску GitHub і двомовне пояснення · herstel van REPO_ONGELDIG bij spaties in releasetags en tweetalige uitleg
+  - [`978f190b`](https://github.com/Tarasevych/hub/commit/978f190b) 2026-11-22 MELDPANEEL-003 · жива палітра теми сайту, 80% простору під сповіщення, 8-стороннє розтягування, дзвіночок на /melding та класифікована База 506 кодів дій (B-026, правила 1.7.0) · actief sitepalet, 80% werkruimte, 8-zijdig schalen, bel op /melding en levend register van 506 actiecodes
+  - [`afdaa140`](https://github.com/Tarasevych/hub/commit/afdaa140) 2026-11-22 MELDPANEEL-003 · фіксація відбитків змін у досьє походження TRACE-001 та хронології гілок · vastlegging van commit-SHA’s in ontwikkeldossier en takkenkroniek
+  - [`62ae327c`](https://github.com/Tarasevych/hub/commit/62ae327c) 2026-11-22 MELDPANEEL-003 · семантичне порівняння версії правил (= 1.6.0 / = 1.7.0) у klimop-001 та meldpaneel-003 · semantische vergelijking van regelsVersie in eenheidstests
+  - [`625314e5`](https://github.com/Tarasevych/hub/commit/625314e5) 2026-11-22 MELDPANEEL-003 · доповнення відбитка фіксації у досьє походження TRACE-001 · aanvulling van commit-SHA in ontwikkeldossier
+
+</details>
+
+### Taken op startdatum
+
+#### <a id="t-klant-001"></a>KLANT-001 · 2026-11-21 · agent codex <!-- k:KLANT-001@c85e5d73f104f555021c6a896ffecb70256588d3 -->
+
+Klantrelatiebeheer in de eigen werkruimte
+
+- **Tak:** [`feature/klant-001-klantrelatiebeheer-20261121-181800`](https://github.com/Tarasevych/hub/tree/feature/klant-001-klantrelatiebeheer-20261121-181800) · top [`c85e5d7`](https://github.com/Tarasevych/hub/commit/c85e5d73f104f555021c6a896ffecb70256588d3) (2026-11-22) · status in record: `in_progress`
+- **Andere takken van deze taak:** [`publicatie/klant-001-20261122`](https://github.com/Tarasevych/hub/tree/publicatie/klant-001-20261122)
+- **← Voorganger:** basis [`ba289fa`](https://github.com/Tarasevych/hub/commit/ba289fa919c66765b6fc5565d340976994261c05) · versie `20261105-061659` · [`20261120-141041`](https://github.com/Tarasevych/hub/releases/tag/20261120-141041) · ∈ `integratie` · vorige taak: [UPD-013](#t-upd-013) (precies op haar top)
+- **→ Opvolger:** nog niet in `integratie` · zit in de live versie · eerste release die haar bevat: [`20261122-171856`](https://github.com/Tarasevych/hub/releases/tag/20261122-171856) · volgende taken: geen
+
+#### <a id="t-consol-001"></a>CONSOL-001 · 2026-11-22 · agent antigravity <!-- k:CONSOL-001@01ff27c92d6032c00dc2207c2d9864e04c79cccc -->
+
+Консолідація гілок №208 і №211, завершення спільного переглядача вкладень та доробка безпеки / Consolidatie van takken #208 en #211, afronding gedeelde bijlageweergave en beveiliging
+
+- **Tak:** [`feature/consolidatie-001-20261122-203500`](https://github.com/Tarasevych/hub/tree/feature/consolidatie-001-20261122-203500) · top [`01ff27c`](https://github.com/Tarasevych/hub/commit/01ff27c92d6032c00dc2207c2d9864e04c79cccc) (2026-11-23) · status in record: `in_progress`
+- **← Voorganger:** basis [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) · versie `20261105-061659` · ∈ `integratie` · vorige taak: [KLIMOP-022](#t-klimop-022) (bevat haar top)
+- **→ Opvolger:** nog niet in `integratie` · volgende taken: geen
+
+#### MELDPANEEL-003 · 2026-11-22 · agent antigravity <!-- k:MELDPANEEL-003@625314e5d045f81d13564e68c16b1074ef71c381 -->
+
+Узгодження палітри теми Пульта сповіщень (.canonical-chrome), >80% простору під картки, 8-стороннє розтягування в обох режимах, прив’язка до видимого дзвіночка, живий дзвіночок на id.tarasevych.com/melding та єдина жива База типів і кодів дій MELDINGEN-REGISTER-001
+
+- **Tak:** [`fix/meldpaneel-003-thema-ruimte-register-20261122-134000`](https://github.com/Tarasevych/hub/tree/fix/meldpaneel-003-thema-ruimte-register-20261122-134000) · top [`625314e`](https://github.com/Tarasevych/hub/commit/625314e5d045f81d13564e68c16b1074ef71c381) (2026-11-22) · status in record: `in_progress`
+- **← Voorganger:** basis [`3282235`](https://github.com/Tarasevych/hub/commit/32822354ea08fc850330eed96feaff5b1bb96a58) · versie `20261105-061659` · ∈ `integratie` · vorige taak: [KLIMOP-022](#t-klimop-022) (bevat haar top)
+- **→ Opvolger:** samengevoegd in `integratie` · zit in de live versie · eerste release die haar bevat: [`20261122-154750`](https://github.com/Tarasevych/hub/releases/tag/20261122-154750) · volgende taken: geen
+
+#### <a id="t-uitrolbot-001"></a>UITROLBOT-001 · 2026-11-22 · agent autoclaw <!-- k:UITROLBOT-001@584ce00d1b4abb762488c736923f8b6f24bb878b -->
+
+Запуск і активація бота випусків @Tarasevych_MijnRuimte_UitrolBot: розбір посилання t.me на гілку в chat_id і message_thread_id, публікація двомовного пояснення встановленого випуску з UITROL-MANIFEST.json, меню команд /status /laatste /help і зрозумілі підказки для помилок теми та прав.
+
+- **Tak:** [`feature/uitrolbot-001-20261122-214039`](https://github.com/Tarasevych/hub/tree/feature/uitrolbot-001-20261122-214039) · top [`584ce00`](https://github.com/Tarasevych/hub/commit/584ce00d1b4abb762488c736923f8b6f24bb878b) (2026-11-22) · status in record: `in_progress`
+- **← Voorganger:** basis [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) · versie `20261122-171856` · ∈ `integratie` · vorige taak: [KLIMOP-022](#t-klimop-022) (bevat haar top)
+- **→ Opvolger:** nog niet in `integratie` · volgende taken: geen
+
+### Opvolgingsschema
+
+```mermaid
+flowchart LR
+  INT[(integratie)]
+  LIVE((live))
+  KLANT_001["KLANT-001"]
+  UPD_013 --> KLANT_001
+  CONSOL_001["CONSOL-001"]
+  KLIMOP_022 --> CONSOL_001
+  MELDPANEEL_003["MELDPANEEL-003"]
+  KLIMOP_022 --> MELDPANEEL_003
+  MELDPANEEL_003 -.-> INT
+  UITROLBOT_001["UITROLBOT-001"]
+  KLIMOP_022 --> UITROLBOT_001
+  INT --> LIVE
+```
+
+### Takken zonder taakrecord
+
+Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie/taken/<ID>.json`. Alleen feiten uit git.
+
+| Tak | Top | Basis in `integratie` | In `integratie` | In live versie | PR |
+|---|---|---|---|---|---|
+| [`feature/consol-e2e-wip-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-e2e-wip-20261123) <!-- b:feature/consol-e2e-wip-20261123@1ad654a931d5edeaca57df1448ca5f9a113beb9f --> | [`1ad654a`](https://github.com/Tarasevych/hub/commit/1ad654a931d5edeaca57df1448ca5f9a113beb9f) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m2-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m2-20261123) <!-- b:feature/consol-m2-20261123@30793e7a54da0c23bf37c02aa29d6b5ae031a917 --> | [`30793e7`](https://github.com/Tarasevych/hub/commit/30793e7a54da0c23bf37c02aa29d6b5ae031a917) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m2-wip-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m2-wip-20261123) <!-- b:feature/consol-m2-wip-20261123@6bac8aa1a50949df5224f4407925748ac7e8ca1e --> | [`6bac8aa`](https://github.com/Tarasevych/hub/commit/6bac8aa1a50949df5224f4407925748ac7e8ca1e) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m3-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m3-20261123) <!-- b:feature/consol-m3-20261123@fa4a189e7af4b490fa02f09819d21edd3ee5ffa2 --> | [`fa4a189`](https://github.com/Tarasevych/hub/commit/fa4a189e7af4b490fa02f09819d21edd3ee5ffa2) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m3-wip-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m3-wip-20261123) <!-- b:feature/consol-m3-wip-20261123@e244579069ab30b5ece421b3dd22dc0b2626468c --> | [`e244579`](https://github.com/Tarasevych/hub/commit/e244579069ab30b5ece421b3dd22dc0b2626468c) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m4-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m4-20261123) <!-- b:feature/consol-m4-20261123@bc003eeb029f2a1f32f8fad69824bb8da9ddbc43 --> | [`bc003ee`](https://github.com/Tarasevych/hub/commit/bc003eeb029f2a1f32f8fad69824bb8da9ddbc43) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m4-wip-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m4-wip-20261123) <!-- b:feature/consol-m4-wip-20261123@ed24b33513af8fd99fbf189b5bf6a21afa5987c2 --> | [`ed24b33`](https://github.com/Tarasevych/hub/commit/ed24b33513af8fd99fbf189b5bf6a21afa5987c2) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m5a-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m5a-20261123) <!-- b:feature/consol-m5a-20261123@279b514de3419114d51a90c4c879f20ad672246a --> | [`279b514`](https://github.com/Tarasevych/hub/commit/279b514de3419114d51a90c4c879f20ad672246a) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m5a-wip-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m5a-wip-20261123) <!-- b:feature/consol-m5a-wip-20261123@ed8f29b5dfc0677732e11fd87379f727316953fb --> | [`ed8f29b`](https://github.com/Tarasevych/hub/commit/ed8f29b5dfc0677732e11fd87379f727316953fb) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/consol-m5b-20261123`](https://github.com/Tarasevych/hub/tree/feature/consol-m5b-20261123) <!-- b:feature/consol-m5b-20261123@80bc688be3e7c4516fdc9f793a0422ab429ac257 --> | [`80bc688`](https://github.com/Tarasevych/hub/commit/80bc688be3e7c4516fdc9f793a0422ab429ac257) 2026-11-23 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`archief/bijlage-weergave-tussenstand-20261122`](https://github.com/Tarasevych/hub/tree/archief/bijlage-weergave-tussenstand-20261122) <!-- b:archief/bijlage-weergave-tussenstand-20261122@6dded73308cfdf05a66d0b933d53b9d85e3a97b8 --> | [`6dded73`](https://github.com/Tarasevych/hub/commit/6dded73308cfdf05a66d0b933d53b9d85e3a97b8) 2026-11-22 | [`ba289fa`](https://github.com/Tarasevych/hub/commit/ba289fa919c66765b6fc5565d340976994261c05) | nee | nee | — |
+| [`feature/consolidatie-e2e-20261122-203500`](https://github.com/Tarasevych/hub/tree/feature/consolidatie-e2e-20261122-203500) <!-- b:feature/consolidatie-e2e-20261122-203500@d7b2a5630e6fa15cc6706ecbb057821630528bda --> | [`d7b2a56`](https://github.com/Tarasevych/hub/commit/d7b2a5630e6fa15cc6706ecbb057821630528bda) 2026-11-22 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | nee | nee | — |
+| [`feature/vlag-001-verplichte-vlaggen-20261122-190034`](https://github.com/Tarasevych/hub/tree/feature/vlag-001-verplichte-vlaggen-20261122-190034) <!-- b:feature/vlag-001-verplichte-vlaggen-20261122-190034@c6b31833480ac5298c594f23a32a449138ead1be --> | [`c6b3183`](https://github.com/Tarasevych/hub/commit/c6b31833480ac5298c594f23a32a449138ead1be) 2026-11-22 | [`c6b3183`](https://github.com/Tarasevych/hub/commit/c6b31833480ac5298c594f23a32a449138ead1be) | ja | nee | — |
+| [`functie/bijlage-weergave-v2-20261122`](https://github.com/Tarasevych/hub/tree/functie/bijlage-weergave-v2-20261122) <!-- b:functie/bijlage-weergave-v2-20261122@9e5a02770e257506c89af76d02665d23b8343063 --> | [`9e5a027`](https://github.com/Tarasevych/hub/commit/9e5a02770e257506c89af76d02665d23b8343063) 2026-11-22 | [`411f3c5`](https://github.com/Tarasevych/hub/commit/411f3c56fa6fc197deeb6bc7ab28368affa3c095) | nee | nee | — |
+| [`integratie`](https://github.com/Tarasevych/hub/tree/integratie) <!-- b:integratie@95fda93a7084c102d1c682fbb9a83a83d49f9259 --> | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) 2026-11-22 | [`95fda93`](https://github.com/Tarasevych/hub/commit/95fda93a7084c102d1c682fbb9a83a83d49f9259) | ja | nee | [#31](https://github.com/Tarasevych/hub/pull/31) → `voornaamst` (samengevoegd 2026-11-06)<br>[#64](https://github.com/Tarasevych/hub/pull/64) → `feature/mailscan-002-uitgave-20261110-120000` (samengevoegd 2026-11-10) |
+
+> Aanvullingslogboek: 2026-11-23 — +4 / +15 / Δ

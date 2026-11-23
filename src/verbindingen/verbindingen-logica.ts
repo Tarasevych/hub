@@ -23,11 +23,15 @@ export function isLevend(a: CloudVnextAanbieder, d: IntegratiesUit | null): bool
   if (a.levend === 'google') return d.google.gekoppeld;
   if (a.levend === 'photos') return d.photos.gekoppeld;
   if (a.levend === 'm4') return Boolean(d.m4.aanbieders.find((x) => x.id === a.id)?.accounts.some((acc) => acc.status === 'connected'));
+  if (a.levend === 'webdav') {
+    const koppelingen = (d as IntegratiesUit & { webdav?: { koppelingen?: Array<{ aanbieder: string; status: string }> } }).webdav?.koppelingen;
+    return Boolean(koppelingen?.some((k) => (k.aanbieder === a.id || (a.id === 'nas' && k.aanbieder === 'nas-webdav')) && k.status === 'connected'));
+  }
   return false;
 }
 export function soortVan(a: CloudVnextAanbieder, d: IntegratiesUit | null): Soort {
   if (isLevend(a, d)) return 'verbonden';
-  if (a.stand === 'werkt') return 'beschikbaar';
+  if (a.stand === 'werkt' || a.stand === 'webdav') return 'beschikbaar';
   if (a.stand === 'sleutels-nodig') return 'beperkt';
   if (a.stand === 'gepland') return 'gepland';
   return 'onmogelijk';

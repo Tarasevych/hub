@@ -144,7 +144,7 @@ function tekenFrostSubgroep(
 export async function main() {
   const { check, einde } = checker('klimop-021-overdracht-paneel-tweetaligheid');
   const nuIso = '2026-11-21T16:35:00.000Z';
-  const verlooptIso = '2026-11-22T16:35:00.000Z';
+  const verlooptIso = new Date(Math.max(Date.now(), Date.parse(nuIso)) + 86_400_000).toISOString();
   const geldigeAntwoorden15 = Object.fromEntries(
     KLIMOP_CONTROLE_VRAGEN_IDS.map((id) => [
       id,

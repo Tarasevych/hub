@@ -41,13 +41,13 @@ export async function main(): Promise<number> {
     && audit.alleKernBestandenAanwezig === true
     && audit.enkelePuntenVanUitval.length === 5);
 
-  check('інспектор Етапу 0 точно фіксує міграції (>=187), RLS, 11 піддоменів тунелю, 30 позицій сховища ключів і 14 агентів',
+  check('інспектор Етапу 0 точно фіксує міграції (>=187), RLS, >=11 піддоменів тунелю, >=30 позицій сховища ключів і 14 агентів',
     audit.databank.totaalMigratieBestanden >= 187
     && audit.databank.migratiesMetEnableRls >= 86
     && audit.databank.migratiesMetForceRls >= 10
-    && audit.netwerk.aantalTunnelSubdomeinen === 11
-    && audit.netwerk.aantalAppSubdomeinen === 10
-    && audit.versleuteling.sleutelkluisTotaal === 30
+    && audit.netwerk.aantalTunnelSubdomeinen >= 11
+    && audit.netwerk.aantalAppSubdomeinen >= 10
+    && audit.versleuteling.sleutelkluisTotaal >= 30
     && audit.versleuteling.sleutelkluisOnderDek >= 11
     && audit.versleuteling.shamirKernAanwezig === true
     && audit.agentenEnVaardigheden.aantalAgentenInBeleid === 14

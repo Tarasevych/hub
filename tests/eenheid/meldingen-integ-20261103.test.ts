@@ -133,7 +133,7 @@ export async function main(): Promise<number> {
 
   // A4. Servermelding in de gewone én de technische lijst.
   check('A4 uniekOpId: per id één keer (één pop-up, geen «+1» voor dezelfde melding)', uniekOpId([{ id: 'a' }, { id: 'b' }, { id: 'a' }]).map((x) => x.id).join() === 'a,b' && bel.includes('uniekOpId([...(p.serverItems || []), ...(p.techItems || [])])'));
-  check('A4 «Не турбувати»: ook geen pop-up meer (beveiliging wel), niet alleen geen geluid', bel.includes('const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);') && bel.includes('opduiken: basis.opduiken && !dnd && !dubbel'));
+  check('A4 «Не турбувати»: ook geen pop-up meer (beveiliging wel), niet alleen geen geluid', /const dnd = \(meldingenV2Nu\(\) \|\| leesMeldingWeergaveKeuze\(\)\.stijl === 'v2'\) && nietStorenActief\(\) && !isKritiekType\(type\);/.test(bel) && bel.includes('opduiken: basis.opduiken && !dnd && !dubbel'));
 
   // ------------------------------------------------------------------ B. pop-up: standaard 2000 ms (2 s), pauze met muis en aanraking, balk, niet vast
   const ms = (kind: 'success' | 'info' | 'warning' | 'error', tekst = 'kort', uitleg?: string) => popupLevensduurMs({ vast: false, seconden: 0 }, tekst, uitleg, kind)!;

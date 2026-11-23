@@ -1,6 +1,6 @@
 // UI-015 — nieuwe aanmeld-aanbieders (vlag aanmeldmethoden-vnext, migratie 0198): de LEVENDE statusroute, de zelftest en de
 // ECHTE koppelcontouren voor Microsoft en Discord (OAuth2 code flow + PKCE), Telegram (Login Widget met HMAC-SHA256) en
-// Apple (Sign in with Apple; clientgeheim = ES256-JWT uit de p8-sleutel). Contract: shared/aanmeld-vnext-model.ts.
+// Apple (Sign in with Apple; clientgeheim = ES256-JWT uit de p8-sleutel). Dit bestand KOPPELT en TOONT alleen; het geeft zelf GEEN sessies uit. Contract: shared/aanmeld-vnext-model.ts.
 // Віха M2 (UI-015B, №168): посилені перевірки формату AANMELD_MICROSOFT_TENANT, синонім AANMELD_APPLE_SERVICES_ID,
 // валідація форми ключів без розкриття таємниць, ротація JWKS kid, константно-часовий nonce, azp/iat/nbf/sub,
 // мережевий ліміт часу AbortController 10 с, одноразовість вікна входу Telegram та знімок aanbiedersVoorToegangsSnapshot.

@@ -1,6 +1,6 @@
 // План стирання акаунта (блок 8). Лише текст SQL. Виконання — backend/account-wissen.ts.
 const NAAM = /^[a-z_][a-z0-9_]*$/;
-export const STANDAARD_KOLOM = ['owner_id', 'user_id', 'account_id'] as const;
+export const STANDAARD_KOLOM = ['owner_id', 'user_id', 'gebruiker_id', 'account_id'] as const;
 
 export type WisTabel = { schema: string; tabel: string; kolommen: string[]; uuidKolommen?: string[] };
 /** `tel` — лише для «сухого» підрахунку (accountWisTelling), коли sql не DELETE (UPDATE відв’язування). */
@@ -19,6 +19,8 @@ export const EXTRA_WIS: WisTabel[] = [
   // приймати його вже не можна (huis-vnext.ts звіряє door_user_id з власником оселі), а рядок несе її id. Видаляємо.
   // De uitnodiging VAN een gewiste persoon is dood (aanvaarden eist dat door_user_id nog eigenaar is) en draagt haar id: weg.
   { schema: 'app', tabel: 'huis_uitnodigingen', kolommen: ['door_user_id'] },
+  // CONSOL-001 (0313): рядки міжслужбових мостів пошти належать користувачеві за gebruiker_id; стираємо повністю разом із акаунтом.
+  { schema: 'app', tabel: 'mail_dienstbruggen', kolommen: ['gebruiker_id'] },
 ];
 
 /**
@@ -29,6 +31,10 @@ export const EXTRA_WIS: WisTabel[] = [
 export const GEEN_ACCOUNT_KOLOM: Record<string, Record<string, string>> = {
   cloud_deel_koppelingen: {
     doel_id: 'id файла, теки чи вибірки, яку поширює посилання (0210), не id людини / id van het gedeelde bestand of de map, geen account',
+  },
+  mail_dienstbruggen: {
+    account_id: 'ідентифікатор підключеної поштової скриньки (0313), а не облікового запису людини; рядок стирається за gebruiker_id / id van het e-mailaccount, rij wordt gewist op gebruiker_id',
+    doel_id: 'ідентифікатор нотатки, завдання, події чи картки клієнта (0313), не id людини / id van notitie, taak, afspraak of klant, geen account',
   },
 };
 
@@ -124,7 +130,7 @@ const geenAccount = (tabel: string, kolom: string) => Boolean(GEEN_ACCOUNT_KOLOM
 /** Колонка з id людини, але це не «свій рядок»: чужий журнал або підпис на спільному стані. */
 export const NIET_EIGEN_KOLOM = ['actor_id', 'gewijzigd_door', 'bijgewerkt_door', 'door_id', 'door', 'beeindigd_door', 'ingetrokken_door', 'besluit_door', 'goedgekeurd_door', 'toegekend_door', 'besloten_door', 'gelezen_door', 'gekozen_door', 'bevestigd_door', 'ongedaan_door', 'verbonden_door', 'geverifieerd_door', 'gegeven_door', 'beslist_door', 'lokale_ai_door'] as const;
 
-export const ACCOUNT_KOLOM = /^(owner_id|user_id|account_id|created_by|aanvrager_id|doel_id|beheerder_id|eigenaar_id|owner_key|actor_id|door_id|gewijzigd_door|bijgewerkt_door|door|beeindigd_door|ingetrokken_door|besluit_door|goedgekeurd_door|toegekend_door|besloten_door|gelezen_door|gekozen_door|bevestigd_door|ongedaan_door|verbonden_door|geverifieerd_door|gegeven_door|beslist_door|door_user_id|lokale_ai_door)$/;
+export const ACCOUNT_KOLOM = /^(owner_id|user_id|gebruiker_id|account_id|created_by|aanvrager_id|doel_id|beheerder_id|eigenaar_id|owner_key|actor_id|door_id|gewijzigd_door|bijgewerkt_door|door|beeindigd_door|ingetrokken_door|besluit_door|goedgekeurd_door|toegekend_door|besloten_door|gelezen_door|gekozen_door|bevestigd_door|ongedaan_door|verbonden_door|geverifieerd_door|gegeven_door|beslist_door|door_user_id|lokale_ai_door)$/;
 
 const expressie = (t: WisTabel, kolom: string) =>
   kolom === 'eigenaar_id' || (t.tabel === 'agent_namens_sessies' && kolom === 'user_id') || t.uuidKolommen?.includes(kolom)
