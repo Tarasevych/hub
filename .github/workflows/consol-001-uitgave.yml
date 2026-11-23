@@ -112,9 +112,9 @@ jobs:
               throw Error(`Встановлена версія (${versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
             }
             console.log(`Жива основа випуску з сервера: ${versie} @ ${levend}`);
-          } else if (code === '530' || code === '502' || code === '504' || code === '000') {
+          } else if (['000', '403', '429', '502', '504', '522', '524', '530'].includes(code)) {
             [versie, levend] = bekendLijst[bekendLijst.length - 1];
-            console.log(`Тунель тимчасово недоступний (HTTP ${code}); використано попередньо звірену основу ${versie} @ ${levend}`);
+            console.log(`Зовнішній тунель або мережевий екран тимчасово відхилив запит без сеансу (HTTP ${code}); використано попередньо звірену основу ${versie} @ ${levend}`);
           } else {
             throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
           }
@@ -961,7 +961,7 @@ jobs:
             if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
               throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
             }
-          } else if (code !== '530' && code !== '502' && code !== '504' && code !== '000') {
+          } else if (!['000', '403', '429', '502', '504', '522', '524', '530'].includes(code)) {
             throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
           }
           JS

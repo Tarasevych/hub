@@ -267,6 +267,16 @@ BEGIN
     IF to_regclass('app.foto_externe_bronnen') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.foto_externe_bronnen TO mijnruimte_app;
     END IF;
+    -- 0319, 0320, 0324 (CONSOL-001 / Віха M4): власні ярлики Робочого столу v3, служба Соціальних мереж та зашифровані перехідники інтеграцій під примусовим FORCE RLS за (user_id, ruimte).
+    IF to_regclass('app.werkblad_usr_items') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_usr_items TO mijnruimte_app;
+    END IF;
+    IF to_regclass('app.sociale_netwerken') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.sociale_netwerken TO mijnruimte_app;
+    END IF;
+    IF to_regclass('app.integratie_adapter_koppeling') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.integratie_adapter_koppeling TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).
