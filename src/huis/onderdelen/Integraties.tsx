@@ -115,14 +115,14 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
       {wizard ? (
         <HuisLaag lang={lang} soort={smal ? 'scherm' : 'venster'} titel={tr(lang, 'Home Assistant підключити', 'Home Assistant koppelen')} onSluit={() => setWizard(false)} data={{ 'hv-ha-wizard': '1' }}>
           <ol className='hv-uitleg'>
-            <li>{tr(lang, 'У Home Assistant: Профіль → Безпека → «Довгострокові токени доступу» → створити токен для «Mijn Ruimte».', 'In Home Assistant: Profiel → Beveiliging → «Langlevende toegangstokens» → maak een token voor «Mijn Ruimte».')}</li>
+            <li>{tr(lang, 'У Home Assistant: Профіль → Безпека → «Довгострокові маркери доступу» → створити маркер доступу для «Mijn Ruimte».', 'In Home Assistant: Profiel → Beveiliging → «Langlevende toegangstokens» → maak een token voor «Mijn Ruimte».')}</li>
             <li>{tr(lang, 'Адреса має бути доступною з сервера сайту (LAN або VPN), напр. http://homeassistant.local:8123. Не відкривайте порт в інтернет.', 'Het adres moet bereikbaar zijn vanaf de server van de site (LAN of VPN), bv. http://homeassistant.local:8123. Zet geen poort open naar internet.')}</li>
-            <li>{tr(lang, 'Токен шифрується на сервері й більше не показується. Спочатку — лише читання; команди вмикаються окремо.', 'Het token wordt op de server versleuteld en nooit meer getoond. Eerst alleen lezen; opdrachten zet u apart aan.')}</li>
+            <li>{tr(lang, 'Маркер доступу шифрується на сервері й більше не показується. Спочатку — лише читання; команди вмикаються окремо.', 'Het token wordt op de server versleuteld en nooit meer getoond. Eerst alleen lezen; opdrachten zet u apart aan.')}</li>
           </ol>
           <form className='mq-hb-wizard-vorm' onSubmit={(e) => { e.preventDefault(); void instellen(); }}>
             <label className='hv-veld'><span>{tr(lang, 'Назва (необов’язково)', 'Naam (optioneel)')}</span><input value={naam} maxLength={80} onChange={(e) => setNaam(e.target.value)} placeholder='Home Assistant' data-hv-eerste='1' /></label>
             <label className='hv-veld'><span>{tr(lang, 'Адреса', 'Adres')}</span><input value={adres} inputMode='url' autoComplete='off' placeholder='http://192.168.1.10:8123' required onChange={(e) => setAdres(e.target.value)} data-hv-ha-adres='1' /></label>
-            <label className='hv-veld'><span>{tr(lang, 'Довгостроковий токен', 'Langlevend token')}</span><input type='password' value={token} autoComplete='off' required onChange={(e) => setToken(e.target.value)} data-hv-ha-token='1' /></label>
+            <label className='hv-veld'><span>{tr(lang, 'Довгостроковий маркер доступу', 'Langlevend token')}</span><input type='password' value={token} autoComplete='off' required onChange={(e) => setToken(e.target.value)} data-hv-ha-token='1' /></label>
             {fout ? <p className='hv-melding is-fout mq-accent-coral' role='alert'><AlertCircle aria-hidden='true' />{fout}</p> : null}
             <div className='hv-knoppen'><button type='submit' className='hv-knop is-hoofd' disabled={bezig === 'instellen' || !adres.trim() || !token.trim()} data-hv-ha-opslaan='1'>{bezig === 'instellen' ? tr(lang, 'Перевіряю…', 'Testen…') : tr(lang, 'Перевірити та зберегти', 'Testen en opslaan')}</button></div>
           </form>

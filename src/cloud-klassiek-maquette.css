@@ -796,9 +796,9 @@ html.palet-maquette body .vbc .vbc-badge {
 }
 
 html.palet-maquette body .vbc :is(.vbc-badge.is-ok, .vbc-badge.is-verbonden) {
-  border-color: rgba(var(--mq-accent-rgb), 0.36);
-  background: rgba(var(--mq-accent-rgb), 0.16);
-  color: color-mix(in srgb, var(--mq-accent) 82%, var(--mq-tekst));
+  border-color: color-mix(in srgb, var(--staat-goed) 36%, transparent);
+  background: color-mix(in srgb, var(--staat-goed) 14%, transparent);
+  color: var(--staat-goed);
 }
 
 html.palet-maquette body .vbc .vbc-badge.is-beschikbaar {
@@ -808,9 +808,9 @@ html.palet-maquette body .vbc .vbc-badge.is-beschikbaar {
 }
 
 html.palet-maquette body .vbc .vbc-badge.is-aandacht {
-  border-color: rgba(var(--mq-tech-markering-rgb), 0.42);
-  background: rgba(var(--mq-tech-markering-rgb), 0.14);
-  color: var(--mq-tekst);
+  border-color: color-mix(in srgb, var(--staat-let) 40%, transparent);
+  background: color-mix(in srgb, var(--staat-let) 14%, transparent);
+  color: var(--staat-let);
 }
 
 /* ── 8. Передпускові панелі M4, M5 та M10 (.tsv-cloud-accounts, .cloud-m5, .tsv-cloud-m10) ── */

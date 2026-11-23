@@ -51,7 +51,7 @@ export default function MeldingUitleg(p: UitlegProps) {
     <div className='mv2u' data-soort={u.id} data-risico={u.risico}>
       <p className={`mv2u-risico r-${u.risico}`}>{tw(RISICO[u.risico])}</p>
       <dl className='mv2u-velden'>{rijen.map(([k, v, c]) => <div key={k} className={c}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-      {bevestig ? <p className='mv2u-let' role='status'>{t('Дію буде виконано лише на сторінці з підтвердженням (passkey). Тут нічого не змінюється.', 'De actie gebeurt alleen op de pagina met bevestiging (passkey). Hier verandert niets.')}</p> : null}
+      {bevestig ? <p className='mv2u-let' role='status'>{t('Дію буде виконано лише на сторінці з підтвердженням ключем доступу. Тут нічого не змінюється.', 'De actie gebeurt alleen op de pagina met bevestiging (passkey). Hier verandert niets.')}</p> : null}
       <div className='mv2u-acties' role='group' aria-label={t('Швидкі дії', 'Snelle acties')}>{[...u.acties, ...ALGEMENE_ACTIES.filter((a) => a.soort !== 'gelezen' || p.groep.ongelezen)].map(actie)}</div>
     </div>
   );

@@ -25,7 +25,9 @@ import MeldingUitleg from './MeldingUitleg';
 import { laterActief, zetLater } from './later';
 import type { Bronnen } from './model';
 import { bouwModel } from './model';
+import MeldingModusKiezer from '../MeldingModusKiezer';
 import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
+import { useMeldingWeergaveKeuze } from '../weergave-keuze';
 import { veiligeMeldingUrl } from '../../../shared/meldingen-ecosysteem';
 import './meldingen-v2.css';
 
@@ -101,7 +103,8 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   const nu = p.nu ?? Date.now();
   // UI-014: vlag meldingen-uitleg-v3 (standaard UIT) — uitleg + snelle acties in de kaart, en de instelbare grootte.
   const v3Vlag = useUitlegV3();
-  const v3 = p.uitlegV3 ?? v3Vlag;
+  const weergaveKeuze = useMeldingWeergaveKeuze();
+  const v3 = p.uitlegV3 ?? (weergaveKeuze.eigenUitleg ? weergaveKeuze.uitlegV3 : (v3Vlag || weergaveKeuze.vlagUitlegV3));
   const weergaveGr: PaneelWeergave = p.regels.weergave || STANDAARD_WEERGAVE;
   const [later, setLater] = useState<Record<string, number>>(() => laterActief(nu));
   const [handmatigOngelezen, setHandmatigOngelezen] = useState<Set<string>>(() => new Set());
@@ -410,6 +413,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
               <ChevronDown className='mvk-pijl' aria-hidden='true' />
             </summary>
             <div className='mv2-vorm-inhoud'>
+              <MeldingModusKiezer lang={lang} />
               {v3 ? <fieldset className='mv2-regel mv2-grootte' data-mv2-grootte='1'>
                 <legend>{t('Розмір сповіщень', 'Grootte van de meldingen')}<small>{t('Панель збільшується разом із текстом', 'Het paneel groeit mee met de tekst')}</small></legend>
                 <div className='mv2-segment is-klein' role='radiogroup' aria-label={t('Розмір тексту', 'Tekstgrootte')}>

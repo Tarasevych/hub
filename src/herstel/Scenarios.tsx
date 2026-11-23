@@ -56,7 +56,7 @@ export function ScenariosWeergave({ lang, data, kluis, busy, onKies, totpUitscha
   const op = codesOp(data);
   const kluisAan = !!kluis && kluis.stand !== 'uit';
   const kluisRegel = kluisAan
-    ? tr(lang, 'Ключ зашифрованих даних на новому пристрої відкрийте іншим passkey з PRF або кодом відновлення сховища ключів (не кодом облікового запису).', 'Open de sleutel van de versleutelde gegevens op het nieuwe apparaat met een andere passkey met PRF of met de herstelcode van de sleutelkluis (niet met een herstelcode van het account).')
+    ? tr(lang, 'Ключ зашифрованих даних на новому пристрої відкрийте іншим ключем доступу з PRF або кодом відновлення сховища ключів (не кодом облікового запису).', 'Open de sleutel van de versleutelde gegevens op het nieuwe apparaat met een andere passkey met PRF of met de herstelcode van de sleutelkluis (niet met een herstelcode van het account).')
     : tr(lang, 'Шифрування ваших даних не ввімкнено, тож окремо відкривати ключ не потрібно.', 'Versleuteling van uw gegevens staat niet aan, dus een sleutel apart openen is niet nodig.');
 
   return <>
@@ -87,13 +87,13 @@ export function ScenariosWeergave({ lang, data, kluis, busy, onKies, totpUitscha
         <Kaart id='apparaat' icoon={<Smartphone aria-hidden='true' />} titel={tr(lang, 'Втрачено пристрій', 'Apparaat kwijt')}>
           <ol>
             <li>{tr(lang, 'Завершіть сеанси цього пристрою — той, хто його знайде, не опиниться у вашому обліковому записі.', 'Beëindig de sessies van dit apparaat — wie het vindt, komt dan niet in uw account.')} <Ga lang={lang} sectie='sessions' onKies={onKies} tekst={['До сесій і пристроїв', 'Naar sessies en apparaten']} /></li>
-            <li>{tr(lang, 'Видаліть passkey цього пристрою — ним більше не можна буде підтвердити дії.', 'Verwijder de passkey van dit apparaat — daarmee kan niemand meer iets bevestigen.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-passkeys' onKies={onKies} tekst={['До ключів доступу', 'Naar de toegangssleutels']} /></li>
+            <li>{tr(lang, 'Видаліть ключ доступу цього пристрою — ним більше не можна буде підтвердити дії.', 'Verwijder de passkey van dit apparaat — daarmee kan niemand meer iets bevestigen.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-passkeys' onKies={onKies} tekst={['До ключів доступу', 'Naar de toegangssleutels']} /></li>
             <li>{tr(lang, 'Якщо на ньому був застосунок-автентифікатор — див. «Недоступний автентифікатор» нижче.', 'Stond de authenticator-app erop — zie «Authenticator niet bereikbaar» hieronder.')}</li>
             <li>{kluisRegel}{kluisAan && <> <Ga lang={lang} sectie='security' anker='aanmeldmethoden-sleutelkluis' onKies={onKies} tekst={['До сховища ключів', 'Naar de sleutelkluis']} /></>}</li>
           </ol>
         </Kaart>
 
-        <Kaart id='passkey' icoon={<KeyRound aria-hidden='true' />} titel={tr(lang, 'Втрачено ключ доступу (passkey)', 'Toegangssleutel (passkey) kwijt')}>
+        <Kaart id='passkey' icoon={<KeyRound aria-hidden='true' />} titel={tr(lang, 'Втрачено ключ доступу', 'Toegangssleutel (passkey) kwijt')}>
           <ol>
             <li>{tr(lang, 'Видаліть цей ключ доступу: тоді ним не підтвердить дії ніхто інший.', 'Verwijder deze passkey: dan bevestigt niemand anders er nog iets mee.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-passkeys' onKies={onKies} tekst={['До ключів доступу', 'Naar de toegangssleutels']} /></li>
             <li>{tr(lang, 'Важливі дії підтверджуйте іншим способом: кодом із застосунку, кодом відновлення облікового запису або повторним входом через Google.', 'Bevestig belangrijke handelingen op een andere manier: met de app-code, een herstelcode van het account of opnieuw aanmelden via Google.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-2fa' onKies={onKies} tekst={['До застосунку-автентифікатора', 'Naar de authenticator-app']} /></li>
@@ -136,7 +136,7 @@ export function SleutelverliesBlok({ lang, kluis }: { lang: Lang; kluis: KluisKe
   return <section className='access-plane-section herstel-sleutelverlies' id='herstel-sleutelverlies' data-herstel-sleutelverlies data-kluis={kluis ? kluis.stand : 'onbekend'} tabIndex={-1}>
     <header className='access-plane-section-head'><h2>{tr(lang, 'Наслідки втрати ключа', 'Gevolgen van sleutelverlies')}</h2></header>
     <div className='access-plane-box herstel-tekst'>
-      {kluis && kluis.stand === 'uit' && <p data-kluis-uit>{t2(lang, KLUIS_TEKST.stand.uit)}. {tr(lang, 'Поки шифрування вимкнене, втрата passkey чи кодів не забирає дані — лише ускладнює вхід.', 'Zolang versleuteling uit staat, kost het verlies van passkeys of codes geen gegevens — het maakt alleen aanmelden lastiger.')}</p>}
+      {kluis && kluis.stand === 'uit' && <p data-kluis-uit>{t2(lang, KLUIS_TEKST.stand.uit)}. {tr(lang, 'Поки шифрування вимкнене, втрата ключів доступу чи кодів не забирає дані — лише ускладнює вхід.', 'Zolang versleuteling uit staat, kost het verlies van passkeys of codes geen gegevens — het maakt alleen aanmelden lastiger.')}</p>}
       {(aan || kluis === null || kluis === undefined) && <p className='access-plane-warn' data-kluis-verlies>{t2(lang, KLUIS_TEKST.verlies)}</p>}
       {kluis?.stand === 'gesloten' && <p>{t2(lang, KLUIS_FOUT.SLEUTELKLUIS_GESLOTEN)}</p>}
       <p>{t2(lang, KLUIS_TEKST.tweeCodes)}</p>

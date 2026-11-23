@@ -22,7 +22,7 @@ export default function MiniatuurModusKeuze({ lang }: { lang: 'uk' | 'nl' }) {
           </button>
         ))}
       </div>
-      <p>{t('Авто: до 4 МБ на швидкій мережі, до 1 МБ на 3G, лише з кешу при економії трафіку. На вимогу нічого не качає само.', 'Automatisch: tot 4 MB op een snelle verbinding, tot 1 MB op 3G, alleen uit de cache bij databeperking. Op verzoek laadt niets vanzelf.')}</p>
+      <p>{t('Авто: до 4 МБ на швидкій мережі, до 1 МБ на 3G, лише з проміжного сховища за економії трафіку. На вимогу нічого не завантажує само.', 'Automatisch: tot 4 MB op een snelle verbinding, tot 1 MB op 3G, alleen uit de cache bij databeperking. Op verzoek laadt niets vanzelf.')}</p>
     </section>
   );
 }

@@ -41,7 +41,7 @@ const FOUT:Record<string,[string,string]>={
   VERLOOP_TE_KORT:['Дата має бути щонайменше через 5 хвилин.','De datum moet minstens 5 minuten in de toekomst liggen.'],VERLOOP_TE_LANG:['Не довше ніж на рік.','Niet langer dan een jaar.'],
   VERLOOP_ONGELDIG:['Оберіть строк дії.','Kies een geldigheid.'],MAX_GEBRUIK_ONGELDIG:['Кількість використань: від 1 до 1000.','Aantal keer: van 1 tot 1000.'],
   TE_VEEL_CODES:['Забагато активних кодів (максимум 50). Відкличте непотрібні.','Te veel actieve codes (maximaal 50). Trek overbodige in.'],
-  STEP_UP_STRONG_REQUIRED:['Потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.','Bevestiging met passkey, app-code of herstelcode is nodig.'],
+  STEP_UP_STRONG_REQUIRED:['Потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.','Bevestiging met passkey, app-code of herstelcode is nodig.'],
   STEP_UP_REQUIRED:['Потрібне додаткове підтвердження.','Extra bevestiging is nodig.'],REDEN_TE_KORT:['Причина: щонайменше 10 символів.','Reden: minstens 10 tekens.'],
   AL_INGETROKKEN:['Код уже відкликано.','De code is al ingetrokken.'],RATE_LIMITED:['Забагато спроб. Зачекайте.','Te veel pogingen. Even wachten.'],
 };
@@ -118,7 +118,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
       {!nieuw&&!getoond&&<div className='access-plane-row'>
         <Ticket className='access-plane-row-icon'/>
         <div className='access-plane-row-main'><span className='access-plane-row-title'><strong>{tr(lang,'Обмежений доступ для іншої людини','Beperkte toegang voor iemand anders')}</strong></span>
-          <small>{tr(lang,'Лише перегляд вибраних розділів. Ніколи: способи входу, ключі, права, адміністрування, токени, оновлення сервера, видалення чи експорт.','Alleen bekijken van gekozen onderdelen. Nooit: aanmeldmethoden, sleutels, rechten, beheer, tokens, serverupdates, verwijderen of exporteren.')}</small></div>
+          <small>{tr(lang,'Лише перегляд вибраних розділів. Ніколи: способи входу, ключі, права, адміністрування, маркери доступу, оновлення сервера, видалення чи експорт.','Alleen bekijken van gekozen onderdelen. Nooit: aanmeldmethoden, sleutels, rechten, beheer, tokens, serverupdates, verwijderen of exporteren.')}</small></div>
         <div className='access-plane-row-actions'><button type='button' disabled={!data} onClick={()=>{setFout('');handmatig.current=[];setNieuw({naam:'',notitie:'',scopes:[],verloop:{soort:'preset',preset:'7d'},gebruik:'herbruikbaar',max:''});}}><Plus/>{tr(lang,'Створити код доступу','Toegangscode maken')}</button></div>
       </div>}
       {nieuw&&data&&<form className='access-plane-subrow toegangscode-form' data-code-form onSubmit={e=>{e.preventDefault();void maken();}}>
@@ -142,7 +142,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
           <label className='toegangscode-keuze'><input type='radio' name='gebruik' checked={nieuw.gebruik==='herbruikbaar'} onChange={()=>setNieuw({...nieuw,gebruik:'herbruikbaar'})}/><span>{tr(lang,'Багаторазовий до закінчення строку','Herbruikbaar tot het verloopt')}</span></label>
           {nieuw.gebruik==='herbruikbaar'&&<label className='toegangscode-max'>{tr(lang,'Не більше ніж (необов’язково):','Maximaal (optioneel):')}<input type='number' min={1} max={1000} inputMode='numeric' value={nieuw.max} onChange={e=>setNieuw({...nieuw,max:e.target.value})}/>{tr(lang,'разів','keer')}</label>}
         </fieldset>
-        <small className='access-plane-hint-line'>{tr(lang,'Далі потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.','Daarna is bevestiging met passkey, app-code of herstelcode nodig.')}</small>
+        <small className='access-plane-hint-line'>{tr(lang,'Далі потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.','Daarna is bevestiging met passkey, app-code of herstelcode nodig.')}</small>
         <div className='access-plane-actions'>
           <button type='submit' disabled={!!bezig||!kanMaken}><KeyRound/>{bezig==='maken'?tr(lang,'Створення…','Bezig…'):tr(lang,'Створити код','Code maken')}</button>
           <button type='button' className='secondary' onClick={()=>setNieuw(null)}><X/>{tr(lang,'Скасувати','Annuleren')}</button>
@@ -189,7 +189,7 @@ function CodeRij({lang,c,scopes,presets,context,notities,onChange}:{lang:Lang;c:
       </div>}
       {modus==='verloop'&&<div className='access-plane-confirm' role='group' data-bevestig='code-verloop'>
         <VerloopKiezer lang={lang} waarde={verloop} zet={setVerloop} presets={presets} groep={`verloop-${c.id}`}/>
-        <small className='access-plane-hint-line'>{verlenging?tr(lang,'Це продовження: потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.','Dit is een verlenging: bevestiging met passkey, app-code of herstelcode is nodig.'):tr(lang,'Скоротити строк можна без додаткового підтвердження; активні гостьові сесії теж скоротяться.','Inkorten kan zonder extra bevestiging; actieve gastsessies worden ook korter.')}</small>
+        <small className='access-plane-hint-line'>{verlenging?tr(lang,'Це продовження: потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.','Dit is een verlenging: bevestiging met passkey, app-code of herstelcode is nodig.'):tr(lang,'Скоротити строк можна без додаткового підтвердження; активні гостьові сесії теж скоротяться.','Inkorten kan zonder extra bevestiging; actieve gastsessies worden ook korter.')}</small>
         <div className='access-plane-actions'>
           <button type='button' disabled={bezig} onClick={()=>void doe('/api/owner/access/toegangscodes/wijzigen',{id:c.id,verloop:verloopVoorServer(verloop)})}><Check/>{tr(lang,'Зберегти строк','Geldigheid opslaan')}</button>
           <button type='button' className='secondary' onClick={()=>setModus('')}>{tr(lang,'Скасувати','Annuleren')}</button>

@@ -93,7 +93,7 @@ export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWon
           <button type='submit' className='hv-knop' disabled={bezig || !nieuweWoning.trim()}><Plus aria-hidden='true' />{tr(lang, 'Створити', 'Aanmaken')}</button>
         </form>
       </section>
-      <p className='hv-hint'>{tr(lang, 'Дані оселі ізольовані на рівні бази (RLS): інші користувачі сервера їх не бачать. Токени інтеграцій зашифровані ключем сервера.', 'De gegevens van de woning zijn op databankniveau geïsoleerd (RLS): andere gebruikers van de server zien ze niet. Tokens van integraties zijn versleuteld met de serversleutel.')}</p>
+      <p className='hv-hint'>{tr(lang, 'Дані оселі ізольовані на рівні бази (RLS): інші користувачі сервера їх не бачать. Маркери доступу інтеграцій зашифровані ключем сервера.', 'De gegevens van de woning zijn op databankniveau geïsoleerd (RLS): andere gebruikers van de server zien ze niet. Tokens van integraties zijn versleuteld met de serversleutel.')}</p>
     </div>
   );
 }

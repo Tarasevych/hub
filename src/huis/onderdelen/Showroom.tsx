@@ -45,7 +45,7 @@ export default function Showroom({ lang, naarTab }: { lang: Lang; smal: boolean;
   const actief = stap >= 0 ? sc.stappen[stap] : null; const S = 26;
   return (
     <div className={`hv-showroom${isMaquette ? ' is-maquette' : ''}`} data-hv-showroom={sc.id}>
-      <p className='hv-melding is-info' data-hv-demo='1'><Sparkles aria-hidden='true' />{tr(lang, 'Демонстрація на вигаданих даних. Це не ваша оселя, тут немає реальних пристроїв, команд чи токенів. Показуємо, як виглядає чесний ланцюжок: датчик → правило/людина → команда → підтвердження.', 'Demonstratie met verzonnen gegevens. Dit is niet uw woning; er zijn geen echte apparaten, opdrachten of tokens. We tonen hoe de eerlijke keten eruitziet: sensor → regel/mens → opdracht → bevestiging.')}</p>
+      <p className='hv-melding is-info' data-hv-demo='1'><Sparkles aria-hidden='true' />{tr(lang, 'Демонстрація на вигаданих даних. Це не ваша оселя, тут немає справжніх пристроїв, команд чи маркерів доступу. Показуємо, як виглядає чесний ланцюжок: датчик → правило/людина → команда → підтвердження.', 'Demonstratie met verzonnen gegevens. Dit is niet uw woning; er zijn geen echte apparaten, opdrachten of tokens. We tonen hoe de eerlijke keten eruitziet: sensor → regel/mens → opdracht → bevestiging.')}</p>
       {/* HUIS-001 (етап 0): клікабельний макет майбутнього хабу «Живий дім» — окрема статична сторінка сайту (dist/huis-maquette/,
           складає scripts/huis-maquette.mjs --site). Вигадані дані вбудованого симулятора, жодного зв’язку з пристроями. */}
       <section className='hv-blok hv-maquette-kaart' data-hv-maquette='1'>

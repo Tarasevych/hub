@@ -193,6 +193,8 @@ export const MELDINGEN: readonly MeldingItem[] = [
     titel: ['Автентифікатор замінено', 'Authenticator vervangen'] },
   { id: 'bel.toegangslaag.access-totp-replaced', kanaal: 'bel', soort: 'access_totp_replaced', bestand: 'backend/toegangslaag.ts', type: 'beveiliging', niveau: 'gevaar', schema: 'S2',
     titel: ['Автентифікатор замінено', 'Authenticator vervangen'] },
+  { id: 'bel.toegangslaag.security', kanaal: 'bel', soort: 'security', bestand: 'backend/toegangslaag.ts', type: 'beveiliging', niveau: 'gevaar', schema: 'S1',
+    titel: ['Підозрілий сеанс заблоковано («Це був не я»)', 'Verdachte sessie geblokkeerd («Dit was ik niet»)'] },
   { id: 'bel.toegangssleutels.passkey-vertrouwd', kanaal: 'bel', soort: 'passkey_vertrouwd', bestand: 'backend/toegangssleutels.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
     titel: ['Ключ «…» позначено довіреним', 'Sleutel «…» als vertrouwd gemarkeerd'] },
   { id: 'bel.toegangssleutels.passkey-vertrouwen-ingetrokken', kanaal: 'bel', soort: 'passkey_vertrouwen_ingetrokken', bestand: 'backend/toegangssleutels.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',

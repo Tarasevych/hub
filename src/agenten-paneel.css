@@ -81,6 +81,6 @@
 
 /* Zelftest van de extensie (HUB-07): verplichte controles ✓/✗, informatieve ○ in een rustige kleur. */
 .ext-test{margin:8px 0 0;padding:0;list-style:none;font-size:.86rem;line-height:1.5}
-.ext-test li.ok{color:var(--hub-ok,#15803d)}
-.ext-test li.bad{color:var(--hub-bad,#b91c1c)}
+.ext-test li.ok{color:var(--hub-ok,var(--ok))}
+.ext-test li.bad{color:var(--hub-bad,var(--fout))}
 .ext-test li.info{color:var(--muted,#6b7280)}

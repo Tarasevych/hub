@@ -56,6 +56,7 @@ import {
   useEcosysteemModusActief,
   zetEcosysteemModusActief,
 } from '../../meldingen/ecosysteem';
+import MeldingModusKiezer from '../../meldingen/MeldingModusKiezer';
 import MeldingVoorkeurenPaneel from '../../meldingen/MeldingVoorkeurenPaneel';
 import { useHuidigeRuimte } from '../../tech/ruimtes/ruimte-signaal';
 import { useTech } from '../../tech/tech-opslag';
@@ -472,6 +473,8 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
             <small>{t('Той самий Пульт уваги у повітряному компактному форматі під дзвіночком із перемикачем «Вікно» в один дотик.', 'Dezelfde Aandachtspuls in luchtig compact formaat onder de bel met één-klik-schakelaar «Venster».')}</small>
           </button>
         </div>
+
+        <MeldingModusKiezer lang={lang} />
 
         <div className='mp-schakel-raster'>
           <label className='mp-schakel'>
