@@ -182,6 +182,8 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   calendar_delete_event: 'calendar.delete',
   drive_browse: 'drive.read',
   drive_read_file: 'drive.read',
+  cloud_eigen_lijst: 'drive.read',
+  cloud_koppelingen_lijst: 'drive.read',
   // 21.10.2026 (backend/dev-gebruiker-hulpmiddeldefinities.ts); iCloud is lezen van de agenda, net als calendar_list_events.
   mail_send: 'mail.send',
   drive_create_file: 'drive.write', drive_upload_file: 'drive.write', drive_share_file: 'drive.share',
@@ -238,7 +240,7 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   get_live_release: 'deploy.status',
   read_release_file: 'server.read', get_system_health: 'server.read',
   get_hub_overview: 'server.read', get_connector_stats: 'server.read',
-  search_board: 'board.read', create_task: 'board.write', update_task_status: 'board.write', update_board_item: 'board.write', delete_board_item: 'board.write', manage_hub_notes: 'board.write',
+  search_board: 'board.read', create_task: 'board.write', update_task_status: 'board.write', update_board_item: 'board.write', delete_board_item: 'board.write', manage_hub_notes: 'board.write', comment_board_item: 'board.write',
   get_github_projects: 'github.read',
   draft_email_reply: 'mail.modify', draft_calendar_event: 'board.write',
   // «Deur» van de MCP-console voor agenttokens (backend/mcp-console.ts runTool).

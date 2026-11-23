@@ -77,6 +77,7 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
   { tabel: 'app.geheugen_agent_bots', veld: 'sleutel_versleuteld (окремий токен Telegram-бота агента / afzonderlijk bot-token per AI-agent, 0281)', klasse: 'geheim', stand: 'dek', module: 'backend/geheugen-agent-bots.ts' },
   { tabel: 'app.klantrelatieboek', veld: 'inhoud (досьє клієнтів, угоди, контакти й завдання / klantdossiers, kansen, contacten en taken, 0310)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/klantrelatiebeheer-opslag.ts' },
   { tabel: 'app.cloud_webdav_koppelingen', veld: 'geheim_envelop (пароль застосунку мережевого сховища / toepassingswachtwoord WebDAV, 0317)', klasse: 'geheim', stand: 'dek', module: 'backend/cloud-vnext-webdav.ts' },
+  { tabel: 'app.integratie_adapter_koppeling', veld: 'geheim (пароль застосунку WebDAV, таємний ключ S3 або пароль вузла MQTT / app-wachtwoord WebDAV, S3-geheim of MQTT-wachtwoord, 0324)', klasse: 'geheim', stand: 'dek', module: 'backend/integraties-koppelingen.ts' },
   // --- nog niet: met reden ---
   { tabel: 'mail_oauth_tokens_v2', veld: 'token (Microsoft 365)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/index.ts (Microsoft-tak)',
     reden: { uk: 'Гілка Microsoft у backend/index.ts — спільний файл; переносимо в окремому випуску після зняття блокування.', nl: 'De Microsoft-tak zit in backend/index.ts (gedeeld bestand); volgt in een eigen uitrol.' } },

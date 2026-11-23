@@ -30,7 +30,7 @@ export async function main(): Promise<number> {
   check('fasevolgorde: geen terugsprong (approved biedt geen draft/needs_review)', !faseVolgende('approved').includes('draft') && !faseVolgende('approved').includes('needs_review'));
   check('mens-verplichte fasen: approved/accepted/cancelled/superseded wél, deployed niet', faseVraagtMens('approved') && faseVraagtMens('accepted') && faseVraagtMens('cancelled') && faseVraagtMens('superseded') && !faseVraagtMens('deployed'));
 
-  check('bronFormaat: json/md/txt herkend, rest geweigerd', bronFormaat('a.JSON') === 'json' && bronFormaat('b.md') === 'md' && bronFormaat('c.txt') === 'txt' && bronFormaat('d.pdf') === null && bronFormaat('zonder') === null);
+  check('bronFormaat: json/md/txt/pdf/afbeelding herkend, onveilige/onbekende extensie geweigerd', bronFormaat('a.JSON') === 'json' && bronFormaat('b.md') === 'md' && bronFormaat('c.txt') === 'txt' && bronFormaat('d.pdf') === 'pdf' && bronFormaat('e.png') === 'afbeelding' && bronFormaat('f.exe') === null && bronFormaat('zonder') === null);
   check('voortgang is telbaar: «AC 2/6», zonder criteria een eerlijke tekst', voortgangTekst(2, 6, 'uk') === 'AC 2/6' && voortgangTekst(0, 0, 'uk').includes('без критеріїв'));
   check('schoneExternId: hoofdletters, geweigerde rommel', schoneExternId(' ui-015 ') === 'UI-015' && schoneExternId('14') === '' && schoneExternId('!!') === '');
   check('gebeurtenistekst: bekende soort vertaald, onbekende blijft de code', gebeurtenisTekst('uk', 'besluit') === 'Рішення власника' && gebeurtenisTekst('nl', 'besluit') === 'Eigenaarsbesluit' && gebeurtenisTekst('uk', 'xyz') === 'xyz');
@@ -93,16 +93,16 @@ export async function main(): Promise<number> {
   const tv = inhoud.get('src/afstemming-vnext/onderdelen/Toevoegen.tsx') || '';
   check('toevoegen: drie wegen met data-afv-tv', ["'beschrijf'", "'bestand'", "'agent'"].every((x) => tv.includes(x)) && tv.includes('data-afv-tv='));
   check('toevoegen: voorstel met bron gesprek + idempotentiesleutel; ruwe tekst gaat mee als bedoeling', tv.includes("bron: 'gesprek'") && tv.includes('idempotentie: idempotentie.current') && tv.includes('bedoeling: zadum'));
-  check('toevoegen: AI-structurering heet eerlijk GEPLAND', tv.includes('ШІ-розбір задуму — заплановано'));
-  check('toevoegen: alleen .json/.md/.txt, groottegrens vóór het lezen, bestand nooit uitgevoerd', tv.includes("accept='.json,.md,.txt'") && tv.includes('importBytesMax') && tv.includes('readAsText'));
+  check('toevoegen: ontleding van het concept met expliciete toestemming van de mens, zonder «заплановано»', tv.includes('data-afv-ontleed-toestemming') && tv.includes('afstemmingClient.ontleed(') && !tv.includes('заплановано'));
+  check('toevoegen: .json/.md/.txt/.pdf en afbeeldingen met groottegrenzen, nooit uitgevoerd', tv.includes("accept='.json,.md,.txt,.pdf,image/png,image/jpeg,image/webp'") && tv.includes('importBytesMax') && tv.includes('bijlageBytesMax') && tv.includes('readAsText') && tv.includes('readAsDataURL'));
   check('toevoegen: voorbeeld eerst (niets opgeslagen), onzekere velden en vergelijkbare kaarten zichtbaar', tv.includes('data-afv-import-voorbeeld') && tv.includes('data-afv-import-onzeker') && tv.includes('data-afv-import-vergelijkbaar') && tv.includes('нічого ще не збережено'));
   check('toevoegen: bestaand idee blokkeert een duplicaat en opent de bestaande kaart', tv.includes('data-afv-import-bestaand') && tv.includes('voorbeeld.bestaand') && tv.includes('Повторний імпорт не створює дубля'));
   check('toevoegen: kapot bestand wist de ruwe tekst niet («Розібрати ще раз»)', tv.includes('data-afv-import-ruw') && tv.includes('Розібрати ще раз'));
-  check('toevoegen: agentweg legt AGENT_MAG_NIET uit en noemt MCP eerlijk gepland', tv.includes('AGENT_MAG_NIET') && tv.includes('заплановано') && tv.includes('data-afv-agent-uitleg'));
+  check('toevoegen: agentweg legt AGENT_MAG_NIET uit en wijst naar orchestratie/-voorstellen zonder auto-goedkeuring', tv.includes('AGENT_MAG_NIET') && tv.includes('orchestratie/') && tv.includes('data-afv-agent-uitleg') && !tv.includes('заплановано'));
 
   const ges = inhoud.get('src/afstemming-vnext/onderdelen/Geschiedenis.tsx') || '';
   check('geschiedenis: jongste stroom + volledige geschiedenis van één kaart met token-paginering', ges.includes('afstemmingClient.geschiedenis(k.id)') && ges.includes('data-afv-geschiedenis-zoek') && ges.includes('Показати ще'));
-  check('geschiedenis: de volledige stroom over alles heet eerlijk gepland', ges.includes('заплановано'));
+  check('geschiedenis: volledige gepagineerde stroom over alle kaarten met soort-/actorfilter (geen «заплановано»)', ges.includes('afstemmingClient.geschiedenisAlle(') && ges.includes('data-afv-geschiedenis-soort') && ges.includes('data-afv-geschiedenis-actor') && !ges.includes('заплановано'));
 
   // tweetaligheid: elk onderdeel rendert via tr(/afstemmingTekst — en een paar nl-ankers bestaan echt
   for (const [f, t] of inhoud) { if (f.endsWith('.tsx')) check(`${f}: teksten via tr(/afstemmingTekst`, /\btr\(/.test(t) || t.includes('afstemmingTekst(')); }

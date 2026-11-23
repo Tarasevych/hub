@@ -1672,6 +1672,67 @@ SITE_TOOLS.push(
     }),
     shape: (d) => compact(d),
   },
+  {
+    group: 'drive', service: 'cloud', write: false,
+    tool: {
+      name: 'cloud_eigen_lijst', title: 'Browse internal site drive',
+      description: 'List folders and file metadata on the user\'s internal Mijn Ruimte drive (cloud-vnext), optionally inside one folder or filtered by name/tags. Read-only.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          map_id: { type: 'string', description: p('Необов’язковий ідентифікатор теки внутрішнього диска сайту; пропустіть для кореневого рівня.', 'Optioneel map-id van de interne schijf van de site; weglaten voor de hoofdmap.') },
+          zoek: { type: 'string', description: p('Необов’язковий текст для відбору за назвою або мітками (до 200 символів).', 'Optionele zoektekst om te filteren op bestandsnaam of labels (hoogstens 200 tekens).') },
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (a.map_id !== undefined && (typeof a.map_id !== 'string' || !ID.test(a.map_id))) return 'Invalid "map_id".';
+      if (a.zoek !== undefined && (typeof a.zoek !== 'string' || a.zoek.length > 200)) return 'Invalid "zoek": at most 200 characters.';
+      return null;
+    },
+    request: (a) => ({ route: 'POST /api/owner/cloud/vnext/bestanden', body: without({ mapId: a.map_id, zoek: a.zoek }) }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'drive', service: 'cloud', write: false,
+    tool: {
+      name: 'cloud_koppelingen_lijst', title: 'List connected cloud drives',
+      description: 'Show the live connection status of external cloud storage providers (Google Drive, Microsoft OneDrive, Dropbox, Box) in the user\'s active space without exposing tokens. Read-only.',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/owner/cloud/vnext/integraties', body: {} }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: true,
+    tool: {
+      name: 'comment_board_item', title: 'Comment on a board item',
+      description: `Add a linked comment note to an existing task or note on the user's Mijn Ruimte board without overwriting the original item. ${CONFIRM}`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          item_id: { type: 'string', description: p('Ідентифікатор задачі чи нотатки на дошці (8–80 символів), до якої додається коментар.', 'Id van de taak of notitie op het bord (8 tot 80 tekens) waarbij een opmerking komt.') },
+          body: { type: 'string', description: p('Текст коментаря до запису на дошці (1–4000 символів).', 'Inhoud van de opmerking bij het item op het bord (1 tot 4000 tekens).') },
+        },
+        required: ['item_id', 'body'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (typeof a.item_id !== 'string' || !/^[A-Za-z0-9:_-]{8,80}$/.test(a.item_id)) return 'Invalid "item_id": 8-80 characters.';
+      if (!text(a.body, 1, 4000)) return 'Invalid "body": 1-4000 characters.';
+      return null;
+    },
+    request: (a) => ({
+      route: 'POST /api/mcp/board',
+      body: { kind: 'note', title: `Коментар #${String(a.item_id ?? '').slice(0, 24)}`, body: String(a.body ?? ''), tags: ['hub', 'comment'] },
+    }),
+    shape: (d) => compact(d),
+  },
 );
 
 export const SITE_TOOL_BY_NAME = new Map(SITE_TOOLS.map((t) => [t.tool.name, t]));

@@ -572,5 +572,11 @@ export function useWerkbladBlokken(o: WerkbladBlokkenOpties) {
       opKies={(b, n, oo) => { zetKiezer(null); voerUit(b, n, oo); }} opSluit={() => zetKiezer(null)} />
   ) : null;
 
-  return { aan, blokVan, vakVoor, losseTegel, paneel, kiezerVenster, opCanvasCommit, herstel, schema: BLOKKEN_SCHEMA };
+  const hernoemBlok = useCallback((inst: string, titel: string) => {
+    const b = huidige()[inst];
+    if (!b) return;
+    pasToe({ [inst]: { ...b, wortel: { ...b.wortel, titel }, bron: 'eigen' } }, null, { direct: true });
+  }, [huidige, pasToe]);
+
+  return { aan, blokVan, vakVoor, losseTegel, paneel, kiezerVenster, opCanvasCommit, herstel, hernoemBlok, schema: BLOKKEN_SCHEMA };
 }

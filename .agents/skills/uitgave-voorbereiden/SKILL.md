@@ -30,17 +30,19 @@ description: Готуй випуски Mijn Ruimte, перевіряй осно�
    - Розрізняй `basisCommit` задачі (від якої гілка приймається в чергу `integratie` через `taak-start`) і `UITROL-BASIS` зібраного пакета (`geinstalleerd.json` або `beleid.json → basis`).
    - Зареєструй завдання (`taak-start`) і перевіряй свіжість до початку та перед передаванням: `node scripts/orch.mjs controleer` і `node scripts/orch.mjs versheid --taak <ID> --fase start|overdracht`.
 
-2. **Стан міграцій на PostgreSQL 18.6 і права БД.**
+2. **Стан міграцій на PostgreSQL 18.6, прапорці функцій (`VLAG-001`) і права БД.**
    - Звір номери `migrations/NNNN_*.sql`, наявність `ENABLE ROW LEVEL SECURITY` / `FORCE ROW LEVEL SECURITY` та функцій просторів (`app.huidige_gebruiker()`, `app.huidige_ruimte()`), оновлення `migrations/rechten.sql` для `mijnruimte_app` і `mijnruimte_system`, а для таблиць із таємницями — `shared/sleutelkluis.ts`.
+   - За правилом `VLAG-001` переконайся, що кожен новий прапорець функції додається з початковим станом `false, false` та `ON CONFLICT (sleutel) DO NOTHING`, а в `UITROL-MANIFEST.json` заповнено перелік `functievlaggen` для всіх поведінкових змін випуску.
    - **Обов’язковий прогін нових міграцій на чистій PostgreSQL 18.6** (цільовий стек ВМ за `AGENTS.md` §1 / `B-009`, не застаріла згадка старіших версій PostgreSQL): накат, повторний запуск (повторостійкість), перевірка обмежень на значення полів і збереження наявних даних за логікою `deploy/uitrol/mijn-ruimte-migratie-proef.sh`.
 
-3. **Типи, тести, збірка та каталог пошуку.**
+3. **Типи, тести, реєстр сповіщень (`MELDINGEN-REGISTER-001`), складання та каталог пошуку.**
    - Запусти перевірки типів: `NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit` і `npm run typecheck:server`.
+   - Перевір повноту реєстру сповіщень і дій за правилом `MELDINGEN-REGISTER-001` командою `node scripts/meldingen-register-controle.mjs` (`0` некласифікованих кодів і жодної категорії `overig`).
    - Запусти відповідні модульні тести (`node scripts/eenheidstests.mjs <фільтр>`), з явним зазначенням пропущених частин (як-от БД без `DATABASE_URL`).
-   - Виконай або звір повну збірку `npm run build`, яка проганяє: `scripts/kaart-controle.mjs`, `scripts/plaatsing-controle.mjs`, `scripts/hulp-vraagtekens-controle.mjs`, **`scripts/zoek-ui-catalogus.mjs`** (каталог пошуку інтерфейсу, окрема перевірка `node scripts/zoek-ui-catalogus.mjs --controle`), `scripts/l002-audit.mjs`, `scripts/mail-slimme-inbox-audit.mjs`, `scripts/kleur-contrast-controle.mjs`, `scripts/tech-bundels-controle.mjs`, `vite build` і `build:server`.
+   - Виконай або звір повне складання `npm run build`, яке проганяє: `scripts/kaart-controle.mjs`, `scripts/stap-op-register-controle.mjs`, `scripts/meldingen-register-controle.mjs`, `scripts/plaatsing-controle.mjs`, `scripts/hulp-vraagtekens-controle.mjs`, **`scripts/zoek-ui-catalogus.mjs`** (каталог пошуку інтерфейсу, окрема перевірка `node scripts/zoek-ui-catalogus.mjs --controle`), `scripts/l002-audit.mjs`, `scripts/mail-slimme-inbox-audit.mjs`, `scripts/kleur-contrast-controle.mjs`, `scripts/klant-servergrens-controle.mjs`, `vite build`, `scripts/huis-maquette.mjs`, `scripts/tech-bundels-controle.mjs` і `build:server`.
 
 4. **Походження архіву (`TRACE-001`) та оприлюднення у GitHub.**
-   - Збирай архів виключно чинним конвеєром (`node scripts/orch.mjs pakket` → `deploy/uitrol/maak-voorstelpakket.sh`), із зафіксованим у git файлом `orchestratie/ontwikkelarchieven/<TASK-ID>.json`, `ONTWIKKELARCHIEF.json` (обов’язково від `20261103-211555`), `UITROL-MANIFEST.json` (`uk + nl`, автор, агенти, модель) і точними результатами випробувань (`TESTRESULTATEN`).
+   - Збирай архів виключно чинним конвеєром (`node scripts/orch.mjs pakket` → `deploy/uitrol/maak-voorstelpakket.sh`), із зафіксованим у git файлом `orchestratie/ontwikkelarchieven/<TASK-ID>.json`, `ONTWIKKELARCHIEF.json` (обов’язково від `20261103-211555`), `UITROL-MANIFEST.json` (`uk + nl`, `functievlaggen`, автор, агенти, модель) і точними результатами випробувань (`TESTRESULTATEN`).
    - Після публікації в GitHub Release перевір наявність файла `mijn-ruimte-<versie>.tar.gz` і **точний збіг його SHA-256**. Стан «опубліковано» **ніколи не означає** «встановлено».
 
 5. **Передавання та зв’язок із пам’яттю розвитку.**

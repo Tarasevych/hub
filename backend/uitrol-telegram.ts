@@ -18,6 +18,7 @@ import { schrijfBeheerAudit } from './audit-gebeurtenis';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import { releaseInfo } from './uitgave-info';
 import { pakkettenDir } from './uitrol-github';
+import { bouwUitgaveUitleg } from './uitrol-telegram-uitleg';
 
 const VERSIE_RE = /^\d{8}-\d{6}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -508,7 +509,10 @@ export async function telegramInstellingenOpslaan(
   return eenmaligeSleutel ? { ...stand, eenmaligeSleutel } : stand;
 }
 
-export async function telegramVerbindingTesten(eigenaar: { id: string; email?: string }) {
+export async function telegramVerbindingTesten(
+  eigenaar: { id: string; email?: string },
+  opties: { metProefDocument?: boolean } = {},
+) {
   const inst = await telegramInstellingenVan(eigenaar.id);
   const bot = await leesBotToken(eigenaar.id);
   if (!bot || !inst.chatId) throw new TelegramArchiefFout('TELEGRAM_CHAT_ONTBREEKT', 400);
@@ -572,6 +576,24 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
         'Mijn Ruimte — test van het Telegram-releasearchief geslaagd.',
       ].join('\n'),
     });
+    const metProefDoc = opties.metProefDocument !== false;
+    const proefDocument = metProefDoc
+      ? await stuurDocument(
+          bot.token,
+          inst.chatId,
+          inst.messageThreadId,
+          'mijn-ruimte-verbindingstest.txt',
+          Buffer.from(
+            [
+              'Mijn Ruimte — пробний файл архіву випусків.',
+              'Mijn Ruimte — proefbestand van het releasearchief.',
+              `Час / Tijd: ${new Date().toISOString()}`,
+            ].join('\n'),
+            'utf8',
+          ),
+          'Mijn Ruimte · пробний файл / proefbestand (не архів)',
+        )
+      : null;
     await sys().query(
       `UPDATE app.uitrol_telegram_instellingen SET laatst_getest_op = now(), laatste_test_ok = true, laatste_test_fout = '', bijgewerkt_op = now() WHERE user_id = $1`,
       [eigenaar.id],
@@ -580,7 +602,7 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
       actor: eigenaar,
       actie: 'owner.uitrol.telegram.test',
       doel: { soort: 'telegram', id: inst.chatId },
-      details: { bot: String(me?.username || ''), chatType, botStatus, isForum, messageThreadId: inst.messageThreadId },
+      details: { bot: String(me?.username || ''), chatType, botStatus, isForum, messageThreadId: inst.messageThreadId, ...(proefDocument ? { documentMessageId: proefDocument.messageId } : {}) },
       service: 'admin',
     });
     return {
@@ -591,6 +613,8 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
       botStatus,
       isForum,
       messageThreadId: inst.messageThreadId,
+      documentOk: Boolean(proefDocument),
+      ...(proefDocument ? { documentMessageId: proefDocument.messageId } : {}),
     };
   } catch (e) {
     const code = e instanceof TelegramArchiefFout ? e.code : 'TELEGRAM_BOT_FOUT';
@@ -1045,6 +1069,13 @@ export type TelegramUitrolGebeurtenis = {
 const UPDATES_URL = () => `https://${SERVICE_HOSTS.admin || 'admin.tarasevych.com'}/updates`;
 const schoonRegel = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 
+/** Коротке двомовне пояснення до встановленого випуску з маніфесту (лише коли версія збігається з живою). */
+function korteUitgaveUitleg(versie: string): string {
+  const info = releaseInfo();
+  if (!versie || String(info.versie || '') !== versie) return '';
+  return bouwUitgaveUitleg(info).slice(0, 1800);
+}
+
 function bouwUitrolToetsenbord(metLaatste = true) {
   const acties: Array<{ text: string; callback_data: string }> = [
     { text: '📊 Оновити стан / Status', callback_data: 'ut:status' },
@@ -1125,6 +1156,8 @@ function bouwGebeurtenisTekst(g: TelegramUitrolGebeurtenis): string {
     if (methode) regels.push(`• Спосіб / Methode: ${methode}`);
     if (door) regels.push(`• Виконавець / Uitvoerder: ${door}`);
     if (commit) regels.push(`• Фіксація змін / Vastlegging: ${commit}`);
+    const uitleg = korteUitgaveUitleg(versie);
+    if (uitleg) regels.push('', uitleg);
   } else if (g.soort === 'mislukt') {
     regels.push(`❌ Збій або переривання встановлення: ${versie}`);
     regels.push(`❌ Installatie mislukt of afgebroken: ${versie}`);
@@ -1229,6 +1262,16 @@ export async function telegramWebhookInstellen(
     secret_token: secret,
     allowed_updates: ['message', 'callback_query'],
   });
+
+  // Меню команд у Telegram: необов’язковий крок, помилки не блокують активацію приймача.
+  const opdrachten = [
+    { command: 'status', description: 'Стан випусків / Releasestatus' },
+    { command: 'laatste', description: 'Останній випуск / Laatste uitgave' },
+    { command: 'help', description: 'Довідка / Help' },
+  ];
+  for (const scope of [undefined, { type: 'all_group_chats' }] as const) {
+    await tgApi(bot.token, 'setMyCommands', { commands: opdrachten, ...(scope ? { scope } : {}) }).catch(() => undefined);
+  }
 
   await schrijfBeheerAudit({
     actor: eigenaar,
@@ -1482,7 +1525,7 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
 
   const tekst = String(msg.text || '').trim();
   const eerste = tekst.split(/\s+/)[0] || '';
-  const cmdMatch = /^\/(status|laatste|help)(?:@[A-Za-z0-9_]{3,64})?$/i.exec(eerste);
+  const cmdMatch = /^\/(status|laatste|help|start)(?:@[A-Za-z0-9_]{3,64})?$/i.exec(eerste);
   if (!cmdMatch) {
     await markeer('geen-commando');
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
@@ -1495,7 +1538,7 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
   }
 
-  if (commando === 'help') {
+  if (commando === 'help' || commando === 'start') {
     await tgApi(bot.token, 'sendMessage', {
       chat_id: doelChat,
       ...threadOpt,
@@ -1541,6 +1584,7 @@ export type TelegramRouteDeps = {
   requireSession: (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
   isEigenaar: (u: SessionOk['user']) => boolean;
   sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>;
+  koppelingVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean>;
 };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 
@@ -1584,7 +1628,8 @@ export function uitrolTelegramRoutes(deps: TelegramRouteDeps): Record<string, Ro
     'POST /api/owner/uitrol/telegram/testen': [eigenaar({ sterk: true }, async (_c, a) => {
       const limiet = await rateLimit(`uitrol-telegram-test:${a.user.id}`, 10, 3600);
       if (!limiet.ok) return error('RATE_LIMITED', 429);
-      return telegramVerbindingTesten(wie(a));
+      const metProefDocument = deps.koppelingVlagAan ? await deps.koppelingVlagAan(a.user).catch(() => false) : true;
+      return telegramVerbindingTesten(wie(a), { metProefDocument });
     })],
     'POST /api/owner/uitrol/telegram/webhook-instellen': [eigenaar({ sterk: true }, async (c, a) => {
       const limiet = await rateLimit(`uitrol-telegram-wh-setup:${a.user.id}`, 10, 3600);

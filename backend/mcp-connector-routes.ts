@@ -29,6 +29,45 @@ import { leesGebruikerCaps, leesStaat, zetGebruikerCap, zetStaat } from './ai-si
 import {
   BORD_AGENTEN, MCP_URL, PRIVE_CAPS, SITE_REGEL, SITE_UMOVY, agentAan, connectGeweigerd, isBordKlant, isPriveCap, isSiteSleutel, methodeAan, tabsVoor,
 } from '../shared/ai-agent-bord';
+import { db } from '../server/platform';
+import { hoortBij } from '../shared/ruimte-scheiding';
+import { PostgresCloudConnections } from './cloud-verbinding-m4-pg';
+
+export const MCP_BRONNEN_LIVE_VLAG = 'mcp-bronnen-live-v1' as const;
+
+export type McpBronStand = { live: boolean; gekoppeld: boolean };
+
+export async function leesMcpBronnenStand(userId: string): Promise<Record<'cloud-intern' | 'mail-outlook' | 'cloud-onedrive', McpBronStand>> {
+  const poort = await aiPoortNu(userId).catch(() => ({ ruimte: 'prive' as const }));
+  const ruimte: AiRuimte = poort.ruimte === 'technisch' ? 'technisch' : 'prive';
+  const lade = { userId, ruimte };
+  let outlookGekoppeld = false;
+  let onedriveGekoppeld = false;
+  try {
+    const mailRows = await db.list<Record<string, unknown>>('mail_accounts_v1', { filter: { ownerUserId: userId }, limit: 30 });
+    outlookGekoppeld = (mailRows.items as Array<Record<string, unknown>>).some((r) => {
+      if (!hoortBij(r, lade)) return false;
+      const prov = String(r.provider || '').toLowerCase();
+      const st = String(r.status || 'connected').toLowerCase();
+      return (prov.includes('microsoft') || prov.includes('outlook')) && st !== 'revoked' && st !== 'disconnected';
+    });
+  } catch {
+    outlookGekoppeld = false;
+  }
+  try {
+    const cloudRows = await new PostgresCloudConnections().list({ owner: userId, space: ruimte });
+    onedriveGekoppeld = cloudRows.some(
+      (r) => r.status === 'connected' && ['onedrive-personal', 'onedrive-business', 'sharepoint'].includes(r.provider),
+    );
+  } catch {
+    onedriveGekoppeld = false;
+  }
+  return {
+    'cloud-intern': { live: true, gekoppeld: true },
+    'mail-outlook': { live: true, gekoppeld: outlookGekoppeld },
+    'cloud-onedrive': { live: true, gekoppeld: onedriveGekoppeld },
+  };
+}
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
@@ -39,6 +78,7 @@ type Deps = {
   body: (body: unknown) => Record<string, unknown>;
   /** H4: verse herauthenticatie (step-up) voor toestemming aan Claude, riskante hulpmiddelen op 'altijd' en goedkeuren van riskante aanroepen. */
   stepUp?: (ctx: unknown, auth: any) => Promise<any | null>;
+  bronnenLiveVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean>;
 };
 
 const header = (event: any, name: string): string | undefined => {
@@ -313,7 +353,12 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/owner/mcp-connector/tools': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth || 'errorCode' in auth) return denied(auth);
-      return deps.respond({ tools: await describeTools(auth.user.id) });
+      const liveMag = deps.bronnenLiveVlagAan ? await deps.bronnenLiveVlagAan(auth.user).catch(() => false) : true;
+      if (!liveMag) {
+        return deps.respond({ tools: await describeTools(auth.user.id) });
+      }
+      const [tools, bronnen] = await Promise.all([describeTools(auth.user.id), leesMcpBronnenStand(auth.user.id)]);
+      return deps.respond({ tools, bronnen });
     }],
 
     // De modus van een hulpmiddel zetten: "always" (geen extra vraag), "ask" (elke aanroep wacht op een klik op de site) of "off" (weg uit

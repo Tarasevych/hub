@@ -62,7 +62,7 @@ export async function main() {
   check('menu alleen klein', j(maakPlek('menu', 'x').maten) === j(['klein']));
   check('pagina is gesloten (uitbreidingspunt)', isGesloten(maakPlek('pagina', 'mail#boven'), {}) && !B({ van: 'blok', knoopId: 'm' }, nz(maakPlek('pagina', 'mail#boven')), ctx).ok);
   check('pagina open met uitbreiding', B({ van: 'blok', knoopId: 'm' }, nz(maakPlek('pagina', 'mail#boven')), { ...ctx, uitbreidingen: ['pagina'] }).ok);
-  check('reden «gesloten» in tekst', redenTekst({ ok: false, reden: 'soort-niet-toegestaan' }, maakPlek('pagina', 'p#v'), {}).startsWith('Ще недоступно'));
+  check('reden «gesloten» in tekst', redenTekst({ ok: false, reden: 'soort-niet-toegestaan' }, maakPlek('pagina', 'p#v'), {}).startsWith('Тут не можна: ця ділянка сторінки'));
   check('reden kring in tekst uk', redenTekst({ ok: false, reden: 'kring' }, plekB('a'), {}) === 'Тут не можна: блок не можна покласти сам у себе');
   check('onbekende bron geweigerd', !B({ van: 'blok', knoopId: 'nergens' }, nz(), ctx).ok);
   check('onbekend doelblok geweigerd', !B({ van: 'blok', knoopId: 'm' }, nz(plekB('nergens')), ctx).ok);

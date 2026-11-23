@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Ban, Check, CheckCheck, Clock, Hand, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { api } from './platform/client';
+import { useVlag } from './functievlag-lezen';
 import { emitCanonicalNotice } from './canoniek-meldingen';
 import { Help, IconButton, Logo, type LogoKind, type Tr } from './mcp-ui';
 import { textOf } from './mcp-teksten';
@@ -17,7 +18,9 @@ type Tool = {
   name: string; title: string; description: string; kind: string; group: Group; mode: Mode; defaultMode: Mode;
   risky: boolean; needsApproval: boolean; readOnly: boolean; destructive: boolean; enabled: boolean;
 };
-type Source = { logo: LogoKind; uk: string; nl: string; live: boolean };
+export const MCP_BRONNEN_LIVE_VLAG = 'mcp-bronnen-live-v1' as const;
+type BronId = 'cloud-intern' | 'mail-outlook' | 'cloud-onedrive';
+type Source = { logo: LogoKind; uk: string; nl: string; live: boolean; bronId?: BronId };
 
 /** Bronnen per groep: zo ziet u meteen WELKE dienst achter een hulpmiddel zit (Google, Microsoft of ons eigen systeem) en wat nog niet gekoppeld kan worden. */
 const GROUPS: Array<{ id: Group; logo: LogoKind; uk: string; nl: string; hint: [string, string]; sources: Source[] }> = [
@@ -27,15 +30,15 @@ const GROUPS: Array<{ id: Group; logo: LogoKind; uk: string; nl: string; hint: [
     sources: [{ logo: 'docker', uk: 'Podman / Docker', nl: 'Podman / Docker', live: true }, { logo: 'server', uk: 'Caddy (домени)', nl: 'Caddy (domeinen)', live: true }] },
   { id: 'browser', logo: 'chrome', uk: 'Браузер', nl: 'Browser', hint: ['Читання й керування сторінками сайту через розширення. Докладні перемикачі для кожного браузера — у його картці.', 'Pagina\'s van de site lezen en bedienen via de extensie. Gedetailleerde schakelaars per browser staan op de kaart van die browser.'],
     sources: [{ logo: 'chrome', uk: 'Chrome / Edge', nl: 'Chrome / Edge', live: true }, { logo: 'firefox', uk: 'Firefox', nl: 'Firefox', live: false }] },
-  { id: 'mail', logo: 'mail', uk: 'Пошта', nl: 'E-mail', hint: ['Пошук, читання й зміна листів у підключених поштових акаунтах.', 'Zoeken, lezen en wijzigen van berichten in gekoppelde mailaccounts.'],
-    sources: [{ logo: 'google', uk: 'Gmail (Google)', nl: 'Gmail (Google)', live: true }, { logo: 'microsoft', uk: 'Outlook (Microsoft)', nl: 'Outlook (Microsoft)', live: false }] },
+  { id: 'mail', logo: 'mail', uk: 'Пошта', nl: 'E-mail', hint: ['Пошук, читання й зміна листів у підключених поштових скриньках.', 'Zoeken, lezen en wijzigen van berichten in gekoppelde postvakken.'],
+    sources: [{ logo: 'google', uk: 'Gmail (Google)', nl: 'Gmail (Google)', live: true }, { logo: 'microsoft', uk: 'Outlook (Microsoft)', nl: 'Outlook (Microsoft)', live: true, bronId: 'mail-outlook' }] },
   { id: 'calendar', logo: 'calendar', uk: 'Календар', nl: 'Agenda', hint: ['Календарі й події.', 'Agenda\'s en afspraken.'],
     sources: [{ logo: 'google', uk: 'Google Calendar', nl: 'Google Agenda', live: true }, { logo: 'microsoft', uk: 'Outlook Calendar', nl: 'Outlook-agenda', live: false }] },
-  { id: 'drive', logo: 'internal', uk: 'Диск', nl: 'Schijf', hint: ['Перегляд тек і читання файлів. Зараз працює лише з Google Drive; інші диски з’являться, коли їх буде підключено до сайту.', 'Mappen bekijken en bestanden lezen. Nu alleen met Google Drive; andere schijven komen erbij zodra ze aan de site gekoppeld zijn.'],
-    sources: [{ logo: 'google', uk: 'Google Drive', nl: 'Google Drive', live: true }, { logo: 'microsoft', uk: 'OneDrive (Microsoft)', nl: 'OneDrive (Microsoft)', live: false }, { logo: 'internal', uk: 'Внутрішній диск сайту', nl: 'Interne schijf van de site', live: false }] },
+  { id: 'drive', logo: 'internal', uk: 'Диск', nl: 'Schijf', hint: ['Перегляд тек і читання файлів на Google Drive, внутрішньому диску сайту та підключених зовнішніх сховищах (зокрема OneDrive).', 'Mappen bekijken en bestanden lezen op Google Drive, de interne schijf van de site en gekoppelde externe opslag (zoals OneDrive).'],
+    sources: [{ logo: 'google', uk: 'Google Drive', nl: 'Google Drive', live: true }, { logo: 'microsoft', uk: 'OneDrive (Microsoft)', nl: 'OneDrive (Microsoft)', live: true, bronId: 'cloud-onedrive' }, { logo: 'internal', uk: 'Внутрішній диск сайту', nl: 'Interne schijf van de site', live: true, bronId: 'cloud-intern' }] },
   { id: 'site', logo: 'internal', uk: 'Пошук по сайту', nl: 'Zoeken op de site', hint: ['Єдиний пошук по всьому, що вже проіндексовано в Mijn Ruimte.', 'Eén zoekopdracht over alles wat Mijn Ruimte al heeft geïndexeerd.'],
     sources: [{ logo: 'internal', uk: 'Mijn Ruimte', nl: 'Mijn Ruimte', live: true }] },
-  { id: 'github', logo: 'github', uk: 'GitHub', nl: 'GitHub', hint: ['Лише читання через ваш токен зі сховища.', 'Alleen lezen met uw token uit de kluis.'],
+  { id: 'github', logo: 'github', uk: 'GitHub', nl: 'GitHub', hint: ['Лише читання через ваш ключ доступу зі сховища.', 'Alleen lezen met uw toegangssleutel uit de kluis.'],
     sources: [{ logo: 'github', uk: 'GitHub', nl: 'GitHub', live: true }] },
 ];
 
@@ -105,7 +108,9 @@ export function ToolApprovals({ tr, calls, reload }: { tr: Tr; calls: ToolCall[]
 
 /** "Інструменти й дозволи": per bron een tabblad met logo, per hulpmiddel Altijd / Vragen / Uit en een uitleg die precies zegt wat DIT hulpmiddel doet. */
 export default function McpToolsPanel({ tr }: { tr: Tr }) {
+  const bronnenLiveVlagAan = useVlag('mcp-bronnen-live-v1', false);
   const [tools, setTools] = useState<Tool[]>([]);
+  const [bronnen, setBronnen] = useState<Record<string, { live?: boolean; gekoppeld?: boolean }>>({});
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [tab, setTab] = useState<Group>(() => { try { return (sessionStorage.getItem('mr.mcp.tools.tab') as Group) || 'devices'; } catch { return 'devices'; } });
@@ -116,6 +121,9 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
   const load = useCallback(async () => {
     const res = await api.post('/api/owner/mcp-connector/tools', sessionBody());
     setTools(res.data?.tools ?? []);
+    if (res.data?.bronnen && typeof res.data.bronnen === 'object') {
+      setBronnen(res.data.bronnen as Record<string, { live?: boolean; gekoppeld?: boolean }>);
+    }
   }, []);
   useEffect(() => { void load().catch(() => undefined); }, [load]);
   const pick = (g: Group) => { setTab(g); setRiskAsk(null); try { sessionStorage.setItem('mr.mcp.tools.tab', g); } catch { /* geen opslag */ } };
@@ -194,12 +202,22 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
       </div>
 
       <div className='hub-card'>
-        <div className='hub-source' style={{ flexWrap: 'wrap' }}>
-          {current.sources.map((s) => (
-            <span key={s.uk} className={`hub-pill ${s.live ? 'ok' : 'off'}`} title={s.live ? tr('Працює', 'Werkt') : tr('Ще не підключено до сайту', 'Nog niet aan de site gekoppeld')}>
-              <Logo kind={s.logo} size={16} label={tr(s.uk, s.nl)} />{tr(s.uk, s.nl)}{s.live ? '' : ` · ${tr('скоро', 'binnenkort')}`}
-            </span>
-          ))}
+        <div className='hub-source' style={{ flexWrap: 'wrap' }} data-vlag={MCP_BRONNEN_LIVE_VLAG}>
+          {current.sources.map((s) => {
+            const bronStand = bronnenLiveVlagAan && s.bronId ? bronnen[s.bronId] : undefined;
+            const live = s.bronId ? (bronnenLiveVlagAan ? (bronStand?.live !== undefined ? Boolean(bronStand.live) : s.live) : false) : s.live;
+            const gekoppeld = s.bronId ? (bronnenLiveVlagAan ? (bronStand ? Boolean(bronStand.gekoppeld) : s.bronId === 'cloud-intern') : false) : live;
+            const titel = !live
+              ? tr('Ще не підключено до сайту', 'Nog niet aan de site gekoppeld')
+              : gekoppeld
+                ? tr('Працює', 'Werkt')
+                : tr('Підтримується на сайті — підключіть обліковий запис у службі', 'Ondersteund op de site — koppel een account in de dienst');
+            return (
+              <span key={s.uk} className={`hub-pill ${live && gekoppeld ? 'ok' : 'off'}`} data-mcp-bron={s.bronId || s.logo} data-mcp-bron-live={String(live)} title={titel}>
+                <Logo kind={s.logo} size={16} label={tr(s.uk, s.nl)} />{tr(s.uk, s.nl)}{!live ? ` · ${tr('скоро', 'binnenkort')}` : gekoppeld ? '' : ` · ${tr('готово до підключення', 'klaar om te koppelen')}`}
+              </span>
+            );
+          })}
         </div>
         <p>{tr(current.hint[0], current.hint[1])}</p>
         <div className='hub-actions'>

@@ -18,6 +18,17 @@ export type Tweetalig = readonly [string, string];
 /** Model dat de server ECHT heeft ingesteld (env CHAT_MODELLEN / CHAT_MODEL, anders het standaardmodel van de code). */
 export type ModelKeuze = { id: string; standaard: boolean };
 
+/** Прапорець функції вибору цільового під’єднаного пристрою в розмові ШІ (міграція 0326, VLAG-001). */
+export const AI_CHAT_APPARAATKEUZE_VLAG = 'ai-chat-apparaatkeuze-v1' as const;
+
+/** Окремий не-оглядачевий пристрій поточного простору користувача для вибору у вікні чату. */
+export type WerkruimteApparaatOptie = {
+  id: string;
+  naam: string;
+  platform: string | null;
+  online: boolean;
+};
+
 /** Alles wat het scherm over dit account weet. Komt van POST /api/owner/ai/werkruimte/overzicht; nooit uit de browser. */
 export type Feiten = {
   /** Heeft dit account het recht 'api-platform' (backend/api-recht.ts)? Zonder dit recht werkt er niets op ai.*. */
@@ -29,7 +40,7 @@ export type Feiten = {
   /** Namen van de hulpmiddelen die de chat op ai.* op dit moment ECHT heeft (na hulpmiddelmodi en AI-beleid). */
   chatTools: readonly string[];
   /** Eigen pc's/VM's met de agent (Local Machine Connector). */
-  apparaten: { totaal: number; online: number };
+  apparaten: { totaal: number; online: number; items?: readonly WerkruimteApparaatOptie[] };
   /** Browsers met de extensie: gekoppeld en op dit moment aangezet. */
   browsers: { totaal: number; actief: number };
   /** GitHub-token in de kluis (doel github/github-app). */
@@ -42,7 +53,7 @@ export type Feiten = {
 
 export const LEGE_FEITEN: Feiten = {
   recht: false, sleutel: false, modellen: [], chatTools: [],
-  apparaten: { totaal: 0, online: 0 }, browsers: { totaal: 0, actief: 0 },
+  apparaten: { totaal: 0, online: 0, items: [] }, browsers: { totaal: 0, actief: 0 },
   github: false, google: { bekend: false, post: false, agenda: false, schijf: false }, koppelingen: 0,
 };
 
@@ -274,7 +285,26 @@ export const WERKRUIMTE_FOUTEN = {
   teVeel: 'AI_WERKRUIMTE_TE_VEEL_VERZOEKEN',
   laatsteMoetVraagZijn: 'AI_WERKRUIMTE_LAATSTE_MOET_VRAAG_ZIJN',
   aanbieder: 'AI_WERKRUIMTE_AANBIEDER_FOUT',
+  apparaatNietGevonden: 'APPARAAT_NIET_GEVONDEN',
 } as const;
 
 /** Foutcode van de aanbieder met de HTTP-status erbij (401 = sleutel geweigerd, 429 = limiet van Anthropic). */
 export const aanbiederFout = (status: number): string => `${WERKRUIMTE_FOUTEN.aanbieder}_${Number.isFinite(status) ? status : 0}`;
+
+/** Інструменти комп’ютера й локальних застосунків, чия схема приймає поле `machine` (без `machine_list`). */
+export const APPARAAT_HULPMIDDELEN_MET_MACHINE: ReadonlySet<string> = new Set([
+  'machine_info', 'machine_list_dir', 'machine_read_file', 'machine_file_info',
+  'machine_search_files', 'machine_write_file', 'machine_exec',
+  'docker_list_containers', 'docker_manage_container', 'system_metrics',
+  'app_deploy', 'app_deploy_status', 'app_list', 'app_logs', 'app_versions',
+  'app_rollback', 'app_control', 'app_route', 'app_secret_request',
+  'app_secret_list', 'app_secret_delete',
+]);
+
+/** Підставляє вибраний користувачем ідентифікатор пристрою в аргументи виклику інструмента ПК. */
+export function pasGekozenApparaatToe(toolNaam: string, args: unknown, apparaatId: string | null | undefined): unknown {
+  const id = typeof apparaatId === 'string' ? apparaatId.trim() : '';
+  if (!id || !APPARAAT_HULPMIDDELEN_MET_MACHINE.has(toolNaam)) return args;
+  const basis = args && typeof args === 'object' && !Array.isArray(args) ? (args as Record<string, unknown>) : {};
+  return { ...basis, machine: id };
+}

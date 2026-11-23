@@ -36,6 +36,8 @@ export type CanvasProps = {
   className?: string;
   /** Werkblad-blokken: inhoud van dit object blijft bedienbaar in de bewerkmodus (geen inert). */
   interactief?: (entry: DesktopEntry) => boolean;
+  /** Map of blok op het werkblad hernoemen vanuit het contextmenu of met F2. */
+  onRename?: (instanceId: string) => void;
 };
 
 type Menu = { id: string; x: number; y: number };
@@ -111,6 +113,10 @@ export function Canvas(p: CanvasProps) {
 
   const opToets = (e: React.KeyboardEvent, id: string) => {
     if (!p.editMode || a) return;
+    if (e.key === 'F2' && p.onRename) {
+      const obj = K.zoek(werkRef.current, id);
+      if (obj && !obj.locked && obj.kind === 'folder') { e.preventDefault(); p.onRename(id); return; }
+    }
     if (e.key === 'Enter' || e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
       e.preventDefault(); const el = e.currentTarget as HTMLElement, r = wortel.current!.getBoundingClientRect(), b = el.getBoundingClientRect();
       zetMenu({ id, x: b.left - r.left + 8, y: b.top - r.top + 8 }); return;
@@ -157,6 +163,7 @@ export function Canvas(p: CanvasProps) {
     const focus = () => requestAnimationFrame(() => wortel.current?.querySelector<HTMLElement>(`[data-wbc-id="${CSS.escape(id)}"]`)?.focus());
     switch (soort) {
       case 'toevoegen': { const e = K.zoek(l, id); p.onRequestAdd?.(e ? { x: e.x, y: e.y + e.h + 8 } : undefined); break; }
+      case 'hernoem': p.onRename?.(id); break;
       case 'plaats': zetPlaats(id); zeg(T.plaatsKies(t)); wortel.current?.focus({ preventScroll: true }); break;
       case 'formaat': zeg(T.hulp); focus(); break;
       case 'voren': voerUit(K.stapNaarVoren(l, id), T.voorgrond(t)); focus(); break;
@@ -249,6 +256,7 @@ export function Canvas(p: CanvasProps) {
         <div ref={menuRef} className="wbc-menu" role="menu" aria-label={naam(menu.id)} data-wbc-menu="" onKeyDown={menuToets}
           style={{ left: Math.min(menu.x, Math.max(0, (breedte || 300) - 232)), top: menu.y }} onClick={(e) => e.stopPropagation()}>
           {p.onRequestAdd && <button role="menuitem" type="button" onClick={() => menuActie('toevoegen')}>{T.menu.toevoegen}</button>}
+          {!menuItem.locked && menuItem.kind === 'folder' && p.onRename && <button role="menuitem" type="button" onClick={() => menuActie('hernoem')}>{T.menu.hernoem}</button>}
           {!menuItem.locked && <button role="menuitem" type="button" onClick={() => menuActie('plaats')}>{T.menu.plaats}</button>}
           {!menuItem.locked && <button role="menuitem" type="button" onClick={() => menuActie('formaat')}>{T.menu.formaat}</button>}
           <button role="menuitem" type="button" onClick={() => menuActie('voren')}>{T.menu.voren}</button>

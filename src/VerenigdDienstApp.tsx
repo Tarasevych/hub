@@ -64,6 +64,7 @@ const IdentityAdminView=lazy(()=>import('./IdentiteitBeheerWeergave'));
 const McpServiceView=lazy(()=>import('./McpDienstWeergave'));
 const MailFunctionalView=lazy(()=>import('./MailFunctioneelWeergave'));
 const SettingsCenterView=lazy(()=>import('./InstellingencentrumWeergave'));
+const SocialOverzicht=lazy(()=>import('./social/SocialOverzicht'));
 
 // Het blok van de dienst die nu open is alvast ophalen, parallel aan de eerste weergave (anders volgt het pas na de hoofdbundel).
 // Alleen voor een bekende sessie; anoniem toont alleen het aanmeldscherm.
@@ -183,6 +184,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
   /* F5: technisch blijven tot de eerste status er is (tech-opslag → techRuimteBijLaden) */
   const techRuimte=techRuimteBijLaden(tech,weergaveRuimteNu(),state!=='authorized'&&state!=='checking');
   const klantVlag=useVlag('klantrelatiebeheer-v1',false);
+  const socialVlag=useVlag('social-overzicht-v1',false);
   const[knownAccounts,setKnownAccounts]=useState<RememberedAccount[]>(()=>initialCached?.knownAccounts||[]);
   const[sessionLikely,setSessionLikely]=useState(()=>Boolean(initialCached?.user)||ecosystemSessionLikely());
   const[workspaces,setWorkspaces]=useState<Workspace[]>(()=>initialCached?.workspaces||[]);
@@ -342,7 +344,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
       huis:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'rooms',label:tr('Кімнати','Kamers')},{id:'devices',label:tr('Пристрої','Apparaten')},{id:'scenes',label:tr('Сцени','Scènes')},{id:'automations',label:tr('Автоматизації','Automatiseringen')},{id:'security',label:tr('Безпека','Beveiliging')},{id:'energy',label:tr('Енергія','Energie')},{id:'activity',label:tr('Події','Gebeurtenissen')},{id:'integrations',label:tr('Інтеграції','Integraties')},{id:'assistant',label:tr('ШІ-помічник','AI-assistent')},{id:'settings',label:tr('Налаштування','Instellingen')},{id:'showroom',label:tr('Вітрина','Toonzaal')},{id:'planner',label:tr('Калькулятор','Planner')}],
       mcp:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'dashboard',label:tr('Панель розгортання','Deploy-dashboard')},{id:'services',label:tr('Сервіси','Diensten')},{id:'tools',label:tr('Інструменти','Hulpmiddelen')},{id:'board',label:tr('Дошка','Bord')},{id:'agents',label:tr('Підключення ШІ','AI-koppelingen')},{id:'apps',label:tr('Додатки','Apps')},{id:'playground',label:tr('Пісочниця','Zandbak')},{id:'traffic',label:tr('Трафік','Verkeer')},{id:'connect',label:tr('Підключити','Verbinden')},{id:'roadmap',label:tr('Що далі','Wat hierna')},{id:'download',label:tr('Архів на ПК','Archief op de pc')},{id:'verbindingen',label:tr('Технічні підключення','Technische verbindingen')}],
       github:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'repositories',label:tr('Сховища','Repositories')},{id:'code',label:tr('Код і редактор','Code en editor')},{id:'issues',label:tr('Задачі','Vraagstukken')},{id:'pulls',label:tr('Запити на злиття','Samenvoegingen')},{id:'actions',label:tr('Конвеєри CI','CI-werkstromen')},{id:'releases',label:tr('Випуски','Uitgaven')},{id:'sync',label:tr('Дзеркало й пристрої','Spiegel en apparaten')},{id:'projects',label:tr('Проєкти','Projecten')},{id:'documentation',label:tr('Документація','Documentatie')},{id:'research',label:tr('Пошук','Onderzoek')},{id:'activity',label:tr('Активність','Activiteit')},{id:'accounts',label:tr('Підключення','Accounts')}],
-      identity:[{id:'personalization',label:tr('Персоналізація','Personalisatie')},{id:'menu',label:tr('Меню','Menu')},{id:'themes',label:tr('Вигляд і кольори','Weergave en kleuren')},{id:'languages',label:tr('Мови','Talen')},{id:'widgets',label:tr('Блоки','Blokken')},{id:'melding',label:tr('Сповіщення','Meldingen')},{id:'sharing',label:tr('Доступ','Toegang')},{id:'identity',label:tr('Ідентичність','Identiteit')},{id:'account',label:tr('Обліковий запис','Account')},{id:'sessions',label:tr('Сесії','Sessies')},{id:'methods',label:tr('Способи входу','Aanmeldmethoden')},{id:'security',label:tr('Безпека','Beveiliging')},{id:'recovery',label:tr('Відновлення','Herstel')}],
+      identity:[{id:'personalization',label:tr('Персоналізація','Personalisatie')},{id:'menu',label:tr('Меню','Menu')},{id:'themes',label:tr('Вигляд і кольори','Weergave en kleuren')},{id:'languages',label:tr('Мови','Talen')},{id:'widgets',label:tr('Блоки','Blokken')},{id:'melding',label:tr('Сповіщення','Meldingen')},{id:'sharing',label:tr('Доступ','Toegang')},{id:'identity',label:tr('Ідентичність','Identiteit')},{id:'account',label:tr('Обліковий запис','Account')},{id:'sessions',label:tr('Сесії','Sessies')},{id:'methods',label:tr('Способи входу','Aanmeldmethoden')},{id:'security',label:tr('Безпека','Beveiliging')},{id:'recovery',label:tr('Відновлення','Herstel')},{id:'netwerken',label:tr('Соціальні мережі','Sociale netwerken')}],
       api:[{id:'verbindingen',label:tr('Підключення до API','API-koppelingen')},{id:'vault',label:tr('Сховище секретів','Geheimenkluis')},{id:'access',label:tr('API-доступ','API-toegang')},{id:'reconciliation',label:tr('Фактична реалізація','Feitelijke implementatie')}],
       admin:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'access',label:tr('Користувачі та доступ','Gebruikers en toegang')},{id:'ai',label:tr('Доступ ШІ','AI-toegang')},{id:'contour',label:tr('Секрети й ключі','Geheimen en sleutels')},{id:'updates',label:tr('Оновлення','Updates')},{id:'apps',label:tr('Додатки та OAuth','Apps en OAuth')},{id:'devices',label:tr('Пристрої','Apparaten')},{id:'sso',label:tr('Єдиний вхід','Eenmalige aanmelding')},{id:'directories',label:tr('Інтеграції','Integraties')},{id:'roles',label:tr('Ролі','Rollen')},{id:'diagnostics',label:tr('Діагностика','Diagnostiek')},{id:'audit',label:tr('Журнал','Logboek')}],
     };
@@ -811,9 +813,9 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
       navigate('mail','inbox',false);
       return;
     }
-    const exactLeaf=item.id==='tasks'||item.id==='calendar'||item.id==='notes';
+    const exactLeaf=item.id==='tasks'||item.id==='calendar'||item.id==='notes'||item.id==='social';
     if(item.target==='hub'){navigate('hub',item.tab||'overview',!exactLeaf);return}
-    navigate(item.target as TargetService,item.tab||'',true);
+    navigate(item.target as TargetService,item.tab||'',!exactLeaf);
   };
   const requestAccess=async()=>{
     try{
@@ -949,6 +951,18 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     if(service==='mcp')return <McpServiceView lang={lang} tab={tab}/>;
     if(service==='api')return <ApiServiceView lang={lang} tab={tab} tr={tr}/>;
     if(service==='admin')return <TechBundelGrens lang={lang}><AdminConsoleView lang={lang} tab={tab} userId={user.id} sourceOrigin={sourceOrigin} tabContext={tabContext()}/></TechBundelGrens>;
+    if(service==='identity'&&tab==='netwerken'){
+      return (
+        <SocialOverzicht
+          key={user.id+':'+techRuimte}
+          lang={lang}
+          vlagAan={socialVlag}
+          tabContext={tabContext()}
+          sourceOrigin={sourceOrigin}
+          onNavigate={(doelDienst,doelTab)=>navigate(doelDienst as TargetService,doelTab,false)}
+        />
+      );
+    }
     if(service==='identity')return <SettingsCenterView tab={tab} lang={lang} theme={theme} plumEnabled={Boolean(user?.role==='owner'||user?.entitlements?.includes('plum-theme'))} user={user} activeWorkspaces={activeWorkspaces} archivedWorkspaces={archivedWorkspaces} menuPreferences={menuPreferences} securitySessions={securitySessions} securityLoading={securityLoading} busy={busy} onNavigate={next=>navigate('identity',next)} onSaveMenuPreferences={saveMenuPreferences} onLanguage={changeLanguage} onTheme={setTheme} onAddWidget={addSettingsWidget} onShareEmail={shareSettingsEmail} onCreateShareLink={createSettingsShareLink} deelWerkruimtes={deelWerkruimtes} lidWerkruimtes={/* IDENTITEIT-015: спільні простори, де людина лише учасник/глядач — щоб «Вийти з простору» було досяжне й тут */workspaces.filter(w=>w.shared&&!deelWerkruimtes.some(d=>d.id===w.id)).map(w=>({id:w.id,name:w.name,rol:w.workspaceRole==='member'?'member' as const:'viewer' as const}))} delenPost={delenPost} onDelenMelding={pr=>say(pr[0],pr[1])} hubOrigin={hubOrigin()} onDeleteSelf={(email: string, codewoord?: string)=>void deleteSelf(email, codewoord)} onRestoreWorkspace={id=>void restoreWorkspace(id)} onRefreshSessions={()=>void loadSessions()} onRevokeSession={item=>void revokeSession(item)} onRevokeAll={()=>void revokeAll()} onFoto={changeProfilePhoto} onFotoLink={fotoVanLink}/>;
     return <IdentityAdminView tab={tab} tr={tr} state={state} user={user} requests={requests} users={users} activeWorkspaces={activeWorkspaces} archivedWorkspaces={archivedWorkspaces} busy={busy} message={message?.[lang]||''} securitySessions={securitySessions} securityLoading={securityLoading} menuPreferences={menuPreferences} onSaveMenuPreferences={saveMenuPreferences} onConnect={connect} onRefresh={()=>void refresh()} onRefreshSessions={()=>void loadSessions()} onRevokeSession={item=>void revokeSession(item)} onRevokeAll={()=>void revokeAll()} onShareLocation={()=>{}} onDecision={(id,value)=>void runAdmin(()=>api.post(`/api/owner/admin/access-requests/${id}`,{service:'admin',tabContext:tabContext(),sourceOrigin,decision:value,confirmation:'ADMIN_POLICY_CHANGE'}))} onChangeAccess={(item,status,level,role)=>void runAdmin(()=>api.post(`/api/owner/admin/users/${item.id}`,{service:'admin',tabContext:tabContext(),sourceOrigin,status,accessLevel:level,role,workspaceRole:role,confirmation:'ADMIN_POLICY_CHANGE'}))} onDeleteUser={(item,email)=>void runAdmin(()=>api.post(`/api/owner/identity/admin/users/${item.id}/delete`,{service,tabContext:tabContext(),sourceOrigin,confirmEmail:email}))} onRecoverUser={(item,mode)=>void runAdmin(()=>api.post(`/api/owner/identity/admin/users/${item.id}/recover`,{service,tabContext:tabContext(),sourceOrigin,mode}))} onDeleteSelf={(email: string, codewoord?: string)=>void deleteSelf(email, codewoord)} onRestoreWorkspace={id=>void restoreWorkspace(id)} onChangeEntitlements={(item,entitlements)=>void runAdmin(()=>api.post(`/api/owner/admin/users/${item.id}`,{service:'admin',tabContext:tabContext(),sourceOrigin,status:item.status,accessLevel:item.accessLevel,entitlements,confirmation:'ADMIN_POLICY_CHANGE'}))}/>;
   };

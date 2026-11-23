@@ -307,7 +307,7 @@ export const TEKST = {
     ongedaan: 'Скасовано останню зміну.', opnieuw: 'Повторено зміну.',
     status: { saving: 'Зберігаю…', error: 'Не вдалося зберегти. Зміни лишилися тут — спробуйте ще раз.', conflict: 'Стіл змінено в іншій вкладці чи на іншому пристрої. Оновіть, щоб побачити останню версію.' },
     opnieuwProberen: 'Спробувати ще раз', herladen: 'Оновити',
-    menu: { toevoegen: 'Додати', formaat: 'Змінити розмір', voren: 'Вперед', voorgrond: 'На передній план', vast: 'Зафіксувати', los: 'Відкріпити', verwijder: 'Видалити', plaats: 'Розмістити тут…' },
+    menu: { toevoegen: 'Додати', hernoem: 'Перейменувати', formaat: 'Змінити розмір', voren: 'Вперед', voorgrond: 'На передній план', vast: 'Зафіксувати', los: 'Відкріпити', verwijder: 'Видалити', plaats: 'Розмістити тут…' },
     canvas: 'Робочий стіл', greep: (r: Rand) => `Змінити розмір: ${({ n: 'верх', s: 'низ', e: 'праворуч', w: 'ліворуч', ne: 'верх-праворуч', nw: 'верх-ліворуч', se: 'низ-праворуч', sw: 'низ-ліворуч' })[r]}`,
     hulp: 'Режим налаштування: стрілки — перемістити, Shift+стрілки — розмір, Ctrl — точно на 1 px, Enter або Shift+F10 — меню.',
     veld: {
@@ -332,7 +332,7 @@ export const TEKST = {
     ongedaan: 'Laatste wijziging ongedaan gemaakt.', opnieuw: 'Wijziging opnieuw uitgevoerd.',
     status: { saving: 'Opslaan…', error: 'Opslaan mislukt. De wijzigingen staan hier nog — probeer opnieuw.', conflict: 'Het werkblad is in een ander tabblad of op een ander apparaat gewijzigd. Vernieuw om de laatste versie te zien.' },
     opnieuwProberen: 'Opnieuw proberen', herladen: 'Vernieuwen',
-    menu: { toevoegen: 'Toevoegen', formaat: 'Formaat wijzigen', voren: 'Naar voren', voorgrond: 'Op de voorgrond', vast: 'Vastzetten', los: 'Losmaken', verwijder: 'Verwijderen', plaats: 'Hier plaatsen…' },
+    menu: { toevoegen: 'Toevoegen', hernoem: 'Hernoemen', formaat: 'Formaat wijzigen', voren: 'Naar voren', voorgrond: 'Op de voorgrond', vast: 'Vastzetten', los: 'Losmaken', verwijder: 'Verwijderen', plaats: 'Hier plaatsen…' },
     canvas: 'Werkblad', greep: (r: Rand) => `Formaat wijzigen: ${({ n: 'boven', s: 'onder', e: 'rechts', w: 'links', ne: 'rechtsboven', nw: 'linksboven', se: 'rechtsonder', sw: 'linksonder' })[r]}`,
     hulp: 'Instelmodus: pijltjes = verplaatsen, Shift+pijltjes = formaat, Ctrl = 1 px precies, Enter of Shift+F10 = menu.',
     veld: {

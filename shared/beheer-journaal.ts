@@ -29,7 +29,7 @@ export const CATEGORIEEN: readonly Categorie[] = [
   { id: 'toegang', uk: 'Способи входу та доступ', nl: 'Aanmeldmethoden en toegang', patroon: '^(access\\.|aanmeld\\.|aanmelden\\.|bevestigen\\.|beveiliging\\.|code\\.|inlog\\.|koppelen\\.|koppeling\\.|matrix\\.gewijzigd$|niet-ik$|fout-symbool$|plaats-eis\\.|stap-op$|telegram-sterk$|telegram\\.|venster\\.geopend$|widget\\.|wijziging\\.|owner\\.step_up|passkey_|toegang|toegangscode_|gast_)' },
   { id: 'sessie', uk: 'Входи та сесії', nl: 'Aanmeldingen en sessies', patroon: '^(sign_in|owner_sign_in_|sessie\\.|identity_linked|email_conflict|service_handoff|owner\\.(session|tab|redirect|auth|account|account-menu|security|browser)\\.|owner\\.browser\\.|GOOGLE_|LOGIN_|TRANSACTION_|PRIMARY_REDIRECT_|POPUP_|IDENTITY_|SERVICE_SESSION_)' },
   { id: 'mail', uk: 'Пошта', nl: 'E-mail', patroon: '^(owner\\.mail\\.|mail\\.)' },
-  { id: 'integraties', uk: 'Інтеграції', nl: 'Integraties', patroon: '^(integration\\.|owner\\.(connectors|github|cloud|google|calendar|hub|klantrelatie)|cloud\\.|agenda\\.|huis\\.|notitie\\.|connector_|connectors\\.)' },
+  { id: 'integraties', uk: 'Інтеграції', nl: 'Integraties', patroon: '^(integration\\.|owner\\.(connectors|github|cloud|google|calendar|hub|klantrelatie|social)|cloud\\.|agenda\\.|huis\\.|notitie\\.|connector_|connectors\\.)' },
   { id: 'privacy', uk: 'Приватність', nl: 'Privacy', patroon: '^(owner\\.privacy|privacy\\.|owner\\.profile|owner\\.notifications|owner\\.meldingen\\.|owner\\.ui)' },
 ];
 export const CATEGORIE_OVERIG: Categorie = { id: 'overig', uk: 'Інше', nl: 'Overig', patroon: '' };
@@ -611,6 +611,13 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.klantrelatie.afronden': ['Завершено завдання щодо клієнта', 'Vervolgtaak voor klant afgerond'],
   'owner.klantrelatie.afspraak': ['Заплановано зустріч із клієнтом у календарі', 'Afspraak met klant ingepland in agenda'],
   'owner.klantrelatie.hulp': ['Підготовлено чернетку за досьє клієнта', 'Tekstvoorstel voor klantdossier voorbereid'],
+  'integration.adapter.bewaard': ['Збережено зашифроване підключення перехідника зовнішньої служби', 'Versleutelde adapterkoppeling van externe dienst opgeslagen'],
+  'owner.cloud.verbinding.gecontroleerd': ['Перевірено стан хмарного підключення у Центрі підключень', 'Status van cloudkoppeling gecontroleerd in Verbindingencentrum'],
+  'owner.cloud.verbinding.ontkoppeld': ['Від’єднано хмарне підключення у Центрі підключень', 'Cloudkoppeling losgekoppeld in Verbindingencentrum'],
+  'owner.social.profiel.opslaan': ['Збережено канал або профіль у службі «Соціальні мережі»', 'Kanaal of profiel opgeslagen in dienst «Sociale netwerken»'],
+  'owner.social.profiel.verwijderen': ['Видалено канал або профіль у службі «Соціальні мережі»', 'Kanaal of profiel verwijderd in dienst «Sociale netwerken»'],
+  'owner.social.bericht.opslaan': ['Збережено чернетку або допис у службі «Соціальні мережі»', 'Concept of bericht opgeslagen in dienst «Sociale netwerken»'],
+  'owner.social.bericht.verwijderen': ['Видалено чернетку або допис у службі «Соціальні мережі»', 'Concept of bericht verwijderd in dienst «Sociale netwerken»'],
 };
 
 const TOKEN_UK: Record<string, string> = { owner: '', admin: 'Адмін', mcp: 'ШІ', tool: 'інструмент', grant: 'дозвіл', created: 'створено', updated: 'змінено', deleted: 'видалено', revoked: 'відкликано', approved: 'схвалено', denied: 'відхилено', opened: 'відкрито', closed: 'закрито', login: 'вхід', logout: 'вихід' };

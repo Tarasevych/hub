@@ -55,8 +55,10 @@ import { fotoDienstRoutes } from './foto-dienst'; /* UI-002: fotodienst (vlag fo
 import { cloudVnextBestandenRoutes } from './cloud-vnext-bestanden'; /* cloud vNext (0129): mappen, labels, prullenbak, versies, upload in stukken */
 import { bestandenDelenEigenaarRoutes, bestandenDelenPubliekeRoutes } from './bestanden-delen'; /* CLOUD-001 (0210): gedeelde koppelingen voor mappen, bestanden, archieven en bestandsdelen */
 import { cloudVnextIntegratiesRoutes } from './cloud-vnext-integraties';
+import { verbindingenBeheerRoutes } from './verbindingen-beheer';
 import { afstemmingKernRoutes } from './afstemming-kern'; /* UI-014 (0197): kaarten, revisies, gebeurtenissen, import */
 import { afstemmingKoppelRoutes } from './afstemming-koppel';
+import { afstemmingUitbreidingRoutes } from './afstemming-uitbreiding';
 import { aanmeldKoppelRoutes } from './aanmeld-koppel';
 import { aanmeldMethodenRoutes, externTerugVoor, type AanmeldWegDeps } from './aanmelden-methoden'; /* IDENTITEIT-015 (aanmelden): вхід ключем доступу, паролем, Microsoft/Discord/Apple */
 import { registreerAanmeldVlag } from './aanmeld-wegen';
@@ -94,6 +96,7 @@ import './dev-mg-bevestiging';
 import './json-weigering'; /* SEC-002 (slot s): spoor van 415 JSON_VEREIST — journaal + melding */
 import { merkBronRoutes } from './merk-bron'; // 21.10.2026: logo's van domeinen (BIMI/website) en foto's van afzenders (migratie 0097)
 import { adminIntegratieRoutes } from './beheer-integraties';
+import { integratiesKoppelingenRoutes } from './integraties-koppelingen';
 import { afdwingAdmin, schaduwAdmin } from './beleid';
 import { ondersteuningRoutes } from './ondersteuning-routes';
 import { impersonatieRoutes } from './impersonatie-routes';
@@ -136,6 +139,7 @@ import { besluitZoekenPg } from './orch-besluit-pg';
 import { accountVerwijderdZetten, gebruikerVeldenZetten, toegangAanvraagStatus, toegangAanvraagToegestaan } from './gebruiker-schrijven'; // SEC-002 (autorisatie-02/-06)
 import { klantrelatieRoutes } from './klantrelatiebeheer-routes';
 import { relatiehulpRoutes } from './klantrelatie-hulp';
+import { createSocialRoutes, SOCIAL_OVERZICHT_VLAG } from './social-routes';
 import { bijlageWeergaveOcrRoutes } from './bijlage-weergave-ocr';
 import { aiWerkruimteRoutes } from './ai-werkruimte';
 import { aiEcosysteemRoutes } from './ai-ecosysteem';
@@ -772,6 +776,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
     ...cloudVnextIntegratiesRoutes(ownerRequireSession as never, { vlagAan: async (u) => (await flagsBerekenen(u as never, ['cloud-vnext', 'verbindingen-centrum-v2'])).some((v) => v?.value === true) }),
     ...cloudVnextTakenRoutes(ownerRequireSession as never, { vlagAan: async (u) => (await flagsBerekenen(u as never, ['cloud-vnext']))[0]?.value === true, vlagLezen: async (u) => (await flagsBerekenen(u as never, ['verbindingen-centrum-v2']))[0]?.value === true }),
   } as never) as unknown as Record<string, any>),
+  ...verbindingenBeheerRoutes(ownerRequireSession as never, { vlagAan: async (u) => (await flagsBerekenen(u as never, ['cloud-vnext', 'verbindingen-centrum-v2'])).some((v) => v?.value === true) }),
   ...bestandenDelenPubliekeRoutes(async (event, body) => {
     const auth = await ownerRequireSession(event as never, body as never);
     if ('errorCode' in auth) return null;
@@ -782,13 +787,14 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
       displayName: String((auth.user as { displayName?: string }).displayName || ''),
     };
   }),
-  ...afstemmingKernRoutes(ownerRequireSession as never),
+  ...afstemmingKernRoutes(ownerRequireSession as never, { volledigVlagAan: async (u) => (await flagsBerekenen(u as never, ['afstemming-volledig-v1']))[0]?.value === true }),
   ...afstemmingKoppelRoutes(ownerRequireSession as never),
+  ...afstemmingUitbreidingRoutes(ownerRequireSession as never, { isVlagAan: async (u) => (await flagsBerekenen(u as never, ['afstemming-volledig-v1']))[0]?.value === true }),
   ...aanmeldKoppelRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, inloggen: externTerugVoor(aanmeldWegDeps) /* IDENTITEIT-015: вхід через прив'язку — той самий redirect */ }),
   ...aanmeldMethodenRoutes(aanmeldWegDeps), /* IDENTITEIT-015 (aanmelden): /api/aanmelden/{passkey,wachtwoord,extern}/* */
   ...bekendeApparatenRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, audit: ownerAudit, vlagAan: async (userId) => (await flagsBerekenen({ id: userId } as never, ['meldingen-uitleg-v3']))[0]?.value === true }),
   ...telegramRoutes({ requireSession: /* SEC-002 (autorisatie-09): niet-goedgekeurde accounts komen hier niet */ alleenGoedgekeurd(ownerRequireSession) as never, aanmeldStart: telegramAanmeldStart as never, aanmeldAfbreken: telegramAanmeldAfbreken, aanmeldTerugAdres: telegramAanmeldTerugAdres, aanmeldBindingKlopt: telegramAanmeldBindingKlopt /* SEC-002 aanmelden-04 */, aanmeldVoltooien: telegramAanmeldVoltooien as never, sessiesIntrekken: telegramSessiesIntrekken, vlagAan: async (userId: string) => (await flagsBerekenen({ id: userId } as never, ['telegram-aanmelden-v1']))[0]?.value === true } as never),
-  ...apparaatRoutes({ requireSession: /* SEC-002 (autorisatie-09): niet-goedgekeurde accounts komen hier niet */ alleenGoedgekeurd(ownerRequireSession) as never, vlagAan: async (userId: string) => (await flagsBerekenen({ id: userId } as never, ['apparaat-bevestiging-v1']))[0]?.value === true }),
+  ...apparaatRoutes({ requireSession: /* SEC-002 (autorisatie-09): niet-goedgekeurde accounts komen hier niet */ alleenGoedgekeurd(ownerRequireSession) as never, vlagAan: async (userId) => (await flagsBerekenen({ id: userId } as never, ['apparaat-bevestiging-v1']))[0]?.value === true }),
   // Technisch profiel (architectuur 13.10.2026): toekennen, op tijd activeren per tabblad, band.
   ...techRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...techRuimtesRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }), /* technische ruimtes v2 (0115), achter vlag tech-ruimtes-v2 */
@@ -811,6 +817,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...devMgRoutes({ requireSession: ownerRequireSession as never }),
   ...merkBronRoutes({ requireSession: ownerRequireSession as never }),
   ...adminIntegratieRoutes((ctx, capability) => adminContext(ctx.event, ctx.body, capability as AdminCapability) as never, ownerRequireSession as never),
+  ...integratiesKoppelingenRoutes((ctx, capability) => adminContext(ctx.event, ctx.body, capability as AdminCapability) as never, ownerRequireSession as never, { isVlagAan: async (u) => (await flagsBerekenen(u as never, ['integraties-adapter-opslaan-v1']))[0]?.value === true }),
   // «Підтримка від імені» met toestemming (etap 7): alleen-lezen overzicht, nooit een sessie van de gebruiker.
   // Feature flags (etap F): berekenen voor zichzelf; beheren/testen alleen in een actief technisch profiel. Nooit een recht.
   ...flagsRoutes(ownerRequireSession as never),
@@ -843,7 +850,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   // Blijvende archieven: «Завантажити цей випуск» (passkey) en publicatie op GitHub met de token uit de kluis (0061, backend/uitrol-github.ts).
   ...uitrolGithubRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
   // 0283: зашифроване архівування випусків у Telegram і безпечне отримання випусків із GitHub (приймач подій/вручну/MCP).
-  ...uitrolTelegramRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
+  ...uitrolTelegramRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never, koppelingVlagAan: async (u) => (await flagsBerekenen(u as never, ['uitrol-telegram-koppeling-v1']))[0]?.value === true }),
   ...uitrolGithubOntvangenRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   // Besluiten van de eigenaar met passkey-handtekening (§15): terugdraaien naar een release, witte lijst externe MCP-hosts; root controleert en voert uit.
@@ -855,7 +862,8 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   // Een geldige sessie zonder het recht 'api-platform' krijgt hier API_RECHT_VEREIST, nooit OWNER_API_SESSION_REQUIRED.
   ...klantrelatieRoutes(ownerRequireSession, { vlagAan: klantVlag }),
   ...relatiehulpRoutes(ownerRequireSession, { vlagAan: klantVlag }),
-  ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never }),
+  ...createSocialRoutes({ requireSession: ownerRequireSession as never, vlagAan: async (u) => (await flagsBerekenen(u as never, [SOCIAL_OVERZICHT_VLAG]))[0]?.value === true }),
+  ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never, apparaatkeuzeVlagAan: async (u) => (await flagsBerekenen(u as never, ['ai-chat-apparaatkeuze-v1']))[0]?.value === true }),
   ...aiEcosysteemRoutes({ requireSession: ownerRequireSession as never }),
   ...vaardighedenRoutes({ requireSession: ownerRequireSession as never }),
   ...geheugenStroomRoutes({ requireSession: ownerRequireSession as never }),
@@ -867,7 +875,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...sleutelkluisRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never, stapOpEenmalig: (a, actie) => metStapOpEenmalig(a as never, sterkeStapOpGeldig, actie) }),
   ...toegangRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...toegangscodeRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never, gastcodesVoor: (id) => aanmeldVlagAan(id, 'gastcodes-iedereen') }), /* IDENTITEIT-015: коди доступу й для схвалених інших (прапорець) */
-  ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
+  ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,leesScopesVlagAan:async(u)=>(await flagsBerekenen(u as never,['api-platform-lees-v1']))[0]?.value===true}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...geheimenRoutes({ requireSession: ownerRequireSession as never }),
   ...agentNamensRoutes({ requireSession: ownerRequireSession as never }),
@@ -881,7 +889,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...bijlageWeergaveOcrRoutes({ requireSession: ownerRequireSession as never, vlagAan: bijlageWeergaveVlag }),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createAgentRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist}),
-  ...createMcpConnectorRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist as never}),
+  ...createMcpConnectorRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist as never,bronnenLiveVlagAan:async(u)=>(await flagsBerekenen(u as never,['mcp-bronnen-live-v1']))[0]?.value===true}),
   ...createMailComposeRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
   ...createMailAssistantRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
   ...createAiVertalingRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
@@ -901,7 +909,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...wrapFactoryMutations(createZoekBeheerRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createHubBlockDataRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createWerkbladRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
-  ...wrapFactoryMutations(createWerkbladV3Routes((event,body)=>ownerRequireSession(event,body),{vlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-v3']))[0]?.value===true,register:REGISTER_V3_HAKEN,techToegang:werkbladTechToegang}),(event,body)=>ownerRequireSession(event,body)),
+  ...wrapFactoryMutations(createWerkbladV3Routes((event,body)=>ownerRequireSession(event,body),{vlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-v3']))[0]?.value===true,snelkoppelingenVlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-snelkoppelingen-v1']))[0]?.value===true,register:REGISTER_V3_HAKEN,techToegang:werkbladTechToegang}),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createWerkbladBlokkenRoutes((event,body)=>ownerRequireSession(event,body),{vlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-v3','werkblad-blokken'])).filter((v)=>v?.value===true).length===2,register:REGISTER_V3_HAKEN,techToegang:werkbladTechToegang}),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createHubLayoutPreferenceRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   // 20.10.2026 (opdracht van de eigenaar): echte postkoppelingen via IMAP/SMTP met een app-wachtwoord (backend/mail-imap.ts)
@@ -1204,7 +1212,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   'POST /api/service/auth/logout': VEROUDERDE_ROUTE_WEG,
   'GET /api/owner/system/manifest': [async()=>ownerResponse({release:'canonical-v194-identity-first-click-hub-cookie-cutover',accountMenuArchitecture:'canonical_model_v1_identity_mru_visibility_photo_contract',domains:Object.values(SERVICE_ORIGINS),serviceAuthorityCutover:'shared_session_pending_real_browser_acceptance',customDomainOriginBinding:'strict',stableTabBinding:'window_name_plus_session_storage_per_browsing_context',authTransactionLifecycle:'automated_backend_confirmed',ecosystemSession:'api_host_partitioned_shared',hubCanonicalSessionBackend:'confirmed',hubUiCanary:false,hubUiCutover:true,ownerBrowserGoogle:'confirmed_real_chrome_2026_07_31',googleUx:'single_create_same_tab_google_redirect_identity_callback_session_commit_return',googleClientId:CLIENT_ID,googleRedirectUri:OWNER_GOOGLE_CALLBACK,googleCallbackTransport:'identity_root_query_single_server_complete',googleCallbackProcessing:'hashed_state_processing_lease_retry_and_terminal_replay_safe',oauthStateLookup:'direct_transaction_record_id_plus_full_state_hash_with_legacy_fallback',callbackLocale:'state_bound_uk_nl_before_api_response',returnToPolicy:'exact_initiating_service_origin_and_allowlisted_path_only',googleCloudConsole:'root_redirect_uri_confirmed_by_owner_2026_07_31',hubAuthorityCutover:'confirmed_cookie_only_hub_identity_client',productionSecretChanged:false,settingsArchitecture:'identity_domain_settings_center_account_only_boundary_workspace_actions_outside_main_chrome',themePolicy:'explicit_light_dark_plum_light_plum_dark_entitlement_only_no_owner_implicit_grant',iconPolicy:'lucide_menu_glyphs_with_persistent_local_tab_icons_and_fixed_box_css_language_flags',sidebarBehavior:'safe_hover_dwell_transient_overlay_explicit_pinned_reflow_touch_drawer_swipe_manual_submenu_persistence_keyboard_supported',mailArchitecture:'documented_target_v1',mailRuntime:'phase1_plus_provider_foundation',mailTokenVault:'aes_256_gcm_contract_self_tested',mailUnifiedApi:'owner_scoped_foundation_v1',mailProviderOauth:'google_microsoft_live_probe_gated',mailPush:'google_authenticated_ingress_live_probe_gated',mailSync:'gmail_read_pipeline_source_gated_unverified',mailMutations:'provider_labels_and_prepare_confirm_send_source_gated',mailMicrosoft:'oauth_webhook_delta_live_probe_gated',mailLifecycle:'disconnect_health_scheduled_maintenance_migration_inventory_v2',rollbackVersion:'1785990729174',stage1:{ownerRememberedSwitch:'effective_current_account_follows_active_tab_overlay',firstClickAuth:'production_one_click_same_tab_google_redirect'},stage2:{languagePriority:'tab_explicit_account_browser_last_browser_locale',accountSwitch:'preserve_explicit_tab_language',oauthHl:'effective_tab_language',controller:'shared_hub_and_service_shell'},sessionPolicy:{idleDays:7,absoluteDays:30,previousRefreshGraceSeconds:15,raceStrategy:'deterministic idempotent rotation',cookie:'HttpOnly Secure SameSite=Lax Domain=.tarasevych.com',apiPath:OWNER_API_COOKIE_PATH},revocation:'current-tab overlay or explicit all-session revocation',audit:'tamper-evident append-only hash chain v2',i18n:{locales:['uk','nl'],fallback:'visible marker'}})],
   'POST /api/owner/access/request': [async(ctx)=>{const auth=await ownerRequireSession(ctx.event,ctx.body);if('errorCode'in auth)return error('OWNER_SESSION_REQUIRED',401);if(auth.user.status==='approved'||auth.user.role==='owner')return ownerResponse(await ownerPayload(auth.session,auth.user,auth.tabSession,auth.tab));if(auth.user.status==='blocked'||auth.user.status==='deleted')return error('OWNER_ACCESS_REQUEST_NOT_ALLOWED',403);/* SEC-002 (autorisatie-06): limiet per account/IP */if(!await toegangAanvraagToegestaan(auth.user.id,ctx.event))return error('RATE_LIMITED',429);const existing=await listOne<Record<string,unknown>>('access_requests',{userId:auth.user.id,status:'pending'});if(!existing)await db.add('access_requests',[{userId:auth.user.id,email:auth.user.email,name:auth.user.name,picture:auth.user.picture,status:'pending',requestedAt:Date.now()}]);const next:User={...auth.user,status:'pending',updatedAt:Date.now()};/* SEC-002 (autorisatie-02/-06): alleen status new→pending (voorwaardelijk, niet het hele record uit de momentopname); alleen die overgang meldt de eigenaar */const{overgang}=await toegangAanvraagStatus(next.id);const owner=overgang?await listOne<User>('users',{email:OWNER}):null;if(owner)await notify(owner.id,owner.email,'access_request','Новий запит на доступ',`${next.name} (${next.email}) просить створити простір.`);/* systeemwachtrij zonder eigenaar: bewuste systeemstap (RLS 0007) */if(overgang)await alsSysteem(()=>db.add('notification_jobs',[{channel:'email',recipient:OWNER,kind:'access_request',status:'waiting_integration',createdAt:Date.now(),payload:{userId:next.id,email:next.email}},{channel:'telegram',recipient:'owner',kind:'access_request',status:'waiting_integration',createdAt:Date.now(),payload:{userId:next.id,email:next.email}}]));await ownerAudit(next.id,'owner.access.requested','success',{service:auth.service});return ownerResponse(await ownerPayload(auth.session,next,auth.tabSession,auth.tab))}],
-  'POST /api/owner/api-platform/contract': [async(ctx)=>{const auth=await ownerRequireSession(ctx.event,ctx.body);if('errorCode'in auth||auth.service!=='api'||auth.user.status!=='approved')return error('OWNER_API_SESSION_REQUIRED',403);return ownerResponse(await apiPlatformOwnerContract({id:auth.user.id,email:auth.user.email,role:auth.user.role}))}],
+  'POST /api/owner/api-platform/contract': [async(ctx)=>{const auth=await ownerRequireSession(ctx.event,ctx.body);if('errorCode'in auth||auth.service!=='api'||auth.user.status!=='approved')return error('OWNER_API_SESSION_REQUIRED',403);const leesScopesAan=(await flagsBerekenen(auth.user as never,['api-platform-lees-v1']))[0]?.value===true;return ownerResponse(await apiPlatformOwnerContract({id:auth.user.id,email:auth.user.email,role:auth.user.role},{leesScopesAan}))}],
   'POST /api/owner/ui/preferences': [async(ctx)=>{const auth=await ownerRequireSession(ctx.event,ctx.body);if('errorCode'in auth||auth.user.status!=='approved')return error('OWNER_APPROVED_SESSION_REQUIRED',403);return ownerResponse(await ownerUiPreferences(auth.user.id))}],
   // Menu v2: zijbalkmodus, icoonstijl en (fase 2) indeling; strikt genormaliseerd (shared/menu-model.ts). Geen audit per klik: alleen weergave.
   /* Menu v2 fase B2 («levend» menu): tellers per gebruiker (nu alleen: aantal ongelezen in Вхідні van E-mail), zodat het menu op ELKE

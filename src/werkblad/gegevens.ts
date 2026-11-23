@@ -61,11 +61,101 @@ export const haalGezondheid = (force = false) => viaBak(gezondBak, force, async 
 const techBak = bak<TechSamenvatting>();
 export const haalTechSamenvatting = (force = false) => viaBak(techBak, force, haalTech);
 
+export type GithubSamenvatting = {
+  ruimte: string;
+  gekoppeld: boolean;
+  kluisGesloten: boolean;
+  eenklikIngesteld: boolean;
+  accounts: Array<{ pad: 'oauth' | 'app'; login: string; repoAantal: number; bijgewerktOp: number }>;
+  opslagplaatsen: string[];
+  recenteActies: Array<{ id: string; actie: string; resultaat: string; op: number }>;
+};
+const githubBak = bak<GithubSamenvatting>();
+export const haalGithubSamenvatting = (force = false) => viaBak(githubBak, force, async () => {
+  const r = await api.post('/api/owner/hub/werkblad/github', hubAuthBody());
+  const d = (r.data || {}) as Record<string, unknown>;
+  return {
+    ruimte: String(d.ruimte || 'prive'),
+    gekoppeld: d.gekoppeld === true,
+    kluisGesloten: d.kluisGesloten === true,
+    eenklikIngesteld: d.eenklikIngesteld === true,
+    accounts: Array.isArray(d.accounts)
+      ? d.accounts.map((a) => {
+          const o = (a || {}) as Record<string, unknown>;
+          return {
+            pad: (o.pad === 'app' ? 'app' : 'oauth') as 'oauth' | 'app',
+            login: String(o.login || ''),
+            repoAantal: Number(o.repoAantal || 0),
+            bijgewerktOp: Number(o.bijgewerktOp || 0),
+          };
+        })
+      : [],
+    opslagplaatsen: Array.isArray(d.opslagplaatsen) ? d.opslagplaatsen.map((x) => String(x || '')).filter(Boolean) : [],
+    recenteActies: Array.isArray(d.recenteActies)
+      ? d.recenteActies.map((a) => {
+          const o = (a || {}) as Record<string, unknown>;
+          return { id: String(o.id || ''), actie: String(o.actie || ''), resultaat: String(o.resultaat || ''), op: Number(o.op || 0) };
+        })
+      : [],
+  };
+});
+
+export type AiToegangSamenvatting = {
+  ruimte: string;
+  samenvatting: {
+    verbindingen: number;
+    toestemmingen: number;
+    apparaten: number;
+    apparatenVerbonden: number;
+    browsersActief: number;
+  };
+  verbindingen: Array<{ id: string; naam: string; scope: string; laatstGebruiktOp: number }>;
+  toestemmingen: Array<{ id: string; agentId: string; mogelijkheid: string; altijd: boolean; verlooptOp: number }>;
+  apparaten: Array<{ id: string; naam: string; platform: string; online: boolean; laatstGezienOp: number }>;
+  browser: { totaal: number; actief: number };
+};
+const aiToegangBak = bak<AiToegangSamenvatting>();
+export const haalAiToegangSamenvatting = (force = false) => viaBak(aiToegangBak, force, async () => {
+  const r = await api.post('/api/owner/hub/werkblad/ai-toegang', hubAuthBody());
+  const d = (r.data || {}) as Record<string, unknown>;
+  const s = (d.samenvatting && typeof d.samenvatting === 'object' ? d.samenvatting : {}) as Record<string, unknown>;
+  const b = (d.browser && typeof d.browser === 'object' ? d.browser : {}) as Record<string, unknown>;
+  return {
+    ruimte: String(d.ruimte || 'prive'),
+    samenvatting: {
+      verbindingen: Number(s.verbindingen || 0),
+      toestemmingen: Number(s.toestemmingen || 0),
+      apparaten: Number(s.apparaten || 0),
+      apparatenVerbonden: Number(s.apparatenVerbonden || 0),
+      browsersActief: Number(s.browsersActief || 0),
+    },
+    verbindingen: Array.isArray(d.verbindingen)
+      ? d.verbindingen.map((v) => {
+          const o = (v || {}) as Record<string, unknown>;
+          return { id: String(o.id || ''), naam: String(o.naam || ''), scope: String(o.scope || ''), laatstGebruiktOp: Number(o.laatstGebruiktOp || 0) };
+        })
+      : [],
+    toestemmingen: Array.isArray(d.toestemmingen)
+      ? d.toestemmingen.map((t) => {
+          const o = (t || {}) as Record<string, unknown>;
+          return { id: String(o.id || ''), agentId: String(o.agentId || ''), mogelijkheid: String(o.mogelijkheid || ''), altijd: o.altijd === true, verlooptOp: Number(o.verlooptOp || 0) };
+        })
+      : [],
+    apparaten: Array.isArray(d.apparaten)
+      ? d.apparaten.map((m) => {
+          const o = (m || {}) as Record<string, unknown>;
+          return { id: String(o.id || ''), naam: String(o.naam || ''), platform: String(o.platform || ''), online: o.online === true, laatstGezienOp: Number(o.laatstGezienOp || 0) };
+        })
+      : [],
+    browser: { totaal: Number(b.totaal || 0), actief: Number(b.actief || 0) },
+  };
+});
+
 /** «Перевірити зараз» bij de stand van de diensten: dezelfde controle als «Налаштування» → «Акаунт» (alleen het eigen account; server begrenst 10 / 10 min). */
 export const dienstenControleren = async () => { await api.post('/api/owner/diagnostiek/mijn-diensten', hubAuthBody({ uitvoeren: true })); };
 
 /** Alles vergeten (na «Оновити» op het werkblad). */
-export const allesVergeten = () => { zoekBak.waarde = null; gezondBak.waarde = null; techBak.waarde = null; bordVergeten(); };
+export const allesVergeten = () => { zoekBak.waarde = null; gezondBak.waarde = null; techBak.waarde = null; githubBak.waarde = null; aiToegangBak.waarde = null; bordVergeten(); };
 
 /** Eén lader per widget: skelet zolang het laadt, foutcode als het misgaat; `herlaad()` haalt opnieuw op. */
 export function useBron<T>(laad: (force: boolean) => Promise<T>, begin: T | null = null, actief = true) {

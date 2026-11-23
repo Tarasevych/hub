@@ -53,7 +53,7 @@ const PAGINA_ICOON: Record<string, Record<string, string>> = {
   crm: { overview: 'overview', klanten: 'accounts', overeenkomsten: 'logs', tasks: 'scheduled', inzichten: 'gauge', assistenten: 'ai-access', koppelingen: 'connections' },
   huis: { overview: 'overview', rooms: 'blocks', devices: 'devices', scenes: 'workspace', automations: 'workflows', security: 'lock', energy: 'gauge', activity: 'activity', integrations: 'connections', assistant: 'ai-access', settings: 'tune', showroom: 'photos', planner: 'reconcile' },
   mcp: { overview: 'overview', dashboard: 'deploy', services: 'connections', tools: 'workflows', board: 'projects', agents: 'agents', apps: 'blocks', playground: 'runs', traffic: 'gauge', connect: 'link', roadmap: 'documentation', download: 'download', verbindingen: 'key' },
-  identity: { personalization: 'tune', menu: 'sidebar', themes: 'themes', languages: 'languages', widgets: 'blocks', melding: 'melding', sharing: 'invite', identity: 'id-card', account: 'account', sessions: 'sessions', methods: 'vault', security: 'lock', recovery: 'lifebuoy' },
+  identity: { personalization: 'tune', menu: 'sidebar', themes: 'themes', languages: 'languages', widgets: 'blocks', melding: 'melding', sharing: 'invite', identity: 'id-card', account: 'account', sessions: 'sessions', methods: 'vault', security: 'lock', recovery: 'lifebuoy', netwerken: 'accounts' },
   api: { verbindingen: 'connections', vault: 'vault', oauth: 'oauth', access: 'user-check', webhooks: 'webhooks', events: 'events', logs: 'logs', import: 'import', reconciliation: 'reconcile' },
   admin: { overview: 'overview', access: 'user-check', ai: 'ai-access', contour: 'vault', updates: 'import', apps: 'oauth', devices: 'sessions', sso: 'sign-in', directories: 'connections', roles: 'accounts', diagnostics: 'activity', audit: 'logs' },
 };
@@ -76,7 +76,7 @@ export const DIENST_DEF: Record<typeof DIENST_IDS[number], DienstDef> = {
   identity: { titel: { uk: 'Налаштування', nl: 'Instellingen' }, icoon: 'settings', doel: 'identity', tab: 'personalization' },
   api: { titel: { uk: 'API та інтеграції', nl: 'API en integraties' }, icoon: 'network', doel: 'api', tab: 'access' },
   admin: { titel: { uk: 'Адміністрування', nl: 'Beheer' }, icoon: 'shield', doel: 'admin', tab: 'overview' },
-  social: { titel: { uk: 'Соціальні мережі', nl: 'Sociale netwerken' }, icoon: 'share', doel: 'hub', tab: '', planned: true },
+  social: { titel: { uk: 'Соціальні мережі', nl: 'Sociale netwerken' }, icoon: 'share', doel: 'identity', tab: 'netwerken' },
 };
 
 /** Registerregel met de extra's die de bibliotheek nodig heeft (bovenop het gedeelde contract RegisterItem). */
@@ -348,7 +348,14 @@ export const MAP_ID = /^map:[a-z0-9-]{1,40}$/;
 /** Item voor validatie/weergave van één canvasobject: map:* → MAP_ITEM, usr:* → persoonlijkItem(basis uit config.basis). */
 export function registerItemVoorEntry(itemId: string, config?: Record<string, unknown>): RegisterRegel | undefined {
   if (MAP_ID.test(itemId)) return MAP_ITEM;
-  if (USR_ID.test(itemId)) return persoonlijkItem({ id: itemId, basis: String(config?.basis ?? ''), titel: typeof config?.titel === 'string' ? config.titel : undefined });
+  if (USR_ID.test(itemId)) {
+    return persoonlijkItem({
+      id: itemId,
+      basis: String(config?.basis ?? ''),
+      titel: typeof config?.titel === 'string' ? config.titel : undefined,
+      icoon: typeof config?.icoon === 'string' ? config.icoon : undefined,
+    });
+  }
   return PER_ID.get(itemId);
 }
 

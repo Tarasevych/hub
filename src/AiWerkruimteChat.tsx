@@ -5,11 +5,13 @@
 //   - «Зупинити» breekt het lopende verzoek echt af (AbortController) en zegt dat het antwoord onvolledig is;
 //   - elke fout noemt de ECHTE reden met de code erachter (geen «Не вдалося отримати відповідь» voor alles);
 //   - niets wordt nagebootst: zonder sleutel of model is het veld uit en staat er wat er moet gebeuren.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, isAfgebroken } from './platform/client';
+import { useVlag } from './functievlag-lezen';
+import { profielVan, useTech } from './tech/tech-opslag';
 import { ecosystemTabContext } from './tab-context';
 import { foutCode, foutTekst } from './agenten/fouten';
-import { WERKRUIMTE_FOUTEN, type Feiten, type Startstaat } from '../shared/ai-werkruimte';
+import { AI_CHAT_APPARAATKEUZE_VLAG, WERKRUIMTE_FOUTEN, type Feiten, type Startstaat, type WerkruimteApparaatOptie } from '../shared/ai-werkruimte';
 import { AI_AANBIEDER_BIJ_ID, aanbiederUitModel } from '../shared/ai-aanbieders';
 import { AanvragerPill, GoedkeuringInhoud, MensKnop } from './GoedkeuringInhoud';
 import { commandLabel, type Aanvrager } from './agenten-gegevens';
@@ -39,6 +41,7 @@ export function werkruimteFout(e: unknown, tr: Tr, modelId?: string): string {
   if (code === WERKRUIMTE_FOUTEN.modelOnbekend) return met('Цю модель сервер не налаштовано використовувати. Виберіть зі списку.', 'Dit model is op de server niet ingesteld. Kies er een uit de lijst.');
   if (code === WERKRUIMTE_FOUTEN.teVeel) return met('Забагато запитів за хвилину для цього облікового запису. Зачекайте хвилину.', 'Te veel verzoeken per minuut op dit account. Wacht een minuut.');
   if (code === WERKRUIMTE_FOUTEN.laatsteMoetVraagZijn) return met('Останнім у розмові має бути ваше питання.', 'Het laatste in het gesprek moet uw eigen vraag zijn.');
+  if (code === WERKRUIMTE_FOUTEN.apparaatNietGevonden) return met('Вибраний пристрій не знайдено у вашому поточному просторі. Оновіть список пристроїв.', 'Het gekozen apparaat is niet gevonden in uw huidige ruimte. Vernieuw de apparatenlijst.');
   if (code.startsWith(`${WERKRUIMTE_FOUTEN.aanbieder}_401`)) return met(`${naamUk} відхилив ключ зі сховища — перевірте або замініть його.`, `${naamNl} weigert de sleutel uit de kluis — controleer of vervang hem.`);
   if (code.startsWith(`${WERKRUIMTE_FOUTEN.aanbieder}_429`)) return met(`${naamUk} обмежив ваш ключ (ліміт запитів). Спробуйте трохи згодом.`, `${naamNl} beperkt uw sleutel (verzoeklimiet). Probeer het iets later.`);
   if (code.startsWith(WERKRUIMTE_FOUTEN.aanbieder)) return met('Постачальник моделі повернув помилку. Текст помилки є в журналі.', 'De modelaanbieder gaf een fout terug. De tekst staat in het logboek.');
@@ -64,6 +67,9 @@ type Props = {
 };
 
 export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, blokkadeUitleg, werkruimteId, contextSleutels, metGeheugen = true, onToggleGeheugen }: Props) {
+  const tech = useTech();
+  const actieveRuimte: 'prive' | 'technisch' = profielVan(tech) === 'technisch' ? 'technisch' : 'prive';
+  const apparaatKeuzeAan = useVlag('ai-chat-apparaatkeuze-v1', false);
   const [berichten, setBerichten] = useState<Bericht[]>([]);
   const [stappen, setStappen] = useState<Stap[]>([]);
   const [bezig, setBezig] = useState(false);
@@ -74,6 +80,9 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
   const [bewarenIndex, setBewarenIndex] = useState<number | null>(null);
   const effectiefMetGeheugen = onToggleGeheugen ? metGeheugen : lokaalGeheugen;
   const [wachtend, setWachtend] = useState<Wachtend[]>([]);
+  const [liveApparaten, setLiveApparaten] = useState<WerkruimteApparaatOptie[]>([]);
+  const [liveApparatenGeladen, setLiveApparatenGeladen] = useState(false);
+  const [gekozenApparaatId, setGekozenApparaatId] = useState('');
   // SEC-002 interface-01: «Дозволити» pas als de mens ALLE parameters kon zien (geen slice(0, 800) meer).
   const [gezien, setGezien] = useState<Record<string, boolean>>({});
   const [model, setModel] = useState(stand.model);
@@ -83,11 +92,40 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
 
   useEffect(() => { setModel((huidig) => (feiten.modellen.some((m) => m.id === huidig) ? huidig : stand.model)); }, [feiten.modellen, stand.model]);
 
+  useEffect(() => {
+    setLiveApparatenGeladen(false);
+    setLiveApparaten([]);
+    setGekozenApparaatId('');
+  }, [actieveRuimte]);
+
   // Tijdens een verzoek kan een actie op een apparaat op uw goedkeuring wachten: dan vaker kijken.
   const leesWachtend = useCallback(async () => {
     const res = await api.post('/api/owner/agents/list', sessieLichaam());
     setWachtend((res.data?.pending ?? []) as Wachtend[]);
-  }, []);
+    const ruwAgenten = Array.isArray(res.data?.agents) ? (res.data.agents as Array<Record<string, unknown>>) : [];
+    const nietBrowser = ruwAgenten
+      .filter((a) => a && a.platform !== 'browser' && (a.ruimte ?? 'prive') === actieveRuimte && typeof a.id === 'string')
+      .map((a) => ({
+        id: String(a.id),
+        naam: String(a.name || a.id),
+        platform: typeof a.platform === 'string' ? a.platform : null,
+        online: a.status === 'connected',
+      }));
+    setLiveApparaten(nietBrowser);
+    setLiveApparatenGeladen(true);
+  }, [actieveRuimte]);
+
+  const beschikbareApparaten = useMemo<readonly WerkruimteApparaatOptie[]>(() => {
+    if (liveApparatenGeladen) return liveApparaten;
+    return feiten.apparaten.items ?? [];
+  }, [feiten.apparaten.items, liveApparaten, liveApparatenGeladen]);
+
+  useEffect(() => {
+    if (gekozenApparaatId && !beschikbareApparaten.some((a) => a.id === gekozenApparaatId)) {
+      setGekozenApparaatId('');
+    }
+  }, [beschikbareApparaten, gekozenApparaatId]);
+
   useEffect(() => {
     if (!stand.recht) return;
     void leesWachtend().catch(() => undefined);
@@ -108,6 +146,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
     try {
       const res = await api.post('/api/owner/ai/werkruimte/chat', {
         ...sessieLichaam(), model,
+        ...(apparaatKeuzeAan && gekozenApparaatId ? { apparaatId: gekozenApparaatId } : {}),
         ...(werkruimteId ? { werkruimteId } : {}),
         ...(contextSleutels && contextSleutels.length ? { contextSleutels } : {}),
         metGeheugen: effectiefMetGeheugen,
@@ -187,10 +226,24 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
             : tr('Модель не налаштована на сервері', 'Geen model ingesteld op de server')}</span>
         )}
         <span>{tr('Інструментів у чаті', 'Hulpmiddelen in de chat')}: {stand.aantalTools}</span>
-        {/* Eerlijk over wat er NIET is: één apparaat vooraf kiezen kan dit venster niet; de AI kiest met machine_list. */}
-        {feiten.apparaten.online > 1
-          ? <span data-aiw-apparaatkeuze='nog-niet'>{tr('Пристроїв онлайн кілька — вибрати один тут поки не можна; назвіть його у запиті.', 'Er zijn meerdere apparaten online — hier één kiezen kan nog niet; noem het in uw vraag.')}</span>
-          : null}
+        {apparaatKeuzeAan && beschikbareApparaten.length > 0 ? (
+          <label className='aiw-apparaat-kiezer' data-vlag={AI_CHAT_APPARAATKEUZE_VLAG}>
+            {tr('Цільовий пристрій', 'Doelapparaat')}{' '}
+            <select
+              data-aiw-apparaatkeuze='kiezer'
+              value={gekozenApparaatId}
+              disabled={bezig}
+              onChange={(e) => setGekozenApparaatId(e.target.value)}
+            >
+              <option value=''>{tr('Автоматично (за запитом)', 'Automatisch (volgens vraag)')}</option>
+              {beschikbareApparaten.map((ap) => (
+                <option key={ap.id} value={ap.id}>
+                  {ap.naam}{ap.platform ? ` (${ap.platform})` : ''} — {ap.online ? tr('на зв’язку', 'online') : tr('поза мережею', 'offline')}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
 
       <div className='gs-chat-strook' data-aiw-geheugen='1'>

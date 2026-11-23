@@ -31,25 +31,27 @@ export async function main(): Promise<number> {
   check('catalogus: standaardformaat binnen het raster en nooit kleiner dan het eigen minimum',
     BUREAU_WIDGETS.every((w) => KOLOMMEN.includes(w.k as never) && RIJEN.includes(w.r as never) && w.k >= w.minK && w.r >= w.minR && w.minK >= 1 && w.minR >= 1 && w.k <= RASTER_KOLOMMEN));
 
-  // ---- eerlijkheid: «klaar» noemt een echte route, «binnenkort» noemt wat ontbreekt en heeft géén bron
+  // ---- eerlijkheid: «klaar» noemt een echte route, geen onafgemaakte «binnenkort»-tegels meer
   const klaar = BUREAU_WIDGETS.filter((w) => w.stand === 'klaar');
   const binnenkort = BUREAU_WIDGETS.filter((w) => w.stand === 'binnenkort');
   check('eerlijk: elke «klaar»-tegel noemt een route (POST /api/…) en heeft geen «ontbreekt»',
-    klaar.length > 0 && klaar.every((w) => /^POST \/api\/[a-z0-9/_-]+$/.test(w.bron) && !w.ontbreekt));
-  check('eerlijk: elke «binnenkort»-tegel heeft géén bron en zegt in beide talen wat ontbreekt',
-    binnenkort.length > 0 && binnenkort.every((w) => w.bron === '' && w.ontbreekt && w.ontbreekt[0].length > 20 && w.ontbreekt[1].length > 20));
+    klaar.length === BUREAU_WIDGETS.length && klaar.every((w) => /^POST \/api\/[a-z0-9/_-]+$/.test(w.bron) && !w.ontbreekt));
+  check('eerlijk: geen «binnenkort»-tegels meer (alle tegels van het bureau hebben een echte bron)',
+    binnenkort.length === 0);
   check('eerlijk: alleen «klaar» is plaatsbaar op het bureaublad',
-    klaar.every((w) => plaatsbaar(w.id)) && binnenkort.every((w) => !plaatsbaar(w.id)) && !plaatsbaar('bestaat-niet'));
+    klaar.every((w) => plaatsbaar(w.id)) && !plaatsbaar('bestaat-niet'));
   // De genoemde routes bestaan echt in de backend (geen verzonnen adres).
-  const backend = lees('backend/index.ts') + lees('backend/mcp-console.ts') + lees('backend/beheer-diagnostiek.ts') + lees('backend/hub-blok-gegevens.ts');
+  const backend = lees('backend/index.ts') + lees('backend/mcp-console.ts') + lees('backend/beheer-diagnostiek.ts') + lees('backend/hub-blok-gegevens.ts') + lees('backend/werkblad.ts');
   check('eerlijk: elke genoemde route komt werkelijk voor in de backend',
     klaar.every((w) => backend.includes(w.bron.replace('POST ', ''))));
-  // De hub mag die routes ook echt aanroepen.
-  check('eerlijk: de bordroutes staan open voor de dienst hub, de GitHub-route niet (daarom is die tegel «binnenkort»)',
+  // De hub mag die routes ook echt aanroepen (github-platform blijft gescheiden; werkblad levert de veilige hub-samenvatting).
+  check('eerlijk: de bordroutes staan open voor de dienst hub en github/ai-toegang lezen hun veilige hub-samenvatting',
     /BORD_DIENSTEN = \["mcp", "hub"\]/.test(lees('backend/mcp-console.ts'))
     && /auth\.service !== 'github'/.test(lees('backend/github-platform.ts'))
-    && bureauWidget('github-activiteit')!.stand === 'binnenkort'
-    && bureauWidget('ai-toegang')!.stand === 'binnenkort');
+    && bureauWidget('github-activiteit')!.stand === 'klaar'
+    && bureauWidget('github-activiteit')!.bron === 'POST /api/owner/hub/werkblad/github'
+    && bureauWidget('ai-toegang')!.stand === 'klaar'
+    && bureauWidget('ai-toegang')!.bron === 'POST /api/owner/hub/werkblad/ai-toegang');
 
   // ---------------------------------------------------------------- lege toestand
   const leeg = leegBureau();
@@ -76,13 +78,13 @@ export async function main(): Promise<number> {
   });
   const post = vuil.tegels.find((t) => t.id === 'post-laatste')!;
   const tellers = vuil.tegels.find((t) => t.id === 'post-tellers')!;
-  check('normaliseren: onbekende en nog niet werkende tegels vallen weg',
-    vuil.tegels.length === 4 && !vuil.tegels.some((t) => t.id === 'github-activiteit'));
+  check('normaliseren: onbekende tegels vallen weg, werkende tegels (waaronder github-activiteit) blijven',
+    vuil.tegels.length === 5 && vuil.tegels.some((t) => t.id === 'github-activiteit') && !vuil.tegels.some((t) => t.id === ('bestaat-niet' as BureauWidgetId)));
   check('normaliseren: formaten worden op toegestane waarden gezet, nooit onder het minimum',
     KOLOMMEN.includes(post.k as never) && RIJEN.includes(post.r as never) && post.k >= bureauWidget('post-laatste')!.minK
     && tellers.k === 3 && tellers.r === 1);
   check('normaliseren: id\'s zijn uniek en geldig (dubbel of onzin wordt vervangen)',
-    new Set(vuil.tegels.map((t) => t.tid)).size === 4 && vuil.tegels.every((t) => TID.test(t.tid)));
+    new Set(vuil.tegels.map((t) => t.tid)).size === 5 && vuil.tegels.every((t) => TID.test(t.tid)));
   check('normaliseren: dezelfde tegel mag twee keer op het bureaublad liggen (twee instanties)',
     normaliseerBureau({ tegels: [{ tid: 't1', id: 'post-laatste' }, { tid: 't2', id: 'post-laatste' }] }).tegels.length === 2);
   const teveel = normaliseerBureau({ tegels: Array.from({ length: MAX_TEGELS + 9 }, () => ({ id: 'post-tellers' })) });
@@ -91,8 +93,8 @@ export async function main(): Promise<number> {
   check('normaliseren: nieuweTid geeft het eerste vrije id', nieuweTid(leeg) === 't1' && nieuweTid(vuil) !== '' && !tids(vuil).split(',').includes(nieuweTid(vuil)));
 
   // ---------------------------------------------------------------- toevoegen, weghalen, verplaatsen, formaat
-  check('toevoegen: een onbekende of nog niet werkende tegel wordt geweigerd (zelfde object terug)',
-    voegTegelToe(leeg, 'bestaat-niet' as BureauWidgetId) === leeg && voegTegelToe(leeg, 'github-activiteit') === leeg);
+  check('toevoegen: een onbekende tegel wordt geweigerd (zelfde object terug)',
+    voegTegelToe(leeg, 'bestaat-niet' as BureauWidgetId) === leeg && voegTegelToe(leeg, '' as BureauWidgetId) === leeg);
   let vol = leeg;
   for (let i = 0; i < MAX_TEGELS + 3; i += 1) vol = voegTegelToe(vol, 'post-tellers');
   check('toevoegen: stopt bij de grens', vol.tegels.length === MAX_TEGELS);

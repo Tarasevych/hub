@@ -48,6 +48,7 @@ const Systeem = lazy(() => import('./widgets/Overig').then((m) => ({ default: m.
 const Tech = lazy(() => import('./widgets/Overig').then((m) => ({ default: m.TechWidget })));
 const OudBlokW = lazy(() => import('./widgets/Overig').then((m) => ({ default: m.OudBlokWidget })));
 const Snelkoppeling = lazy(() => import('./widgets/Overig').then((m) => ({ default: m.SnelkoppelingWidget })));
+const GitHubWidget = lazy(() => import('./widgets/GitHubWidget'));
 
 export const WIDGET_ICOON: Record<WerkbladWidgetId, LucideIcon> = {
   begroeting: Sun, 'snel-toegang': LayoutGrid, 'snelle-acties': Zap, tip: Sun, post: Mail, agenda: CalendarDays, taken: CheckSquare, notities: NotebookPen, bord: SquareKanban,
@@ -71,6 +72,7 @@ export function Inhoud(p: WidgetProps) {
     case 'zoek-recent': return <Overig {...p} />;
     case 'diensten': return <Diensten {...p} />;
     case 'systeem': return <Systeem {...p} />;
+    case 'github': return <GitHubWidget {...p} />;
     case 'tech-server': case 'tech-updates': case 'tech-diagnostiek': return <Tech {...p} />;
     case 'oud-blok': return <OudBlokW {...p} />;
     case 'snelkoppeling': return <Snelkoppeling {...p} />;
