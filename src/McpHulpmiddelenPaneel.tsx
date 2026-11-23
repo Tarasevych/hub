@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Ban, Check, CheckCheck, Clock, Hand, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { api } from './platform/client';
+import { useVlag } from './functievlag-lezen';
 import { emitCanonicalNotice } from './canoniek-meldingen';
 import { Help, IconButton, Logo, type LogoKind, type Tr } from './mcp-ui';
 import { textOf } from './mcp-teksten';
@@ -107,6 +108,7 @@ export function ToolApprovals({ tr, calls, reload }: { tr: Tr; calls: ToolCall[]
 
 /** "Інструменти й дозволи": per bron een tabblad met logo, per hulpmiddel Altijd / Vragen / Uit en een uitleg die precies zegt wat DIT hulpmiddel doet. */
 export default function McpToolsPanel({ tr }: { tr: Tr }) {
+  const bronnenLiveVlagAan = useVlag('mcp-bronnen-live-v1', false);
   const [tools, setTools] = useState<Tool[]>([]);
   const [bronnen, setBronnen] = useState<Record<string, { live?: boolean; gekoppeld?: boolean }>>({});
   const [busy, setBusy] = useState(false);
@@ -202,9 +204,9 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
       <div className='hub-card'>
         <div className='hub-source' style={{ flexWrap: 'wrap' }} data-vlag={MCP_BRONNEN_LIVE_VLAG}>
           {current.sources.map((s) => {
-            const bronStand = s.bronId ? bronnen[s.bronId] : undefined;
-            const live = bronStand?.live !== undefined ? Boolean(bronStand.live) : s.live;
-            const gekoppeld = s.bronId ? (bronStand ? Boolean(bronStand.gekoppeld) : s.bronId === 'cloud-intern') : live;
+            const bronStand = bronnenLiveVlagAan && s.bronId ? bronnen[s.bronId] : undefined;
+            const live = s.bronId ? (bronnenLiveVlagAan ? (bronStand?.live !== undefined ? Boolean(bronStand.live) : s.live) : false) : s.live;
+            const gekoppeld = s.bronId ? (bronnenLiveVlagAan ? (bronStand ? Boolean(bronStand.gekoppeld) : s.bronId === 'cloud-intern') : false) : live;
             const titel = !live
               ? tr('Ще не підключено до сайту', 'Nog niet aan de site gekoppeld')
               : gekoppeld

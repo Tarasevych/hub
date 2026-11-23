@@ -5,6 +5,7 @@ import {
   Archive, CheckCircle2, Copy, Download, EyeOff, KeyRound, Loader2, Lock, RefreshCw, Save, Send, ShieldAlert, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
 import { api } from '../platform/client';
+import { useVlag } from '../functievlag-lezen';
 import { foutCode } from '../platform/webauthn';
 import { leesSha256 } from '../../shared/bestand-lezen';
 import HulpVraag from '../hulp/HulpVraag';
@@ -82,6 +83,7 @@ export default function TelegramArchief({
   runs?: Run[];
   onGewijzigd?: () => void;
 }) {
+  const koppelingVlagAan = useVlag('uitrol-telegram-koppeling-v1', false);
   const [stand, setStand] = useState<TelegramStand | null>(null);
   const [chatId, setChatId] = useState('');
   const [koppelLink, setKoppelLink] = useState('');
@@ -463,26 +465,28 @@ export default function TelegramArchief({
                 </li>
               </ul>
 
-              <label className='ut-veld'>
-                <span>{tr(lang, 'Посилання на гілку Telegram (необов’язково, заповнить поля нижче)', 'Link naar het Telegram-topic (optioneel, vult de velden hieronder)')}</span>
-                <input
-                  type='text'
-                  value={koppelLink}
-                  onChange={(e) => verwerkKoppeling(e.target.value)}
-                  placeholder='https://t.me/c/3928298101/1939'
-                  maxLength={200}
-                  spellCheck={false}
-                  autoComplete='off'
-                  data-ut-tg-koppeling
-                />
-                <small className='ut-hint'>
-                  {tr(
-                    lang,
-                    'Вставте посилання на тему групи (три числа: група, тема, повідомлення) — з нього автоматично підставиться chat_id і номер теми.',
-                    'Plak de topiclink (drie getallen: groep, topic, bericht) — daaruit worden chat_id en topicnummer overgenomen.',
-                  )}
-                </small>
-              </label>
+              {koppelingVlagAan ? (
+                <label className='ut-veld'>
+                  <span>{tr(lang, 'Посилання на гілку Telegram (необов’язково, заповнить поля нижче)', 'Link naar het Telegram-topic (optioneel, vult de velden hieronder)')}</span>
+                  <input
+                    type='text'
+                    value={koppelLink}
+                    onChange={(e) => verwerkKoppeling(e.target.value)}
+                    placeholder='https://t.me/c/3928298101/1939'
+                    maxLength={200}
+                    spellCheck={false}
+                    autoComplete='off'
+                    data-ut-tg-koppeling
+                  />
+                  <small className='ut-hint'>
+                    {tr(
+                      lang,
+                      'Вставте посилання на тему групи (три числа: група, тема, повідомлення) — з нього автоматично підставиться chat_id і номер теми.',
+                      'Plak de topiclink (drie getallen: groep, topic, bericht) — daaruit worden chat_id en topicnummer overgenomen.',
+                    )}
+                  </small>
+                </label>
+              ) : null}
 
               <label className='ut-veld'>
                 <span>{tr(lang, 'Ідентифікатор чату / каналу (chat_id)', 'Chat- of kanaal-ID (chat_id)')}</span>

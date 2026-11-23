@@ -4,6 +4,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, ExternalLink, RefreshCw, Save, X } from 'lucide-react';
 import { api } from '../platform/client';
+import { useVlag } from '../functievlag-lezen';
 import { INTEGRATIES, METHODE_LABEL, type Integratie } from '../../shared/integraties-catalogus';
 import { detailVan, codeTekst } from '../../shared/integraties-detail';
 import { officieelTekst, registerVan, type LevendeStand } from '../../shared/integraties-register';
@@ -17,6 +18,7 @@ interface Props { lang: Lang; context: Record<string, unknown>; begin?: string; 
 
 export default function WizardV2({ lang, context, begin, levend, href, onSluit, onGewijzigd, onMappen }: Props) {
   const tr = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  const adapterOpslaanAan = useVlag('integraties-adapter-opslaan-v1', false);
   const [stap, setStap] = useState<StapId>(begin ? 'wijze' : 'kies');
   const [id, setId] = useState(begin || '');
   const [zoek, setZoek] = useState('');
@@ -47,6 +49,7 @@ export default function WizardV2({ lang, context, begin, levend, href, onSluit, 
         setUitslag(res.ok
           ? { ok: true, tekst: r!.adapter === 'mqtt' ? tr(`Брокер прийняв вхід (${res.ms} мс). Повідомлень не надсилали.`, `De broker accepteerde de aanmelding (${res.ms} ms). Er is niets verstuurd.`) : tr(`Вхід вдався, видно елементів: ${res.aantal}.`, `Aanmelding gelukt, zichtbare items: ${res.aantal}.`) }
           : { ok: false, code: res.fout, tekst: foutVertaling(res.fout || '', res.fout || '', res.fout || '') });
+        if (!adapterOpslaanAan) wisGeheimen();
       } else if (serverControleerbaar(i)) {
         const res = (await api.post('/api/owner/admin/integraties/controleer', { ...context, id: i.id })).data as { stand: string; code: string; detail: string };
         setUitslag({ ok: res.stand === 'ok', code: res.code, tekst: codeTekst(res.code, lang, undefined, lang === 'nl' ? res.detail : res.code) });
@@ -64,7 +67,7 @@ export default function WizardV2({ lang, context, begin, levend, href, onSluit, 
   };
 
   const bewaarAdapter = async () => {
-    if (!i || soort !== 'adapter') { setStap('klaar'); return; }
+    if (!i || soort !== 'adapter' || !adapterOpslaanAan) { wisGeheimen(); setStap('klaar'); return; }
     setBezig(true); setBewaarFout(null);
     try {
       await api.post('/api/owner/admin/integraties/adapter-koppelingen/bewaar', { ...context, integratie: i.id, ...velden });
@@ -117,7 +120,7 @@ export default function WizardV2({ lang, context, begin, levend, href, onSluit, 
           {soort === 'adapter' && r?.adapter === 'webdav' ? <>{veld('adres', 'Адреса WebDAV', 'WebDAV-adres', 'https://cloud.example/remote.php/dav/files/naam/')}{veld('gebruiker', 'Ім’я користувача', 'Gebruikersnaam')}{geheim('wachtwoord', 'Пароль застосунку', 'App-wachtwoord')}</> : null}
           {soort === 'adapter' && r?.adapter === 's3' ? <>{veld('adres', 'Адреса сховища', 'Eindpunt', 'https://s3.example.com')}{veld('emmer', 'Кошик сховища (S3)', 'Opslagemmer (bucket)')}{veld('regio', 'Регіон', 'Regio', 'us-east-1')}{veld('toegangsId', 'Ідентифікатор ключа доступу', 'Toegangssleutel-ID')}{geheim('geheim', 'Секретний ключ', 'Geheime sleutel')}</> : null}
           {soort === 'adapter' && r?.adapter === 'mqtt' ? <>{veld('host', 'Адреса брокера', 'Brokeradres', 'mqtt.example.com')}{veld('poort', 'Порт (TLS)', 'Poort (TLS)', '8883')}{veld('gebruiker', 'Ім’я входу', 'Gebruikersnaam')}{geheim('wachtwoord', 'Пароль', 'Wachtwoord')}</> : null}
-          {soort === 'adapter' ? <p className='iw2-noot'>{tr('Пароль перевіряється наживо й під час збереження запечатується ключем вашого простору, ніколи не повертаючись в оглядач.', 'Het wachtwoord wordt live gecontroleerd en bij bewaren versleuteld met de sleutel van uw ruimte; het keert nooit terug naar de browser.')}</p> : null}
+          {soort === 'adapter' ? <p className='iw2-noot'>{adapterOpslaanAan ? tr('Пароль перевіряється наживо й під час збереження запечатується ключем вашого простору, ніколи не повертаючись в оглядач.', 'Het wachtwoord wordt live gecontroleerd en bij bewaren versleuteld met de sleutel van uw ruimte; het keert nooit terug naar de browser.') : tr('Пароль використовується лише для разової живої перевірки зв’язку і одразу стирається з пам’яті.', 'Het wachtwoord wordt alleen voor de eenmalige verbindingstest gebruikt en direct gewist.')}</p> : null}
           {soort === 'pagina' ? <><p>{tr('Вхід відбувається на сторінці сервісу, у вже перевіреному процесі (захищене посилання входу, ключі зберігаються зашифровано).', 'Het aanmelden gebeurt op de pagina van de dienst, in de bestaande stroom (beveiligde aanmeldlink, sleutels versleuteld bewaard).')}</p>
             {doelUrl ? <a className='ic2-knop is-primair' href={doelUrl} target='_blank' rel='noopener'>{tr('Відкрити вхід', 'Aanmelden openen')}<ExternalLink aria-hidden /></a> : null}
             <p className='iw2-noot'>{tr('Після входу поверніться сюди й натисніть «Далі».', 'Kom na het aanmelden terug en klik «Verder».')}</p></> : null}
@@ -151,8 +154,8 @@ export default function WizardV2({ lang, context, begin, levend, href, onSluit, 
       <footer className='iw2-voet'>
         <button type='button' className='ic2-knop' onClick={() => { setBewaarFout(null); setStap(vorige(stap)); }} disabled={stap === 'kies' || bezig}><ArrowLeft aria-hidden />{tr('Назад', 'Terug')}</button>
         <button type='button' className='ic2-knop' onClick={sluitVeilig} disabled={bezig}>{tr('Скасувати', 'Annuleren')}</button>
-        {stap !== 'klaar' && stap !== 'kies' && !(stap === 'rechten' && soort === 'adapter') ? <button type='button' className='ic2-knop is-primair' onClick={() => setStap(volgende(stap))} disabled={bezig || (stap === 'wijze' && !wijze) || (stap === 'controle' && !uitslag?.ok && soort === 'adapter')}>{tr('Далі', 'Verder')}<ArrowRight aria-hidden /></button> : null}
-        {stap === 'rechten' && soort === 'adapter' ? <button type='button' className='ic2-knop is-primair' data-wizard-bewaar='' onClick={() => void bewaarAdapter()} disabled={bezig || !uitslag?.ok}><Save aria-hidden />{bezig ? tr('Збереження…', 'Bewaren…') : tr('Зберегти підключення', 'Koppeling bewaren')}</button> : null}
+        {stap !== 'klaar' && stap !== 'kies' && !(stap === 'rechten' && soort === 'adapter' && adapterOpslaanAan) ? <button type='button' className='ic2-knop is-primair' onClick={() => { if (stap === 'rechten') wisGeheimen(); setStap(volgende(stap)); }} disabled={bezig || (stap === 'wijze' && !wijze) || (stap === 'controle' && !uitslag?.ok && soort === 'adapter')}>{tr('Далі', 'Verder')}<ArrowRight aria-hidden /></button> : null}
+        {stap === 'rechten' && soort === 'adapter' && adapterOpslaanAan ? <button type='button' className='ic2-knop is-primair' data-wizard-bewaar='' onClick={() => void bewaarAdapter()} disabled={bezig || !uitslag?.ok}><Save aria-hidden />{bezig ? tr('Збереження…', 'Bewaren…') : tr('Зберегти підключення', 'Koppeling bewaren')}</button> : null}
         {stap === 'klaar' ? <button type='button' className='ic2-knop is-primair' onClick={sluitVeilig}>{tr('Закрити', 'Sluiten')}</button> : null}
       </footer>
     </section>

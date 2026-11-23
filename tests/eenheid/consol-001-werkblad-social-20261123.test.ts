@@ -3,7 +3,7 @@
 //   1. відсутність «binnenkort» у WERKBLAD_WIDGETS і BUREAU_WIDGETS та розблокування svc:social → identity/netwerken;
 //   2. міграції 0319 і 0320: чистий адитивний SQL (без SQL_RISICO), двомірний ENABLE + FORCE RLS та прапорці можливостей;
 //   3. диспетчер ?actie= (actie-doel.ts): явне зчитування searchParams.get('actie') за білим списком без руйнівних дій;
-//   4. перейменування тек на робочому столі v3 та двомовний статичний рендеринг SocialOverzicht (uk + nl, без витоку мов);
+//   4. перейменування тек на робочому столі v3 та двомовне статичне відмальовування SocialOverzicht (uk + nl, без витоку мов);
 //   5. живі маршрути /api/owner/hub/werkblad/{github,ai-toegang}, v3/persoonlijk та createSocialRoutes із ізоляцією користувачів і просторів.
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -118,20 +118,20 @@ export async function main(): Promise<number> {
       !isVeiligeSocialUrl('https://[::1]/intern'),
   );
 
-  // ---------------------------------------------------------------- 4. Двомовний SSR SocialOverzicht та єдиний реєстр марок
+  // ---------------------------------------------------------------- 4. Двомовне відмальовування SocialOverzicht та єдиний реєстр марок
   const htmlUk = renderToStaticMarkup(createElement(SocialOverzicht, { lang: 'uk' }));
   const htmlNl = renderToStaticMarkup(createElement(SocialOverzicht, { lang: 'nl' }));
   const tekstUk = htmlUk.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const tekstNl = htmlNl.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   check(
-    '4a SocialOverzicht рендериться українською (> 200 символів, з переліком мереж і переходами, без росіїзмів)',
+    '4a SocialOverzicht відмальовується українською (> 200 символів, з переліком мереж і переходами, без русизмів)',
     tekstUk.length > 200 &&
       tekstUk.includes('Соціальні мережі та канали') &&
       tekstUk.includes('Архіви у «Фото»') &&
       !/[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/.test(tekstUk),
   );
   check(
-    '4b SocialOverzicht рендериться нідерландською (> 200 символів, без жодної кирилиці)',
+    '4b SocialOverzicht відмальовується нідерландською (> 200 символів, без жодної кирилиці)',
     tekstNl.length > 200 &&
       tekstNl.includes('Sociale netwerken en kanalen') &&
       tekstNl.includes('Archieven in «Foto’s»') &&
@@ -144,6 +144,11 @@ export async function main(): Promise<number> {
       !/<svg\b/i.test(lees('src/social/SocialOverzicht.tsx')) &&
       lees('src/social/SocialOverzicht.tsx').includes('<Merk '),
   );
+
+  if (!process.env.DATABASE_URL && !process.env.DATABASE_URL_SYSTEM) {
+    console.log('OVERGESLAGEN consol-001-werkblad-social-20261123 (integratie): geen database');
+    return einde();
+  }
 
   // ---------------------------------------------------------------- 5. Жива база даних, ізоляція просторів та FORCE RLS
   const pool = getPool('systeem');

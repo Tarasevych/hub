@@ -5,12 +5,14 @@ import { History, RefreshCw, Search } from 'lucide-react';
 import { AFSTEMMING_LIMIETEN, afstemmingTekst, type Gebeurtenis, type GebeurtenisSoort, type Kaart } from '../../../shared/afstemming-model';
 import { afstemmingClient } from '../afstemming-client';
 import type { OnderdeelProps } from '../AfstemmingPagina';
+import { useVlag } from '../../functievlag-lezen';
 import { AFSTEMMING_VOLLEDIG_VLAG, GEBEURTENIS_TEKST, actorTekst, afstemmingFoutTekst, gebeurtenisTekst, kleineDatum } from '../hulp';
 import { tr } from '../tekst';
 
 const ALLE_SOORTEN = Object.keys(GEBEURTENIS_TEKST) as GebeurtenisSoort[];
 
 export default function Geschiedenis({ lang, ov, openKaart }: OnderdeelProps) {
+  const volledigAan = useVlag('afstemming-volledig-v1', false);
   // ---- загальна стрічка всіх карток одразу
   const [stroom, setStroom] = useState<Gebeurtenis[]>(() => ov?.recent || []);
   const [kaartMap, setKaartMap] = useState<Record<string, { externId: string; titel: readonly [string, string] }>>({});
@@ -47,8 +49,9 @@ export default function Geschiedenis({ lang, ov, openKaart }: OnderdeelProps) {
   }, [actorFilter, lang, soortFilter]);
 
   useEffect(() => {
+    if (!volledigAan) return;
     void laadStroom(undefined, soortFilter, actorFilter);
-  }, [actorFilter, laadStroom, soortFilter]);
+  }, [actorFilter, laadStroom, soortFilter, volledigAan]);
 
   const vind = () => void (async () => {
     setBesig(true); setFout(''); setKaart(null); setEvents(null); setToken(null);
@@ -71,47 +74,49 @@ export default function Geschiedenis({ lang, ov, openKaart }: OnderdeelProps) {
 
   return (
     <div className='afv-geschiedenis' data-afv-geschiedenis='' data-vlag={AFSTEMMING_VOLLEDIG_VLAG}>
-      <section className='afv-blok' data-afv-volledige-stroom=''>
-        <h3><History aria-hidden='true' />{tr(lang, 'Повна стрічка подій усіх карток', 'Volledige gebeurtenissenstroom van alle kaarten')}</h3>
-        <div className='afv-rij'>
-          <select value={soortFilter} data-afv-geschiedenis-soort='' aria-label={tr(lang, 'Вид події', 'Soort gebeurtenis')} onChange={(e) => setSoortFilter(e.target.value)}>
-            <option value=''>{tr(lang, 'Усі види подій', 'Alle soorten gebeurtenissen')}</option>
-            {ALLE_SOORTEN.map((s) => <option key={s} value={s}>{gebeurtenisTekst(lang, s)}</option>)}
-          </select>
-          <select value={actorFilter} data-afv-geschiedenis-actor='' aria-label={tr(lang, 'Учасник', 'Actor')} onChange={(e) => setActorFilter(e.target.value)}>
-            <option value=''>{tr(lang, 'Усі учасники', 'Alle actoren')}</option>
-            <option value='eigenaar'>{tr(lang, 'Власник', 'Eigenaar')}</option>
-            <option value='agent'>{tr(lang, 'Агент ШІ', 'AI-agent')}</option>
-            <option value='systeem'>{tr(lang, 'Система', 'Systeem')}</option>
-          </select>
-          <button type='button' className='afv-knop is-klein' disabled={stroomLaden} onClick={() => void laadStroom(undefined, soortFilter, actorFilter)}>
-            <RefreshCw aria-hidden='true' />{tr(lang, 'Оновити стрічку', 'Stroom verversen')}
-          </button>
-        </div>
-        {!stroom.length ? (
-          <p className='afv-hint'>{stroomLaden ? tr(lang, 'Завантаження стрічки…', 'Stroom laden…') : tr(lang, 'Подій ще немає.', 'Nog geen gebeurtenissen.')}</p>
-        ) : (
-          <ul className='afv-tijdlijn' data-afv-stroom-lijst=''>
-            {stroom.map((g) => {
-              const info = kaartMap[g.kaartId];
-              return (
-                <li key={g.id}>
-                  <button type='button' className='afv-knop is-stil is-klein' onClick={() => openKaart(g.kaartId)}>
-                    {info ? `${info.externId} · ` : ''}{gebeurtenisTekst(lang, g.soort)}
-                  </button>
-                  {info ? <small className='afv-hint'> {afstemmingTekst(info.titel, lang)} · </small> : null}
-                  <small className='afv-hint'>{actorTekst(lang, g.actor)} · {kleineDatum(lang, g.op)}</small>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {stroomToken ? (
-          <button type='button' className='afv-knop is-klein' data-afv-geschiedenis-alle-meer='' disabled={stroomLaden} onClick={() => void laadStroom(stroomToken, soortFilter, actorFilter)}>
-            {tr(lang, 'Показати ще', 'Meer tonen')}
-          </button>
-        ) : null}
-      </section>
+      {volledigAan ? (
+        <section className='afv-blok' data-afv-volledige-stroom=''>
+          <h3><History aria-hidden='true' />{tr(lang, 'Повна стрічка подій усіх карток', 'Volledige gebeurtenissenstroom van alle kaarten')}</h3>
+          <div className='afv-rij'>
+            <select value={soortFilter} data-afv-geschiedenis-soort='' aria-label={tr(lang, 'Вид події', 'Soort gebeurtenis')} onChange={(e) => setSoortFilter(e.target.value)}>
+              <option value=''>{tr(lang, 'Усі види подій', 'Alle soorten gebeurtenissen')}</option>
+              {ALLE_SOORTEN.map((s) => <option key={s} value={s}>{gebeurtenisTekst(lang, s)}</option>)}
+            </select>
+            <select value={actorFilter} data-afv-geschiedenis-actor='' aria-label={tr(lang, 'Учасник', 'Actor')} onChange={(e) => setActorFilter(e.target.value)}>
+              <option value=''>{tr(lang, 'Усі учасники', 'Alle actoren')}</option>
+              <option value='eigenaar'>{tr(lang, 'Власник', 'Eigenaar')}</option>
+              <option value='agent'>{tr(lang, 'Агент ШІ', 'AI-agent')}</option>
+              <option value='systeem'>{tr(lang, 'Система', 'Systeem')}</option>
+            </select>
+            <button type='button' className='afv-knop is-klein' disabled={stroomLaden} onClick={() => void laadStroom(undefined, soortFilter, actorFilter)}>
+              <RefreshCw aria-hidden='true' />{tr(lang, 'Оновити стрічку', 'Stroom verversen')}
+            </button>
+          </div>
+          {!stroom.length ? (
+            <p className='afv-hint'>{stroomLaden ? tr(lang, 'Завантаження стрічки…', 'Stroom laden…') : tr(lang, 'Подій ще немає.', 'Nog geen gebeurtenissen.')}</p>
+          ) : (
+            <ul className='afv-tijdlijn' data-afv-stroom-lijst=''>
+              {stroom.map((g) => {
+                const info = kaartMap[g.kaartId];
+                return (
+                  <li key={g.id}>
+                    <button type='button' className='afv-knop is-stil is-klein' onClick={() => openKaart(g.kaartId)}>
+                      {info ? `${info.externId} · ` : ''}{gebeurtenisTekst(lang, g.soort)}
+                    </button>
+                    {info ? <small className='afv-hint'> {afstemmingTekst(info.titel, lang)} · </small> : null}
+                    <small className='afv-hint'>{actorTekst(lang, g.actor)} · {kleineDatum(lang, g.op)}</small>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {stroomToken ? (
+            <button type='button' className='afv-knop is-klein' data-afv-geschiedenis-alle-meer='' disabled={stroomLaden} onClick={() => void laadStroom(stroomToken, soortFilter, actorFilter)}>
+              {tr(lang, 'Показати ще', 'Meer tonen')}
+            </button>
+          ) : null}
+        </section>
+      ) : null}
       <section className='afv-blok'>
         <h3><Search aria-hidden='true' />{tr(lang, 'Історія однієї картки', 'Geschiedenis van één kaart')}</h3>
         <div className='afv-rij'>

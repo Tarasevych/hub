@@ -3,6 +3,7 @@ import {KeyRound,Layers,Lock,Plug,Plus,RefreshCw,ShieldAlert,ShieldCheck,Sparkle
 import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import {useCatalogusV2} from './integraties/catalogus-vlag';
+import {useVlag} from './functievlag-lezen';
 import {api} from './platform/client';
 import {API_PLATFORM_LEES_VLAG,API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
 import {ecosystemTabContext} from './tab-context';
@@ -95,6 +96,8 @@ const apiFout=(e:unknown)=>String((e as {response?:{data?:{error?:unknown;reason
 export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const isMaquette=useIsMaquette();
   const catalogusV2Aan=useCatalogusV2()===true;
+  const apiLeesVlagAan=useVlag('api-platform-lees-v1',false);
+  const zichtbareLeesScopes=useMemo(()=>apiLeesVlagAan?LEES_SCOPES_KEUZES:LEES_SCOPES_KEUZES.filter(k=>k.id==='identity.me.read'),[apiLeesVlagAan]);
   const actieveTab:ApiActieveTab=tab==='vault'?'vault':tab==='verbindingen'?'verbindingen':'access';
   const[actiefAnker,setActiefAnker]=useState<string>(() => actieveTab==='vault'?'api-vault-panel':actieveTab==='verbindingen'?'api-connections-panel':'api-access-panel');
   const[laagOpen,setLaagOpen]=useState(false);
@@ -167,7 +170,7 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
       return volgende.length?volgende:['identity.me.read'];
     });
   };
-  const create=useCallback(async()=>{if(busy)return;setBusy(true);setNotice('');try{const scopes=gekozenScopes.length?gekozenScopes:['identity.me.read'];const response=await api.post('/api/owner/api-platform/tokens/create',{...sessionBody(),label:tr('Ключ API','API-sleutel'),scopes,expiresInDays:90});const key=String(response?.data?.plaintext||'');if(!key)throw new Error('empty');setPlaintext(key);setLaatstUitgegevenScopes(Array.isArray(response?.data?.item?.scopes)?response.data.item.scopes:scopes);setNotice(tr('Ключ показано один раз. Скопіюйте зараз. Сервер зберіг лише незворотний відбиток.','Sleutel één keer getoond. Kopieer nu. De server bewaart alleen de onomkeerbare vingerafdruk.'));await load();}catch{setNotice(tr('Не вдалося створити ключ.','Sleutel aanmaken mislukt.'))}setBusy(false);},[busy,gekozenScopes,load,tr]);
+  const create=useCallback(async()=>{if(busy)return;setBusy(true);setNotice('');try{const toegestaan=gekozenScopes.filter(s=>apiLeesVlagAan||s==='identity.me.read');const scopes=toegestaan.length?toegestaan:['identity.me.read'];const response=await api.post('/api/owner/api-platform/tokens/create',{...sessionBody(),label:tr('Ключ API','API-sleutel'),scopes,expiresInDays:90});const key=String(response?.data?.plaintext||'');if(!key)throw new Error('empty');setPlaintext(key);setLaatstUitgegevenScopes(Array.isArray(response?.data?.item?.scopes)?response.data.item.scopes:scopes);setNotice(tr('Ключ показано один раз. Скопіюйте зараз. Сервер зберіг лише незворотний відбиток.','Sleutel één keer getoond. Kopieer nu. De server bewaart alleen de onomkeerbare vingerafdruk.'));await load();}catch{setNotice(tr('Не вдалося створити ключ.','Sleutel aanmaken mislukt.'))}setBusy(false);},[apiLeesVlagAan,busy,gekozenScopes,load,tr]);
   const ankerItems=useMemo<ReadonlyArray<MaquetteAnkerItem>>(()=>{
     const ververs:MaquetteAnkerItem={id:'api-actie-vernieuw',label:tr('Оновити дані','Gegevens verversen'),icoon:RefreshCw,soort:'actie',onActie:()=>void load()};
     if(actieveTab==='vault'){
@@ -306,7 +309,7 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
       </div>
       <fieldset className='api-platform-scopes' data-api-scope-kiezer='true'>
         <legend>{tr('Області читання для нового ключа','Leesscopes voor nieuwe sleutel')}</legend>
-        {LEES_SCOPES_KEUZES.map(keuze=>(
+        {zichtbareLeesScopes.map(keuze=>(
           <label key={keuze.id} data-api-scope-optie={keuze.id}>
             <input
               type='checkbox'
@@ -324,7 +327,7 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
         <div className='api-platform-secret-actions'>
           <button type='button' onClick={()=>void navigator.clipboard?.writeText(plaintext)}>{tr('Скопіювати','Kopiëren')}</button>
           <button type='button' onClick={()=>void verify()}>{tr('Перевірити /api/v1/me','/api/v1/me controleren')}</button>
-          {LEES_SCOPES_KEUZES.filter(k=>k.id!=='identity.me.read'&&laatstUitgegevenScopes.includes(k.id)).map(k=>(
+          {zichtbareLeesScopes.filter(k=>k.id!=='identity.me.read'&&laatstUitgegevenScopes.includes(k.id)).map(k=>(
             <button key={k.id} type='button' onClick={()=>void proefLeesPad(k.pad)} disabled={busy}>{tr(`Перевірити ${k.pad}`,`${k.pad} testen`)}</button>
           ))}
           <button type='button' onClick={()=>setPlaintext('')}>{tr('Приховати','Verbergen')}</button>

@@ -78,6 +78,7 @@ type Deps = {
   body: (body: unknown) => Record<string, unknown>;
   /** H4: verse herauthenticatie (step-up) voor toestemming aan Claude, riskante hulpmiddelen op 'altijd' en goedkeuren van riskante aanroepen. */
   stepUp?: (ctx: unknown, auth: any) => Promise<any | null>;
+  bronnenLiveVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean>;
 };
 
 const header = (event: any, name: string): string | undefined => {
@@ -352,6 +353,10 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/owner/mcp-connector/tools': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth || 'errorCode' in auth) return denied(auth);
+      const liveMag = deps.bronnenLiveVlagAan ? await deps.bronnenLiveVlagAan(auth.user).catch(() => false) : true;
+      if (!liveMag) {
+        return deps.respond({ tools: await describeTools(auth.user.id) });
+      }
       const [tools, bronnen] = await Promise.all([describeTools(auth.user.id), leesMcpBronnenStand(auth.user.id)]);
       return deps.respond({ tools, bronnen });
     }],

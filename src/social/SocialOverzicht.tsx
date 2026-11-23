@@ -1,7 +1,7 @@
 // Прикладна сторінка розділу «Соціальні мережі» (id.tarasevych.com/netwerken, CONSOL-001 / M4).
 // Поєднує підключені канали облікового запису (Telegram, Discord, GitHub), огляд імпортованих архівів зі служби «Фото»
-// та суверенну майстерню власних профілів і чернеток публікацій без сторонніх трекерів і без збереження таємних ключів.
-// Повністю безпечна для статичного рендерингу (renderToStaticMarkup) двома мовами (uk + nl).
+// та суверенну майстерню власних профілів і чернеток публікацій без сторонніх засобів стеження і без збереження таємних ключів.
+// Повністю безпечна для статичного відмальовування (renderToStaticMarkup) двома мовами (uk + nl).
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ArrowRight, ExternalLink, FileText, Globe, Images, Pencil, Plus, RefreshCw, Rss, Share2, ShieldCheck, Trash2 } from 'lucide-react';
 import type { TargetService } from '../canoniek-navigatie';
@@ -304,7 +304,7 @@ export function SocialOverzicht({
         <div className='soc-kop-tekst'>
           <span className='soc-pil is-ok'>
             <Share2 aria-hidden='true' />
-            {tr(lang, 'Власний простір без трекерів', 'Eigen ruimte zonder volgers')}
+            {tr(lang, 'Власний простір без засобів стеження', 'Eigen ruimte zonder volgers')}
           </span>
           <h1 id='soc-hoofdkop'>{tr(lang, 'Соціальні мережі та канали', 'Sociale netwerken en kanalen')}</h1>
           <p>

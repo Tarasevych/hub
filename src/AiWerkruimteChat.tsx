@@ -7,6 +7,8 @@
 //   - niets wordt nagebootst: zonder sleutel of model is het veld uit en staat er wat er moet gebeuren.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, isAfgebroken } from './platform/client';
+import { useVlag } from './functievlag-lezen';
+import { profielVan, useTech } from './tech/tech-opslag';
 import { ecosystemTabContext } from './tab-context';
 import { foutCode, foutTekst } from './agenten/fouten';
 import { AI_CHAT_APPARAATKEUZE_VLAG, WERKRUIMTE_FOUTEN, type Feiten, type Startstaat, type WerkruimteApparaatOptie } from '../shared/ai-werkruimte';
@@ -65,6 +67,9 @@ type Props = {
 };
 
 export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, blokkadeUitleg, werkruimteId, contextSleutels, metGeheugen = true, onToggleGeheugen }: Props) {
+  const tech = useTech();
+  const actieveRuimte: 'prive' | 'technisch' = profielVan(tech) === 'technisch' ? 'technisch' : 'prive';
+  const apparaatKeuzeAan = useVlag('ai-chat-apparaatkeuze-v1', false);
   const [berichten, setBerichten] = useState<Bericht[]>([]);
   const [stappen, setStappen] = useState<Stap[]>([]);
   const [bezig, setBezig] = useState(false);
@@ -76,6 +81,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
   const effectiefMetGeheugen = onToggleGeheugen ? metGeheugen : lokaalGeheugen;
   const [wachtend, setWachtend] = useState<Wachtend[]>([]);
   const [liveApparaten, setLiveApparaten] = useState<WerkruimteApparaatOptie[]>([]);
+  const [liveApparatenGeladen, setLiveApparatenGeladen] = useState(false);
   const [gekozenApparaatId, setGekozenApparaatId] = useState('');
   // SEC-002 interface-01: «Дозволити» pas als de mens ALLE parameters kon zien (geen slice(0, 800) meer).
   const [gezien, setGezien] = useState<Record<string, boolean>>({});
@@ -86,13 +92,19 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
 
   useEffect(() => { setModel((huidig) => (feiten.modellen.some((m) => m.id === huidig) ? huidig : stand.model)); }, [feiten.modellen, stand.model]);
 
+  useEffect(() => {
+    setLiveApparatenGeladen(false);
+    setLiveApparaten([]);
+    setGekozenApparaatId('');
+  }, [actieveRuimte]);
+
   // Tijdens een verzoek kan een actie op een apparaat op uw goedkeuring wachten: dan vaker kijken.
   const leesWachtend = useCallback(async () => {
     const res = await api.post('/api/owner/agents/list', sessieLichaam());
     setWachtend((res.data?.pending ?? []) as Wachtend[]);
     const ruwAgenten = Array.isArray(res.data?.agents) ? (res.data.agents as Array<Record<string, unknown>>) : [];
     const nietBrowser = ruwAgenten
-      .filter((a) => a && a.platform !== 'browser' && (a.ruimte ?? 'prive') === 'prive' && typeof a.id === 'string')
+      .filter((a) => a && a.platform !== 'browser' && (a.ruimte ?? 'prive') === actieveRuimte && typeof a.id === 'string')
       .map((a) => ({
         id: String(a.id),
         naam: String(a.name || a.id),
@@ -100,18 +112,16 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
         online: a.status === 'connected',
       }));
     setLiveApparaten(nietBrowser);
-  }, []);
+    setLiveApparatenGeladen(true);
+  }, [actieveRuimte]);
 
   const beschikbareApparaten = useMemo<readonly WerkruimteApparaatOptie[]>(() => {
-    const uitFeiten = feiten.apparaten.items ?? [];
-    if (!liveApparaten.length) return uitFeiten;
-    if (!uitFeiten.length) return liveApparaten;
-    const liveKaart = new Map(liveApparaten.map((a) => [a.id, a]));
-    return uitFeiten.map((a) => liveKaart.get(a.id) ?? a);
-  }, [feiten.apparaten.items, liveApparaten]);
+    if (liveApparatenGeladen) return liveApparaten;
+    return feiten.apparaten.items ?? [];
+  }, [feiten.apparaten.items, liveApparaten, liveApparatenGeladen]);
 
   useEffect(() => {
-    if (gekozenApparaatId && beschikbareApparaten.length > 0 && !beschikbareApparaten.some((a) => a.id === gekozenApparaatId)) {
+    if (gekozenApparaatId && !beschikbareApparaten.some((a) => a.id === gekozenApparaatId)) {
       setGekozenApparaatId('');
     }
   }, [beschikbareApparaten, gekozenApparaatId]);
@@ -136,7 +146,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
     try {
       const res = await api.post('/api/owner/ai/werkruimte/chat', {
         ...sessieLichaam(), model,
-        ...(gekozenApparaatId ? { apparaatId: gekozenApparaatId } : {}),
+        ...(apparaatKeuzeAan && gekozenApparaatId ? { apparaatId: gekozenApparaatId } : {}),
         ...(werkruimteId ? { werkruimteId } : {}),
         ...(contextSleutels && contextSleutels.length ? { contextSleutels } : {}),
         metGeheugen: effectiefMetGeheugen,
@@ -216,7 +226,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
             : tr('Модель не налаштована на сервері', 'Geen model ingesteld op de server')}</span>
         )}
         <span>{tr('Інструментів у чаті', 'Hulpmiddelen in de chat')}: {stand.aantalTools}</span>
-        {beschikbareApparaten.length > 0 ? (
+        {apparaatKeuzeAan && beschikbareApparaten.length > 0 ? (
           <label className='aiw-apparaat-kiezer' data-vlag={AI_CHAT_APPARAATKEUZE_VLAG}>
             {tr('Цільовий пристрій', 'Doelapparaat')}{' '}
             <select

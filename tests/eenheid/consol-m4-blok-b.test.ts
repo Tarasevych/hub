@@ -157,7 +157,7 @@ export async function main(): Promise<number> {
       ORDER BY sleutel`,
   );
   check(
-    'міграції 0324 і 0325 створюють обидва прапорці вимкненими за замовчуванням (false, false) і з описом ≤ 300 символів',
+    'міграції 0324 і 0325 створюють обидва прапорці типово вимкненими (false, false) і з описом ≤ 300 символів',
     vlagRijen.rows.length === 2
       && vlagRijen.rows.every((r: any) => r.aan === false && r.standaard === false && Number(r.len) <= 300),
   );

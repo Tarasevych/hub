@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "id": "CONSOL-001/20261123-095500-m4-revizie-antigravity",
+  "taakId": "CONSOL-001",
+  "tijd": "2026-11-23T09:55:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Усунено всі 4 зауваження незалежного ревізора Віхи M4: підключено справжнє клієнтське (useVlag) та серверне (через flagsBerekenen у backend/index.ts без порушення інваріанта vlaggen) перемикання поведінки для всіх 7 решти прапорців M4 (api-platform-lees-v1, integraties-adapter-opslaan-v1, afstemming-volledig-v1, ai-chat-apparaatkeuze-v1, mcp-bronnen-live-v1, uitrol-telegram-koppeling-v1, werkblad-snelkoppelingen-v1), виправлено розмежування просторів prive/technisch для списку цільових пристроїв у AiWerkruimteChat.tsx, додано безбазовий пропуск інтеграційної частини consol-001-werkblad-social-20261123.test.ts за відсутності DATABASE_URL та забезпечено повну мовну чистоту всіх файлів M4.",
+    "nl": "Alle 4 opmerkingen van de onafhankelijke revisor voor Mijlpaal M4 verholpen: daadwerkelijke schakeling van gedrag aan clientzijde (useVlag) en serverzijde (via flagsBerekenen in backend/index.ts met behoud van de vlaggen-invariant) voor alle 7 overige M4-vlaggen (api-platform-lees-v1, integraties-adapter-opslaan-v1, afstemming-volledig-v1, ai-chat-apparaatkeuze-v1, mcp-bronnen-live-v1, uitrol-telegram-koppeling-v1, werkblad-snelkoppelingen-v1), ruimtescheiding prive/technisch hersteld voor de doelapparatenlijst in AiWerkruimteChat.tsx, databasevrije overslag toegevoegd in consol-001-werkblad-social-20261123.test.ts wanneer DATABASE_URL ontbreekt, en volledige taalzuiverheid bevestigd."
+  },
+  "waarom": {
+    "uk": "Забезпечення суворого дотримання правила VLAG-001 (повне керування нових можливостей прапорцями зі станом типово вимкнено), розмежування просторів даних, безбазової перевірюваності та Абсолютного мовного закону перед злиттям Віхи M4.",
+    "nl": "Waarborgen van strikte naleving van VLAG-001 (volledige schakeling van nieuwe mogelijkheden achter standaard uitgeschakelde vlaggen), gegevensruimtescheiding, databasevrije toetsbaarheid en de Absolute Taalwet vóór samenvoeging van Mijlpaal M4."
+  },
+  "bouwtVoortOp": [
+    "CONSOL-001/20261123-090000-m4-antigravity"
+  ],
+  "tak": "feature/consol-m4-20261123",
+  "pr": null,
+  "commits": [
+    "6fb339ce2b204415f589c1786bf27466103efbfc"
+  ],
+  "onderwerpen": [
+    "werkblad",
+    "integraties",
+    "afstemming",
+    "ai-ecosysteem"
+  ]
+}

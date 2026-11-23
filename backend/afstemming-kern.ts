@@ -121,7 +121,10 @@ function parsTxt(inhoud: string): Geparst {
 }
 
 // ------------------------------------------------------------------------------------------------ routes
-export function afstemmingKernRoutes(requireSession: RequireSession): Record<string, RouterMiddleware[]> {
+export function afstemmingKernRoutes(
+  requireSession: RequireSession,
+  opties: { volledigVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean> } = {},
+): Record<string, RouterMiddleware[]> {
   const route = (run: (ctx: Ctx, auth: SessionOk, d: Record<string, unknown>) => Promise<Resp>): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as unknown as Ctx;
     const auth = await requireSession(ctx.event, ctx.body);
@@ -453,6 +456,9 @@ export function afstemmingKernRoutes(requireSession: RequireSession): Record<str
         const kaart = await laadKaart(auth.user.id, id);
         const blad = await db.list<GebeurtenisRecord>(GEBEURTENISSEN, { filter: { ownerUserId: auth.user.id, kaartId: kaart.id }, limit: LIMIET.gebeurtenissenPagina, nieuwsteEerst: true, ...(str(d.token) ? { nextToken: str(d.token) } : {}) });
         return json({ gebeurtenissen: (blad.items as unknown as Array<MetId<GebeurtenisRecord>>).map(gebeurtenisUit), volgende: blad.nextToken ?? null });
+      }
+      if (opties.volledigVlagAan && !(await opties.volledigVlagAan(auth.user).catch(() => false))) {
+        return error('VLAG_UIT', 404);
       }
       await zorgLegacySeed(auth.user.id);
       const soortFilter = str(d.soort).trim();

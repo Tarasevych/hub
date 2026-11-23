@@ -7,12 +7,14 @@ import { AFSTEMMING_LIMIETEN, afstemmingTekst, schoneExternId, schoneTitel, type
 import { afstemmingClient } from '../afstemming-client';
 import type { OnderdeelProps } from '../AfstemmingPagina';
 import Laag from '../Laag';
+import { useVlag } from '../../functievlag-lezen';
 import { AFSTEMMING_VOLLEDIG_VLAG, afstemmingFoutTekst, bronFormaat, criteriaUitTekst, PRIORITEITEN } from '../hulp';
 import { foutTekst, tr } from '../tekst';
 
 type Tv = 'beschrijf' | 'bestand' | 'agent';
 
 export default function Toevoegen({ lang, smal, toon, openKaart, onSluit }: OnderdeelProps & { onSluit: () => void }) {
+  const volledigAan = useVlag('afstemming-volledig-v1', false);
   const [tv, setTv] = useState<Tv>('beschrijf');
   const [besig, setBesig] = useState(false);
   const [fout, setFout] = useState('');
@@ -81,6 +83,7 @@ export default function Toevoegen({ lang, smal, toon, openKaart, onSluit }: Onde
     if (!formaat) { setFout(foutTekst(lang, 'FORMAAT_ONBEKEND')); return; }
     setBijlageInfo('');
     if (formaat === 'pdf' || formaat === 'afbeelding') {
+      if (!volledigAan) { setFout(foutTekst(lang, 'FORMAAT_ONBEKEND')); return; }
       if (f.size > AFSTEMMING_LIMIETEN.bijlageBytesMax) { setFout(foutTekst(lang, 'IMPORT_TE_GROOT')); return; }
       const lezer = new FileReader();
       lezer.onload = () => {
@@ -153,16 +156,20 @@ export default function Toevoegen({ lang, smal, toon, openKaart, onSluit }: Onde
           <label className='afv-veld'><small>{tr(lang, 'Опишіть задум своїми словами — текст зберігається як є, нічого не губиться', 'Beschrijf het idee in eigen woorden — de tekst wordt bewaard zoals hij is')}</small>
             <textarea value={zadum} rows={5} maxLength={AFSTEMMING_LIMIETEN.tekstMax} data-afv-eerste='' data-afv-zadum='' placeholder={tr(lang, 'Хочу, щоб…', 'Ik wil dat…')} onChange={(e) => setZadum(e.target.value)} />
           </label>
-          <div className='afv-rij' data-afv-ontleed-balk=''>
-            <label className='afv-rij'>
-              <input type='checkbox' checked={toestemmingOntleed} data-afv-ontleed-toestemming='' onChange={(e) => setToestemmingOntleed(e.target.checked)} />
-              <small>{tr(lang, 'Дозволяю розібрати чернетку в поля форми (таємниці очищуються, вихідний текст не змінюється)', 'Ik geef toestemming om dit concept in velden te ontleden (geheimen worden geschoond, ruwe tekst blijft staan)')}</small>
-            </label>
-            <button type='button' className='afv-knop is-klein' data-afv-ontleed-knop='' disabled={besig || !toestemmingOntleed || zadum.trim().length < 3} onClick={ontleedZadum}>
-              <Sparkles aria-hidden='true' />{tr(lang, 'Розібрати задум у поля', 'Idee in velden ontleden')}
-            </button>
-          </div>
-          {ontleedInfo ? <p className='afv-melding is-info' role='status' data-afv-ontleed-uit=''>{ontleedInfo}</p> : null}
+          {volledigAan ? (
+            <>
+              <div className='afv-rij' data-afv-ontleed-balk=''>
+                <label className='afv-rij'>
+                  <input type='checkbox' checked={toestemmingOntleed} data-afv-ontleed-toestemming='' onChange={(e) => setToestemmingOntleed(e.target.checked)} />
+                  <small>{tr(lang, 'Дозволяю розібрати чернетку в поля форми (таємниці очищуються, вихідний текст не змінюється)', 'Ik geef toestemming om dit concept in velden te ontleden (geheimen worden geschoond, ruwe tekst blijft staan)')}</small>
+                </label>
+                <button type='button' className='afv-knop is-klein' data-afv-ontleed-knop='' disabled={besig || !toestemmingOntleed || zadum.trim().length < 3} onClick={ontleedZadum}>
+                  <Sparkles aria-hidden='true' />{tr(lang, 'Розібрати задум у поля', 'Idee in velden ontleden')}
+                </button>
+              </div>
+              {ontleedInfo ? <p className='afv-melding is-info' role='status' data-afv-ontleed-uit=''>{ontleedInfo}</p> : null}
+            </>
+          ) : null}
           <input value={titel} maxLength={AFSTEMMING_LIMIETEN.titelMax} data-afv-titel='' placeholder={tr(lang, 'Коротка назва (обов’язково)', 'Korte titel (verplicht)')} aria-label={tr(lang, 'Назва', 'Titel')} onChange={(e) => setTitel(e.target.value)} />
           <input value={samenvatting} maxLength={AFSTEMMING_LIMIETEN.samenvattingMax} placeholder={tr(lang, 'Суть одним-двома реченнями', 'Kern in één à twee zinnen')} aria-label={tr(lang, 'Суть', 'Kern')} onChange={(e) => setSamenvatting(e.target.value)} />
           <div className='afv-rij'>
@@ -183,9 +190,15 @@ export default function Toevoegen({ lang, smal, toon, openKaart, onSluit }: Onde
           <div className='afv-dropvlak' data-afv-import-invoer=''
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { e.preventDefault(); leesBestand(e.dataTransfer.files?.[0]); }}>
-            <p>{tr(lang, 'Перетягніть файл .json, .md, .txt, .pdf або зображення (.png, .jpg, .webp) — або', 'Sleep een .json-, .md-, .txt-, .pdf-bestand of afbeelding (.png, .jpg, .webp) hierheen — of')}</p>
+            <p>{volledigAan
+              ? tr(lang, 'Перетягніть файл .json, .md, .txt, .pdf або зображення (.png, .jpg, .webp) — або', 'Sleep een .json-, .md-, .txt-, .pdf-bestand of afbeelding (.png, .jpg, .webp) hierheen — of')
+              : tr(lang, 'Перетягніть файл .json, .md або .txt — або', 'Sleep een .json-, .md- of .txt-bestand hierheen — of')}</p>
             <button type='button' className='afv-knop' onClick={() => kies.current?.click()}>{tr(lang, 'Оберіть файл', 'Kies een bestand')}</button>
-            <input ref={kies} type='file' accept='.json,.md,.txt,.pdf,image/png,image/jpeg,image/webp' className='afv-verborgen' tabIndex={-1} aria-hidden='true' onChange={(e) => leesBestand(e.target.files?.[0])} />
+            {volledigAan ? (
+              <input ref={kies} type='file' accept='.json,.md,.txt,.pdf,image/png,image/jpeg,image/webp' className='afv-verborgen' tabIndex={-1} aria-hidden='true' onChange={(e) => leesBestand(e.target.files?.[0])} />
+            ) : (
+              <input ref={kies} type='file' accept='.json,.md,.txt' className='afv-verborgen' tabIndex={-1} aria-hidden='true' onChange={(e) => leesBestand(e.target.files?.[0])} />
+            )}
             <small className='afv-hint'>{tr(lang, 'Документи PDF і зображення розбираються в пам’яті без тимчасових файлів. Жоден файл ніколи не виконується як код.', 'PDF-documenten en afbeeldingen worden in het geheugen ontleed zonder tijdelijke bestanden. Een bestand wordt nooit als code uitgevoerd.')}</small>
           </div>
           {bijlageInfo ? <p className='afv-melding is-info' role='status' data-afv-bijlage-info=''>{bijlageInfo}</p> : null}

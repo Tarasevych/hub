@@ -159,6 +159,7 @@ export type WerkruimteDeps = {
   ladeVoorVerzoek?: (userId: string, body: unknown) => Promise<{ userId: string; ruimte: AiRuimte }>;
   /** Alleen voor tests: zonder teller. Standaard 20 verzoeken per minuut per account (de sleutel kost de gebruiker geld). */
   limiet?: (userId: string) => Promise<boolean>;
+  apparaatkeuzeVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean>;
 };
 
 const lichaam = (body: unknown): Record<string, unknown> => (body && typeof body === 'object' ? body as Record<string, unknown> : {});
@@ -191,7 +192,11 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
       const lade = deps.feiten && !deps.ladeVoorVerzoek
         ? { userId: p.user.id, ruimte: 'prive' as AiRuimte }
         : await (deps.ladeVoorVerzoek ?? ecosysteemLade)(p.user.id, ctx.body).catch(() => ({ userId: p.user.id, ruimte: 'prive' as AiRuimte }));
-      const feiten = await feitenVanDeps({ id: p.user.id, email: p.user.email }, true, lade.ruimte);
+      const ruweFeiten = await feitenVanDeps({ id: p.user.id, email: p.user.email }, true, lade.ruimte);
+      const keuzeMag = deps.apparaatkeuzeVlagAan ? await deps.apparaatkeuzeVlagAan(p.user).catch(() => false) : true;
+      const feiten: Feiten = keuzeMag
+        ? ruweFeiten
+        : { ...ruweFeiten, apparaten: { totaal: ruweFeiten.apparaten.totaal, online: ruweFeiten.apparaten.online } };
       return json({ feiten, stand: startStaat(feiten) });
     }) as RouterMiddleware],
 
@@ -217,6 +222,9 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
         : typeof body.machineId === 'string'
           ? body.machineId.trim()
           : '';
+      if (gevraagdApparaatId && deps.apparaatkeuzeVlagAan && !(await deps.apparaatkeuzeVlagAan(p.user).catch(() => false))) {
+        return error('VLAG_UIT', 403);
+      }
       if (gevraagdApparaatId.length > 80) return error(WERKRUIMTE_FOUTEN.apparaatNietGevonden, 403);
 
       let gekozenApparaat: store.AgentRow | null = null;

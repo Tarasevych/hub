@@ -5,6 +5,7 @@ import { Activity, CircleCheckBig, FileSearch, ScanSearch } from 'lucide-react';
 import { AFSTEMMING_LIMIETEN, afstemmingTekst, voortgangTekst, type Kaart, type RouteProefUit, type ScanBevinding } from '../../../shared/afstemming-model';
 import { afstemmingClient, AfstemmingFout, type RapportUit } from '../afstemming-client';
 import { groepeerKaarten, type ControleGroepen } from '../zvirka-kern';
+import { useVlag } from '../../functievlag-lezen';
 import { foutTekst, geledenTekst, tr, type Lang } from '../tekst';
 import type { OnderdeelProps } from '../AfstemmingPagina';
 
@@ -22,6 +23,7 @@ const BEVINDING_LABEL: Record<ScanBevinding['soort'], [string, string]> = {
 };
 
 export default function Controles({ lang, openKaart, toon }: OnderdeelProps) {
+  const volledigAan = useVlag('afstemming-volledig-v1', false);
   const [groepen, setGroepen] = useState<ControleGroepen | null>(null);
   const [rapport, setRapport] = useState<RapportUit | null>(null);
   const [laden, setLaden] = useState(true);
@@ -51,6 +53,7 @@ export default function Controles({ lang, openKaart, toon }: OnderdeelProps) {
   }, [lang]);
 
   const draaiProef = useCallback(async () => {
+    if (!volledigAan) return;
     setProefBezig(true);
     try {
       const uit = await afstemmingClient.proef(proefDienst ? { dienst: proefDienst } : {});
@@ -61,7 +64,7 @@ export default function Controles({ lang, openKaart, toon }: OnderdeelProps) {
     } finally {
       setProefBezig(false);
     }
-  }, [lang, proefDienst]);
+  }, [lang, proefDienst, volledigAan]);
 
   // Сценарій 6: знахідка без картки → чернетка з ключем повторостійкості (повторне натискання повертає ту саму картку).
   const maakConcept = useCallback(async (b: ScanBevinding) => {
@@ -100,38 +103,40 @@ export default function Controles({ lang, openKaart, toon }: OnderdeelProps) {
           'Чесно: тут показані зафіксовані докази (випробування, перевірки після випуску, рішення власника) та безпечні внутрішні проби готовності маршрутів без жодних мутацій даних.',
           'Eerlijk: hier staan vastgelegde bewijzen (tests, controles na uitrol, eigenaarsbesluiten) en veilige interne routecontroles zonder gegevensmutaties.')}
       </p>
-      <section className='afv-blok' data-afv-proef-blok=''>
-        <h3><Activity aria-hidden='true' />{tr(lang, 'Безпечні внутрішні проби готовності маршрутів', 'Veilige interne routecontroles')}</h3>
-        <p className='afv-hint'>{tr(lang,
-          'Перевірка з’єднання з базою даних, реєстру прапорців, канонічних вкладок і внутрішніх маршрутів у режимі лише читання без зовнішніх мережевих запитів.',
-          'Alleen-lezen controle van databaseverbinding, vlaggenregister, canonieke tabbladen en interne routes zonder externe netwerkaanroepen.')}</p>
-        <div className='afv-rij'>
-          <select value={proefDienst} aria-label={tr(lang, 'Цільова служба', 'Doeldienst')} onChange={(e) => setProefDienst(e.target.value)}>
-            <option value=''>{tr(lang, 'Усі основні служби', 'Alle hoofddiensten')}</option>
-            {(['hub', 'mail', 'cloud', 'api', 'admin', 'mcp', 'huis', 'identity'] as const).map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <button type='button' className='afv-knop' data-afv-proef='' disabled={proefBezig} onClick={() => void draaiProef()}>
-            {proefBezig ? tr(lang, 'Виконуємо пробу…', 'Proef loopt…') : tr(lang, 'Запустити внутрішню пробу', 'Interne proef starten')}
-          </button>
-        </div>
-        {proefUit ? (
-          <div style={{ display: 'grid', gap: 6 }} data-afv-proef-uit={proefUit.omgeving}>
-            <p className='afv-hint'>
-              {tr(lang, `Середовище: ${proefUit.omgeving} · ${geledenTekst(lang, proefUit.op)}`, `Omgeving: ${proefUit.omgeving} · ${geledenTekst(lang, proefUit.op)}`)}
-            </p>
-            <div style={{ display: 'grid', gap: 6 }} role='list'>
-              {proefUit.controles.map((c) => (
-                <div key={c.id} style={{ ...S.rij, cursor: 'default' }} role='listitem' data-afv-proef-item={c.id}>
-                  <span style={badge(c.status === 'ok' ? 'ok' : c.status === 'let_op' ? 'warn' : 'fout')}>{c.status}</span>
-                  <span style={S.titel}>{afstemmingTekst(c.naam, lang)}</span>
-                  <code style={{ fontSize: 11 }}>{c.detail}</code>
-                  <span style={S.teller}>{c.duurMs} ms</span>
-                </div>
-              ))}
-            </div>
+      {volledigAan ? (
+        <section className='afv-blok' data-afv-proef-blok=''>
+          <h3><Activity aria-hidden='true' />{tr(lang, 'Безпечні внутрішні проби готовності маршрутів', 'Veilige interne routecontroles')}</h3>
+          <p className='afv-hint'>{tr(lang,
+            'Перевірка з’єднання з базою даних, реєстру прапорців, канонічних вкладок і внутрішніх маршрутів у режимі лише читання без зовнішніх мережевих запитів.',
+            'Alleen-lezen controle van databaseverbinding, vlaggenregister, canonieke tabbladen en interne routes zonder externe netwerkaanroepen.')}</p>
+          <div className='afv-rij'>
+            <select value={proefDienst} aria-label={tr(lang, 'Цільова служба', 'Doeldienst')} onChange={(e) => setProefDienst(e.target.value)}>
+              <option value=''>{tr(lang, 'Усі основні служби', 'Alle hoofddiensten')}</option>
+              {(['hub', 'mail', 'cloud', 'api', 'admin', 'mcp', 'huis', 'identity'] as const).map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+            <button type='button' className='afv-knop' data-afv-proef='' disabled={proefBezig} onClick={() => void draaiProef()}>
+              {proefBezig ? tr(lang, 'Виконуємо пробу…', 'Proef loopt…') : tr(lang, 'Запустити внутрішню пробу', 'Interne proef starten')}
+            </button>
           </div>
-        ) : null}
-      </section>
+          {proefUit ? (
+            <div style={{ display: 'grid', gap: 6 }} data-afv-proef-uit={proefUit.omgeving}>
+              <p className='afv-hint'>
+                {tr(lang, `Середовище: ${proefUit.omgeving} · ${geledenTekst(lang, proefUit.op)}`, `Omgeving: ${proefUit.omgeving} · ${geledenTekst(lang, proefUit.op)}`)}
+              </p>
+              <div style={{ display: 'grid', gap: 6 }} role='list'>
+                {proefUit.controles.map((c) => (
+                  <div key={c.id} style={{ ...S.rij, cursor: 'default' }} role='listitem' data-afv-proef-item={c.id}>
+                    <span style={badge(c.status === 'ok' ? 'ok' : c.status === 'let_op' ? 'warn' : 'fout')}>{c.status}</span>
+                    <span style={S.titel}>{afstemmingTekst(c.naam, lang)}</span>
+                    <code style={{ fontSize: 11 }}>{c.detail}</code>
+                    <span style={S.teller}>{c.duurMs} ms</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
       {groepen ? (
         <>
           {groep(tr(lang, 'Критерії без доказів', 'Criteria zonder bewijs'), tr(lang, 'Картки з критеріями приймання, до яких ще не прикріплено жодного доказу.', 'Kaarten met acceptatiecriteria waar nog geen enkel bewijsstuk aan hangt.'), groepen.zonderBewijs, 'warn', 'zonder-bewijs')}

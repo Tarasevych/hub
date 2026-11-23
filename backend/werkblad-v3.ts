@@ -236,6 +236,8 @@ type Context = { event: Record<string, unknown>; body: unknown; params: Record<s
 export type V3RouteOpties = {
   /** Server-side vlag 'werkblad-v3' voor deze gebruiker (backend/index.ts: berekenen(u, ['werkblad-v3'])). Fout → uit. */
   vlagAan: (user: User) => Promise<boolean>;
+  /** Server-side vlag 'werkblad-snelkoppelingen-v1' voor synchronisatie van eigen snelkoppelingen (0319). */
+  snelkoppelingenVlagAan?: (user: User) => Promise<boolean>;
   /** Registerhaken van de bibliotheek (werker B); zonder: de veilige standaard van shared/werkblad-v3.ts. */
   register?: Pick<V3Context, 'itemToegestaan' | 'grenzen' | 'singleton'>;
   /**
@@ -263,8 +265,12 @@ export const createWerkbladV3Routes = (authorize: Authorize, opties: V3RouteOpti
     let aan = false;
     try { aan = (await opties.vlagAan(auth.user)) === true; } catch { aan = false; }
     if (vlagNodig && !aan) return error('WERKBLAD_V3_UIT', 403);
+    let snelkoppelingenAan = true;
+    if (opties.snelkoppelingenVlagAan) {
+      try { snelkoppelingenAan = (await opties.snelkoppelingenVlagAan(auth.user)) === true; } catch { snelkoppelingenAan = false; }
+    }
     const ctx: V3Context = { ruimte: lade.ruimte as WerkbladRuimte, eigenaar: isEigenaar(auth.user), ...(await registerVoor(opties, auth.user, lade.ruimte)) };
-    try { return await fn(lade, ctx, { ...bodyOf(c.body), __aan: aan }); }
+    try { return await fn(lade, ctx, { ...bodyOf(c.body), __aan: aan, __snelkoppelingenAan: snelkoppelingenAan }); }
     catch (err) { console.error('[werkblad-v3]', String((err as Error)?.message || err).slice(0, 200)); return error('WERKBLAD_V3_MISLUKT', 500); }
   }];
   return {
@@ -273,7 +279,7 @@ export const createWerkbladV3Routes = (authorize: Authorize, opties: V3RouteOpti
       if (!b.__aan) return json({ source: 'server_werkblad_v3_0114', aan: false, vlag: WERKBLAD_V3_FLAG, ruimte: lade.ruimte });
       if (!isLeegOfApparaat(b.apparaat)) return error('WERKBLAD_V3_APPARAAT_ONGELDIG', 400);
       const s = await v3Laden(lade, ctx, apparaatOf(b.apparaat));
-      return json({ source: 'server_werkblad_v3_0114', aan: true, ...s });
+      return json({ source: 'server_werkblad_v3_0114', aan: true, ...s, ...(b.__snelkoppelingenAan ? {} : { persoonlijk: [] }) });
     }),
     'POST /api/owner/hub/werkblad/v3/bewaren': met(true, async (lade, ctx, b) => {
       const apparaat = apparaatOf(b.apparaat);
@@ -288,6 +294,7 @@ export const createWerkbladV3Routes = (authorize: Authorize, opties: V3RouteOpti
     }),
     /** Eigen snelkoppelingen (usr:*) per lade bewaren en synchroniseren tussen apparaten (0319). */
     'POST /api/owner/hub/werkblad/v3/persoonlijk': met(true, async (lade, ctx, b) => {
+      if (!b.__snelkoppelingenAan) return error('VLAG_UIT', 404);
       if (JSON.stringify(b.items ?? null).length > WERKBLAD_V3_LIMIETEN.maxBytesBody) return error('WERKBLAD_V3_TE_GROOT', 413);
       if (!Array.isArray(b.items)) return error('WERKBLAD_V3_ITEMS_ONGELDIG', 400);
       if (b.items.length > MAX_PERSOONLIJK_ITEMS) return error('WERKBLAD_V3_TE_VEEL_ITEMS', 413);

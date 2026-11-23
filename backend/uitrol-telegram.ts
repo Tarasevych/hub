@@ -509,7 +509,10 @@ export async function telegramInstellingenOpslaan(
   return eenmaligeSleutel ? { ...stand, eenmaligeSleutel } : stand;
 }
 
-export async function telegramVerbindingTesten(eigenaar: { id: string; email?: string }) {
+export async function telegramVerbindingTesten(
+  eigenaar: { id: string; email?: string },
+  opties: { metProefDocument?: boolean } = {},
+) {
   const inst = await telegramInstellingenVan(eigenaar.id);
   const bot = await leesBotToken(eigenaar.id);
   if (!bot || !inst.chatId) throw new TelegramArchiefFout('TELEGRAM_CHAT_ONTBREEKT', 400);
@@ -573,21 +576,24 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
         'Mijn Ruimte — test van het Telegram-releasearchief geslaagd.',
       ].join('\n'),
     });
-    const proefDocument = await stuurDocument(
-      bot.token,
-      inst.chatId,
-      inst.messageThreadId,
-      'mijn-ruimte-verbindingstest.txt',
-      Buffer.from(
-        [
-          'Mijn Ruimte — пробний файл архіву випусків.',
-          'Mijn Ruimte — proefbestand van het releasearchief.',
-          `Час / Tijd: ${new Date().toISOString()}`,
-        ].join('\n'),
-        'utf8',
-      ),
-      'Mijn Ruimte · пробний файл / proefbestand (не архів)',
-    );
+    const metProefDoc = opties.metProefDocument !== false;
+    const proefDocument = metProefDoc
+      ? await stuurDocument(
+          bot.token,
+          inst.chatId,
+          inst.messageThreadId,
+          'mijn-ruimte-verbindingstest.txt',
+          Buffer.from(
+            [
+              'Mijn Ruimte — пробний файл архіву випусків.',
+              'Mijn Ruimte — proefbestand van het releasearchief.',
+              `Час / Tijd: ${new Date().toISOString()}`,
+            ].join('\n'),
+            'utf8',
+          ),
+          'Mijn Ruimte · пробний файл / proefbestand (не архів)',
+        )
+      : null;
     await sys().query(
       `UPDATE app.uitrol_telegram_instellingen SET laatst_getest_op = now(), laatste_test_ok = true, laatste_test_fout = '', bijgewerkt_op = now() WHERE user_id = $1`,
       [eigenaar.id],
@@ -596,7 +602,7 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
       actor: eigenaar,
       actie: 'owner.uitrol.telegram.test',
       doel: { soort: 'telegram', id: inst.chatId },
-      details: { bot: String(me?.username || ''), chatType, botStatus, isForum, messageThreadId: inst.messageThreadId, documentMessageId: proefDocument.messageId },
+      details: { bot: String(me?.username || ''), chatType, botStatus, isForum, messageThreadId: inst.messageThreadId, ...(proefDocument ? { documentMessageId: proefDocument.messageId } : {}) },
       service: 'admin',
     });
     return {
@@ -607,8 +613,8 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
       botStatus,
       isForum,
       messageThreadId: inst.messageThreadId,
-      documentOk: true,
-      documentMessageId: proefDocument.messageId,
+      documentOk: Boolean(proefDocument),
+      ...(proefDocument ? { documentMessageId: proefDocument.messageId } : {}),
     };
   } catch (e) {
     const code = e instanceof TelegramArchiefFout ? e.code : 'TELEGRAM_BOT_FOUT';
@@ -1578,6 +1584,7 @@ export type TelegramRouteDeps = {
   requireSession: (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
   isEigenaar: (u: SessionOk['user']) => boolean;
   sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>;
+  koppelingVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean>;
 };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 
@@ -1621,7 +1628,8 @@ export function uitrolTelegramRoutes(deps: TelegramRouteDeps): Record<string, Ro
     'POST /api/owner/uitrol/telegram/testen': [eigenaar({ sterk: true }, async (_c, a) => {
       const limiet = await rateLimit(`uitrol-telegram-test:${a.user.id}`, 10, 3600);
       if (!limiet.ok) return error('RATE_LIMITED', 429);
-      return telegramVerbindingTesten(wie(a));
+      const metProefDocument = deps.koppelingVlagAan ? await deps.koppelingVlagAan(a.user).catch(() => false) : true;
+      return telegramVerbindingTesten(wie(a), { metProefDocument });
     })],
     'POST /api/owner/uitrol/telegram/webhook-instellen': [eigenaar({ sterk: true }, async (c, a) => {
       const limiet = await rateLimit(`uitrol-telegram-wh-setup:${a.user.id}`, 10, 3600);

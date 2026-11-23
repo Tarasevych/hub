@@ -144,7 +144,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   useEffect(() => { for (const [a, l] of Object.entries(lagen) as [ApparaatKlasse, LaagStand][]) if (l) schrijfCacheV3(ownerUserId, profiel, a, { ruimte, laag: l, achtergrond }); }, [lagen, achtergrond, ownerUserId, profiel, ruimte]);
   useEffect(() => { try { localStorage.setItem(USR_CACHE_SLEUTEL(ownerUserId, ruimte), JSON.stringify(eigenUsr.slice(0, 100))); } catch { /* leeg */ } }, [eigenUsr, ownerUserId, ruimte]);
   useEffect(() => {
-    if (usrGemigreerd.current || !magBewerken) return;
+    if (!snelkoppelingenSynchroon || usrGemigreerd.current || !magBewerken) return;
     if ((eerste.persoonlijk?.length ?? 0) === 0 && eigenUsr.length > 0) {
       usrGemigreerd.current = true;
       void eigenSnelkoppelingen(eigenUsr).then((opgeslagen) => { if (opgeslagen.length) zetEigenUsr(opgeslagen); }).catch(() => undefined);
@@ -444,7 +444,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
             onPersoonlijk={(lijst) => {
               const nieuw: PersoonlijkInvoer[] = lijst.filter((r) => r.basis).map((r) => ({ id: r.id, basis: String(r.basis), titel: r.titel.uk, icoon: r.icoon }));
               zetEigenUsr(nieuw);
-              if (magBewerken) {
+              if (magBewerken && snelkoppelingenSynchroon) {
                 void eigenSnelkoppelingen(nieuw).then((opgeslagen) => zetEigenUsr(opgeslagen)).catch(() => undefined);
               }
             }}

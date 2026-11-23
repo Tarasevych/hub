@@ -74,6 +74,7 @@ export type AdapterNetwerkDeps = {
   haal?: Haal;
   dnsLookup?: (host: string) => Promise<Array<{ address: string }>>;
   mqttCheck?: typeof mqttControle;
+  isVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean>;
 };
 
 type DbVraag = Parameters<Parameters<typeof alsGebruiker>[1]>[0];
@@ -454,6 +455,9 @@ export function integratiesKoppelingenRoutes(
       const ctx = raw as unknown as Ctx;
       const auth = await gate(ctx, capability);
       if ('errorCode' in auth) return error(auth.errorCode, 403);
+      if (netwerkDeps.isVlagAan && !(await netwerkDeps.isVlagAan(auth.user).catch(() => false))) {
+        return error('VLAG_UIT', 404);
+      }
       const b = ctx.body && typeof ctx.body === 'object' ? (ctx.body as Record<string, unknown>) : {};
       const vreemd = rejectForeignOwnerUserId(auth.user as never, b);
       if (vreemd) return vreemd;

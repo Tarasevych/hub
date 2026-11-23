@@ -1,5 +1,5 @@
 // Клієнтські запити прикладної служби «Соціальні мережі» (CONSOL-001 / M4, 0320_social_overzicht_vlag.sql).
-// Безпечний для серверного рендерингу (renderToStaticMarkup): не звертається до window чи location на рівні модуля.
+// Безпечний для серверного відмальовування (renderToStaticMarkup): не звертається до window чи location на рівні модуля.
 import { api } from '../platform/client';
 
 export type SocialNetwerkId =

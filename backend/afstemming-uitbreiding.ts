@@ -69,6 +69,7 @@ export type AfstemmingUitbreidingOpties = {
   leesBijlageTekst?: (bytes: Uint8Array, mime: string, naam: string, userId: string) => Promise<{ tekst: string; paginas: number; herkomst: string; status: string }>;
   fetchImpl?: typeof fetch;
   getApiKey?: (userId: string) => Promise<string | null>;
+  isVlagAan?: (user: { id: string; email?: string; role?: string }) => Promise<boolean>;
 };
 
 function gooi(code: string): never {
@@ -409,6 +410,9 @@ export function afstemmingUitbreidingRoutes(
       if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
       if (!(DIENSTEN as readonly string[]).includes(auth.service)) return error('OWNER_CLOUD_SESSION_REQUIRED', 403);
       if (auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
+      if (opties.isVlagAan && !(await opties.isVlagAan(auth.user).catch(() => false))) {
+        return error('VLAG_UIT', 404);
+      }
       const d = (ctx.body && typeof ctx.body === 'object' ? ctx.body : {}) as Record<string, unknown>;
       const vreemd = rejectForeignOwnerUserId(auth.user as never, d);
       if (vreemd) return vreemd;

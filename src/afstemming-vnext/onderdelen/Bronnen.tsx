@@ -5,6 +5,7 @@ import { useState, type CSSProperties } from 'react';
 import { Bot, FileClock, GitMerge, Plug2 } from 'lucide-react';
 import { afstemmingTekst, type OrchestratieKoppelingUit } from '../../../shared/afstemming-model';
 import { afstemmingClient, AfstemmingFout, type RapportUit } from '../afstemming-client';
+import { useVlag } from '../../functievlag-lezen';
 import { foutTekst, geledenTekst, tr } from '../tekst';
 import type { OnderdeelProps } from '../AfstemmingPagina';
 
@@ -18,6 +19,7 @@ const werkt = { ...S.badge, background: 'var(--ok-zacht)', color: 'var(--ok)' };
 const infoBadge = { ...S.badge, background: 'var(--info-zacht)', color: 'var(--info)' };
 
 export default function Bronnen({ lang, openKaart, toon }: OnderdeelProps) {
+  const volledigAan = useVlag('afstemming-volledig-v1', false);
   const [rapport, setRapport] = useState<RapportUit | null>(null);
   const [periode, setPeriode] = useState<'week' | 'maand' | ''>('');
   const [bezig, setBezig] = useState(false);
@@ -33,6 +35,7 @@ export default function Bronnen({ lang, openKaart, toon }: OnderdeelProps) {
   };
 
   const draaiOrchestratie = async (vastleggen: boolean) => {
+    if (!volledigAan) return;
     setOrchBezig(true);
     try {
       const uit = await afstemmingClient.orchestratieKoppeling(vastleggen);
@@ -73,52 +76,56 @@ export default function Bronnen({ lang, openKaart, toon }: OnderdeelProps) {
           {bron(tr(lang, 'Пропозиція зв’язку', 'Koppelvoorstel'), tr(lang, 'Кандидат «дублює/конфліктує/залежить» зі ступенем впевненості; рішення — за власником.', 'Kandidaat «dupliceert/conflicteert/hangt af» met benoemde zekerheid; het besluit blijft bij de eigenaar.'), 'werkt', 'koppel', "POST /api/owner/afstemming/koppel { actie: 'stel-voor' }")}
         </div>
       </section>
-      <section className='afv-blok'>
-        <h3><Plug2 aria-hidden='true' />{tr(lang, 'Автоматичне розпізнавання та перевірка джерел', 'Automatische herkenning en bronafstemming')}</h3>
-        <div style={{ display: 'grid', gap: 8 }} role='list'>
-          {bron(tr(lang, 'Розбір чернетки та вкладень PDF/зображень', 'Ontleding van concepten en PDF-/beeldbijlagen'), tr(lang, 'Структурування задуму за згодою людини з очищенням таємниць і читання тексту PDF/зображень у пам’яті без тимчасових файлів.', 'Structureren van ideeën met menselijke toestemming en geheugenextractie uit PDF en afbeeldingen zonder tijdelijke bestanden.'), 'werkt', 'ontleed', 'POST /api/owner/afstemming/ontleed · /bijlage-tekst')}
-          {bron(tr(lang, 'Зіставлення з координацією orchestratie/ та випусками', 'Afstemming met orchestratie/ en uitrolgeschiedenis'), tr(lang, 'Автоматичне зіставлення завдань orchestratie/taken/, записів спадкоємності orchestratie/verwijzingen/ і встановлених випусків із картками.', 'Automatische koppeling van orchestratie/taken/, orchestratie/verwijzingen/ en geïnstalleerde releases aan kaarten.'), 'werkt', 'orchestratie', 'POST /api/owner/afstemming/orchestratie-koppeling')}
-          {bron(tr(lang, 'Внутрішні проби маршрутів та пошук схожих вимог', 'Interne routecontroles en verwante eisen'), tr(lang, 'Безпечні проби готовності служб у режимі лише читання та лексико-графовий пошук кандидатів на зв’язок.', 'Alleen-lezen routecontroles van diensten en lexicaal-grafgebaseerde kandidaatselectie.'), 'werkt', 'proef', 'POST /api/owner/afstemming/proef · /kandidaten')}
-        </div>
-      </section>
-      <section className='afv-blok' data-afv-orch-blok=''>
-        <h3><GitMerge aria-hidden='true' />{tr(lang, 'Зіставлення з координацією orchestratie/', 'Afstemming met orchestratie/')}</h3>
-        <p className='afv-hint'>{tr(lang,
-          'Сервер у режимі лише читання звіряє orchestratie/taken/, orchestratie/verwijzingen/ та історію встановлених випусків з вашими картками. Знайдені збіги можна зберегти як пропозиції без автоматичного злиття.',
-          'De server vergelijkt alleen-lezen orchestratie/taken/, orchestratie/verwijzingen/ en geïnstalleerde releases met uw kaarten. Gevonden overeenkomsten kunnen als voorstel worden bewaard zonder automatische samenvoeging.')}</p>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type='button' className='afv-knop' data-afv-orch-scan='' disabled={orchBezig} onClick={() => void draaiOrchestratie(false)}>
-            {orchBezig ? tr(lang, 'Звіряємо…', 'Vergelijken…') : tr(lang, 'Перевірити збіги з orchestratie/', 'Overeenkomsten met orchestratie/ zoeken')}
-          </button>
-          {orchUit && orchUit.matches.length > 0 ? (
-            <button type='button' className='afv-knop is-hoofd' data-afv-orch-vastleggen='' disabled={orchBezig} onClick={() => void draaiOrchestratie(true)}>
-              {tr(lang, 'Зберегти знайдені пропозиції', 'Gevonden voorstellen bewaren')}
-            </button>
-          ) : null}
-        </div>
-        {orchUit ? (
-          <div style={{ display: 'grid', gap: 8 }} data-afv-orch-uit=''>
-            <p className='afv-hint'>
-              {tr(
-                lang,
-                `Прочитано: завдань ${orchUit.gelezen.taken}, записів спадкоємності ${orchUit.gelezen.verwijzingen}, випусків ${orchUit.gelezen.releases} · збігів ${orchUit.matches.length} · ${geledenTekst(lang, orchUit.op)}`,
-                `Gelezen: ${orchUit.gelezen.taken} taken, ${orchUit.gelezen.verwijzingen} verwijzingen, ${orchUit.gelezen.releases} releases · ${orchUit.matches.length} overeenkomsten · ${geledenTekst(lang, orchUit.op)}`,
-              )}
-            </p>
-            {orchUit.matches.slice(0, 12).map((m) => (
-              <div key={`${m.bronSoort}-${m.sleutel}-${m.kaartId}`} style={S.rij} data-afv-orch-match={m.bronSoort}>
-                <span style={infoBadge}>{m.bronSoort}</span>
-                <div style={{ flex: 1, minWidth: 180, display: 'grid', gap: 2 }}>
-                  <strong>{m.externId} · {afstemmingTekst(m.kaartTitel, lang)}</strong>
-                  <span className='afv-hint'>{m.titel} — {m.reden} ({Math.round(m.zekerheid * 100)}%)</span>
-                  <code style={{ fontSize: 11 }}>{m.sleutel}</code>
-                </div>
-                <button type='button' className='afv-knop is-klein' onClick={() => openKaart(m.kaartId)}>{tr(lang, 'Відкрити картку', 'Kaart openen')}</button>
+      {volledigAan ? (
+        <>
+          <section className='afv-blok'>
+            <h3><Plug2 aria-hidden='true' />{tr(lang, 'Автоматичне розпізнавання та перевірка джерел', 'Automatische herkenning en bronafstemming')}</h3>
+            <div style={{ display: 'grid', gap: 8 }} role='list'>
+              {bron(tr(lang, 'Розбір чернетки та вкладень PDF/зображень', 'Ontleding van concepten en PDF-/beeldbijlagen'), tr(lang, 'Структурування задуму за згодою людини з очищенням таємниць і читання тексту PDF/зображень у пам’яті без тимчасових файлів.', 'Structureren van ideeën met menselijke toestemming en geheugenextractie uit PDF en afbeeldingen zonder tijdelijke bestanden.'), 'werkt', 'ontleed', 'POST /api/owner/afstemming/ontleed · /bijlage-tekst')}
+              {bron(tr(lang, 'Зіставлення з координацією orchestratie/ та випусками', 'Afstemming met orchestratie/ en uitrolgeschiedenis'), tr(lang, 'Автоматичне зіставлення завдань orchestratie/taken/, записів спадкоємності orchestratie/verwijzingen/ і встановлених випусків із картками.', 'Automatische koppeling van orchestratie/taken/, orchestratie/verwijzingen/ en geïnstalleerde releases aan kaarten.'), 'werkt', 'orchestratie', 'POST /api/owner/afstemming/orchestratie-koppeling')}
+              {bron(tr(lang, 'Внутрішні проби маршрутів та пошук схожих вимог', 'Interne routecontroles en verwante eisen'), tr(lang, 'Безпечні проби готовності служб у режимі лише читання та лексико-графовий пошук кандидатів на зв’язок.', 'Alleen-lezen routecontroles van diensten en lexicaal-grafgebaseerde kandidaatselectie.'), 'werkt', 'proef', 'POST /api/owner/afstemming/proef · /kandidaten')}
+            </div>
+          </section>
+          <section className='afv-blok' data-afv-orch-blok=''>
+            <h3><GitMerge aria-hidden='true' />{tr(lang, 'Зіставлення з координацією orchestratie/', 'Afstemming met orchestratie/')}</h3>
+            <p className='afv-hint'>{tr(lang,
+              'Сервер у режимі лише читання звіряє orchestratie/taken/, orchestratie/verwijzingen/ та історію встановлених випусків з вашими картками. Знайдені збіги можна зберегти як пропозиції без автоматичного злиття.',
+              'De server vergelijkt alleen-lezen orchestratie/taken/, orchestratie/verwijzingen/ en geïnstalleerde releases met uw kaarten. Gevonden overeenkomsten kunnen als voorstel worden bewaard zonder automatische samenvoeging.')}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type='button' className='afv-knop' data-afv-orch-scan='' disabled={orchBezig} onClick={() => void draaiOrchestratie(false)}>
+                {orchBezig ? tr(lang, 'Звіряємо…', 'Vergelijken…') : tr(lang, 'Перевірити збіги з orchestratie/', 'Overeenkomsten met orchestratie/ zoeken')}
+              </button>
+              {orchUit && orchUit.matches.length > 0 ? (
+                <button type='button' className='afv-knop is-hoofd' data-afv-orch-vastleggen='' disabled={orchBezig} onClick={() => void draaiOrchestratie(true)}>
+                  {tr(lang, 'Зберегти знайдені пропозиції', 'Gevonden voorstellen bewaren')}
+                </button>
+              ) : null}
+            </div>
+            {orchUit ? (
+              <div style={{ display: 'grid', gap: 8 }} data-afv-orch-uit=''>
+                <p className='afv-hint'>
+                  {tr(
+                    lang,
+                    `Прочитано: завдань ${orchUit.gelezen.taken}, записів спадкоємності ${orchUit.gelezen.verwijzingen}, випусків ${orchUit.gelezen.releases} · збігів ${orchUit.matches.length} · ${geledenTekst(lang, orchUit.op)}`,
+                    `Gelezen: ${orchUit.gelezen.taken} taken, ${orchUit.gelezen.verwijzingen} verwijzingen, ${orchUit.gelezen.releases} releases · ${orchUit.matches.length} overeenkomsten · ${geledenTekst(lang, orchUit.op)}`,
+                  )}
+                </p>
+                {orchUit.matches.slice(0, 12).map((m) => (
+                  <div key={`${m.bronSoort}-${m.sleutel}-${m.kaartId}`} style={S.rij} data-afv-orch-match={m.bronSoort}>
+                    <span style={infoBadge}>{m.bronSoort}</span>
+                    <div style={{ flex: 1, minWidth: 180, display: 'grid', gap: 2 }}>
+                      <strong>{m.externId} · {afstemmingTekst(m.kaartTitel, lang)}</strong>
+                      <span className='afv-hint'>{m.titel} — {m.reden} ({Math.round(m.zekerheid * 100)}%)</span>
+                      <code style={{ fontSize: 11 }}>{m.sleutel}</code>
+                    </div>
+                    <button type='button' className='afv-knop is-klein' onClick={() => openKaart(m.kaartId)}>{tr(lang, 'Відкрити картку', 'Kaart openen')}</button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : null}
-      </section>
+            ) : null}
+          </section>
+        </>
+      ) : null}
       <section className='afv-blok'>
         <h3><FileClock aria-hidden='true' />{tr(lang, 'Звіт на вимогу', 'Rapport op aanvraag')}</h3>
         <p className='afv-hint'>{tr(lang, 'Без розсилок і нав’язливих листів (§9): звіт формується тут лише тоді, коли ви просите.', 'Zonder ongevraagde berichten (§9): het rapport verschijnt hier wanneer u erom vraagt.')}</p>
