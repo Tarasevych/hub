@@ -275,10 +275,10 @@ export async function main(): Promise<number> {
       const bootCss = uit.files.find((f) => f.fileName === 'canonical-boot.css')?.source || '';
       const bootJs = uit.files.find((f) => f.fileName === 'canonical-boot.js')?.source || '';
 
-      assert.ok(bootCss.includes('#tsv-laad-kapsel{'));
+      assert.ok(bootCss.includes('#tsv-laad-kapsel{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px))'));
       assert.ok(bootCss.includes('border-radius:999px'));
       assert.ok(bootCss.includes('pointer-events:none'));
-      assert.ok(bootCss.includes('@media(max-width:700px){#tsv-laad-kapsel{top:calc(56px + env(safe-area-inset-top,0px))}}'));
+      assert.ok(bootCss.includes('@media(max-width:700px){#tsv-laad-kapsel{bottom:calc(20px + env(safe-area-inset-bottom,0px))}}'));
       assert.ok(bootCss.includes('@media print{#tsv-voortgang,#tsv-laad-kapsel{display:none!important}}'));
 
       // Перевірка синтаксичної коректності зовнішнього стартового скрипта
