@@ -101,7 +101,7 @@
       "agent": "antigravity",
       "model": "Claude Opus 4.6",
       "datum": "2026-11-23",
-      "uk": "У межах Віхи M5-Б консолідації реалізовано неблокуюче попередження VLAG_OPRUIMEN у scripts/orch/pakket.mjs та у вікні Vlaggen.tsx для архівних прапорців старших за 30 днів, доповнено VLAG_UITLEG до повних 63 прапорців, створено завершальну міграцію 0335_vlaggen_consolidatie_aan.sql та зафіксовано спадкоємність усіх 52 відкритих запитів на злиття в orchestratie/verwijzingen/."
+      "uk": "У межах Віхи M5-Б консолідації реалізовано незаборонне попередження VLAG_OPRUIMEN у scripts/orch/pakket.mjs та у вікні Vlaggen.tsx для архівних прапорців старших за 30 днів, доповнено VLAG_UITLEG до повних 63 прапорців, створено завершальну міграцію 0335_vlaggen_consolidatie_aan.sql та зафіксовано спадкоємність усіх 52 відкритих запитів на злиття в orchestratie/verwijzingen/."
     }
   ],
   "mogelijkheden": [

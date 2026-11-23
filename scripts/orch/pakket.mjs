@@ -67,7 +67,7 @@ export function controleerFunctievlaggen({ beleid, manifest, paden, lees, versie
   const gedragPaden = (paden ?? []).filter((p) => gedrag.some((g) => p.startsWith(g)) && !zonder.some((u) => p.startsWith(u)) && !/\.md$/i.test(p));
   if (!gedragPaden.length) return z;
 
-  // VLAG_OPRUIMEN: неблокуюче попередження для прапорців, що перебувають в архіві понад opruimenNaDagen (30 днів) і досі згадуються у змінених файлах коду.
+  // VLAG_OPRUIMEN: незаборонне попередження для прапорців, що перебувають в архіві понад opruimenNaDagen (30 днів) і досі згадуються у змінених файлах коду.
   const opruimenDagen = Number(b.opruimenNaDagen) > 0 ? Number(b.opruimenNaDagen) : 30;
   const opruimenMs = opruimenDagen * 24 * 3600_000;
   const nuMs = (() => {

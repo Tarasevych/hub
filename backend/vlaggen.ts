@@ -53,7 +53,7 @@ async function alleVlagRijen(): Promise<Record<string, unknown>[]> {
 export async function vlagPubliekActief(sleutel: string): Promise<boolean> {
   try {
     const alle = await alleVlagRijen();
-    const r = alle.find((x) => String(x.sleutel) === sleutel && !x.gearchiveerd_op);
+    const r = alle.find((x) => String(x.sleutel) === sleutel);
     if (!r) return false;
     const v = vlagUit(r);
     return v.aan && (v.standaard || v.percentage > 0 || v.gebruikers.length > 0);
@@ -235,7 +235,7 @@ async function verwijderenIntern(u: Gebruiker, tab: string, sleutel: unknown) {
 }
 
 /** Test voor zichzelf (flags.test): waarde true/false tot het einde van de activering; null = test weg. */
-export async function testen(u: Gebruiker, tab: string, sleutel: unknown, waarde: unknown) {
+async function testenIntern(u: Gebruiker, tab: string, sleutel: unknown, waarde: unknown) {
   const { a, testen: mag } = await rechten(u, tab);
   // Geen lopend technisch profiel in dit tabblad (verlopen, gepauzeerd, verlaten): dat is iets anders dan «rol mist het recht».
   if (!a) fout('TECH_PROFIEL_NIET_ACTIEF', 403);
@@ -313,4 +313,9 @@ export async function archiveren(...a: Parameters<typeof archiverenIntern>): Ret
 /** VLAG-001: після зміни прапорця пам'ять прапорців очищається (навіть якщо зміна не вдалася). */
 export async function verwijderen(...a: Parameters<typeof verwijderenIntern>): ReturnType<typeof verwijderenIntern> {
   try { return await verwijderenIntern(...a); } finally { vlagGeheugenLeeg(); }
+}
+
+/** VLAG-001: після зміни особистої перевірки пам'ять прапорців очищається. */
+export async function testen(...a: Parameters<typeof testenIntern>): ReturnType<typeof testenIntern> {
+  try { return await testenIntern(...a); } finally { vlagGeheugenLeeg(); }
 }

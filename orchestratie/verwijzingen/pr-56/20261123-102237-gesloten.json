@@ -11,7 +11,7 @@
   },
   "waarom": {
     "uk": "Міграція 0200 та журнал розробки вже побайтово застосовані в integratie через злитий запит №50.",
-    "nl": "Migratie 0200 en het ontwikkeldossier zijn via PR #50 al identiek opgenomen in integratie."
+    "nl": "Migratie 0200 en het ontwikkeldossier zijn via samenvoegingsverzoek nr. 50 al identiek opgenomen in integratie."
   },
   "titel": {
     "uk": "IDENTITEIT-007: узгодження довжини опису перемикача в міграції 0200 з обмеженням таблиці (до 300 знаків)",
