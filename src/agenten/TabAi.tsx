@@ -164,7 +164,7 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
             </a>
             <a role='listitem' className='ag-kaart ag-methode' href='#tokens' data-ai-methode='tokens'>
               <b>{tr('Маркер доступу або «в один дотик»', 'Token of «in één klik»')}</b>
-              <small>{tr('Для агентів без OAuth: отримати маркер доступу тут і вставити в клієнт (вкладка «Токени»).', 'Voor agents zonder OAuth: hier een token halen en in de client plakken (tabblad «Tokens»).')}</small>
+              <small>{tr('Для агентів без OAuth: отримати маркер доступу тут і вставити у клієнтську програму (вкладка «Маркери доступу»).', 'Voor agents zonder OAuth: hier een token halen en in de client plakken (tabblad «Tokens»).')}</small>
             </a>
             <details className='ag-kaart ag-methode' data-ai-methode='mcp'>
               <summary><b>{tr('Стара спільна адреса', 'Het oude gedeelde adres')}</b> <small>{tr('працює для вже підключених ШІ й перенаправляє (308) на адресу агента; для нового підключення беріть адресу свого ШІ з «Конекторів»', 'blijft werken voor al gekoppelde AI en leidt door (308) naar het adres van de agent; neem voor een nieuwe koppeling het adres van uw AI uit «Connectors»')}</small></summary>

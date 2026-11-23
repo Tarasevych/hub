@@ -67,7 +67,7 @@ export function ToegangWijziging({lang,context,id,onChange}:{lang:Lang;context:R
           ?tr(lang,'Зміну скасовано: право схвалювати оновлення збережено.','Wijziging teruggedraaid: het recht om updates goed te keuren is behouden.')
           :uitkomst.recht==='ssh-nodig'?tr(lang,'Сервер уже відкликав право. Автоматично повернути його неможливо: це робиться лише на сервері командою нижче (через SSH).','De server had het recht al ingetrokken. Automatisch teruggeven kan niet: dat gebeurt alleen op de server met de opdracht hieronder (via SSH).')
           :tr(lang,'Право не відновлено.','Het recht is niet teruggezet.')}</p>
-        {uitkomst.passkeyTerug&&<p>{tr(lang,'Видалений ключ доступу повернуто до вашого акаунта.','De verwijderde passkey staat weer in uw account.')}</p>}
+        {uitkomst.passkeyTerug&&<p>{tr(lang,'Видалений ключ доступу повернуто до вашого облікового запису.','De verwijderde toegangssleutel staat weer in uw account.')}</p>}
         <p>{uitkomst.sessie==='ingetrokken'?tr(lang,'Сесію, з якої зробили зміну, завершено.','De sessie waarmee de wijziging gedaan is, is beëindigd.')
           :uitkomst.sessie==='huidige-sessie'?tr(lang,'Зміну зроблено з цієї ж сесії, тому її не завершено.','De wijziging is vanuit deze zelfde sessie gedaan; die is daarom niet beëindigd.')
           :tr(lang,'Сесія, з якої зробили зміну, уже завершена.','De sessie waarmee de wijziging gedaan is, was al beëindigd.')}</p>

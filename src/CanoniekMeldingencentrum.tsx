@@ -207,8 +207,9 @@ export default function CanonicalNotificationCenter(p: Props) {
   };
   const markRetainedRead = (id: string) => markRetainedReadMany([id]);
 
-  const playChime = () => {
-    if ((meldingenV2Nu() || eenheidPuls) && nietStorenActief()) return;
+  const v2OfPulsNu = () => meldingenV2Nu() || eenheidPuls || leesMeldingWeergaveKeuze().stijl === 'v2';
+  const playChime = (type?: MeldingType) => {
+    if (v2OfPulsNu() && nietStorenActief() && !(type && isKritiekType(type))) return;
     if (!soundRef.current || !(unlocked.current || navigator.userActivation?.hasBeenActive)) return;
     try {
       const ctx = new AudioContext();
@@ -267,7 +268,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     setPaused(!!aftelRef.current && gepauzeerd(aftelRef.current));
     setBalkSegment({ versie: 0, duur: next.levensduurMs ?? 2000, verstreken: 0 });
     setActive(next);
-    if (!next.stil) playChime();
+    if (!next.stil) playChime(next.type);
     markeerGetoond(next);
   };
 
@@ -304,10 +305,10 @@ export default function CanonicalNotificationCenter(p: Props) {
     const basis = vk(type);
     // INTEG-001 (oude fout): «Не турбувати» beloofde «без звуку й спливних вікон», maar alleen het geluid zweeg. Nu ook geen pop-up
     // (beveiliging blijft opduiken). En één gebeurtenis die uit twee bronnen binnenkomt (dienst + serveractiviteit) krijgt één pop-up.
-    const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);
+    const dnd = (meldingenV2Nu() || leesMeldingWeergaveKeuze().stijl === 'v2') && nietStorenActief() && !isKritiekType(type);
     const pulsDnd = eenheidPuls && nietStorenActief() && !isKritiekType(type);
     // Meldingen v2: een regel «Тихе»/«Вимкнене» voor deze bron maakt het stiller (geen pop-up, geen geluid); beveiliging nooit.
-    const regel = (meldingenV2Nu() || eenheidPuls) ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
+    const regel = v2OfPulsNu() ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
     const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);
     const dubbel = !notice.voorbeeld && isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
     const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil && !pulsDnd && !notice.alleenPaneel };

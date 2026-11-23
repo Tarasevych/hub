@@ -58,8 +58,8 @@ export default function SessiesOverzicht(p:Props){
       <label className='zijbalk-schakel' data-sessies-onthoud-schakel='1'>
         <input type='checkbox' role='switch' checked={onthouden} disabled={bezig} onChange={event=>void wisselOnthouden(event.target.checked)}/>
         <span className='zijbalk-schakel-spoor' aria-hidden='true'><i/></span>
-        <span><strong>{tr('Зберегти цей акаунт для наступних сесій','Dit account bewaren voor volgende sessies')}</strong>
-        <small>{tr('Цей вибір діє на цьому пристрої й показується на екрані входу. Якщо вимкнути, сервер одразу забуде цей оглядач: наступного разу потрібно буде увійти знову, приватне локальне проміжне сховище пошти буде видалено після виходу, а акаунт не залишиться у списку для швидкого входу.','Deze keuze geldt op dit apparaat en is zichtbaar op het aanmeldscherm. Uitzetten laat de server deze browser meteen vergeten: de volgende keer meldt u opnieuw aan, de privé lokale mailcache wordt na afmelden gewist en het account blijft niet in de lijst voor snel aanmelden.')}</small></span>
+        <span><strong>{tr('Зберегти цей обліковий запис для наступних сеансів','Dit account bewaren voor volgende sessies')}</strong>
+        <small>{tr('Цей вибір діє на цьому пристрої й показується на екрані входу. Якщо вимкнути, сервер одразу забуде цей оглядач: наступного разу потрібно буде увійти знову, приватне локальне проміжне сховище пошти буде видалено після виходу, а обліковий запис не залишиться у списку для швидкого входу.','Deze keuze geldt op dit apparaat en is zichtbaar op het aanmeldscherm. Uitzetten laat de server deze browser meteen vergeten: de volgende keer meldt u opnieuw aan, de privé lokale mailcache wordt na afmelden gewist en het account blijft niet in de lijst voor snel aanmelden.')}</small></span>
       </label>
       {onthouden&&vanafVolgende&&<small className='settings-honest-note' data-sessies-onthoud-volgende>{tr('Діятиме з наступного входу: зараз цей браузер ще не запам’ятовано.','Geldt vanaf de volgende aanmelding: deze browser wordt nu nog niet onthouden.')}</small>}
     </section>
