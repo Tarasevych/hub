@@ -84,7 +84,7 @@ export const PLEKKEN = [
   ['ToegangslaagWeergave', 'identity', 'methods', 'iedereen'], ['toegangslaag-panelen', 'identity', 'methods', 'iedereen'], ['SleutelkluisSectie', 'identity', 'methods', 'iedereen'],
   ['herstel/', 'identity', 'recovery', 'iedereen'], ['HerstelcodesSectie', 'identity', 'recovery', 'iedereen'], ['ToegangssleutelsSectie', 'identity', 'methods', 'iedereen'], ['Toegangscodes', 'identity', 'security', 'iedereen'], ['ToegangWijziging', 'identity', 'security', 'iedereen'], ['geheim/', 'identity', 'security', 'iedereen'],
   ['ai-ecosysteem/GeheugenStroomPaneel', 'ai', 'runs', 'iedereen'], ['ai-ecosysteem/GeheugenTakenPaneel', 'ai', 'runs', 'iedereen'],
-  ['ai-ecosysteem/AgentTelegramBotsPaneel', 'ai', 'runs', 'iedereen'], ['ai-ecosysteem/', 'ai', 'agents', 'iedereen'],
+  ['ai-ecosysteem/AgentTelegramBotsPaneel', 'ai', 'runs', 'iedereen'], ['ai-ecosysteem/', 'ai', 'workflows', 'iedereen'],
   ['AIDienstWeergave', 'ai', 'workspace', 'iedereen'], ['AiWerkruimte', 'ai', 'workspace', 'iedereen'],
   ['agenten/TabOrch', 'mcp', 'agents', 'technisch'] /* ORCH-001: «Координація» — alleen eigenaar op mcp.* */,
   // KLIMOP-018 (21.11.2026): панель «Плюща» вбудована у вкладку «Координація» (TabOrch → KlimopPaneel) і має той самий технічний
