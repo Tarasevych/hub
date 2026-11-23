@@ -317,6 +317,55 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу лише для себе в «Перемикачах функцій», перевірте досьє клієнтів, угоди й завдання за відкритого сховища ключів, а потім відкрийте для вибраних людей або всіх.', 'Zet eerst alleen voor uzelf aan bij «Functieschakelaars», controleer klantdossiers, verkoopkansen en taken met geopende sleutelkluis, en open daarna voor gekozen mensen of iedereen.'],
     gevolg: ['Вимкнення негайно закриває доступ до маршрутів та екрана клієнтських взаємин без втрати чи зміни збережених зашифрованих досьє. Прав доступу перемикач не додає.', 'Uitschakelen sluit meteen de routes en het scherm van klantrelatiebeheer zonder verlies of wijziging van de versleutelde dossiers. De schakelaar geeft geen extra rechten.'],
   },
+  // CONSOL-001 / Віха M4 (0319..0320, 0324..0329): робочий стіл, соцмережі, перехідники, картотека «Звірка», ШІ, програмні інтерфейси, MCP та архів Telegram.
+  'werkblad-snelkoppelingen-v1': {
+    naam: ['Власні ярлики на робочому столі між пристроями', 'Eigen snelkoppelingen op het werkblad tussen apparaten'],
+    wat: ['Зберігає власні ярлики користувача на робочому столі в поточному просторі та синхронізує їх між комп’ютером, планшетом і телефоном.', 'Bewaart eigen snelkoppelingen op het werkblad binnen de huidige ruimte en synchroniseert ze tussen computer, tablet en telefoon.'],
+    wanneer: ['Потребує увімкненого «Нового робочого столу». Увімкніть спершу для себе та перевірте додавання й перейменування ярликів.', 'Vereist «Nieuw werkblad». Zet eerst voor uzelf aan en controleer het toevoegen en hernoemen van snelkoppelingen.'],
+    gevolg: ['Вимкнення зупиняє серверну синхронізацію нових ярликів без видалення вже збережених записів у просторі. Прав доступу перемикач не змінює.', 'Uitschakelen stopt de serversynchronisatie van nieuwe snelkoppelingen zonder reeds bewaarde items in de ruimte te wissen. Verandert geen rechten.'],
+  },
+  'social-overzicht-v1': {
+    naam: ['Служба «Соціальні мережі»', 'Dienst «Sociale netwerken»'],
+    wat: ['Відкриває єдиний огляд підключених каналів Telegram, Discord і GitHub, метаданих імпортованих архівів світлин та власних профілів і чернеток публікацій у межах простору.', 'Opent één overzicht van gekoppelde Telegram-, Discord- en GitHub-kanalen, metadata van geïmporteerde fotoarchieven en eigen profielen en publicatieconcepten binnen de ruimte.'],
+    wanneer: ['Увімкніть спершу лише для себе в «Перемикачах функцій», перевірте відображення каналів і збереження чернеток, а потім за потреби відкрийте іншим.', 'Zet eerst alleen voor uzelf aan bij «Functieschakelaars», controleer kanalen en concepten en stel daarna zo nodig open voor anderen.'],
+    gevolg: ['Вимкнення негайно закриває маршрути й екран служби «Соціальні мережі», зберігаючи всі створені профілі та чернетки в просторі.', 'Uitschakelen sluit meteen de routes en het scherm van «Sociale netwerken», terwijl alle aangemaakte profielen en concepten bewaard blijven.'],
+  },
+  'integraties-adapter-opslaan-v1': {
+    naam: ['Збереження підключень перехідників у Майстрі інтеграцій', 'Adapterkoppelingen bewaren in de koppelwizard'],
+    wat: ['Дозволяє після успішної живої перевірки зашифровано зберегти підключення Nextcloud (WebDAV), S3 або MQTT у вашому просторі та показувати службу серед під’єднаних.', 'Maakt het mogelijk om na een geslaagde verbindingstest een Nextcloud- (WebDAV), S3- of MQTT-koppeling versleuteld in uw ruimte te bewaren en bij «Gekoppeld» te tonen.'],
+    wanneer: ['Увімкніть спершу для себе, перевірте збереження, повторну перевірку стану та від’єднання перехідника в каталозі інтеграцій.', 'Zet eerst voor uzelf aan en controleer bewaren, opnieuw testen en loskoppelen van een adapter in de integratiecatalogus.'],
+    gevolg: ['Вимкнення прибирає дію збереження нових перехідників у майстрі без видалення чи розшифрування вже збережених підключень.', 'Uitschakelen verbergt het bewaren van nieuwe adapters in de wizard zonder bestaande versleutelde koppelingen te wissen.'],
+  },
+  'afstemming-volledig-v1': {
+    naam: ['Повне оснащення картотеки «Звірка»', 'Volledige uitrusting van kartotheek «Afstemming»'],
+    wat: ['Додає загальну стрічку подій усіх карток, розбір чернетки задуму за згодою людини, читання вкладень PDF і зображень, безпечні внутрішні проби маршрутів та зіставлення з координацією.', 'Voegt de gezamenlijke gebeurtenissenstroom, idee-ontleding na toestemming, tekstlezing uit PDF- en beeldbijlagen, veilige interne routecontroles en afstemming met orchestratie toe.'],
+    wanneer: ['Потребує увімкненої «Нової Звірки». Увімкніть для себе, щоб користуватися повним набором інструментів картотеки розвитку.', 'Vereist «Nieuwe afstemming». Zet voor uzelf aan om alle hulpmiddelen van de ontwikkelkartotheek te gebruiken.'],
+    gevolg: ['Вимкнення повертає базовий набір вкладок без видалення створених карток, доказів, вкладень чи історії подій.', 'Uitschakelen keert terug naar de basisweergave zonder aangemaakte kaarten, bewijsstukken, bijlagen of geschiedenis te wissen.'],
+  },
+  'ai-chat-apparaatkeuze-v1': {
+    naam: ['Вибір цільового пристрою у вікні розмови ШІ', 'Keuze van doelapparaat in het AI-gespreksvenster'],
+    wat: ['Показує у вікні розмови «ШІ для вас» зручний вибір під’єднаного комп’ютера в поточному просторі, щоб команди виконувалися саме на обраному пристрої.', 'Toont in het gespreksvenster «AI voor u» een duidelijke keuze van de verbonden computer in de huidige ruimte, zodat opdrachten op het gekozen apparaat lopen.'],
+    wanneer: ['Увімкніть, коли до облікового запису під’єднано один або кілька комп’ютерів і потрібно явно обирати цільовий пристрій.', 'Zet aan wanneer één of meer computers aan het account gekoppeld zijn en u het doelapparaat uitdrukkelijk wilt kiezen.'],
+    gevolg: ['Вимкнення ховає перемикач пристрою у вікні розмови; дозволи й підключення комп’ютерів не змінюються.', 'Uitschakelen verbergt de apparaatkiezer in het gespreksvenster; toestemmingen en apparaatkoppelingen blijven ongewijzigd.'],
+  },
+  'api-platform-lees-v1': {
+    naam: ['Області машинного читання платформи програмних інтерфейсів', 'Machineleesscopes op het programmaverbindingsplatform'],
+    wat: ['Дозволяє випускати машинні ключі доступу з трьома областями лише для читання у власному просторі: пошта, події календаря та метадані файлів без вмісту.', 'Maakt het mogelijk om machinesleutels uit te geven met drie alleen-lezen scopes binnen de eigen ruimte: e-mail, agenda-afspraken en bestandsmetadata zonder inhoud.'],
+    wanneer: ['Увімкніть лише тоді, коли зовнішньому сценарію власника потрібен контрольований доступ на читання з миттєвим відкликанням ключа.', 'Zet alleen aan wanneer een eigen extern script gecontroleerde leestoegang met onmiddellijke intrekking nodig heeft.'],
+    gevolg: ['Руйнівні області залишаються суворо забороненими. Вимкнення приховує вибір нових областей читання в інтерфейсі без зміни прав облікового запису.', 'Ingrijpende schrijfbereiken blijven strikt verboden. Uitschakelen verbergt de keuze van nieuwe leesscopes in het scherm zonder accountrechten te wijzigen.'],
+  },
+  'mcp-bronnen-live-v1': {
+    naam: ['Живий стан джерел на панелі знарядь ШІ', 'Actuele koppelingsstatus van bronnen in het AI-hulpmiddelenpaneel'],
+    wat: ['Показує на панелі знарядь ШІ справжній стан підключення внутрішнього диска сайту, пошти Microsoft Outlook та сховища OneDrive у поточному просторі.', 'Toont in het AI-hulpmiddelenpaneel de werkelijke koppelingsstatus van de interne siteschijf, Microsoft Outlook-post en OneDrive-opslag in de huidige ruimte.'],
+    wanneer: ['Увімкніть спершу для себе, щоб бачити на панелі знарядь актуальну готовність підключених служб.', 'Zet eerst voor uzelf aan om in het hulpmiddelenpaneel direct de actuele gereedheid van gekoppelde diensten te zien.'],
+    gevolg: ['Вимкнення повертає статичні позначки джерел без жодного впливу на дозволи інструментів чи підключення пошти й хмари.', 'Uitschakelen toont weer de vaste bronlabels zonder invloed op hulpmiddelrechten of e-mail- en cloudkoppelingen.'],
+  },
+  'uitrol-telegram-koppeling-v1': {
+    naam: ['Посилання на тему групи та пояснення випуску в архіві Telegram', 'Groepstopiclink en uitgave-uitleg in het Telegram-archief'],
+    wat: ['Дозволяє вставити посилання на повідомлення в групі Telegram для автоматичного заповнення ідентифікатора групи й теми, надсилає пробний файл під час перевірки зв’язку та додає двомовне пояснення випуску.', 'Ontleedt een geplakte Telegram-berichtlink automatisch naar groeps- en topic-id, stuurt een proefbestand bij de verbindingstest en voegt tweetalige uitgave-uitleg toe.'],
+    wanneer: ['Увімкніть для адміністратора оновлень під час налаштування захищеного архівування випусків у групу Telegram із темами.', 'Zet aan voor het inrichten van het versleutelde releasearchief in een Telegram-groep met onderwerpen.'],
+    gevolg: ['Вимкнення ховає допоміжне поле розбору посилання на сторінці налаштувань без зміни збережених ключів, архівів чи приймача подій.', 'Uitschakelen verbergt het hulpveld voor linkontleding zonder bewaarde sleutels, archieven of de webhook te veranderen.'],
+  },
 };
 
 export const HELP_FLAGS: HelpLagen = {

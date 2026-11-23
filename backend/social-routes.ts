@@ -276,10 +276,14 @@ async function verzamelFotoArchieven(lade: Lade) {
     for (const bron of new Set(bronnen)) perBronTelling[bron] = (perBronTelling[bron] || 0) + 1;
   }
 
+  const fotoBronVertaling: Record<string, readonly [string, string]> = {
+    cloud: ['Хмарне сховище', 'Cloudopslag'],
+    map: ['Тека / ZIP', 'Map / ZIP'],
+  };
   const perBron = FOTO_BRONNEN.map((b) => ({
     id: b.id,
-    naam: b.naam,
-    soort: b.soort,
+    naam: fotoBronVertaling[b.id] ?? ([b.naam, b.naam] as const),
+    soort: b.groep,
     aantal: perBronTelling[b.id] || 0,
   })).filter((b) => b.aantal > 0);
 

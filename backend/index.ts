@@ -55,8 +55,10 @@ import { fotoDienstRoutes } from './foto-dienst'; /* UI-002: fotodienst (vlag fo
 import { cloudVnextBestandenRoutes } from './cloud-vnext-bestanden'; /* cloud vNext (0129): mappen, labels, prullenbak, versies, upload in stukken */
 import { bestandenDelenEigenaarRoutes, bestandenDelenPubliekeRoutes } from './bestanden-delen'; /* CLOUD-001 (0210): gedeelde koppelingen voor mappen, bestanden, archieven en bestandsdelen */
 import { cloudVnextIntegratiesRoutes } from './cloud-vnext-integraties';
+import { verbindingenBeheerRoutes } from './verbindingen-beheer';
 import { afstemmingKernRoutes } from './afstemming-kern'; /* UI-014 (0197): kaarten, revisies, gebeurtenissen, import */
 import { afstemmingKoppelRoutes } from './afstemming-koppel';
+import { afstemmingUitbreidingRoutes } from './afstemming-uitbreiding';
 import { aanmeldKoppelRoutes } from './aanmeld-koppel';
 import { aanmeldMethodenRoutes, externTerugVoor, type AanmeldWegDeps } from './aanmelden-methoden'; /* IDENTITEIT-015 (aanmelden): вхід ключем доступу, паролем, Microsoft/Discord/Apple */
 import { registreerAanmeldVlag } from './aanmeld-wegen';
@@ -94,6 +96,7 @@ import './dev-mg-bevestiging';
 import './json-weigering'; /* SEC-002 (slot s): spoor van 415 JSON_VEREIST — journaal + melding */
 import { merkBronRoutes } from './merk-bron'; // 21.10.2026: logo's van domeinen (BIMI/website) en foto's van afzenders (migratie 0097)
 import { adminIntegratieRoutes } from './beheer-integraties';
+import { integratiesKoppelingenRoutes } from './integraties-koppelingen';
 import { afdwingAdmin, schaduwAdmin } from './beleid';
 import { ondersteuningRoutes } from './ondersteuning-routes';
 import { impersonatieRoutes } from './impersonatie-routes';
@@ -136,6 +139,7 @@ import { besluitZoekenPg } from './orch-besluit-pg';
 import { accountVerwijderdZetten, gebruikerVeldenZetten, toegangAanvraagStatus, toegangAanvraagToegestaan } from './gebruiker-schrijven'; // SEC-002 (autorisatie-02/-06)
 import { klantrelatieRoutes } from './klantrelatiebeheer-routes';
 import { relatiehulpRoutes } from './klantrelatie-hulp';
+import { createSocialRoutes, SOCIAL_OVERZICHT_VLAG } from './social-routes';
 import { bijlageWeergaveOcrRoutes } from './bijlage-weergave-ocr';
 import { aiWerkruimteRoutes } from './ai-werkruimte';
 import { aiEcosysteemRoutes } from './ai-ecosysteem';
@@ -772,6 +776,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
     ...cloudVnextIntegratiesRoutes(ownerRequireSession as never, { vlagAan: async (u) => (await flagsBerekenen(u as never, ['cloud-vnext', 'verbindingen-centrum-v2'])).some((v) => v?.value === true) }),
     ...cloudVnextTakenRoutes(ownerRequireSession as never, { vlagAan: async (u) => (await flagsBerekenen(u as never, ['cloud-vnext']))[0]?.value === true, vlagLezen: async (u) => (await flagsBerekenen(u as never, ['verbindingen-centrum-v2']))[0]?.value === true }),
   } as never) as unknown as Record<string, any>),
+  ...verbindingenBeheerRoutes(ownerRequireSession as never, { vlagAan: async (u) => (await flagsBerekenen(u as never, ['cloud-vnext', 'verbindingen-centrum-v2'])).some((v) => v?.value === true) }),
   ...bestandenDelenPubliekeRoutes(async (event, body) => {
     const auth = await ownerRequireSession(event as never, body as never);
     if ('errorCode' in auth) return null;
@@ -784,6 +789,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   }),
   ...afstemmingKernRoutes(ownerRequireSession as never),
   ...afstemmingKoppelRoutes(ownerRequireSession as never),
+  ...afstemmingUitbreidingRoutes(ownerRequireSession as never),
   ...aanmeldKoppelRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, inloggen: externTerugVoor(aanmeldWegDeps) /* IDENTITEIT-015: вхід через прив'язку — той самий redirect */ }),
   ...aanmeldMethodenRoutes(aanmeldWegDeps), /* IDENTITEIT-015 (aanmelden): /api/aanmelden/{passkey,wachtwoord,extern}/* */
   ...bekendeApparatenRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, audit: ownerAudit, vlagAan: async (userId) => (await flagsBerekenen({ id: userId } as never, ['meldingen-uitleg-v3']))[0]?.value === true }),
@@ -811,6 +817,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...devMgRoutes({ requireSession: ownerRequireSession as never }),
   ...merkBronRoutes({ requireSession: ownerRequireSession as never }),
   ...adminIntegratieRoutes((ctx, capability) => adminContext(ctx.event, ctx.body, capability as AdminCapability) as never, ownerRequireSession as never),
+  ...integratiesKoppelingenRoutes((ctx, capability) => adminContext(ctx.event, ctx.body, capability as AdminCapability) as never, ownerRequireSession as never),
   // «Підтримка від імені» met toestemming (etap 7): alleen-lezen overzicht, nooit een sessie van de gebruiker.
   // Feature flags (etap F): berekenen voor zichzelf; beheren/testen alleen in een actief technisch profiel. Nooit een recht.
   ...flagsRoutes(ownerRequireSession as never),
@@ -855,6 +862,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   // Een geldige sessie zonder het recht 'api-platform' krijgt hier API_RECHT_VEREIST, nooit OWNER_API_SESSION_REQUIRED.
   ...klantrelatieRoutes(ownerRequireSession, { vlagAan: klantVlag }),
   ...relatiehulpRoutes(ownerRequireSession, { vlagAan: klantVlag }),
+  ...createSocialRoutes({ requireSession: ownerRequireSession as never, vlagAan: async (u) => (await flagsBerekenen(u as never, [SOCIAL_OVERZICHT_VLAG]))[0]?.value === true }),
   ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never }),
   ...aiEcosysteemRoutes({ requireSession: ownerRequireSession as never }),
   ...vaardighedenRoutes({ requireSession: ownerRequireSession as never }),

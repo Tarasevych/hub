@@ -71,9 +71,9 @@ export type AfstemmingUitbreidingOpties = {
   getApiKey?: (userId: string) => Promise<string | null>;
 };
 
-const gooi = (code: string): never => {
+function gooi(code: string): never {
   throw new Error(code);
-};
+}
 
 const grootTekst = (v: unknown): string =>
   String(v ?? '')

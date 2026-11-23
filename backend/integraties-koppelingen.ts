@@ -9,7 +9,7 @@ import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { integratie } from '../shared/integraties-catalogus';
-import { registerVan, type AdapterId } from '../shared/integraties-register';
+import { registerVan, type RegisterRij } from '../shared/integraties-register';
 import { SLEUTEL_GESLOTEN_CODE, isServerEnvelop } from '../shared/sleutelkluis';
 import { alsGebruiker } from './ai-toestemmingen';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
@@ -22,6 +22,8 @@ import type { Haal } from './verbinding-adapters/gemeen';
 import { mqttControle } from './verbinding-adapters/mqtt';
 import { s3Lijst } from './verbinding-adapters/s3';
 import { webdavLijst } from './verbinding-adapters/webdav';
+
+export type AdapterId = NonNullable<RegisterRij['adapter']>;
 
 const TABEL = 'app.integratie_adapter_koppeling';
 const TOEGESTANE_INTEGRATIES = new Set(['nextcloud', 's3', 'mqtt', 'zigbee2mqtt']);
@@ -101,9 +103,9 @@ export class AdapterKoppelingFout extends Error {
   }
 }
 
-const gooi = (code: string, status = 400): never => {
+function gooi(code: string, status = 400): never {
   throw new AdapterKoppelingFout(code, status);
-};
+}
 
 async function inRuimte<T>(userId: string, ruimte: AiRuimte, werk: (q: DbVraag) => Promise<T>): Promise<T> {
   return alsGebruiker(userId, async (q) => {

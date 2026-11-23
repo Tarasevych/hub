@@ -76,7 +76,7 @@ export async function main(): Promise<number> {
 
   for (const pad of gewijzigdePaden) {
     const inhoud = readFileSync(join(process.cwd(), pad), 'utf8');
-    check(`мовний закон (${pad}): нуль російських літер [ЁёЪъЫыЭэ]`, !VERBODEN_LETTERS.test(inhoud));
+    check(`мовний закон (${pad}): нуль заборонених російських літер`, !VERBODEN_LETTERS.test(inhoud));
   }
 
   const wizardTsx = readFileSync(join(process.cwd(), 'src/integraties/WizardV2.tsx'), 'utf8');
