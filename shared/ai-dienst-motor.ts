@@ -59,6 +59,7 @@ export function isVertaalPrivacyModus(waarde: unknown): waarde is VertaalPrivacy
 }
 
 export type DienstSoort = 'aanbieder' | 'libretranslate' | 'ollama' | 'google-translate' | 'deepl' | 'eigen-vertaal-knoop';
+export type UitgebreideDienstSoort = DienstSoort | 'microsoft-translate';
 export type DienstFunctie = 'translate' | 'summary' | 'purpose' | 'context' | 'acties';
 export const DIENST_SOORTEN: readonly DienstSoort[] = [
   'aanbieder',
@@ -68,6 +69,10 @@ export const DIENST_SOORTEN: readonly DienstSoort[] = [
   'deepl',
   'eigen-vertaal-knoop',
 ];
+export const UITGEBREIDE_DIENST_SOORTEN: readonly UitgebreideDienstSoort[] = [
+  ...DIENST_SOORTEN,
+  'microsoft-translate',
+];
 export const DIENST_ALLE_FUNCTIES: readonly DienstFunctie[] = ['translate', 'summary', 'purpose', 'context', 'acties'];
 export const DIENST_ID_RE = /^[a-z][a-z0-9-]{1,30}$/;
 export const DIENST_VOORVOEGSEL = 'dienst:';
@@ -76,24 +81,24 @@ export const GEDEELD_SLEUTEL_VOORVOEGSEL = 'gedeeld-';
 export const DIENST_LIMIET = { standaard: 30, min: 1, max: 5000 } as const;
 export const DIENST_MAX_MOTOREN = 12;
 
-export function standaardPrivacyModus(soort: DienstSoort): VertaalPrivacyModus {
+export function standaardPrivacyModus(soort: UitgebreideDienstSoort): VertaalPrivacyModus {
   if (soort === 'libretranslate' || soort === 'ollama' || soort === 'eigen-vertaal-knoop') return 'eigen-server';
   return 'extern-gezuiverd';
 }
 
-export function dienstIsExtern(soort: DienstSoort): boolean {
-  return soort === 'aanbieder' || soort === 'google-translate' || soort === 'deepl';
+export function dienstIsExtern(soort: UitgebreideDienstSoort): boolean {
+  return soort === 'aanbieder' || soort === 'google-translate' || soort === 'deepl' || soort === 'microsoft-translate';
 }
 
-export function dienstVereistSleutel(soort: DienstSoort): boolean {
-  return soort === 'aanbieder' || soort === 'google-translate' || soort === 'deepl';
+export function dienstVereistSleutel(soort: UitgebreideDienstSoort): boolean {
+  return soort === 'aanbieder' || soort === 'google-translate' || soort === 'deepl' || soort === 'microsoft-translate';
 }
 
-export function dienstMagSleutel(soort: DienstSoort): boolean {
+export function dienstMagSleutel(soort: UitgebreideDienstSoort): boolean {
   return dienstVereistSleutel(soort) || soort === 'eigen-vertaal-knoop';
 }
 
-export function dienstVereistUrl(soort: DienstSoort): boolean {
+export function dienstVereistUrl(soort: UitgebreideDienstSoort): boolean {
   return soort === 'libretranslate' || soort === 'ollama' || soort === 'eigen-vertaal-knoop';
 }
 
@@ -145,8 +150,8 @@ export type DienstGebruik = {
   gemetenOp?: number;
 };
 
-export function dienstFuncties(soort: DienstSoort): DienstFunctie[] {
-  if (soort === 'libretranslate' || soort === 'google-translate' || soort === 'deepl' || soort === 'eigen-vertaal-knoop') {
+export function dienstFuncties(soort: UitgebreideDienstSoort): DienstFunctie[] {
+  if (soort === 'libretranslate' || soort === 'google-translate' || soort === 'deepl' || soort === 'microsoft-translate' || soort === 'eigen-vertaal-knoop') {
     return ['translate'];
   }
   return [...DIENST_ALLE_FUNCTIES];
@@ -219,8 +224,9 @@ export function normaliseerDienstUrl(raw: unknown): string | null {
 export function normaliseerDienstInvoer(raw: DienstInvoer): DienstInvoerUitkomst {
   const id = String(raw.id ?? '').trim().toLowerCase();
   if (!DIENST_ID_RE.test(id)) return fout('DIENST_ID_ONGELDIG', 'Коротка назва: латинські літери, цифри й дефіс, 2–31 знак, починається з літери.', 'Korte naam: Latijnse letters, cijfers en koppelteken, 2–31 tekens, begint met een letter.');
-  const soort = String(raw.soort ?? '') as DienstSoort;
-  if (!DIENST_SOORTEN.includes(soort)) return fout('DIENST_SOORT_ONGELDIG', 'Оберіть вид рушія.', 'Kies het soort motor.');
+  const soortRuw = String(raw.soort ?? '') as UitgebreideDienstSoort;
+  if (!UITGEBREIDE_DIENST_SOORTEN.includes(soortRuw)) return fout('DIENST_SOORT_ONGELDIG', 'Оберіть вид рушія.', 'Kies het soort motor.');
+  const soort = soortRuw as DienstSoort;
   const naam = String(raw.naam ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
   if (!naam) return fout('DIENST_NAAM_LEEG', 'Дайте рушієві назву, яку побачать користувачі.', 'Geef de motor een naam die gebruikers zien.');
   const limiet = Math.round(Number(raw.limietPerDag ?? DIENST_LIMIET.standaard));
@@ -229,7 +235,7 @@ export function normaliseerDienstInvoer(raw: DienstInvoer): DienstInvoerUitkomst
   }
   const rawPm = raw.privacyModus;
   const privacyModus: VertaalPrivacyModus = rawPm === undefined || rawPm === null || rawPm === ''
-    ? standaardPrivacyModus(soort)
+    ? standaardPrivacyModus(soortRuw)
     : isVertaalPrivacyModus(rawPm)
       ? rawPm
       : ('' as VertaalPrivacyModus);
@@ -238,12 +244,12 @@ export function normaliseerDienstInvoer(raw: DienstInvoer): DienstInvoerUitkomst
   }
   const model = String(raw.model ?? '').trim().slice(0, 120);
   if (model && !/^[A-Za-z0-9][A-Za-z0-9._:\/-]*$/.test(model)) return fout('DIENST_MODEL_ONGELDIG', 'Назва моделі містить недозволені знаки.', 'De modelnaam bevat niet-toegestane tekens.');
-  if (soort === 'aanbieder') {
+  if (soortRuw === 'aanbieder') {
     const aanbieder = String(raw.aanbieder ?? '') as AiAanbiederId;
     if (!AI_AANBIEDER_BIJ_ID[aanbieder]) return fout('DIENST_AANBIEDER_ONGELDIG', 'Оберіть постачальника ШІ.', 'Kies de AI-aanbieder.');
     return { ok: true, waarde: { id, soort, naam, aanbieder, model: model || undefined, limietPerDag: limiet, privacyModus } };
   }
-  if (soort === 'google-translate' || soort === 'deepl') {
+  if (soortRuw === 'google-translate' || soortRuw === 'deepl' || soortRuw === 'microsoft-translate') {
     const rawUrl = String(raw.url ?? '').trim();
     let url: string | undefined;
     if (rawUrl) {
@@ -253,19 +259,19 @@ export function normaliseerDienstInvoer(raw: DienstInvoer): DienstInvoerUitkomst
       }
       url = genorm;
     }
-    return { ok: true, waarde: { id, soort, naam, url, limietPerDag: limiet, privacyModus } };
+    return { ok: true, waarde: { id, soort, naam, url, ...(model ? { model } : {}), limietPerDag: limiet, privacyModus } };
   }
   const url = normaliseerDienstUrl(raw.url);
   if (!url) return fout('DIENST_URL_ONGELDIG', 'Адреса сервера: повна, з http:// або https://, без логіна й параметрів.', 'Serveradres: volledig, met http:// of https://, zonder login en parameters.');
-  if (soort === 'ollama' && !model) return fout('DIENST_MODEL_NODIG', 'Для Ollama вкажіть модель, яку вже завантажено на сервері (наприклад, gemma3:4b).', 'Geef voor Ollama het model op dat al op de server staat (bijvoorbeeld gemma3:4b).');
+  if (soortRuw === 'ollama' && !model) return fout('DIENST_MODEL_NODIG', 'Для Ollama вкажіть модель, яку вже завантажено на сервері (наприклад, gemma3:4b).', 'Geef voor Ollama het model op dat al op de server staat (bijvoorbeeld gemma3:4b).');
   return { ok: true, waarde: { id, soort, naam, url, model: model || undefined, limietPerDag: limiet, privacyModus } };
 }
 
 /** Чи готовий рушій обслуговувати людей: увімкнено й має все потрібне. */
-export function dienstKlaar(m: DienstMotor): boolean {
+export function dienstKlaar(m: { soort: UitgebreideDienstSoort; aan: boolean; heeftSleutel: boolean; aanbieder?: AiAanbiederId; url?: string }): boolean {
   if (!m.aan) return false;
   if (m.soort === 'aanbieder') return m.heeftSleutel && Boolean(m.aanbieder);
-  if (m.soort === 'google-translate' || m.soort === 'deepl') return m.heeftSleutel;
+  if (m.soort === 'google-translate' || m.soort === 'deepl' || m.soort === 'microsoft-translate') return m.heeftSleutel;
   return Boolean(m.url);
 }
 
@@ -290,7 +296,7 @@ export function dienstPubliek(m: DienstMotor, vandaag: number, akkoorden: readon
 }
 
 /** Куди піде текст — одним чесним реченням (картка рушія, вікно згоди, рядок «Обробляє: …»). */
-export function dienstWaarheen(m: Pick<DienstMotorPubliek, 'soort' | 'aanbieder' | 'host' | 'beheerder' | 'privacyModus'>, nl = false): string {
+export function dienstWaarheen(m: { soort: UitgebreideDienstSoort; aanbieder?: AiAanbiederId; host?: string; beheerder?: string; privacyModus?: VertaalPrivacyModus }, nl = false): string {
   const wie = m.beheerder || (nl ? 'de beheerder' : 'адміністратор');
   if (m.soort === 'aanbieder') {
     const naam = m.aanbieder ? (nl ? AI_AANBIEDER_BIJ_ID[m.aanbieder].naamNl : AI_AANBIEDER_BIJ_ID[m.aanbieder].naamUk) : (nl ? 'de aanbieder' : 'постачальник');
@@ -298,12 +304,16 @@ export function dienstWaarheen(m: Pick<DienstMotorPubliek, 'soort' | 'aanbieder'
       ? `Naar ${naam}, met de sleutel van de site (${wie} betaalt). De aanbieder ziet de tekst; de site bewaart hem niet.`
       : `До ${naam}, ключем сайту (платить ${wie}). Постачальник бачить текст; сайт його не зберігає.`;
   }
-  if (m.soort === 'google-translate' || m.soort === 'deepl') {
-    const naam = m.soort === 'google-translate' ? 'Google Cloud Translation' : 'DeepL';
+  if (m.soort === 'google-translate' || m.soort === 'deepl' || m.soort === 'microsoft-translate') {
+    const naam = m.soort === 'google-translate'
+      ? 'Google Cloud Translation'
+      : m.soort === 'microsoft-translate'
+        ? 'Microsoft Azure AI Translator'
+        : 'DeepL';
     const zuiver = (m.privacyModus ?? 'extern-gezuiverd') === 'extern-gezuiverd';
     return nl
       ? `Naar ${naam}, met de sleutel van de site (${wie} betaalt)${zuiver ? ', na versterkte zuivering van geheimen en IBAN' : ''}. De dienst ziet de vertaalde tekst; de site bewaart hem niet.`
-      : `До ${naam}, ключем сайту (платить ${wie})${zuiver ? ', після посиленого очищення секретів та IBAN' : ''}. Служба бачить текст перекладу; сайт його не зберігає.`;
+      : `До ${naam}, ключем сайту (платить ${wie})${zuiver ? ', після посиленого очищення таємниць та IBAN' : ''}. Служба бачить текст перекладу; сайт його не зберігає.`;
   }
   const waar = m.host || (nl ? 'de eigen server' : 'власний сервер');
   if (m.soort === 'eigen-vertaal-knoop') {
@@ -316,17 +326,18 @@ export function dienstWaarheen(m: Pick<DienstMotorPubliek, 'soort' | 'aanbieder'
     : `На власний сервер сайту (${waar}), а не до ШІ-компанії. Той, хто керує цим сервером (${wie}), технічно може бачити текст.`;
 }
 
-export function dienstSoortNaam(soort: DienstSoort, nl = false): string {
+export function dienstSoortNaam(soort: UitgebreideDienstSoort, nl = false): string {
   if (soort === 'aanbieder') return nl ? 'Sleutel van de site bij een aanbieder' : 'Ключ сайту в постачальника';
   if (soort === 'libretranslate') return nl ? 'LibreTranslate op eigen server' : 'LibreTranslate на власному сервері';
   if (soort === 'google-translate') return nl ? 'Google Cloud Translation (API-sleutel)' : 'Google Cloud Translation (ключ API)';
+  if (soort === 'microsoft-translate') return nl ? 'Microsoft Azure AI Translator (API-sleutel)' : 'Microsoft Azure AI Translator (ключ API)';
   if (soort === 'deepl') return nl ? 'DeepL API (Free / Pro)' : 'DeepL API (Free / Pro)';
   if (soort === 'eigen-vertaal-knoop') return nl ? 'Eigen beveiligde vertaalknoop' : 'Власний захищений вузол перекладу';
   return nl ? 'Ollama op eigen server' : 'Ollama на власному сервері';
 }
 
 /** Ризики для власника — показуються зі знаком «!» перед увімкненням (типово вимкнено). */
-export function dienstRisicos(m: Pick<DienstMotor, 'soort' | 'aanbieder'>, nl = false): string[] {
+export function dienstRisicos(m: { soort: UitgebreideDienstSoort; aanbieder?: AiAanbiederId }, nl = false): string[] {
   const uit: string[] = [];
   if (m.soort === 'aanbieder') {
     uit.push(nl
@@ -339,13 +350,13 @@ export function dienstRisicos(m: Pick<DienstMotor, 'soort' | 'aanbieder'>, nl = 
       ? 'Gemini: voor gebruikers in de EER, Zwitserland en het VK eisen de voorwaarden van Google het betaalde niveau. Op het gratis niveau gebruikt Google de inhoud om producten te verbeteren en kunnen beoordelaars hem lezen — gebruik dus geen gratis sleutel voor anderen.'
       : 'Gemini: для користувачів у ЄЕЗ, Швейцарії та Великій Британії умови Google вимагають платний рівень. На безкоштовному рівні Google використовує вміст для покращення продуктів і його можуть читати рецензенти — тож не давайте іншим безкоштовний ключ.');
     if (m.aanbieder === 'autoclaw') uit.push(nl ? 'Z.ai verwerkt gegevens op servers in China.' : 'Z.ai обробляє дані на серверах у Китаї.');
-  } else if (m.soort === 'google-translate' || m.soort === 'deepl') {
+  } else if (m.soort === 'google-translate' || m.soort === 'deepl' || m.soort === 'microsoft-translate') {
     uit.push(nl
       ? 'Elk vertaalverzoek gaat op kosten van deze API-sleutel. De daglimiet per persoon begrenst het verbruik; stel ook een quota in bij de dienst.'
-      : 'Кожен запит перекладу йде коштом цього ключа API. Денна межа на людину обмежує витрати; встановіть також квоту в самому сервісі.');
+      : 'Кожен запит перекладу йде коштом цього ключа API. Денна межа на людину обмежує витрати; встановіть також квоту в самій службі.');
     uit.push(nl
       ? 'De tekst van brieven gaat naar de externe vertaaldienst onder uw account. Gebruik de modus «extern-gezuiverd» zodat tokens, geheimen en IBAN vooraf worden verwijderd.'
-      : 'Текст листів надсилається до зовнішнього сервісу перекладу під вашим обліковим записом. Використовуйте режим «extern-gezuiverd», щоб токени, таємниці та IBAN вирізалися до надсилання.');
+      : 'Текст листів надсилається до зовнішньої служби перекладу під вашим обліковим записом. Використовуйте режим «extern-gezuiverd», щоб маркери доступу, таємниці та IBAN вирізалися до надсилання.');
     if (m.soort === 'deepl') {
       uit.push(nl
         ? 'DeepL Free (sleutel eindigt op :fx) mag teksten gebruiken om het model te verbeteren; voor vertrouwelijke post verdient DeepL Pro de voorkeur.'

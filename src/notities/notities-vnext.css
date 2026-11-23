@@ -274,9 +274,22 @@
 .vn-bron-link { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: var(--tekst-mini); justify-self: start; }
 .vn-bron-link svg { width: 12px; height: 12px; }
 .vn-bron-stand { grid-area: stand; justify-self: end; padding: 3px 10px; border-radius: 999px; font-size: var(--tekst-mini); font-weight: 650; white-space: nowrap; background: var(--surface2); color: var(--muted); }
-.vn-bron-stand.is-beschikbaar { background: var(--ok-zacht); color: var(--ok); } .vn-bron-stand.is-alleen-invoer { background: var(--info-zacht); color: var(--info); } .vn-bron-stand.is-beperkt { background: var(--warn-zacht); color: var(--warn); }
-.vn-bronnen-lijst > li > .vn-knop, .vn-bron-geen { grid-area: knop; justify-self: end; }
+.vn-bron-stand.is-beschikbaar, .vn-bron-stand.is-koppeling { background: var(--ok-zacht); color: var(--ok); } .vn-bron-stand.is-alleen-invoer { background: var(--info-zacht); color: var(--info); } .vn-bron-stand.is-beperkt { background: var(--warn-zacht); color: var(--warn); }
+.vn-bronnen-lijst > li > .vn-knop, .vn-bron-geen { grid-area: knop; justify-self: end; text-decoration: none; }
 .vn-bron-geen { font-size: var(--tekst-mini); color: var(--muted); font-style: italic; text-align: right; max-width: 200px; }
 @media (max-width: 620px) { .vn-bronnen-lijst > li { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'mono tekst' 'stand stand' 'knop knop'; } .vn-bron-stand, .vn-bronnen-lijst > li > .vn-knop, .vn-bron-geen { justify-self: start; text-align: left; max-width: none; } }
+
+/* ---- koppelingen van een notitie (agenda, taken, opslag) ---- */
+.vn-koppelingen-blok { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--surface); }
+.vn-koppel-sectie { display: grid; gap: var(--ruimte-2); padding-top: var(--ruimte-2); border-top: 1px solid var(--line); }
+.vn-koppel-sectie:first-of-type { padding-top: 0; border-top: 0; }
+.vn-koppel-kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); flex-wrap: wrap; }
+.vn-koppel-kop strong { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); }
+.vn-koppel-kop strong svg { color: var(--accent); }
+.vn-koppel-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.vn-koppeling-rij { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); flex-wrap: wrap; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); font-size: var(--tekst-mini); }
+.vn-koppeling-rij a.vn-knop { text-decoration: none; }
+.vn-koppel-actie, .vn-koppel-subvorm, .vn-koppel-bevestig { display: grid; gap: var(--ruimte-2); }
+.vn-koppel-subvorm { padding: var(--ruimte-2) var(--ruimte-3); border: 1px dashed var(--line); border-radius: var(--straal-m); background: var(--panel); }
 
 @media (forced-colors: active) { .vn-chip.is-actief, .vn-soorten label.is-actief, .vn-etiket.is-actief, .vn-rail-lijst > li > button.is-actief { outline: 2px solid Highlight; } }

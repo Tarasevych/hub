@@ -3,7 +3,8 @@
 //   [naam ⓘ] [‹ 1/3 ›] [zoom (afbeelding)] | [ШІ] [bewerken] | [Завантажити ▾] [•••] | [згорнути] [закрити]
 // Bij te weinig breedte: eerst labels weg, dan gaan de secundaire groepen naar «•••». Zie docs/bijlage-viewer-v2/INVENTARIS.md.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Info, Minimize2, MoreHorizontal, PenLine, Printer, Save, Share2, Sparkles, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Info, Minimize2, MoreHorizontal, PenLine, Printer, Save, Share2, Sparkles, X } from 'lucide-react';
+import { BIJLAGE_MODUS_LABELS, type BijlageWeergaveWissel } from '../bijlage-weergave/weergave-modus';
 import { IconKnop, ZoomGroep, type KnopStaat } from './Knoppen';
 import './bijlage-v2.css';
 
@@ -15,6 +16,8 @@ export type WerkbalkProps = {
   canvasZoom: boolean; zoom: number; onZoom: (z: number) => void;
   downloadUrl: string; onPrint: () => void; onOpslaan: () => void; onDelen?: () => void;
   bewerkLabel?: string; onBewerk?: () => void;
+  onNotitieUitBijlage?: () => void;
+  weergaveWissel?: BijlageWeergaveWissel | null;
   onMinimaliseer: () => void; onSluit: () => void;
 };
 type Niveau = 'ruim' | 'midden' | 'smal';
@@ -110,16 +113,40 @@ export default function BijlageWerkbalk(p: WerkbalkProps) {
       {!smal && <div className='bv2-groep' role='group' aria-label={t('Файл', 'Bestand')}>
         <IconKnop label={t('Друк', 'Afdrukken')} onClick={doePrint} staat={printStaat} data='print'><Printer size={17} /></IconKnop>
       </div>}
-      {smal && <div className='bv2-groep bv2-menu-anker'>
+      {(smal || Boolean(p.onNotitieUitBijlage) || Boolean(p.weergaveWissel && p.weergaveWissel.opties.length > 1)) && <div className='bv2-groep bv2-menu-anker'>
         <IconKnop label={t('Більше дій', 'Meer acties')} ariaExpanded={menu === 'meer'} onClick={() => setMenu(menu === 'meer' ? null : 'meer')} data='meer'><MoreHorizontal size={18} /></IconKnop>
         {menu === 'meer' && <div className='bv2-zwevend bv2-menu' role='menu' aria-label={t('Більше дій', 'Meer acties')}>
-          {menuItem(t('Про файл', 'Over het bestand'), <Info size={17} />, () => setPaneel('details'), 'm-details')}
-          {aiBeschikbaar && menuItem(t('ШІ і переклад', 'AI en vertaling'), <Sparkles size={17} />, () => setPaneel('ai'), 'm-ai')}
-          {p.onBewerk && menuItem(p.bewerkLabel || t('Редагувати', 'Bewerken'), <PenLine size={17} />, p.onBewerk, 'm-bewerk')}
-          {menuItem(t('Друк', 'Afdrukken'), <Printer size={17} />, doePrint, 'm-print2')}
-          {menuItem(t('Зберегти в сховище…', 'Opslaan in opslag…'), <Save size={17} />, p.onOpslaan, 'm-opslaan2')}
-          {p.onDelen && menuItem(t('Поділитися', 'Delen'), <Share2 size={17} />, p.onDelen, 'm-delen2')}
-          {p.canvasZoom && menuItem(t('Згорнути перегляд', 'Weergave minimaliseren'), <Minimize2 size={17} />, p.onMinimaliseer, 'm-minimaliseer')}
+          {smal && <>
+            {menuItem(t('Про файл', 'Over het bestand'), <Info size={17} />, () => setPaneel('details'), 'm-details')}
+            {aiBeschikbaar && menuItem(t('ШІ і переклад', 'AI en vertaling'), <Sparkles size={17} />, () => setPaneel('ai'), 'm-ai')}
+            {p.onBewerk && menuItem(p.bewerkLabel || t('Редагувати', 'Bewerken'), <PenLine size={17} />, p.onBewerk, 'm-bewerk')}
+            {menuItem(t('Друк', 'Afdrukken'), <Printer size={17} />, doePrint, 'm-print2')}
+            {menuItem(t('Зберегти в сховище…', 'Opslaan in opslag…'), <Save size={17} />, p.onOpslaan, 'm-opslaan2')}
+            {p.onDelen && menuItem(t('Поділитися', 'Delen'), <Share2 size={17} />, p.onDelen, 'm-delen2')}
+            {p.canvasZoom && menuItem(t('Згорнути перегляд', 'Weergave minimaliseren'), <Minimize2 size={17} />, p.onMinimaliseer, 'm-minimaliseer')}
+          </>}
+          {p.onNotitieUitBijlage && menuItem(t('Створити нотатку з вкладення', 'Notitie uit bijlage maken'), <FileText size={17} />, p.onNotitieUitBijlage, 'm-notitie')}
+          {p.weergaveWissel && p.weergaveWissel.opties.length > 1 && (
+            <div className='bv2-modus-groep' role='group' aria-label={t('Режим переглядача', 'Weergavestijl')}>
+              {p.weergaveWissel.opties.map((modus) => {
+                const gekozen = p.weergaveWissel!.huidig === modus;
+                const label = BIJLAGE_MODUS_LABELS[modus][p.lang === 'uk' ? 0 : 1];
+                return (
+                  <button
+                    key={`bv2-modus:${modus}`}
+                    role='menuitemradio'
+                    aria-checked={gekozen}
+                    type='button'
+                    className='bv2-menu-item'
+                    data-bv2={`modus-${modus}`}
+                    onClick={() => { setMenu(null); p.weergaveWissel!.onKies(modus); }}
+                  >
+                    <span>{gekozen ? `✓ ${label}` : label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>}
       </div>}
       <div className='bv2-groep bv2-venster' role='group' aria-label={t('Вікно', 'Venster')}>

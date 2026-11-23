@@ -133,6 +133,8 @@
 .foto-stand.is-kiezer { color: var(--info); border-color: color-mix(in srgb, var(--info) 40%, var(--line)); }
 .foto-stand.is-gepland { border-style: dashed; }
 .foto-bron-uitleg summary { cursor: pointer; color: var(--accent); min-height: 28px; display: inline-flex; align-items: center; }
+.foto-bron-toestemming { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); }
+.foto-bron-toestemming .foto-vink { align-items: flex-start; font-size: 12px; color: var(--text); }
 .foto-bron-acties { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
 .foto-voortgang { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); }
 .foto-voortgang > div { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }

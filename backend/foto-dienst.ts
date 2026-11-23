@@ -20,6 +20,7 @@ import { createReadStream } from 'node:fs';
 import { mkdir, open, readdir, rm, stat, statfs } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { db, error, json, storage } from '../server/platform';
+import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import { buitenVerzoek } from '../server/platform/context';
 import { denyMutation } from './rbac';
@@ -29,19 +30,25 @@ import {
 } from '../shared/foto-model';
 import { hoortBij, ladeFilter, ladeVelden, type Lade } from '../shared/ruimte-scheiding';
 import { cloudVoorvoegsel, ladeOf, padInLade } from './ruimte-cloud-agenda';
+import { googleSuiteDriveProviderSnapshot, googleSuitePrincipalAccessToken } from './google-suite-inrichting';
+import { webdavLeesBestandBytes, webdavMediaLijstVoorLade } from './cloud-vnext-webdav';
 
-const MEDIA = 'foto_media_v1', ALBUMS = 'foto_albums_v1', IMPORTS = 'foto_import_v1', CLOUD_ITEMS = 'cloud_items_v1';
+const MEDIA = 'foto_media_v1', ALBUMS = 'foto_albums_v1', IMPORTS = 'foto_import_v1', CLOUD_ITEMS = 'cloud_items_v1', DRIVE_PROJ = 'google_suite_drive_projection_v1';
 const PLAFOND = 50_000;
 
 type MediaRec = {
   ownerUserId?: string; ruimte?: string; naam?: string; titel?: string; beschrijving?: string; mime?: string; bytes?: number; sha256?: string;
   breedte?: number | null; hoogte?: number | null; genomenOp?: string | null; datumBron?: FotoItem['datumBron']; plaats?: { lat: number; lon: number } | null;
   camera?: string; tags?: string[]; albums?: string[]; favoriet?: boolean; verborgen?: boolean; herkomst?: FotoHerkomst[];
-  opslag?: 'eigen' | 'cloud'; storagePath?: string; cloudItemId?: string; miniatuur?: string | null; dhash?: string | null;
+  opslag?: 'eigen' | 'cloud'; storagePath?: string; cloudItemId?: string;
+  driveFileId?: string; drivePrincipalId?: string; driveAccountId?: string;
+  webdavKoppelingId?: string; webdavPad?: string;
+  miniatuur?: string | null; dhash?: string | null;
   backupOp?: string | null; backupOk?: boolean | null; createdAt?: number; updatedAt?: number;
 };
 type AlbumRec = { ownerUserId?: string; ruimte?: string; naam?: string; soort?: 'album' | 'collectie'; bron?: string; omslagId?: string; createdAt?: number };
 type CloudRec = { ownerUserId?: string; ruimte?: string; title?: string; originalName?: string; mimeType?: string; sizeBytes?: number; storagePath?: string; sha256?: string; verwijderdOp?: string | null; createdAt?: number; kind?: string };
+type DriveProjRec = { ownerUserId?: string; ruimte?: string; principalId?: string; accountId?: string; providerFileId?: string; name?: string; mimeType?: string; size?: string | number; createdAt?: number; modifiedAt?: number; trashed?: boolean };
 type MetId<T> = T & { id: string };
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -65,7 +72,9 @@ async function een<T>(tbl: string, lade: Lade, id: unknown): Promise<MetId<T> | 
 function naarBuiten(r: MetId<MediaRec>, cloudBestaat?: (id: string) => boolean): FotoItem {
   const naam = str(r.naam) || 'foto';
   const herkomst = Array.isArray(r.herkomst) ? r.herkomst.slice(0, 20) : [];
-  const beschikbaar = r.opslag === 'cloud' ? (cloudBestaat ? cloudBestaat(str(r.cloudItemId)) : true) : Boolean(r.storagePath);
+  const beschikbaar = r.opslag === 'cloud'
+    ? (r.driveFileId || r.webdavKoppelingId ? true : cloudBestaat ? cloudBestaat(str(r.cloudItemId)) : true)
+    : Boolean(r.storagePath);
   return {
     id: r.id, naam, titel: str(r.titel) || naam, beschrijving: str(r.beschrijving), soort: mediaSoort(naam, str(r.mime)) || 'foto', mime: mimeVoor(naam, str(r.mime)) /* wolk-09: ook oude records */,
     bytes: num(r.bytes), sha256: str(r.sha256), breedte: r.breedte ?? null, hoogte: r.hoogte ?? null, genomenOp: r.genomenOp ?? null, datumBron: r.datumBron || 'onbekend',
@@ -159,12 +168,117 @@ type Resp = ReturnType<typeof json>;
 const DIENSTEN = ['hub', 'cloud'];
 const NIET_GEVONDEN = new Set(['ITEM_ONBEKEND', 'ALBUM_ONBEKEND', 'UPLOAD_ONBEKEND', 'FOTO_DIENST_UIT']);
 
+type DriveMediaItem = { fileId: string; principalId: string; accountId: string; naam: string; mime: string; bytes: number; aangemaaktMs: number };
+type DriveLezer = {
+  lijst: (lade: Lade) => Promise<{ gekoppeld: boolean; items: DriveMediaItem[] }>;
+  bytes: (lade: Lade, fileId: string, principalId: string, maxBytes: number) => Promise<Buffer>;
+};
+const standaardDriveLezer: DriveLezer = {
+  async lijst(lade) {
+    const snapshots = (await googleSuiteDriveProviderSnapshot(lade.userId).catch(() => [])) as Array<{
+      id: string;
+      accounts?: Array<{ id: string; principalId: string; status: string }>;
+    }>;
+    const verbonden = (snapshots.find((s) => s.id === 'google')?.accounts || []).filter((a) => a.status === 'connected' && a.principalId);
+    if (!verbonden.length) return { gekoppeld: false, items: [] };
+    const uit: DriveMediaItem[] = [];
+    for (const acc of verbonden) {
+      try {
+        const token = await googleSuitePrincipalAccessToken(lade.userId, acc.principalId, 'drive');
+        const q = encodeURIComponent("trashed = false and (mimeType contains 'image/' or mimeType contains 'video/')");
+        const fields = encodeURIComponent('files(id,name,mimeType,size,createdTime,modifiedTime,trashed)');
+        const resp = await fetch(`https://www.googleapis.com/drive/v3/files?pageSize=100&spaces=drive&corpora=user&q=${q}&fields=${fields}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!resp.ok) continue;
+        const body = (await resp.json()) as { files?: Array<Record<string, unknown>> };
+        for (const f of body.files || []) {
+          if (f.trashed) continue;
+          const naam = str(f.name).trim();
+          const mime = str(f.mimeType).trim();
+          if (!naam || !mediaSoort(naam, mime)) continue;
+          uit.push({
+            fileId: str(f.id),
+            principalId: acc.principalId,
+            accountId: acc.id,
+            naam,
+            mime,
+            bytes: Math.max(0, Number(f.size || 0)),
+            aangemaaktMs: Date.parse(str(f.createdTime || f.modifiedTime || '')) || Date.now(),
+          });
+        }
+      } catch {
+        /* недоступний окремий обліковий запис не зупиняє інші */
+      }
+    }
+    return { gekoppeld: true, items: uit };
+  },
+  async bytes(lade, fileId, principalId, maxBytes) {
+    const snapshots = (await googleSuiteDriveProviderSnapshot(lade.userId).catch(() => [])) as Array<{
+      id: string;
+      accounts?: Array<{ id: string; principalId: string; status: string }>;
+    }>;
+    const accounts = (snapshots.find((s) => s.id === 'google')?.accounts || []).filter((a) => a.status === 'connected' && a.principalId);
+    const gekozen = (principalId ? accounts.find((a) => a.principalId === principalId) : null) || accounts[0];
+    if (!gekozen) fout('BRON_NIET_BESCHIKBAAR');
+    const token = await googleSuitePrincipalAccessToken(lade.userId, gekozen!.principalId, 'drive').catch(() => '');
+    if (!token) fout('BRON_NIET_BESCHIKBAAR');
+    const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!resp.ok) fout('BRON_NIET_BESCHIKBAAR');
+    const decl = Number(resp.headers.get('content-length') || 0);
+    if (decl > maxBytes) fout('TE_GROOT_VOOR_WEERGAVE');
+    const buf = Buffer.from(await resp.arrayBuffer());
+    if (buf.length > maxBytes) fout('TE_GROOT_VOOR_WEERGAVE');
+    return buf;
+  },
+};
+let driveLezer: DriveLezer = standaardDriveLezer;
+
+async function bewaarExterneToestemming(lade: Lade, bron: 'google-drive' | 'nextcloud' | 'nas', aantal: number): Promise<void> {
+  try {
+    await getPool('systeem').query(
+      `INSERT INTO app.foto_externe_bronnen (user_id, ruimte, bron, toestemming, laatst_op, aantal, updated_at)
+       VALUES ($1, $2, $3, true, now(), $4, now())
+       ON CONFLICT (user_id, ruimte, bron)
+       DO UPDATE SET toestemming = true, laatst_op = now(), aantal = EXCLUDED.aantal, updated_at = now()`,
+      [lade.userId, lade.ruimte, bron, Math.max(0, aantal)],
+    );
+  } catch {
+    /* якщо база не ініціалізована у безбазовому модульному прогоні — не блокуємо відповідь */
+  }
+}
+
+async function leesExterneToestemmingen(lade: Lade): Promise<Map<string, { toestemming: boolean; laatstOp: string | null }>> {
+  const kaart = new Map<string, { toestemming: boolean; laatstOp: string | null }>();
+  try {
+    const r = await getPool('systeem').query<{ bron: string; toestemming: boolean; laatst_op: Date | string | null }>(
+      `SELECT bron, toestemming, laatst_op FROM app.foto_externe_bronnen WHERE user_id = $1 AND ruimte = $2`,
+      [lade.userId, lade.ruimte],
+    );
+    for (const rij of r.rows) {
+      kaart.set(String(rij.bron), {
+        toestemming: rij.toestemming === true,
+        laatstOp: rij.laatst_op ? new Date(rij.laatst_op).toISOString() : null,
+      });
+    }
+  } catch {
+    /* порожня карта за відсутності таблиці */
+  }
+  return kaart;
+}
+
 export const fotoProef = {
   wisSessies: () => sessies.clear(), vlagNegeren: false,
   /** Alleen voor tests: de schijfmeting vervangen (null = echte meting). */
   zetVrijeBytes: (fn: (() => Promise<number | null>) | null) => { vrijeBytes = fn ?? standaardVrij; },
   /** Alleen voor tests: één opruimronde «op tijdstip nu». */
   opruimenNu: (nu?: number) => opruimen(nu),
+  /** Alleen voor tests: ondervang externe Google Drive-aanroepen zonder echt internetverkeer. */
+  zetDriveLezer: (fn: DriveLezer | null) => { driveLezer = fn ?? standaardDriveLezer; },
 };
 const organiseerBezig = new Set<string>(); // aanv-ronde1-05: één «Упорядкувати» tegelijk per mens
 
@@ -241,9 +355,117 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
     });
   };
 
-  // ---- indexeren: foto's en video's uit «Хмарне сховище» virtueel opnemen (geen kopie)
-  const indexeer: Run = async (lade, _d, auth) => {
+  // ---- indexeren: foto's en video's uit «Хмарне сховище» of externe bron (Google Drive / WebDAV met uitdrukkelijke toestemming)
+  const indexeer: Run = async (lade, d, auth) => {
     const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;
+    const bronVraag = str(d.bron).trim();
+
+    if (bronVraag === 'google-drive') {
+      if (d.toestemming !== true) fout('TOESTEMMING_VEREIST');
+      const [proj, media] = await Promise.all([alle<DriveProjRec>(DRIVE_PROJ, lade), alle<MediaRec>(MEDIA, lade)]);
+      let kandidaten: DriveMediaItem[] = proj
+        .filter((p) => !p.trashed && str(p.providerFileId) && mediaSoort(str(p.name), str(p.mimeType)))
+        .map((p) => ({
+          fileId: str(p.providerFileId),
+          principalId: str(p.principalId),
+          accountId: str(p.accountId),
+          naam: str(p.name),
+          mime: str(p.mimeType),
+          bytes: Math.max(0, Number(p.size || 0)),
+          aangemaaktMs: num(p.createdAt) || num(p.modifiedAt) || Date.now(),
+        }));
+      let gekoppeldAccount = kandidaten.length > 0;
+      if (!kandidaten.length) {
+        const vers = await driveLezer.lijst(lade);
+        gekoppeldAccount = vers.gekoppeld;
+        kandidaten = vers.items;
+      }
+      const bekendDrive = new Set(media.map((m) => str(m.driveFileId)).filter(Boolean));
+      const nieuw: Record<string, unknown>[] = [];
+      let gekoppeld = 0;
+      for (const item of kandidaten) {
+        if (!item.fileId || bekendDrive.has(item.fileId) || item.bytes > L.itemMaxBytes) {
+          if (item.fileId && bekendDrive.has(item.fileId)) gekoppeld += 1;
+          continue;
+        }
+        bekendDrive.add(item.fileId);
+        nieuw.push({
+          ...ladeVelden(lade),
+          naam: item.naam,
+          titel: item.naam,
+          mime: mimeVoor(item.naam, item.mime),
+          bytes: item.bytes,
+          sha256: '',
+          genomenOp: new Date(item.aangemaaktMs).toISOString(),
+          datumBron: 'bestand',
+          plaats: null,
+          camera: '',
+          breedte: null,
+          hoogte: null,
+          tags: [],
+          albums: [],
+          favoriet: false,
+          verborgen: false,
+          herkomst: [{ bron: 'google-drive', pad: item.naam, op: new Date().toISOString() }],
+          opslag: 'cloud',
+          driveFileId: item.fileId,
+          drivePrincipalId: item.principalId,
+          driveAccountId: item.accountId,
+          createdAt: item.aangemaaktMs,
+          updatedAt: Date.now(),
+        });
+      }
+      for (let k = 0; k < nieuw.length; k += 200) await db.add(MEDIA, nieuw.slice(k, k + 200));
+      await bewaarExterneToestemming(lade, 'google-drive', nieuw.length + gekoppeld);
+      return json({ nieuw: nieuw.length, gekoppeld, gekoppeldAccount, toestemming: true, totaalDrive: kandidaten.length });
+    }
+
+    if (bronVraag === 'nextcloud' || bronVraag === 'nas') {
+      if (d.toestemming !== true) fout('TOESTEMMING_VEREIST');
+      const [ext, media] = await Promise.all([
+        webdavMediaLijstVoorLade(lade, bronVraag === 'nas' ? 'nas-webdav' : 'nextcloud'),
+        alle<MediaRec>(MEDIA, lade),
+      ]);
+      const bekendWebdav = new Set(
+        media.filter((m) => m.webdavKoppelingId && m.webdavPad).map((m) => `${m.webdavKoppelingId}|${m.webdavPad}`),
+      );
+      const nieuw: Record<string, unknown>[] = [];
+      let gekoppeld = 0;
+      for (const b of ext.bestanden) {
+        if (!mediaSoort(b.naam, b.mime) || b.bytes > L.itemMaxBytes) continue;
+        const sleutel = `${b.koppelingId}|${b.pad}`;
+        if (bekendWebdav.has(sleutel)) { gekoppeld += 1; continue; }
+        bekendWebdav.add(sleutel);
+        nieuw.push({
+          ...ladeVelden(lade),
+          naam: b.naam,
+          titel: b.naam,
+          mime: mimeVoor(b.naam, b.mime),
+          bytes: b.bytes,
+          sha256: '',
+          genomenOp: null,
+          datumBron: 'onbekend',
+          plaats: null,
+          camera: '',
+          breedte: null,
+          hoogte: null,
+          tags: [],
+          albums: [],
+          favoriet: false,
+          verborgen: false,
+          herkomst: [{ bron: bronVraag, pad: b.pad, op: new Date().toISOString() }],
+          opslag: 'cloud',
+          webdavKoppelingId: b.koppelingId,
+          webdavPad: b.pad,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      }
+      for (let k = 0; k < nieuw.length; k += 200) await db.add(MEDIA, nieuw.slice(k, k + 200));
+      await bewaarExterneToestemming(lade, bronVraag, nieuw.length + gekoppeld);
+      return json({ nieuw: nieuw.length, gekoppeld, gekoppeldAccount: ext.gekoppeld, toestemming: true });
+    }
+
     const [cloud, media] = await Promise.all([alle<CloudRec>(CLOUD_ITEMS, lade), alle<MediaRec>(MEDIA, lade)]);
     const bekend = new Set(media.map((m) => str(m.cloudItemId)).filter(Boolean));
     const shaBekend = new Map(media.filter((m) => m.sha256).map((m) => [str(m.sha256), m]));
@@ -252,29 +474,24 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
     for (const c of cloud) {
       if (str(c.verwijderdOp) || bekend.has(c.id) || !c.storagePath) continue;
       const naam = str(c.originalName) || str(c.title); if (!mediaSoort(naam, str(c.mimeType))) continue;
-      // Inhoud lezen (begrensd): sha256 voor duplicaten en EXIF (datum, camera, plaats) — de cloud bewaart die niet altijd.
       let shaC = str(c.sha256); let exif: Exif = {};
       if (gelezen < 300 && num(c.sizeBytes) <= L.inhoudMaxBytes) {
-        // SEC-002 (aanv-ronde1-04): sizeBytes van de rij kan verouderd zijn — de werkelijke grootte telt (stat in storage.read).
         const [g] = await storage.read([str(c.storagePath)], { eigenaar: lade.userId, maxBytes: L.inhoudMaxBytes }).catch(() => [null]);
         if (g?.content) { const b = Buffer.from(g.content, 'base64'); gelezen++; shaC ||= createHash('sha256').update(b).digest('hex'); if (/jpe?g$/i.test(naam) || str(c.mimeType) === 'image/jpeg') exif = leesExif(new Uint8Array(b.subarray(0, 256 * 1024))); }
       }
       const dubbel = shaC ? shaBekend.get(shaC) : undefined;
-      if (dubbel) { // al als eigen kopie aanwezig: alleen de herkomst bijschrijven (één foto, twee plekken)
+      if (dubbel) {
         const h = [...(dubbel.herkomst || []), { bron: 'cloud', pad: naam, op: new Date().toISOString() }].slice(0, 20);
         const { id: did, ...rest } = dubbel; await db.update(MEDIA, [{ id: did, record: { ...rest, herkomst: h, cloudItemId: c.id, updatedAt: Date.now() } }]); bekend.add(c.id); gekoppeld++; continue;
       }
       const rec = { ...ladeVelden(lade), naam, titel: str(c.title) || naam, mime: mimeVoor(naam, str(c.mimeType)), bytes: num(c.sizeBytes), sha256: shaC, genomenOp: exif.genomenOp ?? null, datumBron: exif.genomenOp ? 'exif' : 'onbekend', plaats: exif.plaats ?? null, camera: exif.camera ?? '', breedte: exif.breedte ?? null, hoogte: exif.hoogte ?? null, tags: [], albums: [], favoriet: false, verborgen: false, herkomst: [{ bron: 'cloud', pad: naam, op: new Date().toISOString() }], opslag: 'cloud', cloudItemId: c.id, createdAt: num(c.createdAt) || Date.now(), updatedAt: Date.now() };
-      nieuw.push(rec); // twee gelijke cloudbestanden blijven twee items: «Упорядкувати» toont ze als duplicaat
+      nieuw.push(rec);
     }
     for (let k = 0; k < nieuw.length; k += 200) await db.add(MEDIA, nieuw.slice(k, k + 200));
     return json({ nieuw: nieuw.length, gekoppeld, totaalCloud: cloud.length });
   };
 
   // ---- bytes lezen (weergave/download/kopie)
-  // SEC-002 (aanv-ronde1-04, 12.11.2026): `r.bytes` is de grootte van TOEN; een bestand in de hmara kan sindsdien door een groter
-  // vervangen zijn (zelfde id). Daarom leest bytesVan met een bovengrens op de WERKELIJKE grootte (storage.read doet eerst stat en
-  // leest een te groot bestand niet in het geheugen), en rekent «controleer» de sha256 in stukken (leesDeel) — nooit het hele bestand.
   const padVan = async (lade: Lade, r: MetId<MediaRec>): Promise<string> => {
     let pad = str(r.storagePath);
     if (r.opslag === 'cloud') { const c = await een<CloudRec>(CLOUD_ITEMS, lade, r.cloudItemId); if (!c || str(c.verwijderdOp)) fout('BRON_NIET_BESCHIKBAAR'); pad = str(c!.storagePath); }
@@ -282,6 +499,12 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
     return pad;
   };
   const bytesVan = async (lade: Lade, r: MetId<MediaRec>, maxBytes: number, teGroot = 'TE_GROOT'): Promise<Buffer> => {
+    if (r.opslag === 'cloud' && str(r.driveFileId)) {
+      return driveLezer.bytes(lade, str(r.driveFileId), str(r.drivePrincipalId), maxBytes);
+    }
+    if (r.opslag === 'cloud' && str(r.webdavKoppelingId) && str(r.webdavPad)) {
+      return webdavLeesBestandBytes(lade, str(r.webdavKoppelingId), str(r.webdavPad), maxBytes);
+    }
     const [g] = await storage.read([await padVan(lade, r)], { eigenaar: lade.userId, maxBytes });
     if (g?.teGroot) fout(teGroot);
     if (!g?.content) fout('BRON_NIET_BESCHIKBAAR');
@@ -289,6 +512,10 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   };
   const DEEL_BYTES = 4 * 1024 * 1024;
   const shaVan = async (lade: Lade, r: MetId<MediaRec>): Promise<string> => {
+    if (r.opslag === 'cloud' && (str(r.driveFileId) || str(r.webdavKoppelingId))) {
+      const b = await bytesVan(lade, r, L.inhoudMaxBytes);
+      return createHash('sha256').update(b).digest('hex');
+    }
     const pad = await padVan(lade, r), h = createHash('sha256');
     for (let offset = 0; ;) {
       const deel = await storage.leesDeel(pad, offset, DEEL_BYTES, { eigenaar: lade.userId });
@@ -339,37 +566,45 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
       else if (actie === 'album-erbij' || actie === 'album-eraf') {
         const a = await een<AlbumRec>(ALBUMS, lade, d.album); if (!a) fout('ALBUM_ONBEKEND');
         const set = new Set(r.albums || []); if (actie === 'album-erbij') set.add(a!.id); else set.delete(a!.id); n = await bewaar(r, { albums: [...set] });
-      } else if (actie === 'kopieer') { // back-up: bestand uit «Хмарне сховище» als eigen kopie bewaren (origineel blijft)
+      } else if (actie === 'kopieer') {
         if (r.opslag !== 'cloud') { uit.push(naarBuiten(r)); continue; }
         if (num(r.bytes) > L.itemMaxBytes) fout('TE_GROOT');
-        // SEC-002 (wolk-02): in delen naar een tijdelijk bestand op het opslagvolume (sha256 onderweg), dan writeVanPad —
-        // vroeger het hele bestand in het geheugen plus base64 (tot ~850 MB per verzoek). Ook hier de rij van «klaar».
         const pad = `${cloudVoorvoegsel(lade)}/foto-${randomUUID()}.${extVan(str(r.naam)) || 'bin'}`;
-        const bronPad = await padVan(lade, r);
-        const { sha, bytes: gekopieerd } = await metKlaarPlek(async () => {
-          await mkdir(sessieWortel(), { recursive: true, mode: 0o700 });
-          const tmp = join(sessieWortel(), `.kopie-${randomUUID()}`);
-          try {
-            const vrij = await vrijeBytes();
-            if (vrij !== null && vrij < num(r.bytes) + SCHIJF_RESERVE + beloofd()) fout('SCHIJF_VOL');
-            const h = createHash('sha256'); let offset = 0;
-            const fh = await open(tmp, 'wx', 0o600);
+        if (str(r.driveFileId) || str(r.webdavKoppelingId)) {
+          const b = await bytesVan(lade, r, L.inhoudMaxBytes, 'TE_GROOT');
+          const vrij = await vrijeBytes();
+          if (vrij !== null && vrij < b.length + SCHIJF_RESERVE + beloofd()) fout('SCHIJF_VOL');
+          const sha = createHash('sha256').update(b).digest('hex');
+          const [ok] = await storage.write([{ path: pad, content: b.toString('base64'), contentType: mimeVoor(str(r.naam), str(r.mime)), ownerId: lade.userId }]);
+          if (!ok) fout('FOTO_OPSLAG_MISLUKT');
+          n = await bewaar(r, { opslag: 'eigen', storagePath: pad, sha256: sha, bytes: b.length, backupOp: new Date().toISOString(), backupOk: true });
+        } else {
+          const bronPad = await padVan(lade, r);
+          const { sha, bytes: gekopieerd } = await metKlaarPlek(async () => {
+            await mkdir(sessieWortel(), { recursive: true, mode: 0o700 });
+            const tmp = join(sessieWortel(), `.kopie-${randomUUID()}`);
             try {
-              for (;;) {
-                const deel = await storage.leesDeel(bronPad, offset, DEEL_BYTES, { eigenaar: lade.userId });
-                if (!deel) { if (offset === 0) fout('BRON_NIET_BESCHIKBAAR'); break; }
-                if (deel.totaal > L.itemMaxBytes) fout('TE_GROOT');
-                if (!deel.data.length) break;
-                await fh.write(deel.data, 0, deel.data.length, offset); h.update(deel.data); offset += deel.data.length;
-                if (offset >= deel.totaal) break;
-              }
-            } finally { await fh.close(); }
-            const [ok] = await storage.writeVanPad([{ path: pad, vanPad: tmp, contentType: mimeVoor(str(r.naam), str(r.mime)), ownerId: lade.userId }]);
-            if (!ok) fout('FOTO_OPSLAG_MISLUKT');
-            return { sha: h.digest('hex'), bytes: offset };
-          } finally { await rm(tmp, { force: true }).catch(() => undefined); }
-        });
-        n = await bewaar(r, { opslag: 'eigen', storagePath: pad, sha256: sha, bytes: gekopieerd, backupOp: new Date().toISOString(), backupOk: true });
+              const vrij = await vrijeBytes();
+              if (vrij !== null && vrij < num(r.bytes) + SCHIJF_RESERVE + beloofd()) fout('SCHIJF_VOL');
+              const h = createHash('sha256'); let offset = 0;
+              const fh = await open(tmp, 'wx', 0o600);
+              try {
+                for (;;) {
+                  const deel = await storage.leesDeel(bronPad, offset, DEEL_BYTES, { eigenaar: lade.userId });
+                  if (!deel) { if (offset === 0) fout('BRON_NIET_BESCHIKBAAR'); break; }
+                  if (deel.totaal > L.itemMaxBytes) fout('TE_GROOT');
+                  if (!deel.data.length) break;
+                  await fh.write(deel.data, 0, deel.data.length, offset); h.update(deel.data); offset += deel.data.length;
+                  if (offset >= deel.totaal) break;
+                }
+              } finally { await fh.close(); }
+              const [ok] = await storage.writeVanPad([{ path: pad, vanPad: tmp, contentType: mimeVoor(str(r.naam), str(r.mime)), ownerId: lade.userId }]);
+              if (!ok) fout('FOTO_OPSLAG_MISLUKT');
+              return { sha: h.digest('hex'), bytes: offset };
+            } finally { await rm(tmp, { force: true }).catch(() => undefined); }
+          });
+          n = await bewaar(r, { opslag: 'eigen', storagePath: pad, sha256: sha, bytes: gekopieerd, backupOp: new Date().toISOString(), backupOk: true });
+        }
       } else if (actie === 'controleer') { // back-up nagaan: is de kopie er nog en klopt de sha256?
         try { const sha = await shaVan(lade, r); n =await bewaar(r, { backupOp: new Date().toISOString(), backupOk: !r.sha256 || sha === r.sha256, ...(r.sha256 ? {} : { sha256: sha }) }); }
         catch { n = await bewaar(r, { backupOp: new Date().toISOString(), backupOk: false }); }
@@ -521,11 +756,25 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
     return json({ duplicaten: dup.slice(0, 300).map((g) => ({ soort: g.soort, items: vul(g.ids) })), gelijkend: gel.slice(0, 300).map((g) => ({ items: vul(g) })) });
   };
 
-  // ---- bronnen: catalogus + tellingen + importgeschiedenis
+  // ---- bronnen: catalogus + tellingen + importgeschiedenis + externe toestemming
   const bronnen: Run = async (lade) => {
-    const [media, imports] = await Promise.all([alle<MediaRec>(MEDIA, lade), alle<Record<string, unknown>>(IMPORTS, lade)]);
+    const [media, imports, toestemmingen] = await Promise.all([
+      alle<MediaRec>(MEDIA, lade),
+      alle<Record<string, unknown>>(IMPORTS, lade),
+      leesExterneToestemmingen(lade),
+    ]);
     const tel: Record<string, number> = {}; for (const m of media) for (const b of new Set((m.herkomst || []).map((h) => h.bron))) tel[b] = (tel[b] || 0) + 1;
-    return json({ bronnen: FOTO_BRONNEN.map((b) => ({ ...b, aantal: tel[b.id] || 0 })), imports: imports.sort((a, b) => num(b.createdAt) - num(a.createdAt)).slice(0, 50).map((i) => ({ id: i.id, bron: i.bron, archief: i.archief, soort: i.soort, nieuw: i.nieuw, bekend: i.bekend, overgeslagen: i.overgeslagen, mislukt: i.mislukt, klaar: i.klaar === true, createdAt: new Date(num(i.createdAt)).toISOString() })) });
+    return json({
+      bronnen: FOTO_BRONNEN.map((b) => {
+        const ext = toestemmingen.get(b.id);
+        return {
+          ...b,
+          aantal: tel[b.id] || 0,
+          ...(ext ? { toestemming: ext.toestemming, laatstOp: ext.laatstOp } : {}),
+        };
+      }),
+      imports: imports.sort((a, b) => num(b.createdAt) - num(a.createdAt)).slice(0, 50).map((i) => ({ id: i.id, bron: i.bron, archief: i.archief, soort: i.soort, nieuw: i.nieuw, bekend: i.bekend, overgeslagen: i.overgeslagen, mislukt: i.mislukt, klaar: i.klaar === true, createdAt: new Date(num(i.createdAt)).toISOString() })),
+    });
   };
   const importLog: Run = async (lade, d, auth) => {
     const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;

@@ -6,7 +6,18 @@ import { sessieDienst } from '../canoniek-navigatie';
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from '../../shared/ruimte-weergave';
 import { weergaveAccountNu, weergaveRuimteNu } from '../gedeelde-voorkeuren';
 import { cacheAccountKey } from '../account-sleutel';
-import type { Notitie, NotitieInvoer, NotitieKleur, NotitieMap, NotitieRevisie, NotitieSoort, Weergave } from '../../shared/notities-vnext-model';
+import type {
+  Notitie,
+  NotitieAgendaKoppeling,
+  NotitieBestandVerwijzing,
+  NotitieInvoer,
+  NotitieKleur,
+  NotitieMap,
+  NotitieRevisie,
+  NotitieSoort,
+  NotitieTaakVerwijzing,
+  Weergave,
+} from '../../shared/notities-vnext-model';
 
 const body = (extra: Record<string, unknown> = {}) => ({ service: sessieDienst(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin, ...extra });
 
@@ -28,6 +39,25 @@ async function roep<T>(pad: string, data: Record<string, unknown> = {}): Promise
   }
 }
 
+export type KiesbareAfspraakUit = { id: string; agendaId: string; bron: 'google' | 'caldav' | 'ics'; titel: string; begin: string; einde: string; heleDag: boolean };
+export type NotitieKoppelingenUit = {
+  agendaKoppelingen: NotitieAgendaKoppeling[];
+  taken: NotitieTaakVerwijzing[];
+  bestanden: NotitieBestandVerwijzing[];
+  kiesbareAfspraken: KiesbareAfspraakUit[];
+  brugVlagAan?: boolean;
+};
+
+/** Генератор повторостійкого ключа для дій прив'язки без Math.random. */
+export function nieuweKoppelSleutel(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g, '');
+  }
+  const buf = new Uint8Array(12);
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') crypto.getRandomValues(buf);
+  return `vnk-${Date.now().toString(36)}-${Array.from(buf).map((b) => b.toString(16).padStart(2, '0')).join('')}`.slice(0, 120);
+}
+
 export const notitiesClient = {
   lijst: async (f: LijstFilter): Promise<LijstAntwoord> => { const d = await roep<any>('/api/notities/lijst', f); return { ...d, ruimte: ruimteFeitenUit(d) }; },
   een: (id: string) => roep<{ notitie: Notitie }>('/api/notities/een', { id }).then((d) => d.notitie),
@@ -43,6 +73,19 @@ export const notitiesClient = {
   importVoorbeeld: (bestanden: { naam: string; tekst: string }[]) => roep<ImportVoorbeeldUit>('/api/notities/import/voorbeeld', { bestanden }),
   importUitvoeren: (bestanden: { naam: string; tekst: string }[], opts: { ookDubbelen: boolean; mapId: string | null; etiket: string }) => roep<{ aangemaakt: Notitie[]; overgeslagen: number; fouten: ImportFoutUit[] }>('/api/notities/import/uitvoeren', { bestanden, ...opts }),
   export: (ookArchief: boolean) => roep<{ notities: Notitie[]; mappen: NotitieMap[] }>('/api/notities/export', { ookArchief }),
+  koppelingen: (notitieId: string) => roep<NotitieKoppelingenUit>('/api/notities/koppelingen', { notitieId }),
+  agendaKoppelen: (invoer: { notitieId: string; eventId: string; agendaId?: string; idempotentieSleutel: string; bevestigd: boolean }) =>
+    roep<{ ok: boolean; koppeling: NotitieAgendaKoppeling; herhaald: boolean }>('/api/notities/agenda/koppel', invoer),
+  agendaAfspraakMaken: (invoer: { notitieId: string; vorm: Record<string, unknown>; idempotentieSleutel: string; bevestigd: boolean }) =>
+    roep<{ ok: boolean; koppeling: NotitieAgendaKoppeling; eventId: string }>('/api/notities/agenda/afspraak', invoer),
+  agendaOntkoppelen: (notitieId: string, eventId: string) =>
+    roep<{ ok: boolean }>('/api/notities/agenda/ontkoppel', { notitieId, eventId }),
+  taakMaken: (invoer: { notitieId: string; titel?: string; uitChecklist?: boolean }) =>
+    roep<{ ok: boolean; aangemaakt: NotitieTaakVerwijzing[]; takenIds: string[] }>('/api/notities/taak/maak', invoer),
+  cloudBestandenZoek: (zoek = '') =>
+    roep<{ bestanden: NotitieBestandVerwijzing[]; reden?: string }>('/api/notities/bestanden/zoek', { zoek }),
+  bestandKoppelen: (notitieId: string, cloudBestandId: string, actie: 'koppel' | 'ontkoppel') =>
+    roep<{ ok: boolean; cloudBestandIds: string[]; bestanden: NotitieBestandVerwijzing[] }>('/api/notities/bestanden/koppel', { notitieId, bestandId: cloudBestandId, actie }),
 };
 
 // ------------------------------------------------------------------------------- klad (alleen in deze browser, nooit een geheim)

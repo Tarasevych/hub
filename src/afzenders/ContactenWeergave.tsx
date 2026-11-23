@@ -14,6 +14,7 @@ import AfzenderFoto from './AfzenderFoto';
 import { gebruikBeeldStappen, gebruikGekozenBeeld, kiesBeeldBron, noteerBeeld } from './beeld-geschiedenis';
 import './afzenders.css';
 import { weigeringZin } from '../../shared/weigering-tekst';
+import { diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 import './contacten.css';
 
 const AfzenderDialoog = lazy(() => import('./AfzenderDialoog'));
@@ -155,6 +156,13 @@ export default function ContactenWeergave({ lang, begin }: { lang: Lang; begin?:
   useEffect(() => {
     void contactenApi.scanStatus().then(zetScanStand).catch(() => undefined);
     const a = neemContactOpen(); if (a) setOpen(a);
+    const sprongId = typeof location !== 'undefined' ? diepeWaarde(location.search, 'contact_sprong') : '';
+    if (sprongId) {
+      wisDiepeParams('contact_sprong');
+      void contactenApi.leesContactSprong(sprongId).then((r) => {
+        if (r?.ok && r.adres) setOpen(r.adres);
+      }).catch(() => undefined);
+    }
     const opener = (e: Event) => { const x = String((e as CustomEvent).detail?.adres || neemContactOpen() || ''); if (x) setOpen(x); };
     window.addEventListener('tsv:mail-contact-open', opener);
     return () => window.removeEventListener('tsv:mail-contact-open', opener);

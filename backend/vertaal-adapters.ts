@@ -8,6 +8,7 @@ import { normaliseerDienstUrl, type VertaalPrivacyModus } from '../shared/ai-die
 export const GOOGLE_TRANSLATE_V2_URL = 'https://translation.googleapis.com/language/translate/v2';
 export const DEEPL_FREE_URL = 'https://api-free.deepl.com/v2/translate';
 export const DEEPL_PRO_URL = 'https://api.deepl.com/v2/translate';
+export const MICROSOFT_TRANSLATOR_V3_URL = 'https://api.cognitive.microsofttranslator.com/translate';
 
 const STANDAARD_TIMEOUT_MS = 30_000;
 const EIGEN_KNOOP_TIMEOUT_MS = 45_000;
@@ -281,6 +282,106 @@ export async function vertaalDeepLReeks(invoer: Omit<DeepLInvoer, 'tekst'> & { t
 
 export async function vertaalDeepL(invoer: DeepLInvoer): Promise<VertaalAdapterUitkomst> {
   const r = await vertaalDeepLReeks({ ...invoer, teksten: [invoer.tekst] });
+  return { vertaald: r.vertaald[0] ?? '', bronTaal: r.bronTaal, status: r.status };
+}
+
+export type MicrosoftTranslateInvoer = {
+  tekst: string;
+  bronTaal: string;
+  doelTaal: string;
+  apiSleutel: string;
+  regio?: string;
+  url?: string;
+  privacyModus: VertaalPrivacyModus;
+  fetchFn?: typeof fetch;
+};
+
+function ontleedMicrosoftSleutel(ruw: string, regioInvoer?: string): { sleutel: string; regio?: string } {
+  const getrimd = String(ruw ?? '').trim();
+  const explicieteRegio = String(regioInvoer ?? '').trim().toLowerCase();
+  const geldigeRegio = /^[a-z][a-z0-9-]{2,30}$/.test(explicieteRegio) ? explicieteRegio : undefined;
+  const dubbelePunt = getrimd.indexOf(':');
+  if (dubbelePunt > 0) {
+    const voor = getrimd.slice(0, dubbelePunt).trim().toLowerCase();
+    const na = getrimd.slice(dubbelePunt + 1).trim();
+    if (/^[a-z][a-z0-9-]{2,30}$/.test(voor) && na.length >= 16) {
+      return { sleutel: na, regio: geldigeRegio ?? voor };
+    }
+  }
+  return { sleutel: getrimd, regio: geldigeRegio };
+}
+
+export async function vertaalMicrosoftTranslateReeks(
+  invoer: Omit<MicrosoftTranslateInvoer, 'tekst'> & { teksten: readonly string[] },
+): Promise<VertaalReeksUitkomst> {
+  controleerPrivacy(invoer.privacyModus, true);
+  const { sleutel, regio } = ontleedMicrosoftSleutel(invoer.apiSleutel, invoer.regio);
+  if (!sleutel) throw new VertaalAdapterFout('VERTAAL_SLEUTEL_ONTBREEKT', 400);
+
+  const basisEindpunt = invoer.url ? normaliseerDienstUrl(invoer.url) : MICROSOFT_TRANSLATOR_V3_URL;
+  if (!basisEindpunt || !basisEindpunt.startsWith('https://')) {
+    throw new VertaalAdapterFout('VERTAAL_URL_ONGELDIG', 400);
+  }
+
+  const teksten = bereidTekstenVoor(invoer.teksten, invoer.privacyModus);
+  if (teksten.length === 0) return { vertaald: [], status: 200 };
+
+  const bron = normaliseerTaalCode(invoer.bronTaal);
+  const doel = normaliseerTaalCode(invoer.doelTaal) || 'uk';
+  const fetchFn = invoer.fetchFn ?? fetch;
+
+  const eindpuntUrl = new URL(basisEindpunt.endsWith('/translate') ? basisEindpunt : `${basisEindpunt}/translate`);
+  eindpuntUrl.searchParams.set('api-version', '3.0');
+  eindpuntUrl.searchParams.set('to', doel);
+  if (bron && bron !== 'auto') eindpuntUrl.searchParams.set('from', bron);
+
+  let res: Response;
+  try {
+    res = await fetchFn(eindpuntUrl.toString(), {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'Ocp-Apim-Subscription-Key': sleutel,
+        ...(regio ? { 'Ocp-Apim-Subscription-Region': regio } : {}),
+      },
+      body: JSON.stringify(teksten.map((Text) => ({ Text }))),
+      redirect: 'error',
+      signal: AbortSignal.timeout(STANDAARD_TIMEOUT_MS),
+    });
+  } catch {
+    throw new VertaalAdapterFout('VERTAAL_NETWERK_FOUT', 0);
+  }
+
+  if (!res.ok) {
+    throw new VertaalAdapterFout('MICROSOFT_TRANSLATE_HTTP_FOUT', res.status);
+  }
+
+  const data = await res.json().catch(() => null) as Array<{
+    detectedLanguage?: { language?: unknown };
+    translations?: Array<{ text?: unknown; to?: unknown }>;
+  }> | null;
+  if (!Array.isArray(data) || data.length !== teksten.length) {
+    throw new VertaalAdapterFout('MICROSOFT_TRANSLATE_ANTWOORD_ONGELDIG', 502);
+  }
+
+  const vertaald: string[] = [];
+  for (const item of data) {
+    const eerste = Array.isArray(item?.translations) ? item.translations[0] : undefined;
+    if (!eerste || typeof eerste.text !== 'string') {
+      throw new VertaalAdapterFout('MICROSOFT_TRANSLATE_ANTWOORD_ONGELDIG', 502);
+    }
+    vertaald.push(eerste.text);
+  }
+  const eersteBron = data.find((item) => typeof item?.detectedLanguage?.language === 'string')?.detectedLanguage?.language;
+  return {
+    vertaald,
+    bronTaal: typeof eersteBron === 'string' && eersteBron ? eersteBron.toLowerCase() : (bron && bron !== 'auto' ? bron : undefined),
+    status: res.status,
+  };
+}
+
+export async function vertaalMicrosoftTranslate(invoer: MicrosoftTranslateInvoer): Promise<VertaalAdapterUitkomst> {
+  const r = await vertaalMicrosoftTranslateReeks({ ...invoer, teksten: [invoer.tekst] });
   return { vertaald: r.vertaald[0] ?? '', bronTaal: r.bronTaal, status: r.status };
 }
 

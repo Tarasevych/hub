@@ -372,3 +372,16 @@
 .agv-kv-reeks { display: grid; gap: 8px; justify-items: start; }
 .agv-kv-reeks p { margin: 0; font-size: 14px; line-height: 1.5; }
 @media (max-width: 480px) { .agv-kv-rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---- snelle sprongen, .ics-uitvoer en gekoppelde notities bij een afspraak ---- */
+.agv-gasten-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.agv-gast-rij { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 13px; }
+.agv-sprongen { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.agv-knop.is-kompakt { min-height: 34px; padding: 4px 10px; font-size: 12.5px; text-decoration: none; }
+.agv-notities-blok { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.agv-notities-kop { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.agv-notities-kop strong { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.agv-notities-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.agv-notitie-rij { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font-size: 13px; }
+.agv-notitie-koppelvorm { display: grid; gap: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.agv-ics-balk { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }

@@ -122,6 +122,9 @@ export const contactenApi = {
   /** 0075 «запам'ятати вибір»: zonder argument alleen lezen, met argument bewaren. */
   scanBeleid: (beleid?: ScanBeleid) => api.post('/api/owner/mail/contacten/scan/beleid', { ...mailContext(), ...(beleid ? { beleid } : {}) })
     .then((r) => ({ beleid: normaliseerScanBeleid(r.data.beleid), scan: r.data.scan as ScanStand })),
+  /** Одноразовий обмін квитка переходу з картки події Календаря (?contact_sprong=<uuid>) на електронну адресу учасника. */
+  leesContactSprong: (sprongId: string) => api.post('/api/owner/agenda/deelnemer/sprong-lees', { ...mailContext(), sprongId })
+    .then((r) => r.data as { ok: boolean; adres?: string; fout?: string }),
 };
 
 /** Gedeelde scanstand voor de melding, de weergave en de instellingen (één poll tegelijk, alleen zolang de controle loopt). */

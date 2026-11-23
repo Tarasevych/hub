@@ -62,6 +62,32 @@ export type Notitie = {
   versie: number;
   aangemaaktOp: string;
   gewijzigdOp: string;
+  takenIds?: string[];
+  cloudBestandIds?: string[];
+};
+export type NotitieAgendaKoppeling = {
+  id: string;
+  notitieId: string;
+  eventId: string;
+  agendaId: string;
+  eventBron: 'google' | 'caldav' | 'ics';
+  eventTitel: string;
+  eventBegin: string;
+  aangemaaktOp: string;
+};
+export type NotitieTaakVerwijzing = {
+  id: string;
+  titel: string;
+  status: string;
+  doelPad: string;
+};
+export type NotitieBestandVerwijzing = {
+  id: string;
+  naam: string;
+  mime: string;
+  bytes: number;
+  soort: string;
+  doelPad: string;
 };
 export type NotitieMap = { id: string; naam: string; kleur: NotitieKleur; volgorde: number; aantal: number };
 export type NotitieRevisie = { id: string; versie: number; titel: string; inhoud: string; soort: NotitieSoort; kleur: NotitieKleur; etiketten: string[]; reden: string; aangemaaktOp: string };
@@ -219,6 +245,19 @@ export function naarChecklist(inhoud: string): string {
   return String(inhoud ?? '').split('\n').map((r) => (!r.trim() || /^\s*[-*+]\s*\[[ xX]\]/.test(r) ? r : `- [ ] ${r.replace(/^\s*[-*+]\s+/, '').trim()}`)).join('\n');
 }
 export const lijstVoortgang = (inhoud: string) => { const r = lijstRegels(inhoud); return { af: r.filter((x) => x.af).length, totaal: r.length }; };
+/** Невиконані пункти списку (до 20 пунктів, кожен до 160 знаків) для перетворення на завдання простору. */
+export function openTakenUitChecklist(inhoud: string): string[] {
+  const uit: string[] = [];
+  for (const r of lijstRegels(inhoud)) {
+    if (r.af) continue;
+    const schoon = r.tekst.replace(/\s+/g, ' ').trim().slice(0, SPIEGEL_MAX_TITEL);
+    if (schoon && !uit.includes(schoon)) {
+      uit.push(schoon);
+      if (uit.length >= 20) break;
+    }
+  }
+  return uit;
+}
 
 // ------------------------------------------------------------------------------- koppelingen
 export function vnVeiligeKoppeling(raw: unknown): string {
@@ -551,9 +590,9 @@ export function vnEtiketWolk(rijen: ReadonlyArray<Pick<Notitie, 'etiketten'>>): 
 }
 
 // ------------------------------------------------------------------------------- bronnen en integraties (eerlijke stand)
-export type BronStand = 'beschikbaar' | 'alleen-invoer' | 'beperkt' | 'gepland';
+export type BronStand = 'beschikbaar' | 'koppeling' | 'alleen-invoer' | 'beperkt' | 'gepland';
 export const BRON_STAND_LABEL: Record<BronStand, Tweetalig> = Object.freeze({
-  beschikbaar: ['працює', 'werkt'], 'alleen-invoer': ['лише імпорт файлів', 'alleen bestandsimport'], beperkt: ['обмежено', 'beperkt'], gepland: ['заплановано', 'gepland'],
+  beschikbaar: ['працює', 'werkt'], koppeling: ['прив’язка працює', 'koppeling werkt'], 'alleen-invoer': ['лише імпорт файлів', 'alleen bestandsimport'], beperkt: ['обмежено', 'beperkt'], gepland: ['заплановано', 'gepland'],
 });
 export type NotitieBron = {
   id: string; naam: string; stand: BronStand; soort: Tweetalig; uitleg: Tweetalig; wat: Tweetalig; bron: string;
@@ -578,9 +617,9 @@ export const NOTITIE_BRONNEN: readonly NotitieBron[] = Object.freeze([
   { id: 'samsung-notes', naam: 'Samsung Notes', merk: 'samsung', stand: 'alleen-invoer', soort: ['Експорт файлів', 'Bestandsexport'], formaten: ['txt'], bron: 'https://support.microsoft.com/en-us/onenote/use-the-onenote-feed-in-microsoft-onenote',
     uitleg: ['Samsung Notes надсилає нотатки в стрічку OneNote лише обмежено; повного API немає. Експортований текст можна імпортувати.', 'Samsung Notes stuurt notities slechts beperkt naar de OneNote-feed; een volledige API is er niet. Geëxporteerde tekst kunt u importeren.'],
     wat: ['Жодної автоматичної синхронізації без окремого підтримуваного API.', 'Geen automatische synchronisatie zonder een aparte ondersteunde API.'] },
-  { id: 'google-calendar', naam: 'Google Calendar', merk: 'googlecalendar', stand: 'gepland', soort: ['Зв’язок із подією', 'Koppeling met een afspraak'], formaten: [], bron: 'https://developers.google.com/workspace/calendar/api/guides/create-events',
-    uitleg: ['Зв’язок «нотатка ↔ подія» через наявний календар Mijn Ruimte (noteId ↔ eventId), з підтвердженням кожного запису.', 'Koppeling «notitie ↔ afspraak» via de bestaande agenda van Mijn Ruimte (noteId ↔ eventId), met bevestiging per schrijfactie.'],
-    wat: ['Це не синхронізація нотаток. Серверної таблиці відповідностей ще немає.', 'Dit is geen notitiesynchronisatie. De servertabel met de koppelingen bestaat nog niet.'] },
+  { id: 'google-calendar', naam: 'Google Calendar', merk: 'googlecalendar', stand: 'koppeling', soort: ['Зв’язок із подією', 'Koppeling met een afspraak'], formaten: [], bron: 'https://developers.google.com/workspace/calendar/api/guides/create-events',
+    uitleg: ['Двостороння прив’язка нотатки до події календаря у межах цього простору з явним підтвердженням кожної дії запису.', 'Tweerichtingskoppeling tussen notitie en agenda-afspraak binnen deze ruimte, met uitdrukkelijke bevestiging bij elke schrijfactie.'],
+    wat: ['Працює через серверну таблицю відповідностей цього простору: можна прив’язати наявну подію або створити нову зустріч із нотатки.', 'Werkt via de servertabel met koppelingen in deze ruimte: koppel een bestaande afspraak of maak met bevestiging een nieuwe afspraak vanuit een notitie.'] },
   { id: 'onenote', naam: 'Microsoft OneNote', merk: 'microsoftonenote', stand: 'gepland', soort: ['Microsoft Graph', 'Microsoft Graph'], formaten: [], bron: 'https://learn.microsoft.com/en-us/graph/api/resources/onenote?view=graph-rest-1.0',
     uitleg: ['Офіційний Graph API для блокнотів, розділів і сторінок (делегований OAuth).', 'Officiële Graph-API voor notitieblokken, secties en pagina’s (gedelegeerde OAuth).'],
     wat: ['Немає OAuth-клієнта Microsoft у сейфі, адаптера Graph і таблиці відповідностей. Окремий серверний модуль.', 'Geen Microsoft-OAuth-client in de kluis, geen Graph-adapter en geen koppeltabel. Een eigen servermodule.'] },
@@ -588,13 +627,13 @@ export const NOTITIE_BRONNEN: readonly NotitieBron[] = Object.freeze([
     uitleg: ['Офіційний Evernote MCP (beta) і експорт ENEX/HTML.', 'Officiële Evernote-MCP (beta) en ENEX/HTML-export.'],
     wat: ['Імпортер ENEX (XML із вкладеннями, потрібна санітизація) і шлюз MCP ще не реалізовано.', 'De ENEX-importer (XML met bijlagen, sanering nodig) en de MCP-gateway zijn nog niet gebouwd.'] },
   { id: 'google-keep', naam: 'Google Keep', merk: 'googlekeep', stand: 'beperkt', soort: ['Workspace API', 'Workspace-API'], formaten: [], bron: 'https://developers.google.com/workspace/keep/api/guides',
-    uitleg: ['API Keep орієнтований на Google Workspace (корпоративні акаунти). Для особистого Keep двостороннього доступу немає.', 'De Keep-API is gericht op Google Workspace (zakelijke accounts). Voor een persoonlijk Keep is er geen tweerichtingstoegang.'],
+    uitleg: ['API Keep орієнтований на Google Workspace (корпоративні облікові записи). Для особистого Keep двостороннього доступу немає.', 'De Keep-API is gericht op Google Workspace (zakelijke accounts). Voor een persoonlijk Keep is er geen tweerichtingstoegang.'],
     wat: ['Потрібна перевірка Workspace-права; наш вхід Google не просить області Keep.', 'Er is een Workspace-controle nodig; onze Google-aanmelding vraagt geen Keep-scopes.'] },
   { id: 'notion', naam: 'Notion', merk: 'notion', stand: 'gepland', soort: ['Сторінки й бази', 'Pagina’s en databases'], formaten: [], bron: 'https://www.notion.so',
     uitleg: ['Сторінки Notion як нотатки.', 'Notion-pagina’s als notities.'],
-    wat: ['Немає OAuth-застосунку, місця для токена в сейфі й маршруту. Окремий серверний модуль.', 'Geen OAuth-app, geen plek voor een token in de kluis en geen route. Een eigen servermodule.'] },
-  { id: 'colornote', naam: 'ColorNote', merk: 'colornote', stand: 'gepland', soort: ['Власний бекап', 'Eigen back-up'], formaten: [], bron: 'https://www.colornote.com/faq-question/what-is-colornotes-backup-system/',
-    uitleg: ['ColorNote має лише власний бекап і ручне «поділитися».', 'ColorNote heeft alleen een eigen back-up en handmatig «delen».'],
+    wat: ['Немає OAuth-застосунку, місця для маркера доступу в сейфі й маршруту. Окремий серверний модуль.', 'Geen OAuth-app, geen plek voor een token in de kluis en geen route. Een eigen servermodule.'] },
+  { id: 'colornote', naam: 'ColorNote', merk: 'colornote', stand: 'gepland', soort: ['Власна запасна копія', 'Eigen reservekopie'], formaten: [], bron: 'https://www.colornote.com/faq-question/what-is-colornotes-backup-system/',
+    uitleg: ['ColorNote має лише власну запасну копію і ручне «поділитися».', 'ColorNote heeft alleen een eigen reservekopie en handmatig «delen».'],
     wat: ['Публічного API не підтверджено; поділений текст можна зберегти як .txt і імпортувати.', 'Geen bevestigde publieke API; gedeelde tekst kunt u als .txt bewaren en importeren.'] },
 ]);
 export const notitieBron = (id: unknown) => NOTITIE_BRONNEN.find((b) => b.id === id);

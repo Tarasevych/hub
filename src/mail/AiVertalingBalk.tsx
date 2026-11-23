@@ -227,12 +227,13 @@ export default function AiVertalingBalk({
           prijzen?: MotorPrijzen | null;
         };
         const loadedAgents = Array.isArray(data?.agents) ? data.agents : [];
+        const loadedDienst = Array.isArray(data?.dienstMotoren) ? data.dienstMotoren : [];
         setAgents(loadedAgents);
-        setDienst(Array.isArray(data?.dienstMotoren) ? data.dienstMotoren : []);
+        setDienst(loadedDienst);
         setMotorGebruik(data?.gebruik && typeof data.gebruik === 'object' ? data.gebruik : {});
         setPrijzen(data?.prijzen || null);
         setStaatGeladen(true);
-        setMotoren(Array.isArray(data?.motoren) && data.motoren.length ? data.motoren : motorenMetStand(loadedAgents, isDocumentView));
+        setMotoren(Array.isArray(data?.motoren) && data.motoren.length ? data.motoren : motorenMetStand(loadedAgents, isDocumentView, loadedDienst));
         if (data?.settings) {
           setSettings(data.settings);
           setSelectedLang(data.settings.defaultLang || 'uk');
@@ -253,7 +254,8 @@ export default function AiVertalingBalk({
         // MAILAI-001: раніше тут вигадувався «Приватний асистент» зі станом «Активний» — кнопки виглядали робочими, але не працювали.
         // Тепер чесно: стан невідомий → агентів немає → панель не показується (переклад нічого не надсилає).
         setAgents([]);
-        setMotoren(motorenMetStand([], isDocumentView));
+        setDienst([]);
+        setMotoren(motorenMetStand([], isDocumentView, []));
         setSelectedAgentId('');
         setStaatGeladen(true);
       });

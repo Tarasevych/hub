@@ -29,8 +29,9 @@ function foutTekst(lang: Lang, e: unknown) {
     UPLOAD_TE_VEEL: ['Забагато одночасних завантажень. Дочекайтеся завершення інших (або скасуйте їх) і спробуйте знову.', 'Te veel gelijktijdige uploads. Wacht tot andere klaar zijn (of annuleer ze) en probeer het opnieuw.'],
     SCHIJF_VOL: ['На сервері закінчується місце — фото не збережено. Спробуйте пізніше або повідомте власника сайту.', 'De server heeft bijna geen ruimte meer — de foto is niet bewaard. Probeer het later of meld het aan de eigenaar van de site.'],
     BEZIG: ['Упорядкування вже триває. Зачекайте, доки воно завершиться.', 'Ordenen loopt al. Wacht tot het klaar is.'],
-    RBAC_FORBIDDEN: ['Ваша роль — лише перегляд: змінювати фото тут не можна. Нічого не змінено.', 'Uw rol is alleen-lezen: hier kunt u geen foto’s wijzigen. Er is niets gewijzigd.'],
+    RBAC_FORBIDDEN: ['Ваша роль — лише перегляд: змінювати світлини тут не можна. Нічого не змінено.', 'Uw rol is alleen-lezen: hier kunt u geen foto’s wijzigen. Er is niets gewijzigd.'],
     RBAC_PENDING_CANNOT_MUTATE: ['Ваш обліковий запис ще чекає на схвалення: до того змінювати нічого не можна.', 'Uw account wacht nog op goedkeuring: tot dan kunt u niets wijzigen.'],
+    TOESTEMMING_VEREIST: ['Спершу позначте явну згоду на читання світлин із підключеного сховища.', 'Geef eerst uitdrukkelijk toestemming om foto’s uit de gekoppelde opslag te lezen.'],
   };
   return (m[c] || ['Не вдалося. Спробуйте ще раз.', 'Mislukt. Probeer het opnieuw.'])[lang === 'uk' ? 0 : 1];
 }
@@ -341,9 +342,19 @@ function Albums({ lang, albums, kiesAlbum, nieuw, hernoem, verwijder }: { lang: 
 function Bronnen({ lang, naImport, toon }: { lang: Lang; naImport: () => void; toon: (m: string) => void }) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [lijst, setLijst] = useState<BronStand[] | null>(null); const [imports, setImports] = useState<ImportRegel[]>([]);
+  const [toestemmingKeuze, setToestemmingKeuze] = useState<Record<string, boolean>>({});
+  const [indexBezig, setIndexBezig] = useState('');
   const [voortgang, setVoortgang] = useState<Voortgang | null>(null); const stop = useRef(false);
   const zipRef = useRef<HTMLInputElement>(null); const mapRef = useRef<HTMLInputElement>(null); const losRef = useRef<HTMLInputElement>(null); const doelBron = useRef('map');
-  const laad = useCallback(() => fotoClient.bronnen().then((r) => { setLijst(r.bronnen); setImports(r.imports); }).catch(() => setLijst([])), []);
+  const laad = useCallback(() => fotoClient.bronnen().then((r) => {
+    setLijst(r.bronnen);
+    setImports(r.imports);
+    setToestemmingKeuze((vorige) => {
+      const nieuw = { ...vorige };
+      for (const b of r.bronnen) if (b.toestemming === true) nieuw[b.id] = true;
+      return nieuw;
+    });
+  }).catch(() => setLijst([])), []);
   useEffect(() => { void laad(); }, [laad]);
   const start = async (invoer: Promise<Parameters<typeof importeer>[0]>, archief: string) => {
     stop.current = false; setVoortgang({ fase: 'lezen', gedaan: 0, totaal: 0, nieuw: 0, bekend: 0, overgeslagen: 0, mislukt: 0 });
@@ -353,8 +364,31 @@ function Bronnen({ lang, naImport, toon }: { lang: Lang; naImport: () => void; t
       naImport(); void laad();
     } catch { toon(t('Не вдалося прочитати архів.', 'Het archief kon niet worden gelezen.')); setVoortgang(null); }
   };
+  const indexeerExtern = async (bron: 'google-drive' | 'nextcloud' | 'nas') => {
+    if (!toestemmingKeuze[bron]) {
+      toon(t('Позначте згоду на читання світлин із підключеного сховища.', 'Vink eerst uw toestemming aan om foto’s uit de gekoppelde opslag te lezen.'));
+      return;
+    }
+    setIndexBezig(bron);
+    try {
+      const r = await fotoClient.indexeer({ bron, toestemming: true });
+      if (r.gekoppeldAccount === false && r.nieuw === 0 && r.gekoppeld === 0) {
+        toon(t('Підключіть це сховище в розділі «Хмарне сховище → Підключення», щоб читати світлини напряму.', 'Koppel deze opslag eerst bij «Cloudopslag → Koppelingen» om foto’s rechtstreeks te lezen.'));
+      } else {
+        toon(t(`Індексовано: нових ${r.nieuw}, пов’язано ${r.gekoppeld}.`, `Geïndexeerd: nieuw ${r.nieuw}, gekoppeld ${r.gekoppeld}.`));
+        naImport();
+      }
+      void laad();
+    } catch (e) {
+      toon(foutTekst(lang, e));
+    } finally {
+      setIndexBezig('');
+    }
+  };
   const kiesBestand = (bron: string, soort: 'zip' | 'map' | 'los') => { doelBron.current = bron; (soort === 'zip' ? zipRef : soort === 'map' ? mapRef : losRef).current?.click(); };
   const groepen: Array<[BronStand['groep'], string]> = [['eigen', t('Ваше сховище', 'Uw opslag')], ['cloud', t('Хмарні сервіси', 'Clouddiensten')], ['sociaal', t('Соцмережі й месенджери', 'Sociale netwerken en chat')], ['apparaat', t('Пристрої й архіви', 'Apparaten en archieven')]];
+  const isExterneLiveBron = (id: string): id is 'google-drive' | 'nextcloud' | 'nas' =>
+    id === 'google-drive' || id === 'nextcloud' || id === 'nas';
   return (
     <div className='foto-bronnen'>
       <input ref={zipRef} type='file' accept='.zip,application/zip' hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void start(zipInvoer(f), f.name); }} />
@@ -376,16 +410,40 @@ function Bronnen({ lang, naImport, toon }: { lang: Lang; naImport: () => void; t
               <div className='foto-bron-standen'>{b.toegang.map((s) => <span key={s} className={`foto-stand is-${s}`}>{TOEGANG[s][lang === 'uk' ? 0 : 1]}</span>)}</div>
               <p>{b.uitleg[lang]}</p>
               {b.archief || b.gepland ? <details className='foto-bron-uitleg'><summary>{t('Як отримати файли', 'Hoe krijgt u de bestanden')}</summary>{b.archief ? <p>{b.archief[lang]}</p> : null}{b.gepland ? <p className='foto-hint'>{b.gepland[lang]}</p> : null}</details> : null}
+              {isExterneLiveBron(b.id) ? (
+                <div className='foto-bron-toestemming' data-foto-toestemming={b.id}>
+                  <label className='foto-vink'>
+                    <input
+                      type='checkbox'
+                      checked={Boolean(toestemmingKeuze[b.id])}
+                      onChange={(e) => setToestemmingKeuze((v) => ({ ...v, [b.id]: e.target.checked }))}
+                    />
+                    <span>{t('Дозволити читання світлин із підключеного сховища у цьому просторі', 'Toestemming om foto’s uit de gekoppelde opslag in deze ruimte te lezen')}</span>
+                  </label>
+                </div>
+              ) : null}
               <div className='foto-bron-acties'>
                 {b.id === 'eigen' ? <button type='button' className='foto-knop is-hoofd' disabled={!!voortgang && voortgang.fase !== 'klaar'} onClick={() => kiesBestand('eigen', 'los')}><Upload aria-hidden='true' />{t('Завантажити фото', 'Foto’s uploaden')}</button> : null}
                 {b.id === 'cloud' ? <button type='button' className='foto-knop' onClick={() => void fotoClient.indexeer().then((r) => { toon(t(`Додано ${r.nieuw}.`, `${r.nieuw} toegevoegd.`)); naImport(); void laad(); }).catch(() => toon(t('Не вдалося.', 'Mislukt.')))}><RefreshCw aria-hidden='true' />{t('Оновити', 'Bijwerken')}</button> : null}
+                {isExterneLiveBron(b.id) ? (
+                  <button
+                    type='button'
+                    className='foto-knop is-hoofd'
+                    disabled={!toestemmingKeuze[b.id] || indexBezig === b.id}
+                    onClick={() => void indexeerExtern(b.id as 'google-drive' | 'nextcloud' | 'nas')}
+                    data-foto-indexeer-extern={b.id}
+                  >
+                    <RefreshCw aria-hidden='true' />
+                    {t('Індексувати світлини', 'Foto’s indexeren')}
+                  </button>
+                ) : null}
                 {b.toegang.includes('kiezer') ? <a className='foto-knop' href={kiezerUrl(lang)}>{t('Вибрати в Google Фото', 'Kiezen in Google Foto’s')}</a> : null}
                 {b.toegang.includes('archief') ? <><button type='button' className='foto-knop' disabled={!!voortgang && voortgang.fase !== 'klaar'} onClick={() => kiesBestand(b.id, 'zip')}><Archive aria-hidden='true' />ZIP</button><button type='button' className='foto-knop' disabled={!!voortgang && voortgang.fase !== 'klaar'} onClick={() => kiesBestand(b.id, 'map')}><FolderOpen aria-hidden='true' />{t('Тека', 'Map')}</button></> : null}
               </div>
             </li>))}</ul>
         </section>
       ))}
-      <p className='foto-hint'>{t('Великі архіви (понад 2 ГБ) краще спершу розпакувати й імпортувати як теку: так браузер читає файли по одному.', 'Grote archieven (boven 2 GB) beter eerst uitpakken en als map importeren: dan leest de browser de bestanden één voor één.')}</p>
+      <p className='foto-hint'>{t('Великі архіви (понад 2 ГБ) краще спершу розпакувати й імпортувати як теку: так оглядач читає файли по одному.', 'Grote archieven (boven 2 GB) beter eerst uitpakken en als map importeren: dan leest de browser de bestanden één voor één.')}</p>
       {imports.length ? <section className='foto-bron-groep'><h3>{t('Історія імпорту', 'Importgeschiedenis')}</h3><ul className='foto-imports'>{imports.map((i) => <li key={i.id}><strong>{bronDef(i.bron)?.naam || i.bron}</strong> · {i.archief} <small>{new Date(i.createdAt).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-NL')} · +{i.nieuw} · ={i.bekend}{i.mislukt ? ` · ✕${i.mislukt}` : ''}{i.klaar ? '' : ` · ${t('не завершено', 'onderbroken')}`}</small></li>)}</ul></section> : null}
     </div>
   );
