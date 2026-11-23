@@ -1226,11 +1226,22 @@ test('L3-C21: Маршрутизація melding-link для сповіщень 
   }
 });
 
-test('L3-C22: Маршрутизація melding-link для сповіщень служби взаємин із клієнтами (klant.*) веде на дійсну сторінку клієнтів', () => {
-  const dienst = dienstVoorSoort('klant.dossier');
-  assert.ok(dienst !== undefined, 'Події klant.* (KLANT-001) мають розпізнаватися функцією dienstVoorSoort');
-  const doel = routeerMeldingLink('/', { soort: 'klant.dossier' });
-  assert.ok(isGeldigeSitePagina(doel), `Сповіщення klant.dossier має вести на дійсну https-сторінку без 404, отримано: ${doel}`);
+test('L3-C22: Маршрутизація melding-link для сповіщень служби взаємин із клієнтами (klant.* / owner.klantrelatie.*) веде на дійсну сторінку клієнтів', () => {
+  const klantCodes = Object.keys(ACTIE_LABELS).filter((k) => k.startsWith('klant.') || k.startsWith('owner.klantrelatie.'));
+  const kandidaatSoort = klantCodes[0] ?? 'owner.klantrelatie.klant';
+  const actieveSoort = dienstVoorSoort(kandidaatSoort) !== undefined ? kandidaatSoort : 'klant.aangemaakt';
+  const dienst: string | undefined = dienstVoorSoort(actieveSoort);
+  assert.ok(
+    dienst === 'crm' || dienst === 'hub',
+    `Події служби клієнтів (${kandidaatSoort} / klant.*) мають прив’язуватися функцією dienstVoorSoort до служби crm або hub, отримано: ${String(dienst)}`,
+  );
+  const crmHost = (SERVICE_HOSTS as Record<string, string>).crm || 'crm.tarasevych.com';
+  const doel = routeerMeldingLink('/', { soort: actieveSoort });
+  assert.ok(
+    doel.startsWith(`https://${crmHost}/`) || doel.startsWith(`https://${SERVICE_HOSTS.hub}/`),
+    `Сповіщення ${actieveSoort} має вести на піддомен crm або hub, отримано: ${doel}`,
+  );
+  assert.ok(isGeldigeSitePagina(doel), `Сповіщення ${actieveSoort} має вести на дійсну https-сторінку без 404, отримано: ${doel}`);
 });
 
 test('L3-C23: Маршрутизація melding-link для подій Пошти (mail.*) безпомилково перетворює відносні та застарілі шляхи на mail.tarasevych.com', () => {

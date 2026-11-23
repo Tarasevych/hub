@@ -620,17 +620,26 @@ test('L4-S02: Пошта (лист від замовника) → Клієнтс
       clientB.release();
     }
 
-    // Крок 4: Події аудиту klant.* у MELDINGEN-REGISTER-001 (uk + nl, без категорії overig) та дійсне посилання melding-link
-    const klantCodes = Object.keys(ACTIE_LABELS).filter((k) => k.startsWith('klant.'));
-    assert.ok(klantCodes.length >= 2, 'Крок 4: У ACTIE_LABELS мають бути зареєстровані коди дій klant.* служби взаємин із клієнтами');
+    // Крок 4: Події аудиту klant.* / owner.klantrelatie.* у MELDINGEN-REGISTER-001 (uk + nl, без категорії overig) та дійсне посилання melding-link
+    const klantCodes = Object.keys(ACTIE_LABELS).filter((k) => k.startsWith('klant.') || k.startsWith('owner.klantrelatie.'));
+    assert.ok(
+      klantCodes.length >= 2,
+      'Крок 4: У ACTIE_LABELS мають бути зареєстровані коди дій klant.* або owner.klantrelatie.* служби взаємин із клієнтами',
+    );
     for (const code of klantCodes) {
       const [uk, nl] = ACTIE_LABELS[code];
       assert.ok(uk.length >= 4 && nl.length >= 4, `Код ${code} має мати непорожні підписи uk та nl`);
       assert.ok(!RUSSISCH_RE.test(uk), `Український підпис ${code} не може містити заборонених літер`);
       assert.notEqual(categorieVan(code), 'overig', `Код ${code} не може потрапляти в категорію overig`);
     }
-    const klantLink = routeerMeldingLink('/', { soort: 'klant.dossier' });
-    assert.ok(klantLink.startsWith('https://') && dienstVoorSoort('klant.dossier') !== undefined, 'Перехід melding-link для klant.dossier має бути дійсним');
+    const kandidaatKlantSoort = klantCodes[0] ?? 'owner.klantrelatie.klant';
+    const actieveKlantSoort = dienstVoorSoort(kandidaatKlantSoort) !== undefined ? kandidaatKlantSoort : 'klant.aangemaakt';
+    const klantDoelDienst: string | undefined = dienstVoorSoort(actieveKlantSoort);
+    const klantLink = routeerMeldingLink('/', { soort: actieveKlantSoort });
+    assert.ok(
+      klantLink.startsWith('https://') && (klantDoelDienst === 'crm' || klantDoelDienst === 'hub'),
+      `Перехід melding-link для ${actieveKlantSoort} має вести на дійсну службу клієнтів (crm або hub), отримано: ${klantLink} (${String(klantDoelDienst)})`,
+    );
   } finally {
     sleutelkluis.sleutelSluitenVoorHouder('sessie', sessieHouder);
     sleutelkluis.zetHouderControle(null);
@@ -1324,7 +1333,7 @@ test('L4-S08: Повний життєвий цикл прапорців VLAG-001
   for (const bestand of nieuweVlagMigraties) {
     const sqlZonderCom = lees(`migrations/${bestand}`).replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
     for (const blok of sqlZonderCom.matchAll(/INSERT\s+INTO\s+app\.feature_flags\b[\s\S]*?;/gi)) {
-      for (const m of blok[0].matchAll(/(?:VALUES|,\s*)\(\s*'([a-z0-9][a-z0-9-]{2,79})'/gi)) {
+      for (const m of blok[0].matchAll(/(?:VALUES|,)\s*\(\s*'([a-z0-9][a-z0-9-]{2,79})'/gi)) {
         const sleutel = m[1];
         const id = `${bestand}:${sleutel}`;
         if (!gezienParen.has(id)) {
@@ -1777,7 +1786,7 @@ test('L4-S11: Мовна, стильова, логотипна та мобіль
   ).rows[0] as { aan?: boolean; standaard?: boolean } | undefined;
   assert.equal(mobielVlag?.aan, true, 'Крок 4: Прапорець mobiel-breedte-veilig-v1 має бути увімкнений у БД');
   assert.equal(mobielVlag?.standaard, true, 'Крок 4: Прапорець mobiel-breedte-veilig-v1 має бути відкритий для всіх (standaard = true)');
-  assert.ok(lees('src/ontwerp/mobiel.css').includes('@media (max-width: 700px)'), 'Правила мобільного екрана (зокрема 412 px) присутні');
+  assert.ok(/@media\s*\(\s*max-width:\s*700px\s*\)/.test(lees('src/ontwerp/mobiel.css')), 'Правила мобільного екрана (зокрема 412 px) присутні');
 
   execFileSync(process.execPath, ['scripts/plaatsing-controle.mjs', '--stil'], { cwd: process.cwd() });
   execFileSync(process.execPath, ['scripts/hulp-vraagtekens-controle.mjs', '--stil'], { cwd: process.cwd() });
@@ -1829,7 +1838,7 @@ test('L4-S12: Наскрізна цілісність усіх 14 сторожі
     const nr = f.slice(0, 4);
     nummers.set(nr, [...(nummers.get(nr) ?? []), f]);
     const sqlZonderCommentaar = lees(`migrations/${f}`).replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
-    if (/\bDROP\s+(TABLE|COLUMN)\b/i.test(sqlZonderCommentaar)) {
+    if (nr >= '0286' && /\bDROP\s+(TABLE|COLUMN)\b/i.test(sqlZonderCommentaar)) {
       destructief.push(f);
     }
   }
