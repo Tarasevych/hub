@@ -44,22 +44,18 @@ CREATE POLICY notities_agenda_koppelingen_eigen ON app.notities_agenda_koppeling
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND ruimte = NULLIF(current_setting('app.ruimte', true), '')
     )
   )
   WITH CHECK (
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND ruimte = NULLIF(current_setting('app.ruimte', true), '')
     )
   );
+
+REVOKE ALL ON app.notities_agenda_koppelingen FROM PUBLIC;
 
 DO $rechten$
 BEGIN

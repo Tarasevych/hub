@@ -4,7 +4,7 @@
 
 ## 1. Doel en afbakening
 
-Dit document beschrijft de consolidatie van Cloudopslag (taken **П-1..П-7** en **З-13**, migratie `0317_cloud_bruggen_vlag.sql`):
+Dit document beschrijft de consolidatie van Cloudopslag (taken **P-1..P-7** en **Z-13**, migratie `0317_cloud_bruggen_vlag.sql`):
 
 1. Overgang van de serverbruggen voor externe aanbieders **M4, M5, M6, M8, M10 en M11** van handmatige omgevingsvariabelen `CLOUD_M*_STAGING` naar beheerde functievlaggen in `app.feature_flags`, met volledig behoud van achterwaartse compatibiliteit met omgevingsvariabelen voor eenheidstests.
 2. Beveiligde koppeling van eigen **Nextcloud**- en **NAS**-opslag (Synology, QNAP, TrueNAS) via **WebDAV over HTTPS** per gebruikersruimte (`prive` of `technisch`).
@@ -29,7 +29,7 @@ Conform **VLAG-001** worden alle nieuwe vlaggen geregistreerd met `aan = false, 
 
 1. **Adreskeuring (`veiligWebdavAdres`):** uitsluitend `https://` op toegestane poorten (`443`, `5006`, `8443`), zonder ingebedde inloggegevens, zoekparameters of ankers. Lokale namen (`localhost`, `*.local`, `*.internal`, `*.arpa`) en alle niet-publieke IPv4- en IPv6-reeksen (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `100.64.0.0/10`, `::1`, `fc00::/7`, `fe80::/10`, inclusief IPv4-in-IPv6) worden onmiddellijk geweigerd.
 2. **Netwerkafscherming (`pinnedFetch`):** elk `PROPFIND`-verzoek gebruikt DNS-vastzetting op de socket zelf tegen DNS-herkoppeling, met een tijdslimiet van 15 seconden, een bovengrens van 512 KB en volledige weigering van `3xx`-omleidingen.
-3. **XML-bescherming:** declaraties `<!DOCTYPE` en `<!ENTITY` worden vóór het ontleden afgewezen, het antwoord doorloopt `parseCloudXml` en elke `<d:href>` moet binnen dezelfde oorsprong en mapwortel vallen.
+3. **XML-bescherming:** declaraties `<!DOCTYPE` en `<!ENTITY` worden vóór het ontleden afgewezen, het antwoord doorloopt `ontleedDavXml` en elke `<d:href>` moet binnen dezelfde oorsprong en mapwortel vallen.
 4. **Versleuteling en ruimte-isolatie:** toepassingswachtwoorden worden versleuteld via de sleutelkluis (`verzegel` / `ontzegel` in `backend/sleutelkluis.ts`) met AAD `cloud-webdav|<ruimte>|<userId>|<id>`, bewaard in `app.cloud_webdav_koppelingen` onder `ENABLE` + `FORCE ROW LEVEL SECURITY` en nooit naar de client of logboeken gestuurd.
 
 ## 4. Toetsing aan de 15 vragen van architectuur «Klimop» (KLIMOP-001)

@@ -312,7 +312,7 @@ export function WebdavAanbiederVeld({
         <p className='cvn-hint'>
           {tr(
             lang,
-            'Створіть окремий пароль застосунку в налаштуваннях безпеки вашого сервера. Пароль шифрується сховищем ключів і ніколи не повертається у браузер.',
+            'Створіть окремий пароль застосунку в налаштуваннях безпеки вашого сервера. Пароль шифрується сховищем ключів і ніколи не повертається в оглядач.',
             'Maak een afzonderlijk toepassingswachtwoord aan in de beveiligingsinstellingen van uw server. Het wachtwoord wordt in de sleutelkluis versleuteld en komt nooit terug naar de browser.',
           )}
         </p>

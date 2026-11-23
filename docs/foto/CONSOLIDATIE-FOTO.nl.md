@@ -4,7 +4,7 @@
 
 ## 1. Doel en afbakening
 
-Dit document beschrijft de afronding van de dienst «Foto’s» (taak **З-14**, migratie `0318_foto_dienst_afwerking.sql`):
+Dit document beschrijft de afronding van de dienst «Foto’s» (taak **Z-14**, migratie `0318_foto_dienst_afwerking.sql`):
 
 1. Rechtstreeks en veilig indexeren en bekijken van foto’s en video’s uit gekoppelde **Google Drive** en uit gekoppelde **Nextcloud**- en **NAS**-opslag (via beveiligde WebDAV), uitsluitend na uitdrukkelijke toestemming van de gebruiker binnen de actieve ruimte (`prive` of `technisch`).
 2. Behoud van eerlijke tweetalige toelichtingen voor opslagdiensten zonder open webprotocol (**iCloud**, **Proton Drive**) zonder misleidende koppelknoppen.

@@ -39,6 +39,8 @@ CREATE POLICY mail_dienstbruggen_eigen ON app.mail_dienstbruggen
     )
   );
 
+REVOKE ALL ON app.mail_dienstbruggen FROM PUBLIC;
+
 DO $rechten$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mijnruimte_app') THEN

@@ -1,5 +1,5 @@
 // Швидкий перегляд події (панель на комп'ютері, нижній аркуш на телефоні): переходи до листів учасника (mail),
-// контактів (contact / afzenders), прив'язаних нотаток зустрічі (notities / notes), вивантаження .ics та CalDAV-редагування за прапорцем.
+// контактів (contact / afzenders), прив'язаних нотаток зустрічі (notities), вивантаження .ics та CalDAV-редагування за прапорцем.
 import { useCallback, useEffect, useState } from 'react';
 import {
   BookUser,
@@ -238,7 +238,7 @@ export default function GebeurtenisDetail({
 
       {actieFout ? <p className='agv-balk is-fout' role='alert'><span>{actieFout}</span></p> : null}
 
-      {/* Нотатки до зустрічі (notities / notes) */}
+      {/* Нотатки до зустрічі (notities) */}
       <div className='agv-notities-blok' data-agenda-v3-notities='1'>
         <div className='agv-notities-kop'>
           <strong><NotebookPen aria-hidden='true' />{DETAIL_TEKSTEN.notitiesKop[lang]}</strong>
@@ -294,7 +294,7 @@ export default function GebeurtenisDetail({
         ) : null}
       </div>
 
-      {/* Одноклікове вивантаження .ics (RFC 5545) */}
+      {/* Вивантаження .ics в один натиск (RFC 5545) */}
       <div className='agv-ics-balk'>
         <button type='button' className='agv-knop is-kompakt' disabled={actieBezig} onClick={() => void haalIcsOp()} data-agenda-v3-export-ics='1'>
           <Download aria-hidden='true' />{DETAIL_TEKSTEN.exportIcs[lang]}

@@ -18,20 +18,14 @@ CREATE POLICY agenda_koppeling_eigen ON app.agenda_koppeling
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND COALESCE(ruimte, 'prive') = COALESCE(NULLIF(current_setting('app.ruimte', true), ''), 'prive')
     )
   )
   WITH CHECK (
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND COALESCE(ruimte, 'prive') = COALESCE(NULLIF(current_setting('app.ruimte', true), ''), 'prive')
     )
   );
 
@@ -41,20 +35,14 @@ CREATE POLICY agenda_abonnement_eigen ON app.agenda_abonnement
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND COALESCE(ruimte, 'prive') = COALESCE(NULLIF(current_setting('app.ruimte', true), ''), 'prive')
     )
   )
   WITH CHECK (
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND COALESCE(ruimte, 'prive') = COALESCE(NULLIF(current_setting('app.ruimte', true), ''), 'prive')
     )
   );
 
@@ -64,22 +52,18 @@ CREATE POLICY agenda_externe_gebeurtenis_eigen ON app.agenda_externe_gebeurtenis
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND COALESCE(ruimte, 'prive') = COALESCE(NULLIF(current_setting('app.ruimte', true), ''), 'prive')
     )
   )
   WITH CHECK (
     current_user::text <> 'mijnruimte_app'
     OR (
       user_id = app.huidige_gebruiker()
-      AND (
-        NULLIF(current_setting('app.ruimte', true), '') IS NULL
-        OR ruimte = NULLIF(current_setting('app.ruimte', true), '')
-      )
+      AND COALESCE(ruimte, 'prive') = COALESCE(NULLIF(current_setting('app.ruimte', true), ''), 'prive')
     )
   );
+
+REVOKE ALL ON app.agenda_koppeling, app.agenda_abonnement, app.agenda_externe_gebeurtenis FROM PUBLIC;
 
 DO $agenda_koppelingen_rechten$
 BEGIN
