@@ -621,6 +621,10 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.systeem.verbinding.storing': ['Перерва зв’язку сторінки з сервером (зафіксовано доказ клієнта)', 'Verbindingsonderbreking met de server (clientbewijs vastgelegd)'],
   'owner.systeem.verbinding.offline': ['Втрата мережевого з’єднання пристрою (зафіксовано доказ клієнта)', 'Verlies van netwerkverbinding op het apparaat (clientbewijs vastgelegd)'],
   'owner.systeem.verbinding.hersteld': ['Зв’язок із сервером відновлено та внесено до хронології', 'Verbinding met de server hersteld en opgeslagen in de tijdlijn'],
+  'telegram.status.hersteld': ['Зв’язок зі службою входу Telegram відновлено після тривалого збою', 'Verbinding met Telegram-aanmelddienst hersteld na langdurige storing'],
+  'telegram.alarm.status-lang': ['Тривалий збій зв’язку зі службою входу Telegram (понад 10 хвилин)', 'Langdurige verbindingsstoring bij aanmelden met Telegram (meer dan 10 minuten)'],
+  'telegram.alarm.status-vast': ['Стійка помилка ключа або доступу бота входу Telegram', 'Blijvende sleutel- of toegangsfout van Telegram-aanmeldbot'],
+  'telegram.alarm.status-hersteld': ['Історичне сповіщення про відновлення входу через Telegram', 'Historische herstelmelding van aanmelden met Telegram'],
 };
 
 const TOKEN_UK: Record<string, string> = { owner: '', admin: 'Адмін', mcp: 'ШІ', tool: 'інструмент', grant: 'дозвіл', created: 'створено', updated: 'змінено', deleted: 'видалено', revoked: 'відкликано', approved: 'схвалено', denied: 'відхилено', opened: 'відкрито', closed: 'закрито', login: 'вхід', logout: 'вихід' };

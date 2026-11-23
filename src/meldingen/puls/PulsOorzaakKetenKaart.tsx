@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { veiligeMeldingUrl, type MeldingEcosysteemGebeurtenis, type MeldingGebeurtenisStatus } from '../../../shared/meldingen-ecosysteem';
 import type { PulsOorzaakKeten, Taal, VoorwaardelijkUitstelSoort } from '../../../shared/meldingen-puls/kern';
-import { verrijkGebeurtenisVoorPuls } from '../../../shared/meldingen-puls/kern';
+import { groepeerOorzaakGevolgen, verrijkGebeurtenisVoorPuls } from '../../../shared/meldingen-puls/kern';
 import { PulsBronTeken, PulsDienstChip, PulsKlimopZegel, PulsUitstelMenu } from './PulsVisueelAnker';
 
 type Props = {
@@ -40,6 +40,7 @@ export default function PulsOorzaakKetenKaart({
   const [toonAlleLeden, setToonAlleLeden] = useState(false);
   const [uitstelOpen, setUitstelOpen] = useState(false);
   const wortelVerrijkt = verrijkGebeurtenisVoorPuls(keten.wortel, lang);
+  const gegroepeerdeGevolgen = groepeerOorzaakGevolgen(keten.gevolgen);
   const primaireHref =
     keten.wortel.acties.map((a) => veiligeMeldingUrl(a.href, 500)).find(Boolean) ||
     veiligeMeldingUrl(keten.wortel.meta?.link, 500) ||
@@ -71,14 +72,14 @@ export default function PulsOorzaakKetenKaart({
         <div className='puls-keten-gevolgen' data-geen-veeg='1'>
           <span className='puls-keten-label'>{t('Автоматично розблокує:', 'Herstelt automatisch:')}</span>
           <div className='puls-keten-chips'>
-            {keten.gevolgen.map((gev) => (
+            {gegroepeerdeGevolgen.map((gev) => (
               <PulsDienstChip
                 key={gev.id}
                 merkSleutel={gev.merkSleutel}
                 icoon={gev.icoon}
                 toon={gev.toon}
                 label={gev.label}
-                sub={gev.herstelTekst}
+                sub={gev.herstelTekst ? (gev.herstelTekst.startsWith('—') ? ` ${gev.herstelTekst}` : ` — ${gev.herstelTekst}`) : undefined}
               />
             ))}
           </div>

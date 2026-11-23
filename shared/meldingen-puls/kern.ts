@@ -104,6 +104,7 @@ export type OorzaakGevolgDienst = {
   icoon: PulsIcoonSoort;
   toon: PulsKleurToon;
   herstelTekst: string;
+  aantal?: number;
 };
 
 export type PulsOorzaakKeten = {
@@ -370,6 +371,10 @@ function kiesSchemaEnNiveau(geb: MeldingEcosysteemGebeurtenis): { schemaId: Meld
   }
 
   if (geb.kanaal === 'beveiliging') {
+    const volTekst = `${geb.titel} ${geb.bericht}`;
+    if (/(зв’язок відновлено|знову працює|verbinding hersteld|werkt weer)/i.test(volTekst) && !/(не працює|werkt niet)/i.test(volTekst)) {
+      return { schemaId: 'S15', niveau: 'gewoon' };
+    }
     const isBesluit = /(підтверд|запит|дозвол|bevestig|toestemm|verzoek)/i.test(bronSoort) && geb.prioriteit !== 'kritiek';
     return { schemaId: 'S1', niveau: isBesluit ? 'besluit' : 'gevaar' };
   }
@@ -532,6 +537,10 @@ export function verrijkGebeurtenisVoorPuls(geb: MeldingEcosysteemGebeurtenis, la
 
 function bepaalOorzaakSleutel(geb: MeldingEcosysteemGebeurtenis, lang: Taal): { sleutel: string; aanbiederLabel: string } | null {
   if (geb.status === 'archief' || geb.status === 'opgelost') return null;
+  const volBericht = `${geb.titel} ${geb.bericht}`;
+  if (/(зв’язок відновлено|знову працює|verbinding hersteld|werkt weer)/i.test(volBericht) && !/(не працює|werkt niet)/i.test(volBericht)) {
+    return null;
+  }
   const tekst = `${geb.bron} ${geb.titel} ${geb.bericht} ${geb.contextLabel} ${String(geb.meta?.provider || '')}`.toLowerCase();
   const isStoringOfWacht =
     geb.prioriteit === 'hoog' ||
@@ -547,6 +556,46 @@ function bepaalOorzaakSleutel(geb: MeldingEcosysteemGebeurtenis, lang: Taal): { 
     return { sleutel: 'systeem:netwerk', aanbiederLabel: lang === 'nl' ? 'Netwerk' : 'Мережа' };
   }
   return null;
+}
+
+/**
+ * Групує повторювані дочірні наслідки однієї й тієї самої служби (підрозділ + текст відновлення)
+ * в один компактний чип із лічильником «×N», щоб ніколи не виводити десятки однакових рядків поспіль.
+ */
+export function groepeerOorzaakGevolgen(gevolgen: readonly OorzaakGevolgDienst[]): OorzaakGevolgDienst[] {
+  const perDienst = new Map<string, { basisLabel: string; item: OorzaakGevolgDienst; aantal: number }>();
+  for (const g of gevolgen) {
+    const schoonLabel = g.label.replace(/\s*·\s*×\d+\s*$/, '').trim();
+    const sleutel = `${schoonLabel}|${g.herstelTekst}|${g.merkSleutel ?? ''}`;
+    const erbij = Math.max(1, Math.trunc(g.aantal ?? 1));
+    const bestaand = perDienst.get(sleutel);
+    if (bestaand) {
+      bestaand.aantal += erbij;
+      if (!bestaand.item.merkSleutel && g.merkSleutel) {
+        bestaand.item = { ...bestaand.item, merkSleutel: g.merkSleutel };
+      }
+    } else {
+      perDienst.set(sleutel, { basisLabel: schoonLabel, item: g, aantal: erbij });
+    }
+  }
+  const uit: OorzaakGevolgDienst[] = [];
+  for (const { basisLabel, item, aantal } of perDienst.values()) {
+    uit.push({
+      ...item,
+      label: aantal > 1 ? `${basisLabel} · ×${aantal}` : basisLabel,
+      aantal,
+    });
+  }
+  return uit;
+}
+
+function ukVerbondenDienstenVorm(n: number): string {
+  const m100 = n % 100;
+  const m10 = n % 10;
+  if (m100 >= 11 && m100 <= 14) return `${n} пов’язаних служб`;
+  if (m10 === 1) return `${n} пов’язану службу`;
+  if (m10 >= 2 && m10 <= 4) return `${n} пов’язані служби`;
+  return `${n} пов’язаних служб`;
 }
 
 /**
@@ -584,7 +633,7 @@ export function bundelOorzaakKetens(
     });
 
     const wortel = gesorteerd[0];
-    const gevolgen: OorzaakGevolgDienst[] = gesorteerd.map((item) => {
+    const ruweGevolgen: OorzaakGevolgDienst[] = gesorteerd.map((item) => {
       const anker = herkenMerkEnAnker(item, lang);
       const kortOnderdeel = subdomeinMenselijkLabel(item.subdomein, lang);
       const herstelTekst =
@@ -601,8 +650,10 @@ export function bundelOorzaakKetens(
         icoon: anker.icoon,
         toon: anker.toon,
         herstelTekst,
+        aantal: 1,
       };
     });
+    const gevolgen = groepeerOorzaakGevolgen(ruweGevolgen);
 
     for (const item of gesorteerd) ketenLeden.add(item.id);
     const nDiensten = gevolgen.length;
@@ -612,8 +663,10 @@ export function bundelOorzaakKetens(
       wortelTitel: wortel.titel,
       samenvatting:
         lang === 'nl'
-          ? `Oorzaak · 1 handeling herstelt ${nDiensten} verbonden onderdelen (${groep.label})`
-          : `Першопричина · 1 дія автоматично відновить ${nDiensten} пов’язані служби (${groep.label})`,
+          ? nDiensten === 1
+            ? `Oorzaak · 1 handeling herstelt 1 verbonden onderdeel (${groep.label})`
+            : `Oorzaak · 1 handeling herstelt ${nDiensten} verbonden onderdelen (${groep.label})`
+          : `Першопричина · 1 дія автоматично відновить ${ukVerbondenDienstenVorm(nDiensten)} (${groep.label})`,
       gevolgen,
       alleIds: gesorteerd.map((x) => x.id),
     });

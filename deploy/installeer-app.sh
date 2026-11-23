@@ -1439,6 +1439,7 @@ installeren() {
   # Timers (cron, opruimen, back-up) starten; `enable` alleen start ze pas na een herstart.
   systemctl enable "${TIMERS[@]}" >/dev/null 2>&1 || true   # nieuwe timers moeten ook een herstart overleven
   systemctl start "${TIMERS[@]}"
+  kern_domeinen_synchroniseren "$doel"
   agenten_bijwerken "$doel"
   # Zone G (22.10.2026): deze server als apparaat van de eigenaar (opdracht-terminal); stil, nooit fataal, alleen de eerste keer.
   if [ -s "$doel/deploy/apparaat-inrichten.sh" ]; then bash "$doel/deploy/apparaat-inrichten.sh" --bij-installeren "$doel" || waarschuwing "server als apparaat: later met «$0 terminal-inrichten»"; fi
@@ -1592,8 +1593,34 @@ EOT
       waarschuwing "$cf is al aangepast: niet overschreven. Zet zelf in de globale opties 'admin unix/$APPS_CADDY_SOCK' en geef --caddy-server door bij apps-koppelen."
     else
       [ -s "$cf" ] && cp -a "$cf" "$cf.voor-mijn-ruimte.$(date +%Y%m%d%H%M%S)"
+      local kern_domein app_poort="${PORT:-8080}" kern_hosts=""
+      [[ "$app_poort" =~ ^[0-9]{2,5}$ ]] || app_poort=8080
+      kern_domein="$(lees_publiek_domein "$bron" || lees_publiek_domein "$HUIDIG" || true)"
+      if [ -n "$kern_domein" ]; then
+        kern_hosts="hub.$kern_domein id.$kern_domein mail.$kern_domein cloud.$kern_domein ai.$kern_domein github.$kern_domein crm.$kern_domein huis.$kern_domein api.$kern_domein admin.$kern_domein dashboard.$kern_domein mcp.$kern_domein"
+      fi
       if [ "$caddy" = tunnel ]; then
-        cat > "$cf" <<EOT
+        if [ -n "$kern_hosts" ]; then
+          cat > "$cf" <<EOT
+# Beheerd door mijn-ruimte-installeer apps-inrichten (modus tunnel): HTTP alleen op 127.0.0.1:$poort; TLS doet de tunnel.
+# Routes per app zet de apps-agent via de admin-socket; kerndomeinen gaan naar de hoofdapp, de rest krijgt het vangnet.
+{
+	admin unix/$APPS_CADDY_SOCK
+	auto_https off
+}
+http://:$poort {
+	bind 127.0.0.1
+	@mijnruimte_kern host $kern_hosts
+	handle @mijnruimte_kern {
+		reverse_proxy 127.0.0.1:$app_poort
+	}
+	handle {
+		respond "Geen app op dit adres" 404
+	}
+}
+EOT
+        else
+          cat > "$cf" <<EOT
 # Beheerd door mijn-ruimte-installeer apps-inrichten (modus tunnel): HTTP alleen op 127.0.0.1:$poort; TLS doet de tunnel.
 # Routes per app zet de apps-agent via de admin-socket; dit is alleen het vangnet.
 {
@@ -1605,8 +1632,26 @@ http://:$poort {
 	respond "Geen app op dit adres" 404
 }
 EOT
+        fi
       else
-        cat > "$cf" <<EOT
+        if [ -n "$kern_hosts" ]; then
+          cat > "$cf" <<EOT
+# Beheerd door mijn-ruimte-installeer apps-inrichten (modus publiek): Caddy op 80/443 met automatische HTTPS per app-domein.
+{
+	admin unix/$APPS_CADDY_SOCK
+}
+:443 {
+	@mijnruimte_kern host $kern_hosts
+	handle @mijnruimte_kern {
+		reverse_proxy 127.0.0.1:$app_poort
+	}
+	handle {
+		respond "Geen app op dit adres" 404
+	}
+}
+EOT
+        else
+          cat > "$cf" <<EOT
 # Beheerd door mijn-ruimte-installeer apps-inrichten (modus publiek): Caddy op 80/443 met automatische HTTPS per app-domein.
 {
 	admin unix/$APPS_CADDY_SOCK
@@ -1615,6 +1660,7 @@ EOT
 	respond "Geen app op dit adres" 404
 }
 EOT
+        fi
       fi
       chmod 0644 "$cf"
     fi
@@ -1853,7 +1899,258 @@ apps_status() {
 # dan verandert er niets. Volgorde: nieuwe versie in een tijdelijk bestand → `cloudflared tunnel ingress validate` → kopie van de
 # oude → vervangen → tunnel herstarten; start die niet, dan gaat de kopie terug. De DNS (CNAME naar <tunnel-id>.cfargotunnel.com)
 # zet de eigenaar zelf bij zijn DNS-beheerder; de site controleert hem. Een herstart van de tunnel onderbreekt de site enkele seconden.
-CF_CONFIG=/etc/cloudflared/config.yml
+if [ "$(id -u)" -eq 0 ]; then unset MIJN_RUIMTE_CF_CONFIG MIJN_RUIMTE_CADDY_CONFIG MIJN_RUIMTE_KERN_SLAAP_SEC; fi
+CF_CONFIG="${MIJN_RUIMTE_CF_CONFIG:-/etc/cloudflared/config.yml}"
+CADDY_CONFIG="${MIJN_RUIMTE_CADDY_CONFIG:-/etc/caddy/Caddyfile}"
+
+# HERSTEL-001: повторостійка синхронізація канонічних піддоменів ядра в /etc/caddy/Caddyfile та /etc/cloudflared/config.yml під час installeren().
+# На сервері з раніше налаштованим тунелем або Caddy новий системний піддомен (напр. crm.<домен>) додається автоматично без ручного втручання.
+# Idempotente synchronisatie van de kerndomeinen in Caddyfile en cloudflared/config.yml; nooit fataal op een testomgeving zonder deze diensten.
+lees_publiek_domein() { # lees_publiek_domein [releasemap]
+  local map="${1:-$HUIDIG}" d=""
+  [ -f "$map/backend/deployment-identiteit.ts" ] && [ ! -L "$map/backend/deployment-identiteit.ts" ] || return 1
+  d="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$map/backend/deployment-identiteit.ts" 2>/dev/null | head -1)"
+  [[ "$d" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$ ]] && [[ "$d" =~ ^[a-z0-9.-]+$ ]] || return 1
+  printf '%s' "$d"
+}
+
+caddy_kern_domeinen_toevoegen() { # caddy_kern_domeinen_toevoegen <in> <uit> <domein> <app_poort> — 0=bijgewerkt, 2=ongewijzigd, 3=ongeldig
+  python3 - "$1" "$2" "$3" "$4" <<'PY'
+import re, sys
+
+bron_pad, uit_pad, domein, poort = sys.argv[1:5]
+if not re.fullmatch(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+", domein):
+    sys.exit(3)
+if not re.fullmatch(r"[0-9]{2,5}", poort) or not (1 <= int(poort) <= 65535):
+    sys.exit(3)
+try:
+    tekst = open(bron_pad, encoding="utf-8").read().replace("\r\n", "\n")
+except OSError:
+    sys.exit(3)
+
+kern_subs = ["hub", "id", "mail", "cloud", "ai", "github", "crm", "huis", "api", "admin", "dashboard", "mcp"]
+hosts = " ".join(f"{s}.{domein}" for s in kern_subs)
+
+if "Geen app op dit adres" not in tekst and "@mijnruimte_kern" not in tekst:
+    sys.exit(2)
+
+if "@mijnruimte_kern" in tekst:
+    nieuw = re.sub(
+        r"^([ \t]*)@mijnruimte_kern[ \t]+host[ \t]+[^\n]+$",
+        lambda m: f"{m.group(1)}@mijnruimte_kern host {hosts}",
+        tekst,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    nieuw = re.sub(
+        r"(handle[ \t]+@mijnruimte_kern[ \t]*\{\s*\n[ \t]*reverse_proxy[ \t]+)127\.0\.0\.1:[0-9]{2,5}",
+        lambda m: f"{m.group(1)}127.0.0.1:{poort}",
+        nieuw,
+        count=1,
+    )
+    # Als een losse respond-regel nog buiten een handle-blok stond, wikkel die in een terugval-handle (in Caddy v2 gaat losse respond vóór handle).
+    nieuw = re.sub(
+        r'(handle[ \t]+@mijnruimte_kern[ \t]*\{[^{}]*\}\s*\n)([ \t]*)respond[ \t]+"Geen app op dit adres"[ \t]+404[ \t]*$',
+        lambda m: f'{m.group(1)}{m.group(2)}handle {{\n{m.group(2)}\trespond "Geen app op dit adres" 404\n{m.group(2)}}}',
+        nieuw,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if nieuw == tekst:
+        sys.exit(2)
+    with open(uit_pad, "w", encoding="utf-8", newline="\n") as f:
+        f.write(nieuw)
+    sys.exit(0)
+
+pat = re.compile(r'^([ \t]*)respond[ \t]+"Geen app op dit adres"[ \t]+404[ \t]*$', re.MULTILINE)
+m = pat.search(tekst)
+if not m:
+    sys.exit(2)
+ind = m.group(1)
+blok = (
+    f"{ind}@mijnruimte_kern host {hosts}\n"
+    f"{ind}handle @mijnruimte_kern {{\n"
+    f"{ind}\treverse_proxy 127.0.0.1:{poort}\n"
+    f"{ind}}}\n"
+    f"{ind}handle {{\n"
+    f'{ind}\trespond "Geen app op dit adres" 404\n'
+    f"{ind}}}"
+)
+nieuw = tekst[:m.start()] + blok + tekst[m.end():]
+with open(uit_pad, "w", encoding="utf-8", newline="\n") as f:
+    f.write(nieuw)
+PY
+}
+
+cf_kern_domeinen_toevoegen() { # cf_kern_domeinen_toevoegen <in> <uit> <domein> — 0=bijgewerkt, 2=ongewijzigd, 3=ongeldig
+  python3 - "$1" "$2" "$3" <<'PY'
+import re, sys
+
+bron_pad, uit_pad, domein = sys.argv[1:4]
+if not re.fullmatch(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+", domein):
+    sys.exit(3)
+try:
+    tekst = open(bron_pad, encoding="utf-8").read().replace("\r\n", "\n")
+except OSError:
+    sys.exit(3)
+
+if "TUNNEL-ID-INVULLEN" in tekst or "<TUNNEL-ID>" in tekst:
+    sys.exit(2)
+
+regels = tekst.splitlines()
+host_re = re.compile(r"^([ \t]*)-\s*hostname:\s*(['\"]?)([^'\"#\s]+)\2\s*(?:#.*)?$")
+svc_re = re.compile(r"^([ \t]+)service:\s*(['\"]?)([^'\"#\s]+)\2\s*(?:#.*)?$")
+
+blokken = []
+i = 0
+while i < len(regels):
+    hm = host_re.match(regels[i])
+    if not hm:
+        i += 1
+        continue
+    ind = hm.group(1)
+    host = hm.group(3).lower()
+    eind = i
+    prop_ind = ind + "  "
+    svc = ""
+    j = i + 1
+    while j < len(regels):
+        r = regels[j]
+        gestript = r.strip()
+        if not gestript or gestript.startswith("#"):
+            j += 1
+            continue
+        huidige_ind = len(r) - len(r.lstrip(" \t"))
+        if huidige_ind <= len(ind):
+            break
+        eind = j
+        sm = svc_re.match(r)
+        if sm:
+            prop_ind = sm.group(1)
+            svc = sm.group(3)
+        j += 1
+    blokken.append({"host": host, "start": i, "eind": eind, "ind": ind, "prop_ind": prop_ind, "svc": svc})
+    i = j
+
+hub_host = f"hub.{domein}"
+hub_blok = next((b for b in blokken if b["host"] == hub_host and re.fullmatch(r"http://127\.0\.0\.1:([0-9]{2,5})", b["svc"])), None)
+if not hub_blok:
+    sys.exit(2)
+poort = int(hub_blok["svc"].rsplit(":", 1)[1])
+if not (1 <= poort <= 65535):
+    sys.exit(2)
+
+bestaande = {b["host"] for b in blokken}
+kern_subs = ["hub", "id", "mail", "cloud", "ai", "github", "crm", "huis", "api", "admin", "mcp"]
+ontbrekend = [f"{s}.{domein}" for s in kern_subs if f"{s}.{domein}" not in bestaande]
+if not ontbrekend:
+    sys.exit(2)
+
+github_host = f"github.{domein}"
+anker = next((b for b in reversed(blokken) if b["host"] == github_host), hub_blok)
+invoeg = []
+for h in ontbrekend:
+    invoeg.append(f"{hub_blok['ind']}- hostname: {h}")
+    invoeg.append(f"{hub_blok['prop_ind']}service: {hub_blok['svc']}")
+
+nieuwe_regels = regels[:anker["eind"] + 1] + invoeg + regels[anker["eind"] + 1:]
+with open(uit_pad, "w", encoding="utf-8", newline="\n") as f:
+    f.write("\n".join(nieuwe_regels) + "\n")
+PY
+}
+
+kern_domeinen_synchroniseren() { # kern_domeinen_synchroniseren [releasemap]
+  local doel="${1:-$HUIDIG}" domein app_poort="${PORT:-8080}" slaap="${MIJN_RUIMTE_KERN_SLAAP_SEC:-3}" stempel rc tmp kopie
+  [[ "$app_poort" =~ ^[0-9]{2,5}$ ]] || app_poort=8080
+  [[ "$slaap" =~ ^[0-9]+$ ]] || slaap=3
+  domein="$(lees_publiek_domein "$doel" || lees_publiek_domein "$HUIDIG" || true)"
+  [ -n "$domein" ] || { waarschuwing "kerndomeinen: PUBLIC_DOMAIN niet gevonden in $doel/backend/deployment-identiteit.ts; synchronisatie overgeslagen"; return 0; }
+  stempel="$(date +%Y%m%d%H%M%S)"
+
+  # Gordel 1: /etc/caddy/Caddyfile — kerndomeinen naar de hoofdapp op 127.0.0.1:$app_poort vóór het 404-vangnet (zonder tunnelonderbreking).
+  if [ -s "$CADDY_CONFIG" ] && [ ! -L "$CADDY_CONFIG" ]; then
+    tmp="$(mktemp "$(dirname "$CADDY_CONFIG")/.Caddyfile.kern.XXXXXX" 2>/dev/null || true)"
+    if [ -n "$tmp" ]; then
+      rc=0; caddy_kern_domeinen_toevoegen "$CADDY_CONFIG" "$tmp" "$domein" "$app_poort" || rc=$?
+      if [ "$rc" -eq 0 ]; then
+        if command -v caddy >/dev/null 2>&1 && ! caddy validate --config "$tmp" --adapter caddyfile >/dev/null 2>&1; then
+          rm -f -- "$tmp"
+          waarschuwing "kerndomeinen: caddy keurt het bijgewerkte bestand af; $CADDY_CONFIG blijft ongewijzigd"
+        else
+          kopie="$CADDY_CONFIG.voor-kern-sync.$stempel"
+          if cp -a -- "$CADDY_CONFIG" "$kopie"; then
+            [ "$(id -u)" -eq 0 ] && chown root:root "$tmp" 2>/dev/null || true
+            chmod 0644 "$tmp"
+            if mv -f -- "$tmp" "$CADDY_CONFIG"; then
+              if command -v systemctl >/dev/null 2>&1 && { systemctl is-active --quiet caddy 2>/dev/null || systemctl is-enabled --quiet caddy 2>/dev/null; }; then
+                if systemctl reload caddy >/dev/null 2>&1 || systemctl restart caddy >/dev/null 2>&1; then
+                  melding "kerndomeinen gesynchroniseerd in $CADDY_CONFIG → 127.0.0.1:$app_poort (kopie: $kopie) / піддомени ядра синхронізовано в Caddyfile"
+                  systemctl try-restart "$APPS_UNIT" >/dev/null 2>&1 || true
+                else
+                  cp -a -- "$kopie" "$CADDY_CONFIG"
+                  systemctl reload caddy >/dev/null 2>&1 || systemctl restart caddy >/dev/null 2>&1 || true
+                  waarschuwing "kerndomeinen: Caddy kon niet herladen; vorige configuratie teruggezet ($kopie)"
+                fi
+              else
+                melding "kerndomeinen gesynchroniseerd in $CADDY_CONFIG → 127.0.0.1:$app_poort (kopie: $kopie) / піддомени ядра синхронізовано в Caddyfile"
+              fi
+            else
+              rm -f -- "$tmp"
+              waarschuwing "kerndomeinen: $CADDY_CONFIG kon niet worden vervangen"
+            fi
+          else
+            rm -f -- "$tmp"
+            waarschuwing "kerndomeinen: reservekopie van $CADDY_CONFIG mislukt; niets gewijzigd"
+          fi
+        fi
+      else
+        rm -f -- "$tmp"
+      fi
+    fi
+  fi
+
+  # Gordel 2: /etc/cloudflared/config.yml — ontbrekende kerndomeinen (zoals crm.<domein>) rechtstreeks naar 127.0.0.1:<app_poort>.
+  if [ -s "$CF_CONFIG" ] && [ ! -L "$CF_CONFIG" ]; then
+    tmp="$(mktemp "$(dirname "$CF_CONFIG")/.config-kern-sync.XXXXXX" 2>/dev/null || true)"
+    if [ -n "$tmp" ]; then
+      rc=0; cf_kern_domeinen_toevoegen "$CF_CONFIG" "$tmp" "$domein" || rc=$?
+      if [ "$rc" -eq 0 ]; then
+        if command -v cloudflared >/dev/null 2>&1 && ! cloudflared tunnel --config "$tmp" ingress validate >/dev/null 2>&1; then
+          rm -f -- "$tmp"
+          waarschuwing "kerndomeinen: cloudflared keurt de bijgewerkte tunnelregels af; $CF_CONFIG blijft ongewijzigd"
+        else
+          kopie="$CF_CONFIG.voor-kern-sync.$stempel"
+          if cp -a -- "$CF_CONFIG" "$kopie"; then
+            [ "$(id -u)" -eq 0 ] && chown root:root "$tmp" 2>/dev/null || true
+            chmod 0644 "$tmp"
+            if mv -f -- "$tmp" "$CF_CONFIG"; then
+              if command -v systemctl >/dev/null 2>&1 && { systemctl is-active --quiet cloudflared 2>/dev/null || systemctl is-enabled --quiet cloudflared 2>/dev/null; }; then
+                if ! systemctl restart cloudflared >/dev/null 2>&1 || ! sleep "$slaap" || ! systemctl is-active --quiet cloudflared; then
+                  cp -a -- "$kopie" "$CF_CONFIG"
+                  systemctl restart cloudflared >/dev/null 2>&1 || true
+                  waarschuwing "kerndomeinen: cloudflared startte niet met de bijgewerkte kerndomeinen; oude configuratie teruggezet ($kopie)"
+                else
+                  melding "kerndomeinen gesynchroniseerd in $CF_CONFIG (kopie: $kopie) / піддомени ядра синхронізовано в налаштуваннях тунелю"
+                fi
+              else
+                melding "kerndomeinen gesynchroniseerd in $CF_CONFIG (kopie: $kopie) / піддомени ядра синхронізовано в налаштуваннях тунелю"
+              fi
+            else
+              rm -f -- "$tmp"
+              waarschuwing "kerndomeinen: $CF_CONFIG kon niet worden vervangen"
+            fi
+          else
+            rm -f -- "$tmp"
+            waarschuwing "kerndomeinen: reservekopie van $CF_CONFIG mislukt; niets gewijzigd"
+          fi
+        fi
+      else
+        rm -f -- "$tmp"
+      fi
+    fi
+  fi
+  return 0
+}
 cf_regel_toevoegen() { # cf_regel_toevoegen <in> <uit> <host> <poort> — alleen tekstwerk (ook in de eenheidstest)
   local in="$1" uit="$2" host="$3" poort="$4"
   [ "$(grep -cE '^  - service: http_status:404[[:space:]]*$' "$in")" = 1 ] || return 3

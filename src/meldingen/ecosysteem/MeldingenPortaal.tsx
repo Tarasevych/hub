@@ -267,6 +267,7 @@ export default function MeldingenPortaal({
   laatsteGeoRef.current = geo;
   const vorigeVoorVolledigRef = useRef<VensterGeometrie | null>(null);
 
+  const [schermBreedte, setSchermBreedte] = useState<number>(() => leesScherm().breedte);
   const [zoek, setZoek] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('actief');
@@ -281,8 +282,35 @@ export default function MeldingenPortaal({
   const [modaalBijlage, setModaalBijlage] = useState<{ gebeurtenis: MeldingEcosysteemGebeurtenis; index: number } | null>(null);
   const [ongedaan, setOngedaan] = useState<OngedaanMakenStaat | null>(null);
   const [ongedaanSec, setOngedaanSec] = useState(5);
+  const [bovenMaten, setBovenMaten] = useState<{ alleenKop: number; kopMetDnd: number; totaalBoven: number }>({
+    alleenKop: 45,
+    kopMetDnd: 45,
+    totaalBoven: 82,
+  });
+  const [scrollStaat, setScrollStaat] = useState<{ kanScrollen: boolean; voortgang: number; duimHoogtePct: number; duimTopPct: number }>({
+    kanScrollen: false,
+    voortgang: 0,
+    duimHoogtePct: 0.25,
+    duimTopPct: 0,
+  });
+  const [schuifActief, setSchuifActief] = useState(false);
   const vensterRef = useRef<HTMLElement | null>(null);
+  const kopRef = useRef<HTMLElement | null>(null);
+  const dndStrookRef = useRef<HTMLDivElement | null>(null);
+  const filtersRef = useRef<HTMLDivElement | null>(null);
+  const lijstRef = useRef<HTMLDivElement | null>(null);
+  const schuifSpoorRef = useRef<HTMLDivElement | null>(null);
+  const schuifPointerIdRef = useRef<number | null>(null);
   const zoekInputRef = useRef<HTMLInputElement | null>(null);
+
+  const isMobielLangscroll =
+    open &&
+    schermBreedte <= 768 &&
+    (!compactBijBel || geo.modus === 'volledig' || profiel.geometrie.modus === 'volledig');
+  const isMobielLangscrollRef = useRef(isMobielLangscroll);
+  isMobielLangscrollRef.current = isMobielLangscroll;
+  const scrollStaatRef = useRef(scrollStaat);
+  scrollStaatRef.current = scrollStaat;
 
   const wekGebeurtenis = useCallback(
     (geb: MeldingEcosysteemGebeurtenis) => {
@@ -399,8 +427,9 @@ export default function MeldingenPortaal({
 
   useEffect(() => {
     const onResize = () => {
+      const scherm = leesScherm();
+      setSchermBreedte(scherm.breedte);
       setGeo((h) => {
-        const scherm = leesScherm();
         if (compactBijBel) {
           const r = vindZichtbareBel();
           if (r) {
@@ -409,14 +438,172 @@ export default function MeldingenPortaal({
             return bijBel;
           }
         }
+        if (!compactBijBel && scherm.breedte > 768 && h.breedte < 620 && (h.modus === 'breed' || h.modus === 'volledig')) {
+          const m = maatVanModus(h.modus, scherm);
+          const hersteld = klemVenster({ ...h, breedte: m.breedte, hoogte: Math.max(h.hoogte, m.hoogte) }, scherm);
+          laatsteGeoRef.current = hersteld;
+          return hersteld;
+        }
         const geklemd = klemVenster(h, scherm);
         laatsteGeoRef.current = geklemd;
         return geklemd;
       });
     };
+    onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [compactBijBel]);
+
+  // HERSTEL-001: на вузькому екрані (<= 768px) у розгорнутому режимі вмикаємо справжнє прокручування документа,
+  // щоб системна кнопка смартфона Android «Довгий знімок екрана» (Scroll Capture) охоплювала всю стрічку карток.
+  useIsomorfLayoutEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const wortelEl = document.documentElement;
+    if (!isMobielLangscroll) {
+      if (wortelEl.getAttribute('data-mel-mobiel-langscroll') === '1') {
+        wortelEl.removeAttribute('data-mel-mobiel-langscroll');
+      }
+      return undefined;
+    }
+    wortelEl.setAttribute('data-mel-mobiel-langscroll', '1');
+    try {
+      window.scrollTo?.(0, 0);
+    } catch {
+      /* без прокручування у тестовому оточенні */
+    }
+    return () => {
+      wortelEl.removeAttribute('data-mel-mobiel-langscroll');
+    };
+  }, [isMobielLangscroll]);
+
+  const werkScrollStaatBij = useCallback(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    let scrollHoogte = 0;
+    let zichtHoogte = 0;
+    let scrollTop = 0;
+    if (isMobielLangscrollRef.current) {
+      const sc = document.scrollingElement || document.documentElement;
+      scrollHoogte = sc?.scrollHeight || 0;
+      zichtHoogte = window.innerHeight || sc?.clientHeight || 0;
+      scrollTop = window.scrollY || sc?.scrollTop || 0;
+    } else if (lijstRef.current) {
+      scrollHoogte = lijstRef.current.scrollHeight || 0;
+      zichtHoogte = lijstRef.current.clientHeight || 0;
+      scrollTop = lijstRef.current.scrollTop || 0;
+    }
+    const kanScrollen = scrollHoogte > zichtHoogte + 8 && zichtHoogte > 0;
+    if (!kanScrollen) {
+      setScrollStaat((oud) => (oud.kanScrollen ? { kanScrollen: false, voortgang: 0, duimHoogtePct: 0.25, duimTopPct: 0 } : oud));
+      return;
+    }
+    const maxScroll = Math.max(1, scrollHoogte - zichtHoogte);
+    const voortgang = Math.min(1, Math.max(0, scrollTop / maxScroll));
+    const duimHoogtePct = Math.min(0.9, Math.max(0.1, zichtHoogte / Math.max(1, scrollHoogte)));
+    const duimTopPct = voortgang * (1 - duimHoogtePct);
+    setScrollStaat((oud) => {
+      if (
+        oud.kanScrollen === kanScrollen &&
+        Math.abs(oud.voortgang - voortgang) < 0.002 &&
+        Math.abs(oud.duimHoogtePct - duimHoogtePct) < 0.002
+      ) {
+        return oud;
+      }
+      return { kanScrollen, voortgang, duimHoogtePct, duimTopPct };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') return undefined;
+    const meetAlles = () => {
+      const alleenKop = Math.max(38, kopRef.current?.offsetHeight || 45);
+      const dndH = dndStrookRef.current?.offsetHeight || 0;
+      const filtH = filtersRef.current?.offsetHeight || 0;
+      const kopMetDnd = alleenKop + dndH;
+      const totaalBoven = kopMetDnd + filtH;
+      setBovenMaten((oud) =>
+        oud.alleenKop === alleenKop && oud.kopMetDnd === kopMetDnd && oud.totaalBoven === totaalBoven
+          ? oud
+          : { alleenKop, kopMetDnd, totaalBoven },
+      );
+      werkScrollStaatBij();
+    };
+    const r = requestAnimationFrame(meetAlles);
+    window.addEventListener('scroll', werkScrollStaatBij, { passive: true });
+    window.addEventListener('resize', meetAlles, { passive: true });
+    let obs: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      obs = new ResizeObserver(meetAlles);
+      if (lijstRef.current) obs.observe(lijstRef.current);
+      if (kopRef.current) obs.observe(kopRef.current);
+      if (filtersRef.current) obs.observe(filtersRef.current);
+    }
+    return () => {
+      cancelAnimationFrame(r);
+      window.removeEventListener('scroll', werkScrollStaatBij);
+      window.removeEventListener('resize', meetAlles);
+      obs?.disconnect();
+    };
+  }, [open, isMobielLangscroll, toonVoorkeuren, filterOpen, zoek, statusFilter, kanaalFilter, stroom.length, geo.hoogte, geo.modus, werkScrollStaatBij]);
+
+  const springSchuifNaarClientY = useCallback(
+    (clientY: number) => {
+      const spoor = schuifSpoorRef.current;
+      if (!spoor) return;
+      const rect = spoor.getBoundingClientRect();
+      if (rect.height <= 4) return;
+      const duimPx = Math.max(32, rect.height * scrollStaatRef.current.duimHoogtePct);
+      const vrijPx = Math.max(1, rect.height - duimPx);
+      const doelVoortgang = Math.min(1, Math.max(0, (clientY - rect.top - duimPx / 2) / vrijPx));
+      if (isMobielLangscrollRef.current) {
+        const sc = document.scrollingElement || document.documentElement;
+        const max = Math.max(0, (sc?.scrollHeight || 0) - (window.innerHeight || sc?.clientHeight || 0));
+        try {
+          window.scrollTo(0, Math.round(doelVoortgang * max));
+        } catch {
+          if (sc) sc.scrollTop = Math.round(doelVoortgang * max);
+        }
+      } else if (lijstRef.current) {
+        const el = lijstRef.current;
+        const max = Math.max(0, el.scrollHeight - el.clientHeight);
+        el.scrollTop = Math.round(doelVoortgang * max);
+      }
+      werkScrollStaatBij();
+    },
+    [werkScrollStaatBij],
+  );
+
+  const startSchuifSleep = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.button > 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    schuifPointerIdRef.current = e.pointerId;
+    setSchuifActief(true);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* без перехоплення вказівника */
+    }
+    springSchuifNaarClientY(e.clientY);
+  };
+
+  const beweegSchuifSleep = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (schuifPointerIdRef.current !== e.pointerId) return;
+    e.preventDefault();
+    springSchuifNaarClientY(e.clientY);
+  };
+
+  const eindigSchuifSleep = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (schuifPointerIdRef.current !== e.pointerId) return;
+    schuifPointerIdRef.current = null;
+    setSchuifActief(false);
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      /* без перехоплення вказівника */
+    }
+  };
 
   useEffect(() => {
     if (!open || modaalBijlage) return;
@@ -469,13 +656,13 @@ export default function MeldingenPortaal({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [open, modaalBijlage, dndMenuOpen, ongedaan, voerOngedaanUit, onSluiten]);
 
-  // Автозакриття при натисканні зовні (коли вікно не закріплене або відкрите компактно біля дзвіночка)
+  // Автозакриття при натисканні зовні (коли вікно не закріплене або відкрите компактно біля дзвіночка; у повноекранному мобільному режимі закривається явно кнопкою ✕)
   useEffect(() => {
-    if (!open || (geo.vastgepind && !compactBijBel)) return;
+    if (!open || isMobielLangscroll || (geo.vastgepind && !compactBijBel)) return;
     const onDown = (e: PointerEvent) => {
-      if (sleepStaat.current) return;
+      if (sleepStaat.current || schuifPointerIdRef.current !== null) return;
       const el = e.target as Element | null;
-      if (!el) return;
+      if (!el || el === document.documentElement || el === document.body) return;
       if (
         el.closest('.mel-ecosysteem-portaal') ||
         el.closest('.mel-bijlage-portaal') ||
@@ -488,7 +675,7 @@ export default function MeldingenPortaal({
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [open, geo.vastgepind, compactBijBel, onSluiten]);
+  }, [open, isMobielLangscroll, geo.vastgepind, compactBijBel, onSluiten]);
 
   const sleepStaat = useRef<{
     soort: 'verplaats' | 'maat';
@@ -559,7 +746,7 @@ export default function MeldingenPortaal({
   }, [pasSleepBewegingToe, rondSleepAf]);
 
   const startVerplaats = (e: ReactPointerEvent<HTMLElement>) => {
-    if (compactBijBel || e.button > 0 || geo.modus === 'volledig') return;
+    if (isMobielLangscroll || compactBijBel || e.button > 0 || geo.modus === 'volledig') return;
     const el = e.target as HTMLElement | null;
     if (el?.closest('button,a,input,select')) return;
     e.preventDefault();
@@ -578,9 +765,9 @@ export default function MeldingenPortaal({
     };
   };
 
-  // Гнучке розтягування працює за всі 8 країв і кутів як у віконному, так і в компактному режимі (крім повного екрана).
+  // Гнучке розтягування працює за всі 8 країв і кутів як у віконному, так і в компактному режимі (крім повного екрана та мобільного потоку).
   const startMaat = (richting: RandRichting, e: ReactPointerEvent<HTMLElement>) => {
-    if (e.button > 0 || (!compactBijBel && geo.modus === 'volledig')) return;
+    if (isMobielLangscroll || e.button > 0 || (!compactBijBel && geo.modus === 'volledig')) return;
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -763,6 +950,7 @@ export default function MeldingenPortaal({
   }, [stroom]);
 
   const isBreed =
+    !isMobielLangscroll &&
     ((!compactBijBel && (geo.modus === 'breed' || geo.modus === 'volledig')) || geo.breedte >= 680) &&
     !toonVoorkeuren;
   const instellingenHref = canonicalNavigationUrl('identity', 'melding', lang);
@@ -925,9 +1113,20 @@ export default function MeldingenPortaal({
       {open && (
         <section
           ref={vensterRef}
-          className={`mel-ecosysteem-portaal puls-portaal is-modus-${compactBijBel ? 'kompakt' : geo.modus}${isBreed ? ' is-tweekolom' : ''}${compactBijBel ? ' is-compact-bij-bel' : ''}`}
+          className={`mel-ecosysteem-portaal puls-portaal is-modus-${compactBijBel ? 'kompakt' : geo.modus}${isBreed ? ' is-tweekolom' : ''}${compactBijBel ? ' is-compact-bij-bel' : ''}${isMobielLangscroll ? ' is-mobiel-langscroll' : ''}${
+            isMobielLangscroll && typeof document !== 'undefined'
+              ? (() => {
+                  const bron = document.querySelector('.canonical-chrome') || document.documentElement;
+                  for (const k of ['theme-plum-dark', 'theme-plum-light', 'theme-dark', 'theme-light']) {
+                    if (bron.classList.contains(k)) return ` ${k}`;
+                  }
+                  return '';
+                })()
+              : ''
+          }`}
           data-qa-id='canonical-notification-panel'
           data-puls-vorm={compactBijBel ? 'compact' : 'venster'}
+          data-mel-langscroll={isMobielLangscroll ? '1' : undefined}
           data-no-edge-swipe='1'
           data-ruimte={ruimte}
           data-subdomein={subdomeinNu}
@@ -940,6 +1139,9 @@ export default function MeldingenPortaal({
             ['--mel-y' as string]: `${geo.y}px`,
             ['--mel-w' as string]: `${geo.breedte}px`,
             ['--mel-h' as string]: `${geo.hoogte}px`,
+            ['--mel-alleen-kop-h' as string]: `${bovenMaten.alleenKop}px`,
+            ['--mel-kop-h' as string]: `${bovenMaten.kopMetDnd}px`,
+            ['--mel-boven-h' as string]: `${bovenMaten.totaalBoven}px`,
           }}
         >
           {RANDEN.map((r) => (
@@ -955,6 +1157,7 @@ export default function MeldingenPortaal({
           ))}
 
           <header
+            ref={kopRef}
             className='mel-kop puls-kop'
             onPointerDown={startVerplaats}
             onPointerMove={beweegVenster}
@@ -1149,7 +1352,7 @@ export default function MeldingenPortaal({
           </header>
 
           {dndActief && nietStorenTot ? (
-            <div className='puls-dnd-strook' role='status'>
+            <div ref={dndStrookRef} className='puls-dnd-strook' role='status'>
               <Moon aria-hidden='true' />
               <span>
                 {t('Не турбувати до ', 'Niet storen tot ')}
@@ -1164,7 +1367,7 @@ export default function MeldingenPortaal({
           ) : null}
 
           {!toonVoorkeuren && (
-            <div className='mel-filters puls-filters-slank'>
+            <div ref={filtersRef} className='mel-filters puls-filters-slank'>
               <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
                 {(
                   [
@@ -1312,7 +1515,7 @@ export default function MeldingenPortaal({
             </div>
           )}
 
-          <div className='mel-lichaam'>
+          <div className='mel-lichaam mel-inhoud'>
             {toonVoorkeuren ? (
               <div className='mel-voorkeuren-kader'>
                 <MeldingModusKiezer lang={lang} />
@@ -1320,96 +1523,130 @@ export default function MeldingenPortaal({
               </div>
             ) : (
               <>
-                <div className='mel-stroom-kolom'>
-                  {/* 15-секундне Спокійне зведення у прокручуваному потоці (не відбирає постійну висоту вікна) */}
-                  {statusFilter === 'actief' && !zoek.trim() && rustigOverzicht.toon && (
-                    <div className='puls-rustig-overzicht' data-puls-overzicht='1'>
-                      <div className='puls-overzicht-tekst'>
-                        <strong>{rustigOverzicht.titel}</strong>
-                        <span>{rustigOverzicht.subtitel}</span>
-                      </div>
-                      <button
-                        type='button'
-                        className='mel-knop puls-knop-overzicht'
-                        onClick={() => {
-                          const items = rustigOverzicht.achtergrondKlaarIds
-                            .map((id) => alleGebeurtenissenMap.get(id))
-                            .filter(Boolean) as MeldingEcosysteemGebeurtenis[];
-                          void registreerActieMetOngedaan(
-                            items,
-                            'archief',
-                            t(`Згорнуто в спокійний журнал: ${items.length} фонових дій`, `${items.length} achtergrondtaken opgeruimd`),
-                          );
-                        }}
-                      >
-                        <CheckCheck aria-hidden='true' />
-                        <span>{rustigOverzicht.actieLabel}</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Розумна підказка тиші після 3 закриттів однотипних некритичних подій */}
-                  {slim.stilteSuggestie && (
-                    <div className='puls-stilte-suggestie' role='status'>
-                      <PulsBronTeken
-                        anker={{
-                          merkSleutel: slim.stilteSuggestie.merkSleutel,
-                          icoon: slim.stilteSuggestie.icoon,
-                          toon: 'systeem',
-                          label: slim.stilteSuggestie.bronLabel,
-                        }}
-                        maat={28}
-                      />
-                      <p>{slim.stilteSuggestie.vraagTekst}</p>
-                      <div className='puls-actie-groep'>
-                        <button type='button' className='mel-knop mel-knop-zacht' onClick={() => slim.sluitStilteSuggestie(true)}>
-                          {t('Залишити', 'Behouden')}
-                        </button>
+                <div className='mel-lijst-kader'>
+                  <div
+                    ref={lijstRef}
+                    id={`mel-lijst-${scope}`}
+                    className='mel-stroom-kolom mel-lijst'
+                    onScroll={werkScrollStaatBij}
+                  >
+                    {/* 15-секундне Спокійне зведення у потоці прокручування (не відбирає постійну висоту вікна) */}
+                    {statusFilter === 'actief' && !zoek.trim() && rustigOverzicht.toon && (
+                      <div className='puls-rustig-overzicht' data-puls-overzicht='1'>
+                        <div className='puls-overzicht-tekst'>
+                          <strong>{rustigOverzicht.titel}</strong>
+                          <span>{rustigOverzicht.subtitel}</span>
+                        </div>
                         <button
                           type='button'
-                          className='mel-knop mel-knop-primair'
+                          className='mel-knop puls-knop-overzicht'
                           onClick={() => {
-                            const k = slim.stilteSuggestie?.bronSleutel.split(':')[0] as MeldingKanaal | undefined;
-                            if (k && onStilVoorKanaal) onStilVoorKanaal(k);
-                            slim.sluitStilteSuggestie(true);
+                            const items = rustigOverzicht.achtergrondKlaarIds
+                              .map((id) => alleGebeurtenissenMap.get(id))
+                              .filter(Boolean) as MeldingEcosysteemGebeurtenis[];
+                            void registreerActieMetOngedaan(
+                              items,
+                              'archief',
+                              t(`Згорнуто в спокійний журнал: ${items.length} фонових дій`, `${items.length} achtergrondtaken opgeruimd`),
+                            );
                           }}
                         >
-                          <Moon aria-hidden='true' />
-                          <span>{t('Тихо в журнал', 'Stil in logboek')}</span>
+                          <CheckCheck aria-hidden='true' />
+                          <span>{rustigOverzicht.actieLabel}</span>
                         </button>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {stroomEenheden.length === 0 ? (
-                    <div className='mel-leeg-staat'>
-                      <CheckCircle2 aria-hidden='true' />
-                      <strong>{t('Спокій і порядок — активних питань за цим фільтром немає', 'Rust en overzicht — geen openstaande punten voor dit filter')}</strong>
-                      <span>
-                        {t(
-                          'Усі фонові дії збережені у вкладці «Журнал», а жива база типів і правила доступні на /melding.',
-                          'Alle achtergrondtaken staan in het archief en het soortenregister staat op /melding.',
-                        )}
-                      </span>
-                    </div>
-                  ) : (
-                    stroomEenheden.map((eenheid) =>
-                      eenheid.soort === 'keten' ? (
-                        <PulsOorzaakKetenKaart
-                          key={eenheid.keten.sleutel}
-                          lang={lang}
-                          keten={eenheid.keten}
-                          geselecteerd={isBreed && Boolean(geselecteerd && eenheid.keten.alleIds.includes(geselecteerd.id))}
-                          onSelect={(wortel) => setGeselecteerdId(wortel.id)}
-                          onHerstelKeten={behandelKetenActie}
-                          renderLosseKaart={renderLosseKaart}
-                          alleGebeurtenissenMap={alleGebeurtenissenMap}
+                    {/* Розумна підказка тиші після 3 закриттів однотипних некритичних подій */}
+                    {slim.stilteSuggestie && (
+                      <div className='puls-stilte-suggestie' role='status'>
+                        <PulsBronTeken
+                          anker={{
+                            merkSleutel: slim.stilteSuggestie.merkSleutel,
+                            icoon: slim.stilteSuggestie.icoon,
+                            toon: 'systeem',
+                            label: slim.stilteSuggestie.bronLabel,
+                          }}
+                          maat={28}
                         />
-                      ) : (
-                        renderLosseKaart(eenheid.gebeurtenis)
-                      ),
-                    )
-                  )}
+                        <p>{slim.stilteSuggestie.vraagTekst}</p>
+                        <div className='puls-actie-groep'>
+                          <button type='button' className='mel-knop mel-knop-zacht' onClick={() => slim.sluitStilteSuggestie(true)}>
+                            {t('Залишити', 'Behouden')}
+                          </button>
+                          <button
+                            type='button'
+                            className='mel-knop mel-knop-primair'
+                            onClick={() => {
+                              const k = slim.stilteSuggestie?.bronSleutel.split(':')[0] as MeldingKanaal | undefined;
+                              if (k && onStilVoorKanaal) onStilVoorKanaal(k);
+                              slim.sluitStilteSuggestie(true);
+                            }}
+                          >
+                            <Moon aria-hidden='true' />
+                            <span>{t('Тихо в журнал', 'Stil in logboek')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {stroomEenheden.length === 0 ? (
+                      <div className='mel-leeg-staat'>
+                        <CheckCircle2 aria-hidden='true' />
+                        <strong>{t('Спокій і порядок — активних питань за цим фільтром немає', 'Rust en overzicht — geen openstaande punten voor dit filter')}</strong>
+                        <span>
+                          {t(
+                            'Усі фонові дії збережені у вкладці «Журнал», а жива база типів і правила доступні на /melding.',
+                            'Alle achtergrondtaken staan in het archief en het soortenregister staat op /melding.',
+                          )}
+                        </span>
+                      </div>
+                    ) : (
+                      stroomEenheden.map((eenheid) =>
+                        eenheid.soort === 'keten' ? (
+                          <PulsOorzaakKetenKaart
+                            key={eenheid.keten.sleutel}
+                            lang={lang}
+                            keten={eenheid.keten}
+                            geselecteerd={isBreed && Boolean(geselecteerd && eenheid.keten.alleIds.includes(geselecteerd.id))}
+                            onSelect={(wortel) => setGeselecteerdId(wortel.id)}
+                            onHerstelKeten={behandelKetenActie}
+                            renderLosseKaart={renderLosseKaart}
+                            alleGebeurtenissenMap={alleGebeurtenissenMap}
+                          />
+                        ) : (
+                          renderLosseKaart(eenheid.gebeurtenis)
+                        ),
+                      )
+                    )}
+                  </div>
+
+                  <div
+                    ref={schuifSpoorRef}
+                    className={`mel-scroll-schuif${scrollStaat.kanScrollen ? ' is-zichtbaar' : ''}${schuifActief ? ' is-actief' : ''}`}
+                    data-qa-id='mel-scroll-schuif'
+                    data-geen-veeg='1'
+                    role='scrollbar'
+                    aria-controls={`mel-lijst-${scope}`}
+                    aria-orientation='vertical'
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(scrollStaat.voortgang * 100)}
+                    aria-hidden={!scrollStaat.kanScrollen}
+                    aria-label={t('Повзунок швидкого прокручування списку сповіщень', 'Snelle schuifbalk voor meldingenlijst')}
+                    onPointerDown={startSchuifSleep}
+                    onPointerMove={beweegSchuifSleep}
+                    onPointerUp={eindigSchuifSleep}
+                    onPointerCancel={eindigSchuifSleep}
+                  >
+                    <span
+                      className='mel-scroll-duim'
+                      style={{
+                        height: `${Math.round(scrollStaat.duimHoogtePct * 1000) / 10}%`,
+                        top: `${Math.round(scrollStaat.duimTopPct * 1000) / 10}%`,
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {isBreed && geselecteerd && geselecteerdVerrijkt && (
@@ -1445,7 +1682,7 @@ export default function MeldingenPortaal({
                               icoon={gev.icoon}
                               toon={gev.toon}
                               label={gev.label}
-                              sub={gev.herstelTekst}
+                              sub={gev.herstelTekst ? (gev.herstelTekst.startsWith('—') ? gev.herstelTekst : `— ${gev.herstelTekst}`) : undefined}
                             />
                           ))}
                         </div>
@@ -1562,7 +1799,9 @@ export default function MeldingenPortaal({
   );
 
   if (typeof document !== 'undefined' && document.body) {
-    const portaalWortel = document.querySelector<HTMLElement>('.canonical-chrome') || document.body;
+    const portaalWortel = isMobielLangscroll
+      ? document.body
+      : document.querySelector<HTMLElement>('.canonical-chrome') || document.body;
     return createPortal(portalLaag, portaalWortel);
   }
   return portalLaag;

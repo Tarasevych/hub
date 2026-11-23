@@ -202,26 +202,35 @@
 /* ingeklapt: badge op de rand van de cirkel */
 .canonical-chrome:not(.sidebar-expanded) .menu-badge.getal{top:-9px;right:-11px}
 .canonical-chrome:not(.sidebar-expanded) .menu-badge.punt{top:-6px;right:-6px}
-.menu-bellen{position:fixed;z-index:780;display:flex;flex-direction:column;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 16px));overflow:visible;padding:8px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 12px 32px var(--shadow,rgba(0,0,0,.18));animation:menu-bellen-in .16s ease-out}
+.menu-bellen{position:fixed;z-index:780;display:flex;flex-direction:column;box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-height:min(560px,calc(100dvh - 32px));overflow:visible;padding:10px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 16px 42px var(--shadow,rgba(0,0,0,.22));animation:menu-bellen-in .16s ease-out}
 .menu-bellen::before{content:'';position:absolute;top:0;bottom:0;left:-14px;width:14px}
 .menu-bellen[data-kant='left']::before{left:auto;right:-14px}
-.menu-bellen-kop{display:flex;flex-shrink:0;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 6px 8px;font-size:.82rem}
-.menu-bellen-kop span{color:var(--muted);font-size:.75rem}
+.menu-bellen-kop{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:6px;padding:0 2px 6px;font-size:.86rem}
+.menu-bellen-kop-titel{display:flex;align-items:baseline;gap:6px;min-width:0;flex:1 1 auto}
+.menu-bellen-kop-titel strong{font-size:.86rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-bellen-kop span{flex:none;color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
+.menu-bellen-kop-knoppen{display:inline-flex;flex:none;align-items:center;gap:2px}
+.menu-bellen-info,.menu-bellen-sluit{position:relative;display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;transition:background-color .14s ease,color .14s ease,border-color .14s ease}
+.menu-bellen-info svg,.menu-bellen-sluit svg{width:15px;height:15px}
+.menu-bellen-info:hover,.menu-bellen-info:focus-visible,.menu-bellen-sluit:hover,.menu-bellen-sluit:focus-visible{background:var(--zb-hover);color:var(--text)}
+.menu-bellen-info.is-actief{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:color-mix(in srgb,var(--accent) 12%,var(--panel));color:var(--accent)}
 .menu-bellen-uitleg,.menu-bellen-legenda,.menu-bellen-voet{flex-shrink:0}
-.menu-bellen ul{display:grid;flex:1 1 auto;min-height:0;overflow-y:auto;gap:6px;margin:0;padding:0;list-style:none}
-.menu-bel{--mb:var(--mb-systeem);position:relative;display:grid;grid-template-columns:8px 1fr 26px;gap:8px;align-items:start;padding:8px 6px 8px 10px;border-radius:14px 14px 14px 4px;background:color-mix(in srgb,var(--mb) 11%,var(--panel));border:1px solid color-mix(in srgb,var(--mb) 28%,transparent);animation:menu-bel-in .2s ease-out both}
+.menu-bellen ul{display:grid;align-content:start;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 42%,transparent) transparent;gap:7px;margin:0;padding:2px 4px 2px 0;list-style:none}
+.menu-bellen ul::-webkit-scrollbar{width:5px}
+.menu-bellen ul::-webkit-scrollbar-thumb{border-radius:999px;background:color-mix(in srgb,var(--muted) 38%,transparent)}
+.menu-bel{--mb:var(--mb-systeem);position:relative;display:grid;grid-template-columns:8px minmax(0,1fr);gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--mb) 9%,var(--surface,var(--panel)));border:1px solid color-mix(in srgb,var(--mb) 26%,var(--line));animation:menu-bel-in .2s ease-out both}
 .menu-bel-stip{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--mb)}
 .menu-bel-tekst{min-width:0}
-.menu-bel-tekst small{display:block;color:var(--muted);font-size:.7rem}
-.menu-bel-tekst p{margin:2px 0 0;color:var(--muted);font-size:.78rem;line-height:1.35;overflow-wrap:anywhere}
-.menu-bel-titel{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:0;border:0;background:none;color:var(--text);font:600 .84rem/1.3 inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.menu-bel-tekst small{display:block;color:var(--muted);font-size:12px;line-height:1.25}
+.menu-bel-tekst p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:2px 0 0;color:var(--muted);font-size:12.5px;line-height:1.35;overflow-wrap:anywhere}
+.menu-bel-titel{display:inline-flex;align-items:center;gap:4px;max-width:100%;margin-top:1px;padding:0;border:0;background:none;color:var(--text);font:650 13.5px/1.3 inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere}
 .menu-bel-titel svg{flex:none;width:12px;height:12px;opacity:.6}
 .menu-bel-titel:hover{text-decoration:underline}
-.menu-bel-weg{display:grid;place-items:center;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.menu-bel-weg{display:inline-flex;align-items:center;justify-content:center;padding:0 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);cursor:pointer}
 .menu-bel-weg svg{width:15px;height:15px}
-.menu-bel-weg:hover,.menu-bel-weg:focus-visible{background:color-mix(in srgb,var(--mb) 20%,transparent);color:var(--text)}
+.menu-bel-weg:hover,.menu-bel-weg:focus-visible{background:color-mix(in srgb,var(--mb) 18%,var(--panel));color:var(--text)}
 .menu-bellen button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.menu-bellen-alles{display:block;width:100%;margin-top:8px;padding:6px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:600 .76rem inherit;cursor:pointer}
+.menu-bellen-alles{display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;margin:0;padding:0 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font:600 12px/1.2 inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .menu-bellen-alles:hover{background:var(--zb-hover,rgba(0,0,0,.05));color:var(--text)}
 @keyframes menu-bellen-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
 @keyframes menu-bel-in{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
@@ -507,6 +516,10 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .zijbalk-meldingen-tijden{flex-wrap:wrap;max-width:100%}
   .zijbalk-meldingen .zijbalk-meldingen-tijden input[type='time']{flex:1 1 6.5rem;min-width:0;min-height:var(--tik-hoogte)}
   .zijbalk-meldingen label.zijbalk-meldingen-rij select{width:100%;min-width:0;min-height:var(--tik-hoogte)}
+  .menu-bellen{width:min(380px,calc(100vw - 20px));max-height:min(74dvh,calc(100dvh - 24px))}
+  .menu-bellen-info,.menu-bellen-sluit{width:32px;height:32px}
+  .menu-bellen-info::after,.menu-bellen-sluit::after{content:'';position:absolute;inset:-6px}
+  .menu-bellen-kop-knoppen{gap:6px}
 }
 
 /* 29.10.2026 (hub op de telefoon, menu dicht): de lade-houder toont alleen ☰ — geen restjes eronder (lege scrollvak met pijlen,

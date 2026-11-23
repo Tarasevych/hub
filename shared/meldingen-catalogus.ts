@@ -178,6 +178,8 @@ export const MELDINGEN: readonly MeldingItem[] = [
     titel: ['✅ Telegram прив’язано', '✅ Telegram gekoppeld'] },
   { id: 'bel.telegram-aanmelden-meldingen.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/meldingen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
     titel: ['Подія Telegram-входу', 'Gebeurtenis bij aanmelden met Telegram'] },
+  { id: 'bel.telegram-aanmelden-meldingen.security.hersteld', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/meldingen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S15',
+    titel: ['✅ Telegram: зв’язок відновлено', '✅ Telegram: verbinding hersteld'] },
   { id: 'bel.telegram-aanmelden-ontkoppelen.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/ontkoppelen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
     titel: ['Telegram відв’язано', 'Telegram ontkoppeld'] },
   { id: 'bel.telegram-aanmelden-routes.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/routes.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',

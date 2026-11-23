@@ -522,3 +522,4 @@
     max-height: 135px;
   }
 }
+@media (max-width:700px){.vp-knop{min-height:var(--tik-hoogte)}}
