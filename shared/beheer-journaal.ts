@@ -24,7 +24,7 @@ export const CATEGORIEEN: readonly Categorie[] = [
   { id: 'geheimen', uk: 'Секрети та ключі', nl: 'Geheimen en sleutels', patroon: '(^secret\\.|^sleutelkluis\\.|vault|google-contour|owner\\.app\\.geheim|owner\\.api\\.|api-platform|mcp_(console|backup|archive))' },
   { id: 'ai', uk: 'ШІ та агенти', nl: 'AI en agenten', patroon: '^(ai_|owner\\.mcp\\.|owner\\.ai\\.|owner\\.agent\\.|agent\\.(grant|policy)\\.|owner\\.connector|agent_|agent\\.|beheer\\.agent\\.|browser\\.invoke|ai_beleid|owner\\.extensie\\.|owner\\.vaardigheden\\.|koppeling_gewijzigd$)' },
   { id: 'apparaten', uk: 'Пристрої та термінал', nl: 'Apparaten en terminal', patroon: '^(owner\\.terminal\\.|owner\\.remote\\.|owner\\.apparaat\\.|apparaat\\.|owner\\.ssh-ca\\.|owner\\.browser\\.(enabled|grant)|owner\\.admin\\.device)' },
-  { id: 'diagnose', uk: 'Діагностика', nl: 'Diagnose', patroon: '^(diag\\.|admin\\.diagnostiek|owner\\.diagnose|owner\\.admin\\.diagnostics|owner\\.siem|zoek\\.index\\.)' },
+  { id: 'diagnose', uk: 'Діагностика', nl: 'Diagnose', patroon: '^(diag\\.|admin\\.diagnostiek|owner\\.diagnose|owner\\.admin\\.diagnostics|owner\\.siem|zoek\\.index\\.|owner\\.systeem\\.verbinding\\.|server_storing$|netwerk_offline$|verbinding_hersteld$)' },
   { id: 'beheer', uk: 'Адміністрування', nl: 'Beheer', patroon: '^(admin_|admin\\.|rbac\\.|account_|workspace_|owner_role|owner\\.rol\\.|owner\\.admin\\.|owner\\.role\\.|owner\\.identity\\.|owner\\.access\\.requested|account\\.definitief)' },
   { id: 'toegang', uk: 'Способи входу та доступ', nl: 'Aanmeldmethoden en toegang', patroon: '^(access\\.|aanmeld\\.|aanmelden\\.|bevestigen\\.|beveiliging\\.|code\\.|inlog\\.|koppelen\\.|koppeling\\.|matrix\\.gewijzigd$|niet-ik$|fout-symbool$|plaats-eis\\.|stap-op$|telegram-sterk$|telegram\\.|venster\\.geopend$|widget\\.|wijziging\\.|owner\\.step_up|passkey_|toegang|toegangscode_|gast_)' },
   { id: 'sessie', uk: 'Входи та сесії', nl: 'Aanmeldingen en sessies', patroon: '^(sign_in|owner_sign_in_|sessie\\.|identity_linked|email_conflict|service_handoff|owner\\.(session|tab|redirect|auth|account|account-menu|security|browser)\\.|owner\\.browser\\.|GOOGLE_|LOGIN_|TRANSACTION_|PRIMARY_REDIRECT_|POPUP_|IDENTITY_|SERVICE_SESSION_)' },
@@ -618,6 +618,9 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.social.profiel.verwijderen': ['Видалено канал або профіль у службі «Соціальні мережі»', 'Kanaal of profiel verwijderd in dienst «Sociale netwerken»'],
   'owner.social.bericht.opslaan': ['Збережено чернетку або допис у службі «Соціальні мережі»', 'Concept of bericht opgeslagen in dienst «Sociale netwerken»'],
   'owner.social.bericht.verwijderen': ['Видалено чернетку або допис у службі «Соціальні мережі»', 'Concept of bericht verwijderd in dienst «Sociale netwerken»'],
+  'owner.systeem.verbinding.storing': ['Перерва зв’язку сторінки з сервером (зафіксовано доказ клієнта)', 'Verbindingsonderbreking met de server (clientbewijs vastgelegd)'],
+  'owner.systeem.verbinding.offline': ['Втрата мережевого з’єднання пристрою (зафіксовано доказ клієнта)', 'Verlies van netwerkverbinding op het apparaat (clientbewijs vastgelegd)'],
+  'owner.systeem.verbinding.hersteld': ['Зв’язок із сервером відновлено та внесено до хронології', 'Verbinding met de server hersteld en opgeslagen in de tijdlijn'],
 };
 
 const TOKEN_UK: Record<string, string> = { owner: '', admin: 'Адмін', mcp: 'ШІ', tool: 'інструмент', grant: 'дозвіл', created: 'створено', updated: 'змінено', deleted: 'видалено', revoked: 'відкликано', approved: 'схвалено', denied: 'відхилено', opened: 'відкрито', closed: 'закрито', login: 'вхід', logout: 'вихід' };

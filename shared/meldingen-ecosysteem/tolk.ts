@@ -2,7 +2,22 @@
 // Перетворює сигнали з будь-якого піддомену, серверного журналу, ПК-агента, розширення оглядача,
 // сторінки (інформаційної смуги) чи пошти/сховища/ШІ в єдину структуровану подію екосистеми з діями, контекстом і вкладеннями.
 
-import { normaliseerActies, normaliseerBijlagen, veiligeMeldingUrl, veiligePaginaLink, type MeldingActie, type MeldingBijlage, type MeldingEcosysteemGebeurtenis, type MeldingKanaal, type MeldingPrioriteit, type MeldingSubdomein, type RuimteType, SUBDOMEINEN } from './model';
+import {
+  GEBEURTENIS_STATUSSEN,
+  normaliseerActies,
+  normaliseerBijlagen,
+  veiligeMeldingUrl,
+  veiligePaginaLink,
+  type MeldingActie,
+  type MeldingBijlage,
+  type MeldingEcosysteemGebeurtenis,
+  type MeldingGebeurtenisStatus,
+  type MeldingKanaal,
+  type MeldingPrioriteit,
+  type MeldingSubdomein,
+  type RuimteType,
+  SUBDOMEINEN,
+} from './model';
 
 export type RuweBronGebeurtenis = {
   id?: string;
@@ -13,12 +28,15 @@ export type RuweBronGebeurtenis = {
   subdomein?: MeldingSubdomein;
   soort?: string;
   ernst?: string;
+  status?: MeldingGebeurtenisStatus;
+  herhalingen?: number;
   titel?: string;
   bericht?: string;
   uitleg?: string;
   contextLabel?: string;
   link?: string;
   aangemaaktOp?: number;
+  bijgewerktOp?: number;
   gelezen?: boolean;
   bijlagen?: unknown[];
   acties?: unknown[];
@@ -149,6 +167,21 @@ export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallb
     return base;
   })();
 
+  const status: MeldingGebeurtenisStatus =
+    typeof invoer.status === 'string' && (GEBEURTENIS_STATUSSEN as readonly string[]).includes(invoer.status)
+      ? (invoer.status as MeldingGebeurtenisStatus)
+      : invoer.gelezen
+        ? 'gelezen'
+        : 'nieuw';
+  const herhalingen =
+    typeof invoer.herhalingen === 'number' && Number.isFinite(invoer.herhalingen) && invoer.herhalingen >= 1
+      ? Math.min(100_000, Math.trunc(invoer.herhalingen))
+      : 1;
+  const bijgewerktOp =
+    typeof invoer.bijgewerktOp === 'number' && Number.isFinite(invoer.bijgewerktOp) && invoer.bijgewerktOp > 0
+      ? Math.trunc(invoer.bijgewerktOp)
+      : nu;
+
   return {
     id: String(invoer.id || externeSleutel || `geb-${nu}-${Math.random().toString(36).slice(2, 8)}`),
     ruimte,
@@ -157,19 +190,19 @@ export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallb
     subdomein,
     bron: String(invoer.bron || kanaal).slice(0, 120),
     prioriteit,
-    status: invoer.gelezen ? 'gelezen' : 'nieuw',
+    status,
     titel: titel.slice(0, 400),
     bericht: String(invoer.bericht || '').slice(0, 4000),
     uitleg: String(invoer.uitleg || '').slice(0, 2000),
     contextLabel: String(invoer.contextLabel || `${subdomein} · ${kanaal}`).slice(0, 240),
-    herhalingen: 1,
+    herhalingen,
     uitgesteldTot: null,
     bijlagen,
     acties,
     meta: schoonMeta,
     aiSamenvatting: null,
     aangemaaktOp: nu,
-    bijgewerktOp: nu,
+    bijgewerktOp,
   };
 }
 

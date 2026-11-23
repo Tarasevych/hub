@@ -115,6 +115,7 @@ export async function slaGebeurtenisOp(
   lade: Lade,
   invoer: Record<string, unknown>,
 ): Promise<MeldingEcosysteemGebeurtenis> {
+  const ruweSoort = typeof invoer.soort === 'string' ? invoer.soort : undefined;
   const geb = interpreteerGebeurtenis(
     {
       ruimte: lade.ruimte,
@@ -122,8 +123,12 @@ export async function slaGebeurtenisOp(
       bron: typeof invoer.bron === 'string' ? invoer.bron : undefined,
       kanaal: typeof invoer.kanaal === 'string' ? (invoer.kanaal as MeldingKanaal) : undefined,
       subdomein: typeof invoer.subdomein === 'string' ? (invoer.subdomein as MeldingSubdomein) : undefined,
-      soort: typeof invoer.soort === 'string' ? invoer.soort : undefined,
+      soort: ruweSoort,
       ernst: typeof invoer.ernst === 'string' ? invoer.ernst : undefined,
+      status: typeof invoer.status === 'string' ? (invoer.status as MeldingGebeurtenisStatus) : undefined,
+      herhalingen: typeof invoer.herhalingen === 'number' ? invoer.herhalingen : undefined,
+      aangemaaktOp: typeof invoer.aangemaaktOp === 'number' ? invoer.aangemaaktOp : undefined,
+      bijgewerktOp: typeof invoer.bijgewerktOp === 'number' ? invoer.bijgewerktOp : undefined,
       titel: typeof invoer.titel === 'string' ? invoer.titel : undefined,
       bericht: typeof invoer.bericht === 'string' ? invoer.bericht : undefined,
       uitleg: typeof invoer.uitleg === 'string' ? invoer.uitleg : undefined,
@@ -136,20 +141,23 @@ export async function slaGebeurtenisOp(
     lade.ruimte,
   );
 
-  return alsGebruiker(lade.userId, async (q) => {
+  const aantalHerhalingen = Math.max(1, geb.herhalingen);
+
+  const opgeslagen = await alsGebruiker(lade.userId, async (q) => {
     if (geb.externeSleutel) {
       const r = await q(
         `INSERT INTO app.melding_ecosysteem_gebeurtenissen
           (user_id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status, titel, bericht, uitleg, context_label, herhalingen, bijlagen, acties, meta)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 1, $13::jsonb, $14::jsonb, $15::jsonb)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15::jsonb, $16::jsonb)
            ON CONFLICT (user_id, ruimte, externe_sleutel) WHERE externe_sleutel <> ''
            DO UPDATE SET
-             herhalingen = app.melding_ecosysteem_gebeurtenissen.herhalingen + 1,
+             herhalingen = GREATEST(app.melding_ecosysteem_gebeurtenissen.herhalingen + 1, EXCLUDED.herhalingen),
              prioriteit = CASE
                WHEN EXCLUDED.prioriteit = 'kritiek' THEN 'kritiek'
                ELSE app.melding_ecosysteem_gebeurtenissen.prioriteit
              END,
              status = CASE
+               WHEN EXCLUDED.status = 'opgelost' THEN 'opgelost'
                WHEN app.melding_ecosysteem_gebeurtenissen.status = 'opgelost' THEN EXCLUDED.status
                ELSE app.melding_ecosysteem_gebeurtenissen.status
              END,
@@ -175,6 +183,7 @@ export async function slaGebeurtenisOp(
           geb.bericht,
           geb.uitleg,
           geb.contextLabel,
+          aantalHerhalingen,
           jsonbTekst(geb.bijlagen),
           jsonbTekst(geb.acties),
           jsonbTekst(geb.meta),
@@ -186,7 +195,7 @@ export async function slaGebeurtenisOp(
     const r = await q(
       `INSERT INTO app.melding_ecosysteem_gebeurtenissen
         (user_id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status, titel, bericht, uitleg, context_label, herhalingen, bijlagen, acties, meta)
-       VALUES ($1, $2, '', $3, $4, $5, $6, $7, $8, $9, $10, $11, 1, $12::jsonb, $13::jsonb, $14::jsonb)
+       VALUES ($1, $2, '', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15::jsonb)
        RETURNING ${KOLOMMEN}`,
       [
         lade.userId,
@@ -200,6 +209,7 @@ export async function slaGebeurtenisOp(
         geb.bericht,
         geb.uitleg,
         geb.contextLabel,
+        aantalHerhalingen,
         jsonbTekst(geb.bijlagen),
         jsonbTekst(geb.acties),
         jsonbTekst(geb.meta),
@@ -207,6 +217,52 @@ export async function slaGebeurtenisOp(
     );
     return normaliseerGebeurtenis(r.rows[0] as Record<string, unknown>);
   });
+
+  if (geb.bron === 'verbinding-bewijs') {
+    const m = (geb.meta || {}) as Record<string, unknown>;
+    const soortCode = ruweSoort || String(m.soort || 'server_storing');
+    const bewijsDetails = {
+      ruimte: lade.ruimte,
+      externeSleutel: opgeslagen.externeSleutel,
+      dienst: String(m.dienst || opgeslagen.subdomein || '').slice(0, 64),
+      foutCode: String(m.foutCode || '').slice(0, 80),
+      statusCode: Number.isFinite(Number(m.statusCode)) ? Math.trunc(Number(m.statusCode)) : 0,
+      duurMs: Number.isFinite(Number(m.duurMs)) ? Math.max(0, Math.trunc(Number(m.duurMs))) : null,
+      pogingenAantal: Math.max(1, Number.isFinite(Number(m.pogingenAantal)) ? Math.trunc(Number(m.pogingenAantal)) : opgeslagen.herhalingen),
+      route: String(m.route || '').slice(0, 200),
+    };
+    if (soortCode === 'netwerk_offline') {
+      await auditToevoegen({
+        ownerId: lade.userId,
+        actorId: lade.userId,
+        action: 'owner.systeem.verbinding.offline',
+        type: 'diagnose',
+        result: 'failure',
+        details: bewijsDetails,
+      }).catch(() => undefined);
+    } else {
+      await auditToevoegen({
+        ownerId: lade.userId,
+        actorId: lade.userId,
+        action: 'owner.systeem.verbinding.storing',
+        type: 'diagnose',
+        result: 'failure',
+        details: bewijsDetails,
+      }).catch(() => undefined);
+    }
+    if (opgeslagen.status === 'opgelost') {
+      await auditToevoegen({
+        ownerId: lade.userId,
+        actorId: lade.userId,
+        action: 'owner.systeem.verbinding.hersteld',
+        type: 'diagnose',
+        result: 'success',
+        details: bewijsDetails,
+      }).catch(() => undefined);
+    }
+  }
+
+  return opgeslagen;
 }
 
 export async function lijstStroom(
@@ -647,7 +703,12 @@ export function meldingEcosysteemRoutes(deps: {
         const limiet = await limietControle(`melding-event:${lade.userId}`, 60, 60);
         if (!limiet.ok) throw new LimietFout(limiet.retryAfter);
         const gebeurtenis = await slaGebeurtenisOp(lade, body);
-        if (deps.bijlageWeergaveVlag && gebeurtenis.bijlagen.length > 0 && gebeurtenis.herhalingen <= 1) {
+        if (
+          deps.bijlageWeergaveVlag &&
+          gebeurtenis.bijlagen.length > 0 &&
+          gebeurtenis.herhalingen <= 1 &&
+          gebeurtenis.status !== 'opgelost'
+        ) {
           void stuurBijlageMeldingNaarTelegram(lade, gebeurtenis, {
             vlagAan: deps.bijlageWeergaveVlag,
             leesProfielFn: leesProfiel,

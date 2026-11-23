@@ -125,7 +125,10 @@ export function bouwMeldingRegisterOverzicht(): {
     const catObj = catMap.get(cat) || catMap.get('beheer')!;
     const ruimte: RuimteType = m.type.startsWith('tech.') ? 'technisch' : 'prive';
     const subdomein = herkenSubdomein(`${m.bestand} ${m.soort}`, '', ruimte === 'technisch' ? 'admin' : 'hub');
-    const kanaal = herkenKanaal(`${m.bestand} ${m.soort}`, m.soort, subdomein);
+    const herkendKanaal = herkenKanaal(`${m.bestand} ${m.soort}`, m.soort, subdomein);
+    const kanaal = m.kanaal === 'pagina' && (herkendKanaal === 'app' || herkendKanaal === 'systeem')
+      ? 'pagina'
+      : herkendKanaal;
 
     if (m.kanaal === 'activiteit') gezieneActieCodes.add(m.soort);
 

@@ -11,6 +11,13 @@ import type { CanonicalServerNotification } from '../../canoniek-meldingen';
 import type { ActivityEvent } from '../../connector-activiteit';
 import type { BewaardeRij } from '../lokale-rijen';
 import {
+  abonneerVerbindingIncidenten,
+  incidentNaarEcosysteemGebeurtenis,
+  leesVerbindingIncidenten,
+  synchroniseerVerbindingBewijzenNaarServer,
+  type VerbindingIncidentBewijs,
+} from '../../platform/verbinding-bewijs-opslag';
+import {
   interneAiAnalyse,
   interpreteerGebeurtenis,
   normaliseerGebeurtenis,
@@ -320,6 +327,7 @@ export type UniformeStroomInvoer = {
   subdomeinNu: MeldingSubdomein;
   serverGebeurtenissen: MeldingEcosysteemGebeurtenis[];
   paginaSignalen: PaginaSignaal[];
+  verbindingIncidenten?: VerbindingIncidentBewijs[];
   serverItems: CanonicalServerNotification[];
   techItems: CanonicalServerNotification[];
   localRows: BewaardeRij[];
@@ -347,7 +355,7 @@ const STATUS_RANG: Record<MeldingGebeurtenisStatus, number> = {
   archief: 4,
 };
 
-/** Об’єднує всі 5 джерел подій сайту, сторінок, сервера та агентів в єдиний дедуплікований потік без дублів. */
+/** Об’єднує всі джерела подій сайту, сторінок, доказів зв’язку, сервера та агентів в єдиний дедуплікований потік без дублів. */
 export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosysteemGebeurtenis[] {
   const nl = invoer.lang === 'nl';
   const result = new Map<string, MeldingEcosysteemGebeurtenis>();
@@ -375,15 +383,44 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     }
   };
 
-  // 1. Події з серверної таблиці екосистеми (ПК-агент, розширення, ШІ, пошта, сховище, веб)
+  // 1. Події з серверної таблиці екосистеми (ПК-агент, розширення, ШІ, пошта, сховище, синхронізовані докази зв’язку)
   for (const g of invoer.serverGebeurtenissen) {
     if (g.ruimte !== invoer.ruimte) continue;
     voegToe(g);
   }
 
+  // 1б. Тривалий реєстр доказів і хронології перерв зв’язку з сервером (залишається в історії після відновлення)
+  const incidentenLijst = invoer.verbindingIncidenten ?? leesVerbindingIncidenten();
+  const bandVerbindingSig = invoer.paginaSignalen.find((s) => s.actief && s.id === 'band:verbinding');
+  let heeftVerbindingBewijsInStroom = false;
+  for (const inc of incidentenLijst) {
+    const geb = incidentNaarEcosysteemGebeurtenis(inc, invoer.lang);
+    if (inc.ruimte !== invoer.ruimte && geb.subdomein !== invoer.subdomeinNu) continue;
+    heeftVerbindingBewijsInStroom = true;
+    const liveActies =
+      inc.hersteldOp === null && bandVerbindingSig?.acties?.length
+        ? [
+            ...bandVerbindingSig.acties.map((a) => ({
+              id: `ps:${bandVerbindingSig.id}:${a.id}`,
+              labelUk: a.labelUk,
+              labelNl: a.labelNl,
+              soort: (a.href ? 'navigeer' : 'api') as 'navigeer' | 'api',
+              ...(a.href ? { href: a.href } : {}),
+            })),
+            ...geb.acties.filter((a) => a.soort === 'bijlage' || a.soort === 'ai'),
+          ]
+        : geb.acties;
+    voegToe({
+      ...geb,
+      ruimte: invoer.ruimte,
+      acties: liveActies,
+    });
+  }
+
   // 2. Живі сигнали поточних сторінок та інформаційних смуг (мережа, оновлення сайту/розширення, ключ-сейф, простори)
   for (const sig of invoer.paginaSignalen) {
     if (!sig.actief) continue;
+    if (sig.id === 'band:verbinding' && heeftVerbindingBewijsInStroom) continue;
     const geb = interpreteerGebeurtenis(
       {
         id: sig.id,
@@ -532,6 +569,7 @@ export function useMeldingEcosysteem(opties: {
 }) {
   const [profiel, setProfiel] = useState<MeldingEcosysteemProfiel>(() => leesLokaalProfiel(opties.scope, opties.ruimte));
   const [serverGebeurtenissen, setServerGebeurtenissen] = useState<MeldingEcosysteemGebeurtenis[]>([]);
+  const [verbindingIncidenten, setVerbindingIncidenten] = useState<VerbindingIncidentBewijs[]>(() => leesVerbindingIncidenten());
   const [overrides, setOverrides] = useState(() => leesLokaleStatusOverrides(opties.scope, opties.ruimte));
   const [aiCache, setAiCache] = useState<Record<string, MeldingAiSamenvatting>>({});
   const [laden, setLaden] = useState(false);
@@ -571,6 +609,41 @@ export function useMeldingEcosysteem(opties: {
       setLaden(false);
     }
   }, [opties.scope, opties.ruimte]);
+
+  const syncVerbindingBewijzen = useCallback(async () => {
+    if (!opties.scope || opties.scope === 'anon') return;
+    const aantal = await synchroniseerVerbindingBewijzenNaarServer(
+      opties.scope,
+      (url, data) => api.post(url, data),
+      opties.lang,
+    );
+    if (aantal > 0) {
+      void verversStroom();
+    }
+  }, [opties.scope, opties.lang, verversStroom]);
+
+  useEffect(() => {
+    const wegIncidenten = abonneerVerbindingIncidenten((lijst) => {
+      setVerbindingIncidenten(lijst);
+      if (lijst.some((x) => x.hersteldOp !== null && x.gesynchroniseerdOp === null)) {
+        void syncVerbindingBewijzen();
+      }
+    });
+    const bijOnline = () => {
+      void syncVerbindingBewijzen();
+      void verversStroom();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', bijOnline);
+    }
+    void syncVerbindingBewijzen();
+    return () => {
+      wegIncidenten();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', bijOnline);
+      }
+    };
+  }, [syncVerbindingBewijzen, verversStroom]);
 
   useEffect(() => {
     let levend = true;
@@ -679,6 +752,7 @@ export function useMeldingEcosysteem(opties: {
         subdomeinNu: opties.subdomeinNu,
         serverGebeurtenissen,
         paginaSignalen: opties.paginaSignalen,
+        verbindingIncidenten,
         serverItems: opties.serverItems,
         techItems: opties.techItems,
         localRows: opties.localRows,
@@ -696,6 +770,7 @@ export function useMeldingEcosysteem(opties: {
       opties.subdomeinNu,
       serverGebeurtenissen,
       opties.paginaSignalen,
+      verbindingIncidenten,
       opties.serverItems,
       opties.techItems,
       opties.localRows,

@@ -471,6 +471,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть для адміністратора оновлень під час налаштування захищеного архівування випусків у групу Telegram із темами.', 'Zet aan voor het inrichten van het versleutelde releasearchief in een Telegram-groep met onderwerpen.'],
     gevolg: ['Вимкнення ховає допоміжне поле розбору посилання на сторінці налаштувань без зміни збережених ключів, архівів чи приймача подій.', 'Uitschakelen verbergt het hulpveld voor linkontleding zonder bewaarde sleutels, archieven of de webhook te veranderen.'],
   },
+  'melding-verbinding-bewijs-v1': {
+    naam: ['Докази та хронологія перерв зв’язку з сервером у центрі сповіщень', 'Bewijs en tijdlijn van verbindingsonderbrekingen in het meldingencentrum'],
+    wat: ['Зберігає кожну спробу під час перерви зв’язку зі службою або втрати мережі як постійний очищений доказ, не видаляє подію з історії після відновлення, синхронізує завершені інциденти в базу даних і дозволяє згорнути картку зв’язку в компактну смугу.', 'Bewaart elke poging tijdens een verbindingsonderbreking of netwerkuitval als geschoond bewijs, houdt het incident na herstel zichtbaar in de meldingsgeschiedenis, synchroniseert afgeronde incidenten naar de database en laat de kaart tot een compacte balk inklappen.'],
+    wanneer: ['Типово увімкнено для формування повної хронології доступності служб та зручної роботи на телефоні й комп’ютері.', 'Standaard ingeschakeld voor een volledige tijdlijn van dienstbeschikbaarheid en rustig gebruik op telefoon en computer.'],
+    gevolg: ['Вимкнення зупиняє запис нових хронологій спроб і повертає базовий вигляд повідомлення про зв’язок без видалення вже збережених історичних записів.', 'Uitschakelen stopt het vastleggen van nieuwe pogingstijdlijnen en toont de basisweergave zonder reeds opgeslagen incidenten te wissen.'],
+  },
 };
 
 export const HELP_FLAGS: HelpLagen = {

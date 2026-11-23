@@ -1,19 +1,524 @@
-/* Plakkaat «verbinding» (punt 3, audit 19.10.2026): meta-regel met code/dienst/tijd/poging, knoppen en uitklapbare «Деталі».
-   De plaatsing en kleuren van .canonical-connection-banner zelf staan in src/canoniek-omlijsting.css; hier alleen het nieuwe binnenwerk. */
-.canonical-connection-banner{max-width:min(520px,calc(100vw - 96px))}
-.canonical-connection-banner .vp-doen{color:var(--text);opacity:.86}
-.canonical-connection-banner .vp-meta{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px}
-.canonical-connection-banner .vp-meta code{padding:1px 6px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:.75rem;line-height:1.5;white-space:nowrap}
-.canonical-connection-banner .vp-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
-.canonical-connection-banner .vp-knop{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font:inherit;font-size:.75rem;cursor:pointer;text-decoration:none}
-.canonical-connection-banner .vp-knop:hover,.canonical-connection-banner .vp-knop:focus-visible{background:var(--nav-hover);outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
-.canonical-connection-banner .vp-knop[disabled]{opacity:.6;cursor:progress}
-.canonical-connection-banner .vp-knop svg{width:14px;height:14px;margin:0;stroke-width:2}
-.canonical-connection-banner .vp-knop svg[data-open='1']{rotate:180deg}
-.canonical-connection-banner .vp-hoofd{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
-.canonical-connection-banner .vp-details{display:grid;gap:6px;margin-top:7px}
-.canonical-connection-banner .vp-details pre{margin:0;max-height:210px;overflow:auto;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);font-size:.75rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
-@media(max-width:700px){.canonical-connection-banner{max-width:none}.canonical-connection-banner .vp-details pre{max-height:150px}}
-/* MOBIEL 21.10.2026: knoppen in de verbindingsbanner 26 px → 44 px op de telefoon; uitleg nooit < 12 px */
-.vp-doen{font-size:max(var(--tekst-mini),1em)}
-@media (max-width:700px){.vp-knop{min-height:var(--tik-hoogte)}}
+/* Картка стану зв’язку з сервером (HERSTEL-001): візуальна єдність із «Пультом уваги» (MELDPANEEL-003) та сталими кольорами станів (--staat-*).
+   Позиціонування .canonical-connection-banner визначено в src/canoniek-omlijsting.css; тут задано оформлення картки, пігулки, дій і хронології без !important. */
+
+.canonical-connection-banner.vp-kaart {
+  --vp-staat: var(--staat-let, var(--warn, #d97706));
+  --vp-staat-zacht: var(--staat-let-zacht, color-mix(in srgb, var(--vp-staat) 16%, var(--panel)));
+  display: grid;
+  align-items: stretch;
+  gap: 9px;
+  max-width: min(540px, calc(100vw - 88px));
+  max-height: calc(100dvh - 84px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--vp-staat) 38%, var(--line));
+  border-left: 4px solid var(--vp-staat);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 95%, var(--vp-staat-zacht));
+  color: var(--text);
+  box-shadow: 0 20px 52px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--vp-staat) 12%, transparent);
+  backdrop-filter: blur(16px);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection='server'] {
+  --vp-staat: var(--staat-let, var(--warn, #d97706));
+  --vp-staat-zacht: var(--staat-let-zacht, color-mix(in srgb, var(--vp-staat) 16%, var(--panel)));
+  border-color: color-mix(in srgb, var(--vp-staat) 40%, var(--line));
+  border-left-color: var(--vp-staat);
+  background: color-mix(in srgb, var(--panel) 94%, var(--vp-staat-zacht));
+}
+
+.canonical-connection-banner.vp-kaart[data-connection='offline'] {
+  --vp-staat: var(--staat-fout, var(--danger, #dc2626));
+  --vp-staat-zacht: var(--staat-fout-zacht, color-mix(in srgb, var(--vp-staat) 16%, var(--panel)));
+  border-color: color-mix(in srgb, var(--vp-staat) 42%, var(--line));
+  border-left-color: var(--vp-staat);
+  background: color-mix(in srgb, var(--panel) 94%, var(--vp-staat-zacht));
+}
+
+.canonical-connection-banner.vp-kaart[data-connection='restored'] {
+  --vp-staat: var(--staat-goed, var(--good, #16a34a));
+  --vp-staat-zacht: var(--staat-goed-zacht, color-mix(in srgb, var(--vp-staat) 16%, var(--panel)));
+  border-color: color-mix(in srgb, var(--vp-staat) 44%, var(--line));
+  border-left-color: var(--vp-staat);
+  background: color-mix(in srgb, var(--panel) 93%, var(--vp-staat-zacht));
+}
+
+.canonical-connection-banner.vp-kaart .vp-kop {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.canonical-connection-banner.vp-kaart .vp-medaillon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--vp-staat) 34%, transparent);
+  border-radius: 10px;
+  background: var(--vp-staat-zacht);
+  color: var(--vp-staat);
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-medaillon svg {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  color: var(--vp-staat);
+  stroke-width: 2;
+}
+
+.canonical-connection-banner.vp-kaart .vp-medaillon.vp-medaillon-klein {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-medaillon.vp-medaillon-klein svg {
+  width: 16px;
+  height: 16px;
+}
+
+.canonical-connection-banner.vp-kaart .vp-kop-inhoud {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.canonical-connection-banner.vp-kaart .vp-kop-inhoud strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.32;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.canonical-connection-banner.vp-kaart .vp-herkomst {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.canonical-connection-banner.vp-kaart .vp-staat-pil {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--vp-staat) 36%, transparent);
+  border-radius: 999px;
+  background: var(--vp-staat-zacht);
+  color: var(--vp-staat);
+  font-size: 0.66rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.canonical-connection-banner.vp-kaart .vp-dienst-pil {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  color: var(--text);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+}
+
+.canonical-connection-banner.vp-kaart .vp-bewijs-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6.5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 75%, var(--panel));
+  color: var(--muted);
+  font-size: 0.665rem;
+  font-weight: 600;
+  line-height: 1.32;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-bewijs-pil svg {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  color: var(--vp-staat);
+  stroke-width: 2;
+}
+
+.canonical-connection-banner.vp-kaart .vp-klap-knop {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 65%, var(--panel));
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.canonical-connection-banner.vp-kaart .vp-klap-knop:hover,
+.canonical-connection-banner.vp-kaart .vp-klap-knop:focus-visible {
+  border-color: color-mix(in srgb, var(--vp-staat) 45%, var(--line));
+  background: var(--nav-hover);
+  color: var(--text);
+  outline: 2px solid color-mix(in srgb, var(--vp-staat) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-klap-knop svg {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  color: currentColor;
+  stroke-width: 2;
+}
+
+.canonical-connection-banner.vp-kaart .vp-tekst-blok {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.canonical-connection-banner.vp-kaart .vp-waarom {
+  display: block;
+  color: var(--muted);
+  font-size: max(var(--tekst-mini, 12px), 0.78rem);
+  line-height: 1.44;
+  overflow-wrap: anywhere;
+}
+
+.canonical-connection-banner.vp-kaart .vp-doen {
+  display: block;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--vp-staat) 24%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 60%, var(--panel));
+  color: var(--text);
+  font-size: max(var(--tekst-mini, 12px), 0.78rem);
+  font-weight: 550;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.canonical-connection-banner.vp-kaart .vp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 6px;
+  margin-top: 0;
+}
+
+.canonical-connection-banner.vp-kaart .vp-meta code {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 70%, var(--panel));
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.canonical-connection-banner.vp-kaart .vp-meta code.vp-code-kern {
+  border-color: color-mix(in srgb, var(--vp-staat) 40%, var(--line));
+  background: var(--vp-staat-zacht);
+  color: var(--vp-staat);
+  font-weight: 700;
+}
+
+.canonical-connection-banner.vp-kaart .vp-acties {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+.canonical-connection-banner.vp-kaart .vp-acties.vp-acties-hersteld {
+  margin-top: 0;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 55%, var(--panel));
+  color: var(--text);
+  font: inherit;
+  font-size: 0.77rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop:hover,
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop:focus-visible {
+  border-color: color-mix(in srgb, var(--vp-staat) 42%, var(--line));
+  background: var(--nav-hover);
+  outline: 2px solid color-mix(in srgb, var(--vp-staat) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop[disabled] {
+  opacity: 0.62;
+  cursor: progress;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop svg {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  color: currentColor;
+  stroke-width: 2;
+  flex: none;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop svg[data-open='1'] {
+  rotate: 180deg;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop.vp-hoofd {
+  border-color: color-mix(in srgb, var(--vp-staat) 50%, var(--line));
+  background: var(--vp-staat-zacht);
+  color: var(--vp-staat);
+  font-weight: 700;
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop.vp-hoofd:hover,
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop.vp-hoofd:focus-visible {
+  background: color-mix(in srgb, var(--vp-staat) 24%, var(--panel));
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop.vp-historie {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft, var(--surface)) 58%, var(--panel));
+}
+
+@keyframes vp-draai-animatie {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.canonical-connection-banner.vp-kaart[data-connection] .vp-knop svg.vp-draai {
+  animation: vp-draai-animatie 0.9s linear infinite;
+}
+
+/* Згорнута компактна пігулка: один охайний рядок без перекриття сторінки */
+.canonical-connection-banner.vp-kaart.is-ingeklapt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 14px;
+}
+
+.canonical-connection-banner.vp-kaart.is-ingeklapt .vp-pil-inhoud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.canonical-connection-banner.vp-kaart.is-ingeklapt .vp-code-pil {
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--vp-staat) 42%, var(--line));
+  border-radius: 999px;
+  background: var(--vp-staat-zacht);
+  color: var(--vp-staat);
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.canonical-connection-banner.vp-kaart.is-ingeklapt .vp-pil-dienst {
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+
+.canonical-connection-banner.vp-kaart.is-ingeklapt .vp-pil-poging {
+  font-size: 0.73rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.canonical-connection-banner.vp-kaart.is-ingeklapt .vp-pil-knoppen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+/* Розгорнутий блок «Деталі» із хронологією спроб інциденту */
+.canonical-connection-banner.vp-kaart .vp-details {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.canonical-connection-banner.vp-kaart .vp-chronologie {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface) 68%, var(--panel));
+}
+
+.canonical-connection-banner.vp-kaart .vp-chronologie-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.canonical-connection-banner.vp-kaart .vp-chronologie-kop b {
+  color: var(--text);
+  font-weight: 650;
+}
+
+.canonical-connection-banner.vp-kaart .vp-chronologie-teller {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--vp-staat-zacht);
+  color: var(--vp-staat);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.canonical-connection-banner.vp-kaart .vp-pogingen-lijst {
+  display: grid;
+  gap: 4px;
+  max-height: 132px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.canonical-connection-banner.vp-kaart .vp-pogingen-lijst li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding: 4px 6px;
+  border-radius: 7px;
+  background: var(--panel);
+  font-size: 0.73rem;
+  line-height: 1.35;
+}
+
+.canonical-connection-banner.vp-kaart .vp-poging-nr {
+  font-weight: 700;
+  color: var(--vp-staat);
+}
+
+.canonical-connection-banner.vp-kaart .vp-poging-tijd {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.canonical-connection-banner.vp-kaart .vp-poging-route {
+  flex: 1 1 130px;
+  min-width: 0;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  overflow-wrap: anywhere;
+}
+
+.canonical-connection-banner.vp-kaart .vp-poging-code {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--vp-staat-zacht);
+  color: var(--vp-staat);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.canonical-connection-banner.vp-kaart .vp-details pre {
+  margin: 0;
+  max-height: 170px;
+  overflow: auto;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .canonical-connection-banner.vp-kaart {
+    max-width: none;
+    max-height: calc(100dvh - 74px);
+    padding: 11px 12px;
+  }
+  .canonical-connection-banner.vp-kaart .vp-klap-knop {
+    width: var(--tik-hoogte, 44px);
+    height: var(--tik-hoogte, 44px);
+    min-height: var(--tik-hoogte, 44px);
+  }
+  .canonical-connection-banner.vp-kaart .vp-acties {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .canonical-connection-banner.vp-kaart .vp-acties.vp-acties-hersteld {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .canonical-connection-banner.vp-kaart[data-connection] .vp-knop {
+    min-height: var(--tik-hoogte, 44px);
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+  }
+  .canonical-connection-banner.vp-kaart.is-ingeklapt {
+    padding: 6px 9px;
+  }
+  .canonical-connection-banner.vp-kaart.is-ingeklapt .vp-pil-knoppen .vp-knop {
+    width: auto;
+    padding: 6px 10px;
+  }
+  .canonical-connection-banner.vp-kaart .vp-details pre {
+    max-height: 135px;
+  }
+}
