@@ -58,6 +58,8 @@ import { dienstVanHostnaam } from '../shared/foutuitleg';
 import { activityTitle, activiteitContext } from './connector-activiteit';
 import { SUBDOMEINEN, type MeldingSubdomein } from '../shared/meldingen-ecosysteem';
 import { detecteerLiveVoortgang, isInvoerElementActief, magToastNuTonen } from '../shared/meldingen-puls/kern';
+import { useVlag } from './functievlag-lezen';
+import { useMeldingWeergaveKeuze } from './meldingen/weergave-keuze';
 import Merk from './merk/Merk';
 
 const naarMeldingSubdomein = (dienst: string): MeldingSubdomein => {
@@ -114,9 +116,13 @@ const DETAIL_ICON_COMPONENTS: Record<CanonicalNoticeDetailIcon, typeof Info> = {
 const ANDERE_ESC_LAGEN = '.menu-bellen,.plaats-acties,.menu-acties,.zk-uitklap,[role="menu"],[role="listbox"]';
 
 export default function CanonicalNotificationCenter(p: Props) {
+  const vlagV2 = useVlag('meldingen-v2', false);
+  const vlagUitlegV3 = useVlag('meldingen-uitleg-v3', false);
+  const weergaveKeuze = useMeldingWeergaveKeuze();
   const oudeTestStand = typeof location !== 'undefined' && /[?&]v2=[01]\b/.test(location.search);
-  const eenheidPuls = !oudeTestStand;
-  const v2 = useMeldingenV2();
+  const eenheidPuls = !oudeTestStand && weergaveKeuze.stijl !== 'v2';
+  const v2 = useMeldingenV2() || (oudeTestStand ? vlagV2 : weergaveKeuze.stijl === 'v2' || vlagV2);
+  const uitlegV3Actief = weergaveKeuze.eigenUitleg ? weergaveKeuze.uitlegV3 : vlagUitlegV3;
   const v2Regels = useLeverRegels(v2 || eenheidPuls);
   // INTEG-001: de blijvende status (archief, opgelost) geldt nu voor elk paneel, niet alleen met de vlag meldingen-uitleg-v3: «Очистити»
   // en «Архів» moeten overal werken. Alleen voor een aangemeld account (anders is er geen server-status).
@@ -1237,6 +1243,7 @@ export default function CanonicalNotificationCenter(p: Props) {
                 onGeluid={toggleSound}
                 onSluiten={() => setPanelOpen(false)}
                 onVenster={() => { zetEcosysteemModusActief(true); }}
+                uitlegV3={uitlegV3Actief}
                 techTypen={!!tech.profiel}
                 tech={techRegel ? { aantal: techUnread, open: () => { setPanelOpen(false); openTechMeldingen(); }, tekst: techSamenvattingTekst(p.lang, techUnread) } : null}
               />

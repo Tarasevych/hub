@@ -75,6 +75,16 @@ const OUDE_PADEN: Record<string, readonly [LinkDienst, string]> = {
   // backend/ai-vertaling-routes.ts ('/mail'), backend/cloud-schrijfrecht.ts ('/cloud'): назва служби замість сторінки.
   mail: ['mail', '/'],
   cloud: ['cloud', '/'],
+  huis: ['huis', '/'],
+  crm: ['crm', '/'],
+  klant: ['crm', '/'],
+  klantrelatie: ['crm', '/'],
+  klantrelatiebeheer: ['crm', '/'],
+  klimop: ['mcp', '/agents#orch'],
+  afstemming: ['api', '/afstemming'],
+  geheugen: ['ai', '/processen'],
+  foto: ['cloud', '/fotos'],
+  social: ['identity', '/netwerken'],
   agenda: ['hub', '/agenda'],
   notities: ['hub', '/notities'],
   diagnostiek: ['admin', '/diagnostiek'],
@@ -84,18 +94,33 @@ const OUDE_PADEN: Record<string, readonly [LinkDienst, string]> = {
 /** Ankers van de pagina «Підключення ШІ» (src/agenten/agenten-hash.ts): op de startpagina van mcp.* doen ze niets. */
 const AGENTEN_ANKER = /^#(overzicht|overview|connectors|agent(\/|$)|ai(\/|$)|extern|orch|extensie|extension|browser|apparaten|tokens|toegang|dostupy|toegangen|technisch|journaal|pending|claude|tools|doors|pair|dev:)/;
 
+/** Specifiek subpad voor diensten die op een eigen tabblad of anker van een host leven (bij een kale '/' met soort-hint). */
+function padVoorSoort(soort: string | undefined): readonly [LinkDienst, string] | undefined {
+  const s = String(soort || '').toLowerCase();
+  if (!s) return undefined;
+  if (/^(klimop|owner\.klimop)($|[._:-])/.test(s)) return ['mcp', '/agents#orch'];
+  if (/^(afstemming|reconciliation|owner\.afstemming)($|[._:-])/.test(s)) return ['api', '/afstemming'];
+  if (/^(geheugen|owner\.ai\.geheugen)($|[._:-])/.test(s)) return ['ai', '/processen'];
+  if (/^(foto|fotos|photos|owner\.foto)($|[._:-])/.test(s)) return ['cloud', '/fotos'];
+  if (/^(social|netwerken|owner\.social)($|[._:-])/.test(s)) return ['identity', '/netwerken'];
+  return undefined;
+}
+
 /** Welke dienst past bij een meldingssoort als de link zelf het niet zegt (relatief pad zonder host). */
 export function dienstVoorSoort(soort: string | undefined): LinkDienst | undefined {
   const s = String(soort || '').toLowerCase();
   if (!s) return undefined;
-  if (/^(agenda|calendar)/.test(s)) return 'hub';
-  if (/^(mail|post)/.test(s)) return 'mail';
-  if (/^(cloud|bestand|drive)/.test(s)) return 'cloud';
+  if (/^(agenda|calendar|owner\.calendar|notitie|owner\.notitie)/.test(s)) return 'hub';
+  if (/^(mail|post|owner\.mail)/.test(s)) return 'mail';
+  if (/^(cloud|bestand|drive|foto|fotos|photos|owner\.cloud|owner\.foto)/.test(s)) return 'cloud';
   if (/^(uitrol|beveiliging\.zekering|google_login_config)/.test(s)) return 'admin';
   if (/^(workspace|share|deel)/.test(s)) return 'hub';
-  if (/^(ai|mcp|agent|extensie)/.test(s)) return 'mcp';
-  if (/^(vault)/.test(s)) return 'api';
-  if (/^(security|access|passkey|toegang|herstel|recovery|login|session|sessie|apparaat|impersonatie|ondersteuning)/.test(s)) return 'identity';
+  if (/^(geheugen|owner\.ai\.geheugen)/.test(s)) return 'ai';
+  if (/^(klimop|owner\.klimop|ai|mcp|agent|extensie)/.test(s)) return 'mcp';
+  if (/^(vault|afstemming|reconciliation|owner\.afstemming)/.test(s)) return 'api';
+  if (/^(huis|domotica|woning|owner\.huis)/.test(s)) return 'huis';
+  if (/^(klant|klantrelatie|klantrelatiebeheer|crm|owner\.klantrelatie)/.test(s)) return 'crm';
+  if (/^(social|netwerken|owner\.social|security|access|passkey|toegang|herstel|recovery|login|session|sessie|apparaat|impersonatie|ondersteuning)/.test(s)) return 'identity';
   return undefined;
 }
 
@@ -128,6 +153,10 @@ export function routeerMeldingLink(raw: unknown, hint: LinkHint = {}): string {
     try { u = new URL(s, 'https://x.invalid'); } catch { return ''; }
     const rest = `${u.pathname}${u.search}${u.hash}`;
     const seg = eersteSegment(u.pathname);
+    if (u.pathname === '/' && !u.hash && !hint.dienst) {
+      const spec = padVoorSoort(hint.soort);
+      if (spec) return absoluut(spec[0], `${spec[1]}${spec[1].includes('#') ? '' : u.search}`);
+    }
     const voorkeur = [hint.dienst, dienstVoorSoort(hint.soort)].filter(Boolean) as LinkDienst[];
     // 1) de dienst van de bron/soort, als het pad daar bestaat; 2) een bekend oud pad; 3) de eerste dienst waar het pad bestaat.
     for (const d of voorkeur) if (padBestaat(d, u.pathname)) return routeerMeldingLink(absoluut(d, rest), hint);

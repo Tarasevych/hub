@@ -74,6 +74,7 @@ import {
 } from '../../../shared/meldingen-puls/kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
 import Merk from '../../merk/Merk';
+import MeldingModusKiezer from '../MeldingModusKiezer';
 import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
 import PulsOorzaakKetenKaart from '../puls/PulsOorzaakKetenKaart';
 import {
@@ -1314,6 +1315,7 @@ export default function MeldingenPortaal({
           <div className='mel-lichaam'>
             {toonVoorkeuren ? (
               <div className='mel-voorkeuren-kader'>
+                <MeldingModusKiezer lang={lang} />
                 <MeldingVoorkeurenPaneel lang={lang} techTypen={techTypen} />
               </div>
             ) : (
