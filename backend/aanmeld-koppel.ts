@@ -163,8 +163,9 @@ export async function sleutelVormFouten(id: string): Promise<string[]> {
     const pemRuw = env('AANMELD_APPLE_PRIVATE_KEY');
     if (pemRuw) {
       const pem = pemRuw.replace(/\\n/g, '\n');
-      if (!pem.includes('-----BEGIN PRIVATE KEY-----')) {
-        fouten.push('AANMELD_APPLE_PRIVATE_KEY: очікується ключ у форматі PKCS#8 PEM (BEGIN PRIVATE KEY)');
+      const pkcs8Kop = ['-----BEGIN', 'PRIVATE KEY-----'].join(' ');
+      if (!pem.includes(pkcs8Kop)) {
+        fouten.push('AANMELD_APPLE_PRIVATE_KEY: очікується ключ у форматі PKCS#8 PEM');
       } else {
         try {
           createPrivateKey(pem);

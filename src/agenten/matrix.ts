@@ -18,7 +18,7 @@ export const METHODEN: ReadonlyArray<{ id: MethodeId; naam: T2; uitleg: T2; tab:
   { id: 'ext-technisch', naam: ['Розширення — технічний', 'Extensie — technisch'], uitleg: ['адмін-сторінки, лише в технічному профілі', 'beheerpagina’s, alleen in het technisch profiel'], tab: 'extensie' },
   { id: 'pc', naam: ['Агент на ПК', 'Agent op pc'], uitleg: ['файли й команди на вашому ПК', 'bestanden en opdrachten op uw pc'], tab: 'apparaten' },
   { id: 'lokaal', naam: ['Локальний агент', 'Lokale agent'], uitleg: ['через розширення, лише читання', 'via de extensie, alleen lezen'], tab: 'extensie' },
-  { id: 'token', naam: ['Токен', 'Token'], uitleg: ['MCP-токен для агента', 'MCP-token voor een agent'], tab: 'tokens' },
+  { id: 'token', naam: ['Ключ MCP', 'Token'], uitleg: ['ключ підключення MCP для агента', 'MCP-token voor een agent'], tab: 'tokens' },
 ];
 
 /** Per doel: een representatief hulpmiddel (ruimte via toolRuimte) en de hosts waarop de extensie het bereikt. */

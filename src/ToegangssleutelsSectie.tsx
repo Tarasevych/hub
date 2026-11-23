@@ -54,28 +54,28 @@ export const soortTekst=(lang:Lang,p:Pick<Passkey,'soort'|'aanbieder'>)=>{
 };
 const SoortIcoon=({soort}:{soort?:Soort})=>soort==='telefoon'?<Smartphone/>:soort==='beveiligingssleutel'?<KeyRound/>:soort==='wachtwoordbeheerder'?<Cloud/>:soort==='apparaat'?<Laptop/>:<Fingerprint/>;
 const FOUTEN:Record<string,[string,string]>={
-  AbortError:['Додавання passkey скасовано.','Passkey toevoegen geannuleerd.'],
-  TimeoutError:['Час на підтвердження passkey вийшов. Спробуйте ще раз.','De tijd om de passkey te bevestigen is verstreken. Probeer het opnieuw.'],
-  NotSupportedError:['Цей браузер або пристрій не може створити passkey.','Deze browser of dit apparaat kan geen passkey maken.'],
+  AbortError:['Додавання ключа доступу скасовано.','Passkey toevoegen geannuleerd.'],
+  TimeoutError:['Час на підтвердження ключем доступу вийшов. Спробуйте ще раз.','De tijd om de passkey te bevestigen is verstreken. Probeer het opnieuw.'],
+  NotSupportedError:['Цей браузер або пристрій не може створити ключ доступу.','Deze browser of dit apparaat kan geen passkey maken.'],
   STAP_OP_VENSTER_FOUT:['Не вдалося відкрити вікно «Підтвердіть доступ». Оновіть сторінку й спробуйте ще раз.','Het venster «Toegang bevestigen» kon niet openen. Vernieuw de pagina en probeer het opnieuw.'],
-  NotAllowedError:['Підтвердження passkey скасовано або час вийшов.','Passkey-bevestiging geannuleerd of de tijd is verstreken.'],
+  NotAllowedError:['Підтвердження ключем доступу скасовано або час вийшов.','Passkey-bevestiging geannuleerd of de tijd is verstreken.'],
   // Windows/Chrome: excludeCredentials — op dit apparaat staat al een passkey van u. Telefoon toevoegen gaat via de QR-keuze.
-  InvalidStateError:['Цей пристрій уже має ваш passkey. Щоб додати телефон, у вікні Windows оберіть «Використовувати телефон або планшет».','Dit apparaat heeft al uw passkey. Om een telefoon toe te voegen, kiest u in het Windows-venster «Een telefoon of tablet gebruiken».'],
-  SecurityError:['Браузер не дозволив passkey на цій адресі.','De browser staat de passkey op dit adres niet toe.'],
-  PASSKEY_BESTAAT_AL:['Цей passkey уже додано.','Deze passkey is al toegevoegd.'],
-  PASSKEY_LIMIET:['Досягнуто максимальної кількості passkey.','Het maximale aantal passkeys is bereikt.'],
-  PASSKEY_KAN_GOEDKEUREN:['Цей passkey може схвалювати оновлення: для видалення вкажіть причину.','Deze passkey mag updates goedkeuren: geef een reden op om hem te verwijderen.'],
+  InvalidStateError:['Цей пристрій уже має ваш ключ доступу. Щоб додати телефон, у вікні Windows оберіть «Використовувати телефон або планшет».','Dit apparaat heeft al uw passkey. Om een telefoon toe te voegen, kiest u in het Windows-venster «Een telefoon of tablet gebruiken».'],
+  SecurityError:['Браузер не дозволив ключ доступу на цій адресі.','De browser staat de passkey op dit adres niet toe.'],
+  PASSKEY_BESTAAT_AL:['Цей ключ доступу уже додано.','Deze passkey is al toegevoegd.'],
+  PASSKEY_LIMIET:['Досягнуто максимальної кількості ключів доступу.','Het maximale aantal passkeys is bereikt.'],
+  PASSKEY_KAN_GOEDKEUREN:['Цей ключ доступу може схвалювати оновлення: для видалення вкажіть причину.','Deze passkey mag updates goedkeuren: geef een reden op om hem te verwijderen.'],
   REDEN_TE_KORT:['Вкажіть причину (щонайменше 10 символів).','Geef een reden op (minstens 10 tekens).'],
   REDEN_TE_LANG:['Причина задовга (максимум 500 символів).','De reden is te lang (maximaal 500 tekens).'],
-  STEP_UP_STRONG_REQUIRED:['Потрібне підтвердження passkey, кодом із застосунку або кодом відновлення (повторного входу Google недостатньо).','Bevestiging met passkey, app-code of herstelcode is nodig (opnieuw inloggen bij Google is niet genoeg).'],
+  STEP_UP_STRONG_REQUIRED:['Потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення (повторного входу Google недостатньо).','Bevestiging met passkey, app-code of herstelcode is nodig (opnieuw inloggen bij Google is niet genoeg).'],
   INTREKKEN_LOOPT_AL:['Запит на відкликання вже передано серверу.','Het intrekverzoek is al aan de server doorgegeven.'],
   OPNIEUW_VIA_SSH:['Право цього ключа відкликано через застосунок; повернути його можна лише SSH-командою на сервері.','Het recht van deze sleutel is via de app ingetrokken; terugzetten kan alleen met de SSH-opdracht op de server.'],
   OWNER_REQUIRED:['Це може лише власник.','Dit kan alleen de eigenaar.'],
   PASSKEY_GEEN_VERIFICATIE:['Потрібне розблокування (відбиток, обличчя або PIN).','Ontgrendeling is vereist (vingerafdruk, gezicht of pincode).'],
-  PASSKEY_SLEUTEL_ONBEKEND:['Цей passkey не підтверджено на сервері.','Deze passkey is niet bevestigd op de server.'],
+  PASSKEY_SLEUTEL_ONBEKEND:['Цей ключ доступу не підтверджено на сервері.','Deze passkey is niet bevestigd op de server.'],
   UITDAGING_ONGELDIG:['Запит застарів або вже використаний. Спробуйте ще раз.','Het verzoek is verlopen of al gebruikt. Probeer het opnieuw.'],
-  EERSTE_VIA_SSH:['Перший passkey сервер приймає лише через SSH-команду.','De eerste passkey neemt de server alleen via de SSH-opdracht aan.'],
-  GEEN_PASSKEY:['На сервері ще немає passkey, що може схвалювати.','De server heeft nog geen passkey die mag goedkeuren.'],
+  EERSTE_VIA_SSH:['Перший ключ доступу сервер приймає лише через SSH-команду.','De eerste passkey neemt de server alleen via de SSH-opdracht aan.'],
+  GEEN_PASSKEY:['На сервері ще немає ключа доступу, що може схвалювати.','De server heeft nog geen passkey die mag goedkeuren.'],
   STEP_UP_REQUIRED:['Потрібне додаткове підтвердження. Спробуйте ще раз.','Extra bevestiging is nodig. Probeer het opnieuw.'],
   RATE_LIMITED:['Забагато спроб. Зачекайте кілька хвилин.','Te veel pogingen. Wacht een paar minuten.'],
   NAAM_ONGELDIG:['Вкажіть назву.','Geef een naam op.'],
@@ -84,7 +84,7 @@ const FOUTEN:Record<string,[string,string]>={
 /** IDENTITEIT-015: «є ключ» проти «довіри» — той самий текст у підказці й у вікні підтвердження. */
 export const VERSCHIL_SLEUTEL_VERTROUWEN:[string,string]=['Є ключ — означає, що ним можна підтверджувати важливі дії (а якщо власник сайту ввімкнув вхід ключем — і входити). Довіра — окреме ваше рішення про конкретний пристрій: «це мій телефон чи ключ безпеки». Довіра нових прав не дає; сайт не перевіряє виробника обладнання — позначка лише фіксує, хто, коли й у якому сеансі її поставив.','Een sleutel hebben betekent dat u er belangrijke handelingen mee kunt bevestigen (en, als de site-eigenaar aanmelden met een sleutel aanzette, ook aanmelden). Vertrouwen is een apart besluit over een concreet apparaat: «dit is mijn telefoon of beveiligingssleutel». Vertrouwen geeft geen nieuwe rechten; de site controleert de fabrikant niet — het label legt alleen vast wie het wanneer en in welke sessie zette.'];
 const foutTekst=(lang:Lang,code:string)=>{const t=FOUTEN[code];return t?tr(lang,t[0],t[1]):tr(lang,'Не вдалося. ','Mislukt. ')+(code||tr(lang,'Немає зв’язку.','Geen verbinding.'));};
-export const QR_HINT:[string,string]=['Щоб зберегти passkey на телефоні, виберіть «Використовувати телефон або планшет» і відскануйте QR-код камерою телефону (Bluetooth має бути увімкнено).','Om de passkey op je telefoon op te slaan, kies je «Een telefoon of tablet gebruiken» en scan je de QR-code met de camera van je telefoon (Bluetooth moet aan staan).'];
+export const QR_HINT:[string,string]=['Щоб зберегти ключ доступу на телефоні, виберіть «Використовувати телефон або планшет» і відскануйте QR-код камерою телефону (Bluetooth має бути увімкнено).','Om de passkey op je telefoon op te slaan, kies je «Een telefoon of tablet gebruiken» en scan je de QR-code met de camera van je telefoon (Bluetooth moet aan staan).'];
 const STATUS:Record<Status,[string,string,string]>={
   'alleen-aanmelden':['Лише вхід','Alleen aanmelden','muted'],
   wacht:['Чекає підтвердження сервером','Wacht op bevestiging door de server','warn'],
@@ -133,7 +133,7 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
     try{cred=await passkeyAanmaken(o.publicKey,ac.signal);}finally{window.clearTimeout(traag);setWacht('');}
     await api.post('/api/owner/access/passkeys/registreren',{...context,uitdagingId:o.uitdagingId,naam:naam.trim(),...cred});
     setNieuw(null);
-    return tr(lang,'Passkey додано.','Passkey toegevoegd.');
+    return tr(lang,'Ключ доступу додано.','Passkey toegevoegd.');
   }));
   // Terug van «Підтвердити повторним входом через Google»: dezelfde actie met dezelfde naam meteen hervatten.
   useEffect(()=>{
@@ -156,8 +156,8 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
     await metHervat({actie:'passkey-verwijderen'},()=>api.post('/api/owner/access/passkeys/verwijderen',{...context,id:p.id,...(metReden?{reden:r}:{})}));
     setBevestig(null);setReden('');
     return metReden
-      ?tr(lang,'Passkey видалено; сервер відкликає його право схвалювати оновлення. Повернути право можна лише через SSH.','Passkey verwijderd; de server trekt het recht om updates goed te keuren in. Terugzetten kan alleen via SSH.')
-      :tr(lang,'Passkey видалено.','Passkey verwijderd.');
+      ?tr(lang,'Ключ доступу видалено; сервер відкликає його право схвалювати оновлення. Повернути право можна лише через SSH.','Passkey verwijderd; de server trekt het recht om updates goed te keuren in. Terugzetten kan alleen via SSH.')
+      :tr(lang,'Ключ доступу видалено.','Passkey verwijderd.');
   });};
   const rechtIntrekken=(p:Passkey)=>{const r=reden.trim();void doe(`intrekken-${p.id}`,async()=>{
     await api.post('/api/owner/access/passkeys/goedkeuring/recht-intrekken',{...context,id:p.id,reden:r});
@@ -169,7 +169,7 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
     return r.eerste||r.viaSsh
       ?(r.eerste?tr(lang,'Запит передано серверу. Це перший такий ключ: підтвердьте його SSH-командою нижче.','Aanvraag doorgegeven aan de server. Dit is de eerste zo’n sleutel: bevestig hem met de SSH-opdracht hieronder.')
         :tr(lang,'Запит передано серверу. Право цього ключа раніше відкликали через застосунок, тому повернути його можна лише SSH-командою нижче.','Aanvraag doorgegeven aan de server. Het recht van deze sleutel is eerder via de app ingetrokken; terugzetten kan daarom alleen met de SSH-opdracht hieronder.'))
-      :tr(lang,'Запит передано серверу. Тепер підтвердьте його passkey, який уже може схвалювати.','Aanvraag doorgegeven aan de server. Bevestig hem nu met een passkey die al mag goedkeuren.');
+      :tr(lang,'Запит передано серверу. Тепер підтвердьте його ключ доступу, який уже може схвалювати.','Aanvraag doorgegeven aan de server. Bevestig hem nu met een passkey die al mag goedkeuren.');
   });
   const annuleren=(p:Passkey)=>doe(`ann-${p.id}`,async()=>{await api.post('/api/owner/access/passkeys/goedkeuring/annuleren',{...context,id:p.id});});
   const metRootSleutel=(p:Passkey,doel:'bevestigen')=>{setBevestig(null);void doe(`${doel}-${p.id}`,async()=>{
@@ -203,7 +203,7 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
       <Fingerprint className='access-plane-row-icon'/>
       <div className='access-plane-row-main'>
         <span className='access-plane-row-title'><strong>{tr(lang,'Passkeys','Passkeys')}</strong>
-          <InfoTip label={tr(lang,'Що таке passkey?','Wat is een passkey?')}>
+          <InfoTip label={tr(lang,'Що таке ключ доступу?','Wat is een passkey?')}>
             <p>{tr(lang,'Passkey — це ключ на телефоні чи комп’ютері, який розблоковується відбитком, обличчям або PIN. Ним підтверджують важливі дії замість пароля, а коли власник сайту ввімкне вхід ключем — ним можна й входити без Google.','Een passkey is een sleutel op je telefoon of computer die je ontgrendelt met vingerafdruk, gezicht of pincode. Je bevestigt er belangrijke acties mee zonder wachtwoord, en zodra de site-eigenaar aanmelden met een sleutel aanzet, kun je er ook zonder Google mee aanmelden.')}</p>
             <p data-verschil-vertrouwen>{tr(lang,VERSCHIL_SLEUTEL_VERTROUWEN[0],VERSCHIL_SLEUTEL_VERTROUWEN[1])}</p>
             <p data-qr-hint>{tr(lang,QR_HINT[0],QR_HINT[1])}</p>
@@ -217,29 +217,29 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
           :tr(lang,'Ваші ключі зараз лише підтверджують важливі дії; вхід ключем для вашого облікового запису вмикає власник сайту.','Uw sleutels bevestigen nu alleen belangrijke acties; aanmelden met een sleutel zet de site-eigenaar voor uw account aan.')}</small>}
       </div>
       <div className='access-plane-row-actions'>
-        {!nieuw&&<button type='button' className='secondary' disabled={!!busy||!ondersteund||vol||!data} onClick={()=>{setNotice(null);setNieuw({naam:''});}}><Plus/>{tr(lang,'Додати passkey','Passkey toevoegen')}</button>}
+        {!nieuw&&<button type='button' className='secondary' disabled={!!busy||!ondersteund||vol||!data} onClick={()=>{setNotice(null);setNieuw({naam:''});}}><Plus/>{tr(lang,'Додати ключ доступу','Passkey toevoegen')}</button>}
       </div>
     </div>
 
     {nieuw&&<div className='access-plane-subrow access-plane-nieuw'>
-      <label htmlFor='passkey-naam'>{tr(lang,'Назва passkey','Naam van de passkey')}</label>
+      <label htmlFor='passkey-naam'>{tr(lang,'Назва ключ доступу','Naam van de passkey')}</label>
       <div className='access-plane-inline-form'>
         <input id='passkey-naam' autoFocus value={nieuw.naam} maxLength={60} disabled={busy==='nieuw'} onChange={e=>setNieuw({naam:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'&&!busy)void toevoegenMet(nieuw.naam);if(e.key==='Escape'&&!busy)setNieuw(null);}} placeholder={tr(lang,'Наприклад: Мій телефон (необов’язково)','Bijvoorbeeld: Mijn telefoon (optioneel)')}/>
         {busy!=='nieuw'&&<button type='button' disabled={!!busy} onClick={()=>void toevoegenMet(nieuw.naam)}><Fingerprint/>{tr(lang,'Продовжити','Doorgaan')}</button>}
         <button type='button' className='secondary' onClick={()=>{if(afbreken.current)afbreken.current.abort();else if(!busy)setNieuw(null);}} disabled={busy==='nieuw'&&!wacht}><X/>{tr(lang,'Скасувати','Annuleren')}</button>
       </div>
       {busy==='nieuw'&&<p className='access-plane-pending' role='status' aria-live='polite' data-passkey-wacht={wacht||'server'}><span className='access-plane-spinner' aria-hidden='true'/>{
-        wacht==='traag'?tr(lang,'Вікно passkey не з’явилося? Перевірте, чи воно не сховане за браузером, або натисніть «Скасувати» й спробуйте ще раз.','Geen passkey-venster te zien? Kijk of het achter de browser staat, of klik op «Annuleren» en probeer het opnieuw.')
-        :wacht==='venster'?tr(lang,'Відкрито вікно passkey браузера або Windows. Підтвердіть відбитком, обличчям, PIN або телефоном.','Het passkey-venster van de browser of Windows is open. Bevestig met vingerafdruk, gezicht, pincode of telefoon.')
+        wacht==='traag'?tr(lang,'Вікно ключ доступу не з’явилося? Перевірте, чи воно не сховане за браузером, або натисніть «Скасувати» й спробуйте ще раз.','Geen passkey-venster te zien? Kijk of het achter de browser staat, of klik op «Annuleren» en probeer het opnieuw.')
+        :wacht==='venster'?tr(lang,'Відкрито вікно ключ доступу браузера або Windows. Підтвердіть відбитком, обличчям, PIN або телефоном.','Het passkey-venster van de browser of Windows is open. Bevestig met vingerafdruk, gezicht, pincode of telefoon.')
         :tr(lang,'Готуємо запит…','Verzoek wordt voorbereid…')}</p>}
     </div>}
 
     {notice&&<p className='access-plane-notice access-plane-subrow' data-ok={notice.ok} role='status'>{notice.text}</p>}
-    {herhaal&&<div className='access-plane-actions access-plane-subrow'><button type='button' className='primary' disabled={!!busy} onClick={()=>{const run=herhaal;void doe('herhaal',run);}}><Fingerprint/>{tr(lang,'Підтвердити passkey ще раз','Passkey opnieuw bevestigen')}</button></div>}
-    {!ondersteund&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Цей браузер не підтримує passkey.','Deze browser ondersteunt geen passkeys.')}</p>}
-    {g&&!g.rpKlopt&&<p className='access-plane-lockout access-plane-subrow'><TriangleAlert/>{tr(lang,`Сервер ще налаштований на passkey для ${g.rootRpId}. Поки адміністратор не виконає на сервері «sudo mijn-ruimte-passkey rp-bijwerken», нові passkey не зможуть схвалювати оновлення.`,`De server staat nog ingesteld op passkeys voor ${g.rootRpId}. Zolang de beheerder op de server niet «sudo mijn-ruimte-passkey rp-bijwerken» uitvoert, kunnen nieuwe passkeys geen updates goedkeuren.`)}</p>}
-    {!beheer&&data?.goedkeuring&&aantal>0&&<p className='access-plane-hint-line access-plane-subrow' data-passkey-beheer-hint>{tr(lang,'Яка passkey може схвалювати оновлення сервера — це управління сайтом: технічний профіль → Адміністрування → Оновлення.','Welke passkey serverupdates mag goedkeuren is sitebeheer: technisch profiel → Beheer → Updates.')}</p>}
-    {g&&!g.schakelaar&&aantal>0&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Схвалення оновлень через passkey зараз вимкнено на сервері (перемикач «passkey-goedkeuring»). Ключі можна підготувати заздалегідь.','Updates goedkeuren met een passkey staat nu uit op de server (schakelaar «passkey-goedkeuring»). Je kunt de sleutels al voorbereiden.')}</p>}
+    {herhaal&&<div className='access-plane-actions access-plane-subrow'><button type='button' className='primary' disabled={!!busy} onClick={()=>{const run=herhaal;void doe('herhaal',run);}}><Fingerprint/>{tr(lang,'Підтвердити ключем доступу ще раз','Passkey opnieuw bevestigen')}</button></div>}
+    {!ondersteund&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Цей браузер не підтримує ключ доступу.','Deze browser ondersteunt geen passkeys.')}</p>}
+    {g&&!g.rpKlopt&&<p className='access-plane-lockout access-plane-subrow'><TriangleAlert/>{tr(lang,`Сервер ще налаштований на ключ доступу для ${g.rootRpId}. Поки адміністратор не виконає на сервері «sudo mijn-ruimte-passkey rp-bijwerken», нові ключі доступу не зможуть схвалювати оновлення.`,`De server staat nog ingesteld op passkeys voor ${g.rootRpId}. Zolang de beheerder op de server niet «sudo mijn-ruimte-passkey rp-bijwerken» uitvoert, kunnen nieuwe passkeys geen updates goedkeuren.`)}</p>}
+    {!beheer&&data?.goedkeuring&&aantal>0&&<p className='access-plane-hint-line access-plane-subrow' data-passkey-beheer-hint>{tr(lang,'Який ключ доступу може схвалювати оновлення сервера — це управління сайтом: технічний профіль → Адміністрування → Оновлення.','Welke passkey serverupdates mag goedkeuren is sitebeheer: technisch profiel → Beheer → Updates.')}</p>}
+    {g&&!g.schakelaar&&aantal>0&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Схвалення оновлень ключем доступу зараз вимкнено на сервері (перемикач «passkey-goedkeuring»). Ключі можна підготувати заздалегідь.','Updates goedkeuren met een passkey staat nu uit op de server (schakelaar «passkey-goedkeuring»). Je kunt de sleutels al voorbereiden.')}</p>}
 
     {aantal>0&&<ul className='access-plane-sublist'>
       {data!.passkeys.map(p=><li key={p.id} className='access-plane-row' data-passkey={p.id}>
@@ -257,11 +257,11 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
           {bevestig?.id===p.id&&(()=>{const metReden=bevestig.wat==='intrekken'||kanGoedkeuren(p);return <div className='access-plane-confirm' role='group' data-bevestig={bevestig.wat}>
             <span>{bevestig.wat==='verwijderen'
               ?(metReden
-                ?tr(lang,`Видалити passkey «${p.naam}»? Він може схвалювати оновлення сервера: сервер відкликає це право, а повернути його можна буде лише SSH-командою.`,`Passkey «${p.naam}» verwijderen? Hij mag serverupdates goedkeuren: de server trekt dat recht in en terugzetten kan daarna alleen met een SSH-opdracht.`)
-                :tr(lang,`Видалити passkey «${p.naam}»? Ним більше не можна буде підтверджувати дії.`,`Passkey «${p.naam}» verwijderen? Je kunt er dan geen acties meer mee bevestigen.`))
+                ?tr(lang,`Видалити ключ доступу «${p.naam}»? Він може схвалювати оновлення сервера: сервер відкликає це право, а повернути його можна буде лише SSH-командою.`,`Passkey «${p.naam}» verwijderen? Hij mag serverupdates goedkeuren: de server trekt dat recht in en terugzetten kan daarna alleen met een SSH-opdracht.`)
+                :tr(lang,`Видалити ключ доступу «${p.naam}»? Ним більше не можна буде підтверджувати дії.`,`Passkey «${p.naam}» verwijderen? Je kunt er dan geen acties meer mee bevestigen.`))
               :tr(lang,`Забрати в «${p.naam}» право схвалювати оновлення? Повернути його можна буде лише через SSH на сервері.`,`«${p.naam}» het recht ontnemen om updates goed te keuren? Terugzetten kan daarna alleen via SSH op de server.`)}</span>
             {metReden&&<RedenVeld lang={lang} id={`reden-${p.id}`} waarde={reden} zet={setReden} disabled={!!busy}/>}
-            {metReden&&<small className='access-plane-hint-line'>{tr(lang,'Далі потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.','Daarna is bevestiging met passkey, app-code of herstelcode nodig.')}</small>}
+            {metReden&&<small className='access-plane-hint-line'>{tr(lang,'Далі потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.','Daarna is bevestiging met passkey, app-code of herstelcode nodig.')}</small>}
             <div className='access-plane-actions'>
               <button type='button' className='danger' disabled={!!busy||(metReden&&!redenOk(reden))} onClick={()=>bevestig.wat==='verwijderen'?verwijderen(p):rechtIntrekken(p)}><Trash2/>{bevestig.wat==='verwijderen'?tr(lang,'Видалити','Verwijderen'):tr(lang,'Забрати право','Recht intrekken')}</button>
               <button type='button' className='secondary' onClick={()=>{setBevestig(null);setReden('');}}><X/>{tr(lang,'Скасувати','Annuleren')}</button>

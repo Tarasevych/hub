@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "id": "CONSOL-001/20261123-131300-m6-antigravity",
+  "taakId": "CONSOL-001",
+  "tijd": "2026-11-23T13:13:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Завершено підсумкову Віху M6 наскрізної перевірки та підготовки зведеного випуску CONSOL-001 поверх живої встановленої основи 20261122-171856 (c85e5d73f104f555021c6a896ffecb70256588d3): усунено рекурсивне зациклення скидання буфера у backend/vlaggen-geheugen.ts (bezigMetWissen), синхронізовано двомовні дзеркала правил 1.8.0 (B-027), узгоджено ідемпотентні міграції 0307..0312 та 0335_vlaggen_consolidatie_aan.sql (58 прикладних прапорців «Для всіх», 5 безпекових «Тільки для власника»), виконано повне мовне очищення українського інтерфейсу за зверненням №163 (заміна passkey → «ключ доступу» у правильних граматичних відмінках у 65 файлах src/ та перегенерація пошукового каталогу на 2438 елементів), додано чотири рівні наскрізних випробувань consolidatie-001-laag1..4.test.ts (250 перевірок), створено досьє розробки orchestratie/ontwikkelarchieven/CONSOL-001.json і конвеєр оприлюднення .github/workflows/consol-001-uitgave.yml за правилами VLAG-001 та TRACE-001.",
+    "nl": "Eindmijlpaal M6 van de ketentoetsing en uitgavevoorbereiding voor CONSOL-001 voltooid boven op de geïnstalleerde basis 20261122-171856 (c85e5d73f104f555021c6a896ffecb70256588d3): recursieve lus bij het wissen van het vlaggengeheugen in backend/vlaggen-geheugen.ts verholpen (bezigMetWissen), tweetalige regelspiegels 1.8.0 (B-027) gesynchroniseerd, idempotente migraties 0307..0312 en 0335_vlaggen_consolidatie_aan.sql afgestemd (58 toepassingsvlaggen «Voor iedereen», 5 beveiligingsvlaggen voor de eigenaar), volledige taalzuivering van de Oekraïense teksten uitgevoerd volgens melding #163 (65 bestanden in src/ en bijgewerkte zoekcatalogus met 2438 elementen), vier ketentestlagen consolidatie-001-laag1..4.test.ts (250 controles), ontwikkeldossier CONSOL-001.json en uitgavewerkstroom consol-001-uitgave.yml volgens VLAG-001 en TRACE-001 opgesteld."
+  },
+  "waarom": {
+    "uk": "Гарантування безпечного, безконфліктного й повністю перевіреного зведеного випуску всіх 18 груп консолідованих розробок без жодної втрати попередніх можливостей та з дотриманням Абсолютного мовного закону, VLAG-001 і TRACE-001.",
+    "nl": "Waarborgen van een veilige, conflictvrije en volledig getoetste geconsolideerde uitgave van alle 18 ontwikkelgroepen zonder verlies van eerdere mogelijkheden en met volledige naleving van de taalwet, VLAG-001 en TRACE-001."
+  },
+  "bouwtVoortOp": [
+    "CONSOL-001/20261123-102710-antigravity"
+  ],
+  "tak": "feature/consolidatie-001-20261122-203500",
+  "pr": null,
+  "commits": [
+    "47c76581708f850bc30bacd2bbbd09e6754c39b9"
+  ],
+  "onderwerpen": [
+    "vlaggen",
+    "meldingen",
+    "zoek-catalogus",
+    "posta-lezer",
+    "klantrelatiebeheer"
+  ]
+}

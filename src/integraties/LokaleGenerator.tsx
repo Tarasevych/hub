@@ -74,7 +74,7 @@ export default function LokaleGenerator({ lang, context }: { lang: Lang; context
         <label className='il-w-veld' style={{ display: 'flex', alignItems: 'center', gap: 8 }}><input data-hulp='integraties.generator-aan' type='checkbox' checked={inst.aan} onChange={(e) => setInst((x) => ({ ...x, aan: e.target.checked }))} style={{ width: 'auto' }} /><span>{t('Увімкнено: ШІ з цим дозволом може створювати зображення', 'Aan: een AI met dit recht kan afbeeldingen genereren')} <HulpVraag k='integraties.generator-aan' /></span></label>
         <div className='il-w-acties'>
           <button type='button' className='il-knop' onClick={() => void controleer()} disabled={bezig !== '' || !inst.url}><RefreshCw className={bezig === 'test' ? 'spin' : ''} aria-hidden />{t('Перевірити', 'Controleren')}</button>
-          <button type='submit' className='il-knop is-primair' disabled={bezig !== ''}>{bezig === 'opslaan' ? t('Зберігаємо…', 'Opslaan…') : t('Зберегти (з passkey)', 'Opslaan (met passkey)')}</button>
+          <button type='submit' className='il-knop is-primair' disabled={bezig !== ''}>{bezig === 'opslaan' ? t('Зберігаємо…', 'Opslaan…') : t('Зберегти (з ключем доступу)', 'Opslaan (met passkey)')}</button>
         </div>
       </form>
       {stand?.bijgewerktOp ? <p className='il-d-noot'>{t('Востаннє змінено', 'Laatst gewijzigd')}: {new Date(stand.bijgewerktOp).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE')}{stand.bijgewerktDoor ? ` · ${stand.bijgewerktDoor}` : ''}</p> : null}

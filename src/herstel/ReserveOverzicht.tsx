@@ -69,7 +69,7 @@ export function ReserveOverzicht({ lang, context, data, onKies }: Props) {
       .catch((e) => {
         if (!actief) return;
         const paar = foutNaarTekst(e);
-        setFout([`Не всі способи вдалося перевірити — враховано лише passkey, автентифікатор, коди й Google. ${paar ? paar[0] : ''}`.trim(), `Niet alle manieren konden worden gecontroleerd — alleen passkey, authenticator, codes en Google tellen mee. ${paar ? paar[1] : ''}`.trim()]);
+        setFout([`Не всі способи вдалося перевірити — враховано лише ключ доступу, автентифікатор, коди й Google. ${paar ? paar[0] : ''}`.trim(), `Niet alle manieren konden worden gecontroleerd — alleen passkey, authenticator, codes en Google tellen mee. ${paar ? paar[1] : ''}`.trim()]);
       });
     return () => { actief = false; };
   }, [context, sleutel]);

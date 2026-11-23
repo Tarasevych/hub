@@ -23,9 +23,9 @@ export const SSH_FOUTEN: Readonly<Record<string, T>> = Object.freeze({
   OWNER_REQUIRED: ['Лише власник керує SSH-сертифікатами.', 'Alleen de eigenaar beheert SSH-certificaten.'],
   TECH_SSH_CA_VEREIST: ['Потрібен активний технічний профіль Власника в цій вкладці.', 'Een actief technisch profiel van de eigenaar in dit tabblad is nodig.'],
   AGENT_NIET_TOEGESTAAN: ['Агент не може керувати SSH-сертифікатами.', 'Een agent kan SSH-certificaten niet beheren.'],
-  SSH_CA_PASSKEY_VEREIST: ['Потрібне підтвердження passkey.', 'Een bevestiging met passkey is nodig.'],
-  SSH_CA_PASSKEY: ['Root не підтвердив passkey — нічого не змінено.', 'Root heeft de passkey niet bevestigd — niets gewijzigd.'],
-  GEEN_PASSKEY: ['На сервері ще немає passkey власника (mijn-ruimte-passkey toevoegen).', 'Er staat nog geen passkey van de eigenaar op de server (mijn-ruimte-passkey toevoegen).'],
+  SSH_CA_PASSKEY_VEREIST: ['Потрібне підтвердження ключем доступу.', 'Een bevestiging met passkey is nodig.'],
+  SSH_CA_PASSKEY: ['Root не підтвердив ключ доступу — нічого не змінено.', 'Root heeft de passkey niet bevestigd — niets gewijzigd.'],
+  GEEN_PASSKEY: ['На сервері ще немає ключа доступу власника (mijn-ruimte-passkey toevoegen).', 'Er staat nog geen passkey van de eigenaar op de server (mijn-ruimte-passkey toevoegen).'],
   UITDAGING_ONGELDIG: ['Підтвердження застаріло або вже використане. Спробуйте ще раз.', 'De bevestiging is verlopen of al gebruikt. Probeer het opnieuw.'],
   SSH_CA_SLEUTEL: ['Вставте один публічний ключ ssh-ed25519, без коментаря й без налаштувань.', 'Plak één publieke ssh-ed25519-sleutel, zonder commentaar en zonder opties.'],
   SSH_CA_UIT: ['Підпис вимкнено. Спершу «Підготувати», потім «Увімкнути».', 'Ondertekenen staat uit. Eerst «Voorbereiden», dan «Aanzetten».'],
@@ -45,7 +45,7 @@ const tekst = (code: string, uk: boolean, root?: { uk?: string; nl?: string }) =
   const f = SSH_FOUTEN[code] ?? UITGIFTE_FOUTEN[code];
   if (f) return uk ? f[0] : f[1];
   if (/STEP_UP|STAP_OP/.test(code)) return uk ? 'Вхід не підтверджено — нічого не змінено.' : 'Aanmelding niet bevestigd — niets gewijzigd.';
-  if (/^PASSKEY_|NotAllowedError|AbortError/.test(code)) return uk ? 'Passkey не підтверджено — нічого не змінено.' : 'Passkey niet bevestigd — niets gewijzigd.';
+  if (/^PASSKEY_|NotAllowedError|AbortError/.test(code)) return uk ? 'Ключ доступу не підтверджено — нічого не змінено.' : 'Passkey niet bevestigd — niets gewijzigd.';
   return `${uk ? 'Не вдалося' : 'Mislukt'} (${code}).`;
 };
 type Antwoord = { ok: boolean; code: string; uk?: string; nl?: string; detail?: string; stand?: SshCaStand };
@@ -178,7 +178,7 @@ export default function SshBeheer({ sluit }: { sluit: () => void }) {
             </>
           ) : (
             <form className='ssh-uitgifte' onSubmit={(e) => { e.preventDefault(); if (!bezig && geldig) void uitgeven(); }}>
-              {!opPasskeyAdres() ? <p className='tech-meta' role='note' data-ssh-elders='1'>{uk ? 'Якщо сервер вимагає passkey (типово так), сертифікат видається лише на ' : 'Vraagt de server een passkey (standaard wel), dan wordt het certificaat alleen uitgegeven op '}<a href={SSH_PASSKEY_ADRESSEN[0]}>admin.tarasevych.com</a>{uk ? ' або id.tarasevych.com. Відкрийте технічний шар там і повторіть; переглядати й відкликати сертифікати можна й тут.' : ' of id.tarasevych.com. Open de technische laag daar en probeer opnieuw; bekijken en intrekken kan ook hier.'}</p> : null}
+              {!opPasskeyAdres() ? <p className='tech-meta' role='note' data-ssh-elders='1'>{uk ? 'Якщо сервер вимагає ключ доступу (типово так), сертифікат видається лише на ' : 'Vraagt de server een passkey (standaard wel), dan wordt het certificaat alleen uitgegeven op '}<a href={SSH_PASSKEY_ADRESSEN[0]}>admin.tarasevych.com</a>{uk ? ' або id.tarasevych.com. Відкрийте технічний шар там і повторіть; переглядати й відкликати сертифікати можна й тут.' : ' of id.tarasevych.com. Open de technische laag daar en probeer opnieuw; bekijken en intrekken kan ook hier.'}</p> : null}
               <label className='tech-veld'><span>{uk ? 'Публічний ключ' : 'Publieke sleutel'}</span>
                 <textarea rows={3} value={publiek} onChange={(e) => setPubliek(e.target.value)} spellCheck={false} autoComplete='off' placeholder='ssh-ed25519 AAAA…' data-ssh-publiek='1' /></label>
               <label className='tech-veld'><span>{uk ? 'Термін дії' : 'Geldigheid'}</span>

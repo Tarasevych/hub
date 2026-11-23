@@ -79,7 +79,7 @@ export function reserveControles(snapshot: SnapshotLike, methoden: ReserveMethod
   else uit.push({
     id: 'onafhankelijk', toon: 'slecht', sectie: 'security',
     titel: P(lijst.length ? `Лише один незалежний спосіб: ${opsomming(0)}` : 'Немає жодного незалежного способу підтвердження', lijst.length ? `Maar één onafhankelijke manier: ${opsomming(1)}` : 'Geen enkele onafhankelijke manier om te bevestigen'),
-    uitleg: P('Якщо втратите цей доступ, повернути обліковий запис буде нічим. Додайте passkey або застосунок-автентифікатор — тоді важливі дії можна буде підтвердити іншим способом.', 'Raakt u deze toegang kwijt, dan is er niets om het account terug te krijgen. Voeg een passkey of authenticator-app toe — dan kunt u belangrijke handelingen op een andere manier bevestigen.'),
+    uitleg: P('Якщо втратите цей доступ, повернути обліковий запис буде нічим. Додайте ключ доступу або застосунок-автентифікатор — тоді важливі дії можна буде підтвердити іншим способом.', 'Raakt u deze toegang kwijt, dan is er niets om het account terug te krijgen. Voeg een passkey of authenticator-app toe — dan kunt u belangrijke handelingen op een andere manier bevestigen.'),
     actie: P('Додати спосіб', 'Manier toevoegen'),
   });
 
@@ -101,12 +101,12 @@ export function reserveControles(snapshot: SnapshotLike, methoden: ReserveMethod
   else {
     const prf = kluis.omslagen.passkeys.some((x) => x.prf);
     const code = kluis.omslagen.herstelcode !== null;
-    if (prf && code && !kluis.herstelcodeWacht) uit.push({ id: 'kluis', toon: 'goed', titel: kluisTitel, uitleg: P('Ключ відкривається passkey з PRF, а в запасі є код відновлення сховища.', 'De sleutel opent met een passkey met PRF, en de herstelcode van de kluis ligt in reserve.') });
+    if (prf && code && !kluis.herstelcodeWacht) uit.push({ id: 'kluis', toon: 'goed', titel: kluisTitel, uitleg: P('Ключ відкривається ключ доступу з PRF, а в запасі є код відновлення сховища.', 'De sleutel opent met een passkey met PRF, en de herstelcode van de kluis ligt in reserve.') });
     else if (prf && code) uit.push({ id: 'kluis', toon: 'aandacht', sectie: 'security', titel: kluisTitel, uitleg: kluisP(KLUIS_TEKST.codeWacht), actie: P('Підтвердити новий код', 'Nieuwe code bevestigen') });
     else {
       const mist: Paar[] = [];
-      if (!prf) mist.push(P('немає passkey з PRF — щоразу доведеться вводити код сховища', 'geen passkey met PRF — u moet telkens de kluiscode typen'));
-      if (!code) mist.push(P('немає коду відновлення сховища — втрата всіх passkey означатиме втрату даних', 'geen herstelcode van de kluis — alle passkeys kwijt betekent de gegevens kwijt'));
+      if (!prf) mist.push(P('немає ключа доступу з PRF — щоразу доведеться вводити код сховища', 'geen passkey met PRF — u moet telkens de kluiscode typen'));
+      if (!code) mist.push(P('немає коду відновлення сховища — втрата всіх ключів доступу означатиме втрату даних', 'geen herstelcode van de kluis — alle passkeys kwijt betekent de gegevens kwijt'));
       uit.push({ id: 'kluis', toon: 'slecht', sectie: 'security', titel: kluisTitel, uitleg: [mist.map((m) => m[0]).join('; ') + '.', mist.map((m) => m[1]).join('; ') + '.'], actie: P('До сховища ключів', 'Naar de sleutelkluis') });
     }
   }

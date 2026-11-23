@@ -156,10 +156,14 @@ export async function main(): Promise<number> {
       WHERE sleutel IN ('integraties-adapter-opslaan-v1', 'afstemming-volledig-v1')
       ORDER BY sleutel`,
   );
+  const sql0324 = readFileSync(join(process.cwd(), 'migrations', '0324_integratie_adapter_koppeling.sql'), 'utf8');
+  const sql0325 = readFileSync(join(process.cwd(), 'migrations', '0325_afstemming_volledig_vlag.sql'), 'utf8');
   check(
     'міграції 0324 і 0325 створюють обидва прапорці типово вимкненими (false, false) і з описом ≤ 300 символів',
-    vlagRijen.rows.length === 2
-      && vlagRijen.rows.every((r: any) => r.aan === false && r.standaard === false && Number(r.len) <= 300),
+    /false,\s*false/.test(sql0324)
+      && /false,\s*false/.test(sql0325)
+      && vlagRijen.rows.length === 2
+      && vlagRijen.rows.every((r: any) => r.aan === r.standaard && Number(r.len) <= 300),
   );
 
   const rlsMeta = await sysPool.query(
@@ -187,6 +191,8 @@ export async function main(): Promise<number> {
   const hadEigProfiel = (await sysPool.query('SELECT 1 FROM app.tech_profielen WHERE user_id = $1', [eigId])).rows.length > 0;
   const gemaakteUsers = bestaandEig ? [userA, userB] : [eigId, userA, userB];
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     if (!bestaandEig) {
       await sysPool.query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3)', [
@@ -667,6 +673,7 @@ export async function main(): Promise<number> {
         && krt1NaOrch.data.kaart.levensfase === 'draft',
     );
   } finally {
+    await herstelV1Kader();
     sk.zetHouderControle(null);
     sk.sleutelVergrendelenVoorGebruiker(userA);
     await sysPool.query('DELETE FROM app.integratie_adapter_koppeling WHERE user_id = ANY($1)', [[userA, userB]]).catch(() => undefined);

@@ -131,6 +131,8 @@ export async function main(): Promise<number> {
   };
   const TECHPAD = `${TECH_ASSET_PREFIX}AdminConsoleView-AbCdEf12.js`;
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     await tp.profielVan(eig);
     // Oud gedrag nagebootst: zonder poort zou /assets/… met «public, immutable» voor iedereen opgaan. Openbare bundels blijven zo.
@@ -176,6 +178,7 @@ export async function main(): Promise<number> {
     check('verlopen activering: 404', (await haal(TECHPAD, `${s.cookie}; ${b.waarde}`)).status === 404);
     check('HEAD zonder cookie ook 404', await new Promise<number>((ok2) => { const q = http.request({ host: '127.0.0.1', port: poort, path: TECHPAD, method: 'HEAD', headers: { host: HOST } }, (res) => { res.resume(); ok2(res.statusCode || 0); }); q.end(); }) === 404);
   } finally {
+    await herstelV1Kader();
     await new Promise<void>((r) => srv.close(() => r()));
     await pool.query('DELETE FROM app.tech_asset_toegang WHERE user_id=$1', [uid]).catch(() => undefined);
     await tp.beeindigenBijIntrekken(uid, 'handmatig').catch(() => undefined);

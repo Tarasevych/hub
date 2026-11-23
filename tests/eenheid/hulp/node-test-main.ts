@@ -33,7 +33,7 @@ export function nodeTestSuite() {
   process.on('unhandledRejection', telFout);
   const test = (naam: string, fn: () => unknown) => {
     lopend.push(nodeTest(naam, async () => {
-      try { await fn(); } catch (e) { gefaald += 1; throw e; }
+      try { await fn(); } catch (e) { gefaald += 1; console.error(`FOUT [${naam}]: ${(e as Error)?.message || e}`); throw e; }
     }));
   };
   const main = async (): Promise<number> => {

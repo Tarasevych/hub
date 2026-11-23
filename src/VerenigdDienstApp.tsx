@@ -717,8 +717,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     try{await action();await loadAdmin();setMessage(null)}
     catch(e){
       /* SEC-002: weigeringen van het beheer met hun eigen uitleg */
-      const w=beheerWeigering(e);
-      if(w){say(w[0],w[1]);await loadAdmin().catch(()=>undefined)}
+      const w=beheerWeigering(e);if(w){say(w[0],w[1]);await loadAdmin().catch(()=>undefined)}
       else say('Не вдалося зберегти зміну.','De wijziging kon niet worden opgeslagen.');
     }
     setBusy(false);

@@ -90,8 +90,8 @@ export default function UitrolMeester({ lang, context, sourceOrigin, tabContext,
       {klaar ? <>
         <CheckCircle2 aria-hidden='true' />
         <p><b>{tr(lang, 'Усе готово.', 'Alles klaar.')}</b> {teGoedkeuren > 0
-          ? tr(lang, `Пакетів, що чекають вашого схвалення: ${teGoedkeuren}. Підтвердіть passkey на телефоні.`, `Pakketten die op uw goedkeuring wachten: ${teGoedkeuren}. Bevestig met de passkey op uw telefoon.`)
-          : tr(lang, 'Перетягніть пакет у майстрі «Нове оновлення» на вкладці «Огляд» — установка почнеться лише після вашого passkey.', 'Sleep een pakket in de wizard «Nieuwe update» op het tabblad Overzicht — installeren start pas na uw passkey.')}</p>
+          ? tr(lang, `Пакетів, що чекають вашого схвалення: ${teGoedkeuren}. Підтвердіть ключ доступу на телефоні.`, `Pakketten die op uw goedkeuring wachten: ${teGoedkeuren}. Bevestig met de passkey op uw telefoon.`)
+          : tr(lang, 'Перетягніть пакет у майстрі «Нове оновлення» на вкладці «Огляд» — установка почнеться лише після вашого ключа доступу.', 'Sleep een pakket in de wizard «Nieuwe update» op het tabblad Overzicht — installeren start pas na uw passkey.')}</p>
         {naarOverzicht && <button type='button' className='uitrol-meester-cta' onClick={naarOverzicht}>{teGoedkeuren > 0 ? <Fingerprint aria-hidden='true' /> : <UploadIcon aria-hidden='true' />}{teGoedkeuren > 0 ? tr(lang, 'Схвалити оновлення', 'Update goedkeuren') : tr(lang, 'Завантажити архів', 'Archief uploaden')}<ArrowRight aria-hidden='true' /></button>}
       </> : <>
         <KeyRound aria-hidden='true' />
@@ -103,43 +103,43 @@ export default function UitrolMeester({ lang, context, sourceOrigin, tabContext,
     <div className='uitrol-meester-stappen'>
     {stap('passkey', 1, KeyRound, tr(lang, 'Passkey, що може схвалювати', 'Passkey die mag goedkeuren'),
       data.passkeys.length ? tr(lang, `Готово: ${data.passkeys.map((p) => `${p.label} (${p.kort})`).join(', ')}`, `Klaar: ${data.passkeys.map((p) => `${p.label} (${p.kort})`).join(', ')}`)
-        : data.wachtend.length ? tr(lang, 'Passkey додано — чекає підтвердження на сервері (крок 2)', 'Passkey toegevoegd — wacht op bevestiging door de server (stap 2)')
-        : tr(lang, 'Додайте passkey на цьому телефоні й позначте «Може схвалювати оновлення сервера»', 'Voeg een passkey toe op deze telefoon en vink «Mag serverupdates goedkeuren» aan'),
+        : data.wachtend.length ? tr(lang, 'Ключ доступу додано — чекає підтвердження на сервері (крок 2)', 'Passkey toegevoegd — wacht op bevestiging door de server (stap 2)')
+        : tr(lang, 'Додайте ключ доступу на цьому телефоні й позначте «Може схвалювати оновлення сервера»', 'Voeg een passkey toe op deze telefoon en vink «Mag serverupdates goedkeuren» aan'),
       <>
-        {!kanPasskey && <p className='admin-uitrol-hint'>{tr(lang, 'Цей браузер не підтримує passkey. Відкрийте сторінку в Chrome на телефоні.', 'Deze browser ondersteunt geen passkeys. Open de pagina in Chrome op uw telefoon.')}</p>}
+        {!kanPasskey && <p className='admin-uitrol-hint'>{tr(lang, 'Цей браузер не підтримує ключ доступу. Відкрийте сторінку в Chrome на телефоні.', 'Deze browser ondersteunt geen passkeys. Open de pagina in Chrome op uw telefoon.')}</p>}
         <ol className='uitrol-meester-uitleg'>
-          <li>{tr(lang, 'Натисніть «Додати passkey», дайте назву (наприклад «Телефон») і підтвердьте відбитком або обличчям.', 'Druk op «Passkey toevoegen», geef een naam (bijv. «Telefoon») en bevestig met vingerafdruk of gezicht.')}</li>
-          <li>{tr(lang, 'У рядку цього passkey увімкніть «Може схвалювати оновлення сервера».', 'Zet in de rij van deze passkey «Mag serverupdates goedkeuren» aan.')}</li>
-          <li>{tr(lang, 'Перший такий passkey сервер приймає лише після SSH-команди (крок 2); наступні — підтвердженням уже доданим passkey, без SSH.', 'De eerste zo’n passkey aanvaardt de server pas na de SSH-opdracht (stap 2); volgende met een al toegevoegde passkey, zonder SSH.')}</li>
+          <li>{tr(lang, 'Натисніть «Додати ключ доступу», дайте назву (наприклад «Телефон») і підтвердьте відбитком або обличчям.', 'Druk op «Passkey toevoegen», geef een naam (bijv. «Telefoon») en bevestig met vingerafdruk of gezicht.')}</li>
+          <li>{tr(lang, 'У рядку цього ключа доступу увімкніть «Може схвалювати оновлення сервера».', 'Zet in de rij van deze passkey «Mag serverupdates goedkeuren» aan.')}</li>
+          <li>{tr(lang, 'Перший такий ключ доступу сервер приймає лише після SSH-команди (крок 2); наступні — підтвердженням уже доданим ключем доступу, без SSH.', 'De eerste zo’n passkey aanvaardt de server pas na de SSH-opdracht (stap 2); volgende met een al toegevoegde passkey, zonder SSH.')}</li>
         </ol>
         <PasskeysSection lang={lang} context={context} onChange={() => void laden()} beheer />
       </>)}
 
     {stap('server', 2, Server, tr(lang, 'Підтвердити на сервері (один раз, SSH)', 'Bevestigen op de server (één keer, SSH)'),
-      stand.server === 'ok' ? tr(lang, 'Схвалення через passkey увімкнено на сервері', 'Goedkeuren met passkey staat aan op de server')
+      stand.server === 'ok' ? tr(lang, 'Схвалення ключем доступу увімкнено на сервері', 'Goedkeuren met passkey staat aan op de server')
         : tr(lang, 'Сайт навмисно не може сам собі дозволити встановлювати код — це робить root один раз', 'De site kan zichzelf bewust geen recht geven om code te installeren — root doet dat één keer'),
       <>
         <p>{tr(lang, 'Чому через SSH: якщо хтось захопить сайт, він не зможе додати свій ключ чи ввімкнути встановлення. Це робиться один раз; далі все — з телефона.', 'Waarom via SSH: wie de site overneemt, kan geen eigen sleutel toevoegen of installeren aanzetten. Dit gebeurt één keer; daarna alles vanaf de telefoon.')}</p>
         {data.wachtend.length > 0 && <>
-          <h3>{tr(lang, 'а) Підтвердити passkey', 'a) Passkey bevestigen')}</h3>
+          <h3>{tr(lang, 'а) Підтвердити ключем доступу', 'a) Passkey bevestigen')}</h3>
           {data.wachtend.map((w) => <div key={w.kort}>
             <p>{tr(lang, `Passkey «${w.label}», відбиток `, `Passkey «${w.label}», vingerafdruk `)}<b>{w.kort}</b>{tr(lang, ' — порівняйте з тим, що покаже сервер (sudo mijn-ruimte-passkey wachtend).', ' — vergelijk met wat de server toont (sudo mijn-ruimte-passkey wachtend).')}</p>
             <Kopieer lang={lang} tekst={w.sshOpdracht} />
           </div>)}
         </>}
-        {!data.wachtend.length && !data.passkeys.length && <p className='admin-uitrol-hint'>{tr(lang, 'Спершу крок 1: тут з’явиться команда з відбитком саме вашого passkey.', 'Eerst stap 1: hier verschijnt de opdracht met de vingerafdruk van uw passkey.')}</p>}
+        {!data.wachtend.length && !data.passkeys.length && <p className='admin-uitrol-hint'>{tr(lang, 'Спершу крок 1: тут з’явиться команда з відбитком саме вашого ключа доступу.', 'Eerst stap 1: hier verschijnt de opdracht met de vingerafdruk van uw passkey.')}</p>}
         {!data.schakelaar && <>
-          <h3>{tr(lang, 'б) Увімкнути схвалення через passkey', 'b) Goedkeuren met passkey aanzetten')}</h3>
+          <h3>{tr(lang, 'б) Увімкнути схвалення ключем доступу', 'b) Goedkeuren met passkey aanzetten')}</h3>
           <Kopieer lang={lang} tekst='sudo nano /etc/mijn-ruimte/mcp-rechten.json' />
           <p>{tr(lang, 'Змініть "passkey-goedkeuring": false на true (якщо рядка немає — додайте "passkey-goedkeuring": true), збережіть: Ctrl+O, Enter, Ctrl+X.', 'Wijzig "passkey-goedkeuring": false in true (staat de regel er niet, voeg "passkey-goedkeuring": true toe), bewaar: Ctrl+O, Enter, Ctrl+X.')}</p>
         </>}
         <h3>{tr(lang, 'Перевірка', 'Controle')}</h3>
         <Kopieer lang={lang} tekst='sudo mijn-ruimte-passkey lijst' />
-        <p className='admin-uitrol-hint'>{tr(lang, 'Має показати «schakelaar aan» і ваш passkey. Потім натисніть «Оновити» вгорі сторінки.', 'Moet «schakelaar aan» en uw passkey tonen. Druk daarna op «Vernieuwen» bovenaan.')}</p>
+        <p className='admin-uitrol-hint'>{tr(lang, 'Має показати «schakelaar aan» і ваш ключ доступу. Потім натисніть «Оновити» вгорі сторінки.', 'Moet «schakelaar aan» en uw passkey tonen. Druk daarna op «Vernieuwen» bovenaan.')}</p>
       </>)}
 
     {stap('ai', 3, Bot, tr(lang, 'Доступ ШІ (якщо оновлення готує агент)', 'AI-toegang (als een agent de update voorbereidt)'),
-      tr(lang, 'Яке підключення ШІ і що саме може робити — підписується вашим passkey', 'Welke AI-koppeling wat mag doen — ondertekend met uw passkey'),
+      tr(lang, 'Яке підключення ШІ і що саме може робити — підписується вашим ключем доступу', 'Welke AI-koppeling wat mag doen — ondertekend met uw passkey'),
       <>
         <p>{tr(lang, 'Додайте підключення (наприклад Claude) і групу «Розгортання». Агент зможе лише завантажити пакет; схвалити не може ніхто, крім вас.', 'Voeg de koppeling toe (bijv. Claude) en de groep «Uitrollen». De agent kan alleen een pakket uploaden; goedkeuren kan niemand behalve u.')}</p>
         <Suspense fallback={<p>{tr(lang, 'Завантаження…', 'Laden…')}</p>}><AiBeleid lang={lang} sourceOrigin={sourceOrigin} tabContext={tabContext} /></Suspense>

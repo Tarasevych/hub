@@ -62,7 +62,7 @@ export const methodeTekst = (lang: Lang, m: string) => { const t = METHODE[m as 
 export const DEELSTAPPEN: Array<{ id: string; stap: string; sub?: string; uk: string; nl: string; hulpUk: string; hulpNl: string }> = [
   { id: 'ontvangen', stap: 'ontvangen', uk: 'Отримання пакета', nl: 'Pakket ontvangen', hulpUk: 'Сервер знайшов схвалений пакет у inbox', hulpNl: 'De server vond het goedgekeurde pakket in de inbox' },
   { id: 'kopie', stap: 'kopie', uk: 'Копіювання на сервер', nl: 'Kopiëren naar de server', hulpUk: 'Пакет копіюється в закриту робочу теку root', hulpNl: 'Het pakket wordt naar de afgesloten werkmap van root gekopieerd' },
-  { id: 'echtheid', stap: 'echtheid', uk: 'Перевірка автентичності', nl: 'Echtheid controleren', hulpUk: 'Підпис passkey (або ключа випуску) і sha256', hulpNl: 'Passkey-handtekening (of release-sleutel) en sha256' },
+  { id: 'echtheid', stap: 'echtheid', uk: 'Перевірка автентичності', nl: 'Echtheid controleren', hulpUk: 'Підпис ключа доступу (або ключа випуску) і sha256', hulpNl: 'Passkey-handtekening (of release-sleutel) en sha256' },
   { id: 'inhoud', stap: 'inhoud', uk: 'Перевірка вмісту', nl: 'Inhoud controleren', hulpUk: 'Структура архіву, метадані, версія новіша за встановлену', hulpNl: 'Archiefstructuur, metadata, versie nieuwer dan geïnstalleerd' },
   { id: 'bron', stap: 'installeren', sub: 'bron', uk: 'Копіювання коду', nl: 'Broncode kopiëren', hulpUk: 'Файли випуску кладуться в нову теку релізу', hulpNl: 'Bestanden van de release naar een nieuwe releasemap' },
   { id: 'bouwen', stap: 'installeren', sub: 'bouwen', uk: 'Збірка (npm ci + vite)', nl: 'Bouwen (npm ci + vite)', hulpUk: 'Залежності й фронтенд збираються ізольовано', hulpNl: 'Afhankelijkheden en frontend worden geïsoleerd gebouwd' },

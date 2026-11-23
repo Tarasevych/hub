@@ -48,6 +48,8 @@ export async function main(): Promise<number> {
   const actief = (t: string, s?: { id: string; createdAt: number }) => tp.actieveActivatie(uid, t, s ? { id: s.id, createdAt: s.createdAt } : undefined);
   const redenVan = async (id: string) => String((await pool.query('SELECT beeindigd_reden FROM app.tech_activaties WHERE id=$1', [id])).rows[0]?.beeindigd_reden || '');
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     await tp.profielVan(eig);
 
@@ -133,6 +135,7 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
+    await herstelV1Kader();
     await pool.query('DELETE FROM app.tech_activaties WHERE user_id=$1 AND (sessie_id = ANY($2) OR reden LIKE $3)', [uid, sessies, '%']).catch(() => undefined);
     if (sessies.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id = ANY($1)`, [sessies]).catch(() => undefined);
     if (tabs.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_tab_sessions_v1' AND id = ANY($1)`, [tabs]).catch(() => undefined);

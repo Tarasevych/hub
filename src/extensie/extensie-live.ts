@@ -474,7 +474,7 @@ export function regelVan(live: ExtensieLive, uk: boolean, nu = Date.now(), host 
   const rest = live.ontgrendeling ? live.ontgrendeling.eind - (nu + live.scheef) : 0;
   const naam = uk ? STAAT_TEKST[staat][0] : STAAT_TEKST[staat][1];
   const tekst = `${uk ? 'Розширення' : 'Extensie'}: ${naam}${(staat === 'ontgrendeld' || staat === 'agent') && rest > 0 ? ` · ${restTekst(rest, uk)}` : ''}`;
-  const uitleg = staat === 'vergrendeld' ? (uk ? 'Розблокувати з Passkey' : 'Ontgrendelen met passkey') : staat === 'niet-gekoppeld' ? (uk ? 'Підключити розширення' : 'Extensie koppelen') : (uk ? 'Стан і відкликання' : 'Stand en intrekken');
+  const uitleg = staat === 'vergrendeld' ? (uk ? 'Розблокувати ключем доступу' : 'Ontgrendelen met passkey') : staat === 'niet-gekoppeld' ? (uk ? 'Підключити розширення' : 'Extensie koppelen') : (uk ? 'Стан і відкликання' : 'Stand en intrekken');
   // Hub «Підключення ШІ» → tab «Розширення браузера» (oude #extension blijft werken).
   const pad = '/agents?ontgrendelen=1#extensie';
   return { staat, tekst, uitleg, url: host === 'mcp.tarasevych.com' ? pad : `https://mcp.tarasevych.com${pad}` };

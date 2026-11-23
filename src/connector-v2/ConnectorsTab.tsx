@@ -208,8 +208,8 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
       setMelding(
         code === 'OWNER_REQUIRED'
           ? tr('Технічні інструменти змінює лише власник сайту.', 'Technische hulpmiddelen wijzigt alleen de eigenaar van de site.')
-          : /STEP_UP|NotAllowedError|Підтвердження passkey скасовано|Passkey-bevestiging geannuleerd/i.test(code)
-            ? tr('Підтвердження Passkey скасовано — стан не змінено.', 'Passkey-bevestiging geannuleerd — de staat is niet gewijzigd.')
+          : /STEP_UP|NotAllowedError|Підтвердження ключем доступу скасовано|Passkey-bevestiging geannuleerd/i.test(code)
+            ? tr('підтвердження ключем доступу скасовано — стан не змінено.', 'Passkey-bevestiging geannuleerd — de staat is niet gewijzigd.')
             : code || tr('Не вдалося застосувати дозволи.', 'Rechten toepassen mislukt.'),
       );
     } finally {
@@ -265,7 +265,7 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
         <button type='button' className='v2-knop is-primair' disabled={bezig || !heeftActieNodig} onClick={() => void bewaarEnActiveer()} data-v2-bewaar={a.slug}>
           {vraagtEenActieActivatie ? <Fingerprint size={15} /> : <Check size={15} />}
           {vraagtEenActieActivatie
-            ? tr('Зберегти й активувати (Passkey)', 'Opslaan en activeren (Passkey)')
+            ? tr('Зберегти й активувати (ключ доступу)', 'Opslaan en activeren (Passkey)')
             : tr('Зберегти', 'Opslaan')}
         </button>
         {vraagtEenActieActivatie ? (
@@ -372,7 +372,7 @@ function MassaVenster({ tr, uk, voorbeeld, bezig, melding, klaar, onAnnuleer, on
           </table>
           {!wijzigend.length ? <p className='v2-uitleg'>{tr('Нічого не зміниться: ці налаштування вже діють.', 'Er verandert niets: deze instellingen gelden al.')}</p> : null}
           {riskant > 0 ? <p className='v2-let' role='note'><AlertTriangle size={15} aria-hidden='true' />{tr(`Додається ризикованих дозволів (високий або критичний ризик): ${riskant}.`, `Er komen risicovolle rechten bij (hoog of kritiek risico): ${riskant}.`)}{gevoelig ? tr(` З них чутливих (пошта, фото): ${gevoelig}.`, ` Waarvan gevoelig (mail, foto's): ${gevoelig}.`) : ''}</p> : null}
-          {uitbreiding && !klaar ? <p className='v2-let' role='note'><KeyRound size={15} aria-hidden='true' />{tr('Розширення дозволів потребує підтвердження passkey — браузер попросить його після натискання кнопки.', 'Uitbreiden van rechten vraagt bevestiging met passkey — de browser vraagt die na het indrukken van de knop.')}</p> : null}
+          {uitbreiding && !klaar ? <p className='v2-let' role='note'><KeyRound size={15} aria-hidden='true' />{tr('Розширення дозволів потребує підтвердження ключем доступу — браузер попросить його після натискання кнопки.', 'Uitbreiden van rechten vraagt bevestiging met passkey — de browser vraagt die na het indrukken van de knop.')}</p> : null}
           {herverbinden > 0 && !klaar ? <p className='v2-uitleg'>{tr(`Для ${herverbinden} підключених агентів нові дозволи з’являться після перепідключення; обмеження діють одразу.`, `Bij ${herverbinden} gekoppelde agents verschijnen nieuwe rechten na opnieuw verbinden; beperkingen gelden meteen.`)}</p> : null}
           {melding ? <p className='v2-melding' role='status'>{melding}</p> : null}
         </div>
@@ -380,7 +380,7 @@ function MassaVenster({ tr, uk, voorbeeld, bezig, melding, klaar, onAnnuleer, on
           {klaar ? <button type='button' className='v2-knop is-primair' onClick={onAnnuleer}><Check size={15} />{tr('Закрити', 'Sluiten')}</button> : (
             <>
               <button type='button' className='v2-knop' onClick={onAnnuleer} disabled={bezig}>{tr('Скасувати', 'Annuleren')}</button>
-              <button type='button' className='v2-knop is-primair' onClick={onBevestig} disabled={bezig || !wijzigend.length} data-v2-massa-bevestig>{uitbreiding ? <KeyRound size={15} /> : <Check size={15} />}{bezig ? tr('Застосовую…', 'Toepassen…') : uitbreiding ? tr('Підтвердити passkey і застосувати', 'Bevestigen met passkey en toepassen') : tr('Застосувати', 'Toepassen')}</button>
+              <button type='button' className='v2-knop is-primair' onClick={onBevestig} disabled={bezig || !wijzigend.length} data-v2-massa-bevestig>{uitbreiding ? <KeyRound size={15} /> : <Check size={15} />}{bezig ? tr('Застосовую…', 'Toepassen…') : uitbreiding ? tr('Підтвердити ключем доступу і застосувати', 'Bevestigen met passkey en toepassen') : tr('Застосувати', 'Toepassen')}</button>
             </>
           )}
         </footer>
@@ -564,9 +564,9 @@ export default function ConnectorsTab({ tr, ingebed = false }: { tr: Tr; ingebed
             <div>
               <b>{tr('Додаткове підтвердження кожного нового підключення', 'Extra bevestiging van elke nieuwe koppeling')}</b>
               {!data && fout ? <p className='v2-let' role='note'>{tr('Стан невідомий — сервер не відповів. Поточне налаштування не змінено.', 'Stand onbekend — de server antwoordde niet. De huidige instelling is niet gewijzigd.')}</p> : null}
-              <p>{tr('Перед видачею доступу сайт попросить passkey або код із застосунку-автентифікатора — навіть якщо ви щойно увійшли. Це захищає, якщо хтось заволодів вашою сесією в браузері.', 'Voor toegang vraagt de site een passkey of code uit de authenticator-app — ook als u net bent aangemeld. Dat beschermt als iemand uw browsersessie overneemt.')}</p>
+              <p>{tr('Перед видачею доступу сайт попросить ключ доступу або код із застосунку-автентифікатора — навіть якщо ви щойно увійшли. Це захищає, якщо хтось заволодів вашою сесією в браузері.', 'Voor toegang vraagt de site een passkey of code uit de authenticator-app — ook als u net bent aangemeld. Dat beschermt als iemand uw browsersessie overneemt.')}</p>
               {data && !data.methoden.passkey && !data.methoden.totp ? (
-                <p className='v2-let' role='note'><ShieldQuestion size={15} aria-hidden='true' />{tr('У вас ще немає passkey чи застосунку-автентифікатора, тому зараз підтвердження йде через повторний вхід Google. Додайте сильніший спосіб:', 'U hebt nog geen passkey of authenticator-app, dus nu gaat de bevestiging via opnieuw aanmelden met Google. Voeg een sterkere manier toe:')} <a href={canonicalNavigationUrl('identity', 'methods', lang)}><KeyRound size={13} />{tr('Способи входу', 'Aanmeldmethoden')}</a></p>
+                <p className='v2-let' role='note'><ShieldQuestion size={15} aria-hidden='true' />{tr('У вас ще немає ключа доступу чи застосунку-автентифікатора, тому зараз підтвердження йде через повторний вхід Google. Додайте сильніший спосіб:', 'U hebt nog geen passkey of authenticator-app, dus nu gaat de bevestiging via opnieuw aanmelden met Google. Voeg een sterkere manier toe:')} <a href={canonicalNavigationUrl('identity', 'methods', lang)}><KeyRound size={13} />{tr('Способи входу', 'Aanmeldmethoden')}</a></p>
               ) : data ? <p className='v2-ok'><ShieldCheck size={15} />{tr('Сильний спосіб підтвердження є', 'Een sterke bevestigingsmanier is aanwezig')} ({[data.methoden.passkey ? 'passkey' : '', data.methoden.totp ? tr('застосунок', 'app') : ''].filter(Boolean).join(', ')})</p> : null}
             </div>
           </section>
@@ -581,7 +581,7 @@ export default function ConnectorsTab({ tr, ingebed = false }: { tr: Tr; ingebed
               <Schakelaar aan={alleAgenten} kant='gebruiker' label={tr('Увімкнути всіх агентів', 'Alle agents aanzetten')} onChange={setAlleAgenten} />
             </div>
             <div className={`v2b-rij${alleActies ? ' is-gevaar' : ''}`}>
-              <div><b>{tr('Дозволити всі дії', 'Alle acties toestaan')}</b><small>{tr('Читання, запис і видалення — найвищий рівень. Потрібен passkey.', 'Lezen, schrijven en verwijderen — hoogste niveau. Passkey nodig.')}</small></div>
+              <div><b>{tr('Дозволити всі дії', 'Alle acties toestaan')}</b><small>{tr('Читання, запис і видалення — найвищий рівень. Потрібен ключ доступу.', 'Lezen, schrijven en verwijderen — hoogste niveau. Passkey nodig.')}</small></div>
               <Schakelaar aan={alleActies} kant='beheer' label={tr('Дозволити всі дії', 'Alle acties toestaan')} onChange={setAlleActies} />
             </div>
             {!alleActies ? (

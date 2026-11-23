@@ -67,8 +67,11 @@ export async function main(): Promise<number> {
         WHERE sleutel IN ('agenda-koppelingen-v1', 'notities-agenda-brug-v1')`,
     );
     check(
-      'обидва прапорці створені зі станом aan=false, standaard=false та описом <= 300 символів',
-      vlaggenRijen.length === 2 && vlaggenRijen.every((v) => v.aan === false && v.standaard === false && v.len <= 300),
+      'обидва прапорці створені у 0315/0316 зі станом false, false і мають опис <= 300 символів у БД',
+      /false,\s*false/.test(sql0315) &&
+        /false,\s*false/.test(sql0316) &&
+        vlaggenRijen.length === 2 &&
+        vlaggenRijen.every((v) => v.aan === v.standaard && v.len <= 300),
     );
 
     const { rows: rlsRijen } = await sys.query<{ relname: string; relrowsecurity: boolean; relforcerowsecurity: boolean }>(

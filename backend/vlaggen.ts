@@ -34,19 +34,16 @@ export const voorIedereen = (v: Vlag) => v.aan && (v.percentage >= 100 || (v.per
 // навантажувати сервер — таблиця прапорців береться з пам'яті процесу (до 15 с), а не окремим запитом до бази на кожне звертання.
 // Будь-яка зміна через це вікно (zetten, standZetten, archiveren, verwijderen) одразу очищає пам'ять, тож власник бачить зміну відразу.
 // Особисті перевірки (feature_flag_tests) — як і раніше, з бази: вони стосуються однієї людини й рідкісні.
-const VLAG_GEHEUGEN_MS = 15_000;
-let vlagGeheugen: { tot: number; rows: Record<string, unknown>[] } | null = null;
-const geheugenLuisteraars = new Set<() => void>();
-export const registreerVlagGeheugenLuisteraar = (fn: () => void): void => { geheugenLuisteraars.add(fn); };
-export const vlagGeheugenLeeg = () => {
-  vlagGeheugen = null;
-  for (const fn of geheugenLuisteraars) { try { fn(); } catch { /* безпечне очищення */ } }
-};
+import {
+  alleGecacheteVlagRijen,
+  registreerVlagGeheugenLuisteraar as registreerGeheugenLuisteraar,
+  wisVlagGeheugen,
+} from './vlaggen-geheugen';
+
+export const registreerVlagGeheugenLuisteraar = registreerGeheugenLuisteraar;
+export const vlagGeheugenLeeg = (): void => { wisVlagGeheugen(); };
 async function alleVlagRijen(): Promise<Record<string, unknown>[]> {
-  if (vlagGeheugen && vlagGeheugen.tot > Date.now()) return vlagGeheugen.rows;
-  const rows = (await sys().query('SELECT * FROM app.feature_flags ORDER BY sleutel')).rows as Record<string, unknown>[];
-  vlagGeheugen = { tot: Date.now() + VLAG_GEHEUGEN_MS, rows };
-  return rows;
+  return alleGecacheteVlagRijen();
 }
 
 /** Публічна перевірка «увімкнено хоч для когось» із того самого 15-секундного сховища в пам'яті (для способів входу без активного сеансу). */

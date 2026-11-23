@@ -2,6 +2,7 @@
 import { getPool } from '../../server/platform/pg';
 import { TELEGRAM_VLAG, instellingenNormaliseren, type TelegramInstellingen, type KoppelRecht, type KoppelStand, type Vingerafdruk } from '../../shared/telegram-aanmelden/model';
 import { INGEBOUWDE_ACTIES, isKeuze, type ActieSoort } from '../../shared/telegram-aanmelden/beleid';
+import { leesGecacheteVlagRij, registreerVlagGeheugenLuisteraar, wisVlagGeheugen } from '../vlaggen-geheugen';
 
 export const sql = async <T = Record<string, any>>(tekst: string, waarden: unknown[] = []): Promise<T[]> => // eslint-disable-line @typescript-eslint/no-explicit-any
   (await getPool('systeem').query(tekst, waarden)).rows as T[];
@@ -25,12 +26,13 @@ const VLAG_GEHEUGEN_MS = 15_000;
 type Vlag = { sleutel: string; omschrijving: string; aan: boolean; standaard: boolean; percentage: number; gebruikers: string[] };
 let vlagCache: { vlag: Vlag | null; tot: number } | null = null;
 const gebruikerVlagCache = new Map<string, { aan: boolean; tot: number }>();
-export const vlagCacheWissen = (): void => { vlagCache = null; gebruikerVlagCache.clear(); };
+export const vlagCacheWissen = (): void => { vlagCache = null; gebruikerVlagCache.clear(); wisVlagGeheugen(); };
+registreerVlagGeheugenLuisteraar(() => { vlagCache = null; gebruikerVlagCache.clear(); });
 async function vlagRij(): Promise<Vlag | null> {
   if (vlagCache && vlagCache.tot > Date.now()) return vlagCache.vlag;
   let vlag: Vlag | null = null;
   try {
-    const [r] = await sql('SELECT sleutel, aan, standaard, percentage, gebruikers FROM app.feature_flags WHERE sleutel = $1', [TELEGRAM_VLAG]);
+    const r = await leesGecacheteVlagRij(TELEGRAM_VLAG);
     vlag = r ? { sleutel: String(r.sleutel), omschrijving: '', aan: r.aan === true, standaard: r.standaard === true, percentage: Number(r.percentage) || 0, gebruikers: Array.isArray(r.gebruikers) ? r.gebruikers.map(String) : [] } : null;
   } catch { vlag = null; }
   vlagCache = { vlag, tot: Date.now() + VLAG_GEHEUGEN_MS };

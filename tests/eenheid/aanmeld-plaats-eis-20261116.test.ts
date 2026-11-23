@@ -47,7 +47,8 @@ export async function main(): Promise<number> {
   const T = `${Date.now()}-${randomBytes(2).toString('hex')}`;
   const vorige = { owner: process.env.OWNER_EMAIL, id: process.env.GOOGLE_OAUTH_CLIENT_ID, secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET };
   const G = await nepGoogle({ ownerEmail: `plaats-eig-${T}@example.test` });
-  const pool = getPool();
+  const pool = getPool('systeem');
+  const { vlagGeheugenLeeg } = await import('../../backend/vlaggen');
   const vlagVooraf = (await pool.query('SELECT sleutel, aan, standaard, percentage, gebruikers FROM app.feature_flags WHERE sleutel = ANY($1)', [VLAGGEN as unknown as string[]])).rows;
   type Browser = ReturnType<typeof G.browser>;
   const IP = `198.51.100.${1 + Math.floor(Math.random() * 250)}`;
@@ -62,6 +63,7 @@ export async function main(): Promise<number> {
     userId = (await pool.query("select id from app.records where tbl='users' and data->>'email'=$1 order by seq desc limit 1", [email])).rows[0]?.id as string;
     await pool.query(`update app.records set data = data || $2::jsonb where tbl='users' and id=$1`, [userId, JSON.stringify({ status: 'approved', name: 'Проба місце' })]);
     for (const v of VLAGGEN) await pool.query('UPDATE app.feature_flags SET aan = true, standaard = false, percentage = 0, gebruikers = $2 WHERE sleutel = $1', [v, [userId]]);
+    vlagGeheugenLeeg();
     const bp = await import('../../backend/telegram-aanmelden/beleid-poort');
     const meldingen = async (deel: string) => (await pool.query("select count(*)::int n from app.records where tbl='site_notifications' and data->>'recipientUserId'=$1 and data::text like $2", [userId, `%${deel}%`])).rows[0].n as number;
     const auditRijen = async () => (await pool.query("select details::text d, result o from app.audit where owner_id = $1 and action = 'owner.aanmelden.plaats' order by seq", [userId])).rows as Array<{ d: string; o: string }>;
@@ -158,6 +160,7 @@ export async function main(): Promise<number> {
   } finally {
     G.herstel();
     for (const r of vlagVooraf) await pool.query('UPDATE app.feature_flags SET aan=$2, standaard=$3, percentage=$4, gebruikers=$5 WHERE sleutel=$1', [r.sleutel, r.aan, r.standaard, r.percentage, r.gebruikers]).catch(() => undefined);
+    vlagGeheugenLeeg();
     const ids = (await pool.query("select id from app.records where tbl='users' and data->>'email' like $1", [`plaats-%-${T}@example.test`])).rows.map((r: { id: string }) => r.id);
     if (ids.length) {
       await pool.query('delete from app.passkeys where user_id = any($1)', [ids]).catch(() => undefined);

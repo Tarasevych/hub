@@ -41,8 +41,8 @@ const T = {
   titel: ['Підтвердіть доступ', 'Toegang bevestigen'],
   ingelogd: ['Ви ввійшли як', 'Aangemeld als'],
   laden: ['Завантаження…', 'Laden…'],
-  passkeyKnop: ['Використати passkey', 'Passkey gebruiken'],
-  passkeyUitleg: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено passkey.', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de passkey staat.'],
+  passkeyKnop: ['Використати ключ доступу', 'Passkey gebruiken'],
+  passkeyUitleg: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу.', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de passkey staat.'],
   passkeyBezig: ['Підтвердіть на пристрої…', 'Bevestig op je apparaat…'],
   totpLabel: ['Код автентифікації', 'Verificatiecode'],
   totpUitleg: ['Відкрийте застосунок-автентифікатор і введіть 6-значний код.', 'Open je authenticator-app en voer de 6-cijferige code in.'],
@@ -55,11 +55,11 @@ const T = {
   googleUitleg: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди, і дія продовжиться автоматично.', 'De aanmeldpagina van Google opent. Daarna kom je hier terug en gaat de actie automatisch verder.'],
   /* IDENTITEIT-015 (приймання blokken-profiel): дія без автоматичного продовження (немає hervat) — після повернення її треба повторити */
   googleUitlegHerhalen: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди — тоді повторіть дію: протягом 5 хвилин нового підтвердження вона не вимагатиме.', 'De aanmeldpagina van Google opent. Daarna kom je hier terug — voer de actie dan opnieuw uit: binnen 5 minuten vraagt ze geen nieuwe bevestiging.'],
-  alleenGoogle: ['У вас ще немає passkey чи застосунку-автентифікатора, тому підтвердьте доступ повторним входом у Google.', 'Je hebt nog geen passkey of authenticator-app. Bevestig daarom je toegang door opnieuw in te loggen bij Google.'],
+  alleenGoogle: ['У вас ще немає ключа доступу чи застосунку-автентифікатора, тому підтвердьте доступ повторним входом у Google.', 'Je hebt nog geen passkey of authenticator-app. Bevestig daarom je toegang door opnieuw in te loggen bij Google.'],
   problemen: ['Виникли проблеми?', 'Problemen?'],
   geenAltKop: ['Чому немає інших способів?', 'Waarom zijn er geen andere methoden?'],
   naarMethoden: ['Налаштувати способи входу (/aanmeldmethoden)', 'Aanmeldmethoden instellen (/aanmeldmethoden)'],
-  altPasskey: ['Використати passkey', 'Passkey gebruiken'],
+  altPasskey: ['Використати ключ доступу', 'Passkey gebruiken'],
   altTotp: ['Використати код із застосунку-автентифікатора', 'Code uit de authenticator-app gebruiken'],
   altHerstel: ['Використати код відновлення', 'Herstelcode gebruiken'],
   altCodewoord: ['Використати кодове слово', 'Codewoord gebruiken'],
@@ -70,7 +70,7 @@ const T = {
   onthoudUitleg: ['Ми запам’ятаємо підтвердження лише для цього браузера й цього акаунта. Воно зникає, коли ви виходите з акаунта, і діє щонайбільше {u} год.', 'We onthouden de bevestiging alleen voor deze browser en dit account. Hij verdwijnt zodra je uitlogt en geldt hoogstens {u} uur.'],
   onthoudNooit: ['Цю дію запам’ятати не можна: вона завжди вимагає підтвердження. Це стосується схвалення випусків, видалення, ключів у сховищі, passkey, кодів відновлення та зміни способів входу.', 'Deze actie kan niet onthouden worden: hiervoor vragen we altijd opnieuw. Dat geldt voor het goedkeuren van uitrollen, verwijderen, sleutels in de kluis, passkeys, herstelcodes en het wijzigen van aanmeldmethoden.'],
   onthoudMislukt: ['Доступ підтверджено на 5 хвилин, але 12-годинне запам’ятовування не збереглося. Для наступної дії доведеться підтвердити доступ знову.', 'Toegang 5 minuten bevestigd, maar 12 uur onthouden is niet opgeslagen. De volgende actie kan opnieuw om bevestiging vragen.'],
-  onthoudCodewoord: ['Запам’ятовування на 12 годин недоступне для кодового слова. Використайте passkey або код автентифікатора.', 'Twaalf uur onthouden is niet beschikbaar met het codewoord. Gebruik een passkey of authenticatorcode.'],
+  onthoudCodewoord: ['Запам’ятовування на 12 годин недоступне для кодового слова. Використайте ключ доступу або код автентифікатора.', 'Twaalf uur onthouden is niet beschikbaar met het codewoord. Gebruik een passkey of authenticatorcode.'],
   annuleren: ['Скасувати', 'Annuleren'],
   // SEC-002 interface-07: WAT wordt bevestigd en wat volgt eruit (shared/stap-op-beschrijving.ts).
   watKop: ['Що ви підтверджуєте', 'Wat u bevestigt'],
@@ -85,12 +85,12 @@ const T = {
   sterkTelegram: ['Для цієї дії потрібен надійніший спосіб: ключ доступу, код із застосунку-автентифікатора, код відновлення або Telegram (ви самі дозволили Telegram для таких дій). Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: toegangssleutel, app-code, herstelcode of Telegram (u stond Telegram zelf toe voor zulke handelingen). Opnieuw inloggen bij Google is niet genoeg.'],
 } as const;
 const FOUT: Record<string, readonly [string, string]> = {
-  NotAllowedError: ['Підтвердження passkey скасовано або час вийшов. Спробуйте ще раз або виберіть інший спосіб.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken. Probeer opnieuw of kies een andere manier.'],
-  SecurityError: ['Браузер не дозволив passkey на цій адресі.', 'De browser staat de passkey op dit adres niet toe.'],
-  GEEN_WEBAUTHN: ['Цей браузер не підтримує passkey. Виберіть інший спосіб.', 'Deze browser ondersteunt geen passkeys. Kies een andere manier.'],
-  GEEN_PASSKEY: ['У вас немає passkey. Виберіть інший спосіб.', 'Je hebt geen passkey. Kies een andere manier.'],
-  PASSKEY_SLEUTEL_ONBEKEND: ['Цей passkey не належить до вашого акаунта. Виберіть інший passkey.', 'Deze passkey hoort niet bij je account. Kies een andere passkey.'],
-  PASSKEY_TELLER_TERUG: ['Passkey відхилено (можлива копія ключа).', 'Passkey geweigerd (mogelijk een kopie van de sleutel).'],
+  NotAllowedError: ['Підтвердження ключем доступу скасовано або час вийшов. Спробуйте ще раз або виберіть інший спосіб.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken. Probeer opnieuw of kies een andere manier.'],
+  SecurityError: ['Браузер не дозволив ключ доступу на цій адресі.', 'De browser staat de passkey op dit adres niet toe.'],
+  GEEN_WEBAUTHN: ['Цей браузер не підтримує ключ доступу. Виберіть інший спосіб.', 'Deze browser ondersteunt geen passkeys. Kies een andere manier.'],
+  GEEN_PASSKEY: ['У вас немає ключа доступу. Виберіть інший спосіб.', 'Je hebt geen passkey. Kies een andere manier.'],
+  PASSKEY_SLEUTEL_ONBEKEND: ['Цей ключ доступу не належить до вашого акаунта. Виберіть інший ключ доступу.', 'Deze passkey hoort niet bij je account. Kies een andere passkey.'],
+  PASSKEY_TELLER_TERUG: ['Ключ доступу відхилено (можлива копія ключа).', 'Passkey geweigerd (mogelijk een kopie van de sleutel).'],
   UITDAGING_ONGELDIG: ['Запит застарів. Спробуйте ще раз.', 'Het verzoek is verlopen. Probeer het opnieuw.'],
   ACCESS_TOTP_INVALID: ['Неправильний код. Перевірте час на телефоні й спробуйте ще раз.', 'Onjuiste code. Controleer de tijd op je telefoon en probeer opnieuw.'],
   ACCESS_TOTP_CODE_REQUIRED: ['Неправильний код. Спробуйте ще раз.', 'Onjuiste code. Probeer het opnieuw.'],
@@ -109,7 +109,7 @@ const FOUT: Record<string, readonly [string, string]> = {
   LOGIN_BINDING_MISMATCH: ['Вхід через Google почато в іншій вкладці чи браузері. Спробуйте ще раз тут.', 'De Google-aanmelding is in een ander tabblad of andere browser gestart. Probeer het hier opnieuw.'],
   access_denied: ['Вхід через Google скасовано.', 'Aanmelden bij Google geannuleerd.'],
   NETWORK_ERROR: ['Немає зв’язку із сервером. Спробуйте ще раз.', 'Geen verbinding met de server. Probeer het opnieuw.'],
-  STEP_UP_STRONG_REQUIRED: ['Потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.', 'Bevestiging met passkey, app-code of herstelcode is nodig.'],
+  STEP_UP_STRONG_REQUIRED: ['Потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.', 'Bevestiging met passkey, app-code of herstelcode is nodig.'],
 };
 const foutTekst = (lang: Lang, code: string) => {
   const f = FOUT[code];

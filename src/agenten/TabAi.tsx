@@ -192,7 +192,7 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
           <header className='ag-blok-kop'>
             <h3 className='ag-blok-titel'><SlidersHorizontal aria-hidden='true' /> {tr('Що ШІ може робити', 'Wat de AI mag')}</h3>
             <div className='ag-knoppen'><a href={canonicalNavigationUrl('admin', 'ai', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')} className='ag-link' data-beleid-link='admin'>{tr('Доступ ШІ за підписом (технічний профіль)', 'AI-toegang met handtekening (technisch profiel)')} <ExternalLink size={14} aria-hidden='true' /></a></div>
-            <p className='ag-blok-uitleg'>{tr('Інструменти сайту (режими «завжди/питати/вимкнено») визначає підписана політика в Адміністрування → «Доступ ШІ» (технічний профіль, лише з вашим passkey); на цій вкладці їх не перемикають. Права кожного окремого ШІ — на вкладці «Конектори».', 'De hulpmiddelen van de site (standen «altijd/vragen/uit») bepaalt het ondertekende beleid in Beheer → «AI-toegang» (technisch profiel, alleen met uw passkey); op dit tabblad schakelt u ze niet. De rechten van elke afzonderlijke AI staan op het tabblad «Connectors».')}</p>
+            <p className='ag-blok-uitleg'>{tr('Інструменти сайту (режими «завжди/питати/вимкнено») визначає підписана політика в Адміністрування → «Доступ ШІ» (технічний профіль, лише з вашим ключем доступу); на цій вкладці їх не перемикають. Права кожного окремого ШІ — на вкладці «Конектори».', 'De hulpmiddelen van de site (standen «altijd/vragen/uit») bepaalt het ondertekende beleid in Beheer → «AI-toegang» (technisch profiel, alleen met uw passkey); op dit tabblad schakelt u ze niet. De rechten van elke afzonderlijke AI staan op het tabblad «Connectors».')}</p>
           </header>
         </section>
       ) : (

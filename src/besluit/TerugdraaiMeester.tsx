@@ -105,7 +105,7 @@ export default function TerugdraaiMeester({ tr, ctx, open, onSluit, onKlaar }: P
 
   const onderteken = useCallback(async (g: Gestart) => {
     setFout(''); setBezig('passkey');
-    log('info', 'Крок 4: чекаю підтвердження passkey на телефоні або ключі…', 'Stap 4: wacht op de passkey-bevestiging op telefoon of sleutel…');
+    log('info', 'Крок 4: чекаю підтвердження ключем доступу на телефоні або ключі…', 'Stap 4: wacht op de passkey-bevestiging op telefoon of sleutel…');
     try {
       const b: BesluitUit = await besluitOndertekenen(ctx, g);
       log('ok', 'Підпис прийнято. Рішення покладено в теку для служби сервера.', 'Handtekening aanvaard. Het besluit ligt in de map voor de dienst op de server.');
@@ -115,7 +115,7 @@ export default function TerugdraaiMeester({ tr, ctx, open, onSluit, onKlaar }: P
     } catch (e) {
       const code = besluitFoutCode(e);
       setBezig('');
-      if (code === 'PASSKEY_GEANNULEERD') { setFout(trRef.current('Підпис скасовано або не вдався. Натисніть «Підтвердити passkey ще раз».', 'De handtekening is geannuleerd of mislukt. Klik op «Passkey opnieuw bevestigen».')); log('warn', 'Підпис скасовано.', 'Handtekening geannuleerd.'); }
+      if (code === 'PASSKEY_GEANNULEERD') { setFout(trRef.current('Підпис скасовано або не вдався. Натисніть «Підтвердити ключем доступу ще раз».', 'De handtekening is geannuleerd of mislukt. Klik op «Passkey opnieuw bevestigen».')); log('warn', 'Підпис скасовано.', 'Handtekening geannuleerd.'); }
       else { setGestart(null); const t = besluitCodeTekst(lang, code) || code; setFout(t); log('error', `${t} (${code})`, `${t} (${code})`); }
     }
   }, [ctx, lang, log, volg]);
@@ -150,7 +150,7 @@ export default function TerugdraaiMeester({ tr, ctx, open, onSluit, onKlaar }: P
     : !(ov?.passkeys.length) ? besluitCodeTekst(lang, 'GEEN_PASSKEY')
     // 29.10.2026: proefschrijven in besluit-inbox; vroeger merkte niemand dat de app er niet in mocht (EROFS) — de handtekening ging verloren.
     : ov?.inbox && !ov.inbox.schrijfbaar ? `${besluitCodeTekst(lang, ov.inbox.code || 'INBOX_SCHRIJFFOUT')} (${ov.inbox.detail})`
-    : !kanPasskey() ? tr('Відкрийте цю сторінку в браузері з підтримкою passkey.', 'Open deze pagina in een browser die passkeys ondersteunt.')
+    : !kanPasskey() ? tr('Відкрийте цю сторінку в браузері з підтримкою ключів доступу.', 'Open deze pagina in een browser die passkeys ondersteunt.')
     : !keuzes.length ? tr('На сервері немає іншої повної версії, на яку можна повернутися.', 'Er staat geen andere volledige versie op de server om naar terug te gaan.') : '';
   const b = leef.besluit;
   const eind = !!b && ['klaar', 'geweigerd', 'mislukt', 'verlopen'].includes(b.staat);
@@ -176,7 +176,7 @@ export default function TerugdraaiMeester({ tr, ctx, open, onSluit, onKlaar }: P
         <h2 id='bsl-terug-titel'><Undo2 size={18} aria-hidden='true' />{tr('Відкат на іншу версію', 'Terugdraaien naar een andere versie')}</h2>
         <button type='button' className='bsl-x' onClick={onSluit} disabled={bezig === 'passkey'} aria-label={tr('Закрити', 'Sluiten')}><X size={18} aria-hidden='true' /></button>
       </header>
-      <p className='bsl-lead'>{tr('Оберіть версію — сайт сам проведе вас крок за кроком: перевірить її, підготує рішення, попросить підпис passkey і покаже, що робить сервер.', 'Kies een versie — de site leidt u stap voor stap: controleert ze, bereidt het besluit voor, vraagt de passkey-handtekening en toont wat de server doet.')}</p>
+      <p className='bsl-lead'>{tr('Оберіть версію — сайт сам проведе вас крок за кроком: перевірить її, підготує рішення, попросить підпис ключа доступу і покаже, що робить сервер.', 'Kies een versie — de site leidt u stap voor stap: controleert ze, bereidt het besluit voor, vraagt de passkey-handtekening en toont wat de server doet.')}</p>
 
       <ol className='bsl-stappen' aria-label={tr('Кроки', 'Stappen')}>
         {STAPPEN.map((st, i) => { const stand = standVan(i); const I = stand === 'ok' ? CheckCircle2 : stand === 'fout' ? XCircle : stand === 'bezig' ? st.Icoon : CircleDashed;
@@ -226,7 +226,7 @@ export default function TerugdraaiMeester({ tr, ctx, open, onSluit, onKlaar }: P
           {!gestart && !b && <button type='button' className='bsl-knop bsl-knop-primair' disabled={!controleOk || !!bezig} onClick={() => void voorbereiden()} data-besluit-knop='voorbereiden'>
             {bezig === 'starten' ? <><Loader2 size={16} className='bsl-spin' aria-hidden='true' />{tr('Готую рішення…', 'Besluit voorbereiden…')}</> : <><UploadCloud size={16} aria-hidden='true' />{tr('3. Підготувати рішення', '3. Besluit voorbereiden')}</>}</button>}
           {gestart && !b && <button type='button' className='bsl-knop bsl-knop-primair' disabled={!!bezig} onClick={() => void onderteken(gestart)} data-besluit-knop='ondertekenen'>
-            {bezig === 'passkey' ? <><Loader2 size={16} className='bsl-spin' aria-hidden='true' />{tr('Підтвердіть на телефоні або ключі…', 'Bevestig op uw telefoon of sleutel…')}</> : <><Fingerprint size={16} aria-hidden='true' />{fout ? tr('Підтвердити passkey ще раз', 'Passkey opnieuw bevestigen') : tr('4. Підписати passkey й відкотити', '4. Ondertekenen met passkey en terugdraaien')}</>}</button>}
+            {bezig === 'passkey' ? <><Loader2 size={16} className='bsl-spin' aria-hidden='true' />{tr('Підтвердіть на телефоні або ключі…', 'Bevestig op uw telefoon of sleutel…')}</> : <><Fingerprint size={16} aria-hidden='true' />{fout ? tr('Підтвердити ключем доступу ще раз', 'Passkey opnieuw bevestigen') : tr('4. Підписати ключем доступу й відкотити', '4. Ondertekenen met passkey en terugdraaien')}</>}</button>}
           {!b && <button type='button' className='bsl-knop' onClick={onSluit} disabled={bezig === 'passkey'}>{tr('Скасувати', 'Annuleren')}</button>}
         </div>
         {fout && <p className='bsl-fout' role='alert' data-besluit-fout>{fout}</p>}

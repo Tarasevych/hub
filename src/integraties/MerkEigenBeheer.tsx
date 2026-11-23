@@ -59,7 +59,7 @@ export default function MerkEigenBeheer({ lang, context }: { lang: Lang; context
     <section className='il-sectie' data-merk-eigen-beheer style={{ marginTop: 24, display: 'grid', gap: 12 }}>
       <h3 className='il-sectiekop'>{t('Власні логотипи сервісів', 'Eigen logo\'s van diensten')}</h3>
       <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14 }}>{t(
-        'Сайт не малює чужих логотипів. Там, де немає логотипа з чесним походженням, стоїть нейтральна плитка з літерами назви. Якщо хочете офіційний логотип — завантажте файл, який ви самі взяли з офіційної сторінки бренду сервісу (SVG або PNG до 200 КБ). SVG перевіряється й очищується: без скриптів і без посилань назовні. Потрібне підтвердження passkey.',
+        'Сайт не малює чужих логотипів. Там, де немає логотипа з чесним походженням, стоїть нейтральна плитка з літерами назви. Якщо хочете офіційний логотип — завантажте файл, який ви самі взяли з офіційної сторінки бренду сервісу (SVG або PNG до 200 КБ). SVG перевіряється й очищується: без скриптів і без посилань назовні. Потрібне підтвердження ключем доступу.',
         'De site tekent geen logo\'s van anderen na. Waar geen logo met eerlijke herkomst is, staat een neutrale plaat met letters van de naam. Wilt u het officiële logo, laad dan het bestand op dat u zelf van de officiële merkpagina van de dienst haalde (SVG of PNG tot 200 KB). Een SVG wordt gecontroleerd en ontsmet: geen scripts en geen verwijzingen naar buiten. Een passkey-bevestiging is nodig.')}</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         <label style={{ display: 'grid', gap: 4 }}>

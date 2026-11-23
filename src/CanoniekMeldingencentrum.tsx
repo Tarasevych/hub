@@ -207,9 +207,12 @@ export default function CanonicalNotificationCenter(p: Props) {
   };
   const markRetainedRead = (id: string) => markRetainedReadMany([id]);
 
+  const chimeTypeRef = useRef<MeldingType | undefined>(undefined);
   const v2OfPulsNu = () => meldingenV2Nu() || eenheidPuls || leesMeldingWeergaveKeuze().stijl === 'v2';
   const playChime = (type?: MeldingType) => {
-    if (v2OfPulsNu() && nietStorenActief() && !(type && isKritiekType(type))) return;
+    const effType = type ?? chimeTypeRef.current;
+    chimeTypeRef.current = undefined;
+    if (v2OfPulsNu() && nietStorenActief() && !(effType && isKritiekType(effType))) return;
     if (!soundRef.current || !(unlocked.current || navigator.userActivation?.hasBeenActive)) return;
     try {
       const ctx = new AudioContext();
@@ -268,7 +271,8 @@ export default function CanonicalNotificationCenter(p: Props) {
     setPaused(!!aftelRef.current && gepauzeerd(aftelRef.current));
     setBalkSegment({ versie: 0, duur: next.levensduurMs ?? 2000, verstreken: 0 });
     setActive(next);
-    if (!next.stil) playChime(next.type);
+    chimeTypeRef.current = next.type;
+    if (!next.stil) playChime();
     markeerGetoond(next);
   };
 

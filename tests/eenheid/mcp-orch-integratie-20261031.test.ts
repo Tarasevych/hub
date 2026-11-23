@@ -295,6 +295,8 @@ export async function main(): Promise<number> {
     const sluiters: Array<() => void> = [];
     const oudeEigenaren: string[] = [];
     let server: http.Server | null = null;
+    const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+    const herstelV1Kader = await beginV1TechKader();
     try {
       for (const r of (await sys.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner'")).rows) {
         oudeEigenaren.push(String(r.id));
@@ -438,6 +440,7 @@ export async function main(): Promise<number> {
       const delResp = await verzoek(poort, 'DELETE', '/cursor', '', { authorization: `Bearer ${cursorTok1}` });
       check('DELETE /cursor sluit Streamable HTTP-sessie met 204 No Content', delResp.status === 204);
     } finally {
+      await herstelV1Kader();
       for (const s of sluiters) s();
       if (server) await new Promise<void>((r) => { server!.closeAllConnections?.(); server!.close(() => r()); });
       await koppelingWissen(eigId, 'oauth', 'prive').catch(() => undefined);

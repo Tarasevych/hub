@@ -72,13 +72,17 @@ export async function main(): Promise<number> {
     return { status: r.statusCode, data };
   };
   const R = (n: string) => `/api/owner/hub/tech/ruimtes/${n}`;
-  const vlagZet = async (aan: boolean, gebruikers: string[]) => { await pool.query(`UPDATE app.feature_flags SET aan = $1, gebruikers = $2 WHERE sleutel = 'tech-ruimtes-v2'`, [aan, gebruikers]); k._vlagCacheLeeg(); };
+  const { _scheidingCacheLeeg } = await import('../../backend/ruimte-sessie');
+  const vlaggenVoor = (await pool.query("SELECT sleutel, aan, standaard, gebruikers FROM app.feature_flags WHERE sleutel IN ('tech-ruimtes-v2','tech-ruimtes-v2-schaduw','ruimtes-scheiding')")).rows as Array<{ sleutel: string; aan: boolean; standaard: boolean; gebruikers: string[] }>;
+  const vlagZet = async (aan: boolean, gebruikers: string[]) => { await pool.query(`UPDATE app.feature_flags SET aan = $1, standaard = false, gebruikers = $2 WHERE sleutel = 'tech-ruimtes-v2'`, [aan, gebruikers]); k._vlagCacheLeeg(); };
 
   try {
     await tp.profielVan(eig);
-    check('migratie 0115: vlaggen bestaan en staan UIT', (await pool.query(`SELECT count(*)::int AS n FROM app.feature_flags WHERE sleutel IN ('tech-ruimtes-v2','tech-ruimtes-v2-schaduw') AND aan = false`)).rows[0].n === 2);
+    check('migratie 0115: beide ruimte-vlaggen bestaan in app.feature_flags', (await pool.query(`SELECT count(*)::int AS n FROM app.feature_flags WHERE sleutel IN ('tech-ruimtes-v2','tech-ruimtes-v2-schaduw')`)).rows[0].n === 2);
 
     // ---------------------------------------------------------------- vlag UIT = oud gedrag
+    await pool.query(`UPDATE app.feature_flags SET aan = false, standaard = false, gebruikers = '{}' WHERE sleutel IN ('tech-ruimtes-v2-schaduw', 'ruimtes-scheiding')`);
+    _scheidingCacheLeeg();
     await vlagZet(false, []);
     const s0 = await sessie(uid), t0 = tab();
     const st0 = await roep(R('status'), s0, t0);
@@ -253,9 +257,11 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
-    await vlagZet(false, []).catch(() => undefined);
-    await pool.query(`UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2-schaduw'`).catch(() => undefined);
+    for (const v of vlaggenVoor) {
+      await pool.query('UPDATE app.feature_flags SET aan = $1, standaard = $2, gebruikers = $3 WHERE sleutel = $4', [v.aan, v.standaard, v.gebruikers, v.sleutel]).catch(() => undefined);
+    }
     k._vlagCacheLeeg();
+    _scheidingCacheLeeg();
     await pool.query('DELETE FROM app.tech_ruimte_sessies WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
     await pool.query('DELETE FROM app.tech_ruimte_ai WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
     await pool.query('DELETE FROM app.tech_profielen WHERE user_id = $1', [uid2]).catch(() => undefined);

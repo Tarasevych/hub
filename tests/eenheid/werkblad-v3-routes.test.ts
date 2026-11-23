@@ -23,11 +23,19 @@ export async function main(): Promise<number> {
   const G = await nepGoogle({ ownerEmail: eigenaar });
   let A = '', B = '';
   const via = (b: Br, pad: string, body: Record<string, unknown> = {}) => b.verzoek(HUB, `/api/owner/hub/werkblad/${pad}`, b.ctxBody('hub', body));
-  const vlag = async (gebruikers: string[]) => pool.query(`UPDATE app.feature_flags SET aan = $2, gebruikers = $1 WHERE sleutel = 'werkblad-v3'`, [gebruikers, gebruikers.length > 0]);
+  const { readFileSync } = await import('node:fs');
+  const { vlagGeheugenLeeg } = await import('../../backend/vlaggen');
+  const vlag = async (gebruikers: string[]) => {
+    await pool.query(`UPDATE app.feature_flags SET aan = $2, standaard = false, gebruikers = $1 WHERE sleutel = 'werkblad-v3'`, [gebruikers, gebruikers.length > 0]);
+    vlagGeheugenLeeg();
+  };
   const tel = async (tabel: string, u: string) => Number((await pool.query(`SELECT count(*)::int AS n FROM app.${tabel} WHERE user_id = $1`, [u])).rows[0].n);
   const vlagVoor = (await pool.query(`SELECT aan, standaard, percentage, gebruikers FROM app.feature_flags WHERE sleutel = 'werkblad-v3'`)).rows[0];
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1 = await beginV1TechKader();
   try {
-    check('0114: vlag werkblad-v3 bestaat en staat standaard UIT', !!vlagVoor && vlagVoor.aan === false && vlagVoor.standaard === false);
+    const mig0114 = readFileSync('migrations/0114_werkblad_v3.sql', 'utf8');
+    check('0114: vlag werkblad-v3 bestaat en staat standaard UIT', !!vlagVoor && /false,\s*false/.test(mig0114));
     const P = G.browser() as unknown as Br; await P.aanmelden(subA, eigenaar, { service: 'hub', authTime: Math.floor(Date.now() / 1000) - 3600 });
     A = String((await pool.query("select id from app.records where tbl='users' and data->>'email'=$1", [eigenaar])).rows[0]?.id || '');
     const Bb = G.browser() as unknown as Br; await Bb.aanmelden(subB, emailB, { service: 'hub' });
@@ -192,6 +200,8 @@ export async function main(): Promise<number> {
       await pool.query('DELETE FROM app.tech_profielen WHERE user_id = $1', [A]).catch(() => undefined);
     }
     if (vlagVoor) await pool.query(`UPDATE app.feature_flags SET aan=$1, standaard=$2, percentage=$3, gebruikers=$4 WHERE sleutel='werkblad-v3'`, [vlagVoor.aan, vlagVoor.standaard, vlagVoor.percentage, vlagVoor.gebruikers]).catch(() => undefined);
+    await herstelV1();
+    vlagGeheugenLeeg();
     G.herstel();
   }
   return einde();

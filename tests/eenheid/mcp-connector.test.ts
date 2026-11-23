@@ -163,14 +163,14 @@ export async function main(): Promise<number> {
     // ---- hulpmiddelen en isolatie ----
     // Standaard staan riskante hulpmiddelen uit (B heeft niets ingesteld); gebruiker A zet ze zelf op "ask" zodat de rest van deze test ze ziet.
     const standaardLijst = await listTools(B, { alwaysMachine: true });
-    check('standaard: riskante hulpmiddelen staan uit en ontbreken in de lijst (60 van 77 + get_admin_view, ook hun devtools-namen; 0.5: + browser_audit; 20.10: + 6 agenda-schrijftools; 21.10: + 6 rechten mail/Drive/fotos/iCloud; 15.11: + 8 geheugen_*; 16.11 LAI-CON-001: + browser_local_ai = 92), de gebruiker kan ze zelf aanzetten',
-      standaardLijst.length === 92 && RISKY_TOOLS.size === 17 && !standaardLijst.some((t) => ['click', 'fill', 'take_screenshot', 'machine_exec'].includes(t.name)), String(standaardLijst.length));
+    check('standaard: riskante hulpmiddelen staan uit en ontbreken in de lijst (60 van 77 + get_admin_view, ook hun devtools-namen; 0.5: + browser_audit; 20.10: + 6 agenda-schrijftools; 21.10: + 6 rechten mail/Drive/fotos/iCloud; 15.11: + 8 geheugen_*; 16.11 LAI-CON-001: + browser_local_ai; 23.11 CONSOL-001: + 3 site-leesacties = 95), de gebruiker kan ze zelf aanzetten',
+      standaardLijst.length === 95 && RISKY_TOOLS.size === 17 && !standaardLijst.some((t) => ['click', 'fill', 'take_screenshot', 'machine_exec'].includes(t.name)), String(standaardLijst.length));
     await agents.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const])));
     const leeg = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 4, method: 'tools/list' }));
     // Privéruimte (0042): de 4 servertools (get_live_release, list_releases, read_release_file, get_system_health) staan er NIET in: 93 − 4 = 89
-    // (0.5: + browser_audit; 20.10.2026: + 6 agenda-schrijftools; 15.11.2026: + 8 geheugen_*; 16.11.2026 UPD-003: + browser_local_ai з #137).
-    check('tools/list: zonder apparaat staan alle 104 tools van de privéruimte (9 apparaat + 11 app_* + 7 browser_* + 15 namen naar chrome-devtools-mcp + 29 site + 6 mail/Drive/fotos/iCloud van 21.10 + 8 geheugen_*) er toch; geen GitHub-tool zonder token, geen servertools',
-      leeg.result.tools.length === 104 && leeg.result.tools.some((t: any) => t.name === 'take_snapshot') && leeg.result.tools.some((t: any) => t.name === 'list_services') && !leeg.result.tools.some((t: any) => t.name === 'browser_snapshot') && !leeg.result.tools.some((t: any) => t.name === 'github_get') && !leeg.result.tools.some((t: any) => t.name === 'get_github_projects')
+    // (0.5: + browser_audit; 20.10.2026: + 6 agenda-schrijftools; 15.11.2026: + 8 geheugen_*; 16.11.2026 UPD-003: + browser_local_ai з #137; 23.11.2026 CONSOL-001: + 3 site-leesacties).
+    check('tools/list: zonder apparaat staan alle 107 tools van de privéruimte (9 apparaat + 11 app_* + 7 browser_* + 15 namen naar chrome-devtools-mcp + 32 site + 6 mail/Drive/fotos/iCloud van 21.10 + 8 geheugen_*) er toch; geen GitHub-tool zonder token, geen servertools',
+      leeg.result.tools.length === 107 && leeg.result.tools.some((t: any) => t.name === 'take_snapshot') && leeg.result.tools.some((t: any) => t.name === 'list_services') && !leeg.result.tools.some((t: any) => t.name === 'browser_snapshot') && !leeg.result.tools.some((t: any) => t.name === 'github_get') && !leeg.result.tools.some((t: any) => t.name === 'get_github_projects')
       && !leeg.result.tools.some((t: any) => ['get_live_release', 'list_releases', 'read_release_file', 'get_system_health'].includes(t.name)), leeg.result.tools.map((t: any) => t.name).join(','));
     const privePoging = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 45, method: 'tools/call', params: { name: 'get_live_release', arguments: {} } }));
     check('ruimte: een privéverbinding die een servertool aanroept krijgt SPACE_SEPARATED (isError) en geen gegevens', privePoging.result?.isError === true && /^SPACE_SEPARATED: .*private/.test(privePoging.result.content[0].text) && /technical/.test(privePoging.result.content[0].text), JSON.stringify(privePoging.result).slice(0, 200));
@@ -188,55 +188,55 @@ export async function main(): Promise<number> {
     // account NU eigenaar is én een lopende activering van zijn technische profiel heeft (backend/ai-ruimte-poort.ts). Deze test
     // maakt die twee dingen daarom echt: A wordt tijdelijk eigenaar (er mag er maar één zijn — records_een_eigenaar) en activeert
     // het profiel. Aan het eind van dit blok wordt het weer precies teruggedraaid.
-    const vorigeEigenaar = (await sys.query("SELECT id FROM app.records WHERE tbl = 'users' AND data->>'role' = 'owner' AND id <> $1 LIMIT 1", [A])).rows[0]?.id as string | undefined;
-    if (vorigeEigenaar) await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"member"') WHERE tbl = 'users' AND id = $1`, [vorigeEigenaar]);
-    await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"owner"') WHERE tbl = 'users' AND id = $1`, [A]);
-    await sys.query(`INSERT INTO app.tech_profielen (user_id, profiel_id, rollen, max_minuten, toegekend_door) VALUES ($1, $2, ARRAY['eigenaar'], 480, 'test')
-      ON CONFLICT (user_id) DO NOTHING`, [A, `tech-${randomBytes(6).toString('hex')}`]);
-    const techTabA = randomBytes(24).toString('hex');
-    await tp.activeren({ id: A, email: `${A}@test.invalid`, role: 'owner', status: 'approved' }, techTabA, 60, 'test: technische ruimte van /mcp');
-    // 20.10.2026: de technische kant van de AI is ondergeschikt aan de stand van de dienst «ai» in de gescheiden
-    // gegevensruimtes (0082). Die staat standaard op «uit»; deze test gaat daar niet over, dus zetten we hem aan
-    // (tests/eenheid/hulp/ruimte-ai.ts; de standen zelf staan in tests/eenheid/ruimte-ai-20261020.test.ts).
-    await aiDienstAan(A);
-    await sys.query(`UPDATE app.mcp_oauth_tokens SET ruimte = 'technisch' WHERE id = $1`, [String(koppeling!.id)]);
-    const metGrant = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 42, method: 'tools/list' })).result.tools as any[];
-    const uitrolNamen = metGrant.filter((t) => String(t.name).startsWith('uitrol_')).map((t) => t.name).sort();
-    check('uitrol: met grant in de technische ruimte 5 hulpmiddelen (voorbereiden + status), geen goedkeuren', uitrolNamen.join(',') === 'uitrol_voorstel_annuleren,uitrol_voorstel_begin,uitrol_voorstel_klaar,uitrol_voorstel_status,uitrol_voorstel_stuk', uitrolNamen.join(','));
-    const techNamen = metGrant.map((t) => String(t.name));
-    check('ruimte: de technische ruimte toont de servertools en apparaattools (server), maar geen browser, mail, Drive, agenda, bord of GitHub van de gebruiker',
-      ['get_live_release', 'list_releases', 'read_release_file', 'get_system_health', 'machine_list', 'app_deploy'].every((n) => techNamen.includes(n))
-      && !techNamen.some((n) => /^(mail_|drive_|calendar_|github_|mcp_board|search_board|create_task|draft_|manage_hub|list_services|get_service|get_hub_overview|site_search|get_connector_stats|browser_|take_|click|fill|navigate_|list_pages)/.test(n)), techNamen.join(','));
-    const techPer = (n: string) => metGrant.find((t) => t.name === n);
-    // 20.10.2026: de uitleg komt uit shared/hulpmiddel-teksten.ts in de taal van de mens (hier zonder keuze: Oekraïens), nooit Engels.
-    check('tools/list (technisch): servertools alleen-lezen met uitleg in de taal van de mens (uk)', techPer('get_live_release').annotations.readOnlyHint === true && /[А-Яа-яІіЇїЄєҐґ]/.test(techPer('get_live_release').description) && !/\b(the|and|read-only)\b/i.test(techPer('get_live_release').description), techPer('get_live_release').description);
-    const techPoging = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 47, method: 'tools/call', params: { name: 'mail_search_messages', arguments: { q: 'x' } } }));
-    check('ruimte: een technische verbinding die privé-inhoud (mail) wil lezen krijgt SPACE_SEPARATED (isError)', techPoging.result?.isError === true && /^SPACE_SEPARATED: .*technical/.test(techPoging.result.content[0].text), JSON.stringify(techPoging.result).slice(0, 200));
-    const uitrolStatus = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 43, method: 'tools/call', params: { name: 'uitrol_voorstel_status', arguments: {} } }));
-    check('uitrol: status via MCP met grant', uitrolStatus.result?.isError !== true && Array.isArray(JSON.parse(uitrolStatus.result.content[0].text).voorstellen), JSON.stringify(uitrolStatus).slice(0, 200));
-    const goedkeur = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 44, method: 'tools/call', params: { name: 'uitrol_voorstel_goedkeuren', arguments: { id: randomUUID() } } }));
-    check('uitrol: goedkeuren via MCP altijd geweigerd (ALLEEN_EIGENAAR_MET_PASSKEY)', goedkeur.result?.isError === true && goedkeur.result.content[0].text === 'ALLEEN_EIGENAAR_MET_PASSKEY');
-    const beheerLijst = await c.listUserGrants(A);
-    check('beheer: de lijst van verbindingen toont de ruimte per verbinding', beheerLijst.some((g: any) => g.id === String(koppeling!.id) && g.ruimte === 'technisch'), JSON.stringify(beheerLijst.map((g: any) => [g.id, g.ruimte])));
-    // Levende rechten op het oude /mcp: het technische profiel verlaten haalt de technische hulpmiddelen METEEN weg, zonder de
-    // grant aan te raken; een aanroep wordt geweigerd met TECH_PROFILE_OFF (nooit stil op de privéruimte uitgevoerd).
-    await tp.beeindigenBijIntrekken(A, 'handmatig');
-    const naProfielUit = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 48, method: 'tools/list' })).result.tools as any[];
-    const techZonderProfiel = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 49, method: 'tools/call', params: { name: 'get_live_release', arguments: {} } }));
-    const initZonderProfiel = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 50, method: 'initialize', params: { protocolVersion: '2025-06-18' } }));
-    check('levende rechten (/mcp): zonder actief technisch profiel is tools/list leeg, een technische aanroep geeft TECH_PROFILE_OFF en initialize zegt waarom',
-      naProfielUit.length === 0 && techZonderProfiel.result?.isError === true && /^TECH_PROFILE_OFF/.test(techZonderProfiel.result.content[0].text)
-      && /technical profile is active/.test(initZonderProfiel.result.instructions), JSON.stringify({ n: naProfielUit.length, t: techZonderProfiel.result?.content?.[0]?.text?.slice(0, 60) }));
-    const journaalProfiel = (await sys.query(`SELECT details->>'reden' AS reden FROM app.audit WHERE owner_id = $1 AND action = 'owner.mcp.tool' AND result = 'denied' ORDER BY id DESC LIMIT 3`, [A])).rows;
-    check('levende rechten: de weigering staat in het journaal met reden «tech-profiel»', journaalProfiel.some((r: any) => r.reden === 'tech-profiel'), JSON.stringify(journaalProfiel));
-    await sys.query(`UPDATE app.mcp_oauth_tokens SET ruimte = 'prive' WHERE id = $1`, [String(koppeling!.id)]);
-    await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"member"') WHERE tbl = 'users' AND id = $1`, [A]);
-    if (vorigeEigenaar) await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"owner"') WHERE tbl = 'users' AND id = $1`, [vorigeEigenaar]);
-    await sys.query('DELETE FROM app.uitrol_voorbereiders WHERE id = $1', [grantRij]);
+    const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+    const herstelV1Kader = await beginV1TechKader();
+    try {
+      const vorigeEigenaar = (await sys.query("SELECT id FROM app.records WHERE tbl = 'users' AND data->>'role' = 'owner' AND id <> $1 LIMIT 1", [A])).rows[0]?.id as string | undefined;
+      if (vorigeEigenaar) await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"member"') WHERE tbl = 'users' AND id = $1`, [vorigeEigenaar]);
+      await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"owner"') WHERE tbl = 'users' AND id = $1`, [A]);
+      await sys.query(`INSERT INTO app.tech_profielen (user_id, profiel_id, rollen, max_minuten, toegekend_door) VALUES ($1, $2, ARRAY['eigenaar'], 480, 'test')
+        ON CONFLICT (user_id) DO NOTHING`, [A, `tech-${randomBytes(6).toString('hex')}`]);
+      const techTabA = randomBytes(24).toString('hex');
+      await tp.activeren({ id: A, email: `${A}@test.invalid`, role: 'owner', status: 'approved' }, techTabA, 60, 'test: technische ruimte van /mcp');
+      await aiDienstAan(A);
+      await sys.query(`UPDATE app.mcp_oauth_tokens SET ruimte = 'technisch' WHERE id = $1`, [String(koppeling!.id)]);
+      const metGrant = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 42, method: 'tools/list' })).result.tools as any[];
+      const uitrolNamen = metGrant.filter((t) => String(t.name).startsWith('uitrol_')).map((t) => t.name).sort();
+      check('uitrol: met grant in de technische ruimte 5 hulpmiddelen (voorbereiden + status), geen goedkeuren', uitrolNamen.join(',') === 'uitrol_voorstel_annuleren,uitrol_voorstel_begin,uitrol_voorstel_klaar,uitrol_voorstel_status,uitrol_voorstel_stuk', uitrolNamen.join(','));
+      const techNamen = metGrant.map((t) => String(t.name));
+      check('ruimte: de technische ruimte toont de servertools en apparaattools (server), maar geen browser, mail, Drive, agenda, bord of GitHub van de gebruiker',
+        ['get_live_release', 'list_releases', 'read_release_file', 'get_system_health', 'machine_list', 'app_deploy'].every((n) => techNamen.includes(n))
+        && !techNamen.some((n) => /^(mail_|drive_|calendar_|github_|mcp_board|search_board|create_task|draft_|manage_hub|list_services|get_service|get_hub_overview|site_search|get_connector_stats|browser_|take_|click|fill|navigate_|list_pages)/.test(n)), techNamen.join(','));
+      const techPer = (n: string) => metGrant.find((t) => t.name === n);
+      check('tools/list (technisch): servertools alleen-lezen met uitleg in de taal van de mens (uk)', techPer('get_live_release').annotations.readOnlyHint === true && /[А-Яа-яІіЇїЄєҐґ]/.test(techPer('get_live_release').description) && !/\b(the|and|read-only)\b/i.test(techPer('get_live_release').description), techPer('get_live_release').description);
+      const techPoging = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 47, method: 'tools/call', params: { name: 'mail_search_messages', arguments: { q: 'x' } } }));
+      check('ruimte: een technische verbinding die privé-inhoud (mail) wil lezen krijgt SPACE_SEPARATED (isError)', techPoging.result?.isError === true && /^SPACE_SEPARATED: .*technical/.test(techPoging.result.content[0].text), JSON.stringify(techPoging.result).slice(0, 200));
+      const uitrolStatus = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 43, method: 'tools/call', params: { name: 'uitrol_voorstel_status', arguments: {} } }));
+      check('uitrol: status via MCP met grant', uitrolStatus.result?.isError !== true && Array.isArray(JSON.parse(uitrolStatus.result.content[0].text).voorstellen), JSON.stringify(uitrolStatus).slice(0, 200));
+      const goedkeur = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 44, method: 'tools/call', params: { name: 'uitrol_voorstel_goedkeuren', arguments: { id: randomUUID() } } }));
+      check('uitrol: goedkeuren via MCP altijd geweigerd (ALLEEN_EIGENAAR_MET_PASSKEY)', goedkeur.result?.isError === true && goedkeur.result.content[0].text === 'ALLEEN_EIGENAAR_MET_PASSKEY');
+      const beheerLijst = await c.listUserGrants(A);
+      check('beheer: de lijst van verbindingen toont de ruimte per verbinding', beheerLijst.some((g: any) => g.id === String(koppeling!.id) && g.ruimte === 'technisch'), JSON.stringify(beheerLijst.map((g: any) => [g.id, g.ruimte])));
+      await tp.beeindigenBijIntrekken(A, 'handmatig');
+      const naProfielUit = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 48, method: 'tools/list' })).result.tools as any[];
+      const techZonderProfiel = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 49, method: 'tools/call', params: { name: 'get_live_release', arguments: {} } }));
+      const initZonderProfiel = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 50, method: 'initialize', params: { protocolVersion: '2025-06-18' } }));
+      check('levende rechten (/mcp): zonder actief technisch profiel is tools/list leeg, een technische aanroep geeft TECH_PROFILE_OFF en initialize zegt waarom',
+        naProfielUit.length === 0 && techZonderProfiel.result?.isError === true && /^TECH_PROFILE_OFF/.test(techZonderProfiel.result.content[0].text)
+        && /technical profile is active/.test(initZonderProfiel.result.instructions), JSON.stringify({ n: naProfielUit.length, t: techZonderProfiel.result?.content?.[0]?.text?.slice(0, 60) }));
+      const journaalProfiel = (await sys.query(`SELECT details->>'reden' AS reden FROM app.audit WHERE owner_id = $1 AND action = 'owner.mcp.tool' AND result = 'denied' ORDER BY id DESC LIMIT 3`, [A])).rows;
+      check('levende rechten: de weigering staat in het journaal met reden «tech-profiel»', journaalProfiel.some((r: any) => r.reden === 'tech-profiel'), JSON.stringify(journaalProfiel));
+      await sys.query(`UPDATE app.mcp_oauth_tokens SET ruimte = 'prive' WHERE id = $1`, [String(koppeling!.id)]);
+      await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"member"') WHERE tbl = 'users' AND id = $1`, [A]);
+      if (vorigeEigenaar) await sys.query(`UPDATE app.records SET data = jsonb_set(data, '{role}', '"owner"') WHERE tbl = 'users' AND id = $1`, [vorigeEigenaar]);
+      await sys.query('DELETE FROM app.uitrol_voorbereiders WHERE id = $1', [grantRij]);
+    } finally {
+      await herstelV1Kader();
+    }
     const overzicht = await describeTools(A);
     const kindOf = (n: string) => overzicht.find((t) => t.name === n);
     check('beheeroverzicht: soort en goedkeuring per hulpmiddel (lezen direct; schrijven en uitvoeren na goedkeuring)',
-      overzicht.length === 107 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false && kindOf('get_connector_stats')?.needsApproval === true && kindOf('update_task_status')?.needsApproval === true
+      overzicht.length === 110 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false && kindOf('get_connector_stats')?.needsApproval === true && kindOf('update_task_status')?.needsApproval === true
       && kindOf('machine_write_file')?.kind === 'write' && kindOf('machine_write_file')?.needsApproval === true
       && kindOf('docker_manage_container')?.kind === 'execute' && kindOf('docker_manage_container')?.needsApproval === true
       && kindOf('system_metrics')?.readOnly === true
@@ -246,7 +246,7 @@ export async function main(): Promise<number> {
     const lijst = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 5, method: 'tools/list' })).result.tools as any[];
     const per = (n: string) => lijst.find((t) => t.name === n);
     check('tools/list: apparaattools met annotaties (lezen = readOnlyHint, schrijven/uitvoeren = destructiveHint) en titel',
-      lijst.length === 104 && per('take_snapshot').annotations.readOnlyHint === true && per('click').annotations.destructiveHint === true && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true && /[А-Яа-яІіЇїЄєҐґ]/.test(per('create_task').description) && /[А-Яа-яІіЇїЄєҐґ]/.test(per('list_services').description)
+      lijst.length === 107 && per('take_snapshot').annotations.readOnlyHint === true && per('click').annotations.destructiveHint === true && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true && /[А-Яа-яІіЇїЄєҐґ]/.test(per('create_task').description) && /[А-Яа-яІіЇїЄєҐґ]/.test(per('list_services').description)
       && per('machine_write_file').annotations.readOnlyHint === false && !!per('machine_list').title && !!per('machine_list').inputSchema, lijst.map((t) => t.name).join(','));
     check('tools/list: Docker en metrics: lezen = readOnlyHint, containers beheren = destructiveHint (niet readOnly, niet idempotent)',
       per('docker_list_containers').annotations.readOnlyHint === true && per('system_metrics').annotations.readOnlyHint === true
@@ -342,12 +342,12 @@ export async function main(): Promise<number> {
     const geweigerd = await bt('machine_exec', { command: 'git' }, 63);
     const infoUit = (await describeTools(A)).filter((t) => !t.enabled).map((t) => t.name).sort().join(',');
     check('hulpmiddelen uitzetten: weg uit tools/list, aanroep geweigerd met uitleg, het beheeroverzicht toont het als uit; een andere gebruiker merkt er niets van',
-      naUit.length === 102 && !naUit.includes('machine_exec') && !naUit.includes('click')
+      naUit.length === 105 && !naUit.includes('machine_exec') && !naUit.includes('click')
       && geweigerd.result.isError === true && /turned off by the user/.test(geweigerd.result.content[0].text)
       && infoUit === 'browser_click,machine_exec' && (await agents.getDisabledTools(B)).length === 0);
     await agents.setDisabledTools(A, []);
     await agents.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const]))); // terug naar de standaard maakt riskante hulpmiddelen weer uit; de test wil ze zien
-    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 104);
+    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 107);
     await agents.setAgentPolicy(A, browserA.id, ['browser.snapshot', 'browser.navigate']);
     check('beleid van een browseragent: alleen van de eigen gebruiker aan te passen',
       JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.navigate","browser.snapshot"]' || JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.snapshot","browser.navigate"]');

@@ -73,7 +73,7 @@ export default function ExterneHosts({ tr, ctx, onKlaar }: Props) {
     } catch (e) {
       const code = besluitFoutCode(e);
       setBezig('');
-      if (code === 'PASSKEY_GEANNULEERD') setFout(trRef.current('Підпис скасовано або не вдався. Натисніть «Підтвердити passkey ще раз».', 'De handtekening is geannuleerd of mislukt. Klik op «Passkey opnieuw bevestigen».'));
+      if (code === 'PASSKEY_GEANNULEERD') setFout(trRef.current('Підпис скасовано або не вдався. Натисніть «Підтвердити ключем доступу ще раз».', 'De handtekening is geannuleerd of mislukt. Klik op «Passkey opnieuw bevestigen».'));
       else { setGestart(null); setFout(besluitCodeTekst(lang, code) || code); }
     }
   }, [ctx, laden, lang, volg]);
@@ -88,19 +88,19 @@ export default function ExterneHosts({ tr, ctx, onKlaar }: Props) {
   }, [ctx, lang, lijst, onderteken]);
 
   if (alleenEigenaar) return <section className='ag-kaart bsl-hosts' data-besluit-hosts='alleen-eigenaar'><h3><Globe size={16} aria-hidden='true' /> {tr('Дозволені хости', 'Toegestane hosts')}</h3>
-    <p className='ag-meta'>{tr('Білий список зовнішніх MCP-хостів веде власник сервера (підпис passkey). Попросіть власника додати потрібний хост.', 'De witte lijst van externe MCP-hosts beheert de eigenaar van de server (passkey-handtekening). Vraag de eigenaar de gewenste host toe te voegen.')}</p></section>;
+    <p className='ag-meta'>{tr('Білий список зовнішніх MCP-хостів веде власник сервера (підпис ключа доступу). Попросіть власника додати потрібний хост.', 'De witte lijst van externe MCP-hosts beheert de eigenaar van de server (passkey-handtekening). Vraag de eigenaar de gewenste host toe te voegen.')}</p></section>;
   const s = ov?.stand;
   const gewijzigd = !!s && !gelijk(lijst, s.hosts);
   const blok = !s ? '' : ov?.inbox && !ov.inbox.schrijfbaar ? `${besluitCodeTekst(lang, ov.inbox.code || 'INBOX_SCHRIJFFOUT')} (${ov.inbox.detail})` : !s.rechtenLeesbaar ? tr('Сайт не може прочитати /etc/mijn-ruimte/mcp-rechten.json (права файла root:mijnruimte 0640).', 'De site kan /etc/mijn-ruimte/mcp-rechten.json niet lezen (bestandsrechten root:mijnruimte 0640).')
     : !s.schakelaars.externeHostsPasskey ? besluitCodeTekst(lang, 'BESLUIT_UIT')
     : !(ov?.passkeys.length) ? besluitCodeTekst(lang, 'GEEN_PASSKEY')
-    : !kanPasskey() ? tr('Відкрийте цю сторінку в браузері з підтримкою passkey.', 'Open deze pagina in een browser die passkeys ondersteunt.') : '';
+    : !kanPasskey() ? tr('Відкрийте цю сторінку в браузері з підтримкою ключів доступу.', 'Open deze pagina in een browser die passkeys ondersteunt.') : '';
   const kan = !!s && !blok && gewijzigd;
   const klaar = leef.besluit && ['klaar', 'geweigerd', 'mislukt', 'verlopen'].includes(leef.besluit.staat);
 
   return <section className='ag-kaart bsl-hosts' data-besluit-hosts aria-labelledby='bsl-hosts-titel'>
     <h3 id='bsl-hosts-titel'><Globe size={16} aria-hidden='true' /> {tr('Дозволені хости (білий список власника)', 'Toegestane hosts (witte lijst van de eigenaar)')} <HulpVraag k='besluit.externe-hosts' lang={lang} /></h3>
-    <p className='ag-meta'>{tr('Список живе в root-файлі /etc/mijn-ruimte/mcp-rechten.json. Сайт його не пише: ви підписуєте новий список passkey, root перевіряє підпис і записує сам (атомарно, з резервною копією).', 'De lijst leeft in het root-bestand /etc/mijn-ruimte/mcp-rechten.json. De site schrijft hem niet: u ondertekent de nieuwe lijst met uw passkey, root controleert de handtekening en schrijft zelf (atomisch, met reservekopie).')}</p>
+    <p className='ag-meta'>{tr('Список живе в root-файлі /etc/mijn-ruimte/mcp-rechten.json. Сайт його не пише: ви підписуєте новий список ключем доступу, root перевіряє підпис і записує сам (атомарно, з резервною копією).', 'De lijst leeft in het root-bestand /etc/mijn-ruimte/mcp-rechten.json. De site schrijft hem niet: u ondertekent de nieuwe lijst met uw passkey, root controleert de handtekening en schrijft zelf (atomisch, met reservekopie).')}</p>
     {laadFout && <p className='bsl-fout' role='alert'>{laadFout}</p>}
     {!s && !laadFout && <p className='bsl-stil'><Loader2 size={14} className='bsl-spin' aria-hidden='true' /> {tr('Завантаження…', 'Laden…')}</p>}
     {s && !leef.besluit && <>
@@ -122,9 +122,9 @@ export default function ExterneHosts({ tr, ctx, onKlaar }: Props) {
       {fout && <p className='bsl-fout' role='alert'>{fout}</p>}
       <div className='bsl-acties'>
         {gestart && fout
-          ? <button type='button' className='bsl-knop bsl-knop-primair' disabled={!!bezig} onClick={() => void onderteken(gestart)} data-besluit-knop='opnieuw'><Fingerprint size={16} aria-hidden='true' />{tr('Підтвердити passkey ще раз', 'Passkey opnieuw bevestigen')}</button>
+          ? <button type='button' className='bsl-knop bsl-knop-primair' disabled={!!bezig} onClick={() => void onderteken(gestart)} data-besluit-knop='opnieuw'><Fingerprint size={16} aria-hidden='true' />{tr('Підтвердити ключем доступу ще раз', 'Passkey opnieuw bevestigen')}</button>
           : <button type='button' className='bsl-knop bsl-knop-primair' disabled={!kan || !!bezig} onClick={() => void start()} data-besluit-knop='ondertekenen'>
-            {bezig === 'passkey' ? <><Loader2 size={16} className='bsl-spin' aria-hidden='true' />{tr('Підтвердіть на телефоні або ключі…', 'Bevestig op uw telefoon of sleutel…')}</> : bezig === 'starten' ? <><Loader2 size={16} className='bsl-spin' aria-hidden='true' />{tr('Готую рішення…', 'Besluit voorbereiden…')}</> : <><Fingerprint size={16} aria-hidden='true' />{tr('Підписати passkey й зберегти список', 'Ondertekenen met passkey en lijst opslaan')}</>}
+            {bezig === 'passkey' ? <><Loader2 size={16} className='bsl-spin' aria-hidden='true' />{tr('Підтвердіть на телефоні або ключі…', 'Bevestig op uw telefoon of sleutel…')}</> : bezig === 'starten' ? <><Loader2 size={16} className='bsl-spin' aria-hidden='true' />{tr('Готую рішення…', 'Besluit voorbereiden…')}</> : <><Fingerprint size={16} aria-hidden='true' />{tr('Підписати ключем доступу й зберегти список', 'Ondertekenen met passkey en lijst opslaan')}</>}
           </button>}
         {gewijzigd && <button type='button' className='bsl-knop' disabled={!!bezig} onClick={() => { setLijst(s.hosts); setFout(''); setGestart(null); }} data-besluit-knop='herstel'><RotateCcw size={16} aria-hidden='true' />{tr('Повернути як у файлі', 'Terug naar het bestand')}</button>}
       </div>

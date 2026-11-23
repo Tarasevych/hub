@@ -237,13 +237,13 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
   return <div className='admin-uitrol ut-root' data-admin-uitrol data-ut-tab={tab}>
     <header className='ut-hoofd'>
       <div><h1><PackageCheck aria-hidden='true' /> {tr(lang, 'Оновлення сервера', 'Serverupdates')}</h1>
-        <p>{tr(lang, 'Завантажте архів випуску (.tar.gz) — навіть з телефона, схваліть passkey і дивіться установку крок за кроком у реальному часі. Кожен запуск зберігається в історії з повним журналом.', 'Upload een release-archief (.tar.gz) — ook vanaf uw telefoon, keur goed met uw passkey en volg de installatie stap voor stap in real time. Elke run blijft met volledig logboek in de geschiedenis.')}</p></div>
+        <p>{tr(lang, 'Завантажте архів випуску (.tar.gz) — навіть з телефона, схваліть ключ доступу і дивіться установку крок за кроком у реальному часі. Кожен запуск зберігається в історії з повним журналом.', 'Upload een release-archief (.tar.gz) — ook vanaf uw telefoon, keur goed met uw passkey en volg de installatie stap voor stap in real time. Elke run blijft met volledig logboek in de geschiedenis.')}</p></div>
       <button type='button' className='ut-knop' onClick={() => { void laden(); void recenteLaden(tab === 'log' ? 50 : 5); }}><RefreshCw aria-hidden='true' />{tr(lang, 'Оновити', 'Vernieuwen')}</button>
     </header>
 
     {(notice || herhaal) && <div className='ut-melding' role='status'>
       {notice && <p className='ut-notice' data-ok={notice.ok} data-herstart={notice.herstart || undefined}><span>{notice.text}</span><button type='button' className='ut-notice-x' aria-label={tr(lang, 'Закрити повідомлення', 'Melding sluiten')} onClick={() => setNotice(null)}><X aria-hidden='true' /></button></p>}
-      {herhaal && <button type='button' className='ut-knop ut-knop-primair' disabled={!!busy} onClick={() => { const run = herhaal; void doe('herhaal', run); }}><Fingerprint aria-hidden='true' />{tr(lang, 'Підтвердити passkey ще раз', 'Passkey opnieuw bevestigen')}</button>}
+      {herhaal && <button type='button' className='ut-knop ut-knop-primair' disabled={!!busy} onClick={() => { const run = herhaal; void doe('herhaal', run); }}><Fingerprint aria-hidden='true' />{tr(lang, 'Підтвердити ключем доступу ще раз', 'Passkey opnieuw bevestigen')}</button>}
     </div>}
 
     <div role='tabpanel' id={`ut-paneel-${tab}`} aria-labelledby={`ut-tab-${tab}`} className='ut-paneel'>
@@ -266,7 +266,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
                     disabled={Boolean(busy)}
                     onClick={() => void doe('tg-blok-archief', async () => {
                       const r = (await api.post('/api/owner/uitrol/telegram/archiveren', { ...context, runId: tgBlokkade.huidigeRunId })).data as { versie: string; aantalDelen: number };
-                      return tr(lang, `Випуск ${r.versie} заархівовано в Telegram (${r.aantalDelen} част.). Тепер можна схвалювати оновлення passkey.`, `Release ${r.versie} in Telegram gearchiveerd (${r.aantalDelen} delen). U kunt nu met passkey goedkeuren.`);
+                      return tr(lang, `Випуск ${r.versie} заархівовано в Telegram (${r.aantalDelen} част.). Тепер можна схвалювати оновлення ключ доступу.`, `Release ${r.versie} in Telegram gearchiveerd (${r.aantalDelen} delen). U kunt nu met passkey goedkeuren.`);
                     })}
                   >
                     {tr(lang, `Заархівувати ${tgBlokkade.huidigeVersie} у Telegram зараз`, `Nu ${tgBlokkade.huidigeVersie} in Telegram archiveren`)}
@@ -304,7 +304,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
                 <b className='ut-mono'>{r.versie || r.release || '—'}</b><i className='ut-badge' data-staat={r.staat}>{staatTekst(lang, r.staat)}</i>
                 <span>{methodeTekst(lang, r.methode)} · {datum(lang, r.gestart)} · {runDuur(r, lang)}</span><small>{lang === 'uk' ? r.uk : r.nl}</small>
                 {(() => { const meta = data.voorstellen.find((v) => v.id === r.voorstelId)?.pakketMeta; const door = r.voorbereider || '';
-                  return door || meta ? <span className='ut-recent-wie'>{door ? <i><UserCheck aria-hidden='true' />{tr(lang, 'Підготував: ', 'Voorbereid door: ')}{door}</i> : null}{meta?.auteur ? <i><UserRound aria-hidden='true' />{tr(lang, 'Автор: ', 'Auteur: ')}{meta.auteur}</i> : null}{meta?.agent ? <i><Bot aria-hidden='true' />{tr(lang, 'Агент: ', 'Agent: ')}{meta.agent}</i> : null}</span> : null; })()}</button>{(r.staat === 'mislukt' || r.staat === 'afgebroken') && r.voorstelId && data.voorstellen.some((v) => v.id === r.voorstelId && v.pakketAanwezig === true) ? <span className='ut-recent-acties'><button type='button' className='ut-knop ut-knop-primair' data-ut-recent-hervat onClick={() => naarUploadPoging(true, r.voorstelId)} title={tr(lang, 'Архів цієї спроби ще на сервері: встановлення продовжиться без повторного завантаження (passkey знадобиться знову).', 'Het archief van deze poging ligt nog op de server: de installatie gaat verder zonder nieuwe upload (passkey is opnieuw nodig).')}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити', 'Hervatten')}</button></span> : null}</li>; })())}
+                  return door || meta ? <span className='ut-recent-wie'>{door ? <i><UserCheck aria-hidden='true' />{tr(lang, 'Підготував: ', 'Voorbereid door: ')}{door}</i> : null}{meta?.auteur ? <i><UserRound aria-hidden='true' />{tr(lang, 'Автор: ', 'Auteur: ')}{meta.auteur}</i> : null}{meta?.agent ? <i><Bot aria-hidden='true' />{tr(lang, 'Агент: ', 'Agent: ')}{meta.agent}</i> : null}</span> : null; })()}</button>{(r.staat === 'mislukt' || r.staat === 'afgebroken') && r.voorstelId && data.voorstellen.some((v) => v.id === r.voorstelId && v.pakketAanwezig === true) ? <span className='ut-recent-acties'><button type='button' className='ut-knop ut-knop-primair' data-ut-recent-hervat onClick={() => naarUploadPoging(true, r.voorstelId)} title={tr(lang, 'Архів цієї спроби ще на сервері: встановлення продовжиться без повторного завантаження (ключ доступу знадобиться знову).', 'Het archief van deze poging ligt nog op de server: de installatie gaat verder zonder nieuwe upload (passkey is opnieuw nodig).')}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити', 'Hervatten')}</button></span> : null}</li>; })())}
               {recent.length === 0 && pogingen.length === 0 && <li className='ut-leeg'>{tr(lang, 'Поки порожньо.', 'Nog leeg.')}</li>}
             </ul>
             {/* Elke poging laat een spoor na: ook die nooit een run op de server begon (afbreking in de browser). */}

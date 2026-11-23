@@ -68,6 +68,8 @@ export async function main(): Promise<number> {
   const zoekVia = (b: Br, body: Record<string, unknown>, service = 'hub') => b.verzoek(HUB, '/api/owner/zoek', b.ctxBody(service, body));
   const sug = (b: Br, prefix: string, extra: Record<string, unknown> = {}) => b.verzoek(HUB, '/api/owner/zoek/suggesties', b.ctxBody('hub', { prefix, ...extra }));
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1 = await beginV1TechKader();
   try {
     // ------------------------------------------------------------------ 0. два користувачі, три лади
     const P = G.browser() as unknown as Br; await P.aanmelden(subA, eigenaar, { service: 'hub', authTime: Math.floor(Date.now() / 1000) - 3600 });
@@ -312,6 +314,7 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('несподівана помилка', false, String((e as Error)?.stack || e));
   } finally {
+    await herstelV1();
     laat();
     G.herstel();
     for (const sql of ['DELETE FROM app.zoek_objecten WHERE user_id = ANY($1)', 'DELETE FROM app.zoek_geschiedenis WHERE user_id = ANY($1)', 'DELETE FROM app.zoek_bron_stand WHERE user_id = ANY($1)', 'DELETE FROM app.zoek_wachtrij WHERE user_id = ANY($1)', 'DELETE FROM app.zoek_ocr_tekst WHERE user_id::text = ANY($1)',

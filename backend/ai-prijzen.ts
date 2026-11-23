@@ -3,8 +3,8 @@
 // запит не містить нічого про людину чи лист. Офіційні сторінки цін постачальників не мають машинного формату (перевірено 16.11.2026),
 // тому число тут ОРІЄНТОВНЕ, а поруч завжди посилання на офіційну сторінку. Раз на добу, у фоні; немає мережі = цін немає, решта працює.
 // Richtprijzen uit de openbare modellenlijst van OpenRouter; één keer per dag, op de achtergrond; uit te zetten met de vlag.
-import { getPool } from '../server/platform/pg';
 import { AI_AANBIEDERS, type AiAanbiederId } from '../shared/ai-aanbieders';
+import { leesGecacheteVlagRij, registreerVlagGeheugenLuisteraar, wisVlagGeheugen } from './vlaggen-geheugen';
 
 export const PRIJZEN_BRON = 'https://openrouter.ai/api/v1/models';
 export const PRIJZEN_VLAG = 'ai-prijzen-ophalen';
@@ -22,13 +22,14 @@ let laatstePoging = 0;
 let bezig: Promise<void> | null = null;
 let fetchFn: typeof fetch = (...a) => fetch(...a);
 
-export const prijzenVlagCacheWissen = (): void => { vlagCache = null; };
+export const prijzenVlagCacheWissen = (): void => { vlagCache = null; wisVlagGeheugen(); };
+registreerVlagGeheugenLuisteraar(() => { vlagCache = null; });
 
 const standaardVlagLezer = async (): Promise<boolean> => {
   if (vlagCache && vlagCache.tot > Date.now()) return vlagCache.aan;
   try {
-    const { rows } = await getPool('systeem').query('SELECT aan FROM app.feature_flags WHERE sleutel = $1', [PRIJZEN_VLAG]);
-    const aan = (rows[0] as { aan?: boolean } | undefined)?.aan === true; // немає рядка (міграцію не застосовано) = не звертатися назовні
+    const rij = await leesGecacheteVlagRij(PRIJZEN_VLAG);
+    const aan = rij?.aan === true; // немає рядка (міграцію не застосовано) = не звертатися назовні
     vlagCache = { aan, tot: Date.now() + VLAG_GEHEUGEN_MS };
     return aan;
   } catch {

@@ -64,7 +64,7 @@ export async function isAgendaKoppelingenVlagAan(userId: string): Promise<boolea
     );
     if (eigen.rows.length > 0) return Boolean((eigen.rows[0] as { waarde?: boolean }).waarde);
     const alg = await sys().query(
-      'SELECT aan, standaard, percentage, gebruikers FROM app.feature_flags WHERE sleutel = $1 AND gearchiveerd_op IS NULL LIMIT 1',
+      'SELECT aan, standaard, percentage, gebruikers FROM app.feature_flags WHERE sleutel = $1 LIMIT 1',
       [AGENDA_KOPPELINGEN_VLAG],
     );
     const r = alg.rows[0] as { aan?: boolean; standaard?: boolean; percentage?: number; gebruikers?: string[] } | undefined;

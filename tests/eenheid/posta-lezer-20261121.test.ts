@@ -73,10 +73,10 @@ export async function main(): Promise<number> {
   check('rail: verborgen bij zwevend alleen met de vlag; rechts/onder ongewijzigd', gmw.includes("maquetteLeesModus!=='rechts'&&maquetteLeesModus!=='onder'&&!(zwevendRailVerbergen&&maquetteLeesModus==='zwevend')&&!voorbeeld"));
 
   // 5) Migratie en uitleg
-  const mig = readFileSync('migrations/0307_posta_lezer_vlaggen.sql', 'utf8');
+  const mig = readFileSync('migrations/0308_posta_lezer_vlaggen.sql', 'utf8');
   for (const sleutel of ['lezer-fout-blijft-open-v1', 'mail-tekst-utf8-terugval-v1', 'maquette-zwevend-rail-verbergen-v1']) {
     const m = new RegExp(`VALUES \\('${sleutel}',\\n  '([^']+)',\\n  false, false\\)\\nON CONFLICT \\(sleutel\\) DO NOTHING;`).exec(mig);
-    check(`migratie 0307: ${sleutel} standaard UIT, herhaalbaar, omschrijving ≤ 300`, Boolean(m) && m![1].length <= 300, String(m?.[1].length));
+    check(`migratie 0308: ${sleutel} standaard UIT, herhaalbaar, omschrijving ≤ 300`, Boolean(m) && m![1].length <= 300, String(m?.[1].length));
     const u = VLAG_UITLEG[sleutel];
     check(`uitleg in twee talen: ${sleutel}`, Boolean(u) && [u.naam, u.wat, u.wanneer, u.gevolg].every((p) => p[0].length > 5 && p[1].length > 5));
     const ukr = [u.naam[0], u.wat[0], u.wanneer[0], u.gevolg[0], m?.[1].split(' | ')[0] || ''].join(' ');

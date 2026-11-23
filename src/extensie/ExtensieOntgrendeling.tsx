@@ -59,7 +59,7 @@ const isTekst2 = (v: unknown): v is Tekst2 => !!v && typeof (v as Tekst2).uk ===
 export function weigeringVan(e: unknown, ruimte?: 'prive' | 'technisch'): Weigering {
   const naam = (e as { name?: unknown })?.name;
   if (naam === 'NotAllowedError' || naam === 'AbortError' || naam === 'TimeoutError') {
-    return { code: 'PASSKEY_GEANNULEERD', uk: 'Підтвердження passkey скасовано або час минув. Нічого не відкрито.', nl: 'De passkey-bevestiging is geannuleerd of verlopen. Er is niets geopend.' };
+    return { code: 'PASSKEY_GEANNULEERD', uk: 'Підтвердження ключем доступу скасовано або час минув. Нічого не відкрито.', nl: 'De passkey-bevestiging is geannuleerd of verlopen. Er is niets geopend.' };
   }
   const data = (e instanceof ApiError ? e.response.data : (e as { response?: { data?: unknown } })?.response?.data) as Record<string, unknown> | null | undefined;
   const code = String(data?.error || (e as Error)?.message || 'FOUT');
@@ -256,7 +256,7 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
     </div>
   );
   const rest = o ? Math.max(0, o.eind - nuServer) : 0;
-  const stapTekst = bezig === 'uitdaging' ? tr('Готую запит…', 'Verzoek voorbereiden…') : bezig === 'passkey' ? tr('Підтвердьте passkey на пристрої…', 'Bevestig de passkey op uw apparaat…') : bezig === 'bevestigen' ? tr('Перевіряю…', 'Controleren…') : '';
+  const stapTekst = bezig === 'uitdaging' ? tr('Готую запит…', 'Verzoek voorbereiden…') : bezig === 'passkey' ? tr('Підтвердьте ключ доступу на пристрої…', 'Bevestig de passkey op uw apparaat…') : bezig === 'bevestigen' ? tr('Перевіряю…', 'Controleren…') : '';
   const knopUit = !!bezig || !!blok || !gekozen || !domeinen.length || !live.agentId;
 
   return (
@@ -290,7 +290,7 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
       ) : null}
 
       <form className='eo-form' onSubmit={(e) => { e.preventDefault(); void doeOntgrendelen(); }} data-eo-form='1' aria-describedby={blok ? `${kopId}-blok` : undefined}>
-        <p className='eo-lead'>{open ? tr('Нове розблокування замінить поточне.', 'Een nieuwe ontgrendeling vervangt de huidige.') : tr('Розблокувати може лише користувач із технічним профілем, увімкненим у цій вкладці, своїм власним passkey.', 'Alleen een gebruiker met een technisch profiel dat in dit tabblad aan staat kan ontgrendelen, met de eigen passkey.')}</p>
+        <p className='eo-lead'>{open ? tr('Нове розблокування замінить поточне.', 'Een nieuwe ontgrendeling vervangt de huidige.') : tr('Розблокувати може лише користувач із технічним профілем, увімкненим у цій вкладці, своїм власним ключем доступу.', 'Alleen een gebruiker met een technisch profiel dat in dit tabblad aan staat kan ontgrendelen, met de eigen passkey.')}</p>
         {blok ? <div id={`${kopId}-blok`}>{uitlegBlok(blok, 'note')}</div> : null}
         {keuzes.length ? (
           <PeriodeKiezer naam={`${kopId}-duur`} keuzes={minuutKeuzes(keuzes, uk)} waarde={gekozen} disabled={!!bezig} onChange={setMinuten}
@@ -330,7 +330,7 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
         {live.recht?.caps?.length ? <p className='eo-meta'>{tr('Ваші ролі дадуть: ', 'Uw rollen geven: ')}{live.recht.caps.map((c) => (uk ? CAP_TEKST[c]?.[0] : CAP_TEKST[c]?.[1]) ?? c).join(', ')}</p> : null}
         <div className='eo-knoppen'>
           <button type='submit' className='eo-knop is-hoofd' disabled={knopUit} aria-disabled={knopUit || undefined} aria-busy={(!!bezig && bezig !== 'intrekken') || undefined} data-eo-knop='ontgrendelen'>
-            <KeyRound aria-hidden='true' />{stapTekst || tr('Розблокувати з Passkey', 'Ontgrendelen met passkey')}
+            <KeyRound aria-hidden='true' />{stapTekst || tr('Розблокувати ключем доступу', 'Ontgrendelen met passkey')}
           </button>
         </div>
       </form>

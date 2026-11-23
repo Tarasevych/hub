@@ -212,6 +212,8 @@ export async function main(): Promise<number> {
     return { token, grantId };
   }
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1 = await beginV1TechKader();
   try {
     vorigeEigenaar = (await sys.query("SELECT id FROM app.records WHERE tbl = 'users' AND data->>'role' = 'owner' LIMIT 1")).rows[0]?.id as string | undefined;
     eigenaarId = vorigeEigenaar ?? `bk-eig-${randomUUID()}`;
@@ -331,6 +333,7 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
+    await herstelV1();
     if (server) await new Promise((r) => server!.close(() => r(undefined)));
     if (vorigeDist === undefined) delete process.env.DIST_DIR; else process.env.DIST_DIR = vorigeDist;
     await rm(dist, { recursive: true, force: true }).catch(() => undefined);

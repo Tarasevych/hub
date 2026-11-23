@@ -568,7 +568,7 @@ export async function voerLokaleUploadUit(params: {
 
     const okMelding = {
       ok: true,
-      uk: `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його passkey.`,
+      uk: `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його ключ доступу.`,
       nl: `Pakket ${a.info.versie} geüpload en door de site gecontroleerd. Het installeert niets tot u het met uw passkey goedkeurt.`,
     };
     zetLokaalDeel({ nieuwId: id, melding: okMelding });

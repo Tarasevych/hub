@@ -14,3 +14,26 @@ WHERE sleutel NOT IN (
   'aanmelden-sms'
 )
   AND gearchiveerd_op IS NULL;
+
+UPDATE app.feature_flags
+SET aan = true,
+    standaard = false,
+    gebruikers = ARRAY(
+      SELECT DISTINCT u_id
+      FROM unnest(
+        gebruikers || ARRAY(
+          SELECT id FROM app.records
+          WHERE tbl = 'users' AND data->>'role' = 'owner'
+          ORDER BY seq
+        )
+      ) AS u_id
+      WHERE u_id IS NOT NULL AND u_id <> ''
+    )
+WHERE sleutel IN (
+  'gastcodes-iedereen',
+  'aanmelden-passkey',
+  'aanmelden-wachtwoord',
+  'aanmelden-extern',
+  'aanmelden-sms'
+)
+  AND gearchiveerd_op IS NULL;

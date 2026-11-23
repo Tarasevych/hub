@@ -10,7 +10,7 @@ export const MAIL_UTF8_TERUGVAL_VLAG = 'mail-tekst-utf8-terugval-v1';
 
 let lezer: () => Promise<boolean> = async () => {
   try {
-    const { rows } = await getPool('systeem').query('SELECT aan FROM app.feature_flags WHERE sleutel = $1 AND gearchiveerd_op IS NULL', [MAIL_UTF8_TERUGVAL_VLAG]);
+    const { rows } = await getPool('systeem').query('SELECT aan FROM app.feature_flags WHERE sleutel = $1', [MAIL_UTF8_TERUGVAL_VLAG]);
     return (rows[0] as { aan?: boolean } | undefined)?.aan === true;
   } catch { return false; }
 };

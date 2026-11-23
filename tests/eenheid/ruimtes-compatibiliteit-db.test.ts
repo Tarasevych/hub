@@ -48,7 +48,8 @@ export async function main(): Promise<number> {
     return { status: r.statusCode, data };
   };
   const R = (n: string) => `/api/owner/hub/tech/ruimtes/${n}`;
-  const vlagZet = async (aan: boolean, gebruikers: string[]) => { await pool.query(`UPDATE app.feature_flags SET aan = $1, gebruikers = $2 WHERE sleutel = 'tech-ruimtes-v2'`, [aan, gebruikers]); k._vlagCacheLeeg(); };
+  const vlagVoor = (await pool.query("SELECT aan, standaard, gebruikers FROM app.feature_flags WHERE sleutel = 'tech-ruimtes-v2'")).rows[0] as { aan: boolean; standaard: boolean; gebruikers: string[] } | undefined;
+  const vlagZet = async (aan: boolean, gebruikers: string[]) => { await pool.query(`UPDATE app.feature_flags SET aan = $1, standaard = false, gebruikers = $2 WHERE sleutel = 'tech-ruimtes-v2'`, [aan, gebruikers]); k._vlagCacheLeeg(); };
 
   // nagebootste MCP-klant: één aanroep van hulpmiddel `naam`
   const mcp = async (naam: string) => {
@@ -102,7 +103,8 @@ export async function main(): Promise<number> {
     check('vlag uit: één tabblad uitloggen trekt in (oud gedrag)', !(await levend(oud)));
     check('vlag uit: MCP zonder activering → prive', (await effectieveRuimte(uid)) === 'prive');
   } finally {
-    await vlagZet(false, []).catch(() => undefined);
+    if (vlagVoor) await pool.query("UPDATE app.feature_flags SET aan = $1, standaard = $2, gebruikers = $3 WHERE sleutel = 'tech-ruimtes-v2'", [vlagVoor.aan, vlagVoor.standaard, vlagVoor.gebruikers]).catch(() => undefined);
+    k._vlagCacheLeeg();
     await pool.query('DELETE FROM app.extensie_ontgrendelingen WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
     await pool.query('DELETE FROM app.tech_ruimte_sessies WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
     await pool.query('DELETE FROM app.tech_ruimte_ai WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);

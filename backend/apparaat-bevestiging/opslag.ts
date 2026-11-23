@@ -2,6 +2,7 @@
 // Zelfde opzet als backend/telegram-aanmelden/opslag.ts: de vlag is nooit een recht; backend/index.ts geeft de beoordelaar mee.
 import { getPool } from '../../server/platform/pg';
 import { APPARAAT_VLAG, instellingenNormaliseren, voorkeurenNormaliseren, type ApparaatInstellingen, type ApparaatVoorkeuren } from '../../shared/apparaat-bevestiging/model';
+import { leesGecacheteVlagRij, registreerVlagGeheugenLuisteraar, wisVlagGeheugen } from '../vlaggen-geheugen';
 
 export const sql = async <T = Record<string, any>>(tekst: string, waarden: unknown[] = []): Promise<T[]> => // eslint-disable-line @typescript-eslint/no-explicit-any
   (await getPool('systeem').query(tekst, waarden)).rows as T[];
@@ -10,9 +11,10 @@ export const sql = async <T = Record<string, any>>(tekst: string, waarden: unkno
 const VLAG_GEHEUGEN_MS = 15_000;
 let vlagCache: { aan: boolean; tot: number } | null = null;
 const gebruikerVlagCache = new Map<string, { aan: boolean; tot: number }>();
-export const vlagCacheWissen = (): void => { vlagCache = null; gebruikerVlagCache.clear(); };
+export const vlagCacheWissen = (): void => { vlagCache = null; gebruikerVlagCache.clear(); wisVlagGeheugen(); };
+registreerVlagGeheugenLuisteraar(() => { vlagCache = null; gebruikerVlagCache.clear(); });
 let beoordelaar: ((userId: string) => Promise<boolean>) | null = null;
-export const registreerVlagBeoordelaar = (f: ((userId: string) => Promise<boolean>) | null): void => { beoordelaar = f; vlagCacheWissen(); };
+export const registreerVlagBeoordelaar = (f: ((userId: string) => Promise<boolean>) | null): void => { beoordelaar = f; vlagCache = null; gebruikerVlagCache.clear(); };
 /** Vlag `apparaat-bevestiging-v1` voor één gebruiker; geen beoordelaar geregistreerd (tests) = AAN als de rij het zegt, anders uit. */
 export async function vlagVoor(userId: string): Promise<boolean> {
   if (!userId) return false;
@@ -28,7 +30,7 @@ export async function vlagVoor(userId: string): Promise<boolean> {
   }
   if (vlagCache && vlagCache.tot > nu) return vlagCache.aan;
   try {
-    const [r] = await sql<{ aan: boolean; standaard: boolean }>('SELECT aan, standaard FROM app.feature_flags WHERE sleutel = $1', [APPARAAT_VLAG]);
+    const r = await leesGecacheteVlagRij(APPARAAT_VLAG);
     const aan = !!r && r.aan === true && r.standaard === true;
     vlagCache = { aan, tot: nu + VLAG_GEHEUGEN_MS };
     return aan;

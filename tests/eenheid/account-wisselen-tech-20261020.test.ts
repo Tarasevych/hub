@@ -112,6 +112,8 @@ export async function main(): Promise<number> {
   const C = await mk(`wissel-c-${sfx}@eenheid.test`);
   const tWissel = tab(), tAnder = tab();
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     for (const naam of ['0082_ruimte_scheiding.sql', '0083_mail_contacten_ruimte.sql']) {
       await getPool('migratie').query(readFileSync(join(W, 'migrations', naam), 'utf8'));
@@ -168,6 +170,7 @@ export async function main(): Promise<number> {
       (await rs.gegevensRuimteVeilig(B, { tabContext: tWissel })) === 'prive' && (await rs.technischeRechten(B)).ok === false);
     void pA; void pB;
   } finally {
+    await herstelV1Kader();
     for (const id of [A, B, C]) {
       await pool.query('DELETE FROM app.tech_activaties WHERE user_id=$1', [id]).catch(() => undefined);
       await pool.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [id]).catch(() => undefined);

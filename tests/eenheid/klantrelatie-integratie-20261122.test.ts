@@ -39,27 +39,27 @@ const KLANT_ACTIES = [
 export async function main(): Promise<number> {
   const { check, einde } = checker('klantrelatie-integratie-20261122');
 
-  // 1. Міграція 0310 та архів KLANT-001.json
-  const pad0310 = resolve('migrations/0310_klantrelatiebeheer.sql');
-  check('0310: файл міграції існує, а застарілий 0307_klantrelatiebeheer.sql відсутній',
-    existsSync(pad0310) && !existsSync(resolve('migrations/0307_klantrelatiebeheer.sql')));
+  // 1. Жива міграція 0307_klantrelatiebeheer.sql + міграція укріплення 0312_klantrelatiebeheer_rls_en_vlag.sql та архів KLANT-001.json
+  const pad0307 = resolve('migrations/0307_klantrelatiebeheer.sql');
+  const pad0312 = resolve('migrations/0312_klantrelatiebeheer_rls_en_vlag.sql');
+  check('0307 + 0312: обидва файли міграцій існують для безшовної сумісності з живим сервером 20261122-171856',
+    existsSync(pad0307) && existsSync(pad0312));
 
-  const sql0310 = readFileSync(pad0310, 'utf8');
-  check('0310: увімкнено ENABLE + FORCE ROW LEVEL SECURITY на app.klantrelatieboek',
-    /ALTER\s+TABLE\s+app\.klantrelatieboek\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY\s*;/i.test(sql0310)
-    && /ALTER\s+TABLE\s+app\.klantrelatieboek\s+FORCE\s+ROW\s+LEVEL\s+SECURITY\s*;/i.test(sql0310));
-  check('0310: політика рядкового захисту перевіряє NULLIF для app.user_id та app.ruimte',
-    /current_user::text\s*<>\s*'mijnruimte_app'[\s\S]*?gebruiker\s*=\s*NULLIF\(current_setting\('app\.user_id',\s*true\),\s*''\)\s*AND\s*ruimte\s*=\s*NULLIF\(current_setting\('app\.ruimte',\s*true\),\s*''\)/i.test(sql0310));
-  check('0310: зареєстровано прапорець klantrelatiebeheer-v1 зі станом false, false та ON CONFLICT DO NOTHING',
-    /INSERT\s+INTO\s+app\.feature_flags[\s\S]*?'klantrelatiebeheer-v1'[\s\S]*?'Клієнтські взаємини:[\s\S]*?false\s*,\s*false\s*\)\s*ON\s+CONFLICT\s*\(\s*sleutel\s*\)\s*DO\s+NOTHING/i.test(sql0310));
-  check('0310: нуль попереджень sqlRechtenVlaggen та SQL_RISICO',
-    sqlRechtenVlaggen('0310_klantrelatiebeheer.sql', sql0310).length === 0
-    && SQL_RISICO.every(([re]) => !re.test(sql0310)));
+  const sql0312 = readFileSync(pad0312, 'utf8');
+  check('0312: увімкнено ENABLE + FORCE ROW LEVEL SECURITY на app.klantrelatieboek',
+    /ALTER\s+TABLE\s+app\.klantrelatieboek\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY\s*;/i.test(sql0312)
+    && /ALTER\s+TABLE\s+app\.klantrelatieboek\s+FORCE\s+ROW\s+LEVEL\s+SECURITY\s*;/i.test(sql0312));
+  check('0312: політика рядкового захисту перевіряє NULLIF для app.user_id та app.ruimte',
+    /current_user::text\s*<>\s*'mijnruimte_app'[\s\S]*?gebruiker\s*=\s*NULLIF\(current_setting\('app\.user_id',\s*true\),\s*''\)\s*AND\s*ruimte\s*=\s*NULLIF\(current_setting\('app\.ruimte',\s*true\),\s*''\)/i.test(sql0312));
+  check('0312: зареєстровано прапорець klantrelatiebeheer-v1 зі станом false, false та ON CONFLICT DO NOTHING',
+    /INSERT\s+INTO\s+app\.feature_flags[\s\S]*?'klantrelatiebeheer-v1'[\s\S]*?'Клієнтські взаємини:[\s\S]*?false\s*,\s*false\s*\)\s*ON\s+CONFLICT\s*\(\s*sleutel\s*\)\s*DO\s+NOTHING/i.test(sql0312));
+  check('0312: нуль попереджень sqlRechtenVlaggen та SQL_RISICO',
+    sqlRechtenVlaggen('0312_klantrelatiebeheer_rls_en_vlag.sql', sql0312).length === 0
+    && SQL_RISICO.every(([re]) => !re.test(sql0312)));
 
   const archiefKlant = readFileSync(resolve('orchestratie/ontwikkelarchieven/KLANT-001.json'), 'utf8');
-  check('KLANT-001.json посилається на migrations/0310_klantrelatiebeheer.sql',
-    archiefKlant.includes('"migrations/0310_klantrelatiebeheer.sql"')
-    && !archiefKlant.includes('0307_klantrelatiebeheer.sql'));
+  check('KLANT-001.json зберігає точну історичну прив’язку до migrations/0307_klantrelatiebeheer.sql',
+    archiefKlant.includes('"migrations/0307_klantrelatiebeheer.sql"'));
 
   // 2. Прапорець klantrelatiebeheer-v1 у VLAG_UITLEG, відсутність прямого імпорту прапорців і SLEUTELKLUIS_REGISTER
   const uitleg = VLAG_UITLEG['klantrelatiebeheer-v1'];

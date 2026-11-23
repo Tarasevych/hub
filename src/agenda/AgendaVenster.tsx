@@ -12,12 +12,13 @@ import {
   agendaTekst, geldigeTijdzone, herhalingUitleg, herinneringUitleg, legeVorm, normaliseerVorm, vormFouten,
   type AgendaVorm, type Antwoord, type Frequentie, type Herinnering, type Weekdag,
 } from '../../shared/agenda-model';
-import { canonicalNavigationUrl } from '../canoniek-navigatie';
-import { deelnemerSprong, downloadIcsBestand, exporteerAfspraakIcs, type AgendaKop, type SchrijfUitslag } from './agenda-client';
+import type { AgendaKop, SchrijfUitslag } from './agenda-client';
 import { weigeringZin } from '../../shared/weigering-tekst';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+const canoniekPad = (dienst: 'hub' | 'mail', tab: string, lang: Lang, terugval: string): string =>
+  (typeof window !== 'undefined' && window.__TSV_CANONICAL_SERVICE__?.canonicalUrl(dienst, tab, lang, { explicitTab: true })) || terugval;
 
 const VENSTER_TEKSTEN = {
   brievenVanGast: { uk: 'Листи учасника', nl: 'Berichten van deelnemer' },
@@ -107,19 +108,21 @@ export default function AgendaVenster(props: Props) {
   };
   const openGastSprong = async (email: string, doel: 'mail' | 'contact') => {
     try {
+      const { deelnemerSprong } = await import('./agenda-client');
       const r = await deelnemerSprong(email, doel);
       if (!r.ok) return;
       if (doel === 'mail') {
-        const basis = canonicalNavigationUrl('mail', 'all', lang);
+        const basis = canoniekPad('mail', 'all', lang, '/');
         location.assign(`${basis}?resume_context=1`);
       } else if (r.sprongId) {
-        const basis = canonicalNavigationUrl('mail', 'contacts', lang);
+        const basis = canoniekPad('mail', 'contacts', lang, '/contacten');
         location.assign(`${basis}?contact_sprong=${encodeURIComponent(r.sprongId)}`);
       }
     } catch { /* stil bij netwerkonderbreking */ }
   };
   const haalIcsOp = async () => {
     try {
+      const { downloadIcsBestand, exporteerAfspraakIcs } = await import('./agenda-client');
       const uit = await exporteerAfspraakIcs({ vorm });
       if (uit.ok && uit.ics) downloadIcsBestand(uit.bestandsnaam, uit.ics);
     } catch { /* stil */ }
@@ -373,7 +376,7 @@ export default function AgendaVenster(props: Props) {
                 <button type='button' className='ghost' onClick={() => void haalIcsOp()} data-agenda-export-ics='1'>
                   <Download aria-hidden='true' />{VENSTER_TEKSTEN.exportIcs[lang]}
                 </button>
-                <a className='ghost' href={canonicalNavigationUrl('hub', 'notes', lang)} data-agenda-naar-notities='1'>
+                <a className='ghost' href={canoniekPad('hub', 'notes', lang, '/notities')} data-agenda-naar-notities='1'>
                   {VENSTER_TEKSTEN.notitiesOpenen[lang]}
                 </a>
                 <button type='button' className='ghost agenda-gevaar' data-agenda-verwijderen='1' disabled={bezig || !schrijfbaar}

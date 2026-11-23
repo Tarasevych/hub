@@ -21,7 +21,8 @@ export async function main(): Promise<number> {
   process.env.SLEUTELKLUIS_SLEUTEL_V1 = randomBytes(32).toString('base64');
   const eigenaar = `kaa-eig-${T}@example.test`;
   const G = await nepGoogle({ ownerEmail: eigenaar });
-  const pool = getPool();
+  const pool = getPool('systeem');
+  const { vlagGeheugenLeeg } = await import('../../backend/vlaggen');
   const sk = await import('../../backend/sleutelkluis');
   const ska = await import('../../backend/sleutelkluis-aanmelden');
   const client = await import('../../src/platform/sleutelkluis-client');
@@ -49,6 +50,7 @@ export async function main(): Promise<number> {
     const aId = (await pool.query("select id from app.records where tbl='users' and data->>'email'=$1", [aMail])).rows[0]?.id as string;
     await pool.query("update app.records set data = data || '{\"status\":\"approved\"}'::jsonb where tbl='users' and id = $1", [aId]);
     for (const v of P_VLAGGEN) await pool.query('UPDATE app.feature_flags SET aan = true, standaard = false, percentage = 0, gebruikers = $2 WHERE sleutel = $1', [v, [aId]]);
+    vlagGeheugenLeeg();
     const ww = `Lang-wachtwoord-${T}-ÄÖ`;
     { const salt = randomBytes(16); await pool.query("insert into app.records (tbl,id,data) values ('identity_passwords_v1',$1,$2)", [`kaa-ww-${aId}`, { userId: aId, algorithm: 'scrypt', n: 16384, r: 8, p: 1, salt: salt.toString('base64url'), hash: scryptSync(ww, salt, 32, { N: 16384, r: 8, p: 1 }).toString('base64url'), mustChange: false, createdAt: Date.now(), updatedAt: Date.now() }]); }
     geheimen.push(ww);
@@ -213,6 +215,7 @@ export async function main(): Promise<number> {
   } finally {
     sk.geheugenLeeg(); ska.aanmeldGeheugenLeeg();
     for (const r of vlagVooraf) await pool.query('UPDATE app.feature_flags SET aan=$2, standaard=$3, percentage=$4, gebruikers=$5 WHERE sleutel=$1', [r.sleutel, r.aan, r.standaard, r.percentage, r.gebruikers]).catch(() => undefined);
+    vlagGeheugenLeeg();
     await closePool().catch(() => undefined);
   }
   return einde();

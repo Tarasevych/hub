@@ -22,7 +22,7 @@ export type Open = { sid: string; ticket: string; verloopt: number; eind: number
 type Rij = { id: string; naam: string; protocol: string; host: string; poort: number; begin: number; eindGepland: number; einde: number | null; reden: string | null; bytesIn: number; bytesUit: number; opname: boolean; open: boolean };
 
 const code = (e: unknown) => String((e as Error)?.message || 'FOUT');
-const foutTekst = (e: unknown, uk: boolean) => { const c = code(e); const t = remoteFoutTekst(c, uk ? 'uk' : 'nl'); return t !== c ? t : /STEP_UP|STAP_OP/.test(c) ? (uk ? 'Passkey не підтверджено — нічого не змінено.' : 'Passkey niet bevestigd — niets gewijzigd.') : `${uk ? 'Не вдалося' : 'Mislukt'} (${c}).`; };
+const foutTekst = (e: unknown, uk: boolean) => { const c = code(e); const t = remoteFoutTekst(c, uk ? 'uk' : 'nl'); return t !== c ? t : /STEP_UP|STAP_OP/.test(c) ? (uk ? 'Ключ доступу не підтверджено — нічого не змінено.' : 'Passkey niet bevestigd — niets gewijzigd.') : `${uk ? 'Не вдалося' : 'Mislukt'} (${c}).`; };
 const PROTO: Record<RemoteProtocol, { naam: string; icoon: typeof MonitorUp }> = { rdp: { naam: 'RDP', icoon: MonitorUp }, vnc: { naam: 'VNC', icoon: MonitorSmartphone }, ssh: { naam: 'SSH', icoon: SquareTerminal } };
 const RESOLUTIES: Array<[number, number]> = [[1280, 800], [1366, 768], [1600, 900], [1920, 1080], [1024, 768]];
 
@@ -82,7 +82,7 @@ export default function RemoteBureaublad({ sluit }: { sluit: () => void }) {
     <Venster id='remote-bureaublad' titel={uk ? 'Віддалений стіл' : 'Extern bureaublad'} breedte={760} onSluit={sluit}>
       <div className='tech-venster rb-venster' data-rb-venster='lijst'>
         <p className='tech-lead'>{uk
-          ? 'RDP, VNC або SSH до комп’ютерів у вашій мережі — у вікні браузера. Лише власник, лише з активним технічним профілем у цій вкладці; кожне відкриття — з passkey і записується в журнал. ШІ-агенти доступу не мають.'
+          ? 'RDP, VNC або SSH до комп’ютерів у вашій мережі — у вікні браузера. Лише власник, лише з активним технічним профілем у цій вкладці; кожне відкриття — з ключем доступу і записується в журнал. ШІ-агенти доступу не мають.'
           : 'RDP, VNC of SSH naar computers in uw netwerk — in het browservenster. Alleen de eigenaar, alleen met een actief technisch profiel in dit tabblad; elke sessie met passkey en in het logboek. AI-agenten hebben geen toegang.'}</p>
         {stand ? (
           <p className='rb-stand' data-rb-stand={`${stand.aan ? 'aan' : 'uit'}|${stand.guacd ? 'guacd' : 'geen-guacd'}|${stand.techActief ? 'tech' : 'geen-tech'}`}>
@@ -198,7 +198,7 @@ function VerbindingForm({ uk, v, sluit }: { uk: boolean; v: Verbinding | null; s
         {fout ? <p className='tech-melding' role='alert'>{fout}</p> : null}
         <div className='tech-knoppen'>
           <button type='button' onClick={() => sluit(false)}>{uk ? 'Скасувати' : 'Annuleren'}</button>
-          <button type='submit' className='is-hoofd' disabled={bezig || !naam.trim() || !host.trim() || !poort} data-rb-knop='opslaan'><Fingerprint aria-hidden='true' />{uk ? 'Зберегти з passkey' : 'Opslaan met passkey'}</button>
+          <button type='submit' className='is-hoofd' disabled={bezig || !naam.trim() || !host.trim() || !poort} data-rb-knop='opslaan'><Fingerprint aria-hidden='true' />{uk ? 'Зберегти з ключем доступу' : 'Opslaan met passkey'}</button>
         </div>
       </form>
     </Venster>
@@ -222,7 +222,7 @@ function HostsForm({ uk, hosts, sluit }: { uk: boolean; hosts: string[]; sluit: 
         {fout ? <p className='tech-melding' role='alert'>{fout}</p> : null}
         <div className='tech-knoppen'>
           <button type='button' onClick={() => sluit(false)}>{uk ? 'Скасувати' : 'Annuleren'}</button>
-          <button type='submit' className='is-hoofd' disabled={bezig} data-rb-knop='hosts-opslaan'><Fingerprint aria-hidden='true' />{uk ? 'Зберегти з passkey' : 'Opslaan met passkey'}</button>
+          <button type='submit' className='is-hoofd' disabled={bezig} data-rb-knop='hosts-opslaan'><Fingerprint aria-hidden='true' />{uk ? 'Зберегти з ключем доступу' : 'Opslaan met passkey'}</button>
         </div>
       </form>
     </Venster>

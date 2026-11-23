@@ -29,6 +29,8 @@ export async function main(): Promise<number> {
   const vraag = (userId: string, ruimte: 'prive' | 'technisch', tekst: string) =>
     ab.vraagBevestiging({ userId, ruimte, soort: 'test.elders', params: { tekst }, tool: 'test_tool', agent: 'claude', klant: 'Claude' });
 
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     for (const u of [A, B]) await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2)", [u, { email: `${u}@test.invalid`, role: 'member', status: 'approved' }]);
 
@@ -110,6 +112,7 @@ export async function main(): Promise<number> {
     await sys.query('DELETE FROM app.tech_activaties WHERE user_id=$1', [A]).catch(() => undefined);
     await sys.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [A]).catch(() => undefined);
   } finally {
+    await herstelV1Kader().catch(() => undefined);
     await sys.query("DELETE FROM app.ai_bevestiging WHERE user_id = ANY($1)", [[A, B]]).catch(() => undefined);
     await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)", [[A, B]]).catch(() => undefined);
     await closePool();

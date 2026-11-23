@@ -230,7 +230,7 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
         <ShieldCheck aria-hidden='true' />
         <div>
           <h2>{tr(lang, 'Секрети й ключі', 'Geheimen en sleutels')}</h2>
-          <p>{tr(lang, 'Усі ключі й секрети сайту, сервера та підключених сервісів — лише назви й стан. Значення з’являється тільки після підтвердження (passkey або код) і зникає через 30 секунд.', 'Alle sleutels en geheimen van de site, de server en de gekoppelde diensten — alleen namen en status. Een waarde verschijnt pas na bevestiging (passkey of code) en verdwijnt na 30 seconden.')}</p>
+          <p>{tr(lang, 'Усі ключі й секрети сайту, сервера та підключених сервісів — лише назви й стан. Значення з’являється тільки після підтвердження (ключ доступу або код) і зникає через 30 секунд.', 'Alle sleutels en geheimen van de site, de server en de gekoppelde diensten — alleen namen en status. Een waarde verschijnt pas na bevestiging (passkey of code) en verdwijnt na 30 seconden.')}</p>
         </div>
         <div className='gm-kop-acties'>
           <button type='button' className='gm-knop' onClick={() => void laad()} disabled={laden}><RefreshCw className={laden ? 'spin' : undefined} aria-hidden='true' />{tr(lang, 'Оновити', 'Vernieuwen')}</button>
@@ -240,7 +240,7 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
 
       <div className='gm-veilig' role='note'>
         <Lock aria-hidden='true' />
-        <p>{tr(lang, 'Показ, заміна й видалення — лише після підтвердження passkey, кодом із застосунку або кодом відновлення; одне підтвердження діє на одну дію. Кожна дія (хто, коли, що, чим підтверджено) пишеться в журнал аудиту — без самого значення.', 'Tonen, vervangen en verwijderen kan alleen na bevestiging met passkey, app-code of herstelcode; één bevestiging geldt voor één actie. Elke actie (wie, wanneer, wat, waarmee bevestigd) wordt gelogd in het auditlogboek — zonder de waarde zelf.')}</p>
+        <p>{tr(lang, 'Показ, заміна й видалення — лише після підтвердження ключем доступу, кодом із застосунку або кодом відновлення; одне підтвердження діє на одну дію. Кожна дія (хто, коли, що, чим підтверджено) пишеться в журнал аудиту — без самого значення.', 'Tonen, vervangen en verwijderen kan alleen na bevestiging met passkey, app-code of herstelcode; één bevestiging geldt voor één actie. Elke actie (wie, wanneer, wat, waarmee bevestigd) wordt gelogd in het auditlogboek — zonder de waarde zelf.')}</p>
       </div>
       {!vaultKlaar ? <p className='gm-banner is-bad' role='alert'><AlertTriangle aria-hidden='true' />{tr(lang, 'Шифрування сховища недоступне на сервері (OWNER_VAULT_ENCRYPTION_KEY_V1): нові секрети зараз не зберігаються.', 'Kluisversleuteling is niet beschikbaar op de server (OWNER_VAULT_ENCRYPTION_KEY_V1): nieuwe geheimen worden nu niet opgeslagen.')}</p> : null}
       {bericht ? <p className={`gm-banner is-${bericht.soort}`} role={bericht.soort === 'fout' ? 'alert' : 'status'}>{bericht.soort === 'fout' ? <AlertTriangle aria-hidden='true' /> : bericht.soort === 'ok' ? <Check aria-hidden='true' /> : <Info aria-hidden='true' />}<span>{bericht.tekst}</span><button type='button' className='gm-sluit' aria-label={tr(lang, 'Закрити повідомлення', 'Melding sluiten')} onClick={() => setBericht(null)}><X aria-hidden='true' /></button></p> : null}

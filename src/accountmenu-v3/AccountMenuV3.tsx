@@ -1336,7 +1336,7 @@ export function AccountMenuV3({
                             <span className='am3-tip-head'><span className='am3-tip-dot is-gevaar' /><span>{eindeBevestig ? (uk ? 'Так, завершити' : 'Ja, beëindigen') : (uk ? 'Завершити' : 'Beëindigen')}</span></span>
                             <span className='am3-tip-sub'>{eindeBevestig
                             ? (uk ? 'Натисніть ще раз, щоб підтвердити. Сеанс закриється в усіх вкладках.' : 'Klik nogmaals om te bevestigen. De sessie sluit in alle tabbladen.')
-                            : (uk ? 'Сеанс закривається в усіх вкладках, ШІ втрачає дозволи цього сеансу. Щоб повернутися, потрібен новий вхід із Passkey. Дані не видаляються.' : 'De sessie sluit in alle tabbladen, de AI verliest de toestemmingen van deze sessie. Terugkomen vraagt een nieuwe aanmelding met Passkey. Er worden geen gegevens gewist.')}</span>
+                            : (uk ? 'Сеанс закривається в усіх вкладках, ШІ втрачає дозволи цього сеансу. Щоб повернутися, потрібен новий вхід із ключем доступу. Дані не видаляються.' : 'De sessie sluit in alle tabbladen, de AI verliest de toestemmingen van deze sessie. Terugkomen vraagt een nieuwe aanmelding met Passkey. Er worden geen gegevens gewist.')}</span>
                           </span>
                         </button>
                       </span>

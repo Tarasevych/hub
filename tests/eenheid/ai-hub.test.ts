@@ -179,7 +179,7 @@ export async function main(): Promise<number> {
     await s.vernieuw();
     html = render();
     check('tech-profiel zonder activering: sectie «Технічний профіль» met precies één regel + «Активувати»', html.includes('data-ext-sectie="technisch"') && html.includes('data-ext-tech-regel="1"') && html.includes('Активувати') && !html.includes('data-paneel="extensie-technisch"'));
-    check('tech-profiel zonder activering: geen passkey-ontgrendeling zichtbaar', !html.includes('Розблокувати з Passkey'));
+    check('tech-profiel zonder activering: geen passkey-ontgrendeling zichtbaar', !html.includes('Розблокувати ключем доступу'));
 
     // (c) technisch profiel, actief
     techStatus = { profiel, activatie: { id: 'a3', profielId: 'p1', rollen: ['ontwikkelaar'], mogelijkheden: [], reden: 'test', begin: Date.now(), eind: Date.now() + 60 * 60000 }, nu: Date.now() };
@@ -187,7 +187,7 @@ export async function main(): Promise<number> {
     extStatus = { ...extStatus, recht: { ...oud, magOntgrendelen: true, prive: rechtPrive, technisch: { ...rechtTech, mag: true, code: undefined, activatieTot: Date.now() + 60 * 60000 } } };
     await s.vernieuw();
     html = render([agentRij(TID, 'technisch')]);
-    check('actief: beide secties — gebruiker én technisch (koppelen technisch slot + passkey-ontgrendeling)', html.includes('data-ext-sectie="gebruiker"') && html.includes('data-paneel="extensie-technisch"') && html.includes('Розблокувати з Passkey') && html.includes('data-tech-actief="1"'));
+    check('actief: beide secties — gebruiker én technisch (koppelen technisch slot + passkey-ontgrendeling)', html.includes('data-ext-sectie="gebruiker"') && html.includes('data-paneel="extensie-technisch"') && html.includes('Розблокувати ключем доступу') && html.includes('data-tech-actief="1"'));
     check('actief: profiel van dit tabblad «Технічний»', html.includes('data-profiel-tab="technisch"'));
     uit();
     live.zetExtensieLive(null);

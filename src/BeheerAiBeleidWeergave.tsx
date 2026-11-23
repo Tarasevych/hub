@@ -45,14 +45,14 @@ const PRESET_NL: Record<string, string> = { '30m': '30 min', '1h': '1 uur', '2h'
 const FOUTEN: Record<string, [string, string]> = {
   BELEID_NIET_GESTART: ['Політику ще не встановлено на сервері (перша версія — через SSH).', 'Het beleid is nog niet op de server geïnstalleerd (eerste versie via SSH).'],
   BELEID_KETEN_ONGELDIG: ['Ланцюжок версій пошкоджено — увесь доступ ШІ закрито.', 'De keten van versies is beschadigd — alle AI-toegang is dicht.'],
-  GEEN_PASSKEY: ['На сервері немає passkey, яким можна підписувати (Адміністрування → Оновлення).', 'Er is op de server geen passkey om mee te tekenen (Beheer → Updates).'],
+  GEEN_PASSKEY: ['На сервері немає ключа доступу, яким можна підписувати (Адміністрування → Оновлення).', 'Er is op de server geen passkey om mee te tekenen (Beheer → Updates).'],
   ONTWERP_GEWIJZIGD: ['Чернетка змінилася після підпису — нічого не застосовано.', 'Het ontwerp is na het tekenen gewijzigd — niets toegepast.'],
   VERSIE_VERSCHILT_BELEID: ['Політику вже змінено іншим підписом. Сторінку оновлено — підготуйте зміни ще раз.', 'Het beleid is intussen gewijzigd. Pagina vernieuwd — bereid de wijzigingen opnieuw voor.'],
   ONTWERP_VERLOPEN: ['Чернетка застаріла (понад 15 хв). Підготуйте ще раз.', 'Het ontwerp is verouderd (meer dan 15 min). Bereid het opnieuw voor.'],
   UITDAGING_ONGELDIG: ['Запит застарів або вже використаний. Спробуйте ще раз.', 'Het verzoek is verlopen of al gebruikt. Probeer het opnieuw.'],
   UITDAGING_ANDERS: ['Сервер надіслав інший запит на підпис, ніж ви бачите. Підпис скасовано з міркувань безпеки.', 'De server stuurde een ander tekenverzoek dan u ziet. Tekenen geannuleerd voor de veiligheid.'],
-  NotAllowedError: ['Підтвердження passkey скасовано або час вийшов.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken.'],
-  PASSKEY_SLEUTEL_ONBEKEND: ['Цей passkey не підтверджено на сервері.', 'Deze passkey is niet bevestigd op de server.'],
+  NotAllowedError: ['Підтвердження ключем доступу скасовано або час вийшов.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken.'],
+  PASSKEY_SLEUTEL_ONBEKEND: ['Цей ключ доступу не підтверджено на сервері.', 'Deze passkey is niet bevestigd op de server.'],
   PASSKEY_GEEN_VERIFICATIE: ['Потрібне розблокування (відбиток, обличчя або PIN).', 'Ontgrendeling is vereist (vingerafdruk, gezicht of pincode).'],
   OWNER_REQUIRED: ['Лише власник.', 'Alleen de eigenaar.'],
   ADMIN_SERVICE_REQUIRED: ['Змінювати можна лише на admin.tarasevych.com.', 'Wijzigen kan alleen op admin.tarasevych.com.'],
@@ -424,7 +424,7 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
     <header className='aib-kop'>
       <div>
         <h2><ShieldCheck aria-hidden='true' />{tr(lang, 'Доступ ШІ за вашим підписом', 'AI-toegang met uw handtekening')}</h2>
-        <p>{tr(lang, 'Що може кожен ШІ і як довго. Таймер рахує сервер і сам знімає доступ у момент закінчення. Змінити можна лише з вашим passkey.', 'Wat elke AI mag en hoe lang. De server telt de timer en trekt de toegang zelf in op het eindmoment. Wijzigen kan alleen met uw passkey.')}</p>
+        <p>{tr(lang, 'Що може кожен ШІ і як довго. Таймер рахує сервер і сам знімає доступ у момент закінчення. Змінити можна лише з вашим ключем доступу.', 'Wat elke AI mag en hoe lang. De server telt de timer en trekt de toegang zelf in op het eindmoment. Wijzigen kan alleen met uw passkey.')}</p>
       </div>
       <button type='button' className='aib-icoonknop' onClick={() => void laden()} aria-label={tr(lang, 'Оновити', 'Vernieuwen')} title={tr(lang, 'Оновити', 'Vernieuwen')}><RefreshCw aria-hidden='true' /></button>
     </header>
@@ -585,7 +585,7 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
                 <label><input data-hulp='aib.bulk-doel' type='radio' name='aiz-doel' checked={bulkDoel === 'alle'} onChange={() => setBulkDoel('alle')} />{tr(lang, `Для всіх агентів (${alleAgenten.length})`, `Voor alle agents (${alleAgenten.length})`)}</label>
               </fieldset>
             </div>
-            <p className='aiz-uitleg'>{tr(lang, `Буде змінено: ${bulkWaarTekst} у ${bulkIds.length} агент(ів). Нічого не діє, доки ви не підпишете passkey.`, `Dit wijzigt: ${bulkWaarTekst} bij ${bulkIds.length} agent(s). Er geldt niets tot u met de passkey tekent.`)}</p>
+            <p className='aiz-uitleg'>{tr(lang, `Буде змінено: ${bulkWaarTekst} у ${bulkIds.length} агент(ів). Нічого не діє, доки ви не підпишете ключ доступу.`, `Dit wijzigt: ${bulkWaarTekst} bij ${bulkIds.length} agent(s). Er geldt niets tot u met de passkey tekent.`)}</p>
             <div className='aiz-bulk-knoppen'>
               <SnelKeuze lang={lang} label={tr(lang, 'Групова дія', 'Groepsactie')} onKies={(s) => zetGrant(bulkIds, bulkCaps, s, bulkWaarUk, bulkWaarNl)} />
               <button type='button' className='aib-klein' aria-expanded={open === '__bulk'} aria-haspopup='dialog' onClick={() => setOpen(open === '__bulk' ? '' : '__bulk')}><Timer aria-hidden='true' />{tr(lang, 'Таймер…', 'Timer…')}</button>
@@ -777,7 +777,7 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
             <p className='aib-klein-tekst'>{tr(lang, 'Відбиток зміни: ', 'Vingerafdruk van de wijziging: ')}<code>{venster.beleidHash.slice(0, 16)}</code> · {tr(lang, 'діє 5 хв', 'geldig 5 min')}</p>
             <div className='aib-knoppen'>
               <button type='button' onClick={() => setVenster(null)}><X aria-hidden='true' />{tr(lang, 'Скасувати', 'Annuleren')}</button>
-              <button type='button' className='aib-hoofd' autoFocus disabled={!!bezig} onClick={() => void bevestigen()}><Fingerprint aria-hidden='true' />{bezig === 'teken' ? tr(lang, 'Чекаю passkey…', 'Wacht op passkey…') : tr(lang, 'Підтвердити passkey', 'Bevestigen met passkey')}</button>
+              <button type='button' className='aib-hoofd' autoFocus disabled={!!bezig} onClick={() => void bevestigen()}><Fingerprint aria-hidden='true' />{bezig === 'teken' ? tr(lang, 'Чекаю ключ доступу…', 'Wacht op passkey…') : tr(lang, 'Підтвердити ключем доступу', 'Bevestigen met passkey')}</button>
             </div>
           </div>
         </Venster>

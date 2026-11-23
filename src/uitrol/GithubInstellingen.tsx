@@ -129,7 +129,7 @@ export default function GithubInstellingen({
         soort: 'fout',
         tekst: (e as { message?: string })?.message === 'REPO_ONGELDIG'
           ? tr(lang, 'Неправильний репозиторій.', 'Ongeldige repository.')
-          : tr(lang, 'Не збережено (потрібне підтвердження passkey).', 'Niet opgeslagen (bevestiging met passkey nodig).'),
+          : tr(lang, 'Не збережено (потрібне підтвердження ключем доступу).', 'Niet opgeslagen (bevestiging met passkey nodig).'),
       });
     } finally {
       setBezig('');
@@ -189,7 +189,7 @@ export default function GithubInstellingen({
       } else if (!r.ok) {
         setMelding({ soort: 'fout', tekst: tr(lang, `Випуск ${r.versie || ''} завантажено, але попередня перевірка зупинила його (${r.code || 'VOORCONTROLE_MISLUKT'}).`, `Release ${r.versie || ''} opgehaald, maar door de voorcontrole geweigerd (${r.code || 'VOORCONTROLE_MISLUKT'}).`) });
       } else {
-        setMelding({ soort: 'ok', tekst: tr(lang, `Випуск ${r.versie} завантажено з GitHub і перевірено! Відкрийте «Огляд», щоб схвалити passkey.`, `Release ${r.versie} uit GitHub opgehaald en gecontroleerd! Open «Overzicht» om met passkey goed te keuren.`) });
+        setMelding({ soort: 'ok', tekst: tr(lang, `Випуск ${r.versie} завантажено з GitHub і перевірено! Відкрийте «Огляд», щоб схвалити ключем доступу.`, `Release ${r.versie} uit GitHub opgehaald en gecontroleerd! Open «Overzicht» om met passkey goed te keuren.`) });
         onVoorstelOntvangen?.();
       }
       await laden();
@@ -210,7 +210,7 @@ export default function GithubInstellingen({
       setMelding({ soort: 'ok', tekst: tr(lang, `Видалено ${r.verwijderd} (${mb(r.verwijderdBytes || 0)}).`, `${r.verwijderd} verwijderd (${mb(r.verwijderdBytes || 0)}).`) });
       await laden();
     } catch {
-      setMelding({ soort: 'fout', tekst: tr(lang, 'Не видалено (потрібне підтвердження passkey).', 'Niet verwijderd (bevestiging met passkey nodig).') });
+      setMelding({ soort: 'fout', tekst: tr(lang, 'Не видалено (потрібне підтвердження ключем доступу).', 'Niet verwijderd (bevestiging met passkey nodig).') });
     } finally {
       setBezig('');
     }
@@ -233,7 +233,7 @@ export default function GithubInstellingen({
           <p className='ut-sub'>
             {tr(
               lang,
-              'Публікація встановлених випусків на GitHub, а також безпечне отримання нових випусків із GitHub (через підписаний приймач сповіщень, вручну або MCP) на попередню перевірку перед схваленням passkey.',
+              'Публікація встановлених випусків на GitHub, а також безпечне отримання нових випусків із GitHub (через підписаний приймач сповіщень, вручну або MCP) на попередню перевірку перед схваленням ключ доступу.',
               'Publicatie van geïnstalleerde releases op GitHub, én veilige ontvangst van nieuwe releases uit GitHub (via ondertekende webhook, handmatig of MCP) voor voorcontrole vóór passkey-goedkeuring.',
             )}
           </p>

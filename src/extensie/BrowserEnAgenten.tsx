@@ -359,7 +359,7 @@ function Keten({ tr, uk, stand, techProfiel }: { tr: Tr; uk: boolean; stand: Mat
         ) : null}
       </header>
       <p className='ag2-noot'>{bron === 'ondertekend'
-        ? tr('Діє ваша підписана політика ШІ (admin → «Доступ ШІ»): вона вирішує, які інструменти браузера бачить кожен агент. Тут — лише показ; змінити можна там, з passkey.', 'Uw ondertekende AI-beleid geldt (admin → «AI-toegang»): dat beslist welke browserhulpmiddelen elke agent ziet. Hier alleen weergave; wijzigen kan daar, met passkey.')
+        ? tr('Діє ваша підписана політика ШІ (admin → «Доступ ШІ»): вона вирішує, які інструменти браузера бачить кожен агент. Тут — лише показ; змінити можна там, з ключем доступу.', 'Uw ondertekende AI-beleid geldt (admin → «AI-toegang»): dat beslist welke browserhulpmiddelen elke agent ziet. Hier alleen weergave; wijzigen kan daar, met passkey.')
         : bron === 'ongeldig'
           ? tr('Підписану політику ШІ не вдалося перевірити — усі дії ШІ заблоковано, доки ви її не виправите (admin → «Доступ ШІ»).', 'Het ondertekende AI-beleid kon niet worden gecontroleerd — alle AI-acties zijn geblokkeerd tot u het herstelt (admin → «AI-toegang»).')
           : tr('Ризикові інструменти браузера (клік, введення, скріншот, діагностика, скрипти) на сайті типово вимкнені. Збереження матриці вмикає їх саме для дозволених можливостей: «з підтвердженням» або, з перемикачем вище, без нього.', 'Riskante browserhulpmiddelen (klikken, typen, schermafdruk, diagnose, scripts) staan op de site standaard uit. Opslaan van de matrix zet ze aan voor precies de toegestane mogelijkheden: «met bevestiging» of, met de schakelaar hierboven, zonder.')}</p>
@@ -478,7 +478,7 @@ function SlotKaart({ tr, uk, ruimte, live, nu, stand, techProfiel, techActief: a
           </details>
           <div className='eo-knoppen'>
             <button type='submit' className='eo-knop is-hoofd' disabled={!!bezig || !domeinen.length} aria-busy={bezig === 'open' || undefined} data-bea-open={ruimte} onClick={alleenMens(() => undefined)}>
-              <KeyRound aria-hidden='true' />{bezig === 'open' ? (stap === 'passkey' ? tr('Підтвердіть passkey…', 'Bevestig de passkey…') : tr('Відкриваю…', 'Openen…')) : open ? tr('Відкрити заново на цей строк', 'Opnieuw openen voor deze termijn') : ruimte === 'technisch' ? tr('Розблокувати з passkey', 'Ontgrendelen met passkey') : tr('Відкрити доступ', 'Toegang openen')}
+              <KeyRound aria-hidden='true' />{bezig === 'open' ? (stap === 'passkey' ? tr('Підтвердіть ключ доступу…', 'Bevestig de passkey…') : tr('Відкриваю…', 'Openen…')) : open ? tr('Відкрити заново на цей строк', 'Opnieuw openen voor deze termijn') : ruimte === 'technisch' ? tr('Розблокувати ключем доступу', 'Ontgrendelen met passkey') : tr('Відкрити доступ', 'Toegang openen')}
             </button>
             {open ? <button type='button' className='eo-knop is-gevaar' disabled={!!bezig} onClick={() => void doeDicht()} data-bea-dicht={ruimte}><Lock aria-hidden='true' />{tr('Заблокувати', 'Blokkeren')}</button> : null}
           </div>

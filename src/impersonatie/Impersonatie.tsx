@@ -40,7 +40,7 @@ const FOUTEN: Record<string, [string, string]> = {
   ANDER_TABBLAD: ['Переглядати можна лише у вкладці, з якої надіслано запит.', 'Alleen in het tabblad van de aanvraag.'],
   IMPERSONATIE_NIET_GEVONDEN: ['Не знайдено.', 'Niet gevonden.'],
 };
-const foutTekst = (e: unknown, uk: boolean) => { const c = String((e as Error)?.message || 'FOUT'); const f = FOUTEN[c]; return f ? (uk ? f[0] : f[1]) : /STEP_UP|STAP_OP/.test(c) ? (uk ? 'Вхід не підтверджено passkey або кодом — нічого не дозволено.' : 'Niet bevestigd met passkey of code — niets toegestaan.') : `${uk ? 'Не вдалося' : 'Mislukt'} (${c}).`; };
+const foutTekst = (e: unknown, uk: boolean) => { const c = String((e as Error)?.message || 'FOUT'); const f = FOUTEN[c]; return f ? (uk ? f[0] : f[1]) : /STEP_UP|STAP_OP/.test(c) ? (uk ? 'Вхід не підтверджено ключем доступу або кодом — нічого не дозволено.' : 'Niet bevestigd met passkey of code — niets toegestaan.') : `${uk ? 'Не вдалося' : 'Mislukt'} (${c}).`; };
 const STATUS: Record<string, [string, string]> = { wacht: ['чекає відповіді', 'wacht op antwoord'], actief: ['триває', 'loopt'], geweigerd: ['відхилено', 'geweigerd'], beeindigd: ['завершено', 'beëindigd'], verlopen: ['час вийшов', 'verlopen'], ingetrokken: ['скасовано', 'ingetrokken'] };
 const REDEN: Record<string, [string, string]> = { gebruiker: ['завершили ви', 'door u beëindigd'], beheerder: ['завершив адміністратор', 'door de beheerder beëindigd'], tijd: ['час вийшов', 'tijd om'], 'tech-beeindigd': ['адміністратор вийшов', 'beheerder is uitgelogd'], 'geen-antwoord': ['без відповіді', 'geen antwoord'], vervangen: ['замінено новим запитом', 'vervangen'], geweigerd: ['відхилено', 'geweigerd'] };
 const ACTIE: Record<string, [string, string]> = {
@@ -102,7 +102,7 @@ export function ImpersonatieVenster({ sluit }: { sluit: () => void }) {
   return (
     <Venster id='tech-impersonatie' titel={uk ? 'Подивитися як користувач (за згодою)' : 'Bekijken als gebruiker (met toestemming)'} breedte={600} onSluit={sluit}>
       <div className='imp-venster' data-tech-venster='impersonatie'>
-        <p className='imp-vraag-rij'>{uk ? 'Користувач сам дозволяє з passkey. Ви бачите його сайт у цій вкладці, типово лише перегляд, лише на дозволений час.' : 'De gebruiker staat het zelf toe met passkey. U ziet zijn site in dit tabblad, standaard alleen bekijken, alleen voor de toegestane tijd.'} <Vraag help={HELP_IMP_AANVRAGEN} uk={uk} label={uk ? 'Подивитися як користувач' : 'Bekijken als gebruiker'} /></p>
+        <p className='imp-vraag-rij'>{uk ? 'Користувач сам дозволяє з ключем доступу. Ви бачите його сайт у цій вкладці, типово лише перегляд, лише на дозволений час.' : 'De gebruiker staat het zelf toe met passkey. U ziet zijn site in dit tabblad, standaard alleen bekijken, alleen voor de toegestane tijd.'} <Vraag help={HELP_IMP_AANVRAGEN} uk={uk} label={uk ? 'Подивитися як користувач' : 'Bekijken als gebruiker'} /></p>
         <form className='imp-venster' style={{ padding: 0 }} onSubmit={(e) => { e.preventDefault(); if (!bezig) void vraag(); }}>
           <label className='imp-veld'><span>{uk ? 'Пошта користувача' : 'E-mail van de gebruiker'}</span><input type='email' value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete='off' data-imp-email='1' /></label>
           <label className='imp-veld'><span>{uk ? 'Причина (користувач її побачить)' : 'Reden (de gebruiker ziet die)'}</span><input value={reden} onChange={(e) => setReden(e.target.value)} minLength={3} maxLength={300} required data-imp-reden='1' /></label>
@@ -195,7 +195,7 @@ export function ImpersonatieGebruiker() {
               <button type='button' onClick={() => void doe('/api/impersonatie/weigeren', wacht.id)} disabled={!!bezig} data-imp-knop='weigeren'>{uk ? 'Відхилити' : 'Weigeren'}</button>
               <button type='button' className='is-hoofd' onClick={() => void doe('/api/impersonatie/toestaan', wacht.id, { metActies })} disabled={!!bezig} aria-busy={bezig === wacht.id + '/api/impersonatie/toestaan' || undefined} data-imp-knop='toestaan'>{uk ? `Дозволити на ${wacht.minuten} хв` : `Toestaan voor ${wacht.minuten} min`}</button>
             </div>
-            <p className='imp-meta'>{uk ? 'Сайт попросить підтвердити passkey або кодом з додатка. Без відповіді запит зникне через 15 хв.' : 'De site vraagt bevestiging met passkey of app-code. Zonder antwoord vervalt het verzoek na 15 min.'}</p>
+            <p className='imp-meta'>{uk ? 'Сайт попросить підтвердити ключем доступу або кодом з додатка. Без відповіді запит зникне через 15 хв.' : 'De site vraagt bevestiging met passkey of app-code. Zonder antwoord vervalt het verzoek na 15 min.'}</p>
           </div>
         </Venster>
       ) : null}

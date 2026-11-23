@@ -28,7 +28,7 @@ export default function Goedkeuring({ lang, context = {}, data, busy, klaar, goe
 
   return <section className='ut-kaart' data-ut-goedkeuring aria-labelledby='ut-goed-titel'>
     <header className='ut-kaart-kop'><div><h2 id='ut-goed-titel'><ShieldCheck aria-hidden='true' /> {tr(lang, 'Чекають схвалення', 'Wachten op goedkeuring')}{wachtrij.length > 0 && <span className='ut-teller'>{wachtrij.length}</span>}</h2>
-      <p className='ut-sub'>{tr(lang, 'Схвалення діє лише для цього пакета (його sha256) і лише 5 хвилин. Сервер (root) перевіряє підпис passkey сам.', 'Een goedkeuring geldt alleen voor dit pakket (de sha256) en maar 5 minuten. De server (root) controleert de passkey-handtekening zelf.')}</p></div></header>
+      <p className='ut-sub'>{tr(lang, 'Схвалення діє лише для цього пакета (його sha256) і лише 5 хвилин. Сервер (root) перевіряє підпис ключа доступу сам.', 'Een goedkeuring geldt alleen voor dit pakket (de sha256) en maar 5 minuten. De server (root) controleert de passkey-handtekening zelf.')}</p></div></header>
 
     {wachtrij.length > 1 && <div className='ut-wachtrij-samenvatting' data-ut-cumulatieve-wachtrij role='region' aria-label={tr(lang, 'Кумулятивна черга оновлень', 'Cumulatieve updatewachtrij')}>
       <div className='ut-wachtrij-kop'><Layers aria-hidden='true' /><div>
@@ -86,7 +86,7 @@ export default function Goedkeuring({ lang, context = {}, data, busy, klaar, goe
       </div>
       {afwijs?.id === v.id && <AfwijsVenster lang={lang} v={v} reden={afwijs.reden} setReden={(r) => setAfwijs({ id: v.id, reden: r })} busy={!!busy}
         onAfwijzen={(r) => { afwijzen(v, r); setAfwijs(null); }} onTerug={() => setAfwijs(null)} />}
-      {!klaar && <p className='ut-hint'>{!data.schakelaar ? foutTekst(lang, 'PASSKEY_GOEDKEURING_UIT') : !data.passkeys.length ? foutTekst(lang, 'GEEN_PASSKEY') : tr(lang, 'Відкрийте цю сторінку в браузері з підтримкою passkey.', 'Open deze pagina in een browser die passkeys ondersteunt.')}</p>}
+      {!klaar && <p className='ut-hint'>{!data.schakelaar ? foutTekst(lang, 'PASSKEY_GOEDKEURING_UIT') : !data.passkeys.length ? foutTekst(lang, 'GEEN_PASSKEY') : tr(lang, 'Відкрийте цю сторінку в браузері з підтримкою ключів доступу.', 'Open deze pagina in een browser die passkeys ondersteunt.')}</p>}
     </article>; })}
   </section>;
 }

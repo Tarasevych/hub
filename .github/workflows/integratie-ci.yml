@@ -534,6 +534,8 @@ jobs:
           done
 
           # Автоматичне виконання всіх нових наборів Віх M1–M6 (запити №208, №211, відновлення з архіву, E2E_TLS, зведення)
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM app.records WHERE tbl = 'owner_identity_v1' AND NOT EXISTS (SELECT 1 FROM app.records u WHERE u.tbl = 'users' AND u.id = app.records.data->>'ownerUserId');" >/dev/null
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/0335_vlaggen_consolidatie_aan.sql >/dev/null
           shopt -s nullglob
           declare -A AL_UITGEVOERD=()
           for pad in \
@@ -544,6 +546,7 @@ jobs:
             tests/eenheid/klantrelatie*.test.ts \
             tests/eenheid/verdeelde-opslag*.test.ts \
             tests/eenheid/e2e-tls*.test.ts \
+            tests/eenheid/consol-*.test.ts \
             tests/eenheid/consolidatie-*.test.ts; do
             naam="$(basename "$pad")"
             [ -z "${AL_UITGEVOERD[$naam]:-}" ] || continue

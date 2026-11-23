@@ -8,8 +8,13 @@ const OPSLAG = `mr-vlag:${UITLEG_V3_VLAG}`;
 let waarde: boolean | null = (() => { try { const v = sessionStorage.getItem(OPSLAG); return v === '1' ? true : v === '0' ? false : null; } catch { return null; } })();
 let bezig: Promise<boolean> | null = null;
 const luisteraars = new Set<(v: boolean) => void>();
-export function laadUitlegV3Vlag(): Promise<boolean> {
-  if (bezig) return bezig;
+export function laadUitlegV3Vlag(opnieuw = false): Promise<boolean> {
+  if (opnieuw) {
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+  } else if (bezig) {
+    return bezig;
+  }
   bezig = api.post(`/api/ofrep/v1/evaluate/flags/${UITLEG_V3_VLAG}`, vlagBody()).then((r) => r.data?.value === true, () => null).then((x) => {
     const v = x === true;
     if (x === null) bezig = null; else { try { sessionStorage.setItem(OPSLAG, v ? '1' : '0'); } catch { /* geen opslag */ } }
@@ -17,9 +22,18 @@ export function laadUitlegV3Vlag(): Promise<boolean> {
   });
   return bezig;
 }
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', () => {
+    waarde = null;
+    bezig = null;
+    try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+    if (luisteraars.size > 0) void laadUitlegV3Vlag(true);
+  });
+}
 export function useUitlegV3(): boolean {
   const [v, setV] = useState(waarde === true);
   useEffect(() => { luisteraars.add(setV); void laadUitlegV3Vlag(); return () => { luisteraars.delete(setV); }; }, []);
   return v;
 }
 export const uitlegV3Nu = () => waarde === true;
+

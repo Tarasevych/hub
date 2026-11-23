@@ -92,7 +92,7 @@ export default function RunDetail({ lang, context, runId, hoogte, naarStroom }: 
         <dl className='ut-dl'>
           {rij(tr(lang, 'Підготував', 'Voorbereid door'), run.voorbereider || '—')}
           {rij(tr(lang, 'Схвалив', 'Goedgekeurd door'), run.goedgekeurdDoor === 'ssh-root' || (run.methode === 'ssh' && !run.goedgekeurdDoor)
-            ? <span data-schvalyv='ssh-root'>{tr(lang, 'SSH, root, без passkey', 'SSH, root, zonder passkey')}<br /><small className='ut-hint'>{tr(lang, 'Пакет встановлено командою на сервері через SSH. Схвалення passkey на сайті для такого способу не буває: доступ до SSH і є схваленням.', 'Het pakket is via SSH met een opdracht op de server geïnstalleerd. Bij deze manier is er geen passkey-goedkeuring op de site: de SSH-toegang zelf is de goedkeuring.')}</small></span>
+            ? <span data-schvalyv='ssh-root'>{tr(lang, 'SSH, root, без ключа доступу', 'SSH, root, zonder passkey')}<br /><small className='ut-hint'>{tr(lang, 'Пакет встановлено командою на сервері через SSH. Схвалення ключ доступу на сайті для такого способу не буває: доступ до SSH і є схваленням.', 'Het pakket is via SSH met een opdracht op de server geïnstalleerd. Bij deze manier is er geen passkey-goedkeuring op de site: de SSH-toegang zelf is de goedkeuring.')}</small></span>
             : run.goedgekeurdDoor || '—')}
           {rij(tr(lang, 'Коміт', 'Commit'), commitWeergave(lang, run.commit).waarschuwing ? <CommitTekst lang={lang} commit={run.commit} /> : <Kopieerbaar lang={lang} tekst={commitWeergave(lang, run.commit).kort} />)}
           {rij(tr(lang, 'Розмір', 'Grootte'), run.bytes || run.pakket?.grootte ? mb(run.bytes || run.pakket?.grootte || 0) : '—')}

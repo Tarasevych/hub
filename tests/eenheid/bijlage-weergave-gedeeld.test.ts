@@ -58,9 +58,9 @@ export async function main(): Promise<number> {
   check('bewerklabels zonder Engelse woorden', ['rekening', 'tabel', 'foto', 'archief', 'onbekend'].every((s) => !/[A-Za-z]/.test(bewerkLabel(s as never, '')[0])));
 
   // bedrading en vlag
-  const mig = readFileSync('migrations/0309_bijlage_weergave_gedeeld.sql', 'utf8');
+  const mig = readFileSync('migrations/0310_bijlage_weergave_gedeeld.sql', 'utf8');
   const oms = /VALUES \('bijlage-weergave-gedeeld-v1',\s*'([^']*)',\s*false, false\)\s*ON CONFLICT \(sleutel\) DO NOTHING;/.exec(mig);
-  check('migratie 0309: uit, standaard uit, ON CONFLICT DO NOTHING, ≤ 300 tekens', Boolean(oms) && oms![1].length <= 300);
+  check('migratie 0310: uit, standaard uit, ON CONFLICT DO NOTHING, ≤ 300 tekens', Boolean(oms) && oms![1].length <= 300);
   const u = VLAG_UITLEG['bijlage-weergave-gedeeld-v1'];
   check('uitleg aanwezig', Boolean(u && u.naam && u.wat && u.wanneer && u.gevolg));
   const gmw = readFileSync('src/GoogleMailWerkruimte.tsx', 'utf8');

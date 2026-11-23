@@ -183,14 +183,20 @@ export async function main(): Promise<number> {
       if (bestaand) process.env.OWNER_EMAIL = String(bestaand.email);
       else await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', uid, { email: process.env.OWNER_EMAIL || 'eigenaar@eenheid.test', role: 'owner', status: 'approved', name: 'Eigenaar' }]);
       const eig = { id: uid, email: String(process.env.OWNER_EMAIL), role: 'owner', status: 'approved' };
-      await tp.profielVan(eig);
-      const tA = randomBytes(24).toString('hex'), tB = randomBytes(24).toString('hex');
-      const aA = await tp.activeren(eig, tA, 30, 'tab A (wissel)'), aB = await tp.activeren(eig, tB, 30, 'tab B (blijft)');
-      const n = await tp.beeindigenBijUitloggen(uid, tA);
-      const reden = String((await pool.query('SELECT beeindigd_reden FROM app.tech_activaties WHERE id=$1', [aA.id])).rows[0]?.beeindigd_reden || '');
-      check('R-05 beëindigen per tabblad: tab A weg (reden uitgelogd), tab B blijft actief', n === 1 && reden === 'uitgelogd' && !(await tp.actieveActivatie(uid, tA)) && !!(await tp.actieveActivatie(uid, tB)), `${n} ${reden}`);
-      await tp.beeindigenBijIntrekken(uid, 'handmatig');
-      void aB;
+      const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+      const herstelV1Kader = await beginV1TechKader();
+      try {
+        await tp.profielVan(eig);
+        const tA = randomBytes(24).toString('hex'), tB = randomBytes(24).toString('hex');
+        const aA = await tp.activeren(eig, tA, 30, 'tab A (wissel)'), aB = await tp.activeren(eig, tB, 30, 'tab B (blijft)');
+        const n = await tp.beeindigenBijUitloggen(uid, tA);
+        const reden = String((await pool.query('SELECT beeindigd_reden FROM app.tech_activaties WHERE id=$1', [aA.id])).rows[0]?.beeindigd_reden || '');
+        check('R-05 beëindigen per tabblad: tab A weg (reden uitgelogd), tab B blijft actief', n === 1 && reden === 'uitgelogd' && !(await tp.actieveActivatie(uid, tA)) && !!(await tp.actieveActivatie(uid, tB)), `${n} ${reden}`);
+        await tp.beeindigenBijIntrekken(uid, 'handmatig');
+        void aB;
+      } finally {
+        await herstelV1Kader();
+      }
     } else console.log('OVERGESLAGEN R-05 runtime: geen database');
   }
 

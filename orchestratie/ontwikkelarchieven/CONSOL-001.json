@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "taakId": "CONSOL-001",
+  "datum": "2026-11-23",
+  "taal": "uk",
+  "titel": "CONSOL-001 · Зведене консолідоване оновлення «Мій простір»: повний облік і поєднання гілок №208 та №211, укріплення безпеки, 18 груп прикладних можливостей із взаємосумісними перемикачами, 28 нових прапорців за правилом VLAG-001 та ввімкнення 58 прикладних прапорців (міграція 0335)",
+  "opdracht": "За прямим дорученням власника провести повну інвентаризацію сховища Tarasevych/hub (усі 274 гілки, 52 відкриті та 144 закриті запити на злиття, 16 відкритих звернень, мітки, випуски, прапорці можливостей і позначки «заплановано»), перевірити взаємну сумісність із поточним станом сайту поверх живої встановленої основи 20261122-171856 (c85e5d73f104f555021c6a896ffecb70256588d3), об’єднати всі напрацювання без втрати жодної попередньої можливості (зберігаючи альтернативні втілення як перемикачі), усунути прогалини безпеки (FORCE RLS на таблицях просторів і вузлів, безпечне відновлення запасних копій deploy/archief-herstellen.sh, підключення 10 сканерів безпеки до integratie), добудувати всі 16 запланованих груп прикладних можливостей, усунути англіцизми в інтерфейсі (звернення №163), зареєструвати 28 нових прапорців у власних міграціях за двокроковою схемою VLAG-001 (B-027, правила 1.8.0) та перевести завершальною міграцією 0335 усі 58 прикладних прапорців у стан «Для всіх» (залишивши 5 безпекових прапорців способів входу в стані «Тільки для власника»), розширити пошуковий покажчик інтерфейсу до 2438 елементів, зафіксувати спадкоємність усіх 52 відкритих запитів на злиття в orchestratie/verwijzingen/, пройти наскрізну перевірку й оприлюднити єдиний перевірений пакунок mijn-ruimte-<versie>.tar.gz за правилом TRACE-001 без автоматичного встановлення на живий сервер.",
+  "herkomst": {
+    "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
+    "agent": "antigravity",
+    "model": "Gemini 3.1 Pro",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/consolidatie-001-20261122-203500",
+    "basisCommit": "95fda93a7084c102d1c682fbb9a83a83d49f9259",
+    "basisVersie": "20261105-061659",
+    "geinstalleerdeBasis": "c85e5d73f104f555021c6a896ffecb70256588d3",
+    "geinstalleerdeVersie": "20261122-171856",
+    "integratieBasis": "95fda93a7084c102d1c682fbb9a83a83d49f9259",
+    "regelsVersie": "1.8.0",
+    "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
+    "samengevoegd": [
+      {
+        "taak": "SPIL-WEERGAVE (запит на злиття №208 — спільний переглядач вкладень і відновлення вікон пошти)",
+        "commit": "f5c9fd951869ab14db232957b249f03516d0c0a2",
+        "reden": "Влито без стискання історії (--no-ff) з перенумеруванням міграцій на 0308..0310 та добудовою Етапу 3 за зверненням №206 (розпізнавання тексту й 11 захищених карток Telegram)."
+      },
+      {
+        "taak": "KLANT-001 (запит на злиття №211 та жива встановлена версія сервера 20261122-171856)",
+        "commit": "c85e5d73f104f555021c6a896ffecb70256588d3",
+        "reden": "Влито без стискання історії (--no-ff) зі збереженням живої міграції 0307_klantrelatiebeheer.sql та додаванням міграції укріплення 0312_klantrelatiebeheer_rls_en_vlag.sql (FORCE RLS, SLEUTELKLUIS_REGISTER, 11 кодів сповіщень і прапорець klantrelatiebeheer-v1)."
+      }
+    ]
+  },
+  "commits": [
+    "2eeb5d5f25a2149a1683202e852fbf44f41b46e4",
+    "30793e7a54da0c23bf37c02aa29d6b5ae031a917",
+    "fa4a189e7af4b490fa02f09819d21edd3ee5ffa2",
+    "bc003eeb029f2a1f32f8fad69824bb8da9ddbc43",
+    "80bc688be3e7c4516fdc9f793a0422ab429ac257",
+    "e274580313420af90dbe322e90e50f6e763f04de",
+    "47c76581708f850bc30bacd2bbbd09e6754c39b9"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Повна інвентаризація сховища (274 гілки, 52 відкриті й 144 закриті запити на злиття, 16 звернень, прапорці й заплановані розділи) та узгодження 5 проєктних рішень із власником.",
+      "resultaat": "Укладено поіменний реєстр гілок і запитів, виявлено колізію номера міграції 0307, прогалини рядкового захисту в 0306/0307, приховані змінні середовища CLOUD_M4..M11_STAGING та 16 запланованих груп; власник затвердив увімкнення 58 прикладних прапорців за двокроковою схемою VLAG-001 зі збереженням 5 безпекових прапорців входу тільки для власника."
+    },
+    {
+      "stap": "2) Хвиля А (Віха M1): злиття запитів №208 і №211, добудова Етапу 3 переглядача вкладень (звернення №206), укріплення безпеки 0311/0312 та deploy/archief-herstellen.sh, підключення сканерів безпеки й конвеєра integratie-ci.yml.",
+      "resultaat": "Закрито прогалини FORCE RLS у таблицях розподіленого сховища й клієнтських взаємин, поєднано захисні перевірки відновлення архівів SEC-003, додано розпізнавання полів рахунків і генератор 11 карток PNG для Telegram з перевіркою власного домену isEigenPlatformHost, створено повторюваний сценарій підготовки середовища."
+    },
+    {
+      "stap": "3) Хвиля Б (Віхи M2, M3, M4): втілення всіх 16 запланованих можливостей у службах Входу, Пошти, Календаря, Нотаток, Файлів, Фото, Робочого столу, Соціальних мереж, Інтеграцій, Узгодження, Робочого простору ШІ, Платформи API та Роз’ємів MCP.",
+      "resultaat": "Додано картковий вигляд способів входу UI-015A (№167) та зовнішніх постачальників UI-015B (№168) як сумісний перемикач поруч із виглядом «Макет», повноцінний 4-режимний вибір меню облікового запису (v3 Орбіта / v3 Секційна картка / v2 Компактне / Класичне), 3-режимний переглядач вкладень, мости Пошта ↔ Завдання/Нотатки/Календар/Клієнти, двосторонній міст Нотатки ↔ Календар і CalDAV/ICS, переведення хмарних стадій на 8 прапорців БД і захищений WebDAV, службу «Соціальні мережі», зашифровані перехідники у Ключниці, 4 функції Узгодження, області читання API та живі джерела MCP."
+    },
+    {
+      "stap": "4) Хвиля В (Віха M5) та Завершальна перевірка (Віха M6): реактивна система 63 прапорців, міграція 0335, мовне очищення №163 у 65 файлах src/, перемикач режимів сповіщень, пошуковий каталог на 2438 елементів, спадкоємність 52 запитів на злиття та наскрізні випробування.",
+      "resultaat": "Усі 63 прапорці описано у VLAG_UITLEG двома мовами, впроваджено реактивне оновлення mr:vlaggen-vernieuwd і захищене від повторного входження скидання серверного буфера wisVlagGeheugen(), виконано переклад passkey → «ключ доступу» у 65 українських текстах інтерфейсу за зверненням №163, створено завершальну міграцію 0335_vlaggen_consolidatie_aan.sql (58 прикладних «Для всіх», 5 безпекових «Тільки для власника»), оформлено 52 записи спадкоємності у orchestratie/verwijzingen/, узгоджено міграції 0307..0312 із живою версією сервера 20261122-171856 та пройдено 250 наскрізних і всі базові регресійні перевірки на PostgreSQL 16."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Зберегти оригінальну міграцію 0307_klantrelatiebeheer.sql незмінною (відповідно до живої встановленої версії 20261122-171856 @ c85e5d73), розмістити міграції запиту №208 під номерами 0308..0310, а укріплення FORCE RLS і прапорець klantrelatiebeheer-v1 винести в окрему міграцію 0312_klantrelatiebeheer_rls_en_vlag.sql.",
+      "reden": "На живому сервері власника версія 20261122-171856 уже записала 0307_klantrelatiebeheer у app.schema_migrations; збереження 0307 гарантує відсутність помилки MIGRATIES_ONTBREKEN під час передперевірки та забезпечує реальне застосування FORCE RLS і прапорця klantrelatiebeheer-v1 міграцією 0312 на живому сервері."
+    },
+    {
+      "besluit": "Застосувати двокрокову схему прапорців VLAG-001 (B-027): кожна нова можливість у міграціях 0308..0329 додається зі станом aan = false, standaard = false та ON CONFLICT DO NOTHING, а міграція 0335_vlaggen_consolidatie_aan.sql вмикає 58 прикладних прапорців і залишає 5 безпекових прапорців способів входу тільки для власника.",
+      "reden": "Така побудова одночасно виконує суворе правило пакувальника VLAG-001 (кожен прапорець у власній міграції типово вимкнений і миттєво вимикається на сторінці «Нові можливості сайту» без нового випуску) та пряме рішення власника отримати всі перевірені прикладні розробки ввімкненими у зведеному оновленні."
+    },
+    {
+      "besluit": "Не вилучати жодного попереднього варіанта інтерфейсу при поєднанні паралельних гілок, а надати явні перемикачі режимів із миттєвим поверненням до попередніх виглядів.",
+      "reden": "У меню облікового запису (4 режими), переглядачі вкладень (3 режими), панелі сповіщень (3 режими) та сторінці способів входу (2 режими) власник може перемикати сучасний і класичні варіанти одним натисканням без втрати налаштувань."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "migrations/0308_posta_lezer_vlaggen.sql, migrations/0309_posta_vensters_herstel.sql, migrations/0310_bijlage_weergave_gedeeld.sql, migrations/0311_verdeelde_opslag_rls_herstel.sql, migrations/0312_klantrelatiebeheer_rls_en_vlag.sql, migrations/0313_mail_bruggen_vlag.sql .. migrations/0329_uitrol_telegram_koppeling_vlag.sql, migrations/0335_vlaggen_consolidatie_aan.sql",
+      "omschrijving": "Послідовний безконфліктний ряд нових ідемпотентних міграцій поверх живої основи 0307: суворий рядковий захист FORCE RLS із прив’язкою до користувача й простору, реєстрація 28 нових прапорців за правилом VLAG-001 та завершальне узгоджене ввімкнення 58 прикладних прапорців."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "src/bijlage-weergave/*, backend/bijlage-weergave-ocr.ts, backend/bijlage-telegram-melding.ts, src/klantrelatiebeheer/*, backend/klantrelatiebeheer-*.ts, src/aanmeldmethoden-v2/*, src/social/SocialOverzicht.tsx, backend/social-routes.ts",
+      "omschrijving": "Спільний переглядач вкладень (Етапи 1–3 за №208 і №206, 11 захищених карток PNG для Telegram), служба «Клієнтські взаємини» (№211 із шифруванням DEK у Ключниці), картковий вигляд способів входу (№167/№168) та служба «Соціальні мережі»."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "backend/mail-bruggen.ts, backend/agenda-notities-brug.ts, backend/agenda-caldav-schrijven.ts, backend/cloud-vlaggen-poort.ts, backend/cloud-vnext-webdav.ts, backend/integraties-koppelingen.ts, backend/verbindingen-beheer.ts, backend/afstemming-uitbreiding.ts, backend/vlaggen-geheugen.ts",
+      "omschrijving": "Міжслужбові мости Пошти до Завдань, Нотаток, Календаря й Клієнтів, двосторонній міст Нотатки ↔ Календар і запис CalDAV/ICS, переведення хмарних стадій із змінних середовища на прапорці БД, захищений WebDAV, зашифроване збереження перехідників у Ключниці та спільний безпечний буфер прапорців."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "backend/vlaggen.ts, shared/vlaggen.ts, src/functievlag-lezen.ts, src/vlaggen/Vlaggen.tsx, src/CanoniekAccountMenu.tsx, src/CanoniekMeldingencentrum.tsx, src/meldingen/MeldingModusKiezer.tsx, shared/melding-link.ts, scripts/zoek-ui-catalogus.mjs, shared/zoek-ui-knoppen.generated.ts, src/**/*.tsx",
+      "omschrijving": "Повний двомовний опис усіх 63 прапорців у VLAG_UITLEG, нагадування VLAG_OPRUIMEN після 30 днів в архіві, реактивне скидання клієнтського й серверного буфера прапорців, повне мовне очищення №163 (passkey → «ключ доступу» у 65 файлах src/), збереження всіх альтернативних режимів меню та сповіщень, повні маршрути переходів зі сповіщень і розширення пошукового каталогу до 2438 елементів."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "deploy/archief-herstellen.sh, migrations/rechten.sql, .github/workflows/*.yml, ПРАВИЛА-АГЕНТІВ.uk.md, AGENTENREGELS.nl.md, orchestratie/РІШЕННЯ.uk.md, orchestratie/BESLUITEN.nl.md, orchestratie/verwijzingen/**, orchestratie/onderwerpen/*.json",
+      "omschrijving": "Поєднання захисних перевірок SEC-003 у сценарії відновлення архівів, закриття прогалин прав БД, підключення 10 сканерів безпеки до гілки integratie, синхронізація двомовних дзеркал правил 1.8.0 (B-027) та повний реєстр спадкоємності 52 відкритих запитів на злиття."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/consolidatie-001-laag1-dekking.test.ts, tests/eenheid/consolidatie-001-laag2-grenzen.test.ts, tests/eenheid/consolidatie-001-laag3-combinaties.test.ts, tests/eenheid/consolidatie-001-laag4-scenarios.test.ts, tests/eenheid/consol-*.test.ts, .github/workflows/integratie-ci.yml, .github/workflows/consol-001-uitgave.yml",
+      "omschrijving": "Чотири рівні наскрізних вимогоорієнтованих випробувань (250 перевірок для всіх 18 груп консолідації), цільові набори Віх M1–M5, універсальний перевірковий конвеєр integratie-ci.yml та ізольований конвеєр оприлюднення зведеного випуску CONSOL-001."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": "deploy/archief-herstellen.sh",
+      "uk": "Укріплення безпеки SEC-003 у сценарії відновлення запасних копій: заборона символьних і жорстких посилань у tar-архівах, безпечний тимчасовий каталог через mktemp -d із правами 0700, сувора перевірка власника каталогу призначення та захист від підміни шляху при розпакуванні.",
+      "nl": "Beveiligingsverharding SEC-003 in het herstelscript voor reservekopieën: weigering van symbolische en harde koppelingen in tar-archieven, veilige tijdelijke map via mktemp -d met modus 0700, strikte eigenaarscontrole van de doelmap en bescherming tegen padmanipulatie."
+    },
+    {
+      "pad": ".github/workflows/integratie-ci.yml",
+      "uk": "Універсальний перевірковий конвеєр лише з правами читання (permissions: contents: read, persist-credentials: false, усі дії закріплені 40-символьними відбитками SHA, npm ci --ignore-scripts) для автоматичної перевірки гілки integratie та гілок консолідації на PostgreSQL 16 без будь-якого оприлюднення чи розгортання.",
+      "nl": "Universele controlewerkstroom met uitsluitend leesrechten (permissions: contents: read, persist-credentials: false, alle acties vastgepind op volledige 40-tekens-SHA’s, npm ci --ignore-scripts) voor automatische toetsing van integratie en consolidatietakken op PostgreSQL 16 zonder publicatie of uitrol."
+    },
+    {
+      "pad": ".github/workflows/consol-001-uitgave.yml",
+      "uk": "Ізольований конвеєр перевірки й оприлюднення зведеного пакунка CONSOL-001 поверх живої основи 20261122-171856: без pull_request_target і без secrets.*, усі дії закріплені повними 40-символьними відбитками SHA, звіряє /api/version, усі міграції й випробування на PostgreSQL 16, VLAG-001 і root TRACE-001, ніколи не встановлює пакунок на живий сервер.",
+      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor het geconsolideerde pakket CONSOL-001 boven op de geïnstalleerde basis 20261122-171856: zonder pull_request_target of secrets.*, alle acties vastgepind op 40-tekens-SHA’s, controleert /api/version, PostgreSQL 16, VLAG-001 en root TRACE-001, en installeert nooit automatisch op de server."
+    },
+    {
+      "pad": ".github/workflows/bandit.yml",
+      "uk": "Розширено перелік гілок запуску сканера безпеки Bandit на інтеграційну гілку integratie (без зміни прав доступу, секретів чи версій закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor beveiligingsscanner Bandit is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/bearer.yml",
+      "uk": "Розширено перелік гілок запуску сканера потоків даних Bearer на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor gegevensstroomscanner Bearer is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/devskim.yml",
+      "uk": "Розширено перелік гілок запуску статичного аналізатора безпеки DevSkim на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor statische beveiligingsanalyse DevSkim is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/njsscan.yml",
+      "uk": "Розширено перелік гілок запуску аналізатора безпеки Node.js njsscan на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor Node.js-beveiligingsscanner njsscan is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/ossar.yml",
+      "uk": "Розширено перелік гілок запуску статичного сканера безпеки OSSAR на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor statische beveiligingsscanner OSSAR is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/osv-scanner.yml",
+      "uk": "Розширено перелік гілок запуску сканера вразливостей залежностей OSV-Scanner на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor kwetsbaarhedenscanner OSV-Scanner is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/powershell.yml",
+      "uk": "Розширено перелік гілок запуску перевірки сценаріїв PSScriptAnalyzer на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor scriptcontrole PSScriptAnalyzer is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/scorecard.yml",
+      "uk": "Узгоджено перевірку ланцюга постачання Scorecard із інтеграційною гілкою та безпечними дозволами читання (без додавання секретів чи сторонніх незакріплених дій).",
+      "nl": "De controle van de toeleveringsketen Scorecard is afgestemd op de integratietak met uitsluitend veilige leesrechten (zonder geheimen of onvastgepinde externe acties)."
+    },
+    {
+      "pad": ".github/workflows/semgrep.yml",
+      "uk": "Розширено перелік гілок запуску семантичного сканера безпеки Semgrep на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor semantische beveiligingsscanner Semgrep is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    },
+    {
+      "pad": ".github/workflows/trivy.yml",
+      "uk": "Розширено перелік гілок запуску сканера вразливостей і налаштувань Trivy на інтеграційну гілку integratie (без зміни прав доступу, секретів чи закріплених за SHA дій).",
+      "nl": "De lijst van gecontroleerde takken voor kwetsbaarhedenscanner Trivy is uitgebreid met de integratietak integratie (zonder wijziging van rechten, geheimen of op SHA vastgepinde acties)."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/orch.mjs controleer && node scripts/vaardigheden/valideer.mjs && node scripts/meldingen-register-controle.mjs && npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Замок правил 1.8.0 (B-027 / VLAG-001), перевірка всіх 12 спільних навичок і 14 перехідників агентів, сторож бази сповіщень MELDINGEN-REGISTER-001 (0 некласифікованих записів у 'overig'), контрастність на 28 палітрах, пошуковий покажчик (2438 елементів інтерфейсу), типи клієнта й сервера та всі 14 сторожів повного складання з підписаним розширенням CRX3 0.9.7 пройшли з кодом 0."
+    },
+    {
+      "opdracht": "Подвійний прогін міграцій 0001..0335 на PostgreSQL 16 із трьома ролями (mijnruimte_migrator, mijnruimte_app, mijnruimte_system), 12 стендів «Плюща», 20 хмарних, 180+ безбазових, 13 післяскладальних, 109 базових і 250 наскрізних випробувань consolidatie-001-laag1..4",
+      "resultaat": "Обидва прогони міграцій завершилися без помилок, у таблиці app.feature_flags підтверджено 58 прикладних прапорців у стані «Для всіх» та 5 безпекових прапорців у стані «Тільки для власника» (усього 63), примусовий FORCE RLS діє на всіх таблицях користувацьких і просторових даних, усі регресійні та наскрізні перевірки пройшли на 100%."
+    },
+    {
+      "opdracht": "GitHub Actions (.github/workflows/integratie-ci.yml, 10 сканерів безпеки та .github/workflows/consol-001-uitgave.yml)",
+      "resultaat": "Звірено живу встановлену основу сервера 20261122-171856 @ c85e5d73f104f555021c6a896ffecb70256588d3, перевірено всі 28 нових прапорців за правилом VLAG-001 у маніфесті випуску, пройдено pakketVoorcontrole та перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "ANTIGRAVITY.md",
+    "orchestratie/beleid.json",
+    "orchestratie/BESLUITEN.md",
+    "docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md",
+    "shared/vlaggen.ts",
+    "shared/beheer-journaal.ts",
+    "shared/sleutelkluis.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Оприлюднений пакунок mijn-ruimte-<versie>.tar.gz ніколи не встановлюється автоматично на живий сервер: встановлення запускає виключно власник у розділі Адміністрування → Оновлення з особистим підтвердженням ключем доступу.",
+    "П’ять безпекових прапорців способів входу сторонніх осіб (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) за рішенням власника свідомо залишено в стані «Тільки для власника».",
+    "Жива база даних PostgreSQL 18.6 на сервері власника та захищені критичні політики в розділі kritiek не замінюються на розподілене сховище «Плющ» без окремого наказу власника."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "До досьє, випробувань та реєстру спадкоємності включено виключно публічні метадані координації, відбитки фіксацій змін, відкриті ключі прапорців і штучні тестові дані; жодних паролів, закритих ключів, маркерів доступу чи особистого листування не використано."
+  }
+}

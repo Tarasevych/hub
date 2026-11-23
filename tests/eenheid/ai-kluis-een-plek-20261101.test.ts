@@ -464,6 +464,8 @@ export async function main(): Promise<number> {
   const eigenaarEmail = `ux-ai-vault-${T}@eenheid.test`;
   const sub = `sub-ux-ai-vault-${T}`;
   const oudeEigenaren = (await sys.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner'")).rows.map((r) => String(r.id));
+  const ownerIdVoor = (await sys.query("SELECT data FROM app.records WHERE tbl='owner_identity_v1' AND id='primary'")).rows[0]?.data ?? null;
+  const vlagVoor = (await sys.query("SELECT aan, standaard, gebruikers FROM app.feature_flags WHERE sleutel='tech-ruimtes-v2'")).rows[0] as { aan: boolean; standaard: boolean; gebruikers: string[] } | undefined;
   for (const id of oudeEigenaren) {
     await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"member\"') WHERE tbl='users' AND id=$1", [id]);
   }
@@ -790,8 +792,8 @@ export async function main(): Promise<number> {
         `document.querySelector('[data-agent-diagnose]')?.getAttribute('data-agent-diagnose') === 'BELEID_AGENT_ONBEKEND' && Boolean(document.querySelector('[data-diagnose-actie="onderteken_ai_beleid"]'))`);
 
       const rij4Tekst = await evalJs<string>(`document.querySelector('[data-diagnose-actie="onderteken_ai_beleid"]')?.textContent || ''`);
-      check('Chrome Deel 1.2a: Rij 4 toont primaire knop «Додати Cursor у Доступ ШІ та підписати Passkey»',
-        rij4Tekst.includes('Додати Cursor у Доступ ШІ та підписати Passkey'), rij4Tekst);
+      check('Chrome Deel 1.2a: Rij 4 toont primaire knop «Додати Cursor у Доступ ШІ та підписати ключем доступу»',
+        rij4Tekst.includes('Додати Cursor у Доступ ШІ та підписати ключем доступу'), rij4Tekst);
 
       // Klik op de in-place Passkey-knop! Chrome's Virtual WebAuthn Authenticator tekent met origin https://mcp.tarasevych.com,
       // de browser controleert WYSIWYS beleidHash, en onze watcher draait goedkeur-hulp.mjs verwerk!
@@ -820,7 +822,7 @@ export async function main(): Promise<number> {
           sseCur.berichten.join('').includes('notifications/tools/list_changed'));
       }
 
-      // ------------------------------------------------------------------ Chrome Deel 1.3: Gecombineerde 1-actie rechtenactivatie («Зберегти й активувати (Passkey)»)
+      // ------------------------------------------------------------------ Chrome Deel 1.3: Gecombineerde 1-actie rechtenactivatie («Зберегти й активувати (ключ доступу)»)
       // Zet smalle rechten op actieve grant + wachtende voorkeur (herverbinden=true) + verwijder cursor weer uit keten.json + trek tech-delegatie in:
       // EÉN klik op [data-v2-bewaar="cursor"] moet ALLE DRIE in één actie met één Passkey herstellen!
       await sys.query(
@@ -836,8 +838,8 @@ export async function main(): Promise<number> {
       });
 
       await cdp.send('Page.reload', {}, s);
-      await wachtOp('Gecombineerde 1-actie knop «Зберегти й активувати (Passkey)» zichtbaar',
-        `Boolean(document.querySelector('[data-v2-bewaar="cursor"]')) && (document.querySelector('[data-v2-bewaar="cursor"]')?.textContent || '').includes('Зберегти й активувати (Passkey)')`);
+      await wachtOp('Gecombineerde 1-actie knop «Зберегти й активувати (ключ доступу)» zichtbaar',
+        `Boolean(document.querySelector('[data-v2-bewaar="cursor"]')) && (document.querySelector('[data-v2-bewaar="cursor"]')?.textContent || '').includes('Зберегти й активувати (ключ доступу)')`);
 
       await evalJs(`document.querySelector('[data-v2-bewaar="cursor"]').click()`);
       await wachtOp('1-actie knop werkt tegelijk beleid + actieve grant + tech-delegatie bij naar OK',
@@ -847,7 +849,7 @@ export async function main(): Promise<number> {
       const zichtbaarDom1Actie = Number(await evalJs<string>(`document.querySelector('[data-agent-zichtbaar-echt]')?.getAttribute('data-agent-zichtbaar-echt') || '0'`));
       const voorkeurNa1Actie = await v2st.leesVoorkeur(uid, 'cursor');
       const toolsNa1Actie = await lijstTools('cursor', cur.accessToken);
-      check('Chrome Deel 1.3: «Зберегти й активувати (Passkey)» zet in ÉÉN actie keten seq=1, herverbinden=false op hetzelfde OAuth-token én tech-delegatie AAN',
+      check('Chrome Deel 1.3: «Зберегти й активувати (ключ доступу)» zet in ÉÉN actie keten seq=1, herverbinden=false op hetzelfde OAuth-token én tech-delegatie AAN',
         voorkeurNa1Actie?.herverbinden === false
         && toolsNa1Actie.length === zichtbaarDom1Actie
         && toolsNa1Actie.length >= volledigAantal
@@ -909,7 +911,7 @@ export async function main(): Promise<number> {
         && ghModalStaat.extraIngeklapt
         && ghModalStaat.aantalDoelen === VAULT_DOELEN.length
         && ghModalStaat.doelen === KLUIS_DOELEN
-        && ghModalStaat.knopTekst.includes('Зберегти зашифровано (Passkey)'),
+        && ghModalStaat.knopTekst.includes('Зберегти зашифровано (ключ доступу)'),
         JSON.stringify(ghModalStaat));
 
       // Dien ongeldige Client ID in → specifieke Oekraïense inline fout bij Client ID, geen blinde «відхилено: помилка»!
@@ -1042,8 +1044,17 @@ export async function main(): Promise<number> {
       await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = $1", [uid]).catch(() => undefined);
     }
     for (const cid of clients) await sys.query('DELETE FROM app.mcp_oauth_clients WHERE id = $1', [cid]).catch(() => undefined);
-    await sys.query(`UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2'`).catch(() => undefined);
+    if (vlagVoor) {
+      await sys.query("UPDATE app.feature_flags SET aan = $1, standaard = $2, gebruikers = $3 WHERE sleutel = 'tech-ruimtes-v2'", [vlagVoor.aan, vlagVoor.standaard, vlagVoor.gebruikers]).catch(() => undefined);
+    } else {
+      await sys.query(`UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2'`).catch(() => undefined);
+    }
     trk._vlagCacheLeeg();
+    if (ownerIdVoor) {
+      await sys.query("INSERT INTO app.records (tbl, id, data) VALUES ('owner_identity_v1', 'primary', $1) ON CONFLICT (tbl, id) DO UPDATE SET data = EXCLUDED.data", [ownerIdVoor]).catch(() => undefined);
+    } else {
+      await sys.query("DELETE FROM app.records WHERE tbl = 'owner_identity_v1' AND data->>'email' = $1", [eigenaarEmail]).catch(() => undefined);
+    }
     for (const id of oudeEigenaren) {
       await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl='users' AND id=$1", [id]).catch(() => undefined);
     }

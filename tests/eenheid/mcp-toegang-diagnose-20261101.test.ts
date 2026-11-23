@@ -242,6 +242,7 @@ export async function main(): Promise<number> {
   const T = `${Date.now()}-${randomBytes(2).toString('hex')}`;
   const eigenaarEmail = `mcp-access-${T}@eenheid.test`;
   const sub = `sub-mcp-access-${T}`;
+  const vlagVoor = (await sys.query("SELECT aan, standaard, gebruikers FROM app.feature_flags WHERE sleutel = 'tech-ruimtes-v2'")).rows[0] as { aan: boolean; standaard: boolean; gebruikers: string[] } | undefined;
   const oudeEigenaren = (await sys.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner'")).rows.map((r) => String(r.id));
   for (const id of oudeEigenaren) {
     await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"member\"') WHERE tbl='users' AND id=$1", [id]);
@@ -344,7 +345,7 @@ export async function main(): Promise<number> {
     };
 
     // Zet tech-ruimtes-v2 aan voor eigenaar + GitHub OAuth in beide laden + dienst 'ai' aan
-    await sys.query(`UPDATE app.feature_flags SET aan = true, gebruikers = $1 WHERE sleutel = 'tech-ruimtes-v2'`, [[uid]]);
+    await sys.query(`UPDATE app.feature_flags SET aan = true, standaard = false, gebruikers = $1 WHERE sleutel = 'tech-ruimtes-v2'`, [[uid]]);
     trk._vlagCacheLeeg();
     await aiDienstAan(uid);
     for (const lade of ['prive', 'technisch'] as const) {
@@ -358,8 +359,8 @@ export async function main(): Promise<number> {
     const alleGebruikerAantal = V2_OPTIES.filter((o) => o.status === 'actief' && o.kant === 'gebruiker').length;
     const alleBeheerAantal = V2_OPTIES.filter((o) => o.status === 'actief' && o.kant === 'beheer').length;
     check(`catalogus telt ${alleGebruikerAantal} gebruiker + ${alleBeheerAantal} beheer = ${alleSleutels.length} actieve sleutels`,
-      // UPD-003: + browser_local_ai (LAI-CON-001, #137) на обох боках · aan beide kanten; KLIMOP-014..017: +9 klimop_*:beheer
-      alleGebruikerAantal === 124 && alleBeheerAantal === 89 && alleSleutels.length === 213,
+      // UPD-003: + browser_local_ai; KLIMOP-014..017: +9 klimop_*:beheer; CONSOL-001 (M4): +3 site-leesacties gebruiker (127+89=216)
+      alleGebruikerAantal === 127 && alleBeheerAantal === 89 && alleSleutels.length === 216,
       `${alleGebruikerAantal}+${alleBeheerAantal}=${alleSleutels.length}`);
 
     const cur = await koppelAgent(uid, 'cursor', { kanten: ['gebruiker', 'beheer'], sleutels: alleSleutels });
@@ -813,7 +814,9 @@ export async function main(): Promise<number> {
       await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = $1", [uid]).catch(() => undefined);
     }
     for (const cid of clients) await sys.query('DELETE FROM app.mcp_oauth_clients WHERE id = $1', [cid]).catch(() => undefined);
-    await sys.query(`UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2'`).catch(() => undefined);
+    if (vlagVoor) {
+      await sys.query("UPDATE app.feature_flags SET aan = $1, standaard = $2, gebruikers = $3 WHERE sleutel = 'tech-ruimtes-v2'", [vlagVoor.aan, vlagVoor.standaard, vlagVoor.gebruikers]).catch(() => undefined);
+    }
     trk._vlagCacheLeeg();
     for (const id of oudeEigenaren) {
       await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl='users' AND id=$1", [id]).catch(() => undefined);

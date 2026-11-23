@@ -153,6 +153,8 @@ export async function main(): Promise<number> {
   const opslaanS = (b: B2, weergave: unknown, ruimte?: string) => b.verzoek('id.tarasevych.com', '/api/owner/ui/weergave/save', b.ctxBody('identity', { weergave, ...(ruimte === undefined ? {} : { ruimte }) }));
   const lezenS = (b: B2, ruimte?: string) => b.verzoek('id.tarasevych.com', '/api/owner/ui/weergave', b.ctxBody('identity', ruimte === undefined ? {} : { ruimte }));
   const bootstrap = async (b: B2) => (await b.verzoek('id.tarasevych.com', '/api/owner/ui/preferences', b.ctxBody('identity'))).data;
+  const { beginV1TechKader } = await import('./hulp/v1-tech-kader');
+  const herstelV1Kader = await beginV1TechKader();
   try {
     const b = G.browser();
     await b.aanmelden(`sub-wpa-eig-${T}`, eigenaar, { service: 'identity', intent: 'login' });
@@ -207,6 +209,7 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout (server)', false, String((e as Error)?.stack || e));
   } finally {
+    await herstelV1Kader();
     G.herstel();
     const ids = (await pool.query("select id from app.records where tbl='users' and data->>'email' = any($1)", [[eigenaar, gewoon]])).rows.map((r: { id: string }) => r.id);
     if (ids.length) {

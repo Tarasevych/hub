@@ -76,9 +76,9 @@ export async function main(): Promise<number> {
   check('zwevend venster: taalstrook op een eigen regel', css.includes(".mail-reader-kop-opties {\n  order: 99; flex: 1 0 100%"));
 
   // 4) migratie en uitleg
-  const mig = readFileSync('migrations/0308_posta_vensters_herstel.sql', 'utf8');
+  const mig = readFileSync('migrations/0309_posta_vensters_herstel.sql', 'utf8');
   const oms = /VALUES \('posta-vensters-herstel-v1',\s*'([^']*)',\s*false, false\)\s*ON CONFLICT \(sleutel\) DO NOTHING;/.exec(mig);
-  check('migratie 0308: vlag uit, standaard uit, ON CONFLICT DO NOTHING', Boolean(oms));
+  check('migratie 0309: vlag uit, standaard uit, ON CONFLICT DO NOTHING', Boolean(oms));
   check('omschrijving ≤ 300 tekens', Boolean(oms) && oms![1].length <= 300);
   const u = VLAG_UITLEG['posta-vensters-herstel-v1'];
   check('uitleg aanwezig (naam, wat, wanneer, gevolg)', Boolean(u && u.naam && u.wat && u.wanneer && u.gevolg));

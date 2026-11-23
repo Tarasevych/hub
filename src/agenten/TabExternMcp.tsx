@@ -142,7 +142,7 @@ export default function TabExternMcp({ tr }: { tr: Tr }) {
         <section className='ag-blok is-waarschuwing' role='status' data-extern-witte-lijst='leeg'>
           <header className='ag-blok-kop'>
             <h3 className='ag-blok-titel'><AlertTriangle aria-hidden='true' /> {tr('Спочатку дозвольте хости (білий список власника)', 'Sta eerst hosts toe (witte lijst van de eigenaar)')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Жодне вихідне підключення неможливе, поки список дозволених хостів порожній. Сайт сам його не змінює: власник додає хости нижче й підписує список passkey — root перевіряє підпис і записує файл.',
+            <p className='ag-blok-uitleg'>{tr('Жодне вихідне підключення неможливе, поки список дозволених хостів порожній. Сайт сам його не змінює: власник додає хости нижче й підписує список ключ доступу — root перевіряє підпис і записує файл.',
               'Geen enkele uitgaande verbinding is mogelijk zolang de lijst met toegestane hosts leeg is. De site wijzigt hem niet zelf: de eigenaar voegt hieronder hosts toe en ondertekent de lijst met zijn passkey — root controleert de handtekening en schrijft het bestand.')}</p>
           </header>
           <p className='ag-meta'>{tr('Де: ', 'Waar: ')}<code>{data.witteLijst.bron}</code></p>

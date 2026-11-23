@@ -619,9 +619,10 @@ export async function main(): Promise<number> {
     const sessieId = `m3-sessie-${randomBytes(4).toString('hex')}`;
     try {
       const sysPool = getPool('systeem');
+      const migPool = getPool('migratie');
       await sysPool.query('SELECT 1');
-      await sysPool.query(m0313);
-      await sysPool.query(m0314);
+      await migPool.query(m0313);
+      await migPool.query(m0314);
 
       const rlsRij = (
         await sysPool.query(
