@@ -51,7 +51,7 @@ export function AccountMenuV3Instellingen({ lang }: { lang: 'uk' | 'nl' }) {
       titelNl: 'Compact menu (v2)',
       uitlegUk: 'Згруповані кнопки мови, теми й сеансу з лаконічними підказками.',
       uitlegNl: 'Gegroepeerde knoppen voor taal, thema en sessie met beknopte toelichting.',
-      beschikbaar: v2Aan,
+      beschikbaar: v3Aan || v2Aan,
     },
     {
       id: 'klassiek',

@@ -1215,7 +1215,7 @@ v(`  ініціалізовано=true;
     }
     if(stand.delen){
       const r=Number(stand.delen.actieveRuimtes||0),g=Number(stand.delen.gastSessies||0);
-      оновитиЖивийРядок('sharing',nl?'Actieve werkruimten: '+r+' · actieve gastsessies: '+g:'Активних просторів: '+r+' · чинних гостьових сесій: '+g);
+      оновитиЖивийРядок('sharing',nl?'Actieve werkruimten: '+r+' · actieve gastsessies: '+g:'Активних просторів: '+r+' · чинних гостьових сеансів: '+g);
     }
     if(stand.herstel){
       const pk=Number(stand.herstel.passkeys||0),hc=Number(stand.herstel.herstelcodesOver||0),totp=Boolean(stand.herstel.totpActief),kl=stand.herstel.kluisStand||'onbekend';

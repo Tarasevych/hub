@@ -1,5 +1,5 @@
 // Віха M2 (UI-015A, №167): прапорець `aanmeldmethoden-kaart-v2` та взаємосумісний перемикач режиму подання
-// («Огляд» vNext / «Карткова сітка» UI-015A). За замовчуванням активний поточний вигляд «Огляд» ('vnext').
+// («Огляд» vNext / «Карткова сітка» UI-015A). Типово активний поточний вигляд «Огляд» ('vnext').
 import { useCallback, useEffect, useState } from 'react';
 import { useVlag } from '../functievlag-lezen';
 

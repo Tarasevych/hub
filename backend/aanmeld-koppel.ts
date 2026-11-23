@@ -3,7 +3,7 @@
 // Apple (Sign in with Apple; clientgeheim = ES256-JWT uit de p8-sleutel). Contract: shared/aanmeld-vnext-model.ts.
 // Віха M2 (UI-015B, №168): посилені перевірки формату AANMELD_MICROSOFT_TENANT, синонім AANMELD_APPLE_SERVICES_ID,
 // валідація форми ключів без розкриття таємниць, ротація JWKS kid, константно-часовий nonce, azp/iat/nbf/sub,
-// мережевий ліміт часу AbortController 10 с, одноразовість віджета Telegram та zнімок aanbiedersVoorToegangsSnapshot.
+// мережевий ліміт часу AbortController 10 с, одноразовість вікна входу Telegram та знімок aanbiedersVoorToegangsSnapshot.
 import {
   createHash,
   createHmac,
@@ -531,7 +531,7 @@ function neemTelegramHashIn(hashHex: string, nuMs = Date.now()): boolean {
   return true;
 }
 
-/** Перевірка підпису та свіжості віджета Telegram (відхиляє як застарілі > 10 хв, так і майбутні auth_date > +60 с). */
+/** Перевірка підпису та свіжості вікна входу Telegram (відхиляє як застарілі > 10 хв, так і майбутні auth_date > +60 с). */
 export function telegramControle(query: Record<string, string>, botToken: string): { ok: boolean; vers: boolean } {
   const regel = TELEGRAM_VELDEN.filter((k) => query[k] !== undefined && query[k] !== '')
     .map((k) => `${k}=${query[k]}`)
@@ -657,7 +657,7 @@ function inhoudTid(idToken: unknown): string {
   }
 }
 
-// ------------------------------------------------------------------------------------------------ zнімок для accessSnapshot (UI-015A ↔ UI-015B)
+// ------------------------------------------------------------------------------------------------ знімок для accessSnapshot (UI-015A ↔ UI-015B)
 export type AanbiederSnapshotKaart = {
   id: 'microsoft' | 'apple' | 'discord' | 'telegram';
   status: 'actief' | 'gereed-om-te-koppelen' | 'niet-geconfigureerd' | 'uitgeschakeld';

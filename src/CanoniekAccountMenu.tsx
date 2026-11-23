@@ -436,7 +436,7 @@ export default function CanonicalAccountMenu({
   const menuVoorkeuren = useAccountmenuV3Voorkeuren();
   const gekozenMenuStijl = menuVoorkeuren.indeling;
   const am3 = am3Vlag && (gekozenMenuStijl === 'orbita' || gekozenMenuStijl === 'kaart');
-  const am2 = !am3 && ((am3Vlag && gekozenMenuStijl === 'v2' && am2Vlag) || (!am3Vlag && am2Vlag && gekozenMenuStijl !== 'klassiek'));
+  const am2 = !am3 && ((am3Vlag && gekozenMenuStijl === 'v2') || (!am3Vlag && am2Vlag && gekozenMenuStijl !== 'klassiek'));
   const mobielVenster = useMobielAccountVenster();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
   // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
