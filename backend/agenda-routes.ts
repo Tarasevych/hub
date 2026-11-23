@@ -13,7 +13,7 @@ import { meld } from './melder';
 import { denyMutation, rejectForeignOwnerUserId } from './rbac';
 import { AGENDA_FOUT, geldigeTijdzone } from '../shared/agenda-model';
 import { AGENDA_CALDAV_SCHRIJVEN_ONTBREEKT } from '../shared/agenda-caldav-model';
-import { ICS_INTERVAL_KEUZES, ICS_MAX_BYTES, ICS_MIN_MINUTEN, ICS_SCHEMAS, ICS_TIMEOUT_MS } from '../shared/agenda-ics-model';
+import { ICS_INTERVAL_KEUZES, ICS_MAX_BYTES, ICS_MIN_MINUTEN, ICS_SCHEMAS, ICS_TIMEOUT_MS, bouwIcsGebeurtenis } from '../shared/agenda-ics-model';
 import { AGENDA_SCHRIJF_SCOPE, googleSuiteAgendaScopeStatusVoorEmail, googleSuiteStartAgendaUitbreiding } from './google-suite-inrichting';
 import {
   agendaLijst, gebeurtenisAanmaken, gebeurtenisAntwoord, gebeurtenisDeelnemers, gebeurtenisLees,
@@ -21,9 +21,19 @@ import {
 } from './agenda-google';
 import { agendaItems, geldigeSleutel } from './agenda-spiegel';
 import { caldavKoppelen, caldavLijst, caldavOphalen, caldavRondeVoorEigenaar, caldavVerwijderen } from './agenda-caldav';
+import { caldavBewaarGebeurtenis, caldavControleerSchrijfrecht, caldavWisGebeurtenis, isAgendaKoppelingenVlagAan } from './agenda-caldav-schrijven';
+import {
+  koppelNotitieAanEvent,
+  koppelingenVoorEvent,
+  leesEnWisContactSprong,
+  maakDeelnemerSprong,
+  ontkoppelNotitieEvent,
+} from './agenda-notities-brug';
+import { notitieMaken, notitiesLijst } from './notities-vnext';
+import { schoneInvoer } from '../shared/notities-vnext-model';
 import { icsLijst, icsOphalen, icsRondeVoorEigenaar, icsSchakelen, icsToevoegen, icsVerwijderen } from './agenda-ics';
 import { synchroniseerAgendaVoorEigenaar } from './google-suite-agenda-sync';
-import { ladePoort, ruimteKop } from './ruimte-cloud-agenda';
+import { ladeOf, ladePoort, ruimteKop } from './ruimte-cloud-agenda';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 
 type User = { id: string; status: string; email?: string; sub?: string; name?: string };
@@ -34,13 +44,14 @@ type Context = { event: Record<string, unknown>; body: unknown; params: Record<s
 
 /** De agenda hoort bij de hub, maar de cloudpagina (en de MCP-hulpmiddelen die daar een sessie opbouwen) mag er ook bij. */
 const TOEGESTANE_DIENSTEN = ['hub', 'cloud'];
+const TOEGESTANE_SPRONG_LEES_DIENSTEN = ['hub', 'cloud', 'mail'];
 const lichaamVan = (body: unknown) => (body && typeof body === 'object' ? (body as Record<string, unknown>) : {});
 const kort = (value: unknown, max = 500) => String(value ?? '').replace(/\u0000/g, '').trim().slice(0, max);
 
-const auth = async (authorize: Authorize, ctx: Context) => {
+const auth = async (authorize: Authorize, ctx: Context, diensten: readonly string[] = TOEGESTANE_DIENSTEN) => {
   const uitslag = await authorize(ctx.event, ctx.body);
   if ('errorCode' in uitslag) return null;
-  if (!TOEGESTANE_DIENSTEN.includes(uitslag.service) || uitslag.user.status !== 'approved') return null;
+  if (!diensten.includes(uitslag.service) || uitslag.user.status !== 'approved') return null;
   return uitslag;
 };
 const ctxVan = (gebruiker: AuthSuccess): AgendaContext => ({ ownerUserId: gebruiker.user.id, email: String(gebruiker.user.email || '') });
@@ -188,6 +199,7 @@ export const createAgendaRoutes = (authorize: Authorize) => ladePoort('agenda', 
       // Eerlijkheid in één oogopslag, ook voor een andere cliënt dan de pagina: per aanbieder wat vandaag
       // werkelijk kan, en bij alles wat niet kan de REDEN (zie agendaMogelijkheden hierboven).
       mogelijkheden: agendaMogelijkheden,
+      agendaKoppelingenVlag: await isAgendaKoppelingenVlagAan(context.ownerUserId),
       ...('fout' in lijst ? { agendasFout: lijst.fout } : {}),
     });
   }],
@@ -407,5 +419,219 @@ export const createAgendaRoutes = (authorize: Authorize) => ladePoort('agenda', 
     if (geweigerd) return geweigerd;
     const ok = await caldavVerwijderen(gebruiker.user.id, kort(lichaamVan(ctx.body).id, 120));
     return ok ? json({ ok: true }) : error('CALDAV_ACCOUNT_ONBEKEND', 404);
+  }],
+
+  // -------------------------------------------------------------------------------------- CalDAV tweerichting (onder vlag agenda-koppelingen-v1)
+  'POST /api/owner/agenda/caldav/schrijf-proef': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const geweigerd = mutatieGeweigerd(gebruiker, ctx.body);
+    if (geweigerd) return geweigerd;
+    const body = lichaamVan(ctx.body);
+    const uitslag = await caldavControleerSchrijfrecht(
+      gebruiker.user.id,
+      kort(body.accountId, 120),
+      kort(body.agendaUrl, 2000),
+    );
+    return json(uitslag, uitslag.ok ? 200 : uitslag.fout === 'CALDAV_GEEN_SCHRIJFRECHT' || uitslag.fout === 'CALDAV_VLAG_UIT' ? 403 : 400);
+  }],
+
+  'POST /api/owner/agenda/caldav/bewaar-item': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const geweigerd = mutatieGeweigerd(gebruiker, ctx.body);
+    if (geweigerd) return geweigerd;
+    const body = lichaamVan(ctx.body);
+    const sleutel = sleutelVan(body);
+    if (!sleutel) return error(AGENDA_FOUT.sleutel, 400);
+    const uitslag = await caldavBewaarGebeurtenis(gebruiker.user.id, {
+      sleutel,
+      accountId: body.accountId,
+      agendaUrl: body.agendaUrl,
+      uid: body.uid,
+      bronHref: body.bronHref,
+      etag: body.etag,
+      negeerVersie: body.negeerVersie === true,
+      vorm: body.vorm ?? body,
+      organisatorEmail: String(gebruiker.user.email || ''),
+    });
+    if (uitslag.ok) return json(uitslag);
+    const status = uitslag.uitslag === 'conflict' || uitslag.uitslag === 'bezig' ? 409 : uitslag.uitslag === 'weg' ? 404 : uitslag.uitslag === 'geen-recht' ? 403 : 400;
+    return json(uitslag, status);
+  }],
+
+  'POST /api/owner/agenda/caldav/wis-item': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const geweigerd = mutatieGeweigerd(gebruiker, ctx.body);
+    if (geweigerd) return geweigerd;
+    const body = lichaamVan(ctx.body);
+    const sleutel = sleutelVan(body);
+    if (!sleutel) return error(AGENDA_FOUT.sleutel, 400);
+    const uitslag = await caldavWisGebeurtenis(gebruiker.user.id, {
+      sleutel,
+      accountId: body.accountId,
+      agendaUrl: body.agendaUrl,
+      uid: body.uid,
+      bronHref: body.bronHref,
+      etag: body.etag,
+      negeerVersie: body.negeerVersie === true,
+    });
+    if (uitslag.ok) return json(uitslag);
+    const status = uitslag.uitslag === 'conflict' || uitslag.uitslag === 'bezig' ? 409 : uitslag.uitslag === 'geen-recht' ? 403 : 400;
+    return json(uitslag, status);
+  }],
+
+  // -------------------------------------------------------------------------------------- .ics-uitvoer (RFC 5545) en snelle sprongen
+  'POST /api/owner/agenda/afspraak/export-ics': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const body = lichaamVan(ctx.body);
+    const itemId = kort(body.itemId, 1200);
+    let bron: Record<string, unknown> | null = null;
+    if (itemId) {
+      const [ics, caldav] = await Promise.all([icsLijst(gebruiker.user.id), caldavLijst(gebruiker.user.id)]);
+      const naamKaart = new Map<string, { naam: string; bron: 'ics' | 'caldav' }>();
+      for (const rij of ics) naamKaart.set(`${rij.id}|`, { naam: rij.naam || rij.adres, bron: 'ics' });
+      for (const rij of caldav) {
+        naamKaart.set(`${rij.id}|`, { naam: rij.naam || rij.adres, bron: 'caldav' });
+        for (const ag of rij.agendas) naamKaart.set(`${rij.id}|${ag.url}`, { naam: ag.naam || rij.naam || rij.adres, bron: 'caldav' });
+      }
+      const { items } = await agendaItems(gebruiker.user.id, {
+        schrijfbaar: false,
+        naamVan: (abonnementId, agendaUrl) => naamKaart.get(`${abonnementId}|${agendaUrl}`) || naamKaart.get(`${abonnementId}|`) || { naam: '', bron: 'ics' },
+      });
+      const gevonden = items.find((i) => i.id === itemId);
+      if (!gevonden) return error(AGENDA_FOUT.weg, 404);
+      bron = {
+        uid: gevonden.caldavUid || gevonden.id.split(':').slice(2).join(':') || gevonden.id,
+        titel: gevonden.titel,
+        beschrijving: gevonden.beschrijving,
+        locatie: gevonden.locatie,
+        begin: gevonden.begin,
+        einde: gevonden.einde,
+        heleDag: gevonden.heleDag,
+        rrule: gevonden.herhaling,
+        status: gevonden.status,
+        deelnemers: gevonden.deelnemers,
+        url: gevonden.koppeling,
+      };
+    } else if (body.vorm && typeof body.vorm === 'object') {
+      bron = { uid: kort(body.uid, 300) || `afspraak-${Date.now()}@mijn-ruimte.local`, vorm: body.vorm };
+    }
+    if (!bron) return error('AGENDA_ITEM_VEREIST', 400);
+    const icsTekst = bouwIcsGebeurtenis(bron, kort(body.kalenderNaam, 200));
+    const ruweNaam = String(bron.titel || (bron.vorm as { titel?: string } | undefined)?.titel || 'afspraak')
+      .normalize('NFC')
+      .replace(/[^\p{L}\p{N}_-]+/gu, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 60) || 'afspraak';
+    await auditToevoegen({
+      ownerId: gebruiker.user.id,
+      actorId: gebruiker.user.id,
+      action: 'agenda.ics.geexporteerd',
+      type: 'agenda',
+      result: 'ok',
+      details: { bron: itemId ? itemId.split(':')[0] : 'vorm', ruimte: ladeOf(gebruiker.user.id).ruimte },
+    }).catch(() => undefined);
+    return json({ ok: true, bestandsnaam: `${ruweNaam}.ics`, ics: icsTekst });
+  }],
+
+  'POST /api/owner/agenda/deelnemer/sprong': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const geweigerd = rejectForeignOwnerUserId(gebruiker.user, ctx.body);
+    if (geweigerd) return geweigerd;
+    const body = lichaamVan(ctx.body);
+    const uitslag = await maakDeelnemerSprong(ladeOf(gebruiker.user.id), body.email, body.doel);
+    return uitslag.ok ? json(uitslag) : json(uitslag, 400);
+  }],
+
+  'POST /api/owner/agenda/deelnemer/sprong-lees': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx, TOEGESTANE_SPRONG_LEES_DIENSTEN);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const body = lichaamVan(ctx.body);
+    const lade = ladeOf(gebruiker.user.id);
+    const uitslag = await leesEnWisContactSprong(gebruiker.user.id, lade.ruimte, body.sprongId);
+    return uitslag.ok ? json(uitslag) : json(uitslag, uitslag.fout === 'SPRONG_ONBEKEND' ? 404 : 400);
+  }],
+
+  'POST /api/owner/agenda/notities/lijst': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const body = lichaamVan(ctx.body);
+    const lade = ladeOf(gebruiker.user.id);
+    const eventId = kort(body.eventId, 1200);
+    const [gekoppelde, lijst] = await Promise.all([
+      eventId ? koppelingenVoorEvent(lade, eventId) : Promise.resolve([]),
+      notitiesLijst(lade, { weergave: 'alle', limiet: 40 }).catch(() => ({ notities: [] })),
+    ]);
+    return json({
+      ok: true,
+      gekoppelde,
+      beschikbareNotities: lijst.notities.map((n) => ({ id: n.id, titel: n.titel, soort: n.soort, gewijzigdOp: n.gewijzigdOp })),
+    });
+  }],
+
+  'POST /api/owner/agenda/notities/koppelen': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const geweigerd = rejectForeignOwnerUserId(gebruiker.user, ctx.body) || denyMutation(gebruiker.user, 'workspace.write');
+    if (geweigerd) return geweigerd;
+    const body = lichaamVan(ctx.body);
+    if (body.bevestigd !== true) return error('BEVESTIGING_VEREIST', 400);
+    const sleutel = sleutelVan(body);
+    if (!sleutel) return error(AGENDA_FOUT.sleutel, 400);
+    const lade = ladeOf(gebruiker.user.id);
+    const actor = kort(gebruiker.user.email || gebruiker.user.id, 80);
+
+    let doelNotitieId = kort(body.notitieId, 80);
+    if (!doelNotitieId && body.maakNieuw === true) {
+      const schoon = schoneInvoer({
+        titel: kort(body.titel, 300) || 'Нотатка зустрічі',
+        inhoud: typeof body.inhoud === 'string' ? body.inhoud : '',
+        soort: body.soort === 'lijst' ? 'lijst' : 'tekst',
+        kleur: 'geen',
+        etiketten: ['agenda'],
+        mapId: null,
+        vast: false,
+      });
+      if (!schoon.ok) return error(schoon.fout, 400);
+      const gemaakt = await notitieMaken(lade, schoon.invoer, { auteur: actor, herkomst: { bron: 'agenda', eventId: kort(body.eventId, 300) } });
+      if ('fout' in gemaakt) return error(gemaakt.fout, 400);
+      doelNotitieId = gemaakt.id;
+    }
+
+    const uit = await koppelNotitieAanEvent(lade, {
+      notitieId: doelNotitieId,
+      eventId: body.eventId,
+      agendaId: body.agendaId,
+      idempotentieSleutel: sleutel,
+      bevestigd: body.bevestigd,
+      actor,
+    });
+    if (!uit.ok) return error(uit.fout, uit.fout === 'NIET_GEVONDEN' || uit.fout === 'EVENT_NIET_GEVONDEN' ? 404 : 400);
+    return json({
+      ok: true,
+      koppeling: uit.koppeling,
+      notitieId: doelNotitieId,
+      doelPad: `/notities?open_item_id=${encodeURIComponent(doelNotitieId)}`,
+    });
+  }],
+
+  'POST /api/owner/agenda/notities/ontkoppelen': [async (ctx: Context) => {
+    const gebruiker = await auth(authorize, ctx);
+    if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
+    const geweigerd = rejectForeignOwnerUserId(gebruiker.user, ctx.body) || denyMutation(gebruiker.user, 'workspace.write');
+    if (geweigerd) return geweigerd;
+    const body = lichaamVan(ctx.body);
+    const lade = ladeOf(gebruiker.user.id);
+    const ok = await ontkoppelNotitieEvent(lade, {
+      notitieId: body.notitieId,
+      eventId: body.eventId,
+      actor: kort(gebruiker.user.email || gebruiker.user.id, 80),
+    });
+    return ok ? json({ ok: true }) : error('NIET_GEVONDEN', 404);
   }],
 });

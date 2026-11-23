@@ -71,15 +71,15 @@ export async function main(): Promise<number> {
       zonder.find((m) => m.id === 'eigen-agent')?.staat === 'aansluiten' && met.find((m) => m.id === 'eigen-agent')?.staat === 'werkt');
     check('16a een agent zonder mail.read maakt de motor niet «werkt» (geen valse groene pastille)',
       motorenMetStand([agent({ allowedMailRead: false, scopes: ['files.read'] })]).find((m) => m.id === 'eigen-agent')?.staat === 'aansluiten');
-    check('16a niets imiteren: een externe dienst zonder koppeling is en blijft «ще немає», en heeft GEEN knop',
-      met.filter((m) => m.id !== 'eigen-agent').every((m) => m.staat === 'nog-niet' && m.aansluitenHref === '')
+    check('16a niets imiteren: zonder eigen sleutel of goedgekeurde gedeelde motor staat elke vertaaldienst op «aansluiten» (nooit op «werkt»)',
+      met.filter((m) => m.id !== 'eigen-agent').every((m) => m.staat === 'aansluiten' && m.aansluitenHref === '/ai')
       && VERTAAL_MOTOREN.filter((m) => m.staat === 'nog-niet').every((m) => m.aansluitenHref === '')
       && zonder.filter((m) => m.staat === 'aansluiten').every((m) => m.aansluitenHref !== ''),
       met.map((m) => `${m.id}=${m.staat}${m.aansluitenHref ? '+knop' : ''}`).join(','));
     check('16a de knop «Підключити» wijst naar «Доступ ШІ», net als de andere integratiekaarten',
       met.find((m) => m.id === 'eigen-agent')?.aansluitenHref === '/ai' || zonder.find((m) => m.id === 'eigen-agent')?.aansluitenHref === '/ai');
-    check('16a de SERVER bepaalt de stand (de balk kan «працює» niet zelf verzinnen): /state stuurt `motoren` mee',
-      /motoren: motorenMetStand\(priveAgents\)/.test(routes));
+    check('16a de SERVER bepaalt de stand uit privé-agenten, gedeelde motoren en eigen sleutels: /state stuurt `motoren` mee',
+      /motoren: motorenMetStand\(priveAgents,\s*false,\s*dienstMotoren,\s*eigenSleutels\)/.test(routes));
     check('16a de balk toont de kaarten met pastille, uitleg en één knop; bij «ще немає» staat er expliciet dat er niets is',
       /data-testid="ai-vb-motoren"/.test(balk) && /data-motor-staat=\{motor\.staat\}/.test(balk)
       && /motor\.staat === 'aansluiten' && motor\.aansluitenHref \?/.test(balk) && balk.includes('Підключення ще не написано')

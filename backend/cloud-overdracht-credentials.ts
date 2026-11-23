@@ -1,6 +1,6 @@
-/** M2 token broker. Uses existing Google Suite B+ grant; other providers remain fail-closed
- * until their own correctly-scoped encrypted OAuth grants are implemented and authorized.
- * Must be used ONLY with cloud ladePoort session context, never based on a user-supplied space.
+/** Посередник маркерів доступу хмарних передач. Google Диск використовує чинний контур Google Suite;
+ * інші постачальники працюють через зашифроване сховище M4 за прапорцем cloud-m4-koppelingen-v1.
+ * Tokenbemiddelaar voor cloudoverdrachten binnen de gecontroleerde cloudsessie-lade.
  */
 import {googleSuiteDriveProviderSnapshot,googleSuitePrincipalAccessToken} from './google-suite-inrichting';
 import {ladeOf} from './ruimte-cloud-agenda';
@@ -11,11 +11,12 @@ import {LiveOAuthProviders} from './cloud-verbinding-m4-providers';
 import {CloudMultiAccountTokenBroker} from './cloud-verbinding-m4-token';
 import {cloudOAuthM4Config} from './cloud-verbinding-m4-config';
 import {assertCloudProviderEnabled} from './cloud-m6-aanbieder-gate';
+import {cloudVlagAan} from './cloud-vlaggen-poort';
 const m4Broker=new CloudMultiAccountTokenBroker(new PostgresCloudConnections(),new LiveOAuthProviders(),cloudOAuthM4Config);
 export const cloudTransportToken:CloudTokenResolver=async(ctx:CloudGrantContext,operation:'read'|'write')=>{
  if(ladeOf(ctx.userId).ruimte!==ctx.space)throw new CloudTransportError('CLOUD_TOKEN_SPACE_MISMATCH',403);
  if(ctx.provider!=='google-drive'){
-  if(process.env.CLOUD_M4_CONNECTIONS_STAGING!=='enabled')throw new CloudTransportError('CLOUD_PROVIDER_OAUTH_NOT_CONNECTED',409);
+  if(process.env.CLOUD_M4_CONNECTIONS_STAGING!=='enabled'&&!(await cloudVlagAan('cloud-m4-koppelingen-v1',ctx.userId)))throw new CloudTransportError('CLOUD_PROVIDER_OAUTH_NOT_CONNECTED',409);
   await assertCloudProviderEnabled(ctx.provider,'operate');
   try{return await m4Broker.forOperation({owner:ctx.userId,space:ctx.space},ctx.accountId,ctx.provider,operation);}
   catch{throw new CloudTransportError('CLOUD_M4_GRANT_UNAVAILABLE_OR_REAUTH_REQUIRED',403);}

@@ -12,6 +12,7 @@ import { technischeRijen } from './details';
 import { toonWaarde } from './labels';
 import { actiesVoor, type Beschikbaar } from './acties';
 import { WeergaveEtappe3, type WeergaveExtra } from './Etappe3'; /* етап 3: Claude Opus 5.5 (High) через Antigravity */
+import { BIJLAGE_MODUS_LABELS, type BijlageWeergaveWissel } from './weergave-modus';
 import './weergave.css';
 
 export type WeergaveItem = { naam: string; contentType: string; grootte: number };
@@ -64,6 +65,10 @@ export type KopProps = {
   kopElement?: 'header' | 'div';
   /** етап 4: не показувати власну кнопку «Закрити», коли її вже має рамка вікна (спільне вікно файла) */
   zonderSluiten?: boolean;
+  /** М-3: взаємосумісний перемикач між 3 режимами шапки переглядача (gedeeld / v2 / klassiek) */
+  weergaveWissel?: BijlageWeergaveWissel | null;
+  /** М-3: створення нотатки в notities-vnext з поточного вкладення */
+  onNotitieUitBijlage?: (() => void) | null;
   onSluit: () => void;
 };
 
@@ -178,7 +183,7 @@ export function WeergaveKop(p: KopProps) {
               </div>
             )}
           </div>
-          {(overig.length > 0 || ctxMenu.length > 0 || p.zoom || papier) && (
+          {(overig.length > 0 || ctxMenu.length > 0 || p.zoom || papier || Boolean(p.onNotitieUitBijlage) || Boolean(p.weergaveWissel && p.weergaveWissel.opties.length > 1)) && (
             <div className='weergave-menu-anker' ref={meer.ref}>
               <button type='button' className='weergave-knop rond' aria-label={t('Ще дії', 'Meer acties')} title={t('Ще дії', 'Meer acties')} aria-expanded={meer.open} onClick={() => { info.setOpen(false); meer.setOpen(!meer.open); }}><MoreHorizontal aria-hidden='true' /></button>
               {meer.open && (
@@ -190,7 +195,32 @@ export function WeergaveKop(p: KopProps) {
                   </div>}
                   {overig.map((a) => <button key={a.sleutel} type='button' role='menuitem' onClick={() => { meer.setOpen(false); a.uitvoeren(); }}>{kies(p.taal, a.label)}</button>)}
                   {ctxMenu.map((a) => <button key={`ctx:${a.sleutel}`} type='button' role='menuitem' onClick={() => { meer.setOpen(false); a.uitvoeren(); }}>{kies(p.taal, a.label)}</button>)}
+                  {p.onNotitieUitBijlage && (
+                    <button type='button' role='menuitem' data-weergave-notitie='' onClick={() => { meer.setOpen(false); p.onNotitieUitBijlage!(); }}>
+                      {t('Створити нотатку з вкладення', 'Notitie uit bijlage maken')}
+                    </button>
+                  )}
                   {papier && <button type='button' role='menuitemcheckbox' aria-checked={donker} className='weergave-keuze' onClick={() => { const n = !donker; setDonker(n); bewaarDonker(n); }}>{donker ? '✓ ' : ''}{donker ? t('Темні сторінки документа · повернути оригінал', 'Donkere documentpagina’s · origineel tonen') : t('Темні сторінки документа', 'Donkere documentpagina’s')}</button>}
+                  {p.weergaveWissel && p.weergaveWissel.opties.length > 1 && (
+                    <div className='weergave-modus-groep' role='group' aria-label={t('Режим переглядача', 'Weergavestijl')}>
+                      {p.weergaveWissel.opties.map((modus) => {
+                        const gekozen = p.weergaveWissel!.huidig === modus;
+                        return (
+                          <button
+                            key={`modus:${modus}`}
+                            type='button'
+                            role='menuitemradio'
+                            aria-checked={gekozen}
+                            data-weergave-modus={modus}
+                            className='weergave-keuze'
+                            onClick={() => { meer.setOpen(false); p.weergaveWissel!.onKies(modus); }}
+                          >
+                            {gekozen ? '✓ ' : ''}{kies(p.taal, BIJLAGE_MODUS_LABELS[modus])}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

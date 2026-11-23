@@ -157,7 +157,7 @@ const itemUitSpiegel = (rij: Record<string, unknown> & { id: string }, schrijfba
 export type ExterneRij = {
   abonnementId: string; agendaUrl: string; uid: string; titel: string; locatie: string; beschrijving: string;
   begin: string; einde: string; heleDag: boolean; tijdzone: string; rrule: string; status: string; reeks: number;
-  gewijzigdOp: string; url: string;
+  gewijzigdOp: string; url: string; bronHref?: string; etag?: string;
 };
 /**
  * SEC-002 (integraties-07): hoeveel rijen één vervanging hoogstens schrijft, wat de aanroeper ook aanlevert. Gelijk aan
@@ -202,23 +202,46 @@ export async function externeSpiegelVervang(ownerUserId: string, abonnementId: s
     for (let start = 0; start < alle.length; start += EXTERNE_SPIEGEL_PAKKET) {
       const deel = alle.slice(start, start + EXTERNE_SPIEGEL_PAKKET);
       const kolom = <T>(waarde: (rij: ExterneRij) => T): T[] => deel.map(([, rij]) => waarde(rij));
-      await klant.query(
-        `INSERT INTO app.agenda_externe_gebeurtenis
-           (user_id, ruimte, abonnement_id, agenda_url, uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url, gezien_op)
-         SELECT $1::text, $4::text, $2::text, $3::text, r.uid, r.titel, r.locatie, r.beschrijving, r.begin_waarde, r.eind_waarde, r.hele_dag, r.tijdzone, r.rrule, r.status, r.reeks, r.gewijzigd_op, r.url, now()
-           FROM unnest($5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], $11::boolean[], $12::text[], $13::text[], $14::text[], $15::integer[], $16::text[], $17::text[])
-             AS r(uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url)
-         ON CONFLICT (user_id, abonnement_id, agenda_url, uid) DO UPDATE SET
-           titel = EXCLUDED.titel, locatie = EXCLUDED.locatie, beschrijving = EXCLUDED.beschrijving,
-           begin_waarde = EXCLUDED.begin_waarde, eind_waarde = EXCLUDED.eind_waarde, hele_dag = EXCLUDED.hele_dag,
-           tijdzone = EXCLUDED.tijdzone, rrule = EXCLUDED.rrule, status = EXCLUDED.status, reeks = EXCLUDED.reeks,
-           gewijzigd_op = EXCLUDED.gewijzigd_op, url = EXCLUDED.url, gezien_op = now()`,
-        [ownerUserId, abonnementId, agendaUrl, lade.ruimte,
-          deel.map(([uid]) => uid), kolom((rij) => kort(rij.titel, 300)), kolom((rij) => kort(rij.locatie, 500)), kolom((rij) => kort(rij.beschrijving, 4000)),
-          kolom((rij) => kort(rij.begin, 40)), kolom((rij) => kort(rij.einde, 40)), kolom((rij) => Boolean(rij.heleDag)), kolom((rij) => kort(rij.tijdzone, 80)),
-          kolom((rij) => kort(rij.rrule, 600)), kolom((rij) => kort(rij.status, 40)), kolom((rij) => Math.min(INT4_MAX, Math.max(0, Math.trunc(getal(rij.reeks))))),
-          kolom((rij) => kort(rij.gewijzigdOp, 40)), kolom((rij) => (/^https:\/\//i.test(kort(rij.url, 1600)) ? kort(rij.url, 1600) : ''))],
-      );
+      const basisParams = [
+        ownerUserId, abonnementId, agendaUrl, lade.ruimte,
+        deel.map(([uid]) => uid), kolom((rij) => kort(rij.titel, 300)), kolom((rij) => kort(rij.locatie, 500)), kolom((rij) => kort(rij.beschrijving, 4000)),
+        kolom((rij) => kort(rij.begin, 40)), kolom((rij) => kort(rij.einde, 40)), kolom((rij) => Boolean(rij.heleDag)), kolom((rij) => kort(rij.tijdzone, 80)),
+        kolom((rij) => kort(rij.rrule, 600)), kolom((rij) => kort(rij.status, 40)), kolom((rij) => Math.min(INT4_MAX, Math.max(0, Math.trunc(getal(rij.reeks))))),
+        kolom((rij) => kort(rij.gewijzigdOp, 40)), kolom((rij) => (/^https:\/\//i.test(kort(rij.url, 1600)) ? kort(rij.url, 1600) : '')),
+      ];
+      await klant.query('SAVEPOINT spiegel_met_caldav_meta');
+      try {
+        await klant.query(
+          `INSERT INTO app.agenda_externe_gebeurtenis
+             (user_id, ruimte, abonnement_id, agenda_url, uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url, bron_href, etag, gezien_op)
+           SELECT $1::text, $4::text, $2::text, $3::text, r.uid, r.titel, r.locatie, r.beschrijving, r.begin_waarde, r.eind_waarde, r.hele_dag, r.tijdzone, r.rrule, r.status, r.reeks, r.gewijzigd_op, r.url, r.bron_href, r.etag, now()
+             FROM unnest($5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], $11::boolean[], $12::text[], $13::text[], $14::text[], $15::integer[], $16::text[], $17::text[], $18::text[], $19::text[])
+               AS r(uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url, bron_href, etag)
+           ON CONFLICT (user_id, abonnement_id, agenda_url, uid) DO UPDATE SET
+             titel = EXCLUDED.titel, locatie = EXCLUDED.locatie, beschrijving = EXCLUDED.beschrijving,
+             begin_waarde = EXCLUDED.begin_waarde, eind_waarde = EXCLUDED.eind_waarde, hele_dag = EXCLUDED.hele_dag,
+             tijdzone = EXCLUDED.tijdzone, rrule = EXCLUDED.rrule, status = EXCLUDED.status, reeks = EXCLUDED.reeks,
+             gewijzigd_op = EXCLUDED.gewijzigd_op, url = EXCLUDED.url, bron_href = EXCLUDED.bron_href, etag = EXCLUDED.etag, gezien_op = now()`,
+          [...basisParams, kolom((rij) => kort(rij.bronHref, 2000)), kolom((rij) => kort(rij.etag, 300))],
+        );
+        await klant.query('RELEASE SAVEPOINT spiegel_met_caldav_meta');
+      } catch (invoerFout) {
+        await klant.query('ROLLBACK TO SAVEPOINT spiegel_met_caldav_meta');
+        if ((invoerFout as { code?: string } | null)?.code !== '42703') throw invoerFout;
+        await klant.query(
+          `INSERT INTO app.agenda_externe_gebeurtenis
+             (user_id, ruimte, abonnement_id, agenda_url, uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url, gezien_op)
+           SELECT $1::text, $4::text, $2::text, $3::text, r.uid, r.titel, r.locatie, r.beschrijving, r.begin_waarde, r.eind_waarde, r.hele_dag, r.tijdzone, r.rrule, r.status, r.reeks, r.gewijzigd_op, r.url, now()
+             FROM unnest($5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], $11::boolean[], $12::text[], $13::text[], $14::text[], $15::integer[], $16::text[], $17::text[])
+               AS r(uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url)
+           ON CONFLICT (user_id, abonnement_id, agenda_url, uid) DO UPDATE SET
+             titel = EXCLUDED.titel, locatie = EXCLUDED.locatie, beschrijving = EXCLUDED.beschrijving,
+             begin_waarde = EXCLUDED.begin_waarde, eind_waarde = EXCLUDED.eind_waarde, hele_dag = EXCLUDED.hele_dag,
+             tijdzone = EXCLUDED.tijdzone, rrule = EXCLUDED.rrule, status = EXCLUDED.status, reeks = EXCLUDED.reeks,
+             gewijzigd_op = EXCLUDED.gewijzigd_op, url = EXCLUDED.url, gezien_op = now()`,
+          basisParams,
+        );
+      }
     }
     await klant.query('COMMIT');
     return alle.length;
@@ -262,6 +285,87 @@ export async function externeSpiegelWis(ownerUserId: string, abonnementId: strin
   await sys().query(`DELETE FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', ladeOf(ownerUserId), 1)} AND abonnement_id = $2`, [ownerUserId, abonnementId]);
 }
 
+export async function externeSpiegelLeesEen(ownerUserId: string, abonnementId: string, agendaUrl: string, uid: string): Promise<ExterneRij | null> {
+  const lade = ladeOf(ownerUserId);
+  const res = await sys().query(
+    `SELECT * FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', lade, 1)} AND abonnement_id = $2 AND agenda_url = $3 AND uid = $4 LIMIT 1`,
+    [ownerUserId, kort(abonnementId, 120), kort(agendaUrl, 2000), kort(uid, 500)],
+  );
+  const r = res.rows[0] as Record<string, unknown> | undefined;
+  if (!r) return null;
+  return {
+    abonnementId: kort(r.abonnement_id, 120),
+    agendaUrl: kort(r.agenda_url, 2000),
+    uid: kort(r.uid, 500),
+    titel: kort(r.titel, 300),
+    locatie: kort(r.locatie, 500),
+    beschrijving: kort(r.beschrijving, 4000),
+    begin: kort(r.begin_waarde, 40),
+    einde: kort(r.eind_waarde, 40),
+    heleDag: Boolean(r.hele_dag),
+    tijdzone: kort(r.tijdzone, 80),
+    rrule: kort(r.rrule, 600),
+    status: kort(r.status, 40),
+    reeks: Math.max(0, Math.trunc(getal(r.reeks))),
+    gewijzigdOp: kort(r.gewijzigd_op, 40),
+    url: kort(r.url, 1600),
+    bronHref: kort(r.bron_href, 2000),
+    etag: kort(r.etag, 300),
+  };
+}
+
+export async function externeSpiegelZetEen(ownerUserId: string, rij: ExterneRij): Promise<void> {
+  const lade = ladeOf(ownerUserId);
+  const url = /^https:\/\//i.test(kort(rij.url, 1600)) ? kort(rij.url, 1600) : '';
+  const reeks = Math.min(INT4_MAX, Math.max(0, Math.trunc(getal(rij.reeks))));
+  try {
+    await sys().query(
+      `INSERT INTO app.agenda_externe_gebeurtenis
+         (user_id, ruimte, abonnement_id, agenda_url, uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url, bron_href, etag, gezien_op)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, now())
+       ON CONFLICT (user_id, abonnement_id, agenda_url, uid) DO UPDATE SET
+         ruimte = EXCLUDED.ruimte, titel = EXCLUDED.titel, locatie = EXCLUDED.locatie, beschrijving = EXCLUDED.beschrijving,
+         begin_waarde = EXCLUDED.begin_waarde, eind_waarde = EXCLUDED.eind_waarde, hele_dag = EXCLUDED.hele_dag,
+         tijdzone = EXCLUDED.tijdzone, rrule = EXCLUDED.rrule, status = EXCLUDED.status, reeks = EXCLUDED.reeks,
+         gewijzigd_op = EXCLUDED.gewijzigd_op, url = EXCLUDED.url, bron_href = EXCLUDED.bron_href, etag = EXCLUDED.etag, gezien_op = now()`,
+      [
+        ownerUserId, lade.ruimte, kort(rij.abonnementId, 120), kort(rij.agendaUrl, 2000), kort(rij.uid, 500),
+        kort(rij.titel, 300), kort(rij.locatie, 500), kort(rij.beschrijving, 4000),
+        kort(rij.begin, 40), kort(rij.einde, 40), Boolean(rij.heleDag), kort(rij.tijdzone, 80),
+        kort(rij.rrule, 600), kort(rij.status, 40), reeks, kort(rij.gewijzigdOp, 40), url,
+        kort(rij.bronHref, 2000), kort(rij.etag, 300),
+      ],
+    );
+  } catch (err) {
+    if ((err as { code?: string } | null)?.code !== '42703') throw err;
+    await sys().query(
+      `INSERT INTO app.agenda_externe_gebeurtenis
+         (user_id, ruimte, abonnement_id, agenda_url, uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url, gezien_op)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now())
+       ON CONFLICT (user_id, abonnement_id, agenda_url, uid) DO UPDATE SET
+         ruimte = EXCLUDED.ruimte, titel = EXCLUDED.titel, locatie = EXCLUDED.locatie, beschrijving = EXCLUDED.beschrijving,
+         begin_waarde = EXCLUDED.begin_waarde, eind_waarde = EXCLUDED.eind_waarde, hele_dag = EXCLUDED.hele_dag,
+         tijdzone = EXCLUDED.tijdzone, rrule = EXCLUDED.rrule, status = EXCLUDED.status, reeks = EXCLUDED.reeks,
+         gewijzigd_op = EXCLUDED.gewijzigd_op, url = EXCLUDED.url, gezien_op = now()`,
+      [
+        ownerUserId, lade.ruimte, kort(rij.abonnementId, 120), kort(rij.agendaUrl, 2000), kort(rij.uid, 500),
+        kort(rij.titel, 300), kort(rij.locatie, 500), kort(rij.beschrijving, 4000),
+        kort(rij.begin, 40), kort(rij.einde, 40), Boolean(rij.heleDag), kort(rij.tijdzone, 80),
+        kort(rij.rrule, 600), kort(rij.status, 40), reeks, kort(rij.gewijzigdOp, 40), url,
+      ],
+    );
+  }
+}
+
+export async function externeSpiegelWisEen(ownerUserId: string, abonnementId: string, agendaUrl: string, uid: string): Promise<boolean> {
+  const lade = ladeOf(ownerUserId);
+  const res = await sys().query(
+    `DELETE FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', lade, 1)} AND abonnement_id = $2 AND agenda_url = $3 AND uid = $4`,
+    [ownerUserId, kort(abonnementId, 120), kort(agendaUrl, 2000), kort(uid, 500)],
+  );
+  return Number(res.rowCount || 0) > 0;
+}
+
 type ExterneNaam = (abonnementId: string, agendaUrl: string) => { naam: string; bron: 'ics' | 'caldav' };
 /** Alle afspraken die de hub kan laten zien: Google (schrijfbaar als het recht er is) + de externe, lezende bronnen. */
 export async function agendaItems(ownerUserId: string, opties: { schrijfbaar: boolean; naamVan?: ExterneNaam }): Promise<{ items: AgendaItem[]; begrensd: boolean }> {
@@ -270,8 +374,9 @@ export async function agendaItems(ownerUserId: string, opties: { schrijfbaar: bo
     .filter((rij) => kort(rij.status, 40) !== 'cancelled')
     .map((rij) => itemUitSpiegel(rij, opties.schrijfbaar));
   const extern = await sys().query(
-    'SELECT abonnement_id, agenda_url, uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, url'
-    + ` FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', ladeOf(ownerUserId), 1)} ORDER BY begin_waarde LIMIT $2`, [ownerUserId, SPIEGEL_LIMIET]);
+    `SELECT * FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', ladeOf(ownerUserId), 1)} ORDER BY begin_waarde LIMIT $2`,
+    [ownerUserId, SPIEGEL_LIMIET],
+  );
   for (const rij of extern.rows as Record<string, unknown>[]) {
     const herkomst = opties.naamVan ? opties.naamVan(String(rij.abonnement_id), String(rij.agenda_url || '')) : { naam: '', bron: 'ics' as const };
     items.push({
@@ -292,6 +397,14 @@ export async function agendaItems(ownerUserId: string, opties: { schrijfbaar: bo
       deelnemers: [],
       herhaling: kort(rij.rrule, 600),
       status: kort(rij.status, 40) || 'confirmed',
+      ...(herkomst.bron === 'caldav'
+        ? {
+            caldavAbonnementId: kort(rij.abonnement_id, 120),
+            caldavHref: kort(rij.bron_href, 2000),
+            caldavUid: kort(rij.uid, 500),
+            caldavEtag: kort(rij.etag, 300),
+          }
+        : {}),
     });
   }
   items.sort((a, b) => String(a.begin).localeCompare(String(b.begin)));

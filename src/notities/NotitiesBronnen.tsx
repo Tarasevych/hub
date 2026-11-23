@@ -1,8 +1,9 @@
 // «Інтеграції» — een apart scherm, niet op de hoofdpagina. Elke bron met de EERLIJKE stand uit shared/notities-vnext-model.ts:
 // «werkt» alleen voor de bestandsweg van deze release; «alleen bestandsimport» met de formaten; «beperkt»; «gepland» met wat er
 // op de server ontbreekt. Een knop doet iets (bestanden importeren) of er is geen knop — nooit een «Koppelen» die niets doet.
-import { AlertCircle, ExternalLink, FileText, Upload } from 'lucide-react';
+import { AlertCircle, CalendarDays, ExternalLink, FileText, Upload } from 'lucide-react';
 import { BRON_STAND_LABEL, NOTITIE_BRONNEN, vnTekst } from '../../shared/notities-vnext-model';
+import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { tr, type Lang } from './tekst';
 import MerkLogo from '../merk/MerkLogo';
 
@@ -21,13 +22,18 @@ export default function NotitiesBronnen({ lang, onImport }: { lang: Lang; onImpo
             <div className='vn-bron-tekst'>
               <strong>{b.naam} <small>· {vnTekst(b.soort, lang)}</small></strong>
               <p>{vnTekst(b.uitleg, lang)}</p>
-              <em className={b.stand === 'beschikbaar' ? 'is-ok' : ''}>{b.stand === 'beschikbaar' ? <FileText aria-hidden='true' /> : <AlertCircle aria-hidden='true' />}{vnTekst(b.wat, lang)}</em>
+              <em className={b.stand === 'beschikbaar' || b.stand === 'koppeling' ? 'is-ok' : ''}>
+                {b.stand === 'beschikbaar' ? <FileText aria-hidden='true' /> : b.stand === 'koppeling' ? <CalendarDays aria-hidden='true' /> : <AlertCircle aria-hidden='true' />}
+                {vnTekst(b.wat, lang)}
+              </em>
               <a href={b.bron} target='_blank' rel='noopener noreferrer' className='vn-bron-link'><ExternalLink aria-hidden='true' />{tr(lang, 'Джерело', 'Bron')}</a>
             </div>
             <span className={`vn-bron-stand is-${b.stand}`}>{vnTekst(BRON_STAND_LABEL[b.stand], lang)}</span>
             {b.formaten.length
               ? <button type='button' className='vn-knop is-klein' onClick={onImport} data-vn-bron-import={b.id}><Upload aria-hidden='true' />{tr(lang, 'Імпортувати', 'Importeren')} .{b.formaten.join(' .')}</button>
-              : <span className='vn-bron-geen'>{tr(lang, 'Кнопки «Підключити» немає — конектора ще не існує.', 'Geen knop «Koppelen» — de connector bestaat nog niet.')}</span>}
+              : b.stand === 'koppeling'
+                ? <a className='vn-knop is-klein' href={canonicalNavigationUrl('hub', 'calendar', lang)} data-vn-bron-kalender={b.id}><CalendarDays aria-hidden='true' />{tr(lang, 'Відкрити календар', 'Agenda openen')}</a>
+                : <span className='vn-bron-geen'>{tr(lang, 'Кнопки «Підключити» немає — з’єднувача ще не існує.', 'Geen knop «Koppelen» — de koppeling bestaat nog niet.')}</span>}
           </li>
         ))}
       </ul>

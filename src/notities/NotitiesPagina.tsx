@@ -15,6 +15,7 @@ import './notities-vnext.css';
 import './notities-maquette.css';
 import { SkeletBlok } from '../platform/SkeletBlok';
 import { LegeStaatKaart } from '../platform/LegeStaatKaart';
+import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
 const NotitieBewerker = lazy(() => import('./NotitieBewerker'));
@@ -226,9 +227,13 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
         ) : <small className='vn-hint'>{tr(lang, 'Серед показаних нотаток чеклістів немає.', 'Geen checklists tussen de getoonde notities.')}</small>}
         <button type='button' className='vn-knop is-klein' onClick={() => kies('lijsten')}>{tr(lang, 'Відкрити чеклісти', 'Checklists openen')}</button>
       </div>
-      <div className='vn-zijblok'>
-        <strong><CalendarDays aria-hidden='true' />{tr(lang, 'Нотатка → подія', 'Notitie → afspraak')}</strong>
-        <small className='vn-hint'>{tr(lang, 'Зв’язок із календарем заплановано (noteId ↔ eventId, з підтвердженням). Ще не працює — див. «Інтеграції».', 'De koppeling met de agenda is gepland (noteId ↔ eventId, met bevestiging). Werkt nog niet — zie «Integraties».')}</small>
+      <div className='vn-zijblok' data-vn-agenda-brug='1'>
+        <strong><CalendarDays aria-hidden='true' />{tr(lang, 'Нотатка ↔ подія', 'Notitie ↔ afspraak')}</strong>
+        <small className='vn-hint'>{tr(lang, 'Двостороння прив’язка нотатки до події календаря в цьому просторі з підтвердженням запису, завданнями та файлами Сховища.', 'Tweerichtingskoppeling tussen notitie en agenda-afspraak in deze ruimte met bevestiging, ruimtetaken en Opslag-bestanden.')}</small>
+        <div className='vn-knoppen'>
+          <button type='button' className='vn-knop is-klein' onClick={() => setLaag({ soort: 'nieuw' })}>{tr(lang, 'Нотатка до зустрічі', 'Gespreksnotitie')}</button>
+          <a className='vn-knop is-klein' href={canonicalNavigationUrl('hub', 'calendar', lang)}>{tr(lang, 'Відкрити календар', 'Agenda openen')}</a>
+        </div>
       </div>
     </aside>
   ) : null;

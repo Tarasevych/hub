@@ -1,7 +1,7 @@
-/** M10 admin.tarasevych.com Cloud provider governance bridge (staging only).
- * Separate from cloud-lade routes. No user data, token or file content returned.
- * The authenticated session must be for `admin`, current owner from PG,
- * active technical tab, and fresh strong step-up for every modification.
+/** Адміністративний міст керування хмарними постачальниками M10 на admin.tarasevych.com.
+ * Відокремлений від користувацької полиці хмари: вимагає сеансу служби admin, чинного власника з бази даних,
+ * активної технічної вкладки та посиленого підтвердження доступу перед кожною зміною політики.
+ * Beheerbrug voor cloudaanbieders (M10) op admin.tarasevych.com achter vlag cloud-m10-beheer-v1.
  */
 import {error,json} from '../server/platform';
 import {getPool} from '../server/platform/pg';
@@ -10,6 +10,7 @@ import {CloudTransportError} from './cloud-overdracht-adapters';
 import {CloudM5Governor} from './cloud-m5-governor';
 import {PostgresCloudProviderPolicies,postgresCiVerifier} from './cloud-m6-bestuur-pg';
 import {FIRST_WAVE_PROVIDERS,type WaveOneProvider} from '../shared/cloud-m5-catalogus';
+import {cloudVlagAan} from './cloud-vlaggen-poort';
 
 type Ctx={event:Record<string,unknown>;body:unknown;params?:Record<string,string>};
 type Auth={service:string;user:{id:string;status:string;email?:string;role?:string}}|{errorCode:string};
@@ -20,8 +21,14 @@ const object=(b:unknown):Record<string,unknown>=>b&&typeof b==='object'&&!Array.
 const enabled=()=>process.env.CLOUD_M10_ADMIN_STAGING==='enabled';
 const fail=(e:unknown)=>e instanceof CloudTransportError?error(e.code,e.status):error('CLOUD_M10_ADMIN_UNAVAILABLE',503);
 export function createM10CloudAdminRoutes(authorize:Authorize,stepUp:StepUp){
- async function actor(ctx:Ctx):Promise<{auth:Auth;userId:string}|null>{
+ async function poort(ctx:Ctx):Promise<{open:boolean;voorafAuth?:Auth}>{
+  if(enabled()||await cloudVlagAan('cloud-m10-beheer-v1'))return{open:true};
   const a=await authorize(ctx.event,ctx.body);
+  if(!('errorCode'in a)&&a.user?.id&&await cloudVlagAan('cloud-m10-beheer-v1',a.user.id))return{open:true,voorafAuth:a};
+  return{open:false,voorafAuth:a};
+ }
+ async function actor(ctx:Ctx,vorige?:Auth):Promise<{auth:Auth;userId:string}|null>{
+  const a=vorige??await authorize(ctx.event,ctx.body);
   if('errorCode'in a||a.service!=='admin'||a.user.status!=='approved'||!a.user.id)return null;
   const tab=object(ctx.body).tabContext;
   if(typeof tab!=='string'||!TAB_RE.test(tab))return null;
@@ -33,16 +40,18 @@ export function createM10CloudAdminRoutes(authorize:Authorize,stepUp:StepUp){
  }
  return{
   'POST /api/owner/admin/cloud/providers/list':[async(ctx:Ctx)=>{
-   if(!enabled())return error('CLOUD_M10_NOT_RELEASED',404);
-   try{if(!await actor(ctx))return error('CLOUD_ADMIN_TECH_OWNER_REQUIRED',403);
-    const providers=await Promise.all(FIRST_WAVE_PROVIDERS.map(p=>governor.status(p)));
-    return json({schema:'cloud-governance-m6',release:'STAGING_ONLY',providers});
+   const p=await poort(ctx);
+   if(!p.open)return error('CLOUD_M10_NOT_RELEASED',404);
+   try{if(!await actor(ctx,p.voorafAuth))return error('CLOUD_ADMIN_TECH_OWNER_REQUIRED',403);
+    const providers=await Promise.all(FIRST_WAVE_PROVIDERS.map(k=>governor.status(k)));
+    return json({schema:'cloud-governance-m6',release:'ACTIEF',providers});
    }catch(e){return fail(e);}
   }],
   'POST /api/owner/admin/cloud/providers/change':[async(ctx:Ctx)=>{
-   if(!enabled())return error('CLOUD_M10_NOT_RELEASED',404);
+   const p=await poort(ctx);
+   if(!p.open)return error('CLOUD_M10_NOT_RELEASED',404);
    try{
-    const who=await actor(ctx);if(!who)return error('CLOUD_ADMIN_TECH_OWNER_REQUIRED',403);
+    const who=await actor(ctx,p.voorafAuth);if(!who)return error('CLOUD_ADMIN_TECH_OWNER_REQUIRED',403);
     const b=object(ctx.body),provider=b.provider,reason=b.reason,rev=b.expectedRevision;
     if(typeof provider!=='string'||!FIRST_WAVE_PROVIDERS.includes(provider as WaveOneProvider)||
        typeof reason!=='string'||reason.trim().length<8||reason.length>500||/[\u0000-\u001f]/.test(reason)||

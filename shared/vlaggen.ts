@@ -215,6 +215,60 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу лише для себе. Фото з «Хмарного сховища» з’являться без копіювання.', 'Zet eerst alleen voor uzelf aan. Foto’s uit «Cloudopslag» verschijnen zonder kopie.'],
     gevolg: ['Нічого не видаляється із зовнішніх сервісів. Вимкнено — розділу немає, імпортовані фото лишаються на сервері.', 'Er wordt niets uit externe diensten verwijderd. Uit = geen onderdeel, geïmporteerde foto’s blijven op de server.'],
   },
+  'cloud-m4-koppelingen-v1': {
+    naam: ['Підключення зовнішніх хмарних сховищ за OAuth', 'Koppeling van externe cloudopslag via OAuth'],
+    wat: ['Дозволяє підключати зовнішні хмарні сховища до власного або технічного простору через захищений контур OAuth без розкриття ключів.', 'Maakt het mogelijk externe cloudopslag per eigen of technische ruimte via een beveiligde OAuth-stroom te koppelen zonder sleutels bloot te geven.'],
+    wanneer: ['Увімкніть спершу лише для себе після додавання клієнтських ключів зовнішніх постачальників у сховище власника.', 'Zet eerst uitsluitend voor uzelf aan nadat de clientsleutels van de externe aanbieders in de kluis van de eigenaar zijn geplaatst.'],
+    gevolg: ['Вимкнення зупиняє нові підключення та звернення до зовнішніх сховищ без видалення збережених прив’язок. Прав доступу не додає.', 'Uitschakelen stopt nieuwe koppelingen en aanroepen naar externe opslag zonder bewaarde koppelingen te wissen. Geeft geen extra rechten.'],
+  },
+  'cloud-m5-catalogus-v1': {
+    naam: ['Каталог готовності зовнішніх хмарних постачальників', 'Gereedheidscatalogus van externe cloudaanbieders'],
+    wat: ['Показує схваленому сеансу хмарного сховища чесний стан готовності кожного зовнішнього постачальника та наявність серверних налаштувань.', 'Toont binnen een goedgekeurde cloudsessie de eerlijke gereedheidsstatus van elke externe aanbieder en de aanwezigheid van serverinstellingen.'],
+    wanneer: ['Увімкніть спершу для себе під час перевірки центру підключень хмарного сховища, а потім відкрийте іншим.', 'Zet eerst voor uzelf aan bij het controleren van het integratiecentrum van de cloudopslag en open daarna voor anderen.'],
+    gevolg: ['Вимкнення приховує розширений каталог готовності без зміни підключених облікових записів чи файлів.', 'Uitschakelen verbergt de uitgebreide gereedheidscatalogus zonder gekoppelde accounts of bestanden te wijzigen.'],
+  },
+  'cloud-m6-beheer-v1': {
+    naam: ['Керування політиками зовнішніх хмарних постачальників', 'Beheerbeleid voor externe cloudaanbieders'],
+    wat: ['Відкриває власнику в активному технічному профілі налаштування доступності та обмежень для зовнішніх хмарних постачальників.', 'Opent voor de eigenaar in een actief technisch profiel de instellingen voor beschikbaarheid en grenzen van externe cloudaanbieders.'],
+    wanneer: ['Увімкніть для себе, коли потрібно керувати правилами підключення зовнішніх хмарних служб.', 'Zet voor uzelf aan wanneer de koppelregels van externe clouddiensten beheerd moeten worden.'],
+    gevolg: ['Вимкнення закриває адміністративні маршрути керування політиками хмари без зміни раніше збережених правил.', 'Uitschakelen sluit de beheerroutes voor cloudbeleid zonder eerder opgeslagen regels te veranderen.'],
+  },
+  'cloud-m8-mappen-v1': {
+    naam: ['Єдиний перегляд тек підключених хмарних сховищ', 'Uniform mappenoverzicht van gekoppelde cloudopslag'],
+    wat: ['Забезпечує перегляд тек і переліку об’єктів підключених зовнішніх хмарних сховищ із захищеним серверним вказівником сторінки.', 'Biedt mappenweergave en objectoverzicht van gekoppelde externe cloudopslag met een versleutelde paginawijzer op de server.'],
+    wanneer: ['Увімкніть разом із середовищем виконання зовнішньої хмари після підключення першого сховища.', 'Zet samen met de serveromgeving voor externe cloudopslag aan zodra de eerste opslag is gekoppeld.'],
+    gevolg: ['Вимкнення припиняє читання тек зовнішніх сховищ без жодних змін у самих файлах.', 'Uitschakelen stopt het uitlezen van externe mappen zonder enige wijziging aan de bestanden zelf.'],
+  },
+  'cloud-m10-beheer-v1': {
+    naam: ['Адміністративний міст керування хмарними постачальниками', 'Beheerbrug voor cloudaanbieders'],
+    wat: ['Дозволяє власнику з посиленим підтвердженням особи перевіряти та перемикати готовність контурів зовнішніх хмарних постачальників.', 'Stelt de eigenaar na sterke identiteitsbevestiging in staat de gereedheid van externe cloudaanbieders te controleren en te schakelen.'],
+    wanneer: ['Увімкніть лише для власника під час налаштування зовнішніх хмарних підключень.', 'Zet uitsluitend voor de eigenaar aan tijdens het inrichten van externe cloudkoppelingen.'],
+    gevolg: ['Вимкнення закриває адміністративний міст керування без втрати збережених налаштувань.', 'Uitschakelen sluit de beheerbrug zonder opgeslagen instellingen te verliezen.'],
+  },
+  'cloud-m10-omgeving-v1': {
+    naam: ['Серверне середовище огляду тек і попереднього перегляду хмари', 'Serveromgeving voor mappen en voorbeeldweergave in de cloud'],
+    wat: ['Вмикає робоче серверне середовище для живого читання тек і безпечного попереднього перегляду файлів із підключених зовнішніх хмар.', 'Schakelt de actieve serveromgeving in voor het uitlezen van mappen en beveiligde voorbeeldweergave van bestanden uit gekoppelde cloudopslag.'],
+    wanneer: ['Увімкніть після перевірки ключів шифрування та підключення зовнішнього сховища.', 'Zet aan nadat de versleutelingssleutels en de koppeling met externe opslag zijn gecontroleerd.'],
+    gevolg: ['Вимкнення переводить зовнішні маршрути читання тек і перегляду у вимкнений стан без втрати підключень.', 'Uitschakelen zet de externe routes voor mappen en voorbeeldweergave stil zonder verlies van koppelingen.'],
+  },
+  'cloud-m11-voorbeeld-v1': {
+    naam: ['Захищений попередній перегляд файлів зовнішніх хмар', 'Beveiligde voorbeeldweergave van externe cloudbestanden'],
+    wat: ['Відкриває попередній перегляд підтримуваних файлів із підключених зовнішніх сховищ із перевіркою версії та контрольної суми.', 'Opent een voorbeeldweergave van ondersteunde bestanden uit gekoppelde externe opslag met revisie- en somcontrole.'],
+    wanneer: ['Увімкніть спершу лише для себе разом із серверним середовищем хмари, перевірте перегляд документів і світлин, а потім відкрийте іншим.', 'Zet eerst uitsluitend voor uzelf aan samen met de cloudomgeving, controleer documenten en afbeeldingen, en open daarna voor anderen.'],
+    gevolg: ['Вимкнення вимикає попередній перегляд зовнішніх файлів без зміни самих файлів.', 'Uitschakelen stopt de voorbeeldweergave van externe bestanden zonder de bestanden zelf aan te raken.'],
+  },
+  'cloud-webdav-v1': {
+    naam: ['Підключення власних мережевих сховищ за HTTPS', 'Koppeling van eigen netwerkopslag via HTTPS'],
+    wat: ['Дозволяє підключати власну хмару чи домашнє мережеве сховище NAS за захищеним з’єднанням HTTPS із шифруванням пароля застосунку у сховищі ключів та захистом від звернень до внутрішньої мережі.', 'Maakt het mogelijk een eigen cloud of netwerkopslag via HTTPS te koppelen met versleuteling van het toepassingswachtwoord in de sleutelkluis en bescherming tegen interne netwerkadressen.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте з’єднання з власним сервером хмари й огляд тек, а далі відкрийте іншим за потреби.', 'Zet eerst uitsluitend voor uzelf aan, controleer de verbinding met de eigen opslagserver en het mappenoverzicht, en open daarna zo nodig voor anderen.'],
+    gevolg: ['Вимкнення приховує підключення мережевих сховищ і зупиняє запити до них; зашифровані записи залишаються незмінними.', 'Uitschakelen verbergt de netwerkopslag en stopt verzoeken ernaartoe; versleutelde koppelingen blijven ongewijzigd bewaard.'],
+  },
+  'foto-google-drive-v1': {
+    naam: ['Показ світлин із Google Drive та підключених сховищ у «Фото»', 'Foto’s uit Google Drive en gekoppelde opslag in «Foto’s»'],
+    wat: ['Додає за явною згодою людини пряме відображення світлин із підключеного Google Drive та власних мережевих сховищ у службі «Фото» в межах поточного простору.', 'Voegt na uitdrukkelijke toestemming rechtstreekse weergave van foto’s uit gekoppelde Google Drive en eigen netwerkopslag toe aan de dienst «Foto’s» binnen dezelfde ruimte.'],
+    wanneer: ['Потребує увімкненого розділу «Фото». Увімкніть спершу для себе, надайте згоду на обране джерело й перевірте стрічку світлин.', 'Vereist de dienst «Foto’s». Zet eerst voor uzelf aan, geef toestemming voor een bron en controleer de fotostroom.'],
+    gevolg: ['Вимкнення припиняє завантаження зовнішніх світлин у стрічку без видалення жодного знімка у джерелі чи локальних альбомів.', 'Uitschakelen stopt het ophalen van externe foto’s zonder opnamen bij de bron of lokale albums te wissen.'],
+  },
   'menu-kalender-foto-eigen': {
     naam: ['Календар і Фото в «Моєму просторі»', 'Agenda en Foto’s in «Mijn ruimte»'],
     wat: ['Прибирає «Календар» і «Фото» з меню «Хмарне сховище» і показує їх у «Моєму просторі». Старі адреси переводять на нові.', 'Haalt «Agenda» en «Foto’s» uit het menu «Cloudopslag» en toont ze in «Mijn ruimte». Oude adressen sturen door.'],
@@ -232,6 +286,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wat: ['Нова сторінка «Нотатки»: теки, теги, закріплення, архів і кошик, редактор Markdown із чеклістами, імпорт/експорт файлів.', 'Nieuwe pagina «Notities»: mappen, etiketten, vastzetten, archief en prullenbak, Markdown-editor met checklists, bestandsimport/-export.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати нові нотатки.', 'Zet eerst alleen voor uzelf aan om de nieuwe notities te proberen.'],
     gevolg: ['Записи ті самі (старі нотатки перенесено без втрат, дошка й інструмент manage_hub_notes працюють як раніше). Вимкнено — стара сторінка, усі нотатки на місці.', 'Dezelfde notities (oude zijn zonder verlies overgezet; het bord en manage_hub_notes werken als voorheen). Uit = de oude pagina, alle notities blijven.'],
+  },
+  'notities-agenda-brug-v1': {
+    naam: ['Двосторонній зв’язок нотаток із календарем, завданнями та сховищем', 'Tweerichtingskoppeling van notities met agenda, taken en opslag'],
+    wat: ['Дозволяє прив’язувати нотатку до події календаря за підтвердженням людини, переходити між нотаткою й зустріччю в один натиск, створювати завдання простору з нотатки та прикріплювати власні файли зі сховища.', 'Maakt het mogelijk een notitie na bevestiging aan een agenda-afspraak te koppelen, met één klik heen en weer te springen, ruimtetaken te maken en eigen opslagbestanden te koppelen.'],
+    wanneer: ['Потребує увімкнених нових нотаток. Увімкніть спершу лише для себе, перевірте створення зв’язку з подією календаря, а потім відкрийте для всіх.', 'Vereist de nieuwe notities. Zet eerst uitsluitend voor uzelf aan, controleer de koppeling met een afspraak en open daarna voor iedereen.'],
+    gevolg: ['Вимкнення ховає блок міжслужбових зв’язків у нотатці; збережені нотатки та події календаря залишаються на місці.', 'Uitschakelen verbergt het koppelblok in de notitie; bewaarde notities en agenda-afspraken blijven intact.'],
   },
   'bijlage-viewer-v2': {
     naam: ['Новий перегляд вкладень у пошті', 'Nieuwe bijlageviewer in mail'],
@@ -275,11 +335,23 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий пошук.', 'Zet eerst alleen voor uzelf aan om het nieuwe zoeken te proberen.'],
     gevolg: ['Умови пошуку, збережені пошуки й результати ті самі; змінюється лише панель. Вимкнено — стара панель фільтрів і «Ще умови».', 'Zoekvoorwaarden, opgeslagen zoekopdrachten en resultaten blijven gelijk; alleen het paneel verandert. Uit = het oude filterpaneel en «Meer voorwaarden».'],
   },
+  'mail-dienstbruggen-v1': {
+    naam: ['Швидкі міжслужбові дії з листа та вкладень у Пошті', 'Snelle dienstbruggen vanuit berichten en bijlagen in E-mail'],
+    wat: ['Додає у відкритому листі та переглядачі вкладень швидкі дії створення нотатки, завдання простору, переходу до звірки, події в календарі та картки клієнта без передавання приватного тексту в адресу сторінки.', 'Voegt in het geopende bericht en de bijlageweergave snelle acties toe voor een notitie, ruimtetaak, afstemming, agenda-afspraak en klantkaart zonder privégegevens in het webadres.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте переходи з листа у нотатки, календар і картку клієнта в обох просторах, а потім відкрийте іншим.', 'Zet eerst uitsluitend voor uzelf aan, controleer de acties vanuit een bericht naar notities, agenda en klantkaart in beide ruimtes, en open daarna voor anderen.'],
+    gevolg: ['Вимкнення прибирає кнопки міжслужбових дій із пошти; раніше створені нотатки, завдання, події й досьє клієнтів зберігаються.', 'Uitschakelen verbergt de brugknoppen in de post; eerder aangemaakte notities, taken, afspraken en klantdossiers blijven bewaard.'],
+  },
   'agenda-v3': {
     naam: ['Новий календар (Agenda v3)', 'Nieuwe agenda (Agenda v3)'],
     wat: ['Нова сторінка «Календар»: великий календар, мінікалендар, список календарів, зручний вигляд на телефоні.', 'Nieuwe pagina «Agenda»: grote agenda, minikalender, lijst met agenda’s, prettig op de telefoon.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий вигляд календаря.', 'Zet eerst alleen voor uzelf aan om de nieuwe agenda te proberen.'],
     gevolg: ['Події, підключення й дозволи ті самі; змінюється лише вигляд. Вимкнено — старий календар без змін.', 'Afspraken, koppelingen en rechten blijven gelijk; alleen het uiterlijk verandert. Uit = de oude agenda, ongewijzigd.'],
+  },
+  'agenda-koppelingen-v1': {
+    naam: ['Двосторонній запис CalDAV, вивантаження ICS і переходи в Календарі', 'Tweerichtings-CalDAV, ICS-uitvoer en sprongen in de Agenda'],
+    wat: ['Вмикає збереження й видалення подій у зовнішніх календарях CalDAV із перевіркою прав запису та версії, вивантаження події у файл ICS для календарів лише для читання та швидкі переходи до листів, контакту й нотатки зустрічі.', 'Schakelt opslaan en wissen in externe CalDAV-agenda’s met rechten- en versiecontrole in, biedt ICS-uitvoer voor alleen-lezen agenda’s en voegt snelle sprongen naar berichten, contact en gespreksnotitie toe.'],
+    wanneer: ['Увімкніть спершу лише для себе, перевірте запис у підключений календар CalDAV або завантаження ICS та переходи з картки події, а потім відкрийте для всіх.', 'Zet eerst uitsluitend voor uzelf aan, controleer het schrijven naar een gekoppelde CalDAV-agenda of ICS-uitvoer en de sprongen vanuit een afspraak, en open daarna voor iedereen.'],
+    gevolg: ['Вимкнення залишає зовнішні календарі CalDAV у режимі читання й ховає додаткові переходи без втрати підписок чи подій.', 'Uitschakelen houdt externe CalDAV-agenda’s op alleen-lezen en verbergt de extra sprongen zonder abonnementen of afspraken te verliezen.'],
   },
   'meldingen-v2': {
     naam: ['Новий центр сповіщень', 'Nieuw meldingencentrum'],

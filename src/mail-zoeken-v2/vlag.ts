@@ -18,6 +18,15 @@ export function laadMailZoekenV2Vlag(): Promise<boolean> {
     });
   return bezig;
 }
+function vernieuwMailZoekenV2Vlag(): void {
+  try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+  waarde = null;
+  bezig = null;
+  if (luisteraars.size > 0) void laadMailZoekenV2Vlag();
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', vernieuwMailZoekenV2Vlag);
+}
 export function useMailZoekenV2(): boolean {
   const [v, setV] = useState(waarde === true);
   useEffect(() => { luisteraars.add(setV); void laadMailZoekenV2Vlag(); return () => { luisteraars.delete(setV); }; }, []);

@@ -431,6 +431,10 @@ export type AgendaItem = {
   deelnemers: Deelnemer[];
   herhaling: string;
   status: string;
+  caldavAbonnementId?: string;
+  caldavHref?: string;
+  caldavUid?: string;
+  caldavEtag?: string;
 };
 /** Valt de afspraak op deze dag? Hele-dag-afspraken hebben een inclusief einde in onze items. */
 export function opDag(item: Pick<AgendaItem, 'begin' | 'einde' | 'heleDag'>, dag: string): boolean {

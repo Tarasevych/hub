@@ -95,6 +95,17 @@ export const MAIL_AANBIEDERS: readonly MailAanbieder[] = Object.freeze([
     ],
   },
   {
+    id: 'fastmail', naam: 'Fastmail', merk: 'fastmail', onder: ['Швидка приватна пошта', 'Snelle privémaildienst'],
+    wijze: 'imap-app-wachtwoord',
+    imap: { host: 'imap.fastmail.com', poort: 993, versleuteling: 'tls' },
+    smtp: { host: 'smtp.fastmail.com', poort: 465, versleuteling: 'tls' },
+    hulpAdres: 'https://www.fastmail.com/help/clients/apppassword.html',
+    hulp: [
+      'Fastmail приймає поштові програми лише з окремим паролем застосунку: «Налаштування → Приватність і безпека → Інтеграції → Новий пароль застосунку» з доступом IMAP та SMTP.',
+      'Fastmail staat mailprogramma\'s alleen toe met een apart app-wachtwoord: «Instellingen → Privacy en beveiliging → Integraties → Nieuw app-wachtwoord» met IMAP- en SMTP-toegang.',
+    ],
+  },
+  {
     // Online.ua: er is GEEN door de dienst gepubliceerde IMAP/SMTP-host (gecontroleerd op 20.10.2026). Een host raden zou
     // betekenen dat de gebruiker op een knop drukt die bij de eerste poging faalt — dus geen knop, wel de echte lijst.
     id: 'onlineua', naam: 'Online.ua', merk: 'onlineua', onder: ['Українська пошта', 'Oekraïense e-maildienst'],

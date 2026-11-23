@@ -39,6 +39,15 @@ export function laadBijlageV2Vlag(): Promise<boolean> {
     });
   return bezig;
 }
+function vernieuwBijlageV2Vlag(): void {
+  try { sessionStorage.removeItem(OPSLAG); } catch { /* geen opslag */ }
+  waarde = null;
+  bezig = null;
+  if (luisteraars.size > 0) void laadBijlageV2Vlag();
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('mr:vlaggen-vernieuwd', vernieuwBijlageV2Vlag);
+}
 export function useBijlageV2Vlag(): boolean {
   const [v, setV] = useState(waarde === true);
   useEffect(() => { luisteraars.add(setV); void laadBijlageV2Vlag(); return () => { luisteraars.delete(setV); }; }, []);

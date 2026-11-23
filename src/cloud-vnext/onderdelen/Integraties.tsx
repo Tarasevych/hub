@@ -6,15 +6,17 @@
 // (popup-blokkering), daarna peilt dit scherm de levende status elke 3 s, hoogstens 4 minuten.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ExternalLink, FolderSync, Link2, LoaderCircle, Lock, Minus, Plus, RefreshCw, Search, Settings2, X } from 'lucide-react';
-import { CLOUD_RICHTING_LABEL, CLOUD_STAND_LABEL, CLOUD_VNEXT_AANBIEDERS, cloudTekst, type CloudVnextAanbieder } from '../../../shared/cloud-vnext-model';
+import { CLOUD_RICHTING_LABEL, CLOUD_STAND_LABEL, CLOUD_VNEXT_AANBIEDERS, cloudTekst, type CloudVnextAanbieder, type CloudWebdavAanbieder, type CloudWebdavKoppeling } from '../../../shared/cloud-vnext-model';
 import { OVERDRACHT_GRENZEN } from '../../../shared/cloud-overdracht-model';
 import { cloudClient, CloudFout, type IntegratiesUit } from '../cloud-client';
+import { cloudVnextUitbreidingClient } from '../cloud-vnext-client';
 import type { OnderdeelProps } from '../CloudPagina';
 import { foutTekst, tr, type Lang } from '../tekst';
 
 import { registerGroep } from '../register-koppeling';
 import MerkLogo from '../../merk/MerkLogo';
 import { useCatalogusV2 } from '../../integraties/catalogus-vlag';
+import { AutomatiseringenSectie, WebdavAanbiederVeld } from './WebdavEnTaken';
 import '../cloud-integraties-maquette.css';
 
 const POLL_MS = 3000, POLL_MAX_MS = 4 * 60_000;
@@ -70,15 +72,27 @@ export const Monogram = ({ tekst, merk, naam }: { tekst: string; merk?: string; 
   : <span className='cvi-monogram' aria-hidden='true'>{tekst}</span>;
 
 export default function Integraties({ lang, naarTab }: OnderdeelProps) {
-  const [data, setData] = useState<IntegratiesUit | null>(null);
+  const [data, setData] = useState<(IntegratiesUit & { webdav?: { koppelingen: CloudWebdavKoppeling[] } }) | null>(null);
+  const [webdavLijst, setWebdavLijst] = useState<CloudWebdavKoppeling[]>([]);
+  const [actieveRegels, setActieveRegels] = useState(0);
   const [fout, setFout] = useState('');
   const [laden, setLaden] = useState(true);
   const [bezig, setBezig] = useState(false);
-  const [wachten, setWachten] = useState(false); // popup open → elke 3 s peilen, hoogstens 4 minuten
+  const [wachten, setWachten] = useState(false); // вікно входу відкрите → опитування кожні 3 с, до 4 хв
   const poll = useRef<{ timer: number; tot: number; was: number } | null>(null);
 
   const laad = useCallback(async (): Promise<IntegratiesUit | null> => {
-    try { const vers = await cloudClient.integraties(); setData(vers); setFout(''); return vers; }
+    try {
+      const vers = (await cloudClient.integraties()) as IntegratiesUit & { webdav?: { koppelingen: CloudWebdavKoppeling[] } };
+      setData(vers);
+      if (vers.webdav?.koppelingen) {
+        setWebdavLijst(vers.webdav.koppelingen);
+      } else {
+        void cloudVnextUitbreidingClient.webdavLijst().then((w) => setWebdavLijst(w.koppelingen)).catch(() => undefined);
+      }
+      setFout('');
+      return vers;
+    }
     catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); return null; }
     finally { setLaden(false); }
   }, [lang]);
@@ -118,6 +132,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
     if (a.levend === 'google') return data.google.gekoppeld;
     if (a.levend === 'photos') return data.photos.gekoppeld;
     if (a.levend === 'm4') return Boolean(data.m4.aanbieders.find((x) => x.id === a.id)?.accounts.some((acc) => acc.status === 'connected'));
+    if (a.levend === 'webdav') return webdavLijst.some((k) => k.aanbieder === a.id && k.status === 'connected');
     return false;
   };
   const aantalLevend = data ? CLOUD_VNEXT_AANBIEDERS.filter(levend).length : 0;
@@ -142,9 +157,11 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
       <section className='cvn-blok cvi-samenvatting' aria-label={tr(lang, 'Зведення', 'Samenvatting')}>
         <div className='cvi-chips'>
           <span className='cvi-chip is-ok' data-cvi-levend={aantalLevend}><Link2 aria-hidden='true' />{tr(lang, `Підключено: ${aantalLevend}`, `Gekoppeld: ${aantalLevend}`)}</span>
-          <span className='cvi-chip'><FolderSync aria-hidden='true' />{tr(lang, 'Фонова синхронізація Google-проєкції: кожні 5 хв', 'Achtergrondsynchronisatie van de Google-projectie: elke 5 min')}</span>
-          <span className='cvi-chip'><Lock aria-hidden='true' />{tr(lang, 'Токени: зашифровано на сервері', 'Tokens: versleuteld op de server')}</span>
-          <span className='cvi-chip is-stil'>{tr(lang, 'Автоматизації: заплановано', 'Automatiseringen: gepland')}</span>
+          <span className='cvi-chip'><FolderSync aria-hidden='true' />{tr(lang, 'Фонова синхронізація проєкції Google: кожні 5 хв', 'Achtergrondsynchronisatie van de Google-projectie: elke 5 min')}</span>
+          <span className='cvi-chip'><Lock aria-hidden='true' />{tr(lang, 'Ключі доступу: зашифровано на сервері', 'Toegangssleutels: versleuteld op de server')}</span>
+          <span className={`cvi-chip${actieveRegels > 0 ? ' is-ok' : ''}`} data-cvi-regels={actieveRegels}>
+            {tr(lang, `Правила автоматизацій: ${actieveRegels}`, `Automatiseringsregels: ${actieveRegels}`)}
+          </span>
         </div>
       </section>
 
@@ -231,8 +248,16 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
                           ))}
                         </ul>
                       ) : null}
-                      {allesJa && !m4rij?.accounts.length ? <p className='cvn-melding is-info'>{tr(lang, 'Ключі на сервері є, staging увімкнено — акаунтів ще немає. Кнопка підключення з’явиться наступним кроком: OAuth-маршрути M4 уже в репозиторії, але цей випуск їх у вітрину ще не виводить.', 'De sleutels staan op de server en staging staat aan — accounts zijn er nog niet. De koppelknop komt in de volgende stap: de M4-OAuth-routes zitten al in de repository, maar deze release toont ze nog niet in de etalage.')}</p> : null}
+                      {allesJa && !m4rij?.accounts.length ? <p className='cvn-melding is-info'>{tr(lang, 'Ключі на сервері встановлені, підключення увімкнено — облікових записів ще немає.', 'De sleutels staan op de server en de koppeling staat aan — er zijn nog geen accounts gekoppeld.')}</p> : null}
                     </>
+                  ) : null}
+                  {a.stand === 'webdav' && (a.id === 'nextcloud' || a.id === 'nas-webdav') ? (
+                    <WebdavAanbiederVeld
+                      lang={lang}
+                      aanbieder={a.id as CloudWebdavAanbieder}
+                      koppelingen={webdavLijst}
+                      opGewijzigd={async () => { await laad(); }}
+                    />
                   ) : null}
                   {a.omweg ? <p className='cvi-omweg'>{cloudTekst(a.omweg, lang)}</p> : null}
                   <a className='cvi-site' href={a.site} target='_blank' rel='noreferrer noopener'><ExternalLink aria-hidden='true' />{a.site.replace(/^https:\/\//, '')}</a>
@@ -243,6 +268,12 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
         </div>
       </section>
 
+      <AutomatiseringenSectie
+        lang={lang}
+        googleAccounts={data?.google.accounts || []}
+        opRegelsAantal={setActieveRegels}
+      />
+
       {/* ---- synchronisatie en richtingen: alleen wat echt zo werkt ---- */}
       <section className='cvn-blok' aria-labelledby='cvi-sync-kop'>
         <h3 id='cvi-sync-kop'><FolderSync aria-hidden='true' />{tr(lang, 'Синхронізація і напрямки', 'Synchronisatie en richtingen')}</h3>
@@ -250,9 +281,10 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
           <li data-cvi-sync='drive'><Check aria-hidden='true' />{tr(lang, 'Google Drive: метадані синхронізуються у фоні кожні 5 хв (проєкція на сервері); читання і запис — через сторінку Google Drive.', 'Google Drive: metadata synchroniseert elke 5 min op de achtergrond (projectie op de server); lezen en schrijven via de pagina Google Drive.')}</li>
           <li data-cvi-sync='zoek-cloud'>{data?.zoekIndex.cloud ? <Check aria-hidden='true' /> : <X aria-hidden='true' />}{tr(lang, `Пошуковий індекс знає власну хмару: ${data?.zoekIndex.cloud ? 'так' : 'ні'}.`, `De zoekindex kent de eigen cloud: ${data?.zoekIndex.cloud ? 'ja' : 'nee'}.`)}</li>
           <li data-cvi-sync='zoek-drive'>{data?.zoekIndex.drive ? <Check aria-hidden='true' /> : <X aria-hidden='true' />}{tr(lang, `Пошуковий індекс знає Google Drive: ${data?.zoekIndex.drive ? 'так' : 'ні'}.`, `De zoekindex kent Google Drive: ${data?.zoekIndex.drive ? 'ja' : 'nee'}.`)}</li>
-          <li data-cvi-sync='fotos'><Check aria-hidden='true' />{tr(lang, 'Google Photos: лише імпорт за вашим вибором (офіційний Picker) — повної синхронізації бібліотеки Google не дає нікому.', 'Google Photos: alleen import op uw keuze (officiële Picker) — volledige bibliotheeksynchronisatie geeft Google aan niemand.')}</li>
-          <li data-cvi-sync='tokens'><Lock aria-hidden='true' />{tr(lang, 'Токени доступу зашифровані на сервері (AES-256-GCM) і ніколи не потрапляють у браузер чи у відповіді цієї сторінки.', 'Toegangstokens zijn op de server versleuteld (AES-256-GCM) en komen nooit in de browser of in de antwoorden van deze pagina.')}</li>
-          <li data-cvi-sync='automatisering' className='is-stil'><Minus aria-hidden='true' />{tr(lang, 'Двостороння синхронізація з іншими сховищами та автоматизації — заплановано; кнопок для цього тут свідомо немає.', 'Tweerichtingssynchronisatie met andere opslagdiensten en automatiseringen: gepland; daar staan hier bewust geen knoppen voor.')}</li>
+          <li data-cvi-sync='fotos'><Check aria-hidden='true' />{tr(lang, 'Google Photos: перенесення за вашим вибором у вікні Google — автоматичного читання всієї бібліотеки Google не надає.', 'Google Photos: import op uw keuze in het Google-venster — volledige bibliotheeksynchronisatie geeft Google aan niemand.')}</li>
+          <li data-cvi-sync='webdav'><Check aria-hidden='true' />{tr(lang, 'Nextcloud та власний NAS: захищене читання тек за протоколом WebDAV (HTTPS) із шифруванням пароля сховищем ключів.', 'Nextcloud en eigen NAS: beveiligd lezen van mappen via WebDAV (HTTPS) met wachtwoordversleuteling in de sleutelkluis.')}</li>
+          <li data-cvi-sync='tokens'><Lock aria-hidden='true' />{tr(lang, 'Ключі доступу зашифровані на сервері (AES-256-GCM) і ніколи не потрапляють у оглядач чи у відповіді цієї сторінки.', 'Toegangssleutels zijn op de server versleuteld (AES-256-GCM) en komen nooit in de browser of in de antwoorden van deze pagina.')}</li>
+          <li data-cvi-sync='automatisering'><Check aria-hidden='true' />{tr(lang, 'Правила автоматизацій виконують перевірені фонові передачі між власним сховищем та підключеним Google Диском у межах поточного простору.', 'Automatiseringsregels voeren gecontroleerde achtergrondoverdrachten uit tussen uw eigen opslag en gekoppelde Google Drive binnen de huidige ruimte.')}</li>
         </ul>
       </section>
     </div>

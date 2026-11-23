@@ -251,6 +251,22 @@ BEGIN
     IF to_regclass('app.klantrelatieboek') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.klantrelatieboek TO mijnruimte_app;
     END IF;
+    -- 0313..0318 (CONSOL-001 / Віха M3): мости Пошти, зв'язки Нотаток і Календаря та зовнішні джерела Фото (власні рядки під примусовим рядковим захистом); зашифровані підключення WebDAV і OAuth M4 — лише системна роль.
+    IF to_regclass('app.mail_dienstbruggen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.mail_dienstbruggen TO mijnruimte_app;
+    END IF;
+    IF to_regclass('app.notities_agenda_koppelingen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.notities_agenda_koppelingen TO mijnruimte_app;
+    END IF;
+    IF to_regclass('app.cloud_webdav_koppelingen') IS NOT NULL THEN
+      REVOKE ALL ON app.cloud_webdav_koppelingen FROM mijnruimte_app;
+    END IF;
+    IF to_regclass('app.cloud_oauth_flows_m4') IS NOT NULL THEN
+      REVOKE ALL ON app.cloud_oauth_flows_m4, app.cloud_provider_accounts_m4 FROM mijnruimte_app;
+    END IF;
+    IF to_regclass('app.foto_externe_bronnen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.foto_externe_bronnen TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).

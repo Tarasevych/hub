@@ -13,12 +13,13 @@ export type Facetten = { jaren: Record<string, number>; bronnen: Record<string, 
 export type Stats = { totaal: number; verborgen: number; favorieten: number; bytes: number; metPlaats: number; zonderKopie: number; onbeschikbaar: number };
 export type Bibliotheek = { items: FotoItem[]; totaal: number; volgende: string | null; facetten: Facetten; stats: Stats; albums: FotoAlbum[] };
 export type Vraag = { zoek?: string; bron?: string; jaar?: number; maand?: number; soort?: string; formaat?: string; album?: string; tag?: string; favoriet?: boolean; verborgen?: boolean; metPlaats?: boolean; zonderDatum?: boolean; camera?: string; van?: string; tot?: string; sorteer?: string; oplopend?: boolean; token?: string };
-export type BronStand = BronDef & { aantal: number };
+export type BronStand = BronDef & { aantal: number; toestemming?: boolean; laatstOp?: string | null };
 export type ImportRegel = { id: string; bron: string; archief: string; soort: string; nieuw: number; bekend: number; overgeslagen: number; mislukt: number; klaar: boolean; createdAt: string };
 
 export const fotoClient = {
   bibliotheek: (v: Vraag = {}) => roep<Bibliotheek>('bibliotheek', v as Record<string, unknown>),
-  indexeer: () => roep<{ nieuw: number; gekoppeld: number }>('indexeer'),
+  indexeer: (opties: { bron?: 'cloud' | 'google-drive' | 'nextcloud' | 'nas'; toestemming?: boolean } = {}) =>
+    roep<{ nieuw: number; gekoppeld: number; gekoppeldAccount?: boolean; toestemming?: boolean }>('indexeer', opties as Record<string, unknown>),
   inhoud: (id: string) => roep<{ mime: string; naam: string; data: string; sha256: string }>('inhoud', { id }),
   item: (actie: string, ids: string[], extra: Record<string, unknown> = {}) => roep<{ items?: FotoItem[]; ok?: boolean }>('item', { actie, ids, ...extra }),
   album: (actie: string, extra: Record<string, unknown>) => roep<{ album?: { id: string; naam: string } }>('album', { actie, ...extra }),

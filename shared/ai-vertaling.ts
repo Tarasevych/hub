@@ -1022,59 +1022,71 @@ export const VERTAAL_MOTOREN: readonly VertaalMotor[] = [
     id: 'libretranslate',
     naam: 'LibreTranslate (на вашому сервері)',
     leverancier: 'LibreTranslate',
-    staat: 'nog-niet',
+    staat: 'aansluiten',
     plek: 'eigen-server',
-    uitlegUk: 'Власний контейнер перекладу на вашому ж сервері — нічого не йде назовні. Конектора для нього ще не написано, тому зараз він не працює.',
-    uitlegNl: 'Een eigen vertaalcontainer op uw eigen server — niets gaat naar buiten. De koppeling is nog niet geschreven, dus hij werkt nu niet.',
-    aansluitenHref: '',
+    uitlegUk: 'Власний вузол перекладу на вашому сервері — текст не передається стороннім хмарам. Запрацює після підключення адреси сервера або схвалення спільного рушія в розділі «Доступ ШІ».',
+    uitlegNl: 'Een eigen vertaalknoop op uw server — tekst gaat niet naar externe clouddiensten. Werkt zodra het serveradres is gekoppeld of de gedeelde motor in «AI-toegang» is goedgekeurd.',
+    aansluitenHref: AI_TOEGANG_HREF,
   },
   {
     id: 'google-vertaling',
     naam: 'Google Cloud Translation',
     leverancier: 'Google',
-    staat: 'nog-niet',
+    staat: 'aansluiten',
     plek: 'externe-dienst',
-    uitlegUk: 'Сторонній хмарний сервіс. Конектора ще немає, і без вашого окремого підключення з власним ключем лист туди ніколи не піде.',
-    uitlegNl: 'Een externe clouddienst. De koppeling bestaat nog niet, en zonder uw eigen sleutel en uw eigen toestemming gaat er nooit post naartoe.',
-    aansluitenHref: '',
+    uitlegUk: 'Зовнішня хмарна служба перекладу з попереднім очищенням таємниць і номерів рахунків IBAN. Працює лише після додавання власного ключа або вашої явної згоди на спільний рушій у «Доступ ШІ».',
+    uitlegNl: 'Externe cloudvertaaldienst met voorafgaande zuivering van geheimen en IBAN-nummers. Werkt uitsluitend na het toevoegen van een eigen sleutel of uw expliciete akkoord op een gedeelde motor in «AI-toegang».',
+    aansluitenHref: AI_TOEGANG_HREF,
   },
   {
     id: 'microsoft-vertaling',
     naam: 'Microsoft Azure AI Translator',
     leverancier: 'Microsoft',
-    staat: 'nog-niet',
+    staat: 'aansluiten',
     plek: 'externe-dienst',
-    uitlegUk: 'Сторонній хмарний сервіс. Конектора ще немає.',
-    uitlegNl: 'Een externe clouddienst. De koppeling bestaat nog niet.',
-    aansluitenHref: '',
+    uitlegUk: 'Зовнішня хмарна служба Microsoft Azure AI Translator із захистом таємниць перед відправленням. Потребує власного ключа перекладу або вашої згоди на спільний рушій у «Доступ ШІ».',
+    uitlegNl: 'Externe clouddienst Microsoft Azure AI Translator met zuivering van geheimen vóór verzending. Vereist een eigen vertaalsleutel of uw akkoord op een gedeelde motor in «AI-toegang».',
+    aansluitenHref: AI_TOEGANG_HREF,
   },
   {
     id: 'deepl',
     naam: 'DeepL',
     leverancier: 'DeepL',
-    staat: 'nog-niet',
+    staat: 'aansluiten',
     plek: 'externe-dienst',
-    uitlegUk: 'Сторонній хмарний сервіс. Конектора ще немає.',
-    uitlegNl: 'Een externe clouddienst. De koppeling bestaat nog niet.',
-    aansluitenHref: '',
+    uitlegUk: 'Зовнішня служба перекладу DeepL (Free або Pro) із попереднім очищенням таємниць і параметрів стеження. Працює після підключення ключа або схвалення спільного рушія в «Доступ ШІ».',
+    uitlegNl: 'Externe vertaaldienst DeepL (Free of Pro) met voorafgaande zuivering van geheimen en volgparameters. Werkt na het koppelen van een sleutel of goedkeuring van een gedeelde motor in «AI-toegang».',
+    aansluitenHref: AI_TOEGANG_HREF,
   },
 ];
 
+export type EigenVertaalSleutels = Partial<Record<'google-vertaling' | 'microsoft-vertaling' | 'deepl' | 'libretranslate', boolean>>;
+
 /**
- * De catalogus met de ECHTE stand: de eigen agent «werkt» zodra er minstens één gekoppelde privé-agent met mail.read is
- * (of files.read in een documentweergave). Alle andere motoren blijven staan zoals ze zijn — nooit «werkt» zonder koppeling.
+ * De catalogus met de ECHTE stand: een motor staat alleen op «werkt» wanneer een gekoppelde privé-agent, een goedgekeurde
+ * gedeelde dienstmotor of een eigen vertaalsleutel in de kluis werkelijk aanwezig is — nooit «werkt» zonder echte koppeling.
  */
 export function motorenMetStand(
   agents: readonly AiVertalingAgentInfo[],
   voorDocument = false,
-  dienstMotoren?: readonly Pick<DienstMotorPubliek, 'soort' | 'akkoord'>[],
+  dienstMotoren?: readonly { soort: DienstMotorPubliek['soort'] | 'microsoft-translate'; akkoord: boolean }[],
+  eigenSleutels?: EigenVertaalSleutels,
 ): VertaalMotor[] {
   // MAILAI-001: «працює» лише агент, якого сервер справді може виконати (є ключ API), не просто будь-яке підключення.
   const bruikbaar = (agents || []).some(a => (voorDocument ? agentKanBestand({ ruimte: a.ruimte ?? 'prive', allowedFilesRead: a.allowedFilesRead, heeftSleutel: a.heeftSleutel }) : agentKanPost({ ruimte: a.ruimte ?? 'prive', allowedMailRead: a.allowedMailRead, heeftSleutel: a.heeftSleutel })));
   const dienstLijst = dienstMotoren || [];
-  const soortVoorMotor = (id: string) => (id === 'google-vertaling' ? 'google-translate' : id === 'deepl' ? 'deepl' : id === 'libretranslate' ? 'libretranslate' : null);
+  const soortVoorMotor = (id: string) => (
+    id === 'google-vertaling' ? 'google-translate'
+      : id === 'deepl' ? 'deepl'
+      : id === 'libretranslate' ? 'libretranslate'
+      : id === 'microsoft-vertaling' ? 'microsoft-translate'
+      : null
+  );
   return VERTAAL_MOTOREN.map(m => {
     if (m.id === 'eigen-agent') return { ...m, staat: (bruikbaar ? 'werkt' : 'aansluiten') as VertaalMotorStaat };
+    if (eigenSleutels && (eigenSleutels as Record<string, boolean | undefined>)[m.id] === true) {
+      return { ...m, staat: 'werkt' as VertaalMotorStaat };
+    }
     const doelSoort = soortVoorMotor(m.id);
     if (doelSoort && dienstLijst.length > 0) {
       const gevonden = dienstLijst.filter((d) => d.soort === doelSoort);

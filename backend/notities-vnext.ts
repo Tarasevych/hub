@@ -29,6 +29,19 @@ import {
   spiegelEtiketten, spiegelTekst, spiegelTitel, vingerafdruk, vnEtiketten, zoekWoorden,
   type ImportFout, type ImportItem, type Notitie, type NotitieInvoer, type NotitieKleur, type NotitieMap, type NotitieRevisie, type NotitieSoort, type Weergave,
 } from '../shared/notities-vnext-model';
+import {
+  bestandenVanNotitie,
+  cloudBestandenKiezerLijst,
+  isNotitiesBrugVlagAan,
+  kiesbareAfspraakItemsVoorLade,
+  koppelBestandAanNotitie,
+  koppelNotitieAanEvent,
+  koppelingenVoorNotitie,
+  maakAfspraakUitNotitie,
+  maakTaakUitNotitie,
+  ontkoppelNotitieEvent,
+  takenVanNotitie,
+} from './agenda-notities-brug';
 
 type Q = (sql: string, params?: unknown[]) => Promise<{ rows: any[]; rowCount: number | null }>;
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
@@ -47,6 +60,8 @@ export function notitieUit(r: any): Notitie {
     id: String(r.id), titel: r.titel, inhoud: r.inhoud_md, soort: r.soort, kleur: r.kleur, etiketten: r.etiketten || [], mapId: r.map_id ? String(r.map_id) : null,
     vast: Boolean(r.vast_sinds), gearchiveerdOp: r.gearchiveerd_op ? iso(r.gearchiveerd_op) : null, verwijderdOp: r.verwijderd_op ? iso(r.verwijderd_op) : null,
     auteur: r.auteur, herkomst: r.herkomst && typeof r.herkomst === 'object' ? r.herkomst : {}, versie: Number(r.versie), aangemaaktOp: iso(r.created_at), gewijzigdOp: iso(r.updated_at),
+    takenIds: Array.isArray(r.taken_ids) ? r.taken_ids.map(String) : [],
+    cloudBestandIds: Array.isArray(r.cloud_bestand_ids) ? r.cloud_bestand_ids.map(String) : [],
   };
 }
 const mapUit = (r: any): NotitieMap => ({ id: String(r.id), naam: r.naam, kleur: r.kleur, volgorde: Number(r.volgorde), aantal: Number(r.aantal || 0) });
@@ -526,5 +541,80 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
       return json({ aangemaakt: uit.aangemaakt, overgeslagen: uit.overgeslagen, fouten: uit.fouten, ruimte: kop });
     }),
     'POST /api/notities/export': route(async (_c, _a, lade, kop, d) => json({ ...(await exportAlles(lade, { ookArchief: d.ookArchief === true })), ruimte: kop })),
+    'POST /api/notities/koppelingen': route(async (_c, _a, lade, kop, d) => {
+      const notitieId = alsTekst(d.notitieId || d.id);
+      if (!isUuid(notitieId)) return error('ID_ONGELDIG', 400);
+      const cur = await notitieLezen(lade, notitieId);
+      if (!cur || cur.verwijderdOp) return error('NIET_GEVONDEN', 404);
+      const [agendaKoppelingen, taken, bestanden, kiesbareAfspraken, brugVlagAan] = await Promise.all([
+        koppelingenVoorNotitie(lade, notitieId),
+        takenVanNotitie(lade, cur.takenIds ?? []),
+        bestandenVanNotitie(lade, cur.cloudBestandIds ?? []),
+        kiesbareAfspraakItemsVoorLade(lade),
+        isNotitiesBrugVlagAan(lade.userId),
+      ]);
+      return json({ agendaKoppelingen, taken, bestanden, kiesbareAfspraken, brugVlagAan, ruimte: kop });
+    }),
+    'POST /api/notities/agenda/koppel': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
+      const uit = await koppelNotitieAanEvent(lade, {
+        notitieId: d.notitieId,
+        eventId: d.eventId,
+        agendaId: d.agendaId,
+        idempotentieSleutel: d.idempotentieSleutel,
+        bevestigd: d.bevestigd,
+        actor: wie(auth),
+      });
+      if (!uit.ok) return error(uit.fout, uit.fout === 'NIET_GEVONDEN' || uit.fout === 'EVENT_NIET_GEVONDEN' ? 404 : 400);
+      return json({ ok: true, koppeling: uit.koppeling, herhaald: uit.herhaald, ruimte: kop });
+    }),
+    'POST /api/notities/agenda/afspraak': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
+      const uit = await maakAfspraakUitNotitie(lade, String(auth.user.email || ''), {
+        notitieId: d.notitieId,
+        vorm: d.vorm,
+        idempotentieSleutel: d.idempotentieSleutel,
+        bevestigd: d.bevestigd,
+        meldDeelnemers: d.meldDeelnemers === 'all' || d.meldDeelnemers === 'externalOnly' ? d.meldDeelnemers : 'none',
+        caldavAccountId: d.caldavAccountId,
+        caldavAgendaUrl: d.caldavAgendaUrl,
+        actor: wie(auth),
+      });
+      if (!uit.ok) return error(uit.fout, uit.fout === 'NIET_GEVONDEN' ? 404 : uit.fout.includes('SCHRIJFRECHT') ? 403 : 400);
+      return json({ ok: true, koppeling: uit.koppeling, eventId: uit.eventId, ruimte: kop });
+    }),
+    'POST /api/notities/agenda/ontkoppel': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
+      const ok = await ontkoppelNotitieEvent(lade, { notitieId: d.notitieId, eventId: d.eventId, actor: wie(auth) });
+      return ok ? json({ ok: true, ruimte: kop }) : error('NIET_GEVONDEN', 404);
+    }),
+    // Створення завдання простору зі зворотним посиланням bronNotitie на вихідну нотатку (notitieId).
+    'POST /api/notities/taak/maak': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
+      const uit = await maakTaakUitNotitie(lade, {
+        notitieId: d.notitieId,
+        titel: d.titel,
+        uitChecklist: d.uitChecklist === true,
+        actor: wie(auth),
+      });
+      if (!uit.ok) return error(uit.fout, uit.fout === 'NIET_GEVONDEN' ? 404 : 400);
+      return json({ ok: true, aangemaakt: uit.aangemaakt, takenIds: uit.takenIds, ruimte: kop });
+    }),
+    // Пошук і прикріплення власного файла зі Сховища cloud-vnext (cloud / bestand) без дублювання байтів зі збереженням дзеркала app.mcp_console_items.
+    'POST /api/notities/bestanden/zoek': route(async (_c, _a, lade, kop, d) => {
+      const lijst = await cloudBestandenKiezerLijst(lade, d.zoek);
+      return json({ ...lijst, ruimte: kop });
+    }),
+    'POST /api/notities/bestanden/koppel': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
+      const uit = await koppelBestandAanNotitie(lade, {
+        notitieId: d.notitieId,
+        bestandId: d.bestandId,
+        actie: d.actie,
+        actor: wie(auth),
+      });
+      if (!uit.ok) return error(uit.fout, uit.fout === 'NIET_GEVONDEN' || uit.fout === 'BESTAND_NIET_GEVONDEN' ? 404 : 400);
+      return json({ ok: true, cloudBestandIds: uit.cloudBestandIds, bestanden: uit.bestanden, ruimte: kop });
+    }),
   };
 }

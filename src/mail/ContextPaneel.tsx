@@ -31,6 +31,7 @@ import {
 } from './gesprek-context';
 import { afspraakTijd, useIcsGebeurtenissen, type IcsBron } from './ics-gebeurtenissen';
 import VersieVergelijk from './VersieVergelijk';
+import MailDienstBruggen from './MailDienstBruggen';
 import { openBron, termijnTekst, voorstelUit, type WatNodigUitkomst } from './WatNodigBlok';
 import './context-paneel.css';
 
@@ -306,6 +307,15 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
         <button type='button' className='ctx-knop' onClick={p.onTaak}><ListTodo aria-hidden='true' />{t('До завдань', 'Aan taken')}</button>
         <button type='button' className='ctx-knop' onClick={() => p.onAfspraak(null)}><CalendarPlus aria-hidden='true' />{t('Створити подію', 'Afspraak maken')}</button>
       </span>
+      <MailDienstBruggen
+        lang={p.lang}
+        variant='taken'
+        bron={p.bron}
+        bericht={open}
+        afzenderBrief={afzenderBrief}
+        watNodig={wn}
+        onAfspraak={p.onAfspraak}
+      />
     </section>
   );
 
@@ -336,6 +346,7 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
         <ControleIcoon aria-hidden='true' />
         <span>{controleTekst[controle][p.lang === 'uk' ? 0 : 1]}{auth ? <small> SPF {auth.spf || '—'} · DKIM {auth.dkim || '—'} · DMARC {auth.dmarc || '—'}</small> : null}</span>
       </p>
+      <MailDienstBruggen lang={p.lang} variant='afzender' bron={p.bron} bericht={open} afzenderBrief={afzenderBrief} />
       <fieldset className='ctx-kleuren'>
         <legend>{t('Колір контакту', 'Kleur van het contact')}</legend>
         <label className='ctx-kleur' data-geen title={t('Без кольору', 'Geen kleur')}>

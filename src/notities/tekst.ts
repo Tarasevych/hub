@@ -29,6 +29,17 @@ export function foutTekst(lang: Lang, code: string): string {
     JSON_ONGELDIG: ['JSON не читається', 'JSON onleesbaar'],
     // SEC-002 (g04): de zoekvraag liep tegen de tijdgrens van 5 s aan; de lijst zelf werkt gewoon.
     ZOEKEN_TE_ZWAAR: ['Пошук зайняв забагато часу й був зупинений. Уточніть запит: коротші слова або менше слів.', 'Het zoeken duurde te lang en is gestopt. Maak de vraag preciezer: kortere of minder woorden.'],
+    BEVESTIGING_VEREIST: ['Підтвердьте дію запису до календаря перед збереженням прив’язки.', 'Bevestig eerst de schrijfactie met de agenda voordat u de koppeling bewaart.'],
+    EVENT_NIET_GEVONDEN: ['Подію календаря в поточному просторі не знайдено.', 'De agenda-afspraak is in de huidige ruimte niet gevonden.'],
+    BESTAND_NIET_GEVONDEN: ['Файл Сховища в поточному просторі не знайдено.', 'Het Opslag-bestand is in de huidige ruimte niet gevonden.'],
+    AGENDA_SCHRIJFRECHT_ONTBREEKT: ['Немає дозволу на запис у календар. Розширте доступ у розділі «Календар».', 'Geen schrijfrecht in de agenda. Breid de toegang uit op de agendapagina.'],
+    CALDAV_GEEN_SCHRIJFRECHT: ['Цей зовнішній календар доступний лише для читання.', 'Deze externe agenda is uitsluitend leesbaar.'],
+    GEEN_OPEN_PUNTEN: ['У цій нотатці немає невиконаних пунктів списку.', 'Deze notitie bevat geen openstaande lijstpunten.'],
+    IDEMPOTENTIE_SLEUTEL_ONGELDIG: ['Недійсний ключ запиту. Спробуйте ще раз.', 'Ongeldige verzoeksleutel. Probeer het opnieuw.'],
+    TAKEN_LIMIET_BEREIKT: ['Досягнуто межі 50 прив’язаних завдань для однієї нотатки.', 'De grens van 50 gekoppelde taken voor één notitie is bereikt.'],
+    BESTANDEN_LIMIET_BEREIKT: ['Досягнуто межі 50 прикріплених файлів для однієї нотатки.', 'De grens van 50 gekoppelde bestanden voor één notitie is bereikt.'],
+    CLOUD_GEDEELD_NIET_VOOR_TECHNISCHE_NOTITIE: ['Особисті файли Сховища не прикріплюються до нотаток технічного простору.', 'Persoonlijke Opslag-bestanden worden niet aan notities in de technische ruimte gekoppeld.'],
+    RUIMTE_VERSCHILT: ['Нотатка та календар перебувають у різних просторах.', 'De notitie en de agenda bevinden zich in verschillende ruimtes.'],
   };
   const p = t[code];
   if (p) return tr(lang, p[0], p[1]);

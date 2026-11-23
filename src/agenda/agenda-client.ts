@@ -38,6 +38,7 @@ export type AgendaOverzicht = {
   caldavSchrijvenOntbreekt: readonly (readonly [string, string])[];
   /** Per aanbieder wat vandaag werkelijk kan, en bij alles wat niet kan de reden. */
   mogelijkheden: Record<string, Record<string, unknown>>;
+  agendaKoppelingenVlag?: boolean;
   agendasFout?: string;
 };
 export type SchrijfUitslag = {
@@ -84,3 +85,65 @@ export const caldavKoppelen = (adres: string, gebruikersnaam: string, wachtwoord
   post<{ ok: boolean; fout?: string; account?: CaldavRij; haal?: { staat: string; aantal: number; fout: string } }>('/api/owner/agenda/caldav/koppelen', { adres, gebruikersnaam, wachtwoord, naam });
 export const caldavVernieuwen = (id = '') => post<Record<string, unknown>>('/api/owner/agenda/caldav/vernieuwen', { id });
 export const caldavVerwijderen = (id: string) => post<Record<string, unknown>>('/api/owner/agenda/caldav/verwijderen', { id });
+
+export const caldavSchrijfProef = (accountId: string, agendaUrl: string) =>
+  post<{ ok: boolean; schrijfrecht: boolean; onbevestigd?: boolean; fout?: string }>('/api/owner/agenda/caldav/schrijf-proef', { accountId, agendaUrl });
+export const caldavBewaarItem = (invoer: {
+  sleutel: string; accountId: string; agendaUrl: string; uid?: string; bronHref?: string; etag?: string; negeerVersie?: boolean; vorm: AgendaVorm;
+}) =>
+  post<SchrijfUitslag & { bronHref?: string }>('/api/owner/agenda/caldav/bewaar-item', {
+    idempotentieSleutel: invoer.sleutel,
+    accountId: invoer.accountId,
+    agendaUrl: invoer.agendaUrl,
+    uid: invoer.uid,
+    bronHref: invoer.bronHref,
+    etag: invoer.etag,
+    negeerVersie: Boolean(invoer.negeerVersie),
+    vorm: invoer.vorm,
+  });
+export const caldavWisItem = (invoer: {
+  sleutel: string; accountId: string; agendaUrl: string; uid: string; bronHref?: string; etag?: string; negeerVersie?: boolean;
+}) =>
+  post<SchrijfUitslag>('/api/owner/agenda/caldav/wis-item', {
+    idempotentieSleutel: invoer.sleutel,
+    accountId: invoer.accountId,
+    agendaUrl: invoer.agendaUrl,
+    uid: invoer.uid,
+    bronHref: invoer.bronHref,
+    etag: invoer.etag,
+    negeerVersie: Boolean(invoer.negeerVersie),
+  });
+
+export const exporteerAfspraakIcs = (invoer: { itemId?: string; vorm?: AgendaVorm; kalenderNaam?: string }) =>
+  post<{ ok: boolean; bestandsnaam: string; ics: string }>('/api/owner/agenda/afspraak/export-ics', invoer);
+
+export function downloadIcsBestand(bestandsnaam: string, icsInhoud: string): void {
+  if (typeof document === 'undefined' || typeof Blob === 'undefined' || typeof URL === 'undefined') return;
+  const blob = new Blob([icsInhoud], { type: 'text/calendar;charset=utf-8' });
+  const linkUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = linkUrl;
+  a.download = bestandsnaam || 'afspraak.ics';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(linkUrl), 1500);
+}
+
+export const deelnemerSprong = (email: string, doel: 'mail' | 'contact') =>
+  post<{ ok: boolean; doel?: 'mail' | 'contact'; pad?: string; sprongId?: string; fout?: string }>('/api/owner/agenda/deelnemer/sprong', { email, doel });
+
+export type GekoppeldeAfspraakNotitie = {
+  id: string; notitieId: string; eventId: string; agendaId: string; eventBron: 'google' | 'caldav' | 'ics';
+  eventTitel: string; eventBegin: string; aangemaaktOp: string; notitieTitel: string; doelPad: string;
+};
+export type BeschikbareNotitieKeuze = { id: string; titel: string; soort: string; gewijzigdOp: string };
+
+export const afspraakNotitiesLijst = (eventId: string) =>
+  post<{ ok: boolean; gekoppelde: GekoppeldeAfspraakNotitie[]; beschikbareNotities: BeschikbareNotitieKeuze[] }>('/api/owner/agenda/notities/lijst', { eventId });
+export const afspraakNotitieKoppelen = (invoer: {
+  idempotentieSleutel: string; eventId: string; agendaId?: string; notitieId?: string; maakNieuw?: boolean; titel?: string; inhoud?: string; bevestigd: boolean;
+}) =>
+  post<{ ok: boolean; notitieId: string; doelPad: string }>('/api/owner/agenda/notities/koppelen', invoer);
+export const afspraakNotitieOntkoppelen = (notitieId: string, eventId: string) =>
+  post<{ ok: boolean }>('/api/owner/agenda/notities/ontkoppelen', { notitieId, eventId });

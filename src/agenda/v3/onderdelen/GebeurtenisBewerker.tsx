@@ -32,9 +32,10 @@ export default function GebeurtenisBewerker({ lang, begin, nieuw, agendas, tijdz
   // Een conflict verschijnt onderaan het formulier: meteen in beeld brengen, anders ziet men het niet.
   useEffect(() => { if (w.conflict) conflictVak.current?.scrollIntoView({ block: 'nearest' }); }, [w.conflict]);
   const schrijfbaar = agendas.filter((a) => a.schrijfbaar);
+  const magEnigSchrijven = schrijfrecht || schrijfbaar.some((a) => a.id.startsWith('caldav:'));
   const titel = nieuw ? tr(lang, 'Нова подія', 'Nieuwe afspraak') : tr(lang, 'Змінити подію', 'Afspraak wijzigen');
 
-  if (!schrijfrecht) {
+  if (!magEnigSchrijven) {
     return (
       <Laag lang={lang} soort={smal ? 'blad' : 'venster'} titel={titel} onSluit={onSluit} data={{ 'agenda-v3-bewerker': 'alleen-lezen' }}>
         <p className='agv-balk'><Lock aria-hidden='true' /><span>{tr(lang,
@@ -49,7 +50,7 @@ export default function GebeurtenisBewerker({ lang, begin, nieuw, agendas, tijdz
   }
   if (volledig) {
     return (
-      <AgendaVenster lang={lang} bedoeling={{ vorm, nieuw }} agendas={agendas} standaardTijdzone={tijdzone} magSchrijven={schrijfrecht} bezig={w.bezig} fout={w.fout} conflict={w.conflict}
+      <AgendaVenster lang={lang} bedoeling={{ vorm, nieuw }} agendas={agendas} standaardTijdzone={tijdzone} magSchrijven={magEnigSchrijven} bezig={w.bezig} fout={w.fout} conflict={w.conflict}
         onSluiten={() => { w.wisFout(); onSluit(); }}
         onBewaren={async (v, meld, negeer) => { if (await w.bewaren(v, meld, negeer)) onSluit(); }}
         onVerwijderen={async (v, meld) => { if (await w.verwijderen(v, meld)) onSluit(); }}

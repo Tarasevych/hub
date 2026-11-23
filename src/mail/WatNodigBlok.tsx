@@ -10,9 +10,10 @@
 //     wordt op de server ÉN hier nog eens tegen het origineel gecontroleerd. Wat niet letterlijk in de brief staat, wordt niet
 //     getoond (de voet zegt hoeveel, en u kunt ze apart bekijken, gemarkeerd als «не знайдено»);
 //   - «Пункт хибний — прибрати» (in «Звідки це?») onthoudt dit apparaat per gesprek; «Повернути» haalt ze terug.
-import { CalendarPlus, ChevronDown, CircleHelp, Clock3, ListChecks, ListTodo, LoaderCircle, PenLine, ShieldAlert, ShieldCheck, Sparkles, Undo2 } from 'lucide-react';
+import { CalendarPlus, ChevronDown, CircleHelp, Clock3, ExternalLink, FileText, ListChecks, ListTodo, LoaderCircle, PenLine, ShieldAlert, ShieldCheck, Sparkles, Undo2 } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { maakNotitieUitMail } from './MailDienstBruggen';
 import {
   antwoordNodig, bronLabel, controleerPunten, datumUit, eenvoudigeOntleding, gespreksAlineas, normaliseer, telGevonden,
   type GecontroleerdPunt, type Opbouw,
@@ -54,10 +55,16 @@ type Props = {
   onConcept: (u: WatNodigUitkomst) => void;
   onTaak: (v: AfspraakOfTaak) => void;
   onAgenda: (v: AfspraakOfTaak) => void;
+  onNotitie?: (u: WatNodigUitkomst) => void;
   onUitkomst?: (u: WatNodigUitkomst) => void;
   /** UPD-010: слот верхньої панелі переглядача — компактне поле з піктограмою та розгортуваною панеллю. */
   kopHost?: HTMLElement | null;
 };
+
+const WAT_NODIG_NOTITIE_TEKST = {
+  knop: { uk: 'У Нотатки', nl: 'Naar Notities' },
+  open: { uk: 'Відкрити нотатку', nl: 'Notitie openen' },
+} as const;
 
 const WEG_SLEUTEL = 'mail-ai-weg-v1';
 const OPEN_SLEUTEL = 'mail-ai-blok-open-v1';
@@ -347,6 +354,17 @@ export default function WatNodigBlok(p: Props) {
             <button type='button' className='ai-blok-knop' data-actie='concept' disabled={vanMij && !zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onConcept(uitkomst); }}><PenLine aria-hidden='true' />{t('Чернетка відповіді', 'Antwoordconcept')}</button>
             <button type='button' className='ai-blok-knop' data-actie='taak' disabled={!zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onTaak(voorstel('taak')); }}><ListTodo aria-hidden='true' />{t('До завдань', 'Naar taken')}</button>
             <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => { if (inKop) setKopOpen(false); p.onAgenda(voorstel('agenda')); }}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
+            <WatNodigNotitieKnop
+              lang={p.lang}
+              context={p.context}
+              accountId={p.accountId}
+              berichtId={p.brieven[p.brieven.length - 1]?.id || p.threadId}
+              subject={p.subject}
+              uitkomst={uitkomst}
+              uit={!zichtbaar.length && !kort.length}
+              onSluitKop={inKop ? () => setKopOpen(false) : undefined}
+              onNotitie={p.onNotitie}
+            />
             {motor && !model && (
               <button type='button' className='ai-blok-knop ai-blok-knop-ai' data-actie='model' data-motor={motor.id} disabled={bezig || !genummerd.length} onClick={() => void vraagModel()}
                 title={motor.soort === 'lokaal'
@@ -412,4 +430,59 @@ export default function WatNodigBlok(p: Props) {
   }
 
   return blokSectie;
+}
+
+function WatNodigNotitieKnop(p: {
+  lang: 'uk' | 'nl';
+  context: Record<string, string>;
+  accountId: string;
+  berichtId: string;
+  subject: string;
+  uitkomst: WatNodigUitkomst;
+  uit: boolean;
+  onSluitKop?: () => void;
+  onNotitie?: (u: WatNodigUitkomst) => void;
+}) {
+  const [bezig, setBezig] = useState(false);
+  const [href, setHref] = useState('');
+  useEffect(() => { setHref(''); }, [p.accountId, p.berichtId]);
+
+  const klik = async () => {
+    if (bezig || p.uit) return;
+    p.onSluitKop?.();
+    if (p.onNotitie) {
+      p.onNotitie(p.uitkomst);
+      return;
+    }
+    setBezig(true);
+    const regels = [
+      ...p.uitkomst.punten.map((x) => `- [ ] ${x.tekst}${x.bron ? ` (${bronLabel(p.lang, x.bron)})` : ''}`),
+      ...p.uitkomst.kort.map((x) => `- ${x.tekst}${x.bron ? ` (${bronLabel(p.lang, x.bron)})` : ''}`),
+    ];
+    const uit = await maakNotitieUitMail(p.context, {
+      bronSoort: 'bericht',
+      accountId: p.accountId,
+      messageId: p.berichtId,
+      titel: p.subject || WAT_NODIG_NOTITIE_TEKST.knop[p.lang],
+      inhoud: regels.join('\n'),
+      etiketten: p.lang === 'nl' ? ['post'] : ['пошта'],
+    });
+    setBezig(false);
+    if (uit.ok) setHref(uit.href);
+  };
+
+  return (
+    <>
+      <button type='button' className='ai-blok-knop' data-actie='notitie' disabled={p.uit || bezig} onClick={() => void klik()}>
+        {bezig ? <LoaderCircle className='spin' aria-hidden='true' /> : <FileText aria-hidden='true' />}
+        {WAT_NODIG_NOTITIE_TEKST.knop[p.lang]}
+      </button>
+      {href && (
+        <a className='ai-blok-knop' data-actie='notitie-openen' href={href} target='_blank' rel='noopener noreferrer'>
+          <ExternalLink aria-hidden='true' />
+          {WAT_NODIG_NOTITIE_TEKST.open[p.lang]}
+        </a>
+      )}
+    </>
+  );
 }

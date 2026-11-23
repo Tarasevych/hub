@@ -175,3 +175,21 @@ html body .ctx-paneel .ctx-sectie .ctx-ai h4{align-items:center;margin:0}
 html body .ctx-ai-punten .ctx-bestand>strong{overflow:visible;font-size:13px;font-weight:600;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
 .ctx-ai-punten .ctx-bestand>small{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:3px}
 @media (pointer:coarse){html body .ctx-vergelijk{min-height:44px}}
+
+/* ---------------------------------------------------------------- CONSOL-001 (Віха M3): міжслужбові мости Пошти */
+.ctx-bruggen{display:grid;gap:6px;margin-top:8px}
+.ctx-bruggen-afzender{margin-top:10px}
+.ctx-brug-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface);color:var(--text);font-size:12px;line-height:1.45}
+.ctx-brug-status[data-aard='ok']{border-color:color-mix(in srgb,var(--ok) 45%,var(--line));background:var(--ok-zacht)}
+.ctx-brug-status[data-aard='ok']>svg{color:var(--ok)}
+.ctx-brug-status[data-aard='let-op']{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:var(--warn-zacht)}
+.ctx-brug-status[data-aard='let-op']>svg{color:var(--warn)}
+.ctx-brug-status[data-aard='fout']{border-color:color-mix(in srgb,var(--fout) 45%,var(--line));background:var(--fout-zacht)}
+.ctx-brug-status[data-aard='fout']>svg{color:var(--fout)}
+.ctx-brug-status>svg{flex:0 0 auto;width:15px;height:15px}
+.ctx-brug-link{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:12px;font-weight:600;text-decoration:none}
+.ctx-brug-link svg{width:14px;height:14px;color:var(--accent)}
+.ctx-brug-link:hover{background:var(--accent-soft)}
+.ctx-brug-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.ctx-brug-lijst{display:grid;gap:4px;margin-top:2px}
+@media (pointer:coarse){.ctx-brug-link{min-height:44px}}
