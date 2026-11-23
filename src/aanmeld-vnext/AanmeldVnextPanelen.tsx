@@ -3,10 +3,13 @@
 // en gebruikt dezelfde write/step-up/herstel-stromen. Opbouw naar het referentiebeeld: hero → zoek/chips → hoofdmethoden →
 // extra bescherming → toegang voor anderen → sessieverwijzing → eerlijke aanbiederscatalogus. Regels: geen verzonnen
 // standen of cijfers; geheimen alleen in het detailpaneel; ankers aanmeldmethoden-* blijven werken (dossier §8.5).
-import { MonitorSmartphone, ShieldCheck } from 'lucide-react';
+import { LayoutGrid, List, MonitorSmartphone, ShieldCheck } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AANMELD_ANKERS, type AanmeldGroep, type MethodeUi } from '../../shared/aanmeld-vnext-model';
+import AanmeldmethodenKaartV2 from '../aanmeldmethoden-v2/AanmeldmethodenKaartV2';
+import '../aanmeldmethoden-v2/aanmeldmethoden-v2.css';
+import { useAanmeldmethodenWeergave } from '../aanmeldmethoden-v2/vlag';
 import { ToegangWijziging, wijzigingUitUrl } from '../ToegangWijziging';
 import type { AccessPlanePanels } from '../toegangslaag-panelen';
 import type { Lang } from '../toegangslaag-teksten';
@@ -36,6 +39,7 @@ const useSmal = (): boolean => {
 export default function AanmeldVnextPanelen(p: PaneelProps) {
   const { lang, data, notice } = p;
   const smal = useSmal();
+  const { kaartV2Beschikbaar, actieveWeergave, zetWeergave } = useAanmeldmethodenWeergave();
   const [groep, setGroep] = useState<AanmeldGroep>('alles');
   const [zoek, setZoek] = useState('');
   const [detail, setDetail] = useState<MethodeUi | null>(null);
@@ -84,8 +88,49 @@ export default function AanmeldVnextPanelen(p: PaneelProps) {
 
   const van = (ids: Array<MethodeUi['id']>) => zichtbaar.filter((k) => ids.includes(k.id));
 
+  const weergaveKiezer = kaartV2Beschikbaar ? (
+    <div className='amv-weergave-balk' role='radiogroup' aria-label={tr(lang, 'Подання способів входу', 'Weergave van aanmeldmethoden')}>
+      <span className='amv-weergave-label'>{tr(lang, 'Подання розділу', 'Weergavemodus')}</span>
+      <div className='amv-weergave-knoppen'>
+        <button
+          type='button'
+          role='radio'
+          aria-checked={actieveWeergave === 'vnext'}
+          data-amv-weergave='vnext'
+          className={`amv-weergave-knop${actieveWeergave === 'vnext' ? ' is-actief' : ''}`}
+          onClick={() => zetWeergave('vnext')}
+        >
+          <List aria-hidden='true' />
+          <span>{tr(lang, 'Огляд', 'Overzicht')}</span>
+        </button>
+        <button
+          type='button'
+          role='radio'
+          aria-checked={actieveWeergave === 'kaart-v2'}
+          data-amv-weergave='kaart-v2'
+          className={`amv-weergave-knop${actieveWeergave === 'kaart-v2' ? ' is-actief' : ''}`}
+          onClick={() => zetWeergave('kaart-v2')}
+        >
+          <LayoutGrid aria-hidden='true' />
+          <span>{tr(lang, 'Карткова сітка', 'Kaartweergave')}</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  if (actieveWeergave === 'kaart-v2') {
+    return (
+      <AanmeldmethodenKaartV2
+        {...p}
+        weergaveKiezer={weergaveKiezer}
+        onSessies={p.onKies ? () => p.onKies!('sessions') : undefined}
+      />
+    );
+  }
+
   return (
     <div className='amv' data-amv-pagina=''>
+      {weergaveKiezer}
       {notice ? <p className='amv-melding is-fout' role='alert'>{notice}</p> : null}
       {wijziging ? <ToegangWijziging lang={lang} context={p.context} id={wijziging} onChange={() => void p.load()} /> : null}
       {p.tempPassword ? <p className='amv-melding is-info'><strong>{tr(lang, 'Тимчасовий пароль', 'Tijdelijk wachtwoord')}</strong><code className='amv-geheim'>{p.tempPassword}</code></p> : null}

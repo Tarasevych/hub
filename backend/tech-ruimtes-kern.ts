@@ -1,6 +1,6 @@
 // Technische ruimtes v2 — kern (database, vlag, schaduw). Routes: backend/tech-ruimtes.ts. Beslissing: shared/ruimte-toegang.ts.
 // Vlag tech-ruimtes-v2 UIT → niemand roept de v2-paden aan (tech-profiel.ts kijkt eerst naar v2Aan) = exact het oude gedrag.
-// Schaduw (vlag tech-ruimtes-v2-schaduw of env TECH_RUIMTES_V2_SCHADUW=1, vlag v2 UIT): oude antwoord blijft, verschil met de strenge
+// Schaduw (vlag tech-ruimtes-v2-schaduw uit app.feature_flags, vlag v2 UIT): oude antwoord blijft, verschil met de strenge
 // regel gaat naar het logboek (owner.tech.schaduw.verschil), hoogstens één regel per (gebruiker, punt, reden) per 10 minuten.
 import { createHash } from 'node:crypto';
 import { isOwnerEmail } from '../server/platform';
@@ -25,19 +25,29 @@ const audit = (userId: string, action: string, details: Record<string, unknown>,
 
 // ---------------------------------------------------------------- vlaggen (3 s in het geheugen per gebruiker)
 const vlagCache = new Map<string, { tot: number; aan: boolean }>();
+let wisExternVlagGeheugen: (() => void) | null = null;
+let moetExternWissen = false;
 async function vlag(userId: string, sleutel: string): Promise<boolean> {
   if (!userId) return false;
   const k = `${userId}\u0000${sleutel}`, nu = Date.now(), c = vlagCache.get(k);
   if (c && c.tot > nu) return c.aan;
   let aan = false;
-  try { const { berekenen } = await import('./vlaggen'); aan = (await berekenen({ id: userId } as never, [sleutel]))[0]?.value === true; } catch { aan = false; }
+  try {
+    const m = await import('./vlaggen');
+    wisExternVlagGeheugen = m.vlagGeheugenLeeg;
+    if (moetExternWissen) { moetExternWissen = false; m.vlagGeheugenLeeg(); }
+    aan = (await m.berekenen({ id: userId } as never, [sleutel]))[0]?.value === true;
+  } catch { aan = false; }
   vlagCache.set(k, { tot: nu + 3000, aan });
   return aan;
 }
-export const _vlagCacheLeeg = () => vlagCache.clear();
+export const _vlagCacheLeeg = () => {
+  vlagCache.clear();
+  if (wisExternVlagGeheugen) wisExternVlagGeheugen();
+  else moetExternWissen = true;
+};
 export const v2Aan = (userId: string) => vlag(userId, VLAG);
 export async function schaduwAan(userId: string): Promise<boolean> {
-  if (process.env.TECH_RUIMTES_V2_SCHADUW === '1') return true;
   return vlag(userId, VLAG_SCHADUW);
 }
 

@@ -70,6 +70,7 @@ import './account-afgemeld-menu.css'; // INTEG-001: afgemeld menu op een telefoo
 // UI-008 (vlag accountmenu-v2, standaard UIT): verfijnd menu. Zonder vlag blijft alles hieronder letterlijk zoals v6.
 import { avatarTip, useAccountmenuV2 } from './accountmenu-v2/vlag';
 import './accountmenu-v2/accountmenu-v2.css';
+import { useAccountmenuV3Voorkeuren } from './accountmenu-v3/accountmenu-v3-voorkeuren';
 import { useAccountmenuV3 } from './accountmenu-v3/vlag';
 import { AccountMenuV3 } from './accountmenu-v3/AccountMenuV3';
 import Vraag from './tech/Vraag';
@@ -430,8 +431,12 @@ export default function CanonicalAccountMenu({
   const t = copy[lang];
   const tech = useTech();
   const v2 = useRuimtesV2();
-  const am2 = useAccountmenuV2();
-  const am3 = useAccountmenuV3();
+  const am2Vlag = useAccountmenuV2();
+  const am3Vlag = useAccountmenuV3();
+  const menuVoorkeuren = useAccountmenuV3Voorkeuren();
+  const gekozenMenuStijl = menuVoorkeuren.indeling;
+  const am3 = am3Vlag && (gekozenMenuStijl === 'orbita' || gekozenMenuStijl === 'kaart');
+  const am2 = !am3 && ((am3Vlag && gekozenMenuStijl === 'v2' && am2Vlag) || (!am3Vlag && am2Vlag && gekozenMenuStijl !== 'klassiek'));
   const mobielVenster = useMobielAccountVenster();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
   // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.

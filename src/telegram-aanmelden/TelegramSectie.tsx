@@ -16,6 +16,8 @@ import { KOPPEL_RECHTEN, tekstIn, type KoppelRecht } from '../../shared/telegram
 import { VELD_NAMEN } from '../../shared/telegram-aanmelden/teksten';
 import { PLAATS_EIS_METHODEN, PLAATS_EIS_NAAM, type PlaatsEisMethode } from '../../shared/aanmeld-plaats-eis';
 import { codeRedenTekst, codeZwakte } from '../../shared/telegram-aanmelden/code-sterkte';
+import { TelegramStijlKiezer } from './TelegramInlogMaketHulp';
+import { useTelegramInlogStijl, useTelegramMaketVlag } from './vlag';
 import './telegram.css';
 
 type Lang = 'uk' | 'nl';
@@ -120,6 +122,8 @@ const leesSiteReserve = (): SiteProfiel => {
 
 export default function TelegramSectie({ lang }: { lang: Lang }) {
   const ctx = useMemo<Ctx>(() => identiteitCtx(), []);
+  const maketVlagAan = useTelegramMaketVlag();
+  const [inlogStijl, zetInlogStijl] = useTelegramInlogStijl();
   const [mijn, setMijn] = useState<Mijn | null>(null);
   const [fout, setFout] = useState('');
   const [melding, setMelding] = useState('');
@@ -225,6 +229,22 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
 
     <PlaatsEis lang={lang} methoden={mijn.plaatsEis || []}
       zetten={(methoden) => doeMet(() => tgPost(ctx, '/api/owner/telegram/plaats-eis', { methoden }), methoden.length ? tr(lang, 'Вимогу місця пристрою збережено.', 'De eis van de plaats van het apparaat is opgeslagen.') : tr(lang, 'Вимогу місця пристрою вимкнено.', 'De eis van de plaats van het apparaat staat uit.'))} />
+
+    {maketVlagAan && (
+      <div className='tga-blok' data-tg-maket-voorkeur=''>
+        <div className='tga-blok-kop'>
+          <h3>{tr(lang, 'Подання вікна входу через Telegram', 'Weergave van het Telegram-aanmeldvenster')}</h3>
+          <TelegramStijlKiezer lang={lang} stijl={inlogStijl} onKies={zetInlogStijl} />
+        </div>
+        <p className='tga-klein'>
+          {tr(
+            lang,
+            'У студійному поданні на екрані входу додатково показуються етапи перевірки, зразок повідомлення бота та пам’ятка захисту від підозрілих запитів.',
+            'In de uitgebreide weergave toont het aanmeldscherm ook de controlestappen, een voorbeeld van het botbericht en een waarschuwing bij een verdacht verzoek.',
+          )}
+        </p>
+      </div>
+    )}
 
     <Matrix ctx={ctx} lang={lang} rijen={mijn.matrix} beschikbaar={mijn.beschikbaar} opslaan={(body) => doeMet(() => tgPost(ctx, '/api/owner/telegram/matrix', body), tr(lang, 'Таблицю підтверджень збережено.', 'Bevestigingstabel opgeslagen.'))} />
 

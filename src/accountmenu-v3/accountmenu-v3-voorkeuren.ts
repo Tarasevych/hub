@@ -10,7 +10,7 @@ import { ACCENT_KLEUREN, DIENST_ACCENT, type Accent, type DienstId } from '../..
 import { contrast, meng, type Waarden } from '../thema/paletten';
 import type { Palet } from '../thema/kern';
 
-export const ACCOUNTMENU_V3_INDELINGEN = ['orbita', 'kaart'] as const;
+export const ACCOUNTMENU_V3_INDELINGEN = ['orbita', 'kaart', 'v2', 'klassiek'] as const;
 export type AccountmenuV3Indeling = typeof ACCOUNTMENU_V3_INDELINGEN[number];
 
 export const ACCOUNTMENU_V3_SYSTEEM_PALETTEN = ['kleur', 'maquette', 'klassiek-wit', 'klassiek-zwart', 'grifel', 'puur', 'violet'] as const;
@@ -82,7 +82,7 @@ export function begrensschaal(waarde: unknown): number {
 }
 
 export function isAccountmenuV3Indeling(v: unknown): v is AccountmenuV3Indeling {
-  return v === 'orbita' || v === 'kaart';
+  return v === 'orbita' || v === 'kaart' || v === 'v2' || v === 'klassiek';
 }
 
 export function isVasteTint(v: unknown): v is AccountmenuV3VasteTint {

@@ -27,12 +27,20 @@ export type MaquetteOpties = {
   bijWeergave?: (patch: Partial<MaquetteWeergave>) => void;
   /** Мовні кнопки картки «Мови» → справжня зміна мови сайту (cookie + обліковий запис). Taalknoppen → echte taal van de site. */
   bijTaal?: (lang: 'uk' | 'nl') => void;
+  /** З-12: живий зріз стану облікового запису (способи входу, дозволи простору, засоби відновлення) із сервера. */
+  liveStand?: MaquetteLiveStand | null;
+};
+export type MaquetteAanbiederStand = { klaar: boolean; gekoppeld: boolean };
+export type MaquetteLiveStand = {
+  aanbieders?: Partial<Record<'microsoft' | 'discord' | 'telegram' | 'apple' | 'sms', MaquetteAanbiederStand>>;
+  herstel?: { passkeys: number; totpActief: boolean; herstelcodesOver: number; kluisStand: 'uit' | 'open' | 'gesloten' | 'onbekend' };
+  delen?: { actieveRuimtes: number; gastSessies: number };
 };
 export type MaquetteWeergave = {
   dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: UiterlijkAccent; effecten: number;
   icoonStijl: 'klassiek' | 'kleur' | 'tint'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';
 };
-export type Maquette = { stop: () => void; direct: string[]; zetWeergave: (w: MaquetteWeergave) => void; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void };
+export type Maquette = { stop: () => void; direct: string[]; zetWeergave: (w: MaquetteWeergave) => void; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void; zetLiveStand: (stand: MaquetteLiveStand) => void };
 
 export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquette {
   const doc = root.ownerDocument;
@@ -682,7 +690,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Строк дії посилання","Geldigheidsduur","відомості"),
         рядок("Створити посилання","Koppeling maken","обережна-дія")
       ]),
-      група("чинні","Чинні запрошення та дозволи","Bestaande uitnodigingen en rechten","Майбутнє окреме представлення керування правами.","Toekomstig apart overzicht voor rechtenbeheer.","заплановано",[
+      група("чинні","Чинні запрошення та дозволи","Bestaande uitnodigingen en rechten","Учасники простору, очікувані запрошення, відкриті посилання та миттєва зміна або відкликання прав.","Ruimteleden, openstaande uitnodigingen, actieve koppelingen en directe wijziging of intrekking van rechten.","наявне",[
         рядок("Хто має доступ","Wie heeft toegang","відомості"),
         рядок("Змінити або відкликати право","Recht wijzigen of intrekken","обережна-дія")
       ])
@@ -758,12 +766,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Коди доступу для інших","Toegangscodes voor anderen","перехід",[],null,"security")
       ]),
       група("додаткові","Інші способи та готовність","Andere methoden en beschikbaarheid","Не показувати неввімкнений спосіб як готовий до входу.","Een niet-geactiveerde methode nooit als bruikbaar tonen.","наявне",[
-        рядок("Microsoft — потрібне налаштування власника","Microsoft — configuratie van eigenaar nodig","відомості",[],"заплановано"),
-        рядок("Discord — потрібне налаштування власника","Discord — configuratie van eigenaar nodig","відомості",[],"заплановано"),
-        рядок("Telegram — потрібне налаштування власника","Telegram — configuratie van eigenaar nodig","відомості",[],"заплановано"),
-        рядок("Apple — потрібне налаштування власника","Apple — configuratie van eigenaar nodig","відомості",[],"заплановано"),
+        рядок("Microsoft — потрібне налаштування власника","Microsoft — configuratie van eigenaar nodig","відомості",[],"власник"),
+        рядок("Discord — потрібне налаштування власника","Discord — configuratie van eigenaar nodig","відомості",[],"власник"),
+        рядок("Telegram — потрібне налаштування власника","Telegram — configuratie van eigenaar nodig","відомості",[],"власник"),
+        рядок("Apple — потрібне налаштування власника","Apple — configuratie van eigenaar nodig","відомості",[],"власник"),
         рядок("WhatsApp — такий вхід недоступний","WhatsApp — deze inlogmethode bestaat niet","відомості"),
-        рядок("SMS — потребує окремої розробки","Sms — afzonderlijke ontwikkeling nodig","відомості",[],"заплановано")
+        рядок("SMS — потрібне налаштування власника","Sms — configuratie van eigenaar nodig","відомості",[],"власник")
       ])
     ],
     security:[
@@ -811,13 +819,13 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Коди відновлення","Herstelcodes","відомості"),
         рядок("Інші способи підтвердження","Andere bevestigingsmethoden","відомості")
       ]),
-      група("сценарії","Як відновити доступ","Toegang herstellen","Окремі зрозумілі сценарії для втрати різних засобів входу.","Duidelijke scenario's voor verlies van verschillende inlogmiddelen.","заплановано",[
+      група("сценарії","Як відновити доступ","Toegang herstellen","Окремі зрозумілі сценарії для втрати різних засобів входу.","Duidelijke scenario's voor verlies van verschillende inlogmiddelen.","наявне",[
         рядок("Втрачено пристрій","Apparaat verloren","дія"),
         рядок("Втрачено ключ доступу","Passkey verloren","дія"),
         рядок("Недоступний автентифікатор","Authenticatie-app niet beschikbaar","дія"),
         рядок("Закінчилися резервні коди","Herstelcodes zijn op","дія")
       ]),
-      група("поради","Запобігання втраті доступу","Toegangsverlies voorkomen","Поради з урахуванням можливого шифрування особистих даних.","Adviezen met aandacht voor mogelijke versleuteling van gegevens.","заплановано",[
+      група("поради","Запобігання втраті доступу","Toegangsverlies voorkomen","Поради з урахуванням можливого шифрування особистих даних.","Adviezen met aandacht voor mogelijke versleuteling van gegevens.","наявне",[
         рядок("Перевірити резервні способи","Reserveopties controleren","дія"),
         рядок("Зрозуміти наслідки втрати ключа","Gevolgen van sleutelverlies begrijpen","відомості")
       ])
@@ -836,7 +844,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   function veiligeTekstРеєстру(waarde){return String(waarde??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");}
   function badgeРеєстру(stand){
     const t=написиРеєстру[preferences.lang];
-    const naam=stand==="заплановано"?t.planned:stand==="макет"?t.sample:stand==="частково"?t.partial:t.present;
+    const naam=stand==="власник"?(preferences.lang==="nl"?"Eigenaar moet dit instellen":"Потребує налаштування власника"):stand==="заплановано"?t.planned:stand==="макет"?t.sample:stand==="частково"?t.partial:t.present;
     return '<span class="register-badge register-'+(stand||'наявне')+'">'+naam+'</span>';
   }
   function keuzeРеєстру(sectie,groepsId,rij,rijIndex){
@@ -2606,8 +2614,62 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     });
   },{threshold:.06,rootMargin:"0px 0px 40px 0px"});
   luisteraars.push(()=>revealObserver.disconnect());
+  let поточнийЖивийСтан=opties.liveStand||null;
+  function оновитиЖивийРядок(sectionId,tekst){
+    const sec=byId(sectionId);
+    if(!sec)return;
+    let el=sec.querySelector('[data-mq-live-stand="'+sectionId+'"]');
+    if(!tekst){if(el)el.remove();return;}
+    if(!el){
+      const host=sec.querySelector('.section-copy')||sec.querySelector('.section-header');
+      if(!host)return;
+      el=doc.createElement('p');
+      el.className='section-note mq-live-samenvatting';
+      el.dataset.mqLiveStand=sectionId;
+      host.appendChild(el);
+    }
+    el.textContent=tekst;
+  }
+  function прийнятиЖивийСтан(stand){
+    if(!stand||typeof stand!=='object')return;
+    поточнийЖивийСтан=stand;
+    const nl=preferences.lang==='nl';
+    if(stand.aanbieders){
+      const дод=станНаСайті.methods&&станНаСайті.methods["додаткові"];
+      const регГрупа=(реєстрНалаштувань.methods||[]).find(g=>g.id==="додаткові");
+      const пари=[['microsoft',0,'Microsoft','Microsoft'],['discord',1,'Discord','Discord'],['telegram',2,'Telegram','Telegram'],['apple',3,'Apple','Apple'],['sms',5,'SMS','Sms']];
+      if(дод&&!дод.назви)дод.назви={};
+      for(const [id,idx,ukNaam,nlNaam] of пари){
+        const a=stand.aanbieders[id];
+        if(!a)continue;
+        const st=a.gekoppeld||a.klaar?'в-чинних':'власник';
+        const uk=a.gekoppeld?ukNaam+' — підключено':a.klaar?ukNaam+' — готовий до підключення':ukNaam+' — потрібне налаштування власника';
+        const nlTekst=a.gekoppeld?nlNaam+' — gekoppeld':a.klaar?nlNaam+' — klaar om te koppelen':nlNaam+' — configuratie van eigenaar nodig';
+        if(дод){дод.рядки[idx]=st;дод.назви[idx]={uk,nl:nlTekst};}
+        if(регГрупа&&регГрупа.рядки[idx]){регГрупа.рядки[idx].uk=uk;регГрупа.рядки[idx].nl=nlTekst;регГрупа.рядки[idx].стан=st==='в-чинних'?'наявне':'власник';}
+      }
+      const картка=root.querySelector('[data-future-section="methods"]');
+      if(картка){
+        const новийHtml=tekenМайбутніМожливості('methods');
+        if(новийHtml)картка.outerHTML=новийHtml;else картка.remove();
+      }
+    }
+    if(stand.delen){
+      const r=Number(stand.delen.actieveRuimtes||0),g=Number(stand.delen.gastSessies||0);
+      оновитиЖивийРядок('sharing',nl?'Actieve werkruimten: '+r+' · actieve gastsessies: '+g:'Активних просторів: '+r+' · чинних гостьових сесій: '+g);
+    }
+    if(stand.herstel){
+      const pk=Number(stand.herstel.passkeys||0),hc=Number(stand.herstel.herstelcodesOver||0),totp=Boolean(stand.herstel.totpActief),kl=stand.herstel.kluisStand||'onbekend';
+      const klUk=kl==='open'?'відімкнено':kl==='gesloten'?'замкнено':kl==='uit'?'вимкнено':'перевірка у розділі';
+      const klNl=kl==='open'?'ontgrendeld':kl==='gesloten'?'vergrendeld':kl==='uit'?'uit':'zie onderdeel';
+      оновитиЖивийРядок('methods',nl?'Toegangssleutels: '+pk+' · tweestaps-app: '+(totp?'aan':'niet ingesteld'):'Ключів доступу: '+pk+' · застосунок-автентифікатор: '+(totp?'увімкнено':'не налаштовано'));
+      оновитиЖивийРядок('security',nl?'Toegangssleutels: '+pk+' · persoonlijke sleutelkluis: '+klNl:'Ключів доступу: '+pk+' · сховище особистого ключа: '+klUk);
+      оновитиЖивийРядок('recovery',nl?'Resterende herstelcodes: '+hc+' · toegangssleutels: '+pk:'Залишилося кодів відновлення: '+hc+' · ключів доступу: '+pk);
+    }
+  }
   ініціалізовано=true;
   renderAll();
+  if(поточнийЖивийСтан)прийнятиЖивийСтан(поточнийЖивийСтан);
   zetMaten();
 
   return {
@@ -2628,5 +2690,6 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       }finally{сайтГотовий=true;}
       синхронізуватиДемо();
     },
+    zetLiveStand(stand) { прийнятиЖивийСтан(stand); },
   };
 }

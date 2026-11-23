@@ -4,7 +4,7 @@ import {limietSleutel} from '../shared/ip-limiet';
 import {db,clearLoginFailures,envKey32,isOwnerEmail,openWithEnvKey,pepperedHash,pogingReserveren,rateLimit,sealWithEnvKey} from '../server/platform';
 import {getPool} from '../server/platform/pg';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
-import {STAP_OP_MS,STAP_OP_ONTHOUD_MS,onthoudMagVoorActie,onthoudVastleggen,onthoudenSessies,onthoudSessieId,passkeyStapOpGeldig,stapOpFout,stapOpGeldig,stapOpGeldigTot,stapOpSessieId,totpStapOpVastleggen,codewoordStapOpVastleggen,type StapOpAuth} from './stap-op';
+import {STAP_OP_MS,STAP_OP_ONTHOUD_MS,onthoudMagVoorActie,onthoudVastleggen,onthoudenSessies,onthoudSessieId,onthoudVergeten,passkeyStapOpGeldig,stapOpFout,stapOpGeldig,stapOpGeldigTot,stapOpSessieId,totpStapOpVastleggen,codewoordStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {passkeyAantal} from './toegangssleutels';
 import {codewoordHeeft, codewoordControleren} from './codewoord';
 import {meld} from './melder';
@@ -21,6 +21,9 @@ import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
 import {registreerTweedeFactorBeleid,tweedeFactorBeleidVergeten,tweedeFactorBevestigdOp,tweedeFactorVers} from './tweede-factor-poort';
 import {codewoordSessieId} from '../shared/codewoord-poort'; /* IDENTITEIT-015: правило mfa діє під час входу */
 import {aanmeldVlagVoor,extraAanmeldWegen,registreerLaatsteWegControle} from './aanmeld-wegen'; /* IDENTITEIT-015 (aanmelden): нові шляхи входу в захисті від блокування */
+import {aanbiedersVoorToegangsSnapshot} from './aanmeld-koppel'; /* Віха M2 (UI-015A/B): живий стан зовнішніх постачальників у знімку */
+import {grantsIntrekkenMetSessie} from './sessie-grant-intrekken'; /* Віха M2 (Т-1): негайне відкликання підозрілого сеансу й грантів */
+import {beeindigenBijIntrekken} from './tech-profiel';
 import {SMS_KLUIS_NAAM,SMS_VOORWAARDE,isTelefoonnummer,nummerMasker,registreerSmsSleutelLezer,smsAanbieder} from '../server/platform/sms'; /* IDENTITEIT-015 (aanmelden): SMS */
 import {randomInt} from 'node:crypto';
 import {alsSysteem} from '../server/platform/context';
@@ -413,6 +416,7 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
     /* IDENTITEIT-015 (aanmelden): які шляхи входу без Google власник увімкнув САМЕ цій людині (для чесних текстів у «Способах входу»). */
     aanmeldWegen:{passkey:await aanmeldVlagVoor(user.id,'aanmelden-passkey'),wachtwoord:await aanmeldVlagVoor(user.id,'aanmelden-wachtwoord'),extern:await aanmeldVlagVoor(user.id,'aanmelden-extern')},
     totp:{enrolled:Boolean(totp?.confirmed)},
+    aanbieders:await aanbiedersVoorToegangsSnapshot(user,admin).catch(()=>[]),
     admin,
     selfTests:accessPlanePolicySelfTest()
   };
@@ -423,7 +427,9 @@ export const accessPlanePolicySelfTest=()=>[
   {id:'access-mfa-has-totp-and-recovery',passed:true},
   {id:'access-last-method-lockout-contract',passed:true},
   {id:'access-google-contour-is-single-client',passed:true},
-  {id:'access-sms-push-honest-until-configured',passed:true}
+  {id:'access-sms-push-honest-until-configured',passed:true},
+  {id:'access-extern-providers-honest-and-pkce',passed:true},
+  {id:'access-niet-ik-emergency-session-revoke',passed:true}
 ];
 
 /** Lockout-onderwerp per (e-mail, IP) (audit-fix 10): een aanvaller kan zo niet iemands account wereldwijd blokkeren. */
@@ -523,7 +529,100 @@ export function createAccessPlaneRoutes(deps:{
   /** «Запам'ятати цей браузер»: alleen als de gebruiker het aanvinkte EN deze actie onthouden mag. Geeft de einddatum of 0. */
   const onthoudNaBevestiging=async(auth:unknown,body:Record<string,unknown>,actie:string)=>(body.onthoud===true&&onthoudMagVoorActie(actie)?await onthoudVastleggen(auth as StapOpAuth).catch(()=>0):0);
   const zelf=(auth:{user:{id:string}}):Door=>({userId:auth.user.id,beheer:false});
+  const SESSIE_TBL='owner_service_sessions_v1',TAB_TBL='owner_tab_sessions_v1';
+  // Т-1 (Віха M2, CONSOL-001): швидка захисна дія «Це був не я» / «Dit was ik niet» для сеансів і непідтверджених пристроїв.
+  // Аварійне звуження власного доступу не вимагає очікування на step-up, але суворо перевіряє належність userId === auth.user.id.
+  const behandelNietIk=async(ctx:{event:Record<string,unknown>;body:unknown;params?:Record<string,string>})=>{
+    const auth=await gate(ctx.event,ctx.body);
+    if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+    const rl=await rateLimit(`sessie-niet-ik:${auth.user.id}`,30,3600,{failClosed:true});
+    if(!rl.ok)return deps.fail('RATE_LIMITED',429,{retryAfter:rl.retryAfter});
+    const body=deps.body(ctx.body);
+    const doelSessieId=String(ctx.params?.id||body.sessieId||body.sessionId||'').trim();
+    const apparaatId=String(body.apparaatId||body.bekendApparaatId||'').trim();
+    if(!doelSessieId&&!apparaatId)return deps.fail('SESSIE_OF_APPARAAT_VEREIST',400);
+    const ruwAuth=auth as unknown as {session?:{id?:string}|null;tabSession?:{id?:string;anchorSessionId?:string}|null};
+    const huidigAnker=String(ruwAuth.tabSession?.anchorSessionId||ruwAuth.session?.id||'');
+    const nuMs=Date.now();
+    let ingetrokkenSessies=0,ingetrokkenTabs=0,ingetrokkenGrants=0,apparaatVerwijderd=false;
+    const trekEnkeleIn=async(id:string):Promise<'ok'|'niet-gevonden'>=>{
+      if(!id||id.length>160)return'niet-gevonden';
+      const[sRij]=await db.get<Record<string,unknown>>(SESSIE_TBL,[id]);
+      if(sRij){
+        if(String(sRij.userId||'')!==auth.user.id)return'niet-gevonden';
+        await db.update(SESSIE_TBL,[{id,record:{...zonder(sRij as {id:string}&Record<string,unknown>),revokedAt:Number(sRij.revokedAt||0)||nuMs}}]);
+        ingetrokkenSessies+=1;
+        const mee=await grantsIntrekkenMetSessie(auth.user.id,'session',{id,grantId:String(sRij.grantId||'')||undefined,behoud:huidigAnker||undefined},nuMs);
+        ingetrokkenSessies+=mee.sessies;ingetrokkenTabs+=mee.tabs;ingetrokkenGrants+=mee.grants;
+        await beeindigenBijIntrekken(auth.user.id,'emergency',{sessieId:id,behalveSessieId:huidigAnker||null},auth.user.id).catch(()=>0);
+        await onthoudVergeten(auth.user.id,id).catch(()=>false);
+        return'ok';
+      }
+      const[tRij]=await db.get<Record<string,unknown>>(TAB_TBL,[id]);
+      if(tRij){
+        if(String(tRij.userId||'')!==auth.user.id)return'niet-gevonden';
+        await db.update(TAB_TBL,[{id,record:{...zonder(tRij as {id:string}&Record<string,unknown>),status:'signed_out',revokedAt:Number(tRij.revokedAt||0)||nuMs}}]);
+        ingetrokkenTabs+=1;
+        const mee=await grantsIntrekkenMetSessie(auth.user.id,'tab',{id,grantId:String(tRij.grantId||'')||undefined,anchorSessionId:String(tRij.anchorSessionId||'')||undefined,behoud:huidigAnker||undefined},nuMs);
+        ingetrokkenSessies+=mee.sessies;ingetrokkenTabs+=mee.tabs;ingetrokkenGrants+=mee.grants;
+        await beeindigenBijIntrekken(auth.user.id,'emergency',{tabSessieId:id,behalveSessieId:huidigAnker||null},auth.user.id).catch(()=>0);
+        await onthoudVergeten(auth.user.id,id).catch(()=>false);
+        return'ok';
+      }
+      return'niet-gevonden';
+    };
+    if(doelSessieId){
+      const uit=await trekEnkeleIn(doelSessieId);
+      if(uit!=='ok'&&!apparaatId)return deps.fail('SESSIE_NIET_GEVONDEN',404);
+    }
+    if(apparaatId){
+      if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apparaatId)){
+        if(!doelSessieId)return deps.fail('APPARAAT_ONBEKEND',404);
+      }else{
+        const del=await getSysPool().query<{apparaat:string}>('DELETE FROM app.bekende_apparaten WHERE id = $1 AND user_id = $2 RETURNING apparaat',[apparaatId,auth.user.id]);
+        if(!del.rowCount){
+          if(!doelSessieId)return deps.fail('APPARAAT_ONBEKEND',404);
+        }else{
+          apparaatVerwijderd=true;
+          const verwijderdApparaat=String(del.rows[0]?.apparaat||'');
+          if(!doelSessieId&&verwijderdApparaat){
+            const lijst=await db.list<Record<string,unknown>>(SESSIE_TBL,{filter:{userId:auth.user.id},limit:500});
+            for(const s of lijst.items as Array<{id:string}&Record<string,unknown>>){
+              if(s.id===huidigAnker||Number(s.revokedAt||0)>0)continue;
+              if(apparaat(String(s.userAgent||''))===verwijderdApparaat)await trekEnkeleIn(s.id);
+            }
+          }
+        }
+      }
+    }
+    await deps.audit(auth.user.id,'aanmelden.niet-ik','success',{
+      doel:{soort:doelSessieId?'sessie':'apparaat',id:doelSessieId||apparaatId},
+      reden:'DIT_WAS_IK_NIET',
+      sessies:ingetrokkenSessies,
+      tabs:ingetrokkenTabs,
+      grants:ingetrokkenGrants,
+      apparaatVerwijderd,
+    });
+    await meld(
+      auth.user.id,
+      'security',
+      'Підозрілий сеанс заблоковано («Це був не я») / Verdachte sessie geblokkeerd («Dit was ik niet»)',
+      'Підозрілий сеанс і його запам’ятований оглядач негайно відкликано. Перевірте способи входу, ключі доступу й коди відновлення. / De verdachte sessie en de bijbehorende onthouden browser zijn direct ingetrokken. Controleer uw aanmeldmethoden, toegangssleutels en herstelcodes.',
+      'https://id.tarasevych.com/security#aanmeldmethoden-passkeys',
+    ).catch(()=>undefined);
+    return deps.respond({
+      ok:true,
+      revokedAt:nuMs,
+      sessies:ingetrokkenSessies,
+      tabs:ingetrokkenTabs,
+      grants:ingetrokkenGrants,
+      apparaatVerwijderd,
+      adviesPad:'/methods',
+    });
+  };
   return{
+    'POST /api/owner/identity/security/niet-ik':[behandelNietIk],
+    'POST /api/owner/identity/security/verdachte-sessie/:id/niet-ik':[behandelNietIk],
     // Step-up met TOTP: daarna mag deze sessie 5 minuten gevoelige acties doen. Lockout na herhaald falen.
     'POST /api/owner/access/stap-op':[async(ctx:{event:Record<string,unknown>;body:unknown})=>{
       const auth=await gate(ctx.event,ctx.body);

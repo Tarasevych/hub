@@ -42,6 +42,18 @@ export function laadRuimtesVlag(opnieuw = false): Promise<boolean> {
 }
 export function useRuimtesV2(): boolean {
   const [v, setV] = useState(waarde === true);
-  useEffect(() => { luisteraars.add(setV); void laadRuimtesVlag(); return () => { luisteraars.delete(setV); }; }, []);
+  useEffect(() => {
+    luisteraars.add(setV);
+    void laadRuimtesVlag();
+    const bijVernieuwing = () => {
+      try { sessionStorage.removeItem(OPSLAG); } catch { /* без сховища */ }
+      void laadRuimtesVlag(true);
+    };
+    window.addEventListener('mr:vlaggen-vernieuwd', bijVernieuwing);
+    return () => {
+      luisteraars.delete(setV);
+      window.removeEventListener('mr:vlaggen-vernieuwd', bijVernieuwing);
+    };
+  }, []);
   return v;
 }

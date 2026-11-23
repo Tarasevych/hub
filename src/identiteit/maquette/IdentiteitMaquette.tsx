@@ -6,7 +6,9 @@ import { Bell } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import './maquette-omlijsting.css';
-import type { Maquette, MaquetteOpties, MaquetteWeergave } from './maquette-motor';
+import type { Maquette, MaquetteLiveStand, MaquetteOpties, MaquetteWeergave } from './maquette-motor';
+import { api } from '../../platform/client';
+import { ecosystemTabContext } from '../../tab-context';
 import { MELDINGEN_OPENEN_EVENT } from '../../canoniek-meldingen';
 import { useThemaStand, zetWeergaveStijl } from '../../thema/useThema';
 import type { WeergaveStijl } from '../../thema/weergave-stijl';
@@ -175,6 +177,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
   gebruikerRef.current = gebruiker;
   const wortel = useRef<HTMLDivElement>(null);
   const motor = useRef<Maquette | null>(null);
+  const liveStandRef = useRef<MaquetteLiveStand | null>(null);
   // Гнізда .mq-echt у живій розмітці; картки будуються рядком HTML, тож після кожного перемальовування збираємо їх знову.
   const [gaten, setGaten] = useState<HTMLElement[]>([]);
   const [belHouder, setBelHouder] = useState<HTMLElement | null>(null);
@@ -251,11 +254,13 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
         bijAccountMenu: openAccountMenu,
         weergave: weergaveRef.current,
         bijWeergave: weergaveNaarSite,
+        liveStand: liveStandRef.current,
         // Без обробника мови (старі виклики) — кнопки змінюють лише тексти макета, як раніше.
         ...(onTaalRef.current ? { bijTaal: (l: 'uk' | 'nl') => onTaalRef.current?.(l) } : {}),
       });
       motorActief = m;
       motor.current = m;
+      if (liveStandRef.current) m.zetLiveStand(liveStandRef.current);
       verzamelGaten();
       // Пряме посилання на розділ: показуємо його зі справжніми налаштуваннями. Типовий розділ — сторінка починається з героя, як макет.
       if (actief && actief !== 'intro' && actief !== TYPISCH) m.ga(naarOntwerp(actief), true);
@@ -303,6 +308,77 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
     vorigeWeergave.current = weergaveSleutel;
     motor.current?.zetWeergave(weergaveRef.current);
   }, [weergaveSleutel]);
+
+  // З-12: фонове зчитування справжнього живого стану постачальників входу, дозволів і засобів відновлення з сервера.
+  useEffect(() => {
+    let actiefEffect = true;
+    const ctx = { service: 'identity', tabContext: ecosystemTabContext(), sourceOrigin: location.origin };
+    void Promise.all([
+      api.post('/api/owner/access/snapshot', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
+      api.post('/api/owner/aanmeld/vnext/aanbieders', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
+      api.post('/api/owner/sleutelkluis/stand', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
+      api.post('/api/owner/access/gast-sessies/lijst', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
+      api.post('/api/owner/workspaces/list', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
+    ]).then(([snap, aanb, kluis, gasten, ruimtes]) => {
+      if (!actiefEffect) return;
+      if (!snap && !aanb && !kluis && !gasten && !ruimtes) return;
+      const aanbiedersMap: NonNullable<MaquetteLiveStand['aanbieders']> = {};
+      const lijst = Array.isArray(aanb?.aanbieders)
+        ? (aanb!.aanbieders as Array<{ id?: string; klaarVoorKoppeling?: boolean; gekoppeld?: unknown }>)
+        : [];
+      for (const id of ['microsoft', 'discord', 'telegram', 'apple'] as const) {
+        const rij = lijst.find((x) => x.id === id);
+        if (rij) aanbiedersMap[id] = { klaar: Boolean(rij.klaarVoorKoppeling), gekoppeld: Boolean(rij.gekoppeld) };
+      }
+      const phone = (snap?.phone && typeof snap.phone === 'object' ? snap.phone : null) as
+        | { verified?: boolean; sms?: { klaar?: boolean } }
+        | null;
+      if (phone) {
+        aanbiedersMap.sms = { klaar: Boolean(phone.sms?.klaar), gekoppeld: Boolean(phone.verified) };
+      }
+      const factors = Array.isArray(snap?.factors)
+        ? (snap!.factors as Array<{ id?: string; enrolled?: boolean; count?: number; remaining?: number }>)
+        : [];
+      const pk = factors.find((f) => f.id === 'passkey');
+      const tp = factors.find((f) => f.id === 'totp');
+      const rc = factors.find((f) => f.id === 'recovery');
+      const kluisStandRuw = String(kluis?.stand || '');
+      const kluisStand: 'uit' | 'open' | 'gesloten' | 'onbekend' =
+        kluisStandRuw === 'open' || kluisStandRuw === 'gesloten' || kluisStandRuw === 'uit' ? kluisStandRuw : 'onbekend';
+      const gastLijst = Array.isArray(gasten?.sessies) ? (gasten!.sessies as Array<{ actief?: boolean }>) : [];
+      const ruimteLijst = Array.isArray(ruimtes?.workspaces)
+        ? (ruimtes!.workspaces as Array<{ archived?: boolean }>)
+        : Array.isArray(ruimtes?.items)
+          ? (ruimtes!.items as Array<{ archived?: boolean }>)
+          : [];
+      const stand: MaquetteLiveStand = {
+        ...(Object.keys(aanbiedersMap).length > 0 ? { aanbieders: aanbiedersMap } : {}),
+        ...(snap
+          ? {
+              herstel: {
+                passkeys: typeof pk?.count === 'number' ? pk.count : pk?.enrolled ? 1 : 0,
+                totpActief: Boolean(tp?.enrolled),
+                herstelcodesOver: typeof rc?.remaining === 'number' ? rc.remaining : 0,
+                kluisStand,
+              },
+            }
+          : {}),
+        ...(gasten || ruimtes
+          ? {
+              delen: {
+                actieveRuimtes: Math.max(1, ruimteLijst.filter((w) => !w?.archived).length),
+                gastSessies: gastLijst.filter((g) => g?.actief !== false).length,
+              },
+            }
+          : {}),
+      };
+      liveStandRef.current = stand;
+      motor.current?.zetLiveStand(stand);
+    });
+    return () => {
+      actiefEffect = false;
+    };
+  }, []);
 
   return (
     <>
