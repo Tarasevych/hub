@@ -26,8 +26,9 @@ import * as store from './connectors-opslag';
 import { githubKoppeling } from './github-platform';
 import { googleSuiteOnboardingSnapshot } from './google-suite-inrichting';
 import { listUserGrants } from './mcp-connector';
-import { aanbiederFout, LEGE_FEITEN, startStaat, WERKRUIMTE_FOUTEN, type Feiten, type ModelKeuze } from '../shared/ai-werkruimte';
+import { aanbiederFout, LEGE_FEITEN, pasGekozenApparaatToe, startStaat, WERKRUIMTE_FOUTEN, type Feiten, type ModelKeuze } from '../shared/ai-werkruimte';
 import { AI_AANBIEDERS } from '../shared/ai-aanbieders';
+import { apparaatInRuimte, type AiRuimte } from '../shared/ai-ruimte';
 import {
   bouwWerkruimteSysteemInstructie,
   controleerAanroepVoorWerkruimte,
@@ -110,7 +111,7 @@ const browserActief = (a: store.AgentRow) => a.browser_enabled === true && !!a.a
  * Alle feiten van één account. Elk onderdeel apart in try/catch: één kapotte bron (bv. Google) mag de startpagina
  * niet leegmaken — ze toont dan voor dat ene onderdeel «стан не вдалося прочитати».
  */
-export async function feitenVan(user: { id: string; email?: string }, recht: boolean): Promise<Feiten> {
+export async function feitenVan(user: { id: string; email?: string }, recht: boolean, ruimte: AiRuimte = 'prive'): Promise<Feiten> {
   const veilig = async <T>(fn: () => Promise<T>, terug: T): Promise<T> => { try { return await fn(); } catch { return terug; } };
   const [aanbiederStand, chatTools, agents, github, google, koppelingen] = await Promise.all([
     veilig(() => modellenVoorGebruiker(user.id), { sleutel: false, modellen: ingesteldeModellen() }),
@@ -121,15 +122,25 @@ export async function feitenVan(user: { id: string; email?: string }, recht: boo
     googleStand(user.id, String(user.email ?? '')),
     veilig(async () => (await listUserGrants(user.id)).length, 0),
   ]);
-  const machines = agents.filter((a) => !isBrowser(a));
-  const browsers = agents.filter(isBrowser);
+  const machines = agents.filter((a) => !isBrowser(a) && apparaatInRuimte(a, ruimte));
+  const browsers = agents.filter((a) => isBrowser(a) && apparaatInRuimte(a, ruimte));
+  const apparaatItems = machines.map((a) => ({
+    id: a.id,
+    naam: a.name,
+    platform: a.platform ?? null,
+    online: agentOnline(a.id),
+  }));
   return {
     ...LEGE_FEITEN,
     recht,
     sleutel: aanbiederStand.sleutel,
     chatTools,
     modellen: aanbiederStand.modellen,
-    apparaten: { totaal: machines.length, online: machines.filter((a) => agentOnline(a.id)).length },
+    apparaten: {
+      totaal: machines.length,
+      online: apparaatItems.filter((a) => a.online).length,
+      items: apparaatItems,
+    },
     browsers: { totaal: browsers.length, actief: browsers.filter(browserActief).length },
     github, google, koppelingen,
   };
@@ -139,10 +150,13 @@ type SessieUitkomst = { errorCode: string } | { user: { id: string; email: strin
 export type WerkruimteDeps = {
   requireSession: (event: Record<string, unknown>, body: unknown) => Promise<SessieUitkomst>;
   /** Alleen voor tests: feiten en chat zonder database/netwerk. */
-  feiten?: (user: { id: string; email?: string }, recht: boolean) => Promise<Feiten>;
+  feiten?: (user: { id: string; email?: string }, recht: boolean, ruimte?: AiRuimte) => Promise<Feiten>;
   chatDeps?: ChatDeps;
   ecosysteemOpslag?: EcosysteemOpslag;
   geheugenOpslag?: StroomOpslag;
+  /** Alleen voor tests: apparatenlijst en ruimte zonder database. */
+  agentenLijst?: (userId: string) => Promise<store.AgentRow[]>;
+  ladeVoorVerzoek?: (userId: string, body: unknown) => Promise<{ userId: string; ruimte: AiRuimte }>;
   /** Alleen voor tests: zonder teller. Standaard 20 verzoeken per minuut per account (de sleutel kost de gebruiker geld). */
   limiet?: (userId: string) => Promise<boolean>;
 };
@@ -174,7 +188,10 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
       const ctx = raw as unknown as { event: Record<string, unknown>; body: unknown };
       const p = await poort(ctx);
       if ('fout' in p) return p.fout;
-      const feiten = await feitenVanDeps({ id: p.user.id, email: p.user.email }, true);
+      const lade = deps.feiten && !deps.ladeVoorVerzoek
+        ? { userId: p.user.id, ruimte: 'prive' as AiRuimte }
+        : await (deps.ladeVoorVerzoek ?? ecosysteemLade)(p.user.id, ctx.body).catch(() => ({ userId: p.user.id, ruimte: 'prive' as AiRuimte }));
+      const feiten = await feitenVanDeps({ id: p.user.id, email: p.user.email }, true, lade.ruimte);
       return json({ feiten, stand: startStaat(feiten) });
     }) as RouterMiddleware],
 
@@ -194,21 +211,40 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
 
       const berichten = sanitizeHistory(body.messages);
       if (!berichten.length || berichten[berichten.length - 1].role !== 'user') return error(WERKRUIMTE_FOUTEN.laatsteMoetVraagZijn, 400);
-      if (!(await limiet(p.user.id))) return error(WERKRUIMTE_FOUTEN.teVeel, 429);
 
+      const gevraagdApparaatId = typeof body.apparaatId === 'string'
+        ? body.apparaatId.trim()
+        : typeof body.machineId === 'string'
+          ? body.machineId.trim()
+          : '';
+      if (gevraagdApparaatId.length > 80) return error(WERKRUIMTE_FOUTEN.apparaatNietGevonden, 403);
+
+      let gekozenApparaat: store.AgentRow | null = null;
       const basisDeps = deps.chatDeps ?? defaultChatDeps;
       const werkruimteId = typeof body.werkruimteId === 'string' ? body.werkruimteId.trim() : '';
       const contextSleutels = Array.isArray(body.contextSleutels)
         ? body.contextSleutels.filter((s): s is string => typeof s === 'string').slice(0, 12)
         : [];
+      const metGeheugen = body.metGeheugen === true;
+
+      let lade: { userId: string; ruimte: AiRuimte } | null = null;
+      if (gevraagdApparaatId || werkruimteId || contextSleutels.length > 0 || metGeheugen) {
+        lade = await (deps.ladeVoorVerzoek ?? ecosysteemLade)(p.user.id, ctx.body);
+      }
+
+      if (gevraagdApparaatId && lade) {
+        const alleAgenten = await (deps.agentenLijst ?? store.listAgents)(p.user.id);
+        gekozenApparaat = alleAgenten.find((a) => a.id === gevraagdApparaatId && !isBrowser(a) && apparaatInRuimte(a, lade.ruimte)) ?? null;
+        if (!gekozenApparaat) return error(WERKRUIMTE_FOUTEN.apparaatNietGevonden, 403);
+      }
+
+      if (!(await limiet(p.user.id))) return error(WERKRUIMTE_FOUTEN.teVeel, 429);
 
       let werkruimte = null as Awaited<ReturnType<typeof leesWerkruimteEnContextVoorChat>>['werkruimte'];
       let extraSystem = '';
-      const metGeheugen = body.metGeheugen === true;
       let geheugenAantal = 0;
 
-      if (werkruimteId || contextSleutels.length > 0 || metGeheugen) {
-        const lade = await ecosysteemLade(p.user.id, ctx.body);
+      if (lade && (werkruimteId || contextSleutels.length > 0 || metGeheugen)) {
         if (werkruimteId || contextSleutels.length > 0) {
           const geladen = await leesWerkruimteEnContextVoorChat(lade, werkruimteId, contextSleutels, deps.ecosysteemOpslag);
           werkruimte = geladen.werkruimte;
@@ -233,6 +269,14 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
         }
       }
 
+      if (gekozenApparaat) {
+        const apparaatInstructie = [
+          `Обраний користувачем цільовий пристрій: "${gekozenApparaat.name}" (id: ${gekozenApparaat.id}). Виконуй інструменти комп’ютера саме на цьому пристрої.`,
+          `Door de gebruiker gekozen doelapparaat: "${gekozenApparaat.name}" (id: ${gekozenApparaat.id}). Voer computerhulpmiddelen precies op dit apparaat uit.`,
+        ].join('\n');
+        extraSystem = [extraSystem, apparaatInstructie].filter(Boolean).join('\n\n');
+      }
+
       const samengesteldeDeps: ChatDeps = {
         ...basisDeps,
         model,
@@ -242,22 +286,23 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
           return filterHulpmiddelenVoorWerkruimte(alle, werkruimte);
         },
         callTool: async (uid, name, args) => {
-          const controle = controleerAanroepVoorWerkruimte(name, args, werkruimte);
+          const doelArgs = pasGekozenApparaatToe(name, args, gekozenApparaat?.id ?? null);
+          const controle = controleerAanroepVoorWerkruimte(name, doelArgs, werkruimte);
           if (!controle.ok) {
             return { isError: true, content: [{ type: 'text', text: controle.reden }] };
           }
-          return basisDeps.callTool(uid, name, args);
+          return basisDeps.callTool(uid, name, doelArgs);
         },
       };
 
       const uit = await runChat(samengesteldeDeps, p.user.id, berichten);
       if ('error' in uit) {
-        await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'failure', details: { model, fout: uit.error } }).catch(() => undefined);
+        await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'failure', details: { model, fout: uit.error, ...(gekozenApparaat ? { apparaatId: gekozenApparaat.id } : {}) } }).catch(() => undefined);
         if (uit.error === 'no_api_key') return error(WERKRUIMTE_FOUTEN.geenSleutel, 409);
         return error(aanbiederFout(uit.status), 502);
       }
-      await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'success', details: { model, stappen: uit.steps.map((s) => s.tool), ...(werkruimte ? { werkruimteId: werkruimte.id } : {}), ...(metGeheugen ? { geheugenAantal } : {}) } }).catch(() => undefined);
-      return json({ ...uit, model, ...(werkruimte ? { werkruimteId: werkruimte.id } : {}), ...(metGeheugen ? { geheugenAantal } : {}) });
+      await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'success', details: { model, stappen: uit.steps.map((s) => s.tool), ...(gekozenApparaat ? { apparaatId: gekozenApparaat.id } : {}), ...(werkruimte ? { werkruimteId: werkruimte.id } : {}), ...(metGeheugen ? { geheugenAantal } : {}) } }).catch(() => undefined);
+      return json({ ...uit, model, ...(gekozenApparaat ? { apparaatId: gekozenApparaat.id } : {}), ...(werkruimte ? { werkruimteId: werkruimte.id } : {}), ...(metGeheugen ? { geheugenAantal } : {}) });
     }) as RouterMiddleware],
   };
 }

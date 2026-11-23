@@ -446,11 +446,35 @@ export function afstemmingKernRoutes(requireSession: RequireSession): Record<str
       return error('ACTIE_ONGELDIG', 400);
     }),
 
-    // -------------------------------------------------------------- geschiedenis (append-only journaal) en diff
+    // -------------------------------------------------------------- geschiedenis (append-only journaal: één kaart of volledige stroom) en diff
     'POST /api/owner/afstemming/geschiedenis': route(async (_c, auth, d) => {
-      const kaart = await laadKaart(auth.user.id, d.id);
-      const blad = await db.list<GebeurtenisRecord>(GEBEURTENISSEN, { filter: { ownerUserId: auth.user.id, kaartId: kaart.id }, limit: LIMIET.gebeurtenissenPagina, nieuwsteEerst: true, ...(str(d.token) ? { nextToken: str(d.token) } : {}) });
-      return json({ gebeurtenissen: (blad.items as unknown as Array<MetId<GebeurtenisRecord>>).map(gebeurtenisUit), volgende: blad.nextToken ?? null });
+      const id = str(d.id).trim();
+      if (id) {
+        const kaart = await laadKaart(auth.user.id, id);
+        const blad = await db.list<GebeurtenisRecord>(GEBEURTENISSEN, { filter: { ownerUserId: auth.user.id, kaartId: kaart.id }, limit: LIMIET.gebeurtenissenPagina, nieuwsteEerst: true, ...(str(d.token) ? { nextToken: str(d.token) } : {}) });
+        return json({ gebeurtenissen: (blad.items as unknown as Array<MetId<GebeurtenisRecord>>).map(gebeurtenisUit), volgende: blad.nextToken ?? null });
+      }
+      await zorgLegacySeed(auth.user.id);
+      const soortFilter = str(d.soort).trim();
+      const actorFilter = str(d.actor).trim();
+      const [kaartenLijst, blad] = await Promise.all([
+        eigenKaarten(auth.user.id),
+        db.list<GebeurtenisRecord>(GEBEURTENISSEN, {
+          filter: { ownerUserId: auth.user.id, ...(soortFilter ? { soort: soortFilter } : {}) },
+          limit: LIMIET.gebeurtenissenPagina,
+          nieuwsteEerst: true,
+          ...(str(d.token) ? { nextToken: str(d.token) } : {}),
+        }),
+      ]);
+      const kaarten: Record<string, { externId: string; titel: Tweetekst }> = {};
+      for (const k of kaartenLijst) {
+        kaarten[k.id] = { externId: k.externId, titel: k.titel as Tweetekst };
+      }
+      let gebeurtenissen = (blad.items as unknown as Array<MetId<GebeurtenisRecord>>).map(gebeurtenisUit);
+      if (actorFilter) {
+        gebeurtenissen = gebeurtenissen.filter((g) => g.actor?.soort === actorFilter);
+      }
+      return json({ gebeurtenissen, kaarten, volgende: blad.nextToken ?? null });
     }),
     'POST /api/owner/afstemming/verschil': route(async (_c, auth, d) => {
       const kaart = await laadKaart(auth.user.id, d.id);

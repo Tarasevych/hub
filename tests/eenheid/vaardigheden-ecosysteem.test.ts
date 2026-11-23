@@ -317,9 +317,9 @@ export async function main(): Promise<number> {
   const tAanb = SITE_TOOL_BY_NAME.get('vaardigheden_aanbevelen');
   const tOpsl = SITE_TOOL_BY_NAME.get('vaardigheden_opslaan');
   check(
-    'SITE_TOOLS містить 80 унікальних інструментів і правильні валідатори для vaardigheden_aanbevelen / vaardigheden_opslaan',
-    SITE_TOOLS.length === 80 &&
-      new Set(SITE_TOOLS.map((s) => s.tool.name)).size === 80 &&
+    'SITE_TOOLS містить 83 унікальних інструменти і правильні валідатори для vaardigheden_aanbevelen / vaardigheden_opslaan',
+    SITE_TOOLS.length === 83 &&
+      new Set(SITE_TOOLS.map((s) => s.tool.name)).size === 83 &&
       Boolean(tAanb && !tAanb.write && tAanb.tool.annotations?.readOnlyHint === true) &&
       Boolean(tOpsl && tOpsl.write && tOpsl.tool.annotations?.readOnlyHint === false) &&
       tAanb!.validate({ vraag: 'перевірка' }) === null &&

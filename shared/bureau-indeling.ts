@@ -111,21 +111,13 @@ export const BUREAU_WIDGETS: readonly BureauWidgetDef[] = Object.freeze([
   },
   {
     id: 'github-activiteit', cat: 'github', titel: ['GitHub — активність', 'GitHub — activiteit'],
-    uitleg: ['Ваші останні дії в GitHub.', 'Uw laatste acties in GitHub.'],
-    k: 6, r: 3, minK: 4, minR: 2, stand: 'binnenkort', bron: '',
-    ontbreekt: [
-      'Маршрути GitHub на сервері приймають лише сесію сервісу github.tarasevych.com, тому хаб не може їх запитати. Потрібен окремий маршрут для хаба.',
-      'De GitHub-routes op de server accepteren alleen een sessie van github.tarasevych.com, dus de hub mag ze niet aanroepen. Er is een eigen route voor de hub nodig.',
-    ],
+    uitleg: ['Ваші підключені профілі, сховища та останні дії в GitHub.', 'Uw gekoppelde profielen, opslagplaatsen en laatste acties in GitHub.'],
+    k: 6, r: 3, minK: 4, minR: 2, stand: 'klaar', bron: 'POST /api/owner/hub/werkblad/github',
   },
   {
     id: 'ai-toegang', cat: 'ai', titel: ['Дозволи ШІ', 'AI-toestemmingen'],
-    uitleg: ['Які дозволи ШІ активні у вашому просторі.', 'Welke AI-toestemmingen in uw ruimte actief zijn.'],
-    k: 4, r: 2, minK: 3, minR: 1, stand: 'binnenkort', bron: '',
-    ontbreekt: [
-      'Маршрут дозволів ШІ приймає лише сесії mcp, ai та api — хаб у цьому списку немає. Потрібен маршрут читання для хаба.',
-      'De route voor AI-toestemmingen accepteert alleen sessies van mcp, ai en api — de hub staat niet in die lijst. Er is een leesroute voor de hub nodig.',
-    ],
+    uitleg: ['Які дозволи ШІ, пристрої та з’єднувачі активні у вашому просторі.', 'Welke AI-toestemmingen, apparaten en koppelingen in uw ruimte actief zijn.'],
+    k: 4, r: 2, minK: 3, minR: 1, stand: 'klaar', bron: 'POST /api/owner/hub/werkblad/ai-toegang',
   },
 ]);
 

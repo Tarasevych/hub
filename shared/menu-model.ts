@@ -21,7 +21,7 @@ export const MENU_PAGINAS: Record<string, readonly string[]> = {
   github: ['overview', 'repositories', 'code', 'issues', 'pulls', 'actions', 'releases', 'sync', 'projects', 'documentation', 'research', 'activity', 'accounts'],
   crm: ['overview', 'klanten', 'overeenkomsten', 'tasks', 'inzichten', 'assistenten', 'koppelingen'],
   huis: ['overview', 'rooms', 'devices', 'scenes', 'automations', 'security', 'energy', 'activity', 'integrations', 'assistant', 'settings', 'showroom', 'planner'], // huis vNext (0128)
-  identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'melding', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery'],
+  identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'melding', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery', 'netwerken'],
   api: ['verbindingen', 'vault', 'access', 'reconciliation'], // A10 (19.10.2026): oauth/webhooks/events/logs/import weg — ze toonden hetzelfde paneel als «access»
   admin: ['overview', 'access', 'ai', 'contour', 'updates', 'apps', 'devices', 'sso', 'directories', 'roles', 'diagnostics', 'audit'],
   mcp: ['overview', 'dashboard', 'services', 'tools', 'board', 'agents', 'apps', 'playground', 'traffic', 'connect', 'roadmap', 'download', 'verbindingen'],

@@ -42,6 +42,8 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/owner/agenda/gebeurtenis/antwoord',
   'POST /api/owner/cloud/google-suite/drive/browse',
   'POST /api/owner/cloud/google-suite/drive/file',
+  'POST /api/owner/cloud/vnext/bestanden',
+  'POST /api/owner/cloud/vnext/integraties',
   'POST /api/owner/github/status',
   'POST /api/owner/github/repos',
   'POST /api/owner/github/repo',

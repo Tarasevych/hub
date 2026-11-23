@@ -1,12 +1,12 @@
 // Widgets zonder serverbron (meteen in de hoofdbundel, want zij vormen de eerste indruk / LCP): begroeting, snelle toegang,
 // snelle acties, de tip-strook en «ШІ для вас».
 import { useEffect, useState } from 'react';
-import { Bot, CalendarPlus, Languages, LayoutGrid, ListChecks, Mail, Moon, NotebookPen, PenLine, Search, SquareKanban, Sun, Sunrise, Sunset, Upload, X, type LucideIcon } from 'lucide-react';
-import { STARTVRAGEN } from '../../../shared/ai-werkruimte';
+import { CalendarPlus, Languages, LayoutGrid, ListChecks, Moon, NotebookPen, PenLine, Search, SquareKanban, Sun, Sunrise, Sunset, Upload, X, type LucideIcon } from 'lucide-react';
 import { haalBord, readHubBlockDataCache, loadHubBlockData, useBron } from '../gegevens';
 import { MENU_CATALOG, MenuGlyph, type MenuItemId } from '../../menu-voorkeuren';
 import { dienstToegestaan } from '../../account-rechten';
 import { regelsVoor, tr, locale, type Acties, type WidgetProps } from '../soorten';
+import { SysteemAi } from './SysteemAi';
 
 // ---------------------------------------------------------------- begroeting
 const dagdeel = (uur: number): { uk: string; nl: string; Icoon: LucideIcon } =>
@@ -119,21 +119,5 @@ export function Tip({ lang, acties, item, weg }: WidgetProps) {
   );
 }
 
-// ---------------------------------------------------------------- ШІ для вас — de ECHTE startvragen van ai.* (shared/ai-werkruimte.ts), niets verzonnen.
-// Of een vraag nu werkt (sleutel, model, hulpmiddelen) beslist het werkgebied zelf (POST /api/owner/ai/werkruimte/overzicht, alleen dienst ai).
-const AI_KORT: Record<string, { uk: string; nl: string; Icoon: LucideIcon }> = {
-  samenvatten: { uk: 'Пояснити текст', nl: 'Tekst uitleggen', Icoon: PenLine },
-  'agenda-dag': { uk: 'Мій день', nl: 'Mijn dag', Icoon: CalendarPlus },
-  zoeken: { uk: 'Пошук у просторі', nl: 'Zoeken in de ruimte', Icoon: Search },
-  uitleg: { uk: 'Що вміє ШІ тут', nl: 'Wat AI hier kan', Icoon: Bot },
-};
-export function Ai({ lang, acties, apiPlatform, item, kolommen }: WidgetProps) {
-  const vragen = Object.keys(AI_KORT).map((id) => STARTVRAGEN.find((v) => v.id === id)).filter((v): v is (typeof STARTVRAGEN)[number] => Boolean(v)).slice(0, regelsVoor(item.r, kolommen, 1, 0, 4));
-  return (
-    <div className='wb-ai'>
-      <ul>{vragen.map((v) => { const k = AI_KORT[v.id]; return <li key={v.id} data-wb-ai-vraag={v.id}><k.Icoon aria-hidden='true' /><span><strong>{tr(lang, k.uk, k.nl)}</strong><small>{tr(lang, v.tekst[0], v.tekst[1])}</small></span></li>; })}</ul>
-      {apiPlatform ? null : <small className='wb-ai-hint'><Mail aria-hidden='true' />{tr(lang, 'ШІ потребує права «api-platform» — попросіть власника.', 'AI vraagt het recht «api-platform» — vraag het de eigenaar.')}</small>}
-      <button type='button' className='knop-primair' onClick={() => acties.dienst('ai', 'workspace')}><Bot aria-hidden='true' />{tr(lang, 'Відкрити ШІ', 'AI openen')}</button>
-    </div>
-  );
-}
+// ---------------------------------------------------------------- ШІ для вас + огляд дозволів ШІ цього простору
+export { SysteemAi as Ai };

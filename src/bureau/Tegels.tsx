@@ -1,8 +1,11 @@
 // Inhoud van de tegels op het bureaublad. Elke tegel leest ECHTE gegevens van een route die de hub mag aanroepen
 // (zie src/bureau/gegevens.ts). Lukt dat niet, dan staat er wat er mis is — nooit een nagemaakt lijstje.
 import { useEffect, useState } from 'react';
-import { AlertCircle, CalendarDays, CheckSquare, FolderOpen, Mail, NotebookPen, Activity, ExternalLink } from 'lucide-react';
-import { haalBord, haalDiensten, loadHubBlockData, readHubBlockDataCache, type Bord, type HubBlockDataPayload } from './gegevens';
+import { AlertCircle, Bot, CalendarDays, CheckSquare, FolderOpen, GitBranch, Mail, NotebookPen, Activity, ExternalLink } from 'lucide-react';
+import {
+  haalBord, haalBureauAiToegang, haalBureauGithub, haalDiensten, loadHubBlockData, readHubBlockDataCache,
+  type Bord, type BureauAiToegang, type BureauGithub, type HubBlockDataPayload,
+} from './gegevens';
 import { HUB_ETIKET, VAST_ETIKET, lijstAf, lijstUitTekst, ordenNotities, vormUitEtiketten } from '../../shared/notities-model';
 import { bureauTekst, bureauWidget, type BureauWidgetId } from '../../shared/bureau-indeling';
 import type { TabelRij } from '../../shared/diagnostiek-account';
@@ -145,7 +148,64 @@ function DienstenTegel({ lang }: { lang: Lang }) {
   );
 }
 
-export const TEGEL_ICOON = { post: Mail, agenda: CalendarDays, bestanden: FolderOpen, taken: CheckSquare, notities: NotebookPen, diensten: Activity } as const;
+function GithubTegel({ lang }: { lang: Lang }) {
+  const { waarde, fout, bezig } = useBron<BureauGithub>(() => haalBureauGithub());
+  if (fout) return <Fout lang={lang} code={fout} />;
+  if (!waarde) return <Leeg tekst={bezig ? tr(lang, 'Завантаження…', 'Laden…') : '—'} />;
+  if (waarde.kluisGesloten) {
+    return <Leeg tekst={tr(lang, 'Сховище ключів зачинене. Відімкніть його в «Налаштування» → «Способи входу».', 'De sleutelkluis is gesloten. Ontgrendel haar via «Instellingen» → «Aanmeldmethoden».')} />;
+  }
+  if (!waarde.gekoppeld) {
+    return <Leeg tekst={tr(lang, 'Профіль GitHub не підключено в цьому просторі. Відкрийте службу GitHub → «Підключення».', 'Er is geen GitHub-profiel gekoppeld in deze ruimte. Open de dienst GitHub → «Accounts».')} />;
+  }
+  return (
+    <ul className='bureau-rijen'>
+      {waarde.accounts.map((a) => (
+        <li key={`${a.pad}:${a.login}`}>
+          <span className='bureau-rij-titel'>{a.login ? `@${a.login}` : a.pad.toUpperCase()}</span>
+          <small>{tr(lang, `${a.repoAantal} сховищ`, `${a.repoAantal} opslagplaatsen`)}</small>
+        </li>
+      ))}
+      {waarde.opslagplaatsen.slice(0, 8).map((r) => (
+        <li key={r}>
+          <span className='bureau-rij-titel'>{r}</span>
+          <small>GitHub</small>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AiToegangTegel({ lang }: { lang: Lang }) {
+  const { waarde, fout, bezig } = useBron<BureauAiToegang>(() => haalBureauAiToegang());
+  if (fout) return <Fout lang={lang} code={fout} />;
+  if (!waarde) return <Leeg tekst={bezig ? tr(lang, 'Завантаження…', 'Laden…') : '—'} />;
+  const s = waarde.samenvatting;
+  if (!s.verbindingen && !s.toestemmingen && !s.apparaten) {
+    return <Leeg tekst={tr(lang, 'Активних дозволів ШІ чи пристроїв у цьому просторі зараз немає.', 'Er zijn momenteel geen actieve AI-toestemmingen of apparaten in deze ruimte.')} />;
+  }
+  return (
+    <div>
+      <div className='bureau-tellers'>
+        <span><strong>{s.verbindingen}</strong><small>{tr(lang, 'з’єднувачів', 'koppelingen')}</small></span>
+        <span><strong>{s.toestemmingen}</strong><small>{tr(lang, 'дозволів', 'toestemmingen')}</small></span>
+        <span><strong>{s.apparatenVerbonden}/{s.apparaten}</strong><small>{tr(lang, 'пристроїв', 'apparaten')}</small></span>
+      </div>
+      {waarde.toestemmingen.length ? (
+        <ul className='bureau-rijen'>
+          {waarde.toestemmingen.slice(0, 6).map((t) => (
+            <li key={t.id}>
+              <span className='bureau-rij-titel'>{t.mogelijkheid}</span>
+              {t.verlooptOp ? <small>{stip(lang, t.verlooptOp)}</small> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+export const TEGEL_ICOON = { post: Mail, agenda: CalendarDays, bestanden: FolderOpen, taken: CheckSquare, notities: NotebookPen, diensten: Activity, github: GitBranch, ai: Bot } as const;
 
 /** De inhoud van één tegel. Alleen tegels met stand 'klaar' komen hier: de rest ligt nooit op het bureaublad. */
 export default function TegelInhoud({ lang, widget, ownerUserId }: { lang: Lang; widget: BureauWidgetId; ownerUserId: string }) {
@@ -156,5 +216,7 @@ export default function TegelInhoud({ lang, widget, ownerUserId }: { lang: Lang;
   if (def.cat === 'bestanden') return <BlokBron lang={lang} soort='files' widget={widget} ownerUserId={ownerUserId} />;
   if (def.cat === 'taken' || def.cat === 'notities') return <BordTegel lang={lang} widget={widget} />;
   if (def.cat === 'diensten') return <DienstenTegel lang={lang} />;
+  if (def.cat === 'github') return <GithubTegel lang={lang} />;
+  if (def.cat === 'ai') return <AiToegangTegel lang={lang} />;
   return <Leeg tekst='—' />;
 }

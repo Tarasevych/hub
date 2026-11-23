@@ -9,6 +9,7 @@ import { foutCode } from '../platform/webauthn';
 import { leesSha256 } from '../../shared/bestand-lezen';
 import HulpVraag from '../hulp/HulpVraag';
 import { foutTekst } from './fouten';
+import { leesTelegramKoppeling, UITROL_TELEGRAM_KOPPELING_VLAG } from './telegram-koppeling';
 import { datum, mb, tr, type Lang, type Run } from './types';
 
 const SLEUTEL_VERBERG_SEC = 30;
@@ -83,6 +84,7 @@ export default function TelegramArchief({
 }) {
   const [stand, setStand] = useState<TelegramStand | null>(null);
   const [chatId, setChatId] = useState('');
+  const [koppelLink, setKoppelLink] = useState('');
   const [threadId, setThreadId] = useState('');
   const [actief, setActief] = useState(false);
   const [verplicht, setVerplicht] = useState(false);
@@ -153,6 +155,22 @@ export default function TelegramArchief({
     }
   };
 
+  const verwerkKoppeling = (waarde: string) => {
+    setKoppelLink(waarde);
+    const koppeling = leesTelegramKoppeling(waarde);
+    if (!koppeling) return;
+    setChatId(koppeling.chatId);
+    if (koppeling.threadId) setThreadId(koppeling.threadId);
+    setMelding({
+      soort: 'ok',
+      tekst: tr(
+        lang,
+        `З посилання взято chat_id ${koppeling.chatId}${koppeling.threadId ? ` і тему ${koppeling.threadId}` : ''}. Натисніть «Зберегти налаштування», потім «Перевірити зв’язок».`,
+        `Uit de link overgenomen: chat_id ${koppeling.chatId}${koppeling.threadId ? ` en topic ${koppeling.threadId}` : ''}. Klik op «Instellingen opslaan» en daarna op «Verbinding testen».`,
+      ),
+    });
+  };
+
   const testen = async () => {
     setBezig('test');
     setMelding(null);
@@ -163,13 +181,14 @@ export default function TelegramArchief({
         chatType?: string;
         botStatus?: string;
         messageThreadId?: number | null;
+        documentOk?: boolean;
       };
       setMelding({
         soort: 'ok',
         tekst: tr(
           lang,
-          `Зв’язок підтверджено: бот @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) надіслав тестове повідомлення у «${r.chatTitle || chatId}»${r.messageThreadId ? ` (тема ${r.messageThreadId})` : ''}.`,
-          `Verbinding geslaagd: bot @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) stuurde een testbericht naar «${r.chatTitle || chatId}»${r.messageThreadId ? ` (topic ${r.messageThreadId})` : ''}.`,
+          `Зв’язок підтверджено: бот @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) надіслав пробне повідомлення${r.documentOk ? ' і пробний файл' : ''} у «${r.chatTitle || chatId}»${r.messageThreadId ? ` (тема ${r.messageThreadId})` : ''}.`,
+          `Verbinding geslaagd: bot @${r.botUsername || 'bot'} (${r.botStatus || 'ok'}) stuurde een proefbericht${r.documentOk ? ' en proefbestand' : ''} naar «${r.chatTitle || chatId}»${r.messageThreadId ? ` (topic ${r.messageThreadId})` : ''}.`,
         ),
       });
       await laden();
@@ -374,7 +393,7 @@ export default function TelegramArchief({
   };
 
   return (
-    <section className='ut-kaart ut-github' id='ut-telegram-archief-anker' data-ut-telegram-archief aria-labelledby='ut-tg-arch-titel'>
+    <section className='ut-kaart ut-github' id='ut-telegram-archief-anker' data-ut-telegram-archief data-vlag={UITROL_TELEGRAM_KOPPELING_VLAG} aria-labelledby='ut-tg-arch-titel'>
       <header className='ut-kaart-kop'>
         <div>
           <h2 id='ut-tg-arch-titel'><Lock aria-hidden='true' /> {tr(lang, 'Резервне архівування випусків у Telegram (AES-256-GCM)', 'Versleutelde release-reservekopie in Telegram (AES-256-GCM)')}</h2>
@@ -443,6 +462,27 @@ export default function TelegramArchief({
                   </span>
                 </li>
               </ul>
+
+              <label className='ut-veld'>
+                <span>{tr(lang, 'Посилання на гілку Telegram (необов’язково, заповнить поля нижче)', 'Link naar het Telegram-topic (optioneel, vult de velden hieronder)')}</span>
+                <input
+                  type='text'
+                  value={koppelLink}
+                  onChange={(e) => verwerkKoppeling(e.target.value)}
+                  placeholder='https://t.me/c/3928298101/1939'
+                  maxLength={200}
+                  spellCheck={false}
+                  autoComplete='off'
+                  data-ut-tg-koppeling
+                />
+                <small className='ut-hint'>
+                  {tr(
+                    lang,
+                    'Вставте посилання на тему групи (три числа: група, тема, повідомлення) — з нього автоматично підставиться chat_id і номер теми.',
+                    'Plak de topiclink (drie getallen: groep, topic, bericht) — daaruit worden chat_id en topicnummer overgenomen.',
+                  )}
+                </small>
+              </label>
 
               <label className='ut-veld'>
                 <span>{tr(lang, 'Ідентифікатор чату / каналу (chat_id)', 'Chat- of kanaal-ID (chat_id)')}</span>

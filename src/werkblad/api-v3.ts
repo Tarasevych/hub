@@ -6,12 +6,13 @@ import { api, ApiError } from '../platform/client';
 import { hubAuthBody } from '../useCanoniekHubAuth';
 import { achtergrondOf } from '../../shared/werkblad-indeling';
 import { APPARATEN, apparaatOf, normaliseerLaag } from '../../shared/werkblad-v3';
+import { persoonlijkItem, type PersoonlijkInvoer } from '../../shared/werkblad-register';
 import type { ApparaatKlasse, CanvasLayout, WerkbladRuimte } from '../../shared/werkblad-v3-types';
 
 export type LaagStand = { layout: CanvasLayout; versie: number; bijgewerktOp: number };
 export type V3Antwoord =
   | { aan: false; ruimte: WerkbladRuimte }
-  | { aan: true; ruimte: WerkbladRuimte; bestaat: boolean; netOvergezet: boolean; achtergrond: string; herkomst: string; gemigreerdOp: number; heeftV2Backup: boolean; layouts: Partial<Record<ApparaatKlasse, LaagStand>> };
+  | { aan: true; ruimte: WerkbladRuimte; bestaat: boolean; netOvergezet: boolean; achtergrond: string; herkomst: string; gemigreerdOp: number; heeftV2Backup: boolean; layouts: Partial<Record<ApparaatKlasse, LaagStand>>; persoonlijk: PersoonlijkInvoer[] };
 export type V3BewaarAntwoord = { ruimte: WerkbladRuimte; apparaat: ApparaatKlasse; laag: LaagStand; achtergrond: string };
 
 const ruimteOf = (v: unknown): WerkbladRuimte => (v === 'technisch' ? 'technisch' : 'prive');
@@ -21,6 +22,30 @@ function laagUit(v: unknown, apparaat: ApparaatKlasse, ruimte: WerkbladRuimte): 
   if (!o.layout) return null;
   return { layout: normaliseerLaag(o.layout, apparaat, { ruimte }), versie: Number(o.versie || 0), bijgewerktOp: Number(o.bijgewerktOp || 0) };
 }
+function persoonlijkUitAntwoord(ruw: unknown): PersoonlijkInvoer[] {
+  if (!Array.isArray(ruw)) return [];
+  const uit: PersoonlijkInvoer[] = [];
+  const gezien = new Set<string>();
+  for (const r of ruw.slice(0, 100)) {
+    const o = obj(r);
+    const inv: PersoonlijkInvoer = {
+      id: String(o.id ?? ''),
+      basis: String(o.basis ?? ''),
+      ...(typeof o.titel === 'string' && o.titel.trim() ? { titel: o.titel } : {}),
+      ...(typeof o.icoon === 'string' && o.icoon.trim() ? { icoon: o.icoon } : {}),
+    };
+    const item = persoonlijkItem(inv);
+    if (!item || gezien.has(item.id) || !item.basis) continue;
+    gezien.add(item.id);
+    uit.push({
+      id: item.id,
+      basis: item.basis,
+      ...(inv.titel ? { titel: item.titel.uk } : {}),
+      ...(inv.icoon && item.icoon === inv.icoon ? { icoon: item.icoon } : {}),
+    });
+  }
+  return uit;
+}
 function uit(data: unknown): V3Antwoord {
   const o = obj(data), ruimte = ruimteOf(o.ruimte);
   if (o.aan !== true) return { aan: false, ruimte };
@@ -28,7 +53,7 @@ function uit(data: unknown): V3Antwoord {
   for (const a of APPARATEN) { const l = laagUit(lagen[a], a, ruimte); if (l) layouts[a] = l; }
   return {
     aan: true, ruimte, bestaat: o.bestaat === true, netOvergezet: o.netOvergezet === true, achtergrond: achtergrondOf(o.achtergrond), herkomst: String(o.herkomst || ''),
-    gemigreerdOp: Number(o.gemigreerdOp || 0), heeftV2Backup: o.heeftV2Backup === true, layouts,
+    gemigreerdOp: Number(o.gemigreerdOp || 0), heeftV2Backup: o.heeftV2Backup === true, layouts, persoonlijk: persoonlijkUitAntwoord(o.persoonlijk),
   };
 }
 
@@ -54,6 +79,12 @@ export async function bewaarV3(apparaat: ApparaatKlasse, layout: CanvasLayout, v
     }
     throw e;
   }
+}
+
+/** Eigen snelkoppelingen (usr:*) per ruimte op de server bewaren en synchroniseren tussen apparaten (0319). */
+export async function eigenSnelkoppelingen(items: readonly PersoonlijkInvoer[]): Promise<PersoonlijkInvoer[]> {
+  const d = obj((await api.post('/api/owner/hub/werkblad/v3/persoonlijk', hubAuthBody({ items: items.slice(0, 100) }))).data);
+  return persoonlijkUitAntwoord(d.persoonlijk);
 }
 
 /** v2-backup terugzetten (werkt ook met de vlag uit). v3Wissen: ook de v3-lade wissen (anders blijven de v3-gegevens bewaard). */

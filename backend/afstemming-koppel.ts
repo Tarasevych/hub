@@ -123,9 +123,9 @@ const naarBuitenKoppel = (r: MetId<KoppelRecord>): Koppeling => ({ id: r.id, van
 const naarBuitenRelease = (r: MetId<ReleaseRecord>): ReleaseKoppeling => ({ id: r.id, kaartId: str(r.kaartId), releaseVersie: str(r.releaseVersie), ...(r.runId ? { runId: str(r.runId) } : {}), ...(r.commit ? { commit: str(r.commit) } : {}), zekerheid: num(r.zekerheid), stand: r.stand === 'bevestigd' ? 'bevestigd' : 'voorgesteld', preflight: r.preflight || 'onbekend', postflight: r.postflight || 'niet_gecontroleerd', op: str(r.op) });
 
 // ------------------------------------------------------------------------------------------------ uitrolgeschiedenis (read-only)
-type UitrolRij = { id: string; versie: string; release: string; wijzigingen: string; bron_commit: string; op: string };
+export type UitrolRij = { id: string; versie: string; release: string; wijzigingen: string; bron_commit: string; op: string };
 /** Geïnstalleerde releases uit app.uitrol_runs (staat 'klaar'), jongste eerst. Leeg = eerlijk leeg («nog geen releases»). */
-async function uitrolReleases(limiet = 120): Promise<UitrolRij[]> {
+export async function uitrolReleases(limiet = 120): Promise<UitrolRij[]> {
   try {
     const r = await getPool('systeem').query(
       `SELECT id, versie, release, wijzigingen, bron_commit, COALESCE(geeindigd_op, gestart_op) AS op
@@ -453,7 +453,7 @@ export function afstemmingKoppelRoutes(requireSession: RequireSession): Record<s
       const ZICHTBAAR = new Set(['deployed', 'production_verified', 'accepted']);
       const kaarten = (await eigenKaarten(userId)).filter((k) => k.gearchiveerd !== true && (ZICHTBAAR.has(k.levensfase) || (k.legacy && k.gezondheid === 'working')));
       const bewijs = await eigenBewijs(userId);
-      const perDienst = new Map<string, Array<{ externId: string; titel: Kaart['titel']; uitleg: string; route: string; stand: 'перевірено' | 'не перевірено' }>>();
+      const perDienst = new Map<string, Array<{ kaartId: string; externId: string; titel: Kaart['titel']; uitleg: string; route: string; stand: 'перевірено' | 'не перевірено' }>>();
       for (const k of [...kaarten].sort((a, b) => str(a.externId).localeCompare(str(b.externId)))) {
         const productie = bewijs.some((b) => b.kaartId === k.id && b.omgeving === 'production' && b.resultaat === 'geslaagd');
         const eigenaarZagLegacy = Array.isArray(k.legacy?.bewijslaag) && k.legacy!.bewijslaag.includes('owner_browser_verified'); // de ENIGE uitzondering: de eigenaar keek destijds zelf
@@ -461,7 +461,7 @@ export function afstemmingKoppelRoutes(requireSession: RequireSession): Record<s
         const route = /(^|\s)(\/[a-z][a-z0-9/-]{2,})/.exec(tekst)?.[2] || '';
         const dienst = str(k.dienst) || 'site';
         const lijst = perDienst.get(dienst) || [];
-        lijst.push({ externId: str(k.externId), titel: k.titel, uitleg: (Array.isArray(k.samenvatting) ? str(k.samenvatting[0]) : '').slice(0, 300), route, stand: productie || eigenaarZagLegacy ? 'перевірено' : 'не перевірено' });
+        lijst.push({ kaartId: k.id, externId: str(k.externId), titel: k.titel, uitleg: (Array.isArray(k.samenvatting) ? str(k.samenvatting[0]) : '').slice(0, 300), route, stand: productie || eigenaarZagLegacy ? 'перевірено' : 'не перевірено' });
         perDienst.set(dienst, lijst);
       }
       const rubrieken = [...perDienst.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([dienst, items]) => ({ dienst, items }));

@@ -21,14 +21,17 @@ import { achtergrondOf, normaliseerWerkblad, type WerkbladIndeling } from '../sh
 import { APPARATEN, apparaatOf, migreerV2NaarV3, normaliseerLaag, type V3Context } from '../shared/werkblad-v3';
 import { WERKBLAD_V3_FLAG, WERKBLAD_V3_LIMIETEN, type ApparaatKlasse, type CanvasLayout, type DesktopEntry, type WerkbladRuimte } from '../shared/werkblad-v3-types';
 import { jsonbTekst } from '../shared/tekst-veilig';
-import { zonderTechDeuren } from '../shared/werkblad-register';
+import { persoonlijkItem, zonderTechDeuren, type PersoonlijkInvoer } from '../shared/werkblad-register';
+
+export const WERKBLAD_SNELKOPPELINGEN_FLAG = 'werkblad-snelkoppelingen-v1';
+export const MAX_PERSOONLIJK_ITEMS = 100;
 
 type Q = (sql: string, params?: unknown[]) => Promise<{ rows: any[]; rowCount: number | null }>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export type LaagStand = { layout: CanvasLayout; versie: number; bijgewerktOp: number };
 export type V3Stand = {
   ruimte: WerkbladRuimte; bestaat: boolean; achtergrond: string; herkomst: 'v2' | 'standaard' | ''; gemigreerdOp: number;
-  heeftV2Backup: boolean; layouts: Partial<Record<ApparaatKlasse, LaagStand>>;
+  heeftV2Backup: boolean; layouts: Partial<Record<ApparaatKlasse, LaagStand>>; persoonlijk: PersoonlijkInvoer[];
 };
 
 const ms = (v: unknown) => (v ? new Date(v as string).getTime() : 0);
@@ -67,13 +70,63 @@ async function laagSchrijven(q: Q, lade: Lade, apparaat: ApparaatKlasse, layout:
   await blokkenNaSchrijven(q, lade, String(l.id), blokken);
 }
 
+function schoonPersoonlijkLijst(ruw: unknown, lade: Lade, ctx: V3Context): PersoonlijkInvoer[] {
+  if (!Array.isArray(ruw)) return [];
+  const gezien = new Set<string>();
+  const uit: PersoonlijkInvoer[] = [];
+  for (const r of ruw) {
+    if (uit.length >= MAX_PERSOONLIJK_ITEMS) break;
+    if (!r || typeof r !== 'object' || Array.isArray(r)) continue;
+    const o = r as Record<string, unknown>;
+    const inv: PersoonlijkInvoer = {
+      id: String(o.id ?? ''),
+      basis: String(o.basis ?? ''),
+      ...(typeof o.titel === 'string' && o.titel.trim() ? { titel: o.titel } : {}),
+      ...(typeof o.icoon === 'string' && o.icoon.trim() ? { icoon: o.icoon } : {}),
+    };
+    const item = persoonlijkItem(inv);
+    if (!item || gezien.has(item.id) || !item.basis) continue;
+    if (ctx.itemToegestaan && !ctx.itemToegestaan(item.id, 'shortcut', lade.ruimte as WerkbladRuimte, 'computer', { basis: item.basis, ...(inv.titel ? { titel: item.titel.uk } : {}), ...(inv.icoon ? { icoon: item.icoon } : {}) })) {
+      continue;
+    }
+    gezien.add(item.id);
+    uit.push({
+      id: item.id,
+      basis: item.basis,
+      ...(inv.titel ? { titel: item.titel.uk } : {}),
+      ...(inv.icoon && item.icoon === inv.icoon ? { icoon: item.icoon } : {}),
+    });
+  }
+  return uit;
+}
+
+async function persoonlijkLezen(q: Q, lade: Lade, ctx: V3Context): Promise<PersoonlijkInvoer[]> {
+  const reg = (await q("SELECT to_regclass('app.werkblad_usr_items') AS reg")).rows[0]?.reg;
+  if (!reg) return [];
+  const rijen = (await q(
+    `SELECT item_id, basis, titel, icoon
+       FROM app.werkblad_usr_items
+      WHERE user_id = $1 AND ruimte = $2
+      ORDER BY volgorde ASC, item_id ASC
+      LIMIT $3`,
+    [lade.userId, lade.ruimte, MAX_PERSOONLIJK_ITEMS],
+  )).rows.map((r) => ({
+    id: String(r.item_id),
+    basis: String(r.basis),
+    ...(r.titel ? { titel: String(r.titel) } : {}),
+    ...(r.icoon ? { icoon: String(r.icoon) } : {}),
+  }));
+  return schoonPersoonlijkLijst(rijen, lade, ctx);
+}
+
 async function standLezen(q: Q, lade: Lade, ctx: V3Context, alleen?: ApparaatKlasse | null): Promise<V3Stand> {
   const k = (await q(`SELECT achtergrond, herkomst, gemigreerd_op, v2_backup IS NOT NULL AS backup FROM app.werkblad_v3_lade WHERE user_id = $1 AND ruimte = $2`, [lade.userId, lade.ruimte])).rows[0];
   const layouts: V3Stand['layouts'] = {};
   if (k) for (const a of alleen ? [alleen] : APPARATEN) { const l = await laagLezen(q, lade, a, ctx); if (l) layouts[a] = { layout: l.layout, versie: l.versie, bijgewerktOp: l.bijgewerktOp }; }
+  const persoonlijk = k ? await persoonlijkLezen(q, lade, ctx) : [];
   return {
     ruimte: lade.ruimte as WerkbladRuimte, bestaat: Boolean(k), achtergrond: k ? achtergrondOf(k.achtergrond) : 'nacht',
-    herkomst: k ? k.herkomst : '', gemigreerdOp: k ? ms(k.gemigreerd_op) : 0, heeftV2Backup: Boolean(k?.backup), layouts,
+    herkomst: k ? k.herkomst : '', gemigreerdOp: k ? ms(k.gemigreerd_op) : 0, heeftV2Backup: Boolean(k?.backup), layouts, persoonlijk,
   };
 }
 
@@ -93,6 +146,7 @@ export async function overzetten(q: Q, lade: Lade, ctx: V3Context): Promise<bool
 
 export async function v3Laden(lade: Lade, ctx: V3Context, apparaat?: ApparaatKlasse | null): Promise<V3Stand & { netOvergezet: boolean }> {
   return alsGebruiker(lade.userId, async (q) => {
+    await q("SELECT set_config('app.ruimte', $1, true)", [lade.ruimte]);
     const netOvergezet = await overzetten(q, lade, ctx);
     return { ...(await standLezen(q, lade, ctx, apparaat)), netOvergezet };
   });
@@ -105,6 +159,7 @@ export async function v3Bewaren(lade: Lade, ctx: V3Context, apparaat: ApparaatKl
   const layout = normaliseerLaag(invoer.layout, apparaat, ctx);
   const versieClient = Math.max(0, Math.trunc(Number(invoer.versie) || 0));
   return alsGebruiker(lade.userId, async (q) => {
+    await q("SELECT set_config('app.ruimte', $1, true)", [lade.ruimte]);
     await overzetten(q, lade, ctx);
     await q(`SELECT 1 FROM app.werkblad_v3_lade WHERE user_id = $1 AND ruimte = $2 FOR UPDATE`, [lade.userId, lade.ruimte]);
     const huidig = await laagLezen(q, lade, apparaat, ctx, true);
@@ -121,6 +176,33 @@ export async function v3Bewaren(lade: Lade, ctx: V3Context, apparaat: ApparaatKl
   });
 }
 
+/** Persoonlijke snelkoppelingen (usr:*) van deze lade atomair vervangen onder strikte FORCE RLS (gebruiker én ruimte). */
+export async function v3PersoonlijkBewaren(lade: Lade, ctx: V3Context, itemsRuw: unknown): Promise<PersoonlijkInvoer[]> {
+  const schoon = schoonPersoonlijkLijst(itemsRuw, lade, ctx);
+  return alsGebruiker(lade.userId, async (q) => {
+    await q("SELECT set_config('app.ruimte', $1, true)", [lade.ruimte]);
+    await overzetten(q, lade, ctx);
+    await q(`SELECT 1 FROM app.werkblad_v3_lade WHERE user_id = $1 AND ruimte = $2 FOR UPDATE`, [lade.userId, lade.ruimte]);
+    await q(`DELETE FROM app.werkblad_usr_items WHERE user_id = $1 AND ruimte = $2`, [lade.userId, lade.ruimte]);
+    if (schoon.length > 0) {
+      const records = schoon.map((p, volgorde) => ({
+        item_id: p.id,
+        basis: p.basis,
+        titel: p.titel ?? null,
+        icoon: p.icoon ?? null,
+        volgorde,
+      }));
+      await q(
+        `INSERT INTO app.werkblad_usr_items (user_id, ruimte, item_id, basis, titel, icoon, volgorde, bijgewerkt_op)
+         SELECT $1, $2, r.item_id, r.basis, r.titel, r.icoon, r.volgorde, now()
+           FROM jsonb_to_recordset($3::jsonb) AS r(item_id text, basis text, titel text, icoon text, volgorde int)`,
+        [lade.userId, lade.ruimte, jsonbTekst(records)],
+      );
+    }
+    return persoonlijkLezen(q, lade, ctx);
+  });
+}
+
 /**
  * Terugdraaien: de v2-backup terug in app.werkblad_indeling (versie +1, zodat een open v2-tabblad met een oude versie 409 krijgt).
  * v3Wissen=true wist daarna ook de v3-lade (bij de volgende keer laden met vlag aan wordt opnieuw — eenmalig — overgezet).
@@ -128,6 +210,7 @@ export async function v3Bewaren(lade: Lade, ctx: V3Context, apparaat: ApparaatKl
  */
 export async function v3Terugdraaien(lade: Lade, opties: { v3Wissen?: boolean } = {}): Promise<{ hersteld: boolean; v2Versie: number; v3Gewist: boolean }> {
   return alsGebruiker(lade.userId, async (q) => {
+    await q("SELECT set_config('app.ruimte', $1, true)", [lade.ruimte]);
     const k = (await q(`SELECT v2_backup FROM app.werkblad_v3_lade WHERE user_id = $1 AND ruimte = $2 FOR UPDATE`, [lade.userId, lade.ruimte])).rows[0];
     let hersteld = false, v2Versie = 0;
     if (k?.v2_backup) {
@@ -202,6 +285,14 @@ export const createWerkbladV3Routes = (authorize: Authorize, opties: V3RouteOpti
       const u = await v3Bewaren(lade, ctx, apparaat, { layout: b.layout, versie: b.versie, achtergrond: b.achtergrond });
       if (!u.ok) return json({ ok: false, code: u.code, ruimte: lade.ruimte, apparaat, laag: u.laag, achtergrond: u.achtergrond }, 409);
       return json({ ok: true, source: 'server_werkblad_v3_0114', ruimte: lade.ruimte, apparaat, laag: u.laag, achtergrond: u.achtergrond });
+    }),
+    /** Eigen snelkoppelingen (usr:*) per lade bewaren en synchroniseren tussen apparaten (0319). */
+    'POST /api/owner/hub/werkblad/v3/persoonlijk': met(true, async (lade, ctx, b) => {
+      if (JSON.stringify(b.items ?? null).length > WERKBLAD_V3_LIMIETEN.maxBytesBody) return error('WERKBLAD_V3_TE_GROOT', 413);
+      if (!Array.isArray(b.items)) return error('WERKBLAD_V3_ITEMS_ONGELDIG', 400);
+      if (b.items.length > MAX_PERSOONLIJK_ITEMS) return error('WERKBLAD_V3_TE_VEEL_ITEMS', 413);
+      const persoonlijk = await v3PersoonlijkBewaren(lade, ctx, b.items);
+      return json({ ok: true, source: 'server_werkblad_v3_0319', vlag: WERKBLAD_SNELKOPPELINGEN_FLAG, ruimte: lade.ruimte, persoonlijk });
     }),
     /** Terugdraaien naar de v2-backup. Werkt OOK met de vlag uit (dat is juist het moment om terug te willen). */
     'POST /api/owner/hub/werkblad/v3/terugdraaien': met(false, async (lade, _ctx, b) => {

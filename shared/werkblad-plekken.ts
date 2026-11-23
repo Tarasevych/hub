@@ -32,7 +32,7 @@ export const REDEN_TEKST: Record<Reden | 'gesloten', { uk: string; nl: string }>
   'niet-toegestaan-in-ruimte': { uk: 'Тут не можна: технічний елемент не можна класти у звичайний простір', nl: 'Kan niet: technisch onderdeel hoort niet in de privéruimte' },
   vergrendeld: { uk: 'Тут не можна: елемент або блок закріплено', nl: 'Kan niet: vergrendeld' },
   'maat-past-niet': { uk: 'Тут не можна: тут дозволені лише малі значки', nl: 'Kan niet: hier mogen alleen kleine maten' },
-  gesloten: { uk: 'Ще недоступно: це місце з’явиться в наступному оновленні', nl: 'Nog niet beschikbaar: deze plek komt in een volgende uitgave' },
+  gesloten: { uk: 'Тут не можна: ця ділянка сторінки не приймає значків робочого столу', nl: 'Kan niet: deze paginazone staat niet open voor werkbladonderdelen' },
 };
 
 export interface PlekContext {

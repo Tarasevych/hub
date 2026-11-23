@@ -15,9 +15,10 @@ import { normaliseerLaag, leegLaag } from '../../shared/werkblad-v3';
 import type { ApparaatKlasse, CanvasLayout, DesktopEntry } from '../../shared/werkblad-v3-types';
 import {
   MAP_ITEM, REGISTER_V3_HAKEN, USR_ID, persoonlijkItem, registerItem, registerItemVoorEntry, toegestaanVoor,
-  type RegisterContext, type RegisterRegel,
+  type PersoonlijkInvoer, type RegisterContext, type RegisterRegel,
 } from '../../shared/werkblad-register';
-import { bewaarV3, draaiV3Terug, laadV3, schrijfCacheV3, wisCacheV3, WerkbladV3Verouderd, type LaagStand, type V3Antwoord } from './api-v3';
+import { bewaarV3, draaiV3Terug, eigenSnelkoppelingen, laadV3, schrijfCacheV3, wisCacheV3, WerkbladV3Verouderd, type LaagStand, type V3Antwoord } from './api-v3';
+import { useVlag } from '../functievlag-lezen';
 import { haalWerkblad } from './api';
 import { weigeringZinUitFout } from '../../shared/weigering-tekst';
 import { pasPaginaAchtergrondToe } from './pagina-achtergrond';
@@ -46,18 +47,29 @@ export const limietenV3: K.LimietenFn = (itemId) => {
   const g = REGISTER_V3_HAKEN.grenzen(itemId, soortVan(itemId));
   return g ? { minW: g.min.w, minH: g.min.h, maxW: g.max.w, maxH: g.max.h } : undefined;
 };
-const USR_OPSLAG = (uid: string) => `tsv:werkblad-v3-usr:${uid}`;
+const USR_CACHE_SLEUTEL = (uid: string, ruimte: string) => `tsv:werkblad-v3-usr:${uid}:${ruimte}`;
+const USR_OUDE_SLEUTEL = (uid: string) => `tsv:werkblad-v3-usr:${uid}`;
 const nieuweId = (l: CanvasLayout) => { for (;;) { const id = `i-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (!l.items.some((e) => e.instanceId === id)) return id; } };
 
-/** Persoonlijke snelkoppelingen: uit de bewaarde lagen (config.basis) + nog niet geplaatste uit de lokale lijst. */
-function persoonlijkUit(lagen: Lagen, lokaal: readonly { id: string; basis: string; titel?: string; icoon?: string }[]): RegisterRegel[] {
+function leesUsrCache(uid: string, ruimte: string): PersoonlijkInvoer[] {
+  try {
+    const raw = localStorage.getItem(USR_CACHE_SLEUTEL(uid, ruimte)) ?? (ruimte === 'prive' ? localStorage.getItem(USR_OUDE_SLEUTEL(uid)) : null);
+    const lijst = JSON.parse(raw || '[]');
+    return Array.isArray(lijst) ? lijst.slice(0, 100) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Persoonlijke snelkoppelingen: van de server (eigenSnelkoppelingen), aangevuld met wat al op bewaarde lagen staat (config.basis). */
+function persoonlijkUit(lagen: Lagen, eigenLijst: readonly PersoonlijkInvoer[]): RegisterRegel[] {
   const uit = new Map<string, RegisterRegel>();
+  for (const p of eigenLijst) if (!uit.has(p.id)) { const r = persoonlijkItem(p); if (r) uit.set(r.id, r); }
   for (const l of Object.values(lagen)) for (const e of l?.layout.items || []) {
     if (!USR_ID.test(e.itemId) || uit.has(e.itemId)) continue;
     const r = persoonlijkItem({ id: e.itemId, basis: String(e.config?.basis ?? ''), titel: e.titleOverride, icoon: e.iconOverride });
     if (r) uit.set(r.id, r);
   }
-  for (const p of lokaal) if (!uit.has(p.id)) { const r = persoonlijkItem(p); if (r) uit.set(r.id, r); }
   return [...uit.values()];
 }
 
@@ -105,7 +117,12 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   const [instellingen, zetInstellingen] = useState(false);
   const [bevestig, zetBevestig] = useState<'' | 'reset' | 'v2'>('');
   const [melding, zetMelding] = useState('');
-  const [lokaalUsr, zetLokaalUsr] = useState<{ id: string; basis: string; titel?: string; icoon?: string }[]>(() => { try { return JSON.parse(localStorage.getItem(USR_OPSLAG(ownerUserId)) || '[]'); } catch { return []; } });
+  const snelkoppelingenSynchroon = useVlag('werkblad-snelkoppelingen-v1', false);
+  const [eigenUsr, zetEigenUsr] = useState<PersoonlijkInvoer[]>(() =>
+    eerste.persoonlijk?.length ? eerste.persoonlijk : leesUsrCache(ownerUserId, ruimte),
+  );
+  const [hernoemVerzoek, zetHernoemVerzoek] = useState<{ id: string; teller: number } | null>(null);
+  const [blokMapHernoem, zetBlokMapHernoem] = useState<{ id: string; waarde: string } | null>(null);
   const houder = useRef<HTMLDivElement>(null);
   const breedte = useContainerBreedte(houder);
   const klasse: ApparaatKlasse | null = breedte ? K.apparaatVoorBreedte(breedte) : null;
@@ -113,18 +130,26 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   const keten = useRef<Promise<unknown>>(Promise.resolve());
   const conflict = useRef<{ klasse: ApparaatKlasse; actueel: LaagStand | null } | null>(null);
   const mislukt = useRef<{ klasse: ApparaatKlasse; layout: CanvasLayout; extra: { achtergrond?: string } } | null>(null);
+  const usrGemigreerd = useRef(false);
 
   // BIB-002: технічний доступ = у акаунта є технічний профіль (його дає власник). Тоді ярлики технічних сторінок можна ставити й на
   // приватний стіл — як двері; сама сторінка однаково відкривається лише через браму технічного профілю.
   const techToegang = techProfiel || !!tech.profiel;
   const rctx = useMemo<RegisterContext>(() => ({ ruimte, rechten: { apiPlatform: rechten.apiPlatform, eigenaar: rechten.eigenaar }, techToegang }), [ruimte, rechten.apiPlatform, rechten.eigenaar, techToegang]);
   const wctx = useMemo<WerkbladContext>(() => ({ ruimte, eigenaar: rechten.eigenaar, apiPlatform: rechten.apiPlatform }), [ruimte, rechten.eigenaar, rechten.apiPlatform]);
-  const persoonlijk = useMemo(() => persoonlijkUit(lagen, lokaalUsr), [lagen, lokaalUsr]);
+  const persoonlijk = useMemo(() => persoonlijkUit(lagen, eigenUsr), [lagen, eigenUsr]);
   const persoonlijkRef = useRef(persoonlijk); persoonlijkRef.current = persoonlijk;
 
   // Cache voor de eerste weergave bij een volgend bezoek (de server blijft de waarheid).
   useEffect(() => { for (const [a, l] of Object.entries(lagen) as [ApparaatKlasse, LaagStand][]) if (l) schrijfCacheV3(ownerUserId, profiel, a, { ruimte, laag: l, achtergrond }); }, [lagen, achtergrond, ownerUserId, profiel, ruimte]);
-  useEffect(() => { try { localStorage.setItem(USR_OPSLAG(ownerUserId), JSON.stringify(lokaalUsr.slice(0, 100))); } catch { /* leeg */ } }, [lokaalUsr, ownerUserId]);
+  useEffect(() => { try { localStorage.setItem(USR_CACHE_SLEUTEL(ownerUserId, ruimte), JSON.stringify(eigenUsr.slice(0, 100))); } catch { /* leeg */ } }, [eigenUsr, ownerUserId, ruimte]);
+  useEffect(() => {
+    if (usrGemigreerd.current || !magBewerken) return;
+    if ((eerste.persoonlijk?.length ?? 0) === 0 && eigenUsr.length > 0) {
+      usrGemigreerd.current = true;
+      void eigenSnelkoppelingen(eigenUsr).then((opgeslagen) => { if (opgeslagen.length) zetEigenUsr(opgeslagen); }).catch(() => undefined);
+    }
+  }, [eerste.persoonlijk, eigenUsr, magBewerken, snelkoppelingenSynchroon]);
 
   // Achtergrond: keuze uit v3; de eigen afbeelding blijft in de v2-kolom (achtergrond_eigen) en wordt daar gelezen.
   useEffect(() => {
@@ -162,7 +187,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
     const c = conflict.current; conflict.current = null;
     try {
       const a = await laadV3();
-      if (a.aan) { lagenRef.current = a.layouts; zetLagen(a.layouts); zetAchtergrond(a.achtergrond); }
+      if (a.aan) { lagenRef.current = a.layouts; zetLagen(a.layouts); zetAchtergrond(a.achtergrond); zetEigenUsr(a.persoonlijk); }
       else if (c?.actueel) zetLaag(c.klasse, c.actueel);
       zetStatus('idle'); zetMelding(tr(lang, 'Показано новішу версію з сервера.', 'De nieuwere versie van de server wordt getoond.'));
     } catch { conflict.current = c; zetStatus('conflict'); }
@@ -170,7 +195,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   // Werkblad-blokken (vlag `werkblad-blokken`): uit = blk.aan false = niets verandert aan de weergave.
   const zetVersie = useCallback((a: ApparaatKlasse, versie: number) => { zetLagen((o) => { const l = o[a]; if (!l) return o; const n = { ...o, [a]: { ...l, versie } }; lagenRef.current = n; return n; }); }, []);
   const blk = useWerkbladBlokken({ lang, klasse, magBewerken, bewerken, rctx, persoonlijk, lagenRef, zetVersie, bewaarLaag: bewaar, keten, houder, melding: zetMelding,
-    herladenV3: async () => { try { const a = await laadV3(); if (a.aan) { conflict.current = null; lagenRef.current = a.layouts; zetLagen(a.layouts); zetStatus('idle'); } } catch { /* leeg */ } }, snelToegangItems: [...SNEL_TOEGANG_ITEMS] });
+    herladenV3: async () => { try { const a = await laadV3(); if (a.aan) { conflict.current = null; lagenRef.current = a.layouts; zetLagen(a.layouts); zetEigenUsr(a.persoonlijk); zetStatus('idle'); } } catch { /* leeg */ } }, snelToegangItems: [...SNEL_TOEGANG_ITEMS] });
   const opnieuw = useCallback(() => { const m = mislukt.current; if (m) bewaar(m.klasse, m.layout, m.extra); }, [bewaar]);
 
   // Eerste bezoek op een klasse zonder eigen laag → één keer afleiden van de computerlaag en bewaren (daarna onafhankelijk).
@@ -220,6 +245,34 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
     bewaar(a, { ...l, items: l.items.map((x) => (x.instanceId === instanceId ? (({ parent, ...r }) => { void parent; return { ...r, ...plek }; })(x) : x)) });
   }, [bewaar]);
 
+  const hernoemMap = useCallback((instanceId: string, ruweTitel: string) => {
+    const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout;
+    if (!a || !l || !magBewerken) return;
+    const schoon = ruweTitel.replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, 60);
+    if (!schoon) return;
+    const doel = l.items.find((x) => x.instanceId === instanceId && x.kind === 'folder');
+    if (!doel || doel.titleOverride === schoon) return;
+    const nieuw = normaliseerLaag(
+      { ...l, items: l.items.map((x) => (x.instanceId === instanceId ? { ...x, titleOverride: schoon } : x)) },
+      a,
+      { ruimte, ...REGISTER_V3_HAKEN },
+    );
+    bewaar(a, nieuw);
+    blk.hernoemBlok(instanceId, schoon);
+    zetMelding(tr(lang, `Теку перейменовано на «${schoon}».`, `Map hernoemd naar «${schoon}».`));
+  }, [bewaar, blk, lang, magBewerken, ruimte]);
+
+  const vraagMapHernoem = useCallback((instanceId: string) => {
+    const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout;
+    const doel = l?.items.find((x) => x.instanceId === instanceId && x.kind === 'folder');
+    if (!doel || !magBewerken) return;
+    if (blk.aan) {
+      zetBlokMapHernoem({ id: instanceId, waarde: doel.titleOverride || tr(lang, 'Тека', 'Map') });
+      return;
+    }
+    zetHernoemVerzoek((oud) => ({ id: instanceId, teller: (oud?.teller || 0) + 1 }));
+  }, [blk.aan, lang, magBewerken]);
+
   /** Toevoegen uit de bibliotheek (knop, toetsenbord of slepen). Altijd opnieuw tegen het register + rechten gecontroleerd. */
   const voegToe = useCallback((v: BibliotheekVerzoek) => {
     const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout;
@@ -242,7 +295,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       instanceId, itemId, kind: isMap ? 'folder' : item.kind, ...plek, z: l.items.reduce((m, e) => Math.max(m, e.z), 0) + 1,
       ...(isMap ? { titleOverride: v.titleOverride || item.titel[lang] } : v.titleOverride ? { titleOverride: v.titleOverride } : usr ? { titleOverride: usr.titel[lang] } : {}),
       ...(v.iconOverride ? { iconOverride: v.iconOverride } : usr ? { iconOverride: usr.icoon } : {}),
-      ...(usr ? { config: { basis: String(usr.basis), titel: usr.titel[lang] } } : {}),
+      ...(usr ? { config: { basis: String(usr.basis), titel: usr.titel[lang], ...(usr.icoon ? { icoon: usr.icoon } : {}) } } : {}),
     };
     bewaar(a, normaliseerLaag({ ...l, items: [...l.items, entry] }, a, { ruimte, ...REGISTER_V3_HAKEN }));
     zetMelding(tr(lang, `«${entry.titleOverride || item.titel.uk}» додано на стіл.`, `«${entry.titleOverride || item.titel.nl}» toegevoegd aan het werkblad.`));
@@ -277,14 +330,41 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
 
   const render = useCallback((e: DesktopEntry, c: { bewerken: boolean }) => {
     if (e.kind === 'widget') return <WidgetV3 entry={e} lang={lang} acties={acties} basis={basis} kolommen={kolommen} bewerken={c.bewerken} rctx={rctx} vak={blk.aan && e.itemId === SNEL_TOEGANG ? blk.vakVoor(e, c.bewerken) : undefined} />;
-    if (e.kind === 'folder' && blk.aan) return <div className='wb3-tegel wb3-map-blok' data-wb3-map-blok={e.instanceId}><span className='wb3-map-titel'>{e.titleOverride || tr(lang, 'Тека', 'Map')}</span>{blk.vakVoor(e, c.bewerken)}</div>;
+    if (e.kind === 'folder' && blk.aan) {
+      const bewerkNaam = blokMapHernoem?.id === e.instanceId;
+      return (
+        <div className='wb3-tegel wb3-map-blok' data-wb3-map-blok={e.instanceId}>
+          {bewerkNaam && magBewerken ? (
+            <form className='bib-map-hernoem' onSubmit={(ev) => { ev.preventDefault(); hernoemMap(e.instanceId, blokMapHernoem.waarde); zetBlokMapHernoem(null); }}>
+              <input type='text' maxLength={60} autoFocus value={blokMapHernoem.waarde} aria-label={tr(lang, 'Нова назва теки', 'Nieuwe naam van de map')}
+                onChange={(ev) => zetBlokMapHernoem({ id: e.instanceId, waarde: ev.target.value.replace(/[<>]/g, '') })}
+                onKeyDown={(ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); zetBlokMapHernoem(null); } }} />
+              <button type='submit' className='bib-ikoonknop' aria-label={tr(lang, 'Зберегти назву теки', 'Mapnaam opslaan')}><Check aria-hidden='true' /></button>
+              <button type='button' className='bib-ikoonknop' aria-label={tr(lang, 'Скасувати перейменування', 'Hernoemen annuleren')} onClick={() => zetBlokMapHernoem(null)}><X aria-hidden='true' /></button>
+            </form>
+          ) : (
+            <span className='wb3-map-titel' onDoubleClick={() => magBewerken && zetBlokMapHernoem({ id: e.instanceId, waarde: e.titleOverride || tr(lang, 'Тека', 'Map') })}>
+              {e.titleOverride || tr(lang, 'Тека', 'Map')}
+            </span>
+          )}
+          {blk.vakVoor(e, c.bewerken)}
+        </div>
+      );
+    }
     if (e.kind === 'shortcut' && blk.aan) { const los = blk.losseTegel(e, c.bewerken); if (los) return <div className='wb3-tegel'>{los}</div>; }
     if (e.kind === 'folder') {
       const kinderen = (lagenRef.current[klasseRef.current!]?.layout.items || []).filter((x) => x.parent === e.instanceId);
-      return <div className='wb3-tegel'><MapTegel map={e} kinderen={kinderen} lang={lang} ctx={rctx} persoonlijk={persoonlijk} instellen={c.bewerken} onUitnemen={magBewerken ? uitnemen : undefined} /></div>;
+      return (
+        <div className='wb3-tegel'>
+          <MapTegel map={e} kinderen={kinderen} lang={lang} ctx={rctx} persoonlijk={persoonlijk} instellen={c.bewerken}
+            onUitnemen={magBewerken ? uitnemen : undefined}
+            onHernoem={magBewerken ? hernoemMap : undefined}
+            hernoemTrigger={hernoemVerzoek?.id === e.instanceId ? hernoemVerzoek.teller : undefined} />
+        </div>
+      );
     }
     return <div className='wb3-tegel'><ShortcutTegel itemId={e.itemId} lang={lang} ctx={rctx} titleOverride={e.titleOverride} iconOverride={e.iconOverride} persoonlijk={persoonlijk} instellen={c.bewerken} /></div>;
-  }, [lang, acties, kolommen, rctx, persoonlijk, magBewerken, uitnemen, lagen, blk]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lang, acties, kolommen, rctx, persoonlijk, magBewerken, uitnemen, hernoemMap, hernoemVerzoek, blokMapHernoem, lagen, blk]); // eslint-disable-line react-hooks/exhaustive-deps
   const titel = useCallback((e: DesktopEntry) => {
     if (e.titleOverride) return e.titleOverride;
     const r = registerItemVoorEntry(e.itemId, e.config) ?? registerItem(e.itemId, persoonlijk);
@@ -296,7 +376,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
     try {
       await draaiV3Terug({ v3Wissen: true }); wisCacheV3(ownerUserId, profiel);
       const a = await laadV3();
-      if (a.aan) { conflict.current = null; lagenRef.current = a.layouts; zetLagen(a.layouts); zetAchtergrond(a.achtergrond); zetStatus('idle'); }
+      if (a.aan) { conflict.current = null; lagenRef.current = a.layouts; zetLagen(a.layouts); zetAchtergrond(a.achtergrond); zetEigenUsr(a.persoonlijk); zetStatus('idle'); }
       zetMelding(tr(lang, 'Стіл скинуто до перенесеної розкладки v2.', 'Het werkblad is teruggezet naar de overgezette v2-indeling.'));
     } catch (e) { zetMelding(tr(lang, `Не вдалося скинути (${String((e as Error)?.message || e)}).`, `Terugzetten mislukt (${String((e as Error)?.message || e)}).`)); }
   };
@@ -361,7 +441,13 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       {bewerken && bib ? (
         <div className='wb3-bibliotheek' data-wb3-paneel='bibliotheek'>
           <Bibliotheek lang={lang} ctx={rctx} persoonlijk={persoonlijk} opWerkblad={new Set((klasse && lagen[klasse]?.layout.items || []).map((e) => e.itemId))}
-            onPersoonlijk={(lijst) => zetLokaalUsr(lijst.filter((r) => r.basis).map((r) => ({ id: r.id, basis: String(r.basis), titel: r.titel.uk, icoon: r.icoon })))}
+            onPersoonlijk={(lijst) => {
+              const nieuw: PersoonlijkInvoer[] = lijst.filter((r) => r.basis).map((r) => ({ id: r.id, basis: String(r.basis), titel: r.titel.uk, icoon: r.icoon }));
+              zetEigenUsr(nieuw);
+              if (magBewerken) {
+                void eigenSnelkoppelingen(nieuw).then((opgeslagen) => zetEigenUsr(opgeslagen)).catch(() => undefined);
+              }
+            }}
             onSluiten={() => zetBib(false)} />
         </div>
       ) : null}
@@ -370,7 +456,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       <div className='wb3-houder' ref={houder} data-wb3-houder='' onDragOver={(e) => { if (bewerken && [...e.dataTransfer.types].includes(BIBLIOTHEEK_MIME)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }} onDrop={opDrop}>
         {klasse && laag ? (
           <Canvas key={klasse} layout={laag.layout} editMode={bewerken && magBewerken} limieten={limietenV3} lang={lang} status={status}
-            onCommit={opCommit} onRetry={opnieuw} onReload={() => void herladen()} onRequestAdd={() => zetBib(true)} titel={titel} render={render}
+            onCommit={opCommit} onRetry={opnieuw} onReload={() => void herladen()} onRequestAdd={() => zetBib(true)} onRename={magBewerken ? vraagMapHernoem : undefined} titel={titel} render={render}
             interactief={blk.aan ? heeftBlok : undefined} />
         ) : <Skelet rijen={4} />}
       </div>

@@ -18,7 +18,7 @@ const LABELS: Record<string, Pair> = {
   projects: ['Проєкти', 'Projecten'], documentation: ['Документація', 'Documentatie'], research: ['Дослідження', 'Onderzoek'], activity: ['Активність', 'Activiteit'],
   personalization: ['Персоналізація', 'Personalisatie'], menu: ['Меню', 'Menu'], themes: ['Вигляд і кольори', 'Weergave en kleuren'], languages: ['Мови', 'Talen'], widgets: ['Віджети', 'Widgets'], melding: ['Сповіщення', 'Meldingen'],
   sharing: ['Спільний доступ', 'Delen'], identity: ['Ідентичність', 'Identiteit'], account: ['Обліковий запис', 'Account'], sessions: ['Сесії', 'Sessies'], methods: ['Способи входу', 'Aanmeldmethoden'],
-  security: ['Безпека', 'Beveiliging'], recovery: ['Відновлення', 'Herstel'],
+  security: ['Безпека', 'Beveiliging'], recovery: ['Відновлення', 'Herstel'], netwerken: ['Соціальні мережі', 'Sociale netwerken'],
   vault: ['Сховище', 'Kluis'], oauth: ['OAuth', 'OAuth'], access: ['Доступ', 'Toegang'], webhooks: ['Webhooks', 'Webhooks'], events: ['Події', 'Gebeurtenissen'], logs: ['Журнали', 'Logboeken'],
   import: ['Імпорт', 'Import'], reconciliation: ['Звірка', 'Afstemming'],
   contour: ['Секрети й ключі', 'Geheimen en sleutels'], updates: ['Оновлення', 'Updates'], ai: ['Доступ ШІ', 'AI-toegang'], apps: ['Застосунки', 'Apps'], devices: ['Пристрої', 'Apparaten'], sso: ['Єдиний вхід', 'Eenmalige aanmelding'], directories: ['Інтеграції', 'Integraties'], roles: ['Ролі', 'Rollen'],

@@ -4,15 +4,15 @@
 //   • fasen uit FASE_MENS_VERPLICHT heten expliciet «рішення власника»;
 //   • een 409 (VERSIE_CONFLICT) wist NOOIT het formulier: de verse versie wordt getoond en de mens kiest zelf;
 //   • voortgang is telbaar (AC n/m), nooit een verzonnen percentage.
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { GitCompareArrows, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarPlus, ExternalLink, FileUp, GitCompareArrows, RefreshCw } from 'lucide-react';
 import {
   AFSTEMMING_LIMIETEN, GEZONDHEID_LABEL, KOPPEL_LABEL, KOPPEL_SOORTEN, LEVENSFASE_LABEL, afstemmingTekst, voortgangTekst,
   type Gebeurtenis, type Kaart, type KoppelSoort, type Levensfase,
 } from '../../shared/afstemming-model';
 import { afstemmingClient, AfstemmingFout, type KaartDetail as KaartDetailUit } from './afstemming-client';
 import Laag from './Laag';
-import { actorTekst, afstemmingFoutTekst, criteriaNaarTekst, criteriaUitTekst, faseVolgende, faseVraagtMens, gebeurtenisTekst, kleineDatum, PRIORITEITEN } from './hulp';
+import { actorTekst, afstemmingFoutTekst, agendaUrlVoorKaart, bronFormaat, criteriaNaarTekst, criteriaUitTekst, dienstUrlVoorKaart, faseVolgende, faseVraagtMens, gebeurtenisTekst, kleineDatum, PRIORITEITEN } from './hulp';
 import { foutTekst, tr, type Lang } from './tekst';
 
 type Dtab = 'wat' | 'criteria' | 'relaties' | 'bewijs' | 'releases' | 'historie' | 'acties';
@@ -63,6 +63,33 @@ export default function KaartDetail({ lang, smal, detail, onSluit, herlaad, toon
 
   // ---- blad «Докази»
   const [bVorm, setBVorm] = useState({ soort: 'e2e' as (typeof BEWIJS_SOORTEN)[number], omgeving: 'lokaal' as (typeof OMGEVINGEN)[number], verwijzing: '', resultaat: 'geslaagd' as 'geslaagd' | 'mislukt' | 'onbekend', sha256: '' });
+  const bewijsBestandRef = useRef<HTMLInputElement | null>(null);
+  const leesBewijsBijlage = (f: File | undefined) => {
+    if (!f) return;
+    const formaat = bronFormaat(f.name);
+    if (formaat !== 'pdf' && formaat !== 'afbeelding') { setFout(foutTekst(lang, 'FORMAAT_ONBEKEND')); return; }
+    if (f.size > AFSTEMMING_LIMIETEN.bijlageBytesMax) { setFout(foutTekst(lang, 'IMPORT_TE_GROOT')); return; }
+    const lezer = new FileReader();
+    lezer.onload = () => {
+      void doe(async () => {
+        const uit = await afstemmingClient.bijlageTekst({
+          naam: f.name,
+          mime: f.type || (formaat === 'pdf' ? 'application/pdf' : 'image/png'),
+          dataBase64: String(lezer.result || ''),
+          kaartId: kaart.id,
+          bewaarMetadata: true,
+        });
+        setBVorm((v) => ({
+          ...v,
+          soort: formaat === 'afbeelding' ? 'screenshot' : 'bron',
+          verwijzing: `bijlage:${f.name}`,
+          sha256: uit.sha256,
+        }));
+      }, tr(lang, `Вкладення «${f.name}» перевірено (SHA-256 заповнено).`, `Bijlage «${f.name}» gecontroleerd (SHA-256 ingevuld).`));
+    };
+    lezer.onerror = () => setFout(foutTekst(lang, 'IMPORT_ONGELDIG'));
+    lezer.readAsDataURL(f);
+  };
 
   // ---- blad «Історія» (lui geladen) + diff
   const [events, setEvents] = useState<Gebeurtenis[] | null>(null);
@@ -115,6 +142,8 @@ export default function KaartDetail({ lang, smal, detail, onSluit, herlaad, toon
         <span className='afv-chip is-stil'>{kaart.dienst}</span>
         {kaart.legacy ? <span className='afv-chip is-stil'>legacy · {kaart.legacy.claimId}</span> : null}
         <small className='afv-hint'>{voortgangTekst(kaart.criteriaGeslaagd, kaart.criteriaTotaal, lang)} · {tr(lang, 'ревізія', 'revisie')} {kaart.revisieNummer} · v{kaart.versie}</small>
+        <a className='afv-knop is-klein' href={dienstUrlVoorKaart(kaart.dienst, lang)} data-afv-naar-dienst={kaart.dienst}><ExternalLink aria-hidden='true' />{tr(lang, 'Відкрити службу', 'Dienst openen')}</a>
+        <a className='afv-knop is-klein' href={agendaUrlVoorKaart(kaart, lang)} data-afv-naar-agenda={kaart.externId}><CalendarPlus aria-hidden='true' />{tr(lang, 'Запланувати в Календарі', 'In Agenda plannen')}</a>
       </div>
       {fout ? <p className='afv-melding is-fout' role='alert'>{fout}</p> : null}
       {conflict ? (
@@ -245,9 +274,13 @@ export default function KaartDetail({ lang, smal, detail, onSluit, herlaad, toon
                 <option value='geslaagd'>{tr(lang, 'пройшов', 'geslaagd')}</option><option value='mislukt'>{tr(lang, 'провалився', 'mislukt')}</option><option value='onbekend'>{tr(lang, 'невідомо', 'onbekend')}</option>
               </select>
             </div>
-            <input value={bVorm.verwijzing} placeholder={tr(lang, 'Посилання/шлях на доказ (журнал, скриншот, тест)…', 'Verwijzing/pad naar het bewijs (log, screenshot, test)…')} aria-label={tr(lang, 'Посилання на доказ', 'Verwijzing')} onChange={(e) => setBVorm((v) => ({ ...v, verwijzing: e.target.value }))} />
+            <input value={bVorm.verwijzing} placeholder={tr(lang, 'Посилання або шлях до доказу (журнал, знімок екрана, випробування)…', 'Verwijzing/pad naar het bewijs (logboek, schermafdruk, test)…')} aria-label={tr(lang, 'Посилання на доказ', 'Verwijzing')} onChange={(e) => setBVorm((v) => ({ ...v, verwijzing: e.target.value }))} />
             <input value={bVorm.sha256} placeholder='sha256 (не обов’язково / optioneel)' aria-label='sha256' onChange={(e) => setBVorm((v) => ({ ...v, sha256: e.target.value }))} />
-            <button type='submit' className='afv-knop is-hoofd' disabled={besig || !bVorm.verwijzing.trim()}>{tr(lang, 'Додати', 'Toevoegen')}</button>
+            <div className='afv-rij'>
+              <button type='button' className='afv-knop is-klein' disabled={besig} data-afv-bewijs-bijlage='' onClick={() => bewijsBestandRef.current?.click()}><FileUp aria-hidden='true' />{tr(lang, 'Зчитати PDF або знімок екрана', 'PDF of schermafdruk inlezen')}</button>
+              <input ref={bewijsBestandRef} type='file' accept='.pdf,image/png,image/jpeg,image/webp' className='afv-verborgen' tabIndex={-1} aria-hidden='true' onChange={(e) => leesBewijsBijlage(e.target.files?.[0])} />
+              <button type='submit' className='afv-knop is-hoofd' disabled={besig || !bVorm.verwijzing.trim()}>{tr(lang, 'Додати', 'Toevoegen')}</button>
+            </div>
           </form>
         </div>
       ) : null}

@@ -204,8 +204,8 @@ export async function main(): Promise<number> {
       pagina.includes('RECHT_UITLEG') && pagina.includes("data-aiw-geen-recht='1'") && !/tr\('Сесія закінчилася/.test(pagina));
     check('7c: het chatvenster heeft een veld, een echte stopknop (AbortController) en toont de reden van elke fout',
       chat.includes('new AbortController()') && chat.includes("data-aiw-stop='1'") && chat.includes('werkruimteFout') && chat.includes("api.post('/api/owner/ai/werkruimte/chat'"));
-    check('7j: wat nog NIET kan staat er ook: één apparaat vooraf kiezen is niet mogelijk en wordt niet nagebootst',
-      chat.includes("data-aiw-apparaatkeuze='nog-niet'"));
+    check('7j: het chatvenster biedt een echte apparaatkiezer voor gekoppelde apparaten en geeft apparaatId door aan de chatroute',
+      chat.includes("data-aiw-apparaatkeuze='kiezer'") && chat.includes('apparaatId: gekozenApparaatId'));
     check('7d: er staat geen nagebootst antwoord van de AI in de bron (geen vaste «відповідь» zonder server)',
       !/rol: 'assistant', tekst: '[^']/.test(chat) && chat.includes("String(res.data?.reply ?? '')"));
     check('7e: de startvragen komen uit de gedeelde lijst en worden per stand getoond; klikken vult alleen het veld',

@@ -2,13 +2,26 @@
 // (zelfde sessie/CSRF als de rest van de site); fouten worden AfstemmingFout met de servercode, nooit een stil succes.
 import { api } from '../platform/client';
 import type {
-  Besluit, BewijsStuk, Gebeurtenis, ImportVoorbeeld, Kaart, Koppeling, KoppelSoort, Levensfase, ReleaseKoppeling, Revisie, ScanBevinding,
+  Besluit,
+  BewijsStuk,
+  BijlageTekstUit,
+  Gebeurtenis,
+  ImportVoorbeeld,
+  Kaart,
+  Koppeling,
+  KoppelSoort,
+  Levensfase,
+  OntleedVoorstel,
+  OrchestratieKoppelingUit,
+  ReleaseKoppeling,
+  Revisie,
+  RouteProefUit,
+  ScanBevinding,
 } from '../../shared/afstemming-model';
 
 export class AfstemmingFout extends Error { code: string; huidig?: Kaart; constructor(code: string, huidig?: Kaart) { super(code); this.code = code; this.huidig = huidig; } }
-/* Elke aanroep draagt dienst + tabblad + herkomst mee — dezelfde sessiecontext als de rest van de site. De dienst is hier
-   bewust de HOST zelf (api.…→'api', hub.…→'hub'); het tabblad komt LUI uit ../tab-context, want dat bestand trekt bij een
-   statische import de canonical-runtime (window) mee en zou de node-tests van de componenten breken. */
+/* Кожен виклик несе службу, вкладку й походження — той самий контекст сеансу, що й решта сайту. Контекст вкладки завантажується
+   ліниво, щоб модульні випробування в середовищі Node.js без об’єкта window працювали без перешкод. */
 const dienstVanHost = (): string => { try { return location.hostname.split('.')[0] || 'api'; } catch { return 'api'; } };
 let tabContextLui: (() => string) | null = null;
 const tabContextVeilig = async (): Promise<string> => {
@@ -30,7 +43,8 @@ export type KaartenVraag = { zoek?: string; dienst?: string; categorie?: string;
 export type GraafUit = { knopen: Array<{ id: string; externId: string; titel: [string, string] | { uk: string; nl?: string }; fase: Levensfase; gezondheid: string; dienst: string }>; randen: Array<{ van: string; naar: string; soort: KoppelSoort; stand: string }> };
 export type ReleasesUit = { releases: Array<{ versie: string; op: string; samenvatting: string; kaarten: ReleaseKoppeling[]; ongeregistreerd: string[] }> };
 export type RapportUit = { nieuw: number; veranderd: number; zonderEigenaar: number; conflicten: number; verouderd: number; tekst: [string, string] };
-export type MogelijkhedenUit = { rubrieken: Array<{ dienst: string; items: Array<{ externId: string; titel: [string, string] | { uk: string; nl?: string }; uitleg: string; route: string; stand: 'перевірено' | 'не перевірено' }> }> };
+export type MogelijkhedenUit = { rubrieken: Array<{ dienst: string; items: Array<{ kaartId?: string; externId: string; titel: [string, string] | { uk: string; nl?: string }; uitleg: string; route: string; stand: 'перевірено' | 'не перевірено' }> }> };
+export type GeschiedenisAlleUit = { gebeurtenissen: Gebeurtenis[]; kaarten: Record<string, { externId: string; titel: readonly [string, string] }>; volgende: string | null };
 
 export const afstemmingClient = {
   overzicht: () => roep<Overzicht>('overzicht'),
@@ -43,6 +57,7 @@ export const afstemmingClient = {
   importVoorbeeld: (naam: string, formaat: 'json' | 'md' | 'txt', inhoud: string) => roep<ImportVoorbeeld>('import', { actie: 'voorbeeld', naam, formaat, inhoud }),
   importVastleggen: (invoerHash: string, kaart: ImportVoorbeeld['kaart']) => roep<{ kaart: Kaart; hergebruikt: boolean }>('import', { actie: 'vastleggen', invoerHash, kaart }),
   geschiedenis: (id: string, token?: string) => roep<{ gebeurtenissen: Gebeurtenis[]; volgende: string | null }>('geschiedenis', { id, token }),
+  geschiedenisAlle: (v: { token?: string; soort?: string; actor?: string } = {}) => roep<GeschiedenisAlleUit>('geschiedenis', v),
   verschil: (id: string, revisieA: string, revisieB: string) => roep<{ velden: Array<{ veld: string; a: string; b: string }> }>('verschil', { id, revisieA, revisieB }),
   bewijs: (b: Record<string, unknown>) => roep<{ stuk: BewijsStuk }>('bewijs', b),
   koppel: (b: Record<string, unknown>) => roep<{ koppeling?: Koppeling; koppelingen?: Koppeling[] }>('koppel', b),
@@ -54,4 +69,8 @@ export const afstemmingClient = {
   scan: () => roep<{ bevindingen: ScanBevinding[]; op: string }>('scan'),
   rapport: (periode?: 'week' | 'maand') => roep<RapportUit>('rapport', periode ? { periode } : {}),
   mogelijkheden: () => roep<MogelijkhedenUit>('mogelijkheden'),
+  ontleed: (tekst: string, lang: 'uk' | 'nl', toestemming: boolean) => roep<{ ok: boolean; voorstel: OntleedVoorstel }>('ontleed', { tekst, lang, toestemming }),
+  bijlageTekst: (b: { naam: string; mime: string; dataBase64: string; kaartId?: string; bewaarMetadata?: boolean }) => roep<BijlageTekstUit>('bijlage-tekst', b),
+  proef: (v: { dienst?: string; kaartId?: string; hechtBewijsAan?: boolean } = {}) => roep<RouteProefUit>('proef', v),
+  orchestratieKoppeling: (vastleggen = false) => roep<OrchestratieKoppelingUit>('orchestratie-koppeling', { vastleggen }),
 };

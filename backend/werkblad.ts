@@ -15,9 +15,12 @@
 import { cpus, freemem, loadavg, totalmem } from 'node:os';
 import { error, json } from '../server/platform';
 import { getPool } from '../server/platform/pg';
+import { auditLijst } from '../server/platform/audit';
 import { alsGebruiker } from './ai-toestemmingen';
+import { agentOnline } from './connectors-gateway';
+import { eenklikAppLezen, isKoppelingKluisGesloten, koppelingenVanLade } from './github-koppeling-opslag';
 import { gegevensRuimteVeilig } from './ruimte-scheiding';
-import type { Lade } from '../shared/ruimte-scheiding';
+import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { TAB_RE, heeftTechMogelijkheid, isEigenaar } from './tech-profiel';
 import { releaseInfo } from './uitgave-info';
 import { EIGEN_ACHTERGROND_MAX, normaliseerWerkblad, type TechSamenvatting, type WerkbladContext, type WerkbladIndeling, type WerkbladRuimte } from '../shared/werkblad-indeling';
@@ -170,5 +173,176 @@ export const createWerkbladRoutes = (authorize: Authorize) => {
       }
       return json({ ruimte: lade.ruimte, ...(await techSamenvatting()) });
     }),
+    /** Veilige GitHub-samenvatting voor het werkblad en bureau in de hub-sessie, strikt binnen deze lade zonder geheimen. */
+    'POST /api/owner/hub/werkblad/github': met(async (lade) => json(await werkbladGithubSamenvatting(lade))),
+    /** Veilige samenvatting van actieve AI-toestemmingen, apparaten en koppelingen in deze lade zonder tokens of hashes. */
+    'POST /api/owner/hub/werkblad/ai-toegang': met(async (lade) => json(await werkbladAiToegangSamenvatting(lade))),
   };
 };
+
+export type WerkbladGithubOverzicht = {
+  ruimte: string;
+  gekoppeld: boolean;
+  kluisGesloten: boolean;
+  eenklikIngesteld: boolean;
+  accounts: Array<{ pad: 'oauth' | 'app'; login: string; repoAantal: number; bijgewerktOp: number }>;
+  opslagplaatsen: string[];
+  recenteActies: Array<{ id: string; actie: string; resultaat: string; op: number }>;
+};
+
+export async function werkbladGithubSamenvatting(lade: Lade): Promise<WerkbladGithubOverzicht> {
+  await alsGebruiker(lade.userId, async (q) => {
+    await q("SELECT set_config('app.ruimte', $1, true)", [lade.ruimte]);
+  });
+  const kluisGesloten = await isKoppelingKluisGesloten(lade.userId, lade.ruimte);
+  if (kluisGesloten) {
+    return {
+      ruimte: lade.ruimte,
+      gekoppeld: false,
+      kluisGesloten: true,
+      eenklikIngesteld: false,
+      accounts: [],
+      opslagplaatsen: [],
+      recenteActies: [],
+    };
+  }
+  const [wegen, eenklik, audit] = await Promise.all([
+    koppelingenVanLade(lade.userId, lade.ruimte).catch(() => []),
+    eenklikAppLezen(lade.userId, lade.ruimte).catch(() => null),
+    auditLijst({ ownerId: lade.userId, limit: 30 }).catch(() => ({ items: [] })),
+  ]);
+  const accounts = wegen.map((r) => ({
+    pad: r.pad,
+    login: String(r.login || '').slice(0, 80),
+    repoAantal: Array.isArray(r.repos) ? r.repos.length : 0,
+    bijgewerktOp: Number(r.bijgewerktOp || 0),
+  }));
+  const repoSet = new Set<string>();
+  for (const r of wegen) {
+    for (const naam of Array.isArray(r.repos) ? r.repos : []) {
+      const schoon = String(naam || '').trim().slice(0, 140);
+      if (schoon && repoSet.size < 20) repoSet.add(schoon);
+    }
+  }
+  const recenteActies = audit.items
+    .filter((a) => a.action.startsWith('owner.github.') && (a.context.ruimte ?? (typeof a.details?.ruimte === 'string' ? a.details.ruimte : 'prive')) === lade.ruimte)
+    .slice(0, 6)
+    .map((a) => ({ id: a.id, actie: a.action, resultaat: a.result, op: a.createdAt }));
+  return {
+    ruimte: lade.ruimte,
+    gekoppeld: accounts.length > 0,
+    kluisGesloten: false,
+    eenklikIngesteld: Boolean(eenklik?.appId || eenklik?.clientId),
+    accounts,
+    opslagplaatsen: [...repoSet],
+    recenteActies,
+  };
+}
+
+export type WerkbladAiToegangOverzicht = {
+  ruimte: string;
+  samenvatting: {
+    verbindingen: number;
+    toestemmingen: number;
+    apparaten: number;
+    apparatenVerbonden: number;
+    browsersActief: number;
+  };
+  verbindingen: Array<{ id: string; naam: string; scope: string; laatstGebruiktOp: number }>;
+  toestemmingen: Array<{ id: string; agentId: string; mogelijkheid: string; altijd: boolean; verlooptOp: number }>;
+  apparaten: Array<{ id: string; naam: string; platform: string; online: boolean; laatstGezienOp: number }>;
+  browser: { totaal: number; actief: number };
+};
+
+export async function werkbladAiToegangSamenvatting(lade: Lade): Promise<WerkbladAiToegangOverzicht> {
+  const agentWaar = sqlLadeWaar('ruimte', lade, 1);
+  const { agentRijen, grantRijen } = await alsGebruiker(lade.userId, async (q) => {
+    await q("SELECT set_config('app.ruimte', $1, true)", [lade.ruimte]);
+    const aRijen = (await q(
+      `SELECT id, name, platform, status, browser_enabled, armed_until, last_seen_at
+         FROM app.agents
+        WHERE ${agentWaar} AND revoked_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 25`,
+      [lade.userId],
+    )).rows;
+    const ids = aRijen.map((r) => String(r.id));
+    const gRijen = ids.length
+      ? (await q(
+          `SELECT id, agent_id, capability, always, expires_at
+             FROM app.ai_grants
+            WHERE user_id = $1 AND agent_id = ANY($2::uuid[]) AND revoked_at IS NULL AND expires_at > now()
+            ORDER BY granted_at DESC
+            LIMIT 30`,
+          [lade.userId, ids],
+        )).rows
+      : [];
+    return { agentRijen: aRijen, grantRijen: gRijen };
+  });
+
+  // Tabellen waar mijnruimte_app geen rechtstreekse SELECT op heeft (omdat hashes van serverzijdig beheerde tokens erin staan):
+  // alleen niet-geheime metavelden via systeemrol met strikte geparametriseerde filter op (user_id, ruimte).
+  const sysPool = getPool('systeem');
+  const [oauthUit, consoleUit, extUit] = await Promise.all([
+    sysPool.query(
+      `SELECT id, client_name, scope, last_used_at, created_at
+         FROM app.mcp_oauth_tokens
+        WHERE ${agentWaar} AND revoked_at IS NULL AND refresh_expires_at > now()
+        ORDER BY created_at DESC
+        LIMIT 20`,
+      [lade.userId],
+    ).catch(() => ({ rows: [] })),
+    sysPool.query(
+      `SELECT count(*)::int AS n FROM app.mcp_console_tokens WHERE ${agentWaar} AND revoked_at IS NULL`,
+      [lade.userId],
+    ).catch(() => ({ rows: [{ n: 0 }] })),
+    sysPool.query(
+      `SELECT count(*)::int AS n FROM app.externe_mcp_verbinding WHERE ${agentWaar} AND actief = true`,
+      [lade.userId],
+    ).catch(() => ({ rows: [{ n: 0 }] })),
+  ]);
+
+  const oauthRijen = oauthUit.rows;
+  const consoleAantal = Number(consoleUit.rows[0]?.n || 0);
+  const extAantal = Number(extUit.rows[0]?.n || 0);
+
+  const nu = Date.now();
+  const browsers = agentRijen.filter((a) => String(a.platform || '') === 'browser');
+  const machines = agentRijen.filter((a) => String(a.platform || '') !== 'browser');
+  const browsersActief = browsers.filter((b) => b.browser_enabled === true && b.armed_until && new Date(String(b.armed_until)).getTime() > nu).length;
+  const apparaten = machines.map((m) => ({
+    id: String(m.id),
+    naam: String(m.name || '').slice(0, 80),
+    platform: String(m.platform || 'machine').slice(0, 32),
+    online: agentOnline(String(m.id)) || String(m.status || '') === 'connected',
+    laatstGezienOp: m.last_seen_at ? new Date(String(m.last_seen_at)).getTime() : 0,
+  }));
+  const verbindingen = oauthRijen.map((o) => ({
+    id: String(o.id),
+    naam: String(o.client_name || 'MCP').slice(0, 80),
+    scope: String(o.scope || '').slice(0, 120),
+    laatstGebruiktOp: o.last_used_at ? new Date(String(o.last_used_at)).getTime() : (o.created_at ? new Date(String(o.created_at)).getTime() : 0),
+  }));
+  const toestemmingen = grantRijen.map((g) => ({
+    id: String(g.id),
+    agentId: String(g.agent_id),
+    mogelijkheid: String(g.capability || '').slice(0, 48),
+    altijd: g.always === true,
+    verlooptOp: g.expires_at ? new Date(String(g.expires_at)).getTime() : 0,
+  }));
+
+  return {
+    ruimte: lade.ruimte,
+    samenvatting: {
+      verbindingen: verbindingen.length + consoleAantal + extAantal,
+      toestemmingen: toestemmingen.length,
+      apparaten: apparaten.length,
+      apparatenVerbonden: apparaten.filter((a) => a.online).length,
+      browsersActief,
+    },
+    verbindingen: verbindingen.slice(0, 6),
+    toestemmingen: toestemmingen.slice(0, 6),
+    apparaten: apparaten.slice(0, 6),
+    browser: { totaal: browsers.length, actief: browsersActief },
+  };
+}

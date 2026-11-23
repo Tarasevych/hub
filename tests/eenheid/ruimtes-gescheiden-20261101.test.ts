@@ -110,7 +110,7 @@ export async function main(): Promise<number> {
     && !/bij «Verbonden AI» op de rij van de technische verbinding/.test(bordUi));
   check('AgentBord: de mogelijkheden (vinkjes) gelden voor ALLE privéverbindingen van de AI, ook via het eigen adres; niet voor tokens/technisch',
     /data-caps-uitleg='1'/.test(bordUi) && /і через спільну адресу \/mcp, і через його власну адресу/.test(bordUi)
-    && /via het gedeelde adres \/mcp én via het eigen adres/.test(bordUi) && /MCP-токенів і технічних підключень вони не стосуються/.test(bordUi));
+    && /via het gedeelde adres \/mcp én via het eigen adres/.test(bordUi) && /Ключів підключення MCP і технічних підключень вони не стосуються/i.test(bordUi));
 
   if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) { console.log('OVERGESLAGEN ruimtes-gescheiden (deel met PostgreSQL): geen database'); return einde(); }
 

@@ -1,18 +1,17 @@
-// UI-003 — Verbindingencentrum «Хмарне сховище → Акаунти» (vlag verbindingen-centrum-v2, migratie 0151, standaard UIT).
-// Eén rustig beheercentrum in plaats van een technische providerlijst. Leest ALLEEN bestaande, levende bronnen:
-//   • /api/owner/cloud/vnext/integraties (backend/cloud-vnext-integraties.ts) — Google-accounts, Photos-scope, M4-accounts,
-//     zoekindex, en sinds UI-003 additief per Drive-account de echte syncstand (laatst gelukt / laatste poging / foutcode);
-//   • /api/owner/cloud/vnext/taken (lijst) — de echte geschiedenis van overdrachten tussen opslagdiensten;
-//   • koppelen/opnieuw autoriseren via de BESTAANDE route providers/google/connect/start (popup vóór de await).
-// Niets heet «підключено» zonder levende controle; geen koppelknop waar er geen echte stroom is. Namen van omgevings-
-// variabelen, staging-vlaggen en interne codes staan alleen in ingeklapte «Технічні деталі».
+// UI-003 + CONSOL-001 (З-5) — Центр підключень «Хмарне сховище → Облікові записи» (прапорець verbindingen-centrum-v2, міграція 0151).
+// Єдиний спокійний центр керування підключеними обліковими записами й каталогом служб:
+//   • /api/owner/cloud/vnext/integraties — облікові записи Google, права Photos, підключення M4, пошуковий покажчик і живий стан синхронізації;
+//   • /api/owner/verbindingen/{controleer,selecteer,loskoppelen} — жива перевірка стану, вибір основного облікового запису та розірвання зв’язку з підтвердженням;
+//   • /api/owner/cloud/vnext/taken (lijst) — справжня історія перенесень між сховищами;
+//   • підключення/повторний вхід через наявний маршрут providers/google/connect/start.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ChevronDown, Clock, FolderSync, History, Link2, LoaderCircle, Plus, RefreshCw, Settings2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock, FolderOpen, FolderSync, History, Link2, LoaderCircle, Plus, Power, RefreshCw, Settings2, Star } from 'lucide-react';
 import { CLOUD_VNEXT_AANBIEDERS, cloudTekst, type CloudVnextAanbieder } from '../../shared/cloud-vnext-model';
 import type { CloudTaak } from '../../shared/cloud-overdracht-model';
 import { cloudClient, CloudFout, type IntegratiesUit } from '../cloud-vnext/cloud-client';
 import Logo from '../merk/MerkLogo';
 import { accountStand, probleemUitleg, soortVan, wanneer, type AccountStand, type Soort } from './verbindingen-logica';
+import { verbindingenClient, VerbindingenBeheerFout, type VerbindingSoort } from './verbindingen-client';
 import { MaquetteHeld, MaquetteAnkerRail, type MaquetteAnkerItem } from '../maquette-kern';
 import { useIsMaquette } from '../thema/useThema';
 import './verbindingen.css';
@@ -59,14 +58,14 @@ const MAQUETTE_VBC_TEKSTEN = {
   },
 } as const;
 
-/** Echte merkvormen uit src/merk (niets verzonnen); zonder sleutel tekent Logo een monogram. */
+/** Справжні позначки служб із єдиного реєстру src/merk; без ключа малюється монограма. */
 export const MERK: Record<string, string> = {
   'google-drive': 'googledrive', 'google-photos': 'googlephotos', onedrive: 'microsoftonedrive', dropbox: 'dropbox', box: 'box',
   'icloud-drive': 'icloud', mega: 'mega', nextcloud: 'nextcloud', 'gmail-bijlagen': 'gmail',
 };
-/** Korte, eerlijke beschrijving van wat je ermee kunt (de lange uitleg blijft in de details). */
+/** Короткий чесний опис можливостей (повне пояснення розгортається в деталях). */
 const KORT: Record<string, [string, string]> = {
-  'google-drive': ['Теки, пошук, завантаження, перейменування, кошик; кілька акаунтів.', 'Mappen, zoeken, uploaden, hernoemen, prullenbak; meerdere accounts.'],
+  'google-drive': ['Теки, пошук, завантаження, перейменування, кошик; кілька облікових записів.', 'Mappen, zoeken, uploaden, hernoemen, prullenbak; meerdere accounts.'],
   'google-photos': ['Імпорт вибраних фото у вашу хмару.', 'Gekozen foto’s importeren in uw cloud.'],
   'gmail-bijlagen': ['Вкладення з листів зберігаються у хмару зі сторінки Пошти.', 'Bijlagen uit mails bewaren in de cloud via E-mail.'],
   onedrive: ['Перегляд тек і файлів (лише читання).', 'Mappen en bestanden bekijken (alleen lezen).'],
@@ -80,7 +79,7 @@ const SOORT_LABEL: Record<Soort, [string, string]> = {
 };
 const STAND_LABEL: Record<AccountStand, [string, string]> = { ok: ['Працює', 'Werkt'], aandacht: ['Потребує уваги', 'Vraagt aandacht'], uit: ['Відключено', 'Losgekoppeld'], bezig: ['Триває', 'Bezig'] };
 
-/** Eén «?» per blok: een kleine knop die een korte uitleg onder de kop uitklapt. */
+/** Одна кнопка «?» на блок: розгортає коротке пояснення під заголовком. */
 function Uitleg({ lang, id, children }: { lang: Lang; id: string; children: string }) {
   const [open, setOpen] = useState(false);
   return <>
@@ -98,12 +97,21 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
   const [fout, setFout] = useState('');
   const [laden, setLaden] = useState(true);
   const [bezig, setBezig] = useState(false);
+  const [actieBezig, setActieBezig] = useState('');
+  const [actieBericht, setActieBericht] = useState<{ soort: 'ok' | 'info' | 'fout'; tekst: string } | null>(null);
+  const [bevestigLos, setBevestigLos] = useState<{ soort: VerbindingSoort; id: string; naam: string } | null>(null);
   const [wachten, setWachten] = useState(false);
   const [actiefAnker, setActiefAnker] = useState('vbc-mijn');
   const [viewerOpen, setViewerOpen] = useState(() => typeof document !== 'undefined' && Boolean(document.documentElement.dataset.universeelBestandOpen || document.documentElement.dataset.driveViewerOpen));
   const poll = useRef<{ timer: number; tot: number; was: number } | null>(null);
   const catalogusRef = useRef<HTMLElement | null>(null);
   const foutTekst = (code: string) => code === 'NETWERK' || code === 'FOUT' ? tr(lang, 'Не вдалося отримати стан підключень. Перевірте зʼєднання і спробуйте ще раз.', 'De status van de koppelingen kon niet worden opgehaald. Controleer de verbinding en probeer opnieuw.') : tr(lang, 'Не вдалося отримати стан підключень.', 'De status van de koppelingen kon niet worden opgehaald.');
+  const beheerFoutTekst = (code: string) => {
+    if (code === 'RBAC_FORBIDDEN' || code === 'CLOUD_WRITE_FORBIDDEN') return tr(lang, 'Для зміни підключень потрібне право запису в хмарі.', 'Voor het wijzigen van koppelingen is schrijfrecht in de cloud nodig.');
+    if (code === 'BEVESTIGING_VEREIST') return tr(lang, 'Підтвердіть від’єднання підключення.', 'Bevestig het loskoppelen van de verbinding.');
+    if (code === 'CLOUD_ACCOUNT_NOT_FOUND' || code === 'CLOUD_GOOGLE_ACCOUNT_NOT_FOUND') return tr(lang, 'Підключення не знайдено у вашому просторі.', 'Koppeling niet gevonden in uw ruimte.');
+    return tr(lang, 'Не вдалося виконати дію з підключенням. Спробуйте ще раз.', 'De actie op de koppeling is niet gelukt. Probeer opnieuw.');
+  };
 
   useEffect(() => {
     const controleer = () => {
@@ -143,7 +151,7 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
     poll.current = { timer, tot: Date.now() + POLL_MAX_MS, was };
   }, [laad, stopPoll]);
 
-  /** Bestaande Google-route; popup opent VÓÓR de await (anders blokkeert de browser hem). */
+  /** Наявний маршрут Google; спливне вікно відкривається ДО очікування відповіді, інакше оглядач заблокує його. */
   const google = async (rol: 'primary' | 'additional') => {
     if (bezig) return;
     const venster = window.open('about:blank', 'cloud-google-koppeling', 'popup=yes,width=520,height=720');
@@ -154,6 +162,62 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
       else { venster?.close(); await laad(); }
     } catch (e) { venster?.close(); setFout(foutTekst(e instanceof CloudFout ? e.code : 'FOUT')); }
     finally { setBezig(false); }
+  };
+
+  const doeControle = async (soort: VerbindingSoort, accountId: string, naam: string) => {
+    if (actieBezig) return;
+    setActieBezig(accountId);
+    setActieBericht(null);
+    try {
+      const r = await verbindingenClient.controleer(soort, accountId);
+      await laad();
+      if (r.ok && r.stand === 'ok') {
+        setActieBericht({ soort: 'ok', tekst: tr(lang, `Стан «${naam}» перевірено: підключення працює.`, `Status van «${naam}» gecontroleerd: de koppeling werkt.`) });
+      } else if (r.code === 'SLEUTELS_ONTBREKEN') {
+        setActieBericht({ soort: 'info', tekst: tr(lang, `Для «${naam}» на сервері ще не налаштовані клієнтські ключі постачальника.`, `Voor «${naam}» staan de aanbiederssleutels nog niet op de server ingesteld.`) });
+      } else {
+        setActieBericht({ soort: 'info', tekst: tr(lang, `Підключення «${naam}» потребує повторного підтвердження входу.`, `Koppeling «${naam}» vraagt om opnieuw aanmelden.`) });
+      }
+    } catch (e) {
+      setActieBericht({ soort: 'fout', tekst: beheerFoutTekst(e instanceof VerbindingenBeheerFout ? e.code : 'FOUT') });
+    } finally {
+      setActieBezig('');
+    }
+  };
+
+  const doeSelecteer = async (accountId: string, naam: string) => {
+    if (actieBezig) return;
+    setActieBezig(accountId);
+    setActieBericht(null);
+    try {
+      await verbindingenClient.selecteer(accountId);
+      await laad();
+      setActieBericht({ soort: 'ok', tekst: tr(lang, `Обліковий запис «${naam}» обрано основним для Google Drive.`, `Account «${naam}» is ingesteld als standaard voor Google Drive.`) });
+    } catch (e) {
+      setActieBericht({ soort: 'fout', tekst: beheerFoutTekst(e instanceof VerbindingenBeheerFout ? e.code : 'FOUT') });
+    } finally {
+      setActieBezig('');
+    }
+  };
+
+  const doeLoskoppelen = async () => {
+    if (!bevestigLos || actieBezig) return;
+    const doel = bevestigLos;
+    setActieBezig(doel.id);
+    setActieBericht(null);
+    try {
+      const r = await verbindingenClient.loskoppelen(doel.soort, doel.id);
+      setBevestigLos(null);
+      await laad();
+      const extra = r.remote === 'unsupported'
+        ? tr(lang, ' На боці постачальника можна додатково відкликати дозвіл у налаштуваннях облікового запису.', ' Bij de aanbieder kunt u de toestemming daarnaast intrekken in uw accountinstellingen.')
+        : '';
+      setActieBericht({ soort: 'ok', tekst: `${tr(lang, `Підключення «${doel.naam}» від’єднано. Локальні копії у вашій хмарі збережено.`, `Koppeling «${doel.naam}» is losgekoppeld. Lokale kopieën in uw cloud blijven behouden.`)}${extra}` });
+    } catch (e) {
+      setActieBericht({ soort: 'fout', tekst: beheerFoutTekst(e instanceof VerbindingenBeheerFout ? e.code : 'FOUT') });
+    } finally {
+      setActieBezig('');
+    }
   };
 
   const gAccounts = data?.google.accounts || [];
@@ -226,6 +290,15 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
   const groepen: Array<[Soort, CloudVnextAanbieder[]]> = (['verbonden', 'beschikbaar', 'beperkt', 'gepland', 'onmogelijk'] as Soort[]).map((s) => [s, CLOUD_VNEXT_AANBIEDERS.filter((a) => soortVan(a, data) === s)]);
   const heeftIets = gAccounts.length > 0 || m4Accounts.length > 0 || Boolean(data?.photos.gekoppeld);
 
+  const bevestigBalk = (id: string) => bevestigLos && bevestigLos.id === id ? (
+    <div className='vbc-melding is-waarschuwing' role='region' aria-label={tr(lang, 'Підтвердження від’єднання', 'Bevestiging van loskoppelen')} data-vbc-bevestig={id}>
+      <AlertTriangle aria-hidden='true' />
+      <span>{tr(lang, `Від’єднати «${bevestigLos.naam}»? Локальні файли у вашій хмарі залишаться на місці.`, `«${bevestigLos.naam}» loskoppelen? Lokale bestanden in uw cloud blijven behouden.`)}</span>
+      <button type='button' className='vbc-knop is-klein is-hoofd' disabled={Boolean(actieBezig)} onClick={() => void doeLoskoppelen()} data-vbc-actie='bevestig-loskoppelen'>{tr(lang, 'Підтвердити від’єднання', 'Loskoppelen bevestigen')}</button>
+      <button type='button' className='vbc-knop is-klein' disabled={Boolean(actieBezig)} onClick={() => setBevestigLos(null)} data-vbc-actie='annuleer-loskoppelen'>{tr(lang, 'Скасувати', 'Annuleren')}</button>
+    </div>
+  ) : null;
+
   return (
     <div className={`vbc${isMaquette ? ' mq-schil' : ''}`} data-mq-dienst={isMaquette ? 'cloud' : undefined} data-vbc-centrum=''>
       {isMaquette ? (
@@ -262,11 +335,12 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
         </>
       ) : null}
       <header className='vbc-kop'>
-        <div><h2 id='vbc-titel'>{tr(lang, 'Підключення', 'Koppelingen')}</h2><p className='vbc-hint'>{tr(lang, 'Ваші хмарні акаунти та сервіси в одному місці.', 'Uw cloudaccounts en diensten op één plek.')}</p></div>
+        <div><h2 id='vbc-titel'>{tr(lang, 'Підключення', 'Koppelingen')}</h2><p className='vbc-hint'>{tr(lang, 'Ваші хмарні облікові записи та сервіси в одному місці.', 'Uw cloudaccounts en diensten op één plek.')}</p></div>
         <button type='button' className='vbc-knop is-hoofd' onClick={naarCatalogus} data-vbc-actie='toevoegen'><Plus aria-hidden='true' />{tr(lang, 'Додати підключення', 'Koppeling toevoegen')}</button>
       </header>
 
       {fout ? <p className='vbc-melding is-fout' role='alert'><AlertTriangle aria-hidden='true' />{fout}<button type='button' className='vbc-knop is-klein' onClick={() => { setLaden(true); void laad(); }}><RefreshCw aria-hidden='true' />{tr(lang, 'Ще раз', 'Opnieuw')}</button></p> : null}
+      {actieBericht ? <p className={`vbc-melding is-${actieBericht.soort === 'ok' ? 'info' : actieBericht.soort}`} role='status' data-vbc-bericht={actieBericht.soort}>{actieBericht.soort === 'fout' ? <AlertTriangle aria-hidden='true' /> : <CheckCircle2 aria-hidden='true' />}{actieBericht.tekst}</p> : null}
       {wachten ? <p className='vbc-melding is-info' role='status'><LoaderCircle className='vbc-draai' aria-hidden='true' />{tr(lang, 'Вікно входу Google відкрито. Після входу список оновиться сам.', 'Het Google-aanmeldvenster is open. Na het aanmelden ververst de lijst vanzelf.')}<button type='button' className='vbc-knop is-klein' onClick={stopPoll}>{tr(lang, 'Скасувати', 'Annuleren')}</button></p> : null}
 
       <section className='vbc-overzicht' aria-label={tr(lang, 'Стан', 'Status')} data-vbc-overzicht=''>
@@ -277,13 +351,14 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
       </section>
 
       <section className='vbc-blok' aria-labelledby='vbc-mijn'>
-        <div className='vbc-blokkop'><h3 id='vbc-mijn'>{tr(lang, 'Мої підключення', 'Mijn koppelingen')}</h3><Uitleg lang={lang} id='mijn'>{tr(lang, 'Акаунти, які вже підключені. Стан перевіряється наживо при кожному відкритті сторінки. Ключі доступу зберігаються на сервері зашифрованими й не потрапляють у браузер.', 'Accounts die al gekoppeld zijn. De status wordt live gecontroleerd bij elke opening. Toegangssleutels staan versleuteld op de server en komen nooit in de browser.')}</Uitleg></div>
+        <div className='vbc-blokkop'><h3 id='vbc-mijn'>{tr(lang, 'Мої підключення', 'Mijn koppelingen')}</h3><Uitleg lang={lang} id='mijn'>{tr(lang, 'Облікові записи, які вже підключені. Стан перевіряється наживо при кожному відкритті сторінки. Ключі доступу зберігаються на сервері зашифрованими й не потрапляють в оглядач.', 'Accounts die al gekoppeld zijn. De status wordt live gecontroleerd bij elke opening. Toegangssleutels staan versleuteld op de server en komen nooit in de browser.')}</Uitleg></div>
         {!heeftIets ? (
           <div className='vbc-leeg' data-vbc-leeg='mijn'><p>{tr(lang, 'Ще нічого не підключено.', 'Nog niets gekoppeld.')}</p><button type='button' className='vbc-knop is-hoofd' disabled={bezig} onClick={() => void google('primary')} data-vbc-actie='google-koppelen'><Link2 aria-hidden='true' />{tr(lang, 'Підключити Google Drive', 'Google Drive koppelen')}</button></div>
         ) : (
           <ul className='vbc-lijst'>
             {gAccounts.map((a, i) => {
               const st = accountStand(a), p = probleemUitleg(lang, a);
+              const druk = actieBezig === a.id;
               return (
                 <li key={a.id} className={`vbc-kaart is-${st}`} data-vbc-account={a.id} data-vbc-stand={st}>
                   <div className='vbc-kaart-kop'>
@@ -294,9 +369,14 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
                   <p className='vbc-hint'>{tr(lang, 'Остання синхронізація: ', 'Laatste synchronisatie: ')}<span data-vbc-laatst={a.sync?.laatstGeluktOp || 0}>{a.status === 'connected' ? wanneer(lang, a.sync?.laatstGeluktOp || 0) : '—'}</span></p>
                   {p ? <p className='vbc-melding is-waarschuwing' data-vbc-probleem={p.actie}><AlertTriangle aria-hidden='true' />{p.tekst}</p> : null}
                   <div className='vbc-acties'>
-                    {st === 'aandacht' && p?.actie === 'opnieuw' || st === 'uit' ? <button type='button' className='vbc-knop is-hoofd' disabled={bezig} onClick={() => void google(i === 0 ? 'primary' : 'additional')} data-vbc-actie='opnieuw'><RefreshCw aria-hidden='true' />{tr(lang, 'Повторно підключити', 'Opnieuw koppelen')}</button> : null}
+                    {st === 'aandacht' && p?.actie === 'opnieuw' || st === 'uit' ? <button type='button' className='vbc-knop is-hoofd' disabled={bezig || druk} onClick={() => void google(i === 0 ? 'primary' : 'additional')} data-vbc-actie='opnieuw'><RefreshCw aria-hidden='true' />{tr(lang, 'Повторно підключити', 'Opnieuw koppelen')}</button> : null}
+                    {a.status === 'connected' ? <button type='button' className='vbc-knop' onClick={() => naarTab('files')} data-vbc-actie='bestanden'><FolderOpen aria-hidden='true' />{tr(lang, 'До файлів', 'Naar bestanden')}</button> : null}
                     {a.status === 'connected' ? <button type='button' className='vbc-knop' onClick={() => naarTab('google')} data-vbc-actie='beheren'><Settings2 aria-hidden='true' />{tr(lang, 'Керувати', 'Beheren')}</button> : null}
+                    {a.status === 'connected' && !a.actief ? <button type='button' className='vbc-knop' disabled={druk} onClick={() => void doeSelecteer(a.id, a.email || 'Google Drive')} data-vbc-actie='selecteer'><Star aria-hidden='true' />{tr(lang, 'Зробити основним', 'Als standaard kiezen')}</button> : null}
+                    <button type='button' className='vbc-knop' disabled={druk} onClick={() => void doeControle('google', a.id, a.email || 'Google Drive')} data-vbc-actie='controleer'><RefreshCw aria-hidden='true' className={druk ? 'vbc-draai' : ''} />{tr(lang, 'Перевірити стан', 'Status controleren')}</button>
+                    {a.status !== 'disconnected' ? <button type='button' className='vbc-knop is-stil' disabled={druk || bevestigLos?.id === a.id} onClick={() => setBevestigLos({ soort: 'google', id: a.id, naam: a.email || 'Google Drive' })} data-vbc-actie='loskoppelen'><Power aria-hidden='true' />{tr(lang, 'Від’єднати', 'Loskoppelen')}</button> : null}
                   </div>
+                  {bevestigBalk(a.id)}
                   {a.sync?.foutCode || a.status !== 'connected' ? <details className='vbc-tech'><summary>{tr(lang, 'Технічні деталі', 'Technische details')}</summary><dl><dt>{tr(lang, 'Стан', 'Status')}</dt><dd><code>{a.status}</code></dd>{a.sync?.foutCode ? <><dt>{tr(lang, 'Код', 'Code')}</dt><dd><code>{a.sync.foutCode}</code></dd></> : null}{a.sync ? <><dt>{tr(lang, 'Остання спроба', 'Laatste poging')}</dt><dd>{wanneer(lang, a.sync.laatstPogingOp)}</dd></> : null}</dl></details> : null}
                 </li>
               );
@@ -304,21 +384,31 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
             {data?.photos.gekoppeld ? (
               <li className='vbc-kaart is-ok' data-vbc-account='google-photos' data-vbc-stand='ok'>
                 <div className='vbc-kaart-kop'><Logo id='google-photos' naam='Google Photos' logo={MERK['google-photos']} maat={36} /><div className='vbc-naam'><strong>Google Photos</strong><span>{tr(lang, ...KORT['google-photos'])}</span></div><Badge soort='ok' tekst={tr(lang, ...STAND_LABEL.ok)} /></div>
-                <div className='vbc-acties'><button type='button' className='vbc-knop' onClick={() => naarTab('photos')} data-vbc-actie='fotos'><Settings2 aria-hidden='true' />{tr(lang, 'Керувати', 'Beheren')}</button></div>
+                <div className='vbc-acties'>
+                  <button type='button' className='vbc-knop' onClick={() => naarTab('photos')} data-vbc-actie='fotos'><Settings2 aria-hidden='true' />{tr(lang, 'Керувати', 'Beheren')}</button>
+                  <button type='button' className='vbc-knop' onClick={() => { setLaden(true); void laad(); }} data-vbc-actie='fotos-controleer'><RefreshCw aria-hidden='true' />{tr(lang, 'Перевірити стан', 'Status controleren')}</button>
+                </div>
               </li>
             ) : null}
             {m4Accounts.map((acc) => {
               const st: AccountStand = acc.status === 'connected' ? 'ok' : acc.status === 'reauth_required' ? 'aandacht' : 'uit';
+              const druk = actieBezig === acc.id;
+              const naam = naamFamilie(acc.familie);
               return (
                 <li key={acc.id} className={`vbc-kaart is-${st}`} data-vbc-account={acc.id} data-vbc-stand={st}>
-                  <div className='vbc-kaart-kop'><Logo id={acc.familie} naam={naamFamilie(acc.familie)} logo={MERK[acc.familie] || ''} maat={36} /><div className='vbc-naam'><strong>{naamFamilie(acc.familie)}</strong><span>{acc.label}</span></div><Badge soort={st} tekst={tr(lang, ...STAND_LABEL[st])} /></div>
-                  <p className='vbc-hint'>{tr(lang, 'Пробний режим: лише перегляд. Керування з цієї сторінки ще не доступне.', 'Proefmodus: alleen bekijken. Beheer vanaf deze pagina is nog niet beschikbaar.')}</p>
+                  <div className='vbc-kaart-kop'><Logo id={acc.familie} naam={naam} logo={MERK[acc.familie] || ''} maat={36} /><div className='vbc-naam'><strong>{naam}</strong><span>{acc.label}</span></div><Badge soort={st} tekst={tr(lang, ...STAND_LABEL[st])} /></div>
+                  <div className='vbc-acties'>
+                    {acc.status === 'connected' ? <button type='button' className='vbc-knop' onClick={() => naarTab('files')} data-vbc-actie='bestanden'><FolderOpen aria-hidden='true' />{tr(lang, 'До файлів', 'Naar bestanden')}</button> : null}
+                    {acc.status !== 'revoked' ? <button type='button' className='vbc-knop' disabled={druk} onClick={() => void doeControle('m4', acc.id, `${naam} (${acc.label})`)} data-vbc-actie='controleer'><RefreshCw aria-hidden='true' className={druk ? 'vbc-draai' : ''} />{tr(lang, 'Перевірити стан', 'Status controleren')}</button> : null}
+                    {acc.status !== 'revoked' ? <button type='button' className='vbc-knop is-stil' disabled={druk || bevestigLos?.id === acc.id} onClick={() => setBevestigLos({ soort: 'm4', id: acc.id, naam: `${naam} (${acc.label})` })} data-vbc-actie='loskoppelen'><Power aria-hidden='true' />{tr(lang, 'Від’єднати', 'Loskoppelen')}</button> : null}
+                  </div>
+                  {bevestigBalk(acc.id)}
                 </li>
               );
             })}
           </ul>
         )}
-        {data?.google.gekoppeld ? <div className='vbc-acties'><button type='button' className='vbc-knop' disabled={bezig} onClick={() => void google('additional')} data-vbc-actie='extra-account'><Plus aria-hidden='true' />{tr(lang, 'Додати акаунт Google', 'Google-account toevoegen')}</button></div> : null}
+        {data?.google.gekoppeld ? <div className='vbc-acties'><button type='button' className='vbc-knop' disabled={bezig} onClick={() => void google('additional')} data-vbc-actie='extra-account'><Plus aria-hidden='true' />{tr(lang, 'Додати обліковий запис Google', 'Google-account toevoegen')}</button></div> : null}
       </section>
 
       <section className='vbc-blok' aria-labelledby='vbc-catalogus' ref={catalogusRef} data-vbc-catalogus=''>
@@ -337,7 +427,7 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
         <div className='vbc-blokkop'><h3 id='vbc-sync'><FolderSync aria-hidden='true' />{tr(lang, 'Синхронізація', 'Synchronisatie')}</h3><Uitleg lang={lang} id='sync'>{tr(lang, 'Google Drive оновлюється у фоні приблизно кожні 5 хвилин. Google Photos — лише імпорт фото, які ви самі обрали. Двостороння синхронізація з іншими сховищами ще не існує.', 'Google Drive wordt ongeveer elke 5 minuten op de achtergrond bijgewerkt. Google Photos: alleen import van foto’s die u zelf kiest. Tweerichtingssynchronisatie met andere opslag bestaat nog niet.')}</Uitleg></div>
         <ul className='vbc-synclijst'>
           {gAccounts.filter((a) => a.status === 'connected').map((a) => <li key={a.id} data-vbc-sync-account={a.id}><span>{a.email}</span><span className='vbc-hint'>{a.sync ? wanneer(lang, a.sync.laatstGeluktOp) : tr(lang, 'ще не було', 'nog nooit')}</span></li>)}
-          {!gAccounts.some((a) => a.status === 'connected') ? <li className='vbc-hint'>{tr(lang, 'Немає акаунтів для синхронізації.', 'Geen accounts om te synchroniseren.')}</li> : null}
+          {!gAccounts.some((a) => a.status === 'connected') ? <li className='vbc-hint'>{tr(lang, 'Немає облікових записів для синхронізації.', 'Geen accounts om te synchroniseren.')}</li> : null}
           <li><span>{tr(lang, 'Пошук знає вашу хмару', 'Zoeken kent uw cloud')}</span><span className='vbc-hint'>{data?.zoekIndex.cloud ? tr(lang, 'так', 'ja') : tr(lang, 'ні', 'nee')}</span></li>
           <li><span>{tr(lang, 'Пошук знає Google Drive', 'Zoeken kent Google Drive')}</span><span className='vbc-hint'>{data?.zoekIndex.drive ? tr(lang, 'так', 'ja') : tr(lang, 'ні', 'nee')}</span></li>
         </ul>

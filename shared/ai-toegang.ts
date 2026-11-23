@@ -110,10 +110,10 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
   },
   {
     id: 'files.read', groep: 'Файли', uk: 'Читати файли',
-    omschrijvingUk: 'Перегляд і читання файлів вашого Google Диска.',
-    nl: 'Bestanden lezen', omschrijvingNl: 'Bestanden in uw Google Drive bekijken en lezen.',
+    omschrijvingUk: 'Перегляд і читання файлів вашого Google Диска, внутрішнього диска сайту та підключених зовнішніх хмар.',
+    nl: 'Bestanden lezen', omschrijvingNl: 'Bestanden in uw Google Drive, op de interne schijf van de site en in gekoppelde externe opslag bekijken en lezen.',
     gevoelig: false, standaardAan: true, agents: ['*'],
-    tools: ['drive_browse', 'drive_read_file'],
+    tools: ['drive_browse', 'drive_read_file', 'cloud_eigen_lijst', 'cloud_koppelingen_lijst'],
   },
   {
     id: 'files.write', groep: 'Файли', uk: 'Змінювати файли',
@@ -131,10 +131,10 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
   },
   {
     id: 'board.write', groep: 'Дошка', uk: 'Писати на дошку',
-    omschrijvingUk: 'Створення, зміна статусу й видалення задач.',
-    nl: 'Op het bord schrijven', omschrijvingNl: 'Taken aanmaken, status wijzigen en verwijderen.',
+    omschrijvingUk: 'Створення, коментування, зміна стану й видалення задач.',
+    nl: 'Op het bord schrijven', omschrijvingNl: 'Taken aanmaken, opmerkingen plaatsen, status wijzigen en verwijderen.',
     gevoelig: false, standaardAan: true, agents: ['*'],
-    tools: ['create_task', 'update_task_status', 'update_board_item', 'delete_board_item', 'mcp_board_add', 'upsert_task'],
+    tools: ['create_task', 'update_task_status', 'update_board_item', 'delete_board_item', 'mcp_board_add', 'upsert_task', 'comment_board_item'],
   },
   {
     id: 'notes.read', groep: 'Нотатки', uk: 'Читати нотатки',

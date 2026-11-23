@@ -56,14 +56,14 @@ export async function main(): Promise<number> {
 
     // ---------------------------------------------------------------- 3. normalisatie op de server
     const vuil = await via(P, 'bewaren', { indeling: { v: 2, achtergrond: 'http://x', items: [{ id: 'tech-server' }, { id: 'github' }, { id: 'onzin' }, { id: 'agenda', k: 99, r: 99 }, { id: 'begroeting' }, { id: 'begroeting' }] }, versie: 1 });
-    check('server normaliseert: tech-widget en «binnenkort» en onzin vallen weg in de persoonlijke lade, dubbele begroeting → één, formaat begrensd, achtergrond → nacht',
-      vuil.status === 200 && vuil.data.indeling.items.map((t: { id: string }) => t.id).join(',') === 'agenda,begroeting' && vuil.data.indeling.items[0].k === 12 && vuil.data.indeling.items[0].r === 6 && vuil.data.indeling.achtergrond === 'nacht' && vuil.data.versie === 2, vuil.body.slice(0, 300));
+    check('server normaliseert: tech-widget en onzin vallen weg in de persoonlijke lade, github blijft, dubbele begroeting → één, formaat begrensd, achtergrond → nacht',
+      vuil.status === 200 && vuil.data.indeling.items.map((t: { id: string }) => t.id).join(',') === 'github,agenda,begroeting' && vuil.data.indeling.items[1].k === 12 && vuil.data.indeling.items[1].r === 6 && vuil.data.indeling.achtergrond === 'nacht' && vuil.data.versie === 2, vuil.body.slice(0, 300));
     const groot = await via(P, 'bewaren', { indeling: { v: 2, items: Array.from({ length: 2000 }, () => ({ id: 'post', inst: { x: 'y'.repeat(100) } })) }, versie: 2 });
     check('te groot → 413 WERKBLAD_TE_GROOT', groot.status === 413, `${groot.status} ${groot.body.slice(0, 120)}`);
 
     // ---------------------------------------------------------------- 4. versie
     const oud = await via(P, 'bewaren', { indeling: { v: 2, items: [{ id: 'post' }] }, versie: 1 });
-    check('oudere client (versie 1 terwijl de server op 2 staat) → 409 WERKBLAD_VEROUDERD + de actuele rij (agenda,begroeting)', oud.status === 409 && oud.data.code === 'WERKBLAD_VEROUDERD' && oud.data.indeling.items.map((t: { id: string }) => t.id).join(',') === 'agenda,begroeting' && oud.data.versie === 2, `${oud.status} ${oud.body.slice(0, 200)}`);
+    check('oudere client (versie 1 terwijl de server op 2 staat) → 409 WERKBLAD_VEROUDERD + de actuele rij (github,agenda,begroeting)', oud.status === 409 && oud.data.code === 'WERKBLAD_VEROUDERD' && oud.data.indeling.items.map((t: { id: string }) => t.id).join(',') === 'github,agenda,begroeting' && oud.data.versie === 2, `${oud.status} ${oud.body.slice(0, 200)}`);
     const nieuw = await via(P, 'bewaren', { indeling: { v: 2, items: [{ id: 'post' }] }, versie: 2 });
     check('client met de actuele versie → bewaard, versie 3; herkomst blijft (eigen na een zelf-bewaring)', nieuw.status === 200 && nieuw.data.versie === 3 && nieuw.data.indeling.items[0].id === 'post');
     const zonder = await via(P, 'bewaren', { indeling: { v: 2, items: [{ id: 'taken' }] } });
