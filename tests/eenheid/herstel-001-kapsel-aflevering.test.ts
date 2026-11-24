@@ -15,7 +15,10 @@ import { ACTIE_LABELS } from '../../shared/beheer-journaal';
 import { bouwMeldingRegisterOverzicht } from '../../shared/meldingen-register-overzicht';
 import { VLAG_UITLEG } from '../../shared/vlaggen';
 import {
+  bepaalKapselTellerStaat,
+  bepaalMeldingType,
   bepaalOntvangstStaat,
+  isMeldingMetGeluid,
   isMeldingOngelezen,
   MELDING_KAPSEL_AFLEVERING_VLAG,
   normaliseerGebeurtenis,
@@ -568,6 +571,218 @@ export async function main(): Promise<number> {
     const inhoud = lees(pad);
     check(`5c мовна чистота (${pad}): відсутні заборонені не-українські літери`, !VERBODEN_LETTERS.test(inhoud));
   }
+
+  // 6. Пропорційна мініатюрна капсула кількості сповіщень (без «×», 18px, 999px): зі звуком / без звуку / прочитане без цифри
+  const mailMetHerhaling = maakGeb('g-mail-2', {
+    kanaal: 'mail',
+    subdomein: 'mail',
+    bron: 'mail.inbox',
+    status: 'nieuw',
+    herhalingen: 2,
+    afgeleverdOp: 1500,
+  });
+  const cloudStilHerhaling = maakGeb('g-cloud-4', {
+    kanaal: 'cloud',
+    subdomein: 'cloud',
+    bron: 'cloud.sync',
+    status: 'nieuw',
+    herhalingen: 4,
+    afgeleverdOp: 1500,
+  });
+  const aiHerhaling = maakGeb('g-ai-5', {
+    kanaal: 'ai',
+    subdomein: 'ai',
+    bron: 'claude.controle',
+    status: 'nieuw',
+    herhalingen: 5,
+    afgeleverdOp: 1500,
+  });
+  const gelezenHerhaling = maakGeb('g-gel-3', {
+    kanaal: 'mail',
+    subdomein: 'mail',
+    bron: 'mail.digest',
+    status: 'gelezen',
+    herhalingen: 3,
+    afgeleverdOp: 1200,
+    gelezenOp: 1800,
+  });
+
+  const nachtDatum = new Date(2026, 10, 24, 1, 15);
+  const profielMetStilleUren = {
+    ...std,
+    stilleUren: { actief: true, van: '23:00', tot: '07:30', kritiekStilOmzeilen: true },
+  };
+  const typeAiStil = {
+    ai: { geluid: false, opduiken: true, tonen: true, vast: false, seconden: 0 },
+  };
+
+  check(
+    '6a bepaalKapselTellerStaat і isMeldingMetGeluid розрізняють звук каналу, звук типу, режим тиші, загальний звук і ховають цифру на прочитаних',
+    bepaalMeldingType(mailMetHerhaling) === 'post' &&
+      bepaalMeldingType(aiHerhaling) === 'ai' &&
+      bepaalKapselTellerStaat(mailMetHerhaling, { profiel: std, geluidGlobaal: true }).toon === 'geluid' &&
+      bepaalKapselTellerStaat(mailMetHerhaling, { profiel: std, geluidGlobaal: true }).aantal === 2 &&
+      bepaalKapselTellerStaat(cloudStilHerhaling, { profiel: std, geluidGlobaal: true }).toon === 'stil' &&
+      bepaalKapselTellerStaat(aiHerhaling, { profiel: std, geluidGlobaal: true, typeVoorkeuren: typeAiStil }).toon === 'stil' &&
+      bepaalKapselTellerStaat(mailMetHerhaling, { profiel: std, geluidGlobaal: false }).toon === 'stil' &&
+      bepaalKapselTellerStaat(mailMetHerhaling, { profiel: std, geluidGlobaal: true, nietStorenActief: true }).toon === 'stil' &&
+      bepaalKapselTellerStaat(mailMetHerhaling, { profiel: profielMetStilleUren, geluidGlobaal: true, nu: nachtDatum }).toon === 'stil' &&
+      isMeldingMetGeluid(gevaarGeb, { profiel: profielMetStilleUren, geluidGlobaal: true, nu: nachtDatum }) === true &&
+      bepaalKapselTellerStaat(gelezenHerhaling, { profiel: std, geluidGlobaal: true }).zichtbaar === false,
+  );
+
+  const mailGeluidHtml = renderToStaticMarkup(
+    createElement(MeldingVeegKaart, {
+      lang: 'uk',
+      gebeurtenis: mailMetHerhaling,
+      profiel: std,
+      geluidContext: { profiel: std, geluidGlobaal: true },
+      bijlageVoorkeur: std.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => ({
+        bron: 'intern',
+        samenvatting: 'Огляд',
+        oorzaak: '',
+        advies: '',
+        aanbevolenActies: [],
+        risico: 'normaal',
+        opgesteldOp: Date.now(),
+        geschoond: true,
+      }),
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+
+  const aiStilHtml = renderToStaticMarkup(
+    createElement(MeldingVeegKaart, {
+      lang: 'nl',
+      gebeurtenis: aiHerhaling,
+      profiel: std,
+      geluidContext: { profiel: std, geluidGlobaal: true, typeVoorkeuren: typeAiStil },
+      bijlageVoorkeur: std.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => ({
+        bron: 'intern',
+        samenvatting: 'Overzicht',
+        oorzaak: '',
+        advies: '',
+        aanbevolenActies: [],
+        risico: 'normaal',
+        opgesteldOp: Date.now(),
+        geschoond: true,
+      }),
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+
+  const gelezenHerhalingHtml = renderToStaticMarkup(
+    createElement(MeldingVeegKaart, {
+      lang: 'uk',
+      gebeurtenis: gelezenHerhaling,
+      profiel: std,
+      geluidContext: { profiel: std, geluidGlobaal: true },
+      bijlageVoorkeur: std.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => ({
+        bron: 'intern',
+        samenvatting: 'Огляд',
+        oorzaak: '',
+        advies: '',
+        aanbevolenActies: [],
+        risico: 'normaal',
+        opgesteldOp: Date.now(),
+        geschoond: true,
+      }),
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+
+  check(
+    '6b MeldingVeegKaart замінює «×N» (.mel-herhaling) на мініатюрну капсулу puls-aantal-kapsel без «×»: кольорову зі звуком, сіру без звуку й без капсули на прочитаних',
+    mailGeluidHtml.includes('puls-aantal-kapsel is-met-geluid') &&
+      mailGeluidHtml.includes('data-puls-aantal="2"') &&
+      mailGeluidHtml.includes('data-puls-geluid="1"') &&
+      mailGeluidHtml.includes('>2</span>') &&
+      !mailGeluidHtml.includes('mel-herhaling') &&
+      !mailGeluidHtml.includes('×2') &&
+      aiStilHtml.includes('puls-aantal-kapsel is-stil') &&
+      aiStilHtml.includes('data-puls-aantal="5"') &&
+      aiStilHtml.includes('data-puls-geluid="0"') &&
+      aiStilHtml.includes('>5</span>') &&
+      !aiStilHtml.includes('mel-herhaling') &&
+      !gelezenHerhalingHtml.includes('puls-aantal-kapsel') &&
+      !gelezenHerhalingHtml.includes('mel-herhaling'),
+  );
+
+  const { default: PulsOorzaakKetenKaart } = await import('../../src/meldingen/puls/PulsOorzaakKetenKaart');
+  const ketenStil1 = maakGeb('k-1', { kanaal: 'cloud', subdomein: 'cloud', bron: 'cloud.oauth', status: 'nieuw', titel: 'Google Диск' });
+  const ketenStil2 = maakGeb('k-2', { kanaal: 'github', subdomein: 'github', bron: 'github.oauth', status: 'nieuw', titel: 'GitHub' });
+  const ketenGel1 = maakGeb('k-g1', { kanaal: 'mail', subdomein: 'mail', bron: 'gmail.oauth', status: 'gelezen', gelezenOp: 2000, titel: 'Пошта' });
+  const ketenGel2 = maakGeb('k-g2', { kanaal: 'cloud', subdomein: 'cloud', bron: 'drive.oauth', status: 'gelezen', gelezenOp: 2000, titel: 'Диск' });
+
+  const ketenStilHtml = renderToStaticMarkup(
+    createElement(PulsOorzaakKetenKaart, {
+      lang: 'uk',
+      keten: {
+        sleutel: 'aanbieder:google',
+        wortel: ketenStil1,
+        wortelTitel: 'Потрібне відновлення входу Google',
+        samenvatting: '2 служби',
+        gevolgen: [],
+        alleIds: ['k-1', 'k-2'],
+      },
+      geluidContext: { profiel: std, geluidGlobaal: true },
+      onSelect: () => undefined,
+      onHerstelKeten: () => undefined,
+      renderLosseKaart: () => null,
+      alleGebeurtenissenMap: new Map([
+        ['k-1', ketenStil1],
+        ['k-2', ketenStil2],
+      ]),
+    }),
+  );
+
+  const ketenGelezenHtml = renderToStaticMarkup(
+    createElement(PulsOorzaakKetenKaart, {
+      lang: 'uk',
+      keten: {
+        sleutel: 'aanbieder:google',
+        wortel: ketenGel1,
+        wortelTitel: 'Вхід Google уже відновлено',
+        samenvatting: '2 служби',
+        gevolgen: [],
+        alleIds: ['k-g1', 'k-g2'],
+      },
+      geluidContext: { profiel: std, geluidGlobaal: true },
+      onSelect: () => undefined,
+      onHerstelKeten: () => undefined,
+      renderLosseKaart: () => null,
+      alleGebeurtenissenMap: new Map([
+        ['k-g1', ketenGel1],
+        ['k-g2', ketenGel2],
+      ]),
+    }),
+  );
+
+  check(
+    '6c PulsOorzaakKetenKaart показує мініатюрну капсулу кількості без «×» (сіру для тихого ланцюжка) і прибирає її для прочитаного ланцюжка',
+    ketenStilHtml.includes('puls-aantal-kapsel is-stil') &&
+      ketenStilHtml.includes('data-puls-aantal="2"') &&
+      ketenStilHtml.includes('>2</span>') &&
+      !ketenStilHtml.includes('mel-herhaling') &&
+      !ketenStilHtml.includes('×2') &&
+      !ketenGelezenHtml.includes('puls-aantal-kapsel') &&
+      !ketenGelezenHtml.includes('mel-herhaling'),
+  );
+
+  check(
+    '6d CSS .puls-aantal-kapsel задає висоту 18px, border-radius 999px та оформлення .is-met-geluid і .is-stil без !important',
+    !ecoCss.includes('!important') &&
+      ecoCss.includes('.puls-aantal-kapsel {') &&
+      ecoCss.includes('height: 18px;') &&
+      ecoCss.includes('.puls-aantal-kapsel.is-met-geluid') &&
+      ecoCss.includes('.puls-aantal-kapsel.is-stil'),
+  );
 
   return einde();
 }

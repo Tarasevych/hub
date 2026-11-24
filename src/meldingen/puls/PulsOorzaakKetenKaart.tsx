@@ -13,15 +13,18 @@ import {
 } from 'lucide-react';
 import {
   bepaalOntvangstStaat,
+  isMeldingMetGeluid,
   isMeldingOngelezen,
   veiligeMeldingUrl,
   type MeldingEcosysteemGebeurtenis,
   type MeldingGebeurtenisStatus,
+  type MeldingGeluidContext,
 } from '../../../shared/meldingen-ecosysteem';
 import type { PulsOorzaakKeten, Taal, VoorwaardelijkUitstelSoort } from '../../../shared/meldingen-puls/kern';
 import { groepeerOorzaakGevolgen, verrijkGebeurtenisVoorPuls } from '../../../shared/meldingen-puls/kern';
 import IcoonActieKnop from '../IcoonActieKnop';
 import {
+  PulsAantalKapsel,
   PulsBronTeken,
   PulsDienstChip,
   PulsKlimopZegel,
@@ -39,6 +42,7 @@ function schoonKetenTitel(titel: string): string {
 type Props = {
   lang: Taal;
   keten: PulsOorzaakKeten & { herstelActieLabel?: string };
+  geluidContext?: MeldingGeluidContext;
   geselecteerd?: boolean;
   standaardUitgeklapt?: boolean;
   geforceerdOpen?: boolean;
@@ -51,6 +55,7 @@ type Props = {
 export default function PulsOorzaakKetenKaart({
   lang,
   keten,
+  geluidContext,
   geselecteerd = false,
   standaardUitgeklapt = false,
   geforceerdOpen,
@@ -81,8 +86,19 @@ export default function PulsOorzaakKetenKaart({
   const leden = keten.alleIds
     .map((id) => alleGebeurtenissenMap.get(id))
     .filter(Boolean) as MeldingEcosysteemGebeurtenis[];
+  const ongelezenLeden = leden.filter((g) => isMeldingOngelezen(g));
   const heeftOngelezen =
-    leden.length > 0 ? leden.some((g) => isMeldingOngelezen(g)) : isMeldingOngelezen(keten.wortel);
+    leden.length > 0 ? ongelezenLeden.length > 0 : isMeldingOngelezen(keten.wortel);
+  const ongelezenAantal = !heeftOngelezen
+    ? 0
+    : ongelezenLeden.length > 0
+      ? ongelezenLeden.reduce((som, g) => som + Math.max(1, Math.trunc(g.herhalingen || 1)), 0)
+      : Math.max(keten.alleIds.length, Math.trunc(keten.wortel.herhalingen || 1));
+  const ketenMetGeluid =
+    heeftOngelezen &&
+    (ongelezenLeden.length > 0
+      ? ongelezenLeden.some((g) => isMeldingMetGeluid(g, geluidContext))
+      : isMeldingMetGeluid(keten.wortel, geluidContext));
   const ontvangstStaat =
     leden.length > 0 && leden.every((g) => bepaalOntvangstStaat(g) === 'gelezen')
       ? 'gelezen'
@@ -144,9 +160,14 @@ export default function PulsOorzaakKetenKaart({
           </button>
 
           <span className='puls-kapsel-rechts'>
-            <span className='mel-herhaling' title={kortOorzaakLabel}>
-              ×{keten.alleIds.length}
-            </span>
+            {heeftOngelezen && ongelezenAantal > 0 ? (
+              <PulsAantalKapsel
+                aantal={ongelezenAantal}
+                metGeluid={ketenMetGeluid}
+                lang={lang}
+                titelHint={kortOorzaakLabel}
+              />
+            ) : null}
             {wortelVerrijkt.klimopKernZegel ? <PulsKlimopZegel lang={lang} compact /> : null}
             <PulsOntvangstVinkjes
               staat={ontvangstStaat}

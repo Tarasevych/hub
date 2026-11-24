@@ -249,6 +249,48 @@ export function PulsOntvangstVinkjes({
   );
 }
 
+/**
+ * Пропорційна мініатюрна капсула кількості непрочитаних сповіщень (число без «×», висота 18 px, border-radius: 999px):
+ * - зі звуком (`metGeluid=true`): колір теми сповіщення або розділу;
+ * - без звуку (`metGeluid=false`): спокійна сіра капсула з сірим числом.
+ */
+export function PulsAantalKapsel({
+  aantal,
+  metGeluid,
+  lang,
+  titelHint,
+}: {
+  aantal: number;
+  metGeluid: boolean;
+  lang: Taal;
+  titelHint?: string;
+}) {
+  if (!Number.isFinite(aantal) || aantal < 1) return null;
+  const geheel = Math.trunc(aantal);
+  const weergave = geheel > 999 ? '999+' : String(geheel);
+  const nl = lang === 'nl';
+  const basisTekst = metGeluid
+    ? nl
+      ? `Ongelezen meldingen: ${geheel} (met geluid)`
+      : `Непрочитаних сповіщень: ${geheel} (зі звуком)`
+    : nl
+      ? `Ongelezen meldingen: ${geheel} (zonder geluid)`
+      : `Непрочитаних сповіщень: ${geheel} (без звуку)`;
+  const volledigeTitel = titelHint ? `${titelHint} · ${basisTekst}` : basisTekst;
+
+  return (
+    <span
+      className={`puls-aantal-kapsel ${metGeluid ? 'is-met-geluid' : 'is-stil'}`}
+      data-puls-aantal={geheel}
+      data-puls-geluid={metGeluid ? '1' : '0'}
+      title={volledigeTitel}
+      aria-label={volledigeTitel}
+    >
+      {weergave}
+    </span>
+  );
+}
+
 export function PulsMandaatStraalBlok({
   mandaat,
   gekozenDuur,

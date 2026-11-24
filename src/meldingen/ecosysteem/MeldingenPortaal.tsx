@@ -58,6 +58,7 @@ import {
   type MeldingEcosysteemGebeurtenis,
   type MeldingEcosysteemProfiel,
   type MeldingGebeurtenisStatus,
+  type MeldingGeluidContext,
   type MeldingKanaal,
   type MeldingSubdomein,
   type RandRichting,
@@ -65,6 +66,7 @@ import {
   type VensterGeometrie,
   type VensterModus,
 } from '../../../shared/meldingen-ecosysteem';
+import type { MeldingType, TypeVoorkeur } from '../../../shared/melding-typen';
 import {
   bouwRustigOverzicht,
   bundelOorzaakKetens,
@@ -77,6 +79,7 @@ import {
 } from '../../../shared/meldingen-puls/kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
 import Merk from '../../merk/Merk';
+import { useZijbalkVoorkeuren } from '../../zijbalk-voorkeuren';
 import IcoonActieKnop from '../IcoonActieKnop';
 import MeldingModusKiezer from '../MeldingModusKiezer';
 import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
@@ -203,6 +206,7 @@ type Props = {
   stroom: MeldingEcosysteemGebeurtenis[];
   laden: boolean;
   sound: boolean;
+  typeVoorkeuren?: Partial<Record<MeldingType, TypeVoorkeur>>;
   techTypen?: boolean;
   nietStorenTot?: number | null;
   onZetNietStoren?: (minuten: number | null) => void;
@@ -242,6 +246,7 @@ export default function MeldingenPortaal({
   stroom,
   laden,
   sound,
+  typeVoorkeuren,
   techTypen = false,
   nietStorenTot = null,
   onZetNietStoren,
@@ -968,6 +973,18 @@ export default function MeldingenPortaal({
   const instellingenHref = canonicalNavigationUrl('identity', 'melding', lang);
   const registerHref = `${instellingenHref}#melding-register`;
   const dndActief = Boolean(nietStorenTot && nietStorenTot > Date.now());
+  const zijbalk = useZijbalkVoorkeuren();
+  const effectieveTypeVoorkeuren = typeVoorkeuren ?? zijbalk.meldingen.soorten;
+  const geluidContext = useMemo<MeldingGeluidContext>(
+    () => ({
+      profiel,
+      geluidGlobaal: sound && profiel.geluidGlobaal,
+      nietStorenActief: dndActief,
+      nietStorenTot,
+      typeVoorkeuren: effectieveTypeVoorkeuren,
+    }),
+    [profiel, sound, dndActief, nietStorenTot, effectieveTypeVoorkeuren],
+  );
   const heeftActiefFilter = Boolean(zoek.trim() || kanaalFilter !== 'alle' || alleenDitSubdomein);
 
   const opPaneelToets = (e: ReactKeyboardEvent<HTMLElement>) => {
@@ -1080,6 +1097,7 @@ export default function MeldingenPortaal({
       lang={lang}
       gebeurtenis={geb}
       profiel={profiel}
+      geluidContext={geluidContext}
       geselecteerd={isBreed && geselecteerd?.id === geb.id}
       geforceerdOpen={
         spatieOpenId === geb.id
@@ -1721,6 +1739,7 @@ export default function MeldingenPortaal({
                             key={eenheid.keten.sleutel}
                             lang={lang}
                             keten={eenheid.keten}
+                            geluidContext={geluidContext}
                             geselecteerd={isBreed && Boolean(geselecteerd && eenheid.keten.alleIds.includes(geselecteerd.id))}
                             standaardUitgeklapt={Boolean(profiel.standaardUitgeklapt)}
                             geforceerdOpen={globaalUitgeklapt !== null ? globaalUitgeklapt : undefined}

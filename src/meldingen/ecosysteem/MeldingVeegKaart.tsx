@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { MELDING_SCHEMAS, type MeldingNiveau } from '../../../shared/meldingen-catalogus';
 import {
+  bepaalKapselTellerStaat,
   bepaalOntvangstStaat,
   evalueerVeeg,
   isMeldingOngelezen,
@@ -36,6 +37,7 @@ import {
   type MeldingEcosysteemGebeurtenis,
   type MeldingEcosysteemProfiel,
   type MeldingGebeurtenisStatus,
+  type MeldingGeluidContext,
   type VeegActie,
 } from '../../../shared/meldingen-ecosysteem';
 import {
@@ -46,6 +48,7 @@ import {
 import { voerPaginaSignaalActieUit } from '../../canoniek-meldingen';
 import IcoonActieKnop from '../IcoonActieKnop';
 import {
+  PulsAantalKapsel,
   PulsBestandChip,
   PulsBronTeken,
   PulsKlimopZegel,
@@ -142,6 +145,7 @@ type Props = {
   lang: 'uk' | 'nl';
   gebeurtenis: MeldingEcosysteemGebeurtenis;
   profiel: MeldingEcosysteemProfiel;
+  geluidContext?: MeldingGeluidContext;
   geselecteerd?: boolean;
   standaardOpen?: boolean;
   geforceerdOpen?: boolean;
@@ -160,6 +164,7 @@ export default function MeldingVeegKaart({
   lang,
   gebeurtenis,
   profiel,
+  geluidContext,
   geselecteerd = false,
   standaardOpen = false,
   geforceerdOpen,
@@ -200,6 +205,7 @@ export default function MeldingVeegKaart({
   const verrijkt = useMemo(() => verrijkGebeurtenisVoorPuls(gebeurtenis, lang), [gebeurtenis, lang]);
   const ontvangstStaat = bepaalOntvangstStaat(gebeurtenis);
   const ongelezen = isMeldingOngelezen(gebeurtenis);
+  const tellerStaat = bepaalKapselTellerStaat(gebeurtenis, geluidContext ?? { profiel });
   const vereistBevestiging =
     (verrijkt.niveau === 'gevaar' || verrijkt.niveau === 'besluit') &&
     gebeurtenis.status !== 'opgelost' &&
@@ -516,10 +522,12 @@ export default function MeldingVeegKaart({
                   <Paperclip />
                 </span>
               )}
-              {gebeurtenis.herhalingen > 1 && (
-                <span className='mel-herhaling' title={t('Згруповано повторень', 'Gegroepeerde herhalingen')}>
-                  ×{gebeurtenis.herhalingen}
-                </span>
+              {tellerStaat.zichtbaar && (
+                <PulsAantalKapsel
+                  aantal={tellerStaat.aantal}
+                  metGeluid={tellerStaat.toon === 'geluid'}
+                  lang={lang}
+                />
               )}
               {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} compact />}
               <span className='mel-tijd'>{relatieveTijd(gebeurtenis.bijgewerktOp, lang)}</span>

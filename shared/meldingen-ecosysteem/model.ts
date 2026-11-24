@@ -1,6 +1,8 @@
 // Модель даних єдиної екосистеми сповіщень («застосунок у застосунку», GEMINI-002).
 // Усі типи та нормалізатори сумісні як із сервером (Node.js), так і з оглядачем (React).
 import { LINK_DIENSTEN, routeerMeldingLink, type LinkDienst } from '../melding-link';
+import { isBekendeSoort, soortInfo, typeVanBron } from '../melding-soorten';
+import { isMeldingType, voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../melding-typen';
 
 export const SUBDOMEINEN = ['hub', 'id', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'api', 'admin', 'systeem'] as const;
 export type MeldingSubdomein = (typeof SUBDOMEINEN)[number];
@@ -521,3 +523,143 @@ export function isMeldingOngelezen(
   if (typeof geb.gelezenOp === 'number' && geb.gelezenOp > 0 && geb.status !== 'nieuw') return false;
   return geb.status === 'nieuw';
 }
+
+export type MeldingGeluidContext = {
+  profiel?: Pick<MeldingEcosysteemProfiel, 'geluidGlobaal' | 'stilleUren' | 'kanalen'>;
+  geluidGlobaal?: boolean;
+  nietStorenActief?: boolean;
+  nietStorenTot?: number | null;
+  typeVoorkeuren?: Partial<Record<MeldingType, TypeVoorkeur>>;
+  nu?: Date | number;
+};
+
+export type KapselTellerToon = 'geluid' | 'stil';
+
+export type KapselTellerStaat = {
+  zichtbaar: boolean;
+  aantal: number;
+  toon: KapselTellerToon;
+};
+
+function isStilleUrenNu(stilleUren: StilleUrenEcosysteem | undefined, nu: Date): boolean {
+  if (!stilleUren?.actief) return false;
+  const naarMin = (hhmm: string) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+  };
+  const van = naarMin(stilleUren.van);
+  const tot = naarMin(stilleUren.tot);
+  if (van === tot) return false;
+  const huidig = nu.getHours() * 60 + nu.getMinutes();
+  return van < tot ? huidig >= van && huidig < tot : huidig >= van || huidig < tot;
+}
+
+/** Визначає канонічний тип сповіщення (`MeldingType`) для перевірки налаштувань звуку цього типу. */
+export function bepaalMeldingType(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'kanaal' | 'subdomein' | 'bron' | 'ruimte' | 'meta'>,
+): MeldingType {
+  const metaType = geb.meta?.meldingType ?? geb.meta?.type;
+  if (isMeldingType(metaType)) return metaType;
+
+  const metaKind = typeof geb.meta?.kind === 'string' ? geb.meta.kind.trim() : '';
+  if (metaKind) {
+    const info = soortInfo(metaKind);
+    if (isBekendeSoort(metaKind) || info.type !== 'systeem') return info.type;
+  }
+
+  const bron = String(geb.bron || '').trim();
+  if (bron) {
+    const infoBron = soortInfo(bron);
+    if (isBekendeSoort(bron) || infoBron.type !== 'systeem') return infoBron.type;
+    const uitBron = typeVanBron(bron);
+    if (uitBron !== 'systeem') return uitBron;
+  }
+
+  const tech = geb.ruimte === 'technisch';
+  if (geb.kanaal === 'beveiliging') return tech ? 'tech.bescherming' : 'beveiliging';
+  if (geb.kanaal === 'mail') return 'post';
+  if (geb.kanaal === 'cloud') return 'cloud';
+  if (geb.kanaal === 'ai' || geb.kanaal === 'mcp') return tech ? 'tech.integraties' : 'ai';
+  if (geb.kanaal === 'pc_agent' || geb.kanaal === 'extensie') return 'apparaten';
+  if (geb.kanaal === 'github') return tech ? 'tech.integraties' : 'systeem';
+  return tech ? 'tech.server' : 'systeem';
+}
+
+/**
+ * Визначає, чи має сповіщення активний звук у поточному стані користувача.
+ * Повертає `false`, якщо звук вимкнено хоча б на одному рівні:
+ * 1) загальне вимкнення звуку (сайт або профіль);
+ * 2) режим тиші («Не турбувати», активні тихі години або тиха позначка події);
+ * 3) вимкнений звук каналу;
+ * 4) вимкнений звук відповідного типу сповіщення.
+ */
+export function isMeldingMetGeluid(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'kanaal' | 'subdomein' | 'bron' | 'ruimte' | 'prioriteit' | 'meta'>,
+  ctx: MeldingGeluidContext = {},
+): boolean {
+  if (ctx.geluidGlobaal === false) return false;
+  if (ctx.profiel && ctx.profiel.geluidGlobaal === false) return false;
+
+  const meta = geb.meta || {};
+  if (meta.geluid === false || meta.stil === true || meta.leverModus === 'stil' || meta.leverModus === 'uit') {
+    return false;
+  }
+
+  const nuDate = ctx.nu instanceof Date ? ctx.nu : typeof ctx.nu === 'number' ? new Date(ctx.nu) : new Date();
+  const nuMs = nuDate.getTime();
+  if (ctx.nietStorenActief === true) return false;
+  if (typeof ctx.nietStorenTot === 'number' && ctx.nietStorenTot > nuMs) return false;
+
+  if (ctx.profiel?.stilleUren && isStilleUrenNu(ctx.profiel.stilleUren, nuDate)) {
+    const kritiekOmzeilt =
+      ctx.profiel.stilleUren.kritiekStilOmzeilen !== false &&
+      (geb.prioriteit === 'kritiek' || geb.kanaal === 'beveiliging');
+    if (!kritiekOmzeilt) return false;
+  }
+
+  const kanaalVoorkeur = ctx.profiel?.kanalen?.[geb.kanaal];
+  if (kanaalVoorkeur && (kanaalVoorkeur.actief === false || kanaalVoorkeur.geluid === false)) {
+    return false;
+  }
+
+  if (ctx.typeVoorkeuren) {
+    const soortType = bepaalMeldingType(geb);
+    const typeVoorkeur = voorkeurVoor(ctx.typeVoorkeuren, soortType);
+    if (!typeVoorkeur.tonen || !typeVoorkeur.geluid) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Обчислює стан мініатюрної капсули кількості сповіщень:
+ * - прочитані сповіщення — без капсули з цифрою (`zichtbaar: false`);
+ * - непрочитані зі звуком — капсула в кольорі теми сповіщення або розділу (`toon: 'geluid'`);
+ * - непрочитані без звуку — спокійна сіра капсула (`toon: 'stil'`).
+ */
+export function bepaalKapselTellerStaat(
+  geb: Pick<
+    MeldingEcosysteemGebeurtenis,
+    'status' | 'gelezenOp' | 'herhalingen' | 'kanaal' | 'subdomein' | 'bron' | 'ruimte' | 'prioriteit' | 'meta'
+  >,
+  ctx: MeldingGeluidContext = {},
+  opties?: { aantal?: number; minAantal?: number },
+): KapselTellerStaat {
+  if (!isMeldingOngelezen(geb)) {
+    return { zichtbaar: false, aantal: 0, toon: 'stil' };
+  }
+  const minAantal = Math.max(1, Math.trunc(opties?.minAantal ?? 2));
+  const ruw =
+    typeof opties?.aantal === 'number' && Number.isFinite(opties.aantal)
+      ? Math.trunc(opties.aantal)
+      : Math.trunc(geb.herhalingen || 1);
+  if (ruw < minAantal) {
+    return { zichtbaar: false, aantal: 0, toon: 'stil' };
+  }
+  return {
+    zichtbaar: true,
+    aantal: ruw,
+    toon: isMeldingMetGeluid(geb, ctx) ? 'geluid' : 'stil',
+  };
+}
+

@@ -462,10 +462,18 @@
   color: var(--warn, #d97706);
 }
 .mel-herhaling {
-  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5.5px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--text) 10%, transparent);
+  background: color-mix(in srgb, var(--muted) 14%, var(--panel));
+  color: var(--muted);
+  font-size: 10.5px;
   font-weight: 700;
+  line-height: 1;
 }
 .mel-tijd {
   margin-left: auto;
@@ -2766,6 +2774,8 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
 .puls-portaal .puls-kaart.is-kapsel.is-ongelezen,
 .puls-kaart.is-kapsel.is-ongelezen {
   --kapsel-kleur: var(--mel-accent, var(--accent));
+  --kapsel-teller-vlak: var(--mel-accent, var(--accent));
+  --kapsel-teller-tekst: var(--accentText, #ffffff);
   border-color: color-mix(in srgb, var(--kapsel-kleur) 36%, var(--line));
   border-left-color: color-mix(in srgb, var(--kapsel-kleur) 36%, var(--line));
   border-left-width: 1px;
@@ -2782,16 +2792,22 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
 
 .puls-kaart.is-kapsel.is-ongelezen.is-staat-goed {
   --kapsel-kleur: var(--staat-goed);
+  --kapsel-teller-vlak: var(--staat-goed-vlak, var(--staat-goed));
+  --kapsel-teller-tekst: var(--text-on-vlak, #ffffff);
 }
 
 .puls-kaart.is-kapsel.is-ongelezen.is-staat-let,
 .puls-kaart.is-kapsel.is-ongelezen.is-puls-oorzaak {
   --kapsel-kleur: var(--staat-let);
+  --kapsel-teller-vlak: var(--staat-let-vlak, var(--staat-let));
+  --kapsel-teller-tekst: var(--text-on-vlak, #ffffff);
 }
 
 .puls-kaart.is-kapsel.is-ongelezen.is-staat-fout,
 .puls-kaart.is-kapsel.is-ongelezen.is-niveau-gevaar {
   --kapsel-kleur: var(--staat-fout);
+  --kapsel-teller-vlak: var(--staat-fout-vlak, var(--staat-fout));
+  --kapsel-teller-tekst: var(--text-on-vlak, #ffffff);
 }
 
 .puls-kaart.is-kapsel.is-ongelezen::before {
@@ -2896,6 +2912,39 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   flex: 0 0 auto;
   margin-left: auto;
   white-space: nowrap;
+}
+
+/* Пропорційна мініатюрна капсула кількості непрочитаних сповіщень (число без «×», висота 18 px, border-radius: 999px) */
+.puls-aantal-kapsel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5.5px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Непрочитані сповіщення ЗІ ЗВУКОМ: колір теми сповіщення або розділу */
+.puls-aantal-kapsel.is-met-geluid {
+  border: 1px solid color-mix(in srgb, var(--kapsel-teller-vlak, var(--mel-accent, var(--accent))) 86%, transparent);
+  background: var(--kapsel-teller-vlak, var(--mel-accent, var(--accent)));
+  color: var(--kapsel-teller-tekst, var(--accentText, #ffffff));
+}
+
+/* Непрочитані сповіщення БЕЗ ЗВУКУ: спокійна сіра капсула з сірим числом */
+.puls-aantal-kapsel.is-stil {
+  border: 1px solid color-mix(in srgb, var(--muted) 26%, var(--line));
+  background: color-mix(in srgb, var(--muted) 14%, var(--panel));
+  color: var(--muted);
 }
 
 .puls-kapsel-rechts .mel-tijd {
