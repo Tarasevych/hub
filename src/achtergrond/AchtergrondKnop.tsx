@@ -160,8 +160,15 @@ export function AchtergrondKnopMaquette({ lang }: { lang: 'uk' | 'nl' }) {
   return gastheer ? createPortal(<AchtergrondKnop lang={lang} variant='maquette' />, gastheer) : null;
 }
 
-/** Подія «відкрити панель живого фону» — від кнопки, яка сама зникає (шапка бічного меню закривається). */
+/** Подія «відкрити панель живого фону» — від кнопки в меню акаунтів або бічному меню (спочатку закриває меню, тоді відкриває панель). */
 const PANEEL_GEBEURTENIS = 'tsv:achtergrond-paneel';
+
+/** Відкриває окрему компактну панель «Живий фон» (AchtergrondPaneelLos) поверх сторінки. */
+export function openAchtergrondPaneel(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(PANEEL_GEBEURTENIS));
+  }
+}
 
 /**
  * ACHTERGROND-002: кнопка в шапці бічного меню на телефоні — там, де верхньої смуги оболонки немає (пошта: праворуч угорі лежить
@@ -173,7 +180,7 @@ export function AchtergrondLadeKnop({ lang, voorOpenen }: { lang: 'uk' | 'nl'; v
   return <button type='button' className='la-lade-knop' data-achtergrond-lade-knop aria-haspopup='true'
     aria-label={tr('Живий фон: вимкнути або налаштувати анімацію тла', 'Levende achtergrond: uitzetten of instellen')}
     title={tr('Живий фон: вимкнути чи змінити анімацію тла. Меню закриється, щоб зміни було видно одразу.', 'Levende achtergrond: uitzetten of aanpassen. Het menu sluit, zodat u de wijziging meteen ziet.')}
-    onClick={() => { voorOpenen?.(); window.dispatchEvent(new Event(PANEEL_GEBEURTENIS)); }}><Waves aria-hidden /></button>;
+    onClick={() => { voorOpenen?.(); openAchtergrondPaneel(); }}><Waves aria-hidden /></button>;
 }
 
 /** Господар панелі без власної кнопки: відкривається подією, стоїть угорі праворуч. Paneel zonder eigen knop, rechtsboven. */

@@ -759,6 +759,50 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   forced-color-adjust: none;
 }
 
+/* Кругла кнопка «Живий фон» (32x32) — однакового розміру з кнопкою Палітри, між перемикачем тем і палітрою */
+[data-account-menu-v3] .am3-pref-row.is-theme-row .am3-seg-btn {
+  padding: 0 7px;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn:hover,
+[data-account-menu-v3] .am3-achtergrond-btn:focus-visible {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn > svg.am3-achtergrond-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--am3-accent);
+  transition: color 0.18s ease, transform 0.16s ease, opacity 0.16s ease;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn.is-uit > svg.am3-achtergrond-icon {
+  color: var(--am3-muted);
+  opacity: 0.72;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn:hover > svg.am3-achtergrond-icon {
+  transform: scale(1.08);
+}
+
 /* Кругла кнопка Палітри кольорів (32x32, Модель В: короткий натиск — по колу, правий натиск або утримання — список) */
 [data-account-menu-v3] .am3-palette-btn {
   position: relative;
@@ -2004,6 +2048,7 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
     aspect-ratio: 1 / 1;
   }
 
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-achtergrond-btn,
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-palette-btn,
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-access-btn {
     width: 34px;
@@ -2049,14 +2094,14 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 
   /* Прозора зона дотику >= 44x44 px без спотворення видимої круглої форми */
-  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-mobiel-sluit, .am3-camera-btn, .am3-orbit-node, .am3-palette-btn, .am3-access-btn, .am3-tray-close)::after {
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-mobiel-sluit, .am3-camera-btn, .am3-orbit-node, .am3-access-btn, .am3-tray-close)::after {
     content: '';
     position: absolute;
     inset: -6px;
   }
 
-  /* У рядах зі щільним кроком gap: 8px (палітра відтінків, крапки смуги, хрестик видалення запису) зона дотику не налізає на сусідню дію */
-  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-tint-swatch, .am3-band-dot, .am3-acc-btn.is-icon-only)::after {
+  /* У рядах зі щільним кроком (живий фон + палітра, відтінки, крапки смуги, хрестик видалення запису) зона дотику не налізає на сусідню дію */
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-achtergrond-btn, .am3-palette-btn, .am3-tint-swatch, .am3-band-dot, .am3-acc-btn.is-icon-only)::after {
     content: '';
     position: absolute;
     inset: -3px;
@@ -2067,6 +2112,10 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
     height: 32px;
     min-height: 32px;
     padding: 0 9px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn {
+    padding: 0 7px;
   }
 
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-manage-pill {
@@ -2199,6 +2248,7 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   [data-account-menu-v3] .am3-orbit-node,
   [data-account-menu-v3] .am3-accounts-chevron,
   [data-account-menu-v3] .am3-seg-btn,
+  [data-account-menu-v3] .am3-achtergrond-btn > svg.am3-achtergrond-icon,
   [data-account-menu-v3] .am3-palette-btn > svg.am3-palette-icon,
   [data-account-menu-v3] .am3-hold-ring circle,
   [data-account-menu-v3] .am3-access-ring .ring-fill,
