@@ -129,6 +129,11 @@
       "nl": "Geïsoleerde controle- en publicatiewerkstroom voor CONSOL-001 op basis 20261122-171856: zonder pull_request_target of secrets.*, alle acties vastgepind op 40-tekens-SHA’s, installeert nooit automatisch op de server."
     },
     {
+      "pad": ".github/workflows/herstel-001-uitgave.yml",
+      "uk": "Ізольований конвеєр перевірки й оприлюднення зведеного випуску HERSTEL-001 поверх живої основи 20261122-171856 на Node 24 і PostgreSQL 16: без pull_request_target і без secrets.*, усі дії закріплені 40-символьними відбитками SHA, перевіряє правила 1.8.0, 30 прапорців VLAG-001, подвійні міграції 0001..0341, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на сервер автоматично.",
+      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor de gezamenlijke uitgave HERSTEL-001 boven op basis 20261122-171856 met Node 24 en PostgreSQL 16: zonder pull_request_target of secrets.*, alle acties vastgepind op 40-tekens-SHA’s, controleert regels 1.8.0, 30 vlaggen VLAG-001, dubbele migraties 0001..0341, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
+    },
+    {
       "pad": ".github/workflows/bandit.yml",
       "uk": "Розширено перелік гілок запуску сканера безпеки Bandit на інтеграційну гілку integratie без зміни прав доступу, секретів чи версій закріплених за SHA дій.",
       "nl": "De lijst van gecontroleerde takken voor beveiligingsscanner Bandit is uitgebreid met integratie zonder wijziging van rechten, geheimen of op SHA vastgepinde acties."
