@@ -1371,6 +1371,44 @@ async function bouwLaatsteTekst(): Promise<string> {
   return lijnen.join('\n');
 }
 
+/**
+ * Публікує в погоджену групу/тему повне двомовне пояснення поточного встановленого випуску
+ * (назва, підсумок, зміни, виправлення, обмеження, настанови) з UITROL-MANIFEST.json.
+ * Нічого не змінює на сервері — лише надсилає текст у Telegram.
+ */
+export async function publiceerUitgaveUitleg(eigenaar: { id: string; email?: string }) {
+  const inst = await telegramInstellingenVan(eigenaar.id);
+  const bot = await leesBotToken(eigenaar.id);
+  if (!bot || !inst.chatId) throw new TelegramArchiefFout('TELEGRAM_CHAT_ONTBREEKT', 400);
+
+  const info = releaseInfo();
+  const tekst = bouwUitgaveUitleg(info);
+  if (!tekst) throw new TelegramArchiefFout('UITGAVE_UITLEG_ONTBREEKT', 400);
+
+  const res = await tgApi<{ message_id?: number }>(bot.token, 'sendMessage', {
+    chat_id: inst.chatId,
+    ...(inst.messageThreadId ? { message_thread_id: inst.messageThreadId } : {}),
+    disable_notification: true,
+    text: tekst,
+    reply_markup: bouwUitrolToetsenbord(true),
+  });
+
+  await schrijfBeheerAudit({
+    actor: eigenaar,
+    actie: 'owner.uitrol.telegram.gepubliceerd',
+    doel: { soort: 'release', id: String(info.versie || '—') },
+    details: { messageId: Number(res?.message_id || 0), tekens: tekst.length, thread: inst.messageThreadId },
+    service: 'admin',
+  });
+
+  return {
+    ok: true,
+    versie: String(info.versie || ''),
+    messageId: Number(res?.message_id || 0),
+    tekens: tekst.length,
+  };
+}
+
 export async function verwerkTelegramUitrolWebhook(invoer: {
   secretHeader: string;
   rauwLichaam: string;
@@ -1642,6 +1680,11 @@ export function uitrolTelegramRoutes(deps: TelegramRouteDeps): Record<string, Ro
       if (!limiet.ok) return error('RATE_LIMITED', 429);
       const b = lichaam(c.body);
       return archiveerRunNaarTelegram(wie(a), String(b.runId || b.run || ''));
+    })],
+    'POST /api/owner/uitrol/telegram/publiceren': [eigenaar({ sterk: true }, async (_c, a) => {
+      const limiet = await rateLimit(`uitrol-telegram-publiceer:${a.user.id}`, 10, 3600);
+      if (!limiet.ok) return error('RATE_LIMITED', 429);
+      return publiceerUitgaveUitleg(wie(a));
     })],
     'POST /api/owner/uitrol/telegram/archief/:id/herstel': [eigenaar({ sterk: true }, async (c, a) => {
       const limiet = await rateLimit(`uitrol-telegram-herstel:${a.user.id}`, 10, 3600);

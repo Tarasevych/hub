@@ -545,6 +545,7 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.uitrol.github.ontvangen': ['Отримано пакунок випуску з GitHub Releases', 'Uitgavepakket ontvangen uit GitHub Releases'],
   'owner.uitrol.github.ontvangst.instellingen': ['Оновлено параметри приймання випусків із GitHub', 'Ontvangstinstellingen voor GitHub-releases bijgewerkt'],
   'owner.uitrol.telegram.gearchiveerd': ['Архівовано вхідний пакунок оновлення з Telegram', 'Ontvangen uitrolpakket uit Telegram gearchiveerd'],
+  'owner.uitrol.telegram.gepubliceerd': ['Опубліковано двомовне пояснення випуску в Telegram', 'Tweetalige uitleg van de uitgave in Telegram gepubliceerd'],
   'owner.uitrol.telegram.hersteld': ['Відновлено пакунок оновлення з архіву Telegram', 'Uitrolpakket uit Telegram-archief hersteld'],
   'owner.uitrol.telegram.instellingen': ['Змінено налаштування приймання пакунків через Telegram', 'Telegram-ontvangstinstellingen voor uitrol gewijzigd'],
   'owner.uitrol.telegram.mislukt': ['Не вдалося прийняти пакунок оновлення через Telegram', 'Ontvangst van uitrolpakket via Telegram mislukt'],
