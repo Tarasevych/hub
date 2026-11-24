@@ -386,15 +386,55 @@ export async function main(): Promise<number> {
     }),
   );
 
+  const bijlageGeb = maakGeb('claude-bestand', {
+    kanaal: 'ai',
+    subdomein: 'github',
+    bron: 'claude.controle',
+    prioriteit: 'normaal',
+    status: 'nieuw',
+    titel: 'Claude підготував звіт перевірки',
+    bijlagen: [
+      {
+        id: 'b1',
+        naam: 'perevirka.xlsx',
+        mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        grootteBytes: 4096,
+      },
+    ],
+    meta: { link: 'https://mcp.tarasevych.com' },
+    afgeleverdOp: 1600,
+  });
+
+  const bijlageKapselHtml = renderToStaticMarkup(
+    createElement(MeldingVeegKaart, {
+      lang: 'uk',
+      gebeurtenis: bijlageGeb,
+      profiel: std,
+      bijlageVoorkeur: std.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => ({
+        aanbieder: 'intern-lokaal',
+        modus: 'intern',
+        samenvatting: 'Звіт',
+        watGebeurde: 'Файл',
+        waaromBelangrijk: 'Готово',
+        aanbevolenStappen: [],
+        veiligheidsOpmerking: '',
+        gegenereerdOp: Date.now(),
+      }),
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+
   check(
-    '4a звичайна непрочитана капсула згорнута в 1 рядок (data-kapsel-open="0", details hidden, без 2-го рядка кнопок), має is-ongelezen та одну галочку ✓ (afgeleverd)',
+    '4a звичайна непрочитана капсула згорнута в 1 рядок (data-kapsel-open="0", details hidden, без нижнього ряду кнопок), має is-ongelezen та одну галочку ✓ (afgeleverd)',
     gewoneOngelezenHtml.includes('is-kapsel') &&
       gewoneOngelezenHtml.includes('is-ingeklapt') &&
       gewoneOngelezenHtml.includes('is-ongelezen') &&
       gewoneOngelezenHtml.includes('data-kapsel-open="0"') &&
       gewoneOngelezenHtml.includes('data-ontvangst="afgeleverd"') &&
       /<div class="mel-kaart-details"[^>]*\bhidden\b/.test(gewoneOngelezenHtml) &&
-      !gewoneOngelezenHtml.includes('puls-kapsel-bevestiging-rij'),
+      !gewoneOngelezenHtml.includes('puls-kapsel-onder-rij'),
   );
 
   check(
@@ -406,11 +446,16 @@ export async function main(): Promise<number> {
   );
 
   check(
-    '4c сповіщення безпеки на головному акценті має 2-рядкову капсулу з кнопками підтвердження «Це не я» та «Це я»',
-    gevaarKapselHtml.includes('is-hoofdfocus') &&
-      gevaarKapselHtml.includes('puls-kapsel-bevestiging-rij') &&
+    '4c сповіщення безпеки та сповіщення з файлом мають прив’язаний знизу однорядковий блок круглих капсул (puls-kapsel-onder-rij + puls-kapsel-koppeling + heeft-onder-kapsels)',
+    gevaarKapselHtml.includes('heeft-onder-kapsels') &&
+      gevaarKapselHtml.includes('puls-kapsel-onder-rij') &&
+      gevaarKapselHtml.includes('puls-kapsel-koppeling') &&
       gevaarKapselHtml.includes('Це не я') &&
-      gevaarKapselHtml.includes('Це я'),
+      gevaarKapselHtml.includes('Це я') &&
+      bijlageKapselHtml.includes('heeft-onder-kapsels') &&
+      bijlageKapselHtml.includes('puls-kapsel-onder-rij') &&
+      bijlageKapselHtml.includes('perevirka.xlsx') &&
+      bijlageKapselHtml.includes('Відкрити'),
   );
 
   const profielAutoUitgeklapt = { ...std, standaardUitgeklapt: true };
@@ -472,16 +517,19 @@ export async function main(): Promise<number> {
       controleHtmlUk.includes('автоархів за фільтром'),
   );
 
-  // 5. Пряма геометрія бічної лінії в CSS, прапорець VLAG-001, реєстр MELDINGEN-REGISTER-001 (0 overig) та мовна чистота
+  // 5. Кругла форма капсул (border-radius: 999px), однорядкова прив’язка знизу та тонесенька розділювальна смужечка в CSS
   const ecoCss = lees('src/meldingen/ecosysteem/meldingen-ecosysteem.css');
   check(
-    '5a CSS непрочитаної капсули робить бічну смужку ідеально прямою (border-top-left-radius: 0; border-bottom-left-radius: 0; ::before width: 3.5px; border-radius: 0) і не містить !important',
+    '5a CSS капсул задає півкруглі торці border-radius: 999px, пряму внутрішню смужку непрочитаного без гострих кутів, однорядкову прив’язку puls-kapsel-onder-rij (flex-wrap: nowrap) і тонесеньку розділювальну смужечку 1px без !important',
     !ecoCss.includes('!important') &&
+      ecoCss.includes('.mel-veeg-kapsel-baan') &&
       ecoCss.includes('.puls-kaart.is-kapsel.is-ongelezen') &&
-      ecoCss.includes('border-top-left-radius: 0;') &&
-      ecoCss.includes('border-bottom-left-radius: 0;') &&
       ecoCss.includes('.puls-kaart.is-kapsel.is-ongelezen::before') &&
-      ecoCss.includes('.puls-kaart.is-kapsel.is-gelezen'),
+      ecoCss.includes('.puls-kaart.is-kapsel.is-gelezen') &&
+      ecoCss.includes('.mel-veeg-houder.heeft-onder-kapsels:not(:last-child)') &&
+      ecoCss.includes('.puls-kapsel-onder-rij') &&
+      ecoCss.includes('.puls-kapsel-koppeling') &&
+      ecoCss.includes('border-radius: 999px;'),
   );
 
   const vlagMeta = VLAG_UITLEG[MELDING_KAPSEL_AFLEVERING_VLAG];

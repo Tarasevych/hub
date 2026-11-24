@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Clock3,
   ExternalLink,
+  FileText,
   Filter,
   KeyRound,
   Paperclip,
@@ -397,6 +398,24 @@ export default function MeldingVeegKaart({
   const paginaLink = veiligeMeldingUrl(gebeurtenis.meta?.link, 500) || '';
   const primaireActieHref =
     gebeurtenis.acties.map((a) => veiligeMeldingUrl(a.href, 500)).find(Boolean) || paginaLink;
+  const eigenActies = useMemo(
+    () =>
+      gebeurtenis.acties.filter(
+        (a) =>
+          a.id !== 'open-link' &&
+          a.id !== 'open-bijlagen' &&
+          a.id !== 'ai-ontleden' &&
+          a.id !== 'uitstel-30' &&
+          a.id !== 'oplossen' &&
+          a.id !== `open-${gebeurtenis.subdomein}`,
+      ),
+    [gebeurtenis.acties, gebeurtenis.subdomein],
+  );
+  const heeftActieveBijlageOfActie =
+    gebeurtenis.status !== 'opgelost' &&
+    gebeurtenis.status !== 'archief' &&
+    (gebeurtenis.bijlagen.length > 0 || eigenActies.length > 0);
+  const toonOnderKapsels = !open && (vereistBevestiging || heeftActieveBijlageOfActie);
   const kaartStaat = bepaalKaartStaat(gebeurtenis, verrijkt.niveau);
   const schemaNaam = MELDING_SCHEMAS[verrijkt.schemaId]?.naam[lang === 'nl' ? 1 : 0] || verrijkt.schemaNaam;
   const zichtbareTitel = schoonKaartTitel(gebeurtenis.titel);
@@ -416,143 +435,113 @@ export default function MeldingVeegKaart({
     return paar ? paar[lang === 'nl' ? 1 : 0] : Vol;
   })();
 
+  const openSnelBijlage = (idx: number) => {
+    onSelect?.();
+    if (bijlageVoorkeur.inlineSpeler) {
+      setOpen(true);
+      setInlineBijlageIdx(idx);
+    } else {
+      onOpenBijlageModaal(idx);
+    }
+    if (ongelezen || ontvangstStaat !== 'gelezen') {
+      if (onZichtGelezen) onZichtGelezen();
+      else if (gebeurtenis.status === 'nieuw') void onStatus('gelezen');
+    }
+  };
+
   return (
-    <div className='mel-veeg-houder' data-testid={`mel-kaart-${gebeurtenis.id}`}>
-      {richting && veegEval && (
-        <div
-          className={`mel-veeg-achtergrond is-${richting}${veegEval.uitvoeren ? '' : ' is-geblokkeerd'}`}
-          aria-hidden='true'
-        >
-          {veegEval.uitvoeren ? veegLabel(veegEval.actie, lang) : t('Захист безпеки', 'Beveiligingsblokkade')}
-        </div>
-      )}
-
-      <article
-        ref={kaartRef}
-        className={`mel-kaart puls-kaart is-kapsel${open ? ' is-open' : ' is-ingeklapt'}${ongelezen ? ' is-ongelezen' : ' is-gelezen'}${vereistBevestiging ? ' is-hoofdfocus' : ''} is-niveau-${verrijkt.niveau} is-staat-${kaartStaat} is-prio-${gebeurtenis.prioriteit} is-status-${gebeurtenis.status}${geselecteerd ? ' is-geselecteerd' : ''}`}
-        data-kapsel-open={open ? '1' : '0'}
-        data-kapsel-ongelezen={ongelezen ? '1' : '0'}
-        style={offsetX ? { transform: `translate3d(${offsetX}px, 0, 0)` } : undefined}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={afrondenVeeg}
-        onPointerCancel={afrondenVeeg}
-        onClick={(e) => {
-          if (negeerKlikRef.current) return;
-          const doel = e.target as HTMLElement | null;
-          if (doel?.closest('button,a,input,select,textarea,[data-geen-veeg]')) return;
-          wisselKapselOpen();
-        }}
-      >
-        {/* Рядок 1 компактної капсули: логотип служби + заголовок без шуму + лічильник/час + квитанція месенджера (✓ / ✓✓ / ⏳) + шеврон */}
-        <div className='puls-kapsel-rij'>
-          <PulsBronTeken anker={verrijkt.anker} maat={open ? 32 : 28} />
-
-          <button
-            type='button'
-            className='mel-kaart-titel-knop puls-kapsel-titel-knop'
-            aria-expanded={open}
-            onClick={(e) => {
-              e.stopPropagation();
-              wisselKapselOpen();
-            }}
+    <div
+      className={`mel-veeg-houder${toonOnderKapsels ? ' heeft-onder-kapsels' : ''}${ongelezen ? ' is-houder-ongelezen' : ''} is-houder-staat-${kaartStaat}`}
+      data-testid={`mel-kaart-${gebeurtenis.id}`}
+    >
+      <div className={`mel-veeg-kapsel-baan${open ? ' is-open' : ' is-ingeklapt'}`}>
+        {richting && veegEval && (
+          <div
+            className={`mel-veeg-achtergrond is-${richting}${veegEval.uitvoeren ? '' : ' is-geblokkeerd'}`}
+            aria-hidden='true'
           >
-            <strong>{zichtbareTitel}</strong>
-          </button>
+            {veegEval.uitvoeren ? veegLabel(veegEval.actie, lang) : t('Захист безпеки', 'Beveiligingsblokkade')}
+          </div>
+        )}
 
-          <span className='puls-kapsel-rechts'>
-            {gebeurtenis.autoGearchiveerd && gebeurtenis.status === 'archief' && !open && (
-              <span
-                className='puls-auto-archief-pil'
-                title={t('Автоматично перенесено в архів за правилами фільтрів каналу', 'Automatisch naar archief verplaatst volgens kanaalfilter')}
-              >
-                <Filter aria-hidden='true' />
-                <span>{t('Фільтр', 'Filter')}</span>
-              </span>
-            )}
-            {gebeurtenis.bijlagen.length > 0 && !open && (
-              <span
-                className='puls-kapsel-bijlage-stip'
-                title={t(`Вкладень: ${gebeurtenis.bijlagen.length}`, `Bijlagen: ${gebeurtenis.bijlagen.length}`)}
-                aria-hidden='true'
-              >
-                <Paperclip />
-              </span>
-            )}
-            {gebeurtenis.herhalingen > 1 && (
-              <span className='mel-herhaling' title={t('Згруповано повторень', 'Gegroepeerde herhalingen')}>
-                ×{gebeurtenis.herhalingen}
-              </span>
-            )}
-            {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} compact />}
-            <span className='mel-tijd'>{relatieveTijd(gebeurtenis.bijgewerktOp, lang)}</span>
-            <PulsOntvangstVinkjes
-              staat={ontvangstStaat}
-              afgeleverdOp={gebeurtenis.afgeleverdOp}
-              gelezenOp={gebeurtenis.gelezenOp}
-              autoGearchiveerd={gebeurtenis.autoGearchiveerd}
-              lang={lang}
-            />
-            <ChevronDown className={`mel-pijl-klap${open ? ' is-open' : ''}`} aria-hidden='true' />
-          </span>
-        </div>
+        <article
+          ref={kaartRef}
+          className={`mel-kaart puls-kaart is-kapsel${open ? ' is-open' : ' is-ingeklapt'}${ongelezen ? ' is-ongelezen' : ' is-gelezen'}${vereistBevestiging ? ' is-hoofdfocus' : ''} is-niveau-${verrijkt.niveau} is-staat-${kaartStaat} is-prio-${gebeurtenis.prioriteit} is-status-${gebeurtenis.status}${geselecteerd ? ' is-geselecteerd' : ''}`}
+          data-kapsel-open={open ? '1' : '0'}
+          data-kapsel-ongelezen={ongelezen ? '1' : '0'}
+          style={offsetX ? { transform: `translate3d(${offsetX}px, 0, 0)` } : undefined}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={afrondenVeeg}
+          onPointerCancel={afrondenVeeg}
+          onClick={(e) => {
+            if (negeerKlikRef.current) return;
+            const doel = e.target as HTMLElement | null;
+            if (doel?.closest('button,a,input,select,textarea,[data-geen-veeg]')) return;
+            wisselKapselOpen();
+          }}
+        >
+          {/* Рядок круглої капсули сповіщення: логотип служби + заголовок без шуму + час + галочка месенджера (✓ / ✓✓ / ⏳) + стрілка */}
+          <div className='puls-kapsel-rij'>
+            <PulsBronTeken anker={verrijkt.anker} maat={open ? 32 : 28} />
 
-        {/* Рядок 2 у згорнутій капсулі дозволяється ЛИШЕ для важливих сповіщень з обов’язковим підтвердженням власника («Це не я / Це мій вхід» або мандат ШІ) */}
-        {!open && vereistBevestiging && (
-          <div className='puls-kapsel-bevestiging-rij' data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
-            <span className='puls-kapsel-bevestiging-tekst'>
-              {gebeurtenis.bericht || verrijkt.gevolgHint || kortOnderdeel}
-            </span>
-            <div className='puls-kapsel-bevestiging-knoppen'>
-              {verrijkt.niveau === 'gevaar' ? (
-                <>
-                  {primaireActieHref ? (
-                    <a className='puls-bevestig-pil is-fout' href={primaireActieHref}>
-                      <ShieldAlert aria-hidden='true' />
-                      <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
-                    </a>
-                  ) : (
-                    <button type='button' className='puls-bevestig-pil is-fout' onClick={() => setOpen(true)}>
-                      <ShieldAlert aria-hidden='true' />
-                      <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
-                    </button>
-                  )}
-                  <button type='button' className='puls-bevestig-pil is-goed' onClick={() => void onStatus('opgelost')}>
-                    <ShieldCheck aria-hidden='true' />
-                    <span>{verrijkt.knoppenPaar?.[1] || t('Це мій вхід', 'Dit was ik')}</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button type='button' className='puls-bevestig-pil is-zacht' onClick={() => void onStatus('archief')}>
-                    <XCircle aria-hidden='true' />
-                    <span>{verrijkt.knoppenPaar?.[0] || t('Відхилити', 'Weigeren')}</span>
-                  </button>
-                  {primaireActieHref ? (
-                    <a className='puls-bevestig-pil is-let' href={primaireActieHref}>
-                      <KeyRound aria-hidden='true' />
-                      <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
-                    </a>
-                  ) : (
-                    <button type='button' className='puls-bevestig-pil is-let' onClick={() => void onStatus('opgelost')}>
-                      <KeyRound aria-hidden='true' />
-                      <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
-                    </button>
-                  )}
-                </>
+            <button
+              type='button'
+              className='mel-kaart-titel-knop puls-kapsel-titel-knop'
+              aria-expanded={open}
+              onClick={(e) => {
+                e.stopPropagation();
+                wisselKapselOpen();
+              }}
+            >
+              <strong>{zichtbareTitel}</strong>
+            </button>
+
+            <span className='puls-kapsel-rechts'>
+              {gebeurtenis.autoGearchiveerd && gebeurtenis.status === 'archief' && !open && (
+                <span
+                  className='puls-auto-archief-pil'
+                  title={t('Автоматично перенесено в архів за правилами фільтрів каналу', 'Automatisch naar archief verplaatst volgens kanaalfilter')}
+                >
+                  <Filter aria-hidden='true' />
+                  <span>{t('Фільтр', 'Filter')}</span>
+                </span>
               )}
+              {gebeurtenis.bijlagen.length > 0 && !open && (
+                <span
+                  className='puls-kapsel-bijlage-stip'
+                  title={t(`Вкладень: ${gebeurtenis.bijlagen.length}`, `Bijlagen: ${gebeurtenis.bijlagen.length}`)}
+                  aria-hidden='true'
+                >
+                  <Paperclip />
+                </span>
+              )}
+              {gebeurtenis.herhalingen > 1 && (
+                <span className='mel-herhaling' title={t('Згруповано повторень', 'Gegroepeerde herhalingen')}>
+                  ×{gebeurtenis.herhalingen}
+                </span>
+              )}
+              {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} compact />}
+              <span className='mel-tijd'>{relatieveTijd(gebeurtenis.bijgewerktOp, lang)}</span>
+              <PulsOntvangstVinkjes
+                staat={ontvangstStaat}
+                afgeleverdOp={gebeurtenis.afgeleverdOp}
+                gelezenOp={gebeurtenis.gelezenOp}
+                autoGearchiveerd={gebeurtenis.autoGearchiveerd}
+                lang={lang}
+              />
+              <ChevronDown className={`mel-pijl-klap${open ? ' is-open' : ''}`} aria-hidden='true' />
+            </span>
+          </div>
+
+          {beschermHint && (
+            <div className='mel-bescherm-hint' role='alert'>
+              <ShieldAlert aria-hidden='true' />
+              <span>{beschermHint}</span>
             </div>
-          </div>
-        )}
+          )}
 
-        {beschermHint && (
-          <div className='mel-bescherm-hint' role='alert'>
-            <ShieldAlert aria-hidden='true' />
-            <span>{beschermHint}</span>
-          </div>
-        )}
-
-        {/* Повні подробиці, вкладення, квитанція часу доставки/прочитання та дії: приховані за замовчуванням у капсулі, розкриваються за натиском */}
+          {/* Повні подробиці, вкладення, квитанція часу доставки/прочитання та дії: приховані за замовчуванням у капсулі, розкриваються за натиском */}
         <div className='mel-kaart-details' hidden={!open} data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
           <div className='mel-kaart-meta puls-meta-slank'>
             <span className='puls-meta-onderdeel' title={subdomeinMenselijkLabel(gebeurtenis.subdomein, lang)}>
@@ -915,6 +904,113 @@ export default function MeldingVeegKaart({
           )}
         </div>
       </article>
+      </div>
+
+      {/* Однорядкові круглі кнопки-капсули, прив’язані знизу до сповіщення (для вибору «Це не я / Це я», дозволу ШІ, відкриття файла чи спеціальної дії) */}
+      {toonOnderKapsels && (
+        <div
+          className='puls-kapsel-onder-rij'
+          data-geen-veeg='1'
+          style={offsetX ? { transform: `translate3d(${offsetX}px, 0, 0)` } : undefined}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className='puls-kapsel-koppeling' aria-hidden='true' />
+
+          {vereistBevestiging ? (
+            verrijkt.niveau === 'gevaar' ? (
+              <>
+                {primaireActieHref ? (
+                  <a className='puls-bevestig-pil is-fout' href={primaireActieHref}>
+                    <ShieldAlert aria-hidden='true' />
+                    <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
+                  </a>
+                ) : (
+                  <button type='button' className='puls-bevestig-pil is-fout' onClick={() => setOpen(true)}>
+                    <ShieldAlert aria-hidden='true' />
+                    <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
+                  </button>
+                )}
+                <button type='button' className='puls-bevestig-pil is-goed' onClick={() => void onStatus('opgelost')}>
+                  <ShieldCheck aria-hidden='true' />
+                  <span>{verrijkt.knoppenPaar?.[1] || t('Це я', 'Dit was ik')}</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button type='button' className='puls-bevestig-pil is-zacht' onClick={() => void onStatus('archief')}>
+                  <XCircle aria-hidden='true' />
+                  <span>{verrijkt.knoppenPaar?.[0] || t('Відхилити', 'Weigeren')}</span>
+                </button>
+                {primaireActieHref ? (
+                  <a className='puls-bevestig-pil is-let' href={primaireActieHref}>
+                    <KeyRound aria-hidden='true' />
+                    <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
+                  </a>
+                ) : (
+                  <button type='button' className='puls-bevestig-pil is-let' onClick={() => void onStatus('opgelost')}>
+                    <KeyRound aria-hidden='true' />
+                    <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
+                  </button>
+                )}
+              </>
+            )
+          ) : (
+            <>
+              {gebeurtenis.bijlagen.length > 0 && (
+                <button
+                  type='button'
+                  className='puls-bevestig-pil is-bestand'
+                  title={t(
+                    `Відкрити файл: ${gebeurtenis.bijlagen[0].naam}`,
+                    `Bestand openen: ${gebeurtenis.bijlagen[0].naam}`,
+                  )}
+                  onClick={() => openSnelBijlage(0)}
+                >
+                  <FileText aria-hidden='true' />
+                  <span>
+                    {gebeurtenis.bijlagen[0].naam}
+                    {gebeurtenis.bijlagen.length > 1 ? ` +${gebeurtenis.bijlagen.length - 1}` : ''}
+                  </span>
+                </button>
+              )}
+
+              {eigenActies.slice(0, gebeurtenis.bijlagen.length > 0 ? 1 : 2).map((act) => {
+                const actHref = veiligeMeldingUrl(act.href, 500);
+                const actLabel = lang === 'nl' ? act.labelNl : act.labelUk;
+                return actHref ? (
+                  <a
+                    key={act.id}
+                    className='puls-bevestig-pil is-zacht'
+                    href={actHref}
+                    onClick={() => onOpenActie?.(act)}
+                  >
+                    <ExternalLink aria-hidden='true' />
+                    <span>{actLabel}</span>
+                  </a>
+                ) : (
+                  <button
+                    key={act.id}
+                    type='button'
+                    className='puls-bevestig-pil is-zacht'
+                    disabled={uitvoerBezig === act.id}
+                    onClick={() => void voerActie(act)}
+                  >
+                    <Zap aria-hidden='true' />
+                    <span>{actLabel}</span>
+                  </button>
+                );
+              })}
+
+              {gebeurtenis.bijlagen.length > 0 && eigenActies.length === 0 && paginaLink && (
+                <a className='puls-bevestig-pil is-zacht' href={paginaLink}>
+                  <ExternalLink aria-hidden='true' />
+                  <span>{t('Відкрити', 'Openen')}</span>
+                </a>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

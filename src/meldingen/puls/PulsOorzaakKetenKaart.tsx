@@ -113,7 +113,11 @@ export default function PulsOorzaakKetenKaart({
   };
 
   return (
-    <div className='mel-veeg-houder puls-keten-houder' data-puls-keten={keten.sleutel}>
+    <div
+      className={`mel-veeg-houder puls-keten-houder${!open ? ' heeft-onder-kapsels' : ''}${heeftOngelezen ? ' is-houder-ongelezen' : ''} is-houder-staat-let`}
+      data-puls-keten={keten.sleutel}
+    >
+      <div className={`mel-veeg-kapsel-baan${open ? ' is-open' : ' is-ingeklapt'}`}>
       <article
         className={`mel-kaart puls-kaart is-kapsel is-puls-oorzaak is-hoofdfocus${open ? ' is-open' : ' is-ingeklapt'}${heeftOngelezen ? ' is-ongelezen' : ' is-gelezen'}${geselecteerd ? ' is-geselecteerd' : ''}`}
         data-kapsel-open={open ? '1' : '0'}
@@ -154,10 +158,17 @@ export default function PulsOorzaakKetenKaart({
           </span>
         </div>
 
-        {/* Компактний 2-й рядок головного акценту ланцюга: залежні служби та пряма кнопка відновлення */}
-        {!open && (
-          <div className='puls-kapsel-bevestiging-rij' data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
-            <div className='puls-keten-chips puls-keten-chips-slank'>
+        <div className='mel-kaart-details' hidden={!open} data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
+          <div className='mel-kaart-meta puls-meta-slank'>
+            <span className='puls-oorzaak-badge' title={keten.samenvatting}>
+              <Network aria-hidden='true' />
+              <span>{kortOorzaakLabel}</span>
+            </span>
+          </div>
+
+          <div className='puls-keten-gevolgen' data-geen-veeg='1'>
+            <span className='puls-keten-label'>{t('Розблокує:', 'Herstelt mee:')}</span>
+            <div className='puls-keten-chips'>
               {gegroepeerdeGevolgen.map((gev) => (
                 <PulsDienstChip
                   key={gev.id}
@@ -170,57 +181,7 @@ export default function PulsOorzaakKetenKaart({
                 />
               ))}
             </div>
-
-            <div className='puls-kapsel-bevestiging-knoppen'>
-              {primaireHref ? (
-                <a className='puls-bevestig-pil is-let' href={primaireHref}>
-                  <RefreshCw aria-hidden='true' />
-                  <span>{herstelLabel}</span>
-                </a>
-              ) : (
-                <button
-                  type='button'
-                  className='puls-bevestig-pil is-let'
-                  onClick={() => {
-                    onSelect(keten.wortel);
-                    setOpen(true);
-                    setToonAlleLeden(true);
-                  }}
-                >
-                  <RefreshCw aria-hidden='true' />
-                  <span>{herstelLabel}</span>
-                </button>
-              )}
-            </div>
           </div>
-        )}
-
-        <div className='mel-kaart-details' hidden={!open} data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
-          <div className='mel-kaart-meta puls-meta-slank'>
-            <span className='puls-oorzaak-badge' title={keten.samenvatting}>
-              <Network aria-hidden='true' />
-              <span>{kortOorzaakLabel}</span>
-            </span>
-          </div>
-
-          {open && (
-            <div className='puls-keten-gevolgen' data-geen-veeg='1'>
-              <span className='puls-keten-label'>{t('Розблокує:', 'Herstelt mee:')}</span>
-              <div className='puls-keten-chips'>
-                {gegroepeerdeGevolgen.map((gev) => (
-                  <PulsDienstChip
-                    key={gev.id}
-                    merkSleutel={gev.merkSleutel}
-                    icoon={gev.icoon}
-                    toon={gev.toon}
-                    label={gev.label}
-                    toonIcoon={Boolean(gev.merkSleutel && gev.merkSleutel !== wortelVerrijkt.anker.merkSleutel)}
-                    titelHint={gev.herstelTekst}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
             <div className='puls-actie-groep puls-keten-acties'>
@@ -307,6 +268,33 @@ export default function PulsOorzaakKetenKaart({
           ) : null}
         </div>
       </article>
+      </div>
+
+      {!open && (
+        <div className='puls-kapsel-onder-rij' data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
+          <span className='puls-kapsel-koppeling' aria-hidden='true' />
+
+          {primaireHref ? (
+            <a className='puls-bevestig-pil is-let' href={primaireHref}>
+              <RefreshCw aria-hidden='true' />
+              <span>{herstelLabel}</span>
+            </a>
+          ) : (
+            <button
+              type='button'
+              className='puls-bevestig-pil is-let'
+              onClick={() => {
+                onSelect(keten.wortel);
+                setOpen(true);
+                setToonAlleLeden(true);
+              }}
+            >
+              <RefreshCw aria-hidden='true' />
+              <span>{herstelLabel}</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
