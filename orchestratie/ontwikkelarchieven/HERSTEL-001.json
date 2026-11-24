@@ -3,8 +3,8 @@
   "taakId": "HERSTEL-001",
   "datum": "2026-11-24",
   "taal": "uk",
-  "titel": "HERSTEL-001 · Повний зведений випуск «Мій простір»: усі невстановлені оновлення CONSOL-001, решта UITROLBOT-001, капсули сповіщень і квитанції доставки, кнопка живого фону в меню та «Живий простір» на сторінці Огляд",
-  "opdracht": "За прямим дорученням власника об’єднати в один перевірений випуск поверх поточної живої версії сервера 20261122-171856 (c85e5d73f104f555021c6a896ffecb70256588d3) усі невстановлені напрацювання з CONSOL-001 (запит на злиття №213, 18 груп прикладних можливостей, укріплення безпеки FORCE RLS і SEC-003, 28 прапорців VLAG-001 та ввімкнення 58 прикладних прапорців міграцією 0335), усі виправлення та покращення гілки HERSTEL-001 (усунення лавини сповіщень Telegram і хронологія доказів збоїв зв’язку, виправлення брами TechPoort, автоматична маршрутизація піддомену CRM, мініатюрна капсула завантаження, компактні круглі капсули сповіщень із пропорційними капсулами кількості 18px та квитанціями доставки ✓ / ✓✓, перенесення кнопки живого фону до меню облікових записів між перемикачем тем і палітрою кольорів, втілення напряму «Живий простір» на /overzicht зі спокійним однорядковим режимом), а також перенести решту незлитих змін UITROLBOT-001 (публікація двомовного пояснення поточного випуску в Telegram, коди помилок і модульний тест) і виправити помилку типізації в ecosysteem-opslag.ts. Оприлюднити єдиний перевірений пакунок mijn-ruimte-<versie>.tar.gz на GitHub Releases за правилами VLAG-001 та TRACE-001 без автоматичного встановлення на живий сервер.",
+  "titel": "HERSTEL-001 · Повний зведений випуск «Мій простір»: потокове Telegram-архівування, CONSOL-001, решта UITROLBOT-001, капсули сповіщень і квитанції доставки, кнопка живого фону в меню та «Живий простір» на сторінці Огляд",
+  "opdracht": "За прямим дорученням власника об’єднати в один перевірений випуск поверх фактичної основи root на сервері 20261123-145553 (f56ba3fea1e4da191970e57c9a92272ba861e3ad; усуває відмову BASIS_VEROUDERD) повне виправлення доведеного витоку позакупової пам’яті в Telegram-архівуванні (потокове RFC 7578 multipart-надсилання без буферних копій, частини по 15 МБ замість 45 МБ, зниження приросту позакупової пам’яті на 48 МБ із +335 МБ до ~11 МБ, потокове відновлення, послідовна черга, прибирання завислих bezig і enc-файлів, прив’язка controleerTelegramBlokkade до фактично запущеної версії), усі напрацювання CONSOL-001 (0308..0335), усі виправлення та покращення гілки HERSTEL-001 (0336..0341: усунення лавини сповіщень Telegram, хронологія доказів збоїв зв’язку, виправлення брами TechPoort, автоматична маршрутизація піддомену CRM, мініатюрна капсула завантаження, компактні круглі капсули сповіщень із 18px капсулами кількості й квитанціями ✓/✓✓, перенесення кнопки живого фону до меню облікових записів, «Живий простір» на /overzicht зі спокійним однорядковим режимом) і решту незлитих змін UITROLBOT-001, та оприлюднити єдиний перевірений пакунок mijn-ruimte-<versie>.tar.gz на GitHub Releases за правилами VLAG-001 і TRACE-001 без автоматичного встановлення на живий сервер.",
   "herkomst": {
     "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
     "agent": "antigravity",
@@ -13,16 +13,16 @@
     "tak": "fix/herstel-001-consol-nazorg-20261123-172600",
     "basisCommit": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
     "basisVersie": "20261105-061659",
-    "geinstalleerdeBasis": "c85e5d73f104f555021c6a896ffecb70256588d3",
-    "geinstalleerdeVersie": "20261122-171856",
+    "geinstalleerdeBasis": "f56ba3fea1e4da191970e57c9a92272ba861e3ad",
+    "geinstalleerdeVersie": "20261123-145553",
     "integratieBasis": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
     "regelsVersie": "1.8.0",
     "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
     "samengevoegd": [
       {
-        "taak": "CONSOL-001 (запит на злиття №213 — зведене консолідоване оновлення у гілці integratie)",
-        "commit": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
-        "reden": "Пряма основа гілки HERSTEL-001; уключає всі невстановлені зміни поверх 20261122-171856 (гілки №208 і №211, міграції 0308..0335, 18 груп можливостей та 58 прикладних прапорців)."
+        "taak": "CONSOL-001 (запит на злиття №213 і база root 20261123-145553 @ f56ba3fea1e4)",
+        "commit": "f56ba3fea1e4da191970e57c9a92272ba861e3ad",
+        "reden": "Прямий предок гілки HERSTEL-001 і найвища зафіксована root-основа на сервері; уключає всі зміни CONSOL-001 (гілки №208 і №211, міграції 0308..0335, 18 груп можливостей та 58 прикладних прапорців)."
       },
       {
         "taak": "UITROLBOT-001 (гілка feature/uitrolbot-001-20261122-214039 — решта функцій бота випусків Telegram)",
@@ -46,7 +46,10 @@
     "33c4af2d3a675c411cf1b782b6d76cb927ae1341",
     "8f13bf0078f9b3c85c8e6206a658878761b16854",
     "50bbf44d1c354ea9252c2c41c4b3e4f92545879c",
-    "5987ed78783b0b074a44f3a86e0341ea0c66496b"
+    "5987ed78783b0b074a44f3a86e0341ea0c66496b",
+    "95ec7d9898aa6b2f2deebcbdcd3ed6ee8a82087b",
+    "484a86437b429c1635699a8f2aa86e3bf28906dc",
+    "e04e489ccc75bbf48934e1565c4524ea4c33cd44"
   ],
   "tijdlijn": [
     {
@@ -62,29 +65,34 @@
       "resultaat": "Перенесено кнопку живого фону з верхньої смуги до меню облікових записів між перемикачем тем і кнопкою кольорів у точному круглому розмірі (32×32 ПК / 34×34 мобільний), усунуто порожню висоту 60vh на /overzicht та втілено «Живий простір» із пелюстковими формами, кільцем поступу, кнопкою-ромбом спокійного однорядкового режиму, хвилею модулів і суцільною капсулою швидких дій."
     },
     {
-      "stap": "4) Повна інвентаризація незлитих гілок, перенесення решток UITROLBOT-001, виправлення типізації та перевірка готовності випуску.",
-      "resultaat": "Звірено живу версію сервера 20261122-171856 @ c85e5d73 та всі гілки GitHub; точково перенесено відсутні частини UITROLBOT-001 (публікація пояснення випуску в Telegram, коди помилок, дія owner.uitrol.telegram.gepubliceerd у реєстрі та 12-пунктовий тест), виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd), оновлено пошуковий каталог до 2437 елементів та пройдено перевірки складання, типів, модульних тестів, pakketVoorcontrole і TRACE-001."
+      "stap": "4) Перенесення решток UITROLBOT-001, усунення доведеного витоку позакупової пам’яті Telegram-архівування та узгодження UITROL-BASIS із базою root 20261123-145553.",
+      "resultaat": "Перенесено відсутні частини UITROLBOT-001, виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd), усунено витік позакупової пам’яті в backend/uitrol-telegram.ts (потокове RFC 7578 multipart-надсилання stuurDocumentVanBestand без Buffer/Uint8Array/Blob, частини 15 МБ замість 45 МБ, потокове відновлення, послідовна черга, прибирання bezig і enc-файлів, прив’язка controleerTelegramBlokkade до фактичної версії — пік позакупової пам’яті на 48 МБ зменшено з +335 МБ до ~11 МБ), та узгоджено UITROL-BASIS із базою root 20261123-145553 @ f56ba3fea1e4."
     }
   ],
   "keuzes": [
     {
-      "besluit": "Зібрати єдиний кумулятивний випуск поверх живої встановленої основи сервера 20261122-171856 (c85e5d73f104f555021c6a896ffecb70256588d3), який охоплює весь невипущений на сервер CONSOL-001 (0308..0335), усі правки HERSTEL-001 (0336..0341) та решту змін UITROLBOT-001.",
-      "reden": "Випуск CONSOL-001 ще не встановлено на живому сервері власника, тому встановлення одного узгодженого пакунка з UITROL-BASIS = 20261122-171856 уникає зайвого проміжного оновлення та гарантує безконфліктне застосування всіх 27 нових міграцій 0308..0341 і всіх 30 нових прапорців VLAG-001."
+      "besluit": "Зібрати випуск поверх фактичної найвищої встановленої бази root 20261123-145553 (f56ba3fea1e4da191970e57c9a92272ba861e3ad), яка є прямим предком цієї гілки.",
+      "reden": "Спроба встановити попередній випуск із базою 20261122-171856 була відхилена root із кодом BASIS_VEROUDERD, бо в $WERK_ROOT/laatste-versie вже зафіксовано 20261123-145553; узгодження UITROL-BASIS із 20261123-145553 знімає відмову root при повному збереженні всіх міграцій 0308..0341."
     },
     {
-      "besluit": "Перенести відсутні елементи UITROLBOT-001 точково замість прямого злиття старої гілки feature/uitrolbot-001-20261122-214039.",
-      "reden": "Пряме злиття старої гілки відкотило б пізніші покращення CONSOL-001 (прапорець UITROL_TELEGRAM_KOPPELING_VLAG, чисту українську термінологію без англіцизмів та опцію пробного документа), тоді як точкове перенесення зберігає всі покращення CONSOL-001 і додає відсутню публікацію пояснення випуску."
+      "besluit": "Повністю прибрати leesDeelBytes і new Blob для частин архіву в backend/uitrol-telegram.ts та перевести надсилання і відновлення на потоковий RFC 7578 multipart/form-data (createReadStream + duplex: 'half', частини по 15 МБ).",
+      "reden": "Прямий вимір на сервері довів, що одна спроба старого stuurDocument на 48 МБ створювала +335 МБ позакупової пам’яті, що за 3–4 спроби забивало 3,6 ГБ ОЗП + 2 ГБ підкачки і вішало службу у стані D (HTTP 524). Потокове надсилання зменшило приріст позакупової пам’яті на 48 МБ до ~11 МБ (у 30 разів менше)."
     },
     {
-      "besluit": "Зафіксувати виправлення помилки типізації у src/meldingen/ecosysteem/ecosysteem-opslag.ts (laatsteTijd замість laatstGezienOp) окремою фіксацією змін до пакування.",
-      "reden": "Відповідно до AGENTS.md §3 виявлені помилки виправляються окремою чистою фіксацією змін для чистого проходження перевірки типів TypeScript."
+      "besluit": "Прив’язати controleerTelegramBlokkade до фактично запущеної версії releaseInfo().versie та наявності збереженого файла архіву на диску.",
+      "reden": "Раніше перевірка дивилася на останній рядок app.uitrol_runs навіть після відкату, створюючи глухий кут TELEGRAM_ARCHIEF_VEREIST (HTTP 409)."
     }
   ],
   "wijzigingen": [
     {
       "soort": "toegevoegd",
-      "pad": "migrations/0308_posta_lezer_vlaggen.sql .. migrations/0335_vlaggen_consolidatie_aan.sql, migrations/0336_melding_verbinding_bewijs_vlag.sql .. migrations/0341_melding_kapsel_aflevering_aan.sql",
-      "omschrijving": "Повний безконфліктний ряд із 27 нових ідемпотентних міграцій поверх живої основи 0307: укріплення FORCE RLS, 30 нових прапорців за двокроковою схемою VLAG-001 (28 із CONSOL-001 + melding-verbinding-bewijs-v1 + melding-kapsel-aflevering-v1), очищення черги від хибних карток Telegram (0338) та адитивні стовпці квитанцій доставки й прочитання (0339)."
+      "pad": "migrations/0336_melding_verbinding_bewijs_vlag.sql .. migrations/0341_melding_kapsel_aflevering_aan.sql",
+      "omschrijving": "Шість нових ідемпотентних міграцій поверх CONSOL-001 (0335): прапорці melding-verbinding-bewijs-v1 (0336–0337) та melding-kapsel-aflevering-v1 (0340–0341), очищення черги від хибних карток Telegram (0338) та адитивні стовпці квитанцій доставки й прочитання (0339)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "backend/uitrol-telegram.ts, src/uitrol/TelegramArchief.tsx, src/uitrol/fouten.ts, tests/eenheid/herstel-001-telegram-archief-stroom.test.ts, tests/eenheid/uitrolbot-uitleg-20261122.test.ts",
+      "omschrijving": "Усунено витік позакупової пам’яті Telegram-архівування (потокове RFC 7578 multipart-надсилання stuurDocumentVanBestand і потокове відновлення без Buffer/Blob, частини 15 МБ, послідовна черга, прибирання bezig і enc-файлів, прив’язка controleerTelegramBlokkade до фактичної версії), перенесено публікацію двомовного пояснення випуску в Telegram (UITROLBOT-001) і додано модульні тести на 48 МБ."
     },
     {
       "soort": "gewijzigd",
@@ -98,13 +106,8 @@
     },
     {
       "soort": "gewijzigd",
-      "pad": "backend/uitrol-telegram.ts, src/uitrol/TelegramArchief.tsx, src/uitrol/fouten.ts, tests/eenheid/uitrolbot-uitleg-20261122.test.ts",
-      "omschrijving": "Перенесено решту змін UITROLBOT-001: публікація повного двомовного пояснення поточного випуску в тему Telegram (POST /api/owner/uitrol/telegram/publiceren), коди помилок TELEGRAM_HTTP_400 і UITGAVE_UITLEG_ONTBREEKT та 12-пунктовий модульний тест."
-    },
-    {
-      "soort": "gewijzigd",
-      "pad": "deploy/installeer-app.sh, deploy/archief-herstellen.sh, migrations/rechten.sql, .github/workflows/*.yml",
-      "omschrijving": "Автоматична синхронізація піддоменів ядра включно з crm.<domein> у Caddyfile та cloudflared/config.yml із перевіркою синтаксису й безпечним відкатом, а також усі захисні зміни CONSOL-001 (SEC-003, права БД і 10 сканерів безпеки)."
+      "pad": "deploy/installeer-app.sh, .github/workflows/herstel-001-uitgave.yml",
+      "omschrijving": "Автоматична безпечна синхронізація піддоменів ядра включно з crm.<domein> у Caddyfile та cloudflared/config.yml із перевіркою синтаксису й відкатом, а також ізольований конвеєр перевірки й оприлюднення випуску HERSTEL-001."
     }
   ],
   "risicoUitleg": [
@@ -130,8 +133,8 @@
     },
     {
       "pad": ".github/workflows/herstel-001-uitgave.yml",
-      "uk": "Ізольований конвеєр перевірки й оприлюднення зведеного випуску HERSTEL-001 поверх живої основи 20261122-171856 на Node 24 і PostgreSQL 16: без pull_request_target і без secrets.*, усі дії закріплені 40-символьними відбитками SHA, перевіряє правила 1.8.0, 30 прапорців VLAG-001, подвійні міграції 0001..0341, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на сервер автоматично.",
-      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor de gezamenlijke uitgave HERSTEL-001 boven op basis 20261122-171856 met Node 24 en PostgreSQL 16: zonder pull_request_target of secrets.*, alle acties vastgepind op 40-tekens-SHA’s, controleert regels 1.8.0, 30 vlaggen VLAG-001, dubbele migraties 0001..0341, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
+      "uk": "Ізольований конвеєр перевірки й оприлюднення зведеного випуску HERSTEL-001 поверх основи root 20261123-145553 @ f56ba3fea1e4 (з урахуванням довіреного переліку при тимчасовому відкаті /api/version) на Node 24 і PostgreSQL 16: без pull_request_target і без secrets.*, усі дії закріплені 40-символьними відбитками SHA, перевіряє правила 1.8.0, 30 прапорців VLAG-001, подвійні міграції 0001..0341, потоковий тест Telegram на 48 МБ, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на сервер автоматично.",
+      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor de gezamenlijke uitgave HERSTEL-001 boven op de root-basis 20261123-145553 @ f56ba3fea1e4 (met vertrouwde basislijst bij tijdelijke terugdraai van /api/version) op Node 24 en PostgreSQL 16: zonder pull_request_target of secrets.*, alle acties vastgepind op 40-tekens-SHA’s, controleert regels 1.8.0, 30 vlaggen VLAG-001, dubbele migraties 0001..0341, stroomgebaseerde Telegram-test van 48 MB, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
     },
     {
       "pad": ".github/workflows/bandit.yml",
@@ -190,12 +193,12 @@
       "resultaat": "Замок правил 1.8.0 (B-027 / VLAG-001), перевірка спільних навичок, сторож бази сповіщень MELDINGEN-REGISTER-001 (339 серверних кодів, 547 записів ACTIE_LABELS, 0 у 'overig'), типи сервера та клієнта й повне складання з усіма статичними сторожами та каталогом пошуку (2437 елементів) пройшли успішно."
     },
     {
-      "opdracht": "Модульні випробування HERSTEL-001, UITROLBOT-001, VLAG-001, TRACE-001, Пульта уваги, меню облікових записів, живого фону, робочого столу та 20 хмарних випробувань + перевірка в безголовому Chromium (360×800, 390×844, 1280×800, uk і nl)",
-      "resultaat": "Усі сумісні з Node.js 22.23.5 модульні випробування, усі 20 хмарних тестів та візуальні перевірки в безголовому Chromium (капсули кількості 18px, кнопка живого фону в меню, «Живий простір» на /overzicht у звичайному й спокійному режимах) пройшли без помилок."
+      "opdracht": "Модульні випробування HERSTEL-001 (включно з herstel-001-telegram-archief-stroom.test.ts на 48 МБ — 7/7), UITROLBOT-001 (12/12), VLAG-001, TRACE-001, Пульта уваги, меню облікових записів, живого фону, робочого столу та 20 хмарних випробувань + перевірка в безголовому Chromium (360×800, 390×844, 1280×800, uk і nl)",
+      "resultaat": "Потоковий тест Telegram-архівування на реальному 48 МБ файлі (3 × 16 МБ + повтор після HTTP 502) довів точний RFC 7578 multipart/form-data, Content-Length, побайтовий SHA-256 і приріст позакупової пам’яті maxExtDelta ≈ 10,9 МБ (проти +335 МБ до виправлення). Усі сумісні модульні й хмарні випробування та візуальні перевірки в Chromium пройшли без помилок."
     },
     {
       "opdracht": "node scripts/orch.mjs pakket + pakket-controleer + backend/uitrol-voorcontrole.ts (pakketVoorcontrole) + перевірка root TRACE-001 після публікації GitHub Release",
-      "resultaat": "Звірено живу основу сервера 20261122-171856 @ c85e5d73f104f555021c6a896ffecb70256588d3, перевірено всі 30 нових прапорців VLAG-001 та всі 14 пояснень risicoUitleg, пройдено pakketVoorcontrole (0 помилок) і перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
+      "resultaat": "Узгоджено UITROL-BASIS із базою root 20261123-145553 @ f56ba3fea1e4da191970e57c9a92272ba861e3ad (підтверджений предок HEAD), перевірено 30 нових прапорців VLAG-001 і всі пояснення risicoUitleg, пройдено pakketVoorcontrole (0 помилок) та перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
     }
   ],
   "bronnen": [

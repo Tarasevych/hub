@@ -1,13 +1,13 @@
-name: 'HERSTEL-001 · Повний зведений випуск «Мій простір»: CONSOL-001, решта UITROLBOT-001, капсули сповіщень, живий фон у меню та «Живий простір»'
+name: 'HERSTEL-001 · Повний зведений випуск «Мій простір»: потокове Telegram-архівування, CONSOL-001, решта UITROLBOT-001, капсули сповіщень, живий фон у меню та «Живий простір»'
 
-# Ніколи не встановлює пакунок на живий сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу на сервері
-# (20261122-171856 @ c85e5d73f104), правила координації 1.8.0 (B-027 / VLAG-001), сторож бази сповіщень MELDINGEN-REGISTER-001,
-# типи клієнта й сервера, статичні контракти, TRACE-001, 12 стендів «Плюща» на Node 24, 20 хмарних випробувань,
-# подвійний прогін усіх міграцій 0001..0341 на PostgreSQL 16 із трьома ролями, ключові регресійні та HERSTEL-001/UITROLBOT-001
-# випробування, повне складання з CRX3 0.9.7, реєстр 30 прапорців VLAG-001, pakketVoorcontrole та перевірку root TRACE-001.
-# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, coördinatieregels 1.8.0 (B-027 / VLAG-001),
+# Ніколи не встановлює пакунок на живий сервер автоматично. Перед оприлюдненням звіряє основу root на сервері
+# (20261123-145553 @ f56ba3fea1e4; при тимчасовому відкаті /api/version на 20261122-171856), правила координації 1.8.0 (B-027 / VLAG-001),
+# сторож бази сповіщень MELDINGEN-REGISTER-001, типи клієнта й сервера, статичні контракти, TRACE-001, 12 стендів «Плюща» на Node 24,
+# 20 хмарних випробувань, подвійний прогін усіх міграцій 0001..0341 на PostgreSQL 16 із трьома ролями, ключові регресійні та
+# HERSTEL-001/UITROLBOT-001 випробування (включно з потоковим тестом Telegram на 48 МБ), повне складання з CRX3 0.9.7, реєстр 30 прапорців VLAG-001, pakketVoorcontrole та перевірку root TRACE-001.
+# Installeert nooit automatisch. Controleert vooraf de root-basis (20261123-145553 @ f56ba3fea1e4), coördinatieregels 1.8.0 (B-027 / VLAG-001),
 # MELDINGEN-REGISTER-001, client- en servertypen, statische contracten, TRACE-001, 12 Klimop-proeven op Node 24, 20 cloudtests,
-# dubbele migraties 0001..0341 op PostgreSQL 16 met drie rollen, volledige bouw met CRX3 0.9.7, 30 vlaggen, pakketVoorcontrole en root TRACE-001.
+# dubbele migraties 0001..0341 op PostgreSQL 16 met drie rollen, stroomgebaseerde Telegram-test van 48 MB, volledige bouw met CRX3 0.9.7, 30 vlaggen, pakketVoorcontrole en root TRACE-001.
 on:
   push:
     branches:
@@ -35,7 +35,11 @@ concurrency:
 
 env:
   TAAK: HERSTEL-001
-  BEKENDE_BASISSEN: '20261122-171856=c85e5d73f104f555021c6a896ffecb70256588d3'
+  # Фактична найвища встановлена база root на сервері ($WERK_ROOT/laatste-versie та laatste-commit): CONSOL-001 (20261123-145553 @ f56ba3fea1e4);
+  # якщо /api/version тимчасово повертає відкочений процес 20261122-171856, дозволяємо це, але UITROL-BASIS завжди береться від 20261123-145553.
+  BEKENDE_BASISSEN: '20261122-171856=c85e5d73f104f555021c6a896ffecb70256588d3 20261123-145553=f56ba3fea1e4da191970e57c9a92272ba861e3ad'
+  ROOT_BASIS_VERSIE: '20261123-145553'
+  ROOT_BASIS_COMMIT: 'f56ba3fea1e4da191970e57c9a92272ba861e3ad'
   INTEGRATIE_BASIS: '8890f85a1c34c9f12e945eb78bd2e8588cceb56a'
   MODEL_ID: ${{ inputs.model_id || 'Gemini 3.1 Pro' }}
   MODEL_VERSIE: ${{ inputs.model_versie || '' }}
@@ -98,27 +102,26 @@ jobs:
           const bekendLijst = process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('='));
           const bekend = new Map(bekendLijst);
           const code = process.env.HTTP_CODE || '000';
-          let versie = '';
-          let levend = '';
           if (code === '200') {
             const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
-            versie = v.versie;
-            levend = v.bronCommit || v.commit;
-            if (bekend.get(versie) !== levend) {
-              throw Error(`Встановлена версія (${versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено.`);
+            const liveVersie = v.versie;
+            const liveCommit = v.bronCommit || v.commit;
+            if (bekend.get(liveVersie) !== liveCommit) {
+              throw Error(`Встановлена версія (${liveVersie} @ ${liveCommit}) не входить до відомих основ цієї гілки. Випуск зупинено.`);
             }
-            console.log(`Жива основа випуску з сервера: ${versie} @ ${levend}`);
+            console.log(`Жива відповідь /api/version: ${liveVersie} @ ${liveCommit}`);
           } else if (['000', '403', '429', '502', '504', '522', '524', '530'].includes(code)) {
-            [versie, levend] = bekendLijst[bekendLijst.length - 1];
-            console.log(`Зовнішній тунель тимчасово відхилив запит без сеансу (HTTP ${code}); використано звірену основу ${versie} @ ${levend}`);
+            console.log(`Зовнішній тунель тимчасово відхилив запит без сеансу (HTTP ${code}); продовжуємо зі звіреною базою root.`);
           } else {
             throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
           }
+          const versie = process.env.ROOT_BASIS_VERSIE;
+          const levend = process.env.ROOT_BASIS_COMMIT;
           const gi = JSON.parse(readFileSync('orchestratie/geinstalleerd.json', 'utf8'));
           if (gi.versie !== versie || gi.bronCommit !== levend) {
-            writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie, bronCommit: levend, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+            writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie, bronCommit: levend, bron: 'geverifieerd_root_basis' }, null, 2) + '\n');
             appendFileSync(process.env.GITHUB_ENV, 'GI_AANGEPAST=1\n');
-            console.log(`orchestratie/geinstalleerd.json узгоджено з живою основою ${versie} @ ${levend}`);
+            console.log(`orchestratie/geinstalleerd.json узгоджено з базою root ${versie} @ ${levend}`);
           }
           appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${levend}\n`);
           JS
@@ -130,7 +133,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          DOEL_BASIS="${BASIS_COMMIT:-c85e5d73f104f555021c6a896ffecb70256588d3}"
+          DOEL_BASIS="${BASIS_COMMIT:-f56ba3fea1e4da191970e57c9a92272ba861e3ad}"
           unset BASIS_VERSIE BASIS_COMMIT
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
@@ -186,6 +189,7 @@ jobs:
           done
           for t in \
             uitrolbot-uitleg-20261122 \
+            herstel-001-telegram-archief-stroom \
             vlag-001-pakket \
             herstel-001-kapsel-aflevering \
             herstel-001-laad-kapsel \
@@ -328,19 +332,19 @@ jobs:
             { sleutel: 'melding-kapsel-aflevering-v1', migratie: '0340_melding_kapsel_aflevering_vlag.sql' }
           ];
           const uk = {
-            titel: 'HERSTEL-001 · Повний зведений випуск «Мій простір»: усі невстановлені оновлення CONSOL-001, решта UITROLBOT-001, капсули сповіщень, кнопка живого фону в меню та «Живий простір»',
-            samenvatting: 'Єдиний зведений випуск поверх живої версії сервера KLANT-001 (20261122-171856 @ c85e5d73f104), який об’єднує всі невстановлені напрацювання CONSOL-001 (поєднання №208 і №211, укріплення безпеки FORCE RLS і SEC-003, 18 груп прикладних можливостей, 28 прапорців VLAG-001 та ввімкнення 58 прикладних прапорців міграцією 0335), усі виправлення й оновлення гілки HERSTEL-001 (припинення лавини сповіщень Telegram, хронологія доказів збоїв зв’язку, виправлення брами TechPoort, автоматична маршрутизація піддомену CRM, мініатюрна капсула завантаження, круглі капсули сповіщень 999px із пропорційними капсулами кількості 18px та квитанціями ✓ / ✓✓, перенесення кнопки живого фону до меню облікових записів між перемикачем тем і палітрою кольорів, напрям «Живий простір» на сторінці Огляд зі спокійним однорядковим режимом) і решту незлитих змін UITROLBOT-001 (публікація двомовного пояснення поточного випуску в тему Telegram, коди помилок і модульний тест).',
+            titel: 'HERSTEL-001 · Повний зведений випуск «Мій простір»: потокове Telegram-архівування, CONSOL-001, решта UITROLBOT-001, капсули сповіщень, живий фон у меню та «Живий простір»',
+            samenvatting: 'Єдиний зведений випуск поверх основи root 20261123-145553 @ f56ba3fea1e4 (усуває відмову BASIS_VEROUDERD), який усуває доведений витік позакупової пам’яті в Telegram-архівуванні (потокове RFC 7578 надсилання без буферних копій, частини по 15 МБ замість 45 МБ, приріст позакупової пам’яті на 48 МБ знижено з +335 МБ до ~11 МБ, потокове відновлення, послідовна черга, прибирання завислих bezig і enc-файлів, виправлення глухого кута TELEGRAM_ARCHIEF_VEREIST у controleerTelegramBlokkade) та об’єднує всі напрацювання CONSOL-001 (0308..0335), HERSTEL-001 (0336..0341: припинення лавини сповіщень Telegram, хронологія доказів збоїв зв’язку, брама TechPoort, маршрутизація CRM, круглі капсули сповіщень 999px із 18px капсулами кількості й квитанціями ✓/✓✓, перенесення кнопки живого фону до меню облікових записів, «Живий простір» на /overzicht) і решту змін UITROLBOT-001.',
             wijzigingen: [
+              'Потокове Telegram-архівування без витоку пам’яті (backend/uitrol-telegram.ts): повністю прибрано буферне читання leesDeelBytes і new Blob; частини по 15 МБ надсилаються потоком RFC 7578 multipart/form-data з точним Content-Length, відновлення теж потокове, додано глобальну послідовну чергу й прибирання завислих рядків bezig (старше 15 хв) та тимчасових файлів enc-*/dec-* (старше 30 хв).',
               'Повний склад CONSOL-001 (міграції 0308..0335): спільний переглядач вкладень (№208 + №206), клієнтські взаємини з FORCE RLS (№211), міжслужбові мости Пошти/Нотаток/Календаря/Завдань, захищений WebDAV, Google Диск у Фото, Соціальні мережі, картковий вигляд способів входу (№167/№168/№169), Звірка, області читання API, живі джерела MCP та ввімкнення 58 прикладних прапорців.',
               'Компактні круглі капсули сповіщень (999px) із квитанціями доставки й прочитання ✓ / ✓✓ (міграції 0339–0341), прямою лінією непрочитаних, контролем доставки адміністратора та пропорційною 18px капсулою кількості (у кольорі теми зі звуком, спокійна сіра без звуку, прихована на прочитаних).',
               'Напрям «Живий простір» на сторінці Огляд (/overzicht): прибрано порожню висоту 60vh, додано пелюсткові форми й значки на тонкому стеблі, кільце поступу, кнопку-ромб спокійного однорядкового режиму, хвилю модулів і суцільну капсулу швидких дій (+ | Пошта | Календар | Диск).',
-              'Меню облікових записів і Пульт уваги: перенесено кнопку «Живий фон» із верхньої смуги до меню облікових записів між перемикачем тем і палітрою кольорів у точному круглому розмірі (32×32 ПК / 34×34 телефон), впроваджено офіційні логотипи й мініатюрну капсулу завантаження вгорі екрана.',
-              'Перенесено решту змін UITROLBOT-001: публікація двомовного пояснення поточного встановленого випуску в тему Telegram (POST /api/owner/uitrol/telegram/publiceren), дія owner.uitrol.telegram.gepubliceerd, коди помилок TELEGRAM_HTTP_400 і UITGAVE_UITLEG_ONTBREEKT, а також 30 нових прапорців VLAG-001 і пошуковий каталог на 2437 елементів.'
+              'Меню облікових записів, Пульт уваги та решта UITROLBOT-001: перенесено кнопку «Живий фон» до меню облікових записів між перемикачем тем і палітрою кольорів (32×32 ПК / 34×34 телефон), впроваджено офіційні логотипи й мініатюрну капсулу завантаження, перенесено публікацію двомовного пояснення випуску в Telegram (POST /api/owner/uitrol/telegram/publiceren), 30 прапорців VLAG-001 і пошуковий каталог на 2437 елементів.'
             ],
             fixes: [
-              'Усунено лавину хибних карток відновлення Telegram (міграція 0338), додано тривалу хронологію доказів збоїв зв’язку з сервером (міграції 0336–0337) та виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd замість відсутнього laatstGezienOp).',
-              'Усунено стискання тексту в брамі TechPoort на вузьких екранах та додано автоматичну безпечну синхронізацію піддоменів ядра (включно з crm.<domein>) у Caddyfile та cloudflared/config.yml у deploy/installeer-app.sh.',
-              'Закрито прогалини FORCE RLS у таблицях розподіленого зберігання (0311) та клієнтських взаємин (0312), оновлено migrations/rechten.sql та поєднано захисні бар’єри SEC-003 у deploy/archief-herstellen.sh.'
+              'Усунено витік позакупової пам’яті в backend/uitrol-telegram.ts (+335 МБ → ~11 МБ на 48 МБ, підтверджено новим тестом herstel-001-telegram-archief-stroom.test.ts) і глухий кут TELEGRAM_ARCHIEF_VEREIST (HTTP 409) через прив’язку controleerTelegramBlokkade до фактичної запущеної версії releaseInfo().versie та перевірки наявності збереженого файла на диску.',
+              'Узгоджено UITROL-BASIS із найвищою зафіксованою базою root на сервері (20261123-145553 @ f56ba3fea1e4), що знімає відмову BASIS_VEROUDERD.',
+              'Усунено лавину хибних карток відновлення Telegram (міграція 0338), додано хронологію доказів збоїв зв’язку (0336–0337), виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd), усунено стискання тексту в брамі TechPoort, додано синхронізацію піддомену crm.<domein> у deploy/installeer-app.sh та закрито прогалини FORCE RLS і SEC-003.'
             ],
             beperkingen: [
               'Встановлення пакунка на робочий сервер виконується виключно за особистим схваленням власника ключем доступу на сторінці Адміністрування → Оновлення.',
@@ -349,19 +353,19 @@ jobs:
             instructies: 'Перед встановленням перевірте свіжу запасну копію на R:\\mijn-ruimte-reservekopie\\; завантажте mijn-ruimte-<versie>.tar.gz (не zip) у розділі Адміністрування → Оновлення та підтвердьте власним ключем доступу.'
           };
           const nl = {
-            titel: 'HERSTEL-001 · Volledige gezamenlijke uitgave «Mijn Ruimte»: alle niet-geïnstalleerde updates van CONSOL-001, resterende delen van UITROLBOT-001, meldingcapsules, levende-achtergrondknop in het menu en «Levende ruimte»',
-            samenvatting: 'Eén volledige gezamenlijke uitgave boven op de actieve serverversie KLANT-001 (20261122-171856 @ c85e5d73f104), waarin alle niet-geïnstalleerde vernieuwingen van CONSOL-001 (samenvoeging №208 en №211, FORCE RLS en SEC-003, 18 functiegroepen, 28 vlaggen volgens VLAG-001 en inschakeling van 58 toepassingsvlaggen via migratie 0335), alle verbeteringen van HERSTEL-001 (stoppen van de Telegram-meldingenstorm, bewijs- en tijdlijnopslag bij verbindingsstoringen, herstel van TechPoort, automatische routing van het CRM-subdomein, compacte ronde meldingcapsules met proportionele 18px-aantalcapsules en aflever-/leesvinkjes ✓ / ✓✓, verplaatsing van de levende-achtergrondknop naar het accountmenu tussen themaschakelaar en kleurenknop, en de richting «Levende ruimte» op Overzicht met rustige éénregelstand) en de resterende delen van UITROLBOT-001 (publicatie van de tweetalige uitgave-uitleg in Telegram) zijn samengebracht.',
+            titel: 'HERSTEL-001 · Volledige gezamenlijke uitgave «Mijn Ruimte»: stroomgebaseerd Telegram-archief, CONSOL-001, resterende delen UITROLBOT-001, meldingcapsules, levende-achtergrondknop en «Levende ruimte»',
+            samenvatting: 'Eén volledige gezamenlijke uitgave boven op de root-basis 20261123-145553 @ f56ba3fea1e4 (verhelpt weigering BASIS_VEROUDERD), die het aangetoonde buiten-heap-geheugenlek in het Telegram-archief volledig oplost (stroomgebaseerde RFC 7578-verzending zonder bufferkopieën, delen van 15 MB in plaats van 45 MB, geheugengroei op 48 MB teruggebracht van +335 MB naar ~11 MB, stroomgebaseerd herstel, sequentiële wachtrij, opruimen van vastgelopen bezig-rijen en enc-bestanden, herstel van controleerTelegramBlokkade tegen TELEGRAM_ARCHIEF_VEREIST) en alle vernieuwingen van CONSOL-001 (0308..0335), HERSTEL-001 (0336..0341) en de resterende delen van UITROLBOT-001 samenbrengt.',
             wijzigingen: [
+              'Stroomgebaseerd Telegram-archief zonder geheugenlek (backend/uitrol-telegram.ts): leesDeelBytes en new Blob verwijderd; delen van 15 MB worden rechtstreeks via RFC 7578 multipart/form-data met exacte Content-Length gestroomd, herstel gebeurt eveneens stroomgewijs, met globale sequentiële wachtrij en opruimen van oude bezig-rijen (>15 min) en tijdelijke enc-*/dec-*-bestanden (>30 min).',
               'Volledige inhoud van CONSOL-001 (migraties 0308..0335): gedeelde bijlageweergave (№208 + №206), klantrelatiebeheer met FORCE RLS (№211), dienstbruggen voor Mail/Notities/Agenda/Taken, beveiligde WebDAV, Google Drive in Foto’s, Sociale netwerken, kaartweergave van aanmeldmethoden (№167/№168/№169), Afstemming, API-leesscopes, live MCP-bronnen en inschakeling van 58 toepassingsvlaggen.',
               'Compacte ronde meldingcapsules (999px) met aflever- en leesvinkjes ✓ / ✓✓ (migraties 0339–0341), directe ongelezen lijn, aflevercontrole voor beheer en proportionele 18px-aantalcapsule (in themakleur met geluid, rustig grijs zonder geluid, verborgen bij gelezen meldingen).',
               'Richting «Levende ruimte» op Overzicht (/overzicht): lege hoogte van 60vh verwijderd, organische blad- en druppelvormen met voortgangsring, ruitknop voor rustige éénregelstand, vloeiende modulegolf en doorlopende snelle-actiecapsule (+ | E-mail | Agenda | Schijf).',
-              'Accountmenu en Aandachtspuls: de knop voor de levende achtergrond is verplaatst uit de bovenbalk naar het accountmenu tussen de themaschakelaar en het kleurenpalet in exact dezelfde ronde maat (32×32 pc / 34×34 telefoon), met officiële logo’s en compacte laadcapsule bovenin.',
-              'Resterende wijzigingen uit UITROLBOT-001 overgenomen: publicatie van de tweetalige uitleg van de huidige uitgave in het Telegram-topic (POST /api/owner/uitrol/telegram/publiceren), auditactie owner.uitrol.telegram.gepubliceerd, foutcodes TELEGRAM_HTTP_400 en UITGAVE_UITLEG_ONTBREEKT, 30 nieuwe VLAG-001-vlaggen en zoekcatalogus met 2437 elementen.'
+              'Accountmenu, Aandachtspuls en resterende delen van UITROLBOT-001: knop voor de levende achtergrond verplaatst naar het accountmenu tussen themaschakelaar en kleurenpalet (32×32 pc / 34×34 telefoon), officiële logo’s en compacte laadcapsule bovenin, publicatie van tweetalige uitgave-uitleg in Telegram (POST /api/owner/uitrol/telegram/publiceren), 30 vlaggen VLAG-001 en zoekcatalogus met 2437 elementen.'
             ],
             fixes: [
-              'Storm van valse Telegram-herstelmeldingen verholpen (migratie 0338), duurzame tijdlijn van verbindingsstoringen toegevoegd (migraties 0336–0337) en typefout in ecosysteem-opslag.ts hersteld (laatsteTijd in plaats van laatstGezienOp).',
-              'Tekstknelling in TechPoort op smalle schermen opgelost en veilige, idempotente synchronisatie van kernsubdomeinen (waaronder crm.<domein>) in Caddyfile en cloudflared/config.yml toegevoegd aan deploy/installeer-app.sh.',
-              'FORCE RLS-gaten in verdeelde opslag (0311) en klantrelatiebeheer (0312) gesloten, migrations/rechten.sql bijgewerkt en SEC-003-waarborgen verenigd in deploy/archief-herstellen.sh.'
+              'Buiten-heap-geheugenlek in backend/uitrol-telegram.ts verholpen (+335 MB → ~11 MB op 48 MB, bewezen door herstel-001-telegram-archief-stroom.test.ts) en patstelling TELEGRAM_ARCHIEF_VEREIST (HTTP 409) opgelost door controleerTelegramBlokkade te koppelen aan de werkelijk draaiende versie releaseInfo().versie en aanwezigheid van het archiefbestand op schijf.',
+              'UITROL-BASIS afgestemd op de hoogste door root vastgelegde serverbasis (20261123-145553 @ f56ba3fea1e4), waarmee BASIS_VEROUDERD is verholpen.',
+              'Storm van valse Telegram-herstelmeldingen verholpen (0338), duurzame tijdlijn van verbindingsstoringen toegevoegd (0336–0337), typefout in ecosysteem-opslag.ts hersteld (laatsteTijd), tekstknelling in TechPoort verholpen, idempotente synchronisatie van crm.<domein> toegevoegd aan deploy/installeer-app.sh en FORCE RLS / SEC-003-waarborgen gesloten.'
             ],
             beperkingen: [
               'Installatie op de productieserver vereist altijd goedkeuring met de toegangssleutel van de eigenaar via Beheer → Updates.',
@@ -461,8 +465,8 @@ jobs:
             --agent antigravity --platform 'Google Antigravity' --tool 'Google Antigravity' \
             --model-id "$MODEL_ID" --model-bron auteur \
             --versie "$VERSIE" --uit uitvoer \
-            --samenvatting-uk "Повний зведений випуск HERSTEL-001 поверх живої основи 20261122-171856: усі невстановлені оновлення CONSOL-001 (0308..0335), решта UITROLBOT-001, капсули сповіщень 999px із пропорційними 18px капсулами кількості й квитанціями ✓/✓✓, перенесення кнопки живого фону до меню облікових записів та «Живий простір» на сторінці Огляд." \
-            --samenvatting-nl "Volledige gezamenlijke uitgave HERSTEL-001 boven op de actieve basis 20261122-171856: alle niet-geïnstalleerde updates van CONSOL-001 (0308..0335), resterende delen van UITROLBOT-001, ronde meldingcapsules met 18px-aantalcapsules en vinkjes ✓/✓✓, verplaatsing van de levende-achtergrondknop naar het accountmenu en «Levende ruimte» op Overzicht." \
+            --samenvatting-uk "Повний зведений випуск HERSTEL-001 поверх основи root 20261123-145553: потокове Telegram-архівування без витоку пам’яті (+335 МБ → ~11 МБ на 48 МБ, частини 15 МБ, виправлення TELEGRAM_ARCHIEF_VEREIST), CONSOL-001 (0308..0335), решта UITROLBOT-001, капсули сповіщень 999px із 18px капсулами кількості й квитанціями ✓/✓✓, живий фон у меню та «Живий простір» на /overzicht." \
+            --samenvatting-nl "Volledige gezamenlijke uitgave HERSTEL-001 boven op root-basis 20261123-145553: stroomgebaseerd Telegram-archief zonder geheugenlek (+335 MB → ~11 MB op 48 MB, delen van 15 MB, herstel TELEGRAM_ARCHIEF_VEREIST), CONSOL-001 (0308..0335), resterende delen UITROLBOT-001, ronde meldingcapsules met 18px-aantalcapsules en vinkjes ✓/✓✓, levende achtergrond in het accountmenu en «Levende ruimte» op /overzicht." \
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
@@ -582,12 +586,16 @@ jobs:
           HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/pered-vypuskom.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
           HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
           import { readFileSync } from 'node:fs';
+          const bekend = new Map((process.env.BEKENDE_BASISSEN || '').trim().split(/\s+/).map((p) => p.split('=')));
           const code = process.env.HTTP_CODE || '000';
           if (code === '200') {
             const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
-            if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
-              throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+            const liveVersie = v.versie;
+            const liveCommit = v.bronCommit || v.commit;
+            if (bekend.get(liveVersie) !== liveCommit) {
+              throw Error(`Робочий сервер оновився під час перевірок (${liveVersie} @ ${liveCommit}). Оприлюднення зупинено.`);
             }
+            console.log(`Повторна звірка /api/version: ${liveVersie} @ ${liveCommit} (у довіреному переліку; UITROL-BASIS=${process.env.BASIS_VERSIE})`);
           } else if (!['000', '403', '429', '502', '504', '522', '524', '530'].includes(code)) {
             throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
           }
@@ -604,7 +612,7 @@ jobs:
             "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
             "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
             "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip" \
-            --target "$GITHUB_SHA" --title "HERSTEL-001 · Повний зведений випуск «Мій простір»: CONSOL-001, решта UITROLBOT-001, капсули сповіщень, живий фон у меню та «Живий простір» · ${VERSIE}" \
+            --target "$GITHUB_SHA" --title "HERSTEL-001 · Повний зведений випуск «Мій простір»: потокове Telegram-архівування, CONSOL-001, решта UITROLBOT-001, капсули сповіщень, живий фон у меню та «Живий простір» · ${VERSIE}" \
             --notes-file "$RUNNER_TEMP/opis.md" --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
           node --input-type=module <<'JS'
