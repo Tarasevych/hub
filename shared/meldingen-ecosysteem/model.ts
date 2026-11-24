@@ -28,6 +28,9 @@ export type AiAanbiederKeuze = (typeof AI_AANBIEDERS_KEUZE)[number];
 
 export type RuimteType = 'prive' | 'technisch';
 
+export const MELDING_KAPSEL_AFLEVERING_VLAG = 'melding-kapsel-aflevering-v1' as const;
+export type OntvangstStaat = 'wacht' | 'afgeleverd' | 'gelezen';
+
 export type MeldingBijlage = {
   id: string;
   naam: string;
@@ -82,6 +85,9 @@ export type MeldingEcosysteemGebeurtenis = {
   contextLabel: string;
   herhalingen: number;
   uitgesteldTot: number | null;
+  afgeleverdOp?: number | null;
+  gelezenOp?: number | null;
+  autoGearchiveerd?: boolean;
   bijlagen: MeldingBijlage[];
   acties: MeldingActie[];
   meta: Record<string, unknown>;
@@ -141,6 +147,8 @@ export type MeldingEcosysteemProfiel = {
   ruimte: RuimteType;
   geometrie: VensterGeometrie;
   veeg: VeegRegels;
+  standaardUitgeklapt?: boolean;
+  autoGelezenBijZicht?: boolean;
   contextAdaptatie: boolean;
   toonBannersInCentrum: boolean;
   geluidGlobaal: boolean;
@@ -234,7 +242,7 @@ export function standaardKanaalVoorkeuren(): Record<MeldingKanaal, KanaalVoorkeu
 
 export function standaardProfiel(ruimte: RuimteType = 'prive'): MeldingEcosysteemProfiel {
   return {
-    versie: 1,
+    versie: 2,
     ruimte,
     geometrie: {
       x: 24,
@@ -247,11 +255,13 @@ export function standaardProfiel(ruimte: RuimteType = 'prive'): MeldingEcosystee
     },
     veeg: {
       actief: true,
-      drempelPx: 76,
+      drempelPx: 72,
       links: 'archief',
-      rechts: 'gelezen',
+      rechts: 'archief',
       trilling: true,
     },
+    standaardUitgeklapt: false,
+    autoGelezenBijZicht: true,
     contextAdaptatie: true,
     toonBannersInCentrum: true,
     geluidGlobaal: true,
@@ -306,8 +316,14 @@ export function normaliseerProfiel(raw: unknown, ruimte: RuimteType = 'prive'): 
   // Безпека завжди активна у списку: критичні події безпеки неможливо повністю приховати.
   kanalen.beveiliging.actief = true;
 
+  const rawVersie = begrensGetal(raw.versie, 1, 10, 1);
+  const rechtsNorm =
+    rawVersie < 2 && vRaw.links === 'archief' && vRaw.rechts === 'gelezen'
+      ? 'archief'
+      : kiesEnum(vRaw.rechts, VEEG_ACTIES, def.veeg.rechts);
+
   return {
-    versie: 1,
+    versie: 2,
     ruimte: raw.ruimte === 'technisch' || ruimte === 'technisch' ? (ruimte === 'technisch' ? 'technisch' : 'prive') : 'prive',
     geometrie: {
       x: begrensGetal(gRaw.x, 0, 4000, def.geometrie.x),
@@ -322,9 +338,11 @@ export function normaliseerProfiel(raw: unknown, ruimte: RuimteType = 'prive'): 
       actief: vRaw.actief !== false,
       drempelPx: begrensGetal(vRaw.drempelPx, 48, 180, def.veeg.drempelPx),
       links: kiesEnum(vRaw.links, VEEG_ACTIES, def.veeg.links),
-      rechts: kiesEnum(vRaw.rechts, VEEG_ACTIES, def.veeg.rechts),
+      rechts: rechtsNorm,
       trilling: vRaw.trilling !== false,
     },
+    standaardUitgeklapt: Boolean(raw.standaardUitgeklapt),
+    autoGelezenBijZicht: raw.autoGelezenBijZicht !== false,
     contextAdaptatie: raw.contextAdaptatie !== false,
     toonBannersInCentrum: raw.toonBannersInCentrum !== false,
     geluidGlobaal: raw.geluidGlobaal !== false,
@@ -405,7 +423,7 @@ export function normaliseerActies(raw: unknown, hint: { soort?: string; subdomei
   return uit;
 }
 
-export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEcosysteemGebeurtenis {
+export function normaliseerGebeurtenis(raw: Record<string, unknown>, fallbackRuimte?: RuimteType): MeldingEcosysteemGebeurtenis {
   const ai = isRecord(raw.ai_samenvatting ?? raw.aiSamenvatting)
     ? (raw.ai_samenvatting ?? raw.aiSamenvatting) as Record<string, unknown>
     : null;
@@ -418,6 +436,11 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     }
     return fb;
   };
+  const optTs = (v: unknown): number | null => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = ts(v, 0);
+    return n > 0 ? n : null;
+  };
   const schoonMeta = (() => {
     if (!isRecord(raw.meta)) return {};
     const kopie: Record<string, unknown> = { ...raw.meta };
@@ -428,21 +451,29 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     }
     return kopie;
   })();
+  const statusNorm = kiesEnum(raw.status, GEBEURTENIS_STATUSSEN, 'nieuw');
+  const ruweAfgeleverd = optTs(raw.afgeleverd_op ?? raw.afgeleverdOp);
+  const ruweGelezen = optTs(raw.gelezen_op ?? raw.gelezenOp);
+  const aangemaaktOp = ts(raw.aangemaakt_op ?? raw.aangemaaktOp, nu);
+  const bijgewerktOp = ts(raw.bijgewerkt_op ?? raw.bijgewerktOp, nu);
   return {
     id: String(raw.id || ''),
-    ruimte: raw.ruimte === 'technisch' ? 'technisch' : 'prive',
+    ruimte: raw.ruimte === 'technisch' ? 'technisch' : raw.ruimte === 'prive' ? 'prive' : (fallbackRuimte ?? 'prive'),
     externeSleutel: String(raw.externe_sleutel ?? raw.externeSleutel ?? '').slice(0, 180),
     kanaal: kiesEnum(raw.kanaal, KANALEN, 'systeem'),
     subdomein: kiesEnum(raw.subdomein, SUBDOMEINEN, 'hub'),
     bron: String(raw.bron || '').slice(0, 120),
     prioriteit: kiesEnum(raw.prioriteit, PRIORITEITEN, 'normaal'),
-    status: kiesEnum(raw.status, GEBEURTENIS_STATUSSEN, 'nieuw'),
+    status: statusNorm,
     titel: String(raw.titel || '').slice(0, 400),
     bericht: String(raw.bericht || '').slice(0, 4000),
     uitleg: String(raw.uitleg || '').slice(0, 2000),
     contextLabel: String(raw.context_label ?? raw.contextLabel ?? '').slice(0, 240),
     herhalingen: begrensGetal(raw.herhalingen, 1, 99_999, 1),
     uitgesteldTot: raw.uitgesteld_tot || raw.uitgesteldTot ? ts(raw.uitgesteld_tot ?? raw.uitgesteldTot, 0) || null : null,
+    afgeleverdOp: ruweAfgeleverd ?? (statusNorm === 'gelezen' ? aangemaaktOp : null),
+    gelezenOp: ruweGelezen ?? (statusNorm === 'gelezen' ? bijgewerktOp : null),
+    autoGearchiveerd: Boolean(raw.auto_gearchiveerd ?? raw.autoGearchiveerd ?? schoonMeta.autoGearchiveerd),
     bijlagen: normaliseerBijlagen(raw.bijlagen),
     acties: normaliseerActies(raw.acties, { soort: String(raw.bron || ''), subdomein: String(raw.subdomein || '') }),
     meta: schoonMeta,
@@ -459,7 +490,34 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
           geschoond: ai.geschoond !== false,
         }
       : null,
-    aangemaaktOp: ts(raw.aangemaakt_op ?? raw.aangemaaktOp, nu),
-    bijgewerktOp: ts(raw.bijgewerkt_op ?? raw.bijgewerktOp, nu),
+    aangemaaktOp,
+    bijgewerktOp,
   };
+}
+
+/**
+ * Визначає стан квитанції доставки й прочитання (як у месенджері):
+ * - 'gelezen' (✓✓ дві галочки): сповіщення доставлено і реально переглянуто / прочитано людиною;
+ * - 'afgeleverd' (✓ одна галочка): сповіщення доставлено в панель пристрою, але ще не переглянуто очима;
+ * - 'wacht' (⏳ очікування доставки): сповіщення створене або тихо заархівоване на сервері й ще не надійшло в панель користувача.
+ */
+export function bepaalOntvangstStaat(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'status' | 'afgeleverdOp' | 'gelezenOp'>,
+): OntvangstStaat {
+  if ((typeof geb.gelezenOp === 'number' && geb.gelezenOp > 0) || geb.status === 'gelezen') {
+    return 'gelezen';
+  }
+  if (typeof geb.afgeleverdOp === 'number' && geb.afgeleverdOp > 0) {
+    return 'afgeleverd';
+  }
+  return 'wacht';
+}
+
+/** Перевіряє, чи сповіщення ще непрочитане (кольорове підсвічування й пряма бічна лінія відображаються лише на непрочитаних). */
+export function isMeldingOngelezen(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'status' | 'gelezenOp'>,
+): boolean {
+  if (geb.status === 'gelezen' || geb.status === 'opgelost' || geb.status === 'archief') return false;
+  if (typeof geb.gelezenOp === 'number' && geb.gelezenOp > 0 && geb.status !== 'nieuw') return false;
+  return geb.status === 'nieuw';
 }

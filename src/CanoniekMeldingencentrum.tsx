@@ -1015,8 +1015,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     dismiss();
   };
 
-  const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaalType>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
-    await eco.wijzigGebeurtenisStatus(geb, status, uitstelMinuten);
+  const syncBronGelezen = (geb: Parameters<typeof MeldingenPortaalType>[0]['stroom'][number]) => {
     const serverId = geb.id.startsWith('s:')
       ? geb.id.slice(2)
       : geb.externeSleutel.startsWith('site_notif:')
@@ -1038,14 +1037,35 @@ export default function CanonicalNotificationCenter(p: Props) {
         : typeof geb.meta?.lokaalId === 'string'
           ? geb.meta.lokaalId
           : '';
+    return {
+      serverId,
+      actId,
+      lokId,
+      v3Sleutel: serverId ? `s:${serverId}` : actId ? `a:${actId}` : lokId ? `l:${lokId}` : '',
+    };
+  };
+
+  const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaalType>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
+    await eco.wijzigGebeurtenisStatus(geb, status, uitstelMinuten);
+    const { serverId, actId, lokId, v3Sleutel } = syncBronGelezen(geb);
     if (status !== 'nieuw') {
       if (serverId) void p.onReadServer?.(serverId);
       else if (actId) activity.markRead(actId);
       else if (lokId) markLocalRead(lokId);
     }
-    const v3Sleutel = serverId ? `s:${serverId}` : actId ? `a:${actId}` : lokId ? `l:${lokId}` : '';
     if (v3Sleutel && (status === 'archief' || status === 'opgelost' || status === 'nieuw' || status === 'gelezen')) {
       void wijzigStatus({ ids: [v3Sleutel], status, hoe: 'kaart' });
+    }
+  };
+
+  const behandelZichtGelezen = (geb: Parameters<typeof MeldingenPortaalType>[0]['stroom'][number]) => {
+    eco.registreerGelezenBijZicht(geb);
+    const { serverId, actId, lokId, v3Sleutel } = syncBronGelezen(geb);
+    if (serverId) void p.onReadServer?.(serverId);
+    else if (actId) activity.markRead(actId);
+    else if (lokId) markLocalRead(lokId);
+    if (v3Sleutel && geb.status === 'nieuw') {
+      void wijzigStatus({ ids: [v3Sleutel], status: 'gelezen', hoe: 'kaart' });
     }
   };
 
@@ -1351,6 +1371,9 @@ export default function CanonicalNotificationCenter(p: Props) {
             onToggleSound={toggleSound}
             onVervers={() => void eco.verversStroom()}
             onSlaGeometrieOp={eco.slaGeometrieOp}
+            onWerkProfielBij={eco.werkProfielBij}
+            onRegistreerAfgeleverd={eco.registreerAfgeleverd}
+            onRegistreerZichtGelezen={behandelZichtGelezen}
             onStatusWijzigen={wijzigEnSyncStatus}
             onOntleden={(g, modus, aanbieder) => eco.ontledenMetAi(g, modus, aanbieder)}
             onMarkAll={() => void markAll()}

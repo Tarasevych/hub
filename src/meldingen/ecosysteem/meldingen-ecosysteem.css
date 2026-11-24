@@ -2669,3 +2669,697 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
     display: none;
   }
 }
+
+/* ============================================================================
+   HERSTEL-001 (Пункт 9): Капсульний вигляд без шуму кнопок, розгортання за натиском,
+   ідеально пряма бічна лінія лише у непрочитаних (без вигину й стирчання),
+   галочки доставки й прочитання як у месенджері (✓ / ✓✓ / ⏳), 2-рядковий акцент
+   для підтверджень, перемикач «Розгорнути всі / Згорнути всі» та контроль доставки.
+   ============================================================================ */
+
+/* Рядок вкладок стану + швидка кнопка «Розгорнути всі / Згорнути всі» праворуч */
+.puls-tabs-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+  gap: 5px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 380px) {
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 4px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop,
+  .puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
+
+/* Компактна капсула сповіщення: прибираємо старі вигнуті border-left на користь чистого стану прочитано / непрочитано */
+.puls-portaal .puls-kaart.is-kapsel,
+.puls-kaart.is-kapsel {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.puls-portaal .puls-kaart.is-kapsel.is-open,
+.puls-kaart.is-kapsel.is-open {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+/* Прочитане сповіщення (✓✓ або статус не новий): жодного кольорового підсвічування і жодної бічної смуги */
+.puls-portaal .puls-kaart.is-kapsel.is-gelezen,
+.puls-kaart.is-kapsel.is-gelezen {
+  border-color: var(--line);
+  border-left-color: var(--line);
+  border-left-width: 1px;
+  border-radius: 13px;
+  background: var(--surface);
+}
+
+/* Непрочитане сповіщення: делікатна кольорова підсвітка та ІДЕАЛЬНО ПРЯМА вертикальна смуга без вигину і без стирчання */
+.mel-veeg-houder:has(> .puls-kaart.is-kapsel.is-ongelezen) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 13px;
+  border-bottom-right-radius: 13px;
+}
+
+.puls-portaal .puls-kaart.is-kapsel.is-ongelezen,
+.puls-kaart.is-kapsel.is-ongelezen {
+  --kapsel-kleur: var(--mel-accent, var(--accent));
+  border-color: color-mix(in srgb, var(--kapsel-kleur) 30%, var(--line));
+  border-left-width: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 13px;
+  border-bottom-right-radius: 13px;
+  padding-left: 14px;
+  background: color-mix(in srgb, var(--kapsel-kleur) 7.5%, var(--surface));
+}
+
+.puls-kaart.is-kapsel.is-ongelezen.is-staat-goed {
+  --kapsel-kleur: var(--staat-goed);
+}
+
+.puls-kaart.is-kapsel.is-ongelezen.is-staat-let,
+.puls-kaart.is-kapsel.is-ongelezen.is-puls-oorzaak {
+  --kapsel-kleur: var(--staat-let);
+}
+
+.puls-kaart.is-kapsel.is-ongelezen.is-staat-fout,
+.puls-kaart.is-kapsel.is-ongelezen.is-niveau-gevaar {
+  --kapsel-kleur: var(--staat-fout);
+}
+
+.puls-kaart.is-kapsel.is-ongelezen::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3.5px;
+  border-radius: 0;
+  background: var(--kapsel-kleur);
+  pointer-events: none;
+}
+
+.puls-kaart.is-kapsel:hover {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 36%, var(--line));
+}
+
+.puls-kaart.is-kapsel.is-geselecteerd {
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--mel-accent, var(--accent)) 52%, transparent);
+}
+
+/* Рядок 1 капсули */
+.puls-kapsel-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.puls-kapsel-rij .puls-bron-teken {
+  border-radius: 9px;
+}
+
+.puls-kapsel-rij .puls-bron-teken > svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mel-kaart-titel-knop.puls-kapsel-titel-knop {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.puls-kaart.is-kapsel.is-ingeklapt .puls-kapsel-titel-knop strong {
+  display: block;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.32;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-kaart.is-kapsel.is-gelezen .puls-kapsel-titel-knop strong {
+  font-weight: 560;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+}
+
+.puls-kaart.is-kapsel.is-ongelezen .puls-kapsel-titel-knop strong {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.puls-kaart.is-kapsel.is-open .puls-kapsel-titel-knop strong {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow: visible;
+}
+
+.puls-kapsel-rechts {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.puls-kapsel-rechts .mel-tijd {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.puls-kapsel-rechts .mel-pijl-klap {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  opacity: 0.72;
+  flex: none;
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+
+.puls-kapsel-rechts .mel-pijl-klap.is-open {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.puls-kapsel-bijlage-stip {
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+  opacity: 0.82;
+}
+
+.puls-kapsel-bijlage-stip > svg {
+  width: 12.5px;
+  height: 12.5px;
+}
+
+.puls-auto-archief-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.puls-auto-archief-pil > svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Галочки месенджера: ✓ доставлено, ✓✓ прочитано, ⏳ очікує доставки в панель */
+.puls-ontvangst-vinkjes {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+  flex: none;
+}
+
+.puls-ontvangst-vinkjes > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-gelezen {
+  color: var(--staat-goed);
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-gelezen > svg {
+  width: 15px;
+  height: 15px;
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-afgeleverd {
+  color: var(--muted);
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-wacht {
+  color: var(--staat-let);
+}
+
+/* Рядок 2 у згорнутій капсулі — виключно для сповіщень з обов’язковим підтвердженням на головному акценті */
+.puls-kapsel-bevestiging-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding-left: 36px;
+}
+
+.puls-kapsel-bevestiging-tekst {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-keten-chips.puls-keten-chips-slank {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  gap: 4px;
+}
+
+.puls-keten-chips.puls-keten-chips-slank .puls-dienst-chip {
+  height: 24px;
+  max-width: 108px;
+  padding: 0 7px;
+  gap: 4px;
+  border-radius: 999px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  flex: 0 1 auto;
+}
+
+.puls-keten-chips.puls-keten-chips-slank .puls-dienst-chip > svg {
+  width: 12px;
+  height: 12px;
+}
+
+.puls-keten-chips.puls-keten-chips-slank .puls-dienst-naam {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.puls-kapsel-bevestiging-knoppen {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.puls-bevestig-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.puls-bevestig-pil > svg {
+  width: 12.5px;
+  height: 12.5px;
+  flex: none;
+}
+
+.puls-bevestig-pil.is-fout {
+  border-color: color-mix(in srgb, var(--staat-fout) 48%, var(--line));
+  background: color-mix(in srgb, var(--staat-fout) 14%, var(--panel));
+  color: var(--staat-fout);
+}
+
+.puls-bevestig-pil.is-fout:hover {
+  background: color-mix(in srgb, var(--staat-fout) 22%, var(--panel));
+}
+
+.puls-bevestig-pil.is-goed {
+  border-color: color-mix(in srgb, var(--staat-goed) 48%, var(--line));
+  background: color-mix(in srgb, var(--staat-goed) 14%, var(--panel));
+  color: var(--staat-goed);
+}
+
+.puls-bevestig-pil.is-goed:hover {
+  background: color-mix(in srgb, var(--staat-goed) 22%, var(--panel));
+}
+
+.puls-bevestig-pil.is-let {
+  border-color: color-mix(in srgb, var(--staat-let) 48%, var(--line));
+  background: color-mix(in srgb, var(--staat-let) 14%, var(--panel));
+  color: var(--staat-let);
+}
+
+.puls-bevestig-pil.is-let:hover {
+  background: color-mix(in srgb, var(--staat-let) 22%, var(--panel));
+}
+
+.puls-bevestig-pil.is-zacht:hover {
+  background: var(--nav-hover);
+}
+
+@media (max-width: 420px) {
+  .puls-kapsel-bevestiging-rij {
+    padding-left: 0;
+  }
+}
+
+/* Прогресивне розкриття подробиць у капсулі */
+.mel-kaart-details {
+  display: grid;
+  gap: 7px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+}
+
+.mel-kaart-details[hidden] {
+  display: none;
+}
+
+.mel-ontvangst-samenvatting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* Блок налаштувань капсул у самій панелі сповіщень */
+.puls-kapsel-voorkeuren {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.puls-kapsel-voorkeur-kop {
+  display: grid;
+  gap: 2px;
+}
+
+.puls-kapsel-voorkeur-kop strong {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.puls-kapsel-voorkeur-kop small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.puls-kapsel-stand-keuze {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.puls-stand-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.puls-stand-knop > svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.puls-stand-knop.is-actief {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 48%, var(--line));
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, var(--panel));
+  color: var(--text);
+}
+
+.puls-kapsel-auto-lees {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Панель адміністративного контролю доставки й перегляду сповіщень */
+.puls-aflevering-controle {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+}
+
+.puls-aflevering-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.puls-aflevering-titel {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.puls-aflevering-titel > svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--staat-goed);
+  flex: none;
+}
+
+.puls-aflevering-titel strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.puls-aflevering-titel small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.puls-aflevering-gereedschap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.puls-aflevering-filter-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.puls-aflevering-tellers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 6px;
+}
+
+.puls-aflevering-kaart {
+  display: grid;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.puls-aflevering-kaart small {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+
+.puls-aflevering-kaart strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.puls-aflevering-kaart.is-filter strong > svg {
+  width: 13.5px;
+  height: 13.5px;
+  color: var(--muted);
+}
+
+.puls-aflevering-gebruikers {
+  display: grid;
+  gap: 4px;
+}
+
+.puls-aflevering-gebruiker-rij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  font-size: 11.5px;
+}
+
+.puls-aflevering-naam {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.puls-aflevering-naam > svg {
+  width: 13.5px;
+  height: 13.5px;
+  color: var(--muted);
+}
+
+.puls-aflevering-cijfers {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.puls-aflevering-cijfers small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.puls-aflevering-lijst {
+  display: grid;
+  gap: 5px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.puls-aflevering-rij {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.puls-aflevering-rij-hoofd {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.puls-aflevering-rij-hoofd strong {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-aflevering-rij-hoofd small {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.puls-aflevering-leeg {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+

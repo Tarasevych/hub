@@ -49,7 +49,7 @@ export function categorieSql(kolom = 'action'): string {
 }
 
 /** Technische ruis: gebeurtenissen die elke paginalading of aanmeldstap schrijft. Standaard verborgen, nooit verwijderd. */
-export const RUIS_PATROON = '^(owner\\.admin\\.bootstrap|owner\\.admin\\.audit\\.viewed|owner\\.notifications\\.read|owner\\.meldingen\\.(ecosysteem\\.(actie|profiel)|bijlage\\.telegram)|owner\\.session\\.rotated|owner\\.session\\.refresh|owner\\.browser\\.grant\\.(used|cookie)|owner\\.diagnose\\.gelezen|owner\\.admin\\.diagnostics\\.read|owner\\.mcp\\.tools\\.list|owner\\.extensie\\.beheer\\.bekeken|owner\\.terminal\\.opdrachten\\.bekeken|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)|owner\\.ui\\.|GOOGLE_REDIRECT|GOOGLE_CALLBACK|LOGIN_CLICK|POPUP_|PRIMARY_REDIRECT_|TRANSACTION_|IDENTITY_LOADED|SERVICE_SESSION_CREATED|owner\\.redirect\\.session)';
+export const RUIS_PATROON = '^(owner\\.admin\\.bootstrap|owner\\.admin\\.audit\\.viewed|owner\\.notifications\\.read|owner\\.meldingen\\.(ecosysteem\\.(actie|profiel|ontvangst|aflevering_overzicht)|bijlage\\.telegram)|owner\\.session\\.rotated|owner\\.session\\.refresh|owner\\.browser\\.grant\\.(used|cookie)|owner\\.diagnose\\.gelezen|owner\\.admin\\.diagnostics\\.read|owner\\.mcp\\.tools\\.list|owner\\.extensie\\.beheer\\.bekeken|owner\\.terminal\\.opdrachten\\.bekeken|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)|owner\\.ui\\.|GOOGLE_REDIRECT|GOOGLE_CALLBACK|LOGIN_CLICK|POPUP_|PRIMARY_REDIRECT_|TRANSACTION_|IDENTITY_LOADED|SERVICE_SESSION_CREATED|owner\\.redirect\\.session)';
 const RUIS_RE = new RegExp(RUIS_PATROON);
 export const isRuis = (action: string) => RUIS_RE.test(action);
 
@@ -518,6 +518,8 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.mcp.toegang.geblokkeerd': ['Запит агента через MCP зупинено правилами доступу', 'MCP-verzoek van agent geblokkeerd door toegangsregels'],
   'owner.mcp.tools.list': ['Агент ШІ отримав перелік дозволених інструментів MCP', 'AI-agent vroeg lijst met toegestane MCP-hulpmiddelen op'],
   'owner.meldingen.ecosysteem.actie': ['Оновлено стан картки у Пульті сповіщень', 'Kaartstatus bijgewerkt in meldingenpaneel'],
+  'owner.meldingen.ecosysteem.aflevering_overzicht': ['Переглянуто звіт доставки й прочитання сповіщень у панелі', 'Aflever- en leesoverzicht van meldingen bekeken'],
+  'owner.meldingen.ecosysteem.ontvangst': ['Зафіксовано квитанцію доставки або перегляду сповіщення', 'Aflever- of leesbevestiging van melding vastgelegd'],
   'owner.meldingen.ecosysteem.profiel': ['Збережено вподобання вигляду Пульта сповіщень', 'Weergavevoorkeuren van meldingenpaneel opgeslagen'],
   'owner.remote.tunnel.geweigerd': ['Тунель віддаленого доступу відхилено захистом', 'Tunnel voor externe toegang geweigerd'],
   'owner.rol.hersteld': ['Відновлено основну роль власника простору', 'Rol van eigenaar hersteld'],

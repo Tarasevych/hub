@@ -477,6 +477,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Типово увімкнено для формування повної хронології доступності служб та зручної роботи на телефоні й комп’ютері.', 'Standaard ingeschakeld voor een volledige tijdlijn van dienstbeschikbaarheid en rustig gebruik op telefoon en computer.'],
     gevolg: ['Вимкнення зупиняє запис нових хронологій спроб і повертає базовий вигляд повідомлення про зв’язок без видалення вже збережених історичних записів.', 'Uitschakelen stopt het vastleggen van nieuwe pogingstijdlijnen en toont de basisweergave zonder reeds opgeslagen incidenten te wissen.'],
   },
+  'melding-kapsel-aflevering-v1': {
+    naam: ['Капсульний вигляд сповіщень та квитанції доставки й перегляду (✓ / ✓✓)', 'Capsuleweergave van meldingen en aflever- en leesbewijzen (✓ / ✓✓)'],
+    wat: ['Подає сповіщення у спокійних згорнутих капсулах без зайвих кнопок (до двох рядків лише для рішень власника), фіксує реальну доставку в панель однією галочкою (✓) та перегляд на екрані двома галочками (✓✓), змахуванням переносить в архів і дає адміністраторові звіт про доставку сповіщень.', 'Toont meldingen als rustige ingeklapte capsules zonder knoppenruis (hoogstens twee regels voor bevestigingen), legt echte paneelaflevering vast met één vinkje (✓) en schermweergave met twee vinkjes (✓✓), archiveert met vegen en biedt beheer een afleveroverzicht.'],
+    wanneer: ['Типово увімкнено для чистого візуального сприйняття сповіщень і прозорого контролю доставки (зокрема автоматично заархівованих за правилами фільтрів).', 'Standaard ingeschakeld voor een rustig meldingsbeeld en inzicht in aflevering en lezing (ook bij automatisch gearchiveerde meldingen).'],
+    gevolg: ['Вимкнення повертає розгорнутий картковий вигляд без видалення вже збережених у базі даних міток доставки й прочитання.', 'Uitschakelen herstelt de uitgeklapte kaartweergave zonder eerder opgeslagen aflever- en leestijdstippen te wissen.'],
+  },
 };
 
 export const HELP_FLAGS: HelpLagen = {

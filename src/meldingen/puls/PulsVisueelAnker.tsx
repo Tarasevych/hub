@@ -7,6 +7,8 @@ import {
   Ban,
   Bell,
   Calendar,
+  Check,
+  CheckCheck,
   CheckCircle2,
   Clock3,
   Cloud,
@@ -35,7 +37,13 @@ import {
   Sunrise,
   Zap,
 } from 'lucide-react';
-import { classificeerBijlage, formaatGrootte, type MeldingBijlage, type MeldingSubdomein } from '../../../shared/meldingen-ecosysteem';
+import {
+  classificeerBijlage,
+  formaatGrootte,
+  type MeldingBijlage,
+  type MeldingSubdomein,
+  type OntvangstStaat,
+} from '../../../shared/meldingen-ecosysteem';
 import {
   bestandVisueelAnker,
   uitstelKeuzeLabel,
@@ -173,6 +181,70 @@ export function PulsKlimopZegel({ lang, compact = false }: { lang: Taal; compact
     >
       <ShieldCheck aria-hidden='true' />
       <span className={compact ? 'mr-sr' : undefined}>{lang === 'nl' ? 'Klimop-kernzegel' : 'Підпис ядра «Плющ»'}</span>
+    </span>
+  );
+}
+
+function kortTijdstip(ts: number | null | undefined, lang: Taal): string {
+  if (!ts || ts <= 0) return '';
+  try {
+    return new Date(ts).toLocaleString(lang === 'nl' ? 'nl-BE' : 'uk-UA', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  } catch {
+    return '';
+  }
+}
+
+export function PulsOntvangstVinkjes({
+  staat,
+  afgeleverdOp,
+  gelezenOp,
+  autoGearchiveerd = false,
+  lang,
+}: {
+  staat: OntvangstStaat;
+  afgeleverdOp?: number | null;
+  gelezenOp?: number | null;
+  autoGearchiveerd?: boolean;
+  lang: Taal;
+}) {
+  const nl = lang === 'nl';
+  const afgTijd = kortTijdstip(afgeleverdOp, lang);
+  const gelTijd = kortTijdstip(gelezenOp, lang);
+  const filterDeel = autoGearchiveerd
+    ? nl
+      ? ' · automatisch gearchiveerd via filter'
+      : ' · автоматично в архів за фільтром'
+    : '';
+  const titelTekst =
+    staat === 'gelezen'
+      ? nl
+        ? `Afgeleverd en gelezen${gelTijd ? ` (${gelTijd})` : ''}${filterDeel}`
+        : `Доставлено й прочитано${gelTijd ? ` (${gelTijd})` : ''}${filterDeel}`
+      : staat === 'afgeleverd'
+        ? nl
+          ? `Afgeleverd in paneel${afgTijd ? ` (${afgTijd})` : ''}, nog niet bekeken${filterDeel}`
+          : `Доставлено в панель${afgTijd ? ` (${afgTijd})` : ''}, ще не прочитано${filterDeel}`
+        : nl
+          ? `Wacht op aflevering in paneel${filterDeel}`
+          : `Очікує доставки в панель користувача${filterDeel}`;
+
+  return (
+    <span
+      className={`puls-ontvangst-vinkjes is-ontvangst-${staat}${autoGearchiveerd ? ' is-auto-archief' : ''}`}
+      data-ontvangst={staat}
+      title={titelTekst}
+      aria-label={titelTekst}
+    >
+      {staat === 'gelezen' ? (
+        <CheckCheck aria-hidden='true' />
+      ) : staat === 'afgeleverd' ? (
+        <Check aria-hidden='true' />
+      ) : (
+        <Clock3 aria-hidden='true' />
+      )}
     </span>
   );
 }

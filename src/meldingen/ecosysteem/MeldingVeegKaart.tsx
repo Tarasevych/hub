@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Clock3,
   ExternalLink,
+  Filter,
   KeyRound,
   Paperclip,
   RotateCcw,
@@ -22,7 +23,9 @@ import {
 } from 'lucide-react';
 import { MELDING_SCHEMAS, type MeldingNiveau } from '../../../shared/meldingen-catalogus';
 import {
+  bepaalOntvangstStaat,
   evalueerVeeg,
+  isMeldingOngelezen,
   prioriteitLabel,
   veiligeMeldingUrl,
   type AiAanbiederKeuze,
@@ -46,6 +49,7 @@ import {
   PulsBronTeken,
   PulsKlimopZegel,
   PulsMandaatStraalBlok,
+  PulsOntvangstVinkjes,
   PulsUitstelMenu,
 } from '../puls/PulsVisueelAnker';
 import MeldingAiPaneel from './MeldingAiPaneel';
@@ -140,8 +144,10 @@ type Props = {
   geselecteerd?: boolean;
   standaardOpen?: boolean;
   geforceerdOpen?: boolean;
+  zichtActief?: boolean;
   bijlageVoorkeur: BijlageWeergaveVoorkeur;
   onSelect?: () => void;
+  onZichtGelezen?: () => void;
   onStatus: (status: MeldingGebeurtenisStatus, uitstelMinuten?: number) => Promise<void> | void;
   onVoorwaardelijkUitstel?: (soort: VoorwaardelijkUitstelSoort) => void;
   onOntleden: (modus: 'intern' | 'extern', aanbieder?: AiAanbiederKeuze) => Promise<MeldingAiSamenvatting>;
@@ -156,8 +162,10 @@ export default function MeldingVeegKaart({
   geselecteerd = false,
   standaardOpen = false,
   geforceerdOpen,
+  zichtActief = false,
   bijlageVoorkeur,
   onSelect,
+  onZichtGelezen,
   onStatus,
   onVoorwaardelijkUitstel,
   onOntleden,
@@ -165,7 +173,7 @@ export default function MeldingVeegKaart({
   onOpenActie,
 }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
-  const [open, setOpen] = useState(standaardOpen);
+  const [open, setOpen] = useState(() => standaardOpen || Boolean(profiel.standaardUitgeklapt));
   const [aiOpen, setAiOpen] = useState(Boolean(gebeurtenis.aiSamenvatting));
   const [inlineBijlageIdx, setInlineBijlageIdx] = useState<number | null>(null);
   const gedeeldeWeergave = useVlag(WEERGAVE_VLAG, false);
@@ -174,12 +182,64 @@ export default function MeldingVeegKaart({
   const [offsetX, setOffsetX] = useState(0);
   const [beschermHint, setBeschermHint] = useState('');
   const [uitvoerBezig, setUitvoerBezig] = useState('');
+  const kaartRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (typeof geforceerdOpen === 'boolean') setOpen(geforceerdOpen);
+    if (typeof geforceerdOpen === 'boolean') {
+      setOpen(geforceerdOpen);
+    }
   }, [geforceerdOpen]);
 
+  useEffect(() => {
+    if (typeof geforceerdOpen !== 'boolean' && !standaardOpen) {
+      setOpen(Boolean(profiel.standaardUitgeklapt));
+    }
+  }, [profiel.standaardUitgeklapt, geforceerdOpen, standaardOpen]);
+
   const verrijkt = useMemo(() => verrijkGebeurtenisVoorPuls(gebeurtenis, lang), [gebeurtenis, lang]);
+  const ontvangstStaat = bepaalOntvangstStaat(gebeurtenis);
+  const ongelezen = isMeldingOngelezen(gebeurtenis);
+  const vereistBevestiging =
+    (verrijkt.niveau === 'gevaar' || verrijkt.niveau === 'besluit') &&
+    gebeurtenis.status !== 'opgelost' &&
+    gebeurtenis.status !== 'archief';
+
+  // Автоматичне позначення прочитаним при реальній появі капсули на очах у стрічці (IntersectionObserver).
+  useEffect(() => {
+    if (!zichtActief || profiel.autoGelezenBijZicht === false || !onZichtGelezen) return undefined;
+    if (!ongelezen && ontvangstStaat === 'gelezen') return undefined;
+    const el = kaartRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
+
+    let zichtTimer: number | undefined;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        const zichtbaar =
+          entry.isIntersecting &&
+          entry.intersectionRatio >= 0.65 &&
+          (typeof document === 'undefined' || !document.hidden);
+        if (zichtbaar) {
+          if (zichtTimer === undefined) {
+            zichtTimer = window.setTimeout(() => {
+              zichtTimer = undefined;
+              onZichtGelezen();
+            }, 600);
+          }
+        } else if (zichtTimer !== undefined) {
+          window.clearTimeout(zichtTimer);
+          zichtTimer = undefined;
+        }
+      },
+      { threshold: [0, 0.65] },
+    );
+    obs.observe(el);
+    return () => {
+      if (zichtTimer !== undefined) window.clearTimeout(zichtTimer);
+      obs.disconnect();
+    };
+  }, [zichtActief, profiel.autoGelezenBijZicht, ongelezen, ontvangstStaat, onZichtGelezen]);
 
   const sleep = useRef<{
     actief: boolean;
@@ -325,6 +385,15 @@ export default function MeldingVeegKaart({
     }
   };
 
+  const wisselKapselOpen = () => {
+    onSelect?.();
+    setOpen((v) => !v);
+    if (ongelezen || ontvangstStaat !== 'gelezen') {
+      if (onZichtGelezen) onZichtGelezen();
+      else if (gebeurtenis.status === 'nieuw') void onStatus('gelezen');
+    }
+  };
+
   const paginaLink = veiligeMeldingUrl(gebeurtenis.meta?.link, 500) || '';
   const primaireActieHref =
     gebeurtenis.acties.map((a) => veiligeMeldingUrl(a.href, 500)).find(Boolean) || paginaLink;
@@ -359,81 +428,121 @@ export default function MeldingVeegKaart({
       )}
 
       <article
-        className={`mel-kaart puls-kaart is-niveau-${verrijkt.niveau} is-staat-${kaartStaat} is-prio-${gebeurtenis.prioriteit} is-status-${gebeurtenis.status}${geselecteerd ? ' is-geselecteerd' : ''}`}
+        ref={kaartRef}
+        className={`mel-kaart puls-kaart is-kapsel${open ? ' is-open' : ' is-ingeklapt'}${ongelezen ? ' is-ongelezen' : ' is-gelezen'}${vereistBevestiging ? ' is-hoofdfocus' : ''} is-niveau-${verrijkt.niveau} is-staat-${kaartStaat} is-prio-${gebeurtenis.prioriteit} is-status-${gebeurtenis.status}${geselecteerd ? ' is-geselecteerd' : ''}`}
+        data-kapsel-open={open ? '1' : '0'}
+        data-kapsel-ongelezen={ongelezen ? '1' : '0'}
         style={offsetX ? { transform: `translate3d(${offsetX}px, 0, 0)` } : undefined}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={afrondenVeeg}
         onPointerCancel={afrondenVeeg}
-        onClick={() => {
+        onClick={(e) => {
           if (negeerKlikRef.current) return;
-          onSelect?.();
+          const doel = e.target as HTMLElement | null;
+          if (doel?.closest('button,a,input,select,textarea,[data-geen-veeg]')) return;
+          wisselKapselOpen();
         }}
       >
-        <div className='mel-kaart-kop'>
-          <PulsBronTeken anker={verrijkt.anker} maat={34} />
+        {/* Рядок 1 компактної капсули: логотип служби + заголовок без шуму + лічильник/час + квитанція месенджера (✓ / ✓✓ / ⏳) + шеврон */}
+        <div className='puls-kapsel-rij'>
+          <PulsBronTeken anker={verrijkt.anker} maat={open ? 32 : 28} />
 
-          <div className='mel-kaart-hoofd'>
-            <div className='mel-kaart-meta puls-meta-slank'>
-              <span className='puls-meta-onderdeel' title={subdomeinMenselijkLabel(gebeurtenis.subdomein, lang)}>
-                {kortOnderdeel}
-              </span>
-              <span className='puls-meta-punt' aria-hidden='true'>·</span>
+          <button
+            type='button'
+            className='mel-kaart-titel-knop puls-kapsel-titel-knop'
+            aria-expanded={open}
+            onClick={(e) => {
+              e.stopPropagation();
+              wisselKapselOpen();
+            }}
+          >
+            <strong>{zichtbareTitel}</strong>
+          </button>
+
+          <span className='puls-kapsel-rechts'>
+            {gebeurtenis.autoGearchiveerd && gebeurtenis.status === 'archief' && !open && (
               <span
-                className={`puls-schema-chip is-staat-${kaartStaat}`}
-                data-puls-schema={verrijkt.schemaId}
-                data-puls-staat={kaartStaat}
+                className='puls-auto-archief-pil'
+                title={t('Автоматично перенесено в архів за правилами фільтрів каналу', 'Automatisch naar archief verplaatst volgens kanaalfilter')}
               >
-                {schemaNaam}
+                <Filter aria-hidden='true' />
+                <span>{t('Фільтр', 'Filter')}</span>
               </span>
-              {kaartStaat !== 'goed' && gebeurtenis.prioriteit === 'kritiek' && (
-                <span className={`mel-prio is-${gebeurtenis.prioriteit}`}>
-                  {prioriteitLabel(gebeurtenis.prioriteit, lang)}
-                </span>
-              )}
-              {gebeurtenis.herhalingen > 1 && (
-                <span className='mel-herhaling' title={t('Згруповано повторень', 'Gegroepeerde herhalingen')}>
-                  ×{gebeurtenis.herhalingen}
-                </span>
-              )}
-              <span className='puls-meta-rechts'>
-                {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} compact />}
-                <span className='mel-tijd'>{relatieveTijd(gebeurtenis.bijgewerktOp, lang)}</span>
-              </span>
-            </div>
-
-            <button
-              type='button'
-              className='mel-kaart-titel-knop'
-              aria-expanded={open}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect?.();
-                setOpen((v) => !v);
-                if (gebeurtenis.status === 'nieuw') void onStatus('gelezen');
-              }}
-            >
-              <strong>{zichtbareTitel}</strong>
-              <ChevronDown className={`mel-pijl-klap${open ? ' is-open' : ''}`} aria-hidden='true' />
-            </button>
-
-            {gebeurtenis.contextLabel && !/^[a-z_]+\s*·\s*[a-z_]+$/i.test(gebeurtenis.contextLabel.trim()) && (
-              <small className='mel-context'>{gebeurtenis.contextLabel}</small>
             )}
-          </div>
+            {gebeurtenis.bijlagen.length > 0 && !open && (
+              <span
+                className='puls-kapsel-bijlage-stip'
+                title={t(`Вкладень: ${gebeurtenis.bijlagen.length}`, `Bijlagen: ${gebeurtenis.bijlagen.length}`)}
+                aria-hidden='true'
+              >
+                <Paperclip />
+              </span>
+            )}
+            {gebeurtenis.herhalingen > 1 && (
+              <span className='mel-herhaling' title={t('Згруповано повторень', 'Gegroepeerde herhalingen')}>
+                ×{gebeurtenis.herhalingen}
+              </span>
+            )}
+            {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} compact />}
+            <span className='mel-tijd'>{relatieveTijd(gebeurtenis.bijgewerktOp, lang)}</span>
+            <PulsOntvangstVinkjes
+              staat={ontvangstStaat}
+              afgeleverdOp={gebeurtenis.afgeleverdOp}
+              gelezenOp={gebeurtenis.gelezenOp}
+              autoGearchiveerd={gebeurtenis.autoGearchiveerd}
+              lang={lang}
+            />
+            <ChevronDown className={`mel-pijl-klap${open ? ' is-open' : ''}`} aria-hidden='true' />
+          </span>
         </div>
 
-        {(gebeurtenis.bericht || open) && (
-          <p className={`mel-bericht${open ? ' is-vol' : ''}`}>{gebeurtenis.bericht || gebeurtenis.uitleg}</p>
-        )}
-
-        {verrijkt.mandaat && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' && (
-          <PulsMandaatStraalBlok
-            mandaat={verrijkt.mandaat}
-            gekozenDuur={mandaatDuur}
-            onKiesDuur={setMandaatDuur}
-            lang={lang}
-          />
+        {/* Рядок 2 у згорнутій капсулі дозволяється ЛИШЕ для важливих сповіщень з обов’язковим підтвердженням власника («Це не я / Це мій вхід» або мандат ШІ) */}
+        {!open && vereistBevestiging && (
+          <div className='puls-kapsel-bevestiging-rij' data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
+            <span className='puls-kapsel-bevestiging-tekst'>
+              {gebeurtenis.bericht || verrijkt.gevolgHint || kortOnderdeel}
+            </span>
+            <div className='puls-kapsel-bevestiging-knoppen'>
+              {verrijkt.niveau === 'gevaar' ? (
+                <>
+                  {primaireActieHref ? (
+                    <a className='puls-bevestig-pil is-fout' href={primaireActieHref}>
+                      <ShieldAlert aria-hidden='true' />
+                      <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
+                    </a>
+                  ) : (
+                    <button type='button' className='puls-bevestig-pil is-fout' onClick={() => setOpen(true)}>
+                      <ShieldAlert aria-hidden='true' />
+                      <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
+                    </button>
+                  )}
+                  <button type='button' className='puls-bevestig-pil is-goed' onClick={() => void onStatus('opgelost')}>
+                    <ShieldCheck aria-hidden='true' />
+                    <span>{verrijkt.knoppenPaar?.[1] || t('Це мій вхід', 'Dit was ik')}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type='button' className='puls-bevestig-pil is-zacht' onClick={() => void onStatus('archief')}>
+                    <XCircle aria-hidden='true' />
+                    <span>{verrijkt.knoppenPaar?.[0] || t('Відхилити', 'Weigeren')}</span>
+                  </button>
+                  {primaireActieHref ? (
+                    <a className='puls-bevestig-pil is-let' href={primaireActieHref}>
+                      <KeyRound aria-hidden='true' />
+                      <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
+                    </a>
+                  ) : (
+                    <button type='button' className='puls-bevestig-pil is-let' onClick={() => void onStatus('opgelost')}>
+                      <KeyRound aria-hidden='true' />
+                      <span>{verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}</span>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         )}
 
         {beschermHint && (
@@ -443,310 +552,368 @@ export default function MeldingVeegKaart({
           </div>
         )}
 
-        {gebeurtenis.bijlagen.length > 0 && (() => {
-          // Спільна дія відкриття для значка файла й картки: розгорнути сповіщення, далі вбудований або модальний переглядач.
-          const openBijlage = (idx: number, vanKaart: boolean) => {
-            setOpen(true);
-            if (bijlageVoorkeur.inlineSpeler) {
-              setInlineBijlageIdx((cur) => (cur === idx ? null : idx));
-            } else {
-              onOpenBijlageModaal(idx);
-            }
-            // Розділ 7 концепції: «переглянуте зникає з уваги» — з картки (лише за прапорцем) нове сповіщення стає прочитаним,
-            // так само як під час розгортання заголовка.
-            if (vanKaart && gebeurtenis.status === 'nieuw') void onStatus('gelezen');
-          };
-          const oudeStrook = (
-            <div className='mel-bijlagen-strook' data-geen-veeg='1'>
-              {gebeurtenis.bijlagen.map((b, idx) => (
-                <PulsBestandChip
-                  key={b.id}
-                  bijlage={b}
-                  lang={lang}
-                  actief={inlineBijlageIdx === idx}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openBijlage(idx, false);
-                  }}
-                />
-              ))}
-            </div>
-          );
-          if (!gedeeldeWeergave) return oudeStrook;
-          return (
-            <Suspense fallback={oudeStrook}>
-              <div className='mel-bijlagen-kaarten' data-geen-veeg='1'>
+        {/* Повні подробиці, вкладення, квитанція часу доставки/прочитання та дії: приховані за замовчуванням у капсулі, розкриваються за натиском */}
+        <div className='mel-kaart-details' hidden={!open} data-geen-veeg='1' onClick={(e) => e.stopPropagation()}>
+          <div className='mel-kaart-meta puls-meta-slank'>
+            <span className='puls-meta-onderdeel' title={subdomeinMenselijkLabel(gebeurtenis.subdomein, lang)}>
+              {kortOnderdeel}
+            </span>
+            <span className='puls-meta-punt' aria-hidden='true'>·</span>
+            <span
+              className={`puls-schema-chip is-staat-${kaartStaat}`}
+              data-puls-schema={verrijkt.schemaId}
+              data-puls-staat={kaartStaat}
+            >
+              {schemaNaam}
+            </span>
+            {kaartStaat !== 'goed' && gebeurtenis.prioriteit === 'kritiek' && (
+              <span className={`mel-prio is-${gebeurtenis.prioriteit}`}>
+                {prioriteitLabel(gebeurtenis.prioriteit, lang)}
+              </span>
+            )}
+            {gebeurtenis.contextLabel && !/^[a-z_]+\s*·\s*[a-z_]+$/i.test(gebeurtenis.contextLabel.trim()) && (
+              <>
+                <span className='puls-meta-punt' aria-hidden='true'>·</span>
+                <small className='mel-context'>{gebeurtenis.contextLabel}</small>
+              </>
+            )}
+          </div>
+
+          {(gebeurtenis.bericht || gebeurtenis.uitleg) && (
+            <p className='mel-bericht is-vol'>{gebeurtenis.bericht || gebeurtenis.uitleg}</p>
+          )}
+
+          {verrijkt.mandaat && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' && (
+            <PulsMandaatStraalBlok
+              mandaat={verrijkt.mandaat}
+              gekozenDuur={mandaatDuur}
+              onKiesDuur={setMandaatDuur}
+              lang={lang}
+            />
+          )}
+
+          {gebeurtenis.bijlagen.length > 0 && (() => {
+            const openBijlage = (idx: number, vanKaart: boolean) => {
+              setOpen(true);
+              if (bijlageVoorkeur.inlineSpeler) {
+                setInlineBijlageIdx((cur) => (cur === idx ? null : idx));
+              } else {
+                onOpenBijlageModaal(idx);
+              }
+              if (vanKaart && gebeurtenis.status === 'nieuw') void onStatus('gelezen');
+            };
+            const oudeStrook = (
+              <div className='mel-bijlagen-strook' data-geen-veeg='1'>
                 {gebeurtenis.bijlagen.map((b, idx) => (
-                  <MeldingKaartLui
+                  <PulsBestandChip
                     key={b.id}
-                    taal={lang}
                     bijlage={b}
+                    lang={lang}
                     actief={inlineBijlageIdx === idx}
-                    onOpen={() => openBijlage(idx, true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openBijlage(idx, false);
+                    }}
                   />
                 ))}
               </div>
-            </Suspense>
-          );
-        })()}
-
-        <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
-          {verrijkt.gevolgHint && verrijkt.niveau !== 'gewoon' ? (
-            <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span>
-          ) : null}
-
-          <div className='puls-actie-groep puls-kaart-knoppen-rij'>
-            {verrijkt.niveau === 'gevaar' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
-              <>
-                <IcoonActieKnop
-                  href={primaireActieHref || undefined}
-                  toon='primair-fout'
-                  icoon={<ShieldAlert aria-hidden='true' />}
-                  label={verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}
-                  stopPropagatie
-                  onClick={primaireActieHref ? undefined : () => setOpen(true)}
-                />
-                <IcoonActieKnop
-                  toon='primair-goed'
-                  icoon={<ShieldCheck aria-hidden='true' />}
-                  label={verrijkt.knoppenPaar?.[1] || t('Це мій вхід', 'Dit was ik')}
-                  stopPropagatie
-                  onClick={() => void onStatus('opgelost')}
-                />
-              </>
-            ) : verrijkt.niveau === 'besluit' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
-              <>
-                <IcoonActieKnop
-                  icoon={<XCircle aria-hidden='true' />}
-                  label={verrijkt.knoppenPaar?.[0] || t('Відхилити', 'Weigeren')}
-                  stopPropagatie
-                  onClick={() => void onStatus('archief')}
-                />
-                <IcoonActieKnop
-                  href={primaireActieHref || undefined}
-                  toon='primair-let'
-                  icoon={<KeyRound aria-hidden='true' />}
-                  label={verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}
-                  stopPropagatie
-                  onClick={primaireActieHref ? undefined : () => void onStatus('opgelost')}
-                />
-              </>
-            ) : (
-              <>
-                {gebeurtenis.acties
-                  .filter((a) => a.soort === 'api' || (a.soort === 'navigeer' && Boolean(veiligeMeldingUrl(a.href, 500))))
-                  .slice(0, 2)
-                  .map((actie) => {
-                    const veiligeHref = veiligeMeldingUrl(actie.href, 500);
-                    const actieLabel = lang === 'nl' ? actie.labelNl : actie.labelUk;
-                    return veiligeHref ? (
-                      <IcoonActieKnop
-                        key={actie.id}
-                        href={veiligeHref}
-                        icoon={<ExternalLink aria-hidden='true' />}
-                        label={actieLabel}
-                        stopPropagatie
-                      />
-                    ) : (
-                      <IcoonActieKnop
-                        key={actie.id}
-                        toon='primair-let'
-                        disabled={uitvoerBezig === actie.id}
-                        icoon={<Zap aria-hidden='true' />}
-                        label={actieLabel}
-                        stopPropagatie
-                        onClick={() => void voerActie(actie)}
-                      />
-                    );
-                  })}
-
-                {!gebeurtenis.acties.some((a) => a.href) && paginaLink && (
-                  <IcoonActieKnop
-                    href={paginaLink}
-                    icoon={<ExternalLink aria-hidden='true' />}
-                    label={t('Перейти до сторінки', 'Pagina openen')}
-                    stopPropagatie
-                  />
-                )}
-
-                {gebeurtenis.bijlagen.length > 1 && inlineBijlageIdx === null && (
-                  <IcoonActieKnop
-                    icoon={<Paperclip aria-hidden='true' />}
-                    teller={gebeurtenis.bijlagen.length}
-                    label={t('Переглянути всі вкладення', 'Alle bijlagen bekijken')}
-                    stopPropagatie
-                    onClick={() => {
-                      setOpen(true);
-                      setInlineBijlageIdx(0);
-                    }}
-                  />
-                )}
-              </>
-            )}
-
-            <IcoonActieKnop
-              toon={aiOpen ? 'actief' : 'standaard'}
-              icoon={<Bot aria-hidden='true' />}
-              label={t('Швидкий розбір ШІ', 'Snelle AI-duiding')}
-              aria-pressed={aiOpen}
-              stopPropagatie
-              data-qa-id='puls-kaart-ai'
-              onClick={() => {
-                setOpen(true);
-                setAiOpen((v) => !v);
-              }}
-            />
-
-            {gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
-              <>
-                {kaartStaat !== 'goed' && (
-                  <div className='puls-uitstel-anker'>
-                    <IcoonActieKnop
-                      toon={uitstelMenuOpen ? 'actief' : 'standaard'}
-                      icoon={<Clock3 aria-hidden='true' />}
-                      label={t('Відкласти за умовою або часом', 'Uitstellen op voorwaarde of tijd')}
-                      ariaLabel={t('Розумне відкладення за умовою', 'Slim voorwaardelijk uitstel')}
-                      aria-expanded={uitstelMenuOpen}
-                      stopPropagatie
-                      onClick={() => {
-                        if (onVoorwaardelijkUitstel) {
-                          setUitstelMenuOpen((v) => !v);
-                        } else {
-                          void onStatus('uitgesteld', 30);
-                        }
-                      }}
+            );
+            if (!gedeeldeWeergave) return oudeStrook;
+            return (
+              <Suspense fallback={oudeStrook}>
+                <div className='mel-bijlagen-kaarten' data-geen-veeg='1'>
+                  {gebeurtenis.bijlagen.map((b, idx) => (
+                    <MeldingKaartLui
+                      key={b.id}
+                      taal={lang}
+                      bijlage={b}
+                      actief={inlineBijlageIdx === idx}
+                      onOpen={() => openBijlage(idx, true)}
                     />
-                    {uitstelMenuOpen && onVoorwaardelijkUitstel ? (
-                      <PulsUitstelMenu
-                        lang={lang}
-                        doelSubdomein={gebeurtenis.subdomein}
-                        onKies={(soort) => {
-                          setUitstelMenuOpen(false);
-                          onVoorwaardelijkUitstel(soort);
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                )}
+                  ))}
+                </div>
+              </Suspense>
+            );
+          })()}
 
-                {kaartStaat === 'goed' && gebeurtenis.status === 'nieuw' ? (
+          <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
+            {verrijkt.gevolgHint && verrijkt.niveau !== 'gewoon' ? (
+              <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span>
+            ) : null}
+
+            <div className='puls-actie-groep puls-kaart-knoppen-rij'>
+              {verrijkt.niveau === 'gevaar' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
+                <>
                   <IcoonActieKnop
-                    icoon={<Check aria-hidden='true' />}
-                    label={t('Позначити прочитаним', 'Als gelezen markeren')}
+                    href={primaireActieHref || undefined}
+                    toon='primair-fout'
+                    icoon={<ShieldAlert aria-hidden='true' />}
+                    label={verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}
                     stopPropagatie
-                    onClick={() => void onStatus('gelezen')}
+                    onClick={primaireActieHref ? undefined : () => setOpen(true)}
                   />
-                ) : (
                   <IcoonActieKnop
-                    icoon={<CheckCheck aria-hidden='true' />}
-                    label={t('Позначити виконаним', 'Als opgelost markeren')}
+                    toon='primair-goed'
+                    icoon={<ShieldCheck aria-hidden='true' />}
+                    label={verrijkt.knoppenPaar?.[1] || t('Це мій вхід', 'Dit was ik')}
                     stopPropagatie
                     onClick={() => void onStatus('opgelost')}
                   />
-                )}
+                </>
+              ) : verrijkt.niveau === 'besluit' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
+                <>
+                  <IcoonActieKnop
+                    icoon={<XCircle aria-hidden='true' />}
+                    label={verrijkt.knoppenPaar?.[0] || t('Відхилити', 'Weigeren')}
+                    stopPropagatie
+                    onClick={() => void onStatus('archief')}
+                  />
+                  <IcoonActieKnop
+                    href={primaireActieHref || undefined}
+                    toon='primair-let'
+                    icoon={<KeyRound aria-hidden='true' />}
+                    label={verrijkt.knoppenPaar?.[1] || t('Дозволити', 'Toestaan')}
+                    stopPropagatie
+                    onClick={primaireActieHref ? undefined : () => void onStatus('opgelost')}
+                  />
+                </>
+              ) : (
+                <>
+                  {gebeurtenis.acties
+                    .filter((a) => a.soort === 'api' || (a.soort === 'navigeer' && Boolean(veiligeMeldingUrl(a.href, 500))))
+                    .slice(0, 2)
+                    .map((actie) => {
+                      const veiligeHref = veiligeMeldingUrl(actie.href, 500);
+                      const actieLabel = lang === 'nl' ? actie.labelNl : actie.labelUk;
+                      return veiligeHref ? (
+                        <IcoonActieKnop
+                          key={actie.id}
+                          href={veiligeHref}
+                          icoon={<ExternalLink aria-hidden='true' />}
+                          label={actieLabel}
+                          stopPropagatie
+                        />
+                      ) : (
+                        <IcoonActieKnop
+                          key={actie.id}
+                          toon='primair-let'
+                          disabled={uitvoerBezig === actie.id}
+                          icoon={<Zap aria-hidden='true' />}
+                          label={actieLabel}
+                          stopPropagatie
+                          onClick={() => void voerActie(actie)}
+                        />
+                      );
+                    })}
 
+                  {!gebeurtenis.acties.some((a) => a.href) && paginaLink && (
+                    <IcoonActieKnop
+                      href={paginaLink}
+                      icoon={<ExternalLink aria-hidden='true' />}
+                      label={t('Перейти до сторінки', 'Pagina openen')}
+                      stopPropagatie
+                    />
+                  )}
+
+                  {gebeurtenis.bijlagen.length > 1 && inlineBijlageIdx === null && (
+                    <IcoonActieKnop
+                      icoon={<Paperclip aria-hidden='true' />}
+                      teller={gebeurtenis.bijlagen.length}
+                      label={t('Переглянути всі вкладення', 'Alle bijlagen bekijken')}
+                      stopPropagatie
+                      onClick={() => {
+                        setOpen(true);
+                        setInlineBijlageIdx(0);
+                      }}
+                    />
+                  )}
+                </>
+              )}
+
+              <IcoonActieKnop
+                toon={aiOpen ? 'actief' : 'standaard'}
+                icoon={<Bot aria-hidden='true' />}
+                label={t('Швидкий розбір ШІ', 'Snelle AI-duiding')}
+                aria-pressed={aiOpen}
+                stopPropagatie
+                data-qa-id='puls-kaart-ai'
+                onClick={() => {
+                  setOpen(true);
+                  setAiOpen((v) => !v);
+                }}
+              />
+
+              {gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
+                <>
+                  {kaartStaat !== 'goed' && (
+                    <div className='puls-uitstel-anker'>
+                      <IcoonActieKnop
+                        toon={uitstelMenuOpen ? 'actief' : 'standaard'}
+                        icoon={<Clock3 aria-hidden='true' />}
+                        label={t('Відкласти за умовою або часом', 'Uitstellen op voorwaarde of tijd')}
+                        ariaLabel={t('Розумне відкладення за умовою', 'Slim voorwaardelijk uitstel')}
+                        aria-expanded={uitstelMenuOpen}
+                        stopPropagatie
+                        onClick={() => {
+                          if (onVoorwaardelijkUitstel) {
+                            setUitstelMenuOpen((v) => !v);
+                          } else {
+                            void onStatus('uitgesteld', 30);
+                          }
+                        }}
+                      />
+                      {uitstelMenuOpen && onVoorwaardelijkUitstel ? (
+                        <PulsUitstelMenu
+                          lang={lang}
+                          doelSubdomein={gebeurtenis.subdomein}
+                          onKies={(soort) => {
+                            setUitstelMenuOpen(false);
+                            onVoorwaardelijkUitstel(soort);
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                  )}
+
+                  {kaartStaat === 'goed' && gebeurtenis.status === 'nieuw' ? (
+                    <IcoonActieKnop
+                      icoon={<Check aria-hidden='true' />}
+                      label={t('Позначити прочитаним', 'Als gelezen markeren')}
+                      stopPropagatie
+                      onClick={() => void onStatus('gelezen')}
+                    />
+                  ) : (
+                    <IcoonActieKnop
+                      icoon={<CheckCheck aria-hidden='true' />}
+                      label={t('Позначити виконаним', 'Als opgelost markeren')}
+                      stopPropagatie
+                      onClick={() => void onStatus('opgelost')}
+                    />
+                  )}
+
+                  <IcoonActieKnop
+                    icoon={<Archive aria-hidden='true' />}
+                    label={t('Перенести в архів', 'Archiveren')}
+                    stopPropagatie
+                    onClick={() => void onStatus('archief')}
+                  />
+                </>
+              ) : gebeurtenis.status === 'opgelost' ? (
                 <IcoonActieKnop
-                  icoon={<Archive aria-hidden='true' />}
-                  label={t('Перенести в архів', 'Archiveren')}
+                  icoon={<RotateCcw aria-hidden='true' />}
+                  label={t('Знову відкрити', 'Opnieuw openen')}
+                  data-mel-heropenen='1'
                   stopPropagatie
-                  onClick={() => void onStatus('archief')}
+                  onClick={() => void onStatus('nieuw')}
                 />
-              </>
-            ) : gebeurtenis.status === 'opgelost' ? (
-              <IcoonActieKnop
-                icoon={<RotateCcw aria-hidden='true' />}
-                label={t('Знову відкрити', 'Opnieuw openen')}
-                data-mel-heropenen='1'
-                stopPropagatie
-                onClick={() => void onStatus('nieuw')}
-              />
-            ) : (
-              <IcoonActieKnop
-                icoon={<RotateCcw aria-hidden='true' />}
-                label={t('Повернути з архіву', 'Uit archief terugzetten')}
-                stopPropagatie
-                onClick={() => void onStatus('gelezen')}
-              />
-            )}
+              ) : (
+                <IcoonActieKnop
+                  icoon={<RotateCcw aria-hidden='true' />}
+                  label={t('Повернути з архіву', 'Uit archief terugzetten')}
+                  stopPropagatie
+                  onClick={() => void onStatus('gelezen')}
+                />
+              )}
 
-            {gebeurtenis.status === 'gelezen' && (
-              <IcoonActieKnop
-                icoon={<BellDot aria-hidden='true' />}
-                label={t('Позначити як непрочитане', 'Als ongelezen markeren')}
-                data-mel-ongelezen='1'
-                stopPropagatie
-                onClick={() => void onStatus('nieuw')}
-              />
-            )}
-          </div>
-        </div>
-
-        {open && (
-          <div className='mel-kaart-details' data-geen-veeg='1'>
-            {/* Прогресивне розкриття значків-питань X4 — не захаращує картку в закритому стані */}
-            <div className='puls-x4-emblemen' data-puls-x4={verrijkt.schemaId}>
-              {verrijkt.emblemen.map((emb) => (
-                <div key={emb.vraag} className='puls-x4-cel'>
-                  <small>{emb.vraag}</small>
-                  <strong>{emb.waarde}</strong>
-                </div>
-              ))}
+              {gebeurtenis.status === 'gelezen' && (
+                <IcoonActieKnop
+                  icoon={<BellDot aria-hidden='true' />}
+                  label={t('Позначити як непрочитане', 'Als ongelezen markeren')}
+                  data-mel-ongelezen='1'
+                  stopPropagatie
+                  onClick={() => void onStatus('nieuw')}
+                />
+              )}
             </div>
-
-            {(gebeurtenis.herhalingen > 1 || gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp >= 1000) && (
-              <p className='mel-tijden-samenvatting' data-mel-verloop-tijden='1'>
-                <Clock3 aria-hidden='true' />
-                {t('Перша поява', 'Eerste keer')}: {tijdVolledig(gebeurtenis.aangemaaktOp, lang)}
-                {' · '}
-                {t('Остання поява', 'Laatste keer')}: {tijdVolledig(gebeurtenis.bijgewerktOp, lang)}
-                {gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp >= 1000
-                  ? ` · ${t('Тривалість', 'Duur')}: ${duurTekst(gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp, lang)}`
-                  : ''}
-                {gebeurtenis.herhalingen > 1 ? ` · ×${gebeurtenis.herhalingen}` : ''}
-              </p>
-            )}
-            {gebeurtenis.uitleg && gebeurtenis.uitleg !== gebeurtenis.bericht && (
-              <pre className='mel-uitleg-blok'>{gebeurtenis.uitleg}</pre>
-            )}
-
-            {inlineBijlageIdx !== null && gebeurtenis.bijlagen[inlineBijlageIdx] && (
-              <MeldingBijlageSpeler
-                lang={lang}
-                bijlagen={gebeurtenis.bijlagen}
-                actieveIndex={inlineBijlageIdx}
-                voorkeur={bijlageVoorkeur}
-                onSelectIndex={setInlineBijlageIdx}
-                onSluiten={() => setInlineBijlageIdx(null)}
-                onToggleModaal={() => onOpenBijlageModaal(inlineBijlageIdx)}
-                contextActies={/* SPIL-WEERGAVE етап 4, НЕ ПЕРЕВІРЕНО (Claude Opus 5.5 (High) через Antigravity): дії сповіщення в спільній шапці; діють лише з увімкненим прапорцем bijlage-weergave-gedeeld-v1 */ [
-                  ...(gebeurtenis.status === 'nieuw'
-                    ? [{ sleutel: 'gelezen', label: ['Прочитано', 'Gelezen'] as [string, string], icoon: Check, zichtbaar: true, toon: 'goed' as const, uitvoeren: () => void onStatus('gelezen') }]
-                    : []),
-                  ...gebeurtenis.acties
-                    .filter((a) => a.soort === 'api')
-                    .slice(0, 1)
-                    .map((a) => ({ sleutel: `actie:${a.id}`, label: [a.labelUk, a.labelNl] as [string, string], icoon: Zap, zichtbaar: true, uitvoeren: () => void voerActie(a) })),
-                ]}
-              />
-            )}
-
-            {gebeurtenis.bijlagen.length > 0 && inlineBijlageIdx === null && (
-              <button type='button' className='mel-knop mel-knop-zacht' onClick={() => onOpenBijlageModaal(0)}>
-                <Paperclip aria-hidden='true' />
-                <span>{t('Відкрити переглядач вкладень', 'Bijlageweergave openen')}</span>
-              </button>
-            )}
-
-            {aiOpen && (
-              <MeldingAiPaneel
-                lang={lang}
-                gebeurtenis={gebeurtenis}
-                aiInstelling={profiel.ai}
-                onOntleden={(modus, aanbieder) => onOntleden(modus, aanbieder)}
-              />
-            )}
           </div>
-        )}
+
+          {/* Прогресивне розкриття значків-питань X4 та квитанції доставки у відкритому стані */}
+          {open && (
+            <>
+              <div className='puls-x4-emblemen' data-puls-x4={verrijkt.schemaId}>
+                {verrijkt.emblemen.map((emb) => (
+                  <div key={emb.vraag} className='puls-x4-cel'>
+                    <small>{emb.vraag}</small>
+                    <strong>{emb.waarde}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <p className='mel-ontvangst-samenvatting' data-mel-ontvangst-info={ontvangstStaat}>
+                <PulsOntvangstVinkjes
+                  staat={ontvangstStaat}
+                  afgeleverdOp={gebeurtenis.afgeleverdOp}
+                  gelezenOp={gebeurtenis.gelezenOp}
+                  autoGearchiveerd={gebeurtenis.autoGearchiveerd}
+                  lang={lang}
+                />
+                <span>
+                  {ontvangstStaat === 'gelezen'
+                    ? `${t('Доставлено', 'Afgeleverd')}: ${tijdVolledig(gebeurtenis.afgeleverdOp || gebeurtenis.aangemaaktOp, lang)} · ${t('Прочитано', 'Gelezen')}: ${tijdVolledig(gebeurtenis.gelezenOp || gebeurtenis.bijgewerktOp, lang)}`
+                    : ontvangstStaat === 'afgeleverd'
+                      ? `${t('Доставлено в панель', 'Afgeleverd in paneel')}: ${tijdVolledig(gebeurtenis.afgeleverdOp || gebeurtenis.aangemaaktOp, lang)} · ${t('ще не прочитано', 'nog niet gelezen')}`
+                      : t('Очікує доставки в клієнтську панель користувача', 'Wacht op aflevering in het gebruikerspaneel')}
+                  {gebeurtenis.autoGearchiveerd
+                    ? ` · ${t('автоархів за правилом фільтрів', 'auto-archief via filterregel')}`
+                    : ''}
+                </span>
+              </p>
+
+              {(gebeurtenis.herhalingen > 1 || gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp >= 1000) && (
+                <p className='mel-tijden-samenvatting' data-mel-verloop-tijden='1'>
+                  <Clock3 aria-hidden='true' />
+                  {t('Перша поява', 'Eerste keer')}: {tijdVolledig(gebeurtenis.aangemaaktOp, lang)}
+                  {' · '}
+                  {t('Остання поява', 'Laatste keer')}: {tijdVolledig(gebeurtenis.bijgewerktOp, lang)}
+                  {gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp >= 1000
+                    ? ` · ${t('Тривалість', 'Duur')}: ${duurTekst(gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp, lang)}`
+                    : ''}
+                  {gebeurtenis.herhalingen > 1 ? ` · ×${gebeurtenis.herhalingen}` : ''}
+                </p>
+              )}
+              {gebeurtenis.uitleg && gebeurtenis.uitleg !== gebeurtenis.bericht && (
+                <pre className='mel-uitleg-blok'>{gebeurtenis.uitleg}</pre>
+              )}
+
+              {inlineBijlageIdx !== null && gebeurtenis.bijlagen[inlineBijlageIdx] && (
+                <MeldingBijlageSpeler
+                  lang={lang}
+                  bijlagen={gebeurtenis.bijlagen}
+                  actieveIndex={inlineBijlageIdx}
+                  voorkeur={bijlageVoorkeur}
+                  onSelectIndex={setInlineBijlageIdx}
+                  onSluiten={() => setInlineBijlageIdx(null)}
+                  onToggleModaal={() => onOpenBijlageModaal(inlineBijlageIdx)}
+                  contextActies={[
+                    ...(gebeurtenis.status === 'nieuw'
+                      ? [{ sleutel: 'gelezen', label: ['Прочитано', 'Gelezen'] as [string, string], icoon: Check, zichtbaar: true, toon: 'goed' as const, uitvoeren: () => void onStatus('gelezen') }]
+                      : []),
+                    ...gebeurtenis.acties
+                      .filter((a) => a.soort === 'api')
+                      .slice(0, 1)
+                      .map((a) => ({ sleutel: `actie:${a.id}`, label: [a.labelUk, a.labelNl] as [string, string], icoon: Zap, zichtbaar: true, uitvoeren: () => void voerActie(a) })),
+                  ]}
+                />
+              )}
+
+              {gebeurtenis.bijlagen.length > 0 && inlineBijlageIdx === null && (
+                <button type='button' className='mel-knop mel-knop-zacht' onClick={() => onOpenBijlageModaal(0)}>
+                  <Paperclip aria-hidden='true' />
+                  <span>{t('Відкрити переглядач вкладень', 'Bijlageweergave openen')}</span>
+                </button>
+              )}
+
+              {aiOpen && (
+                <MeldingAiPaneel
+                  lang={lang}
+                  gebeurtenis={gebeurtenis}
+                  aiInstelling={profiel.ai}
+                  onOntleden={(modus, aanbieder) => onOntleden(modus, aanbieder)}
+                />
+              )}
+            </>
+          )}
+        </div>
       </article>
     </div>
   );

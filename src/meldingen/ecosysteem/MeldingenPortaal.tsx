@@ -22,6 +22,8 @@ import {
   BookOpen,
   CheckCheck,
   CheckCircle2,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Clock3,
   Columns2,
   Layers,
@@ -45,6 +47,7 @@ import {
 } from 'lucide-react';
 import {
   KANALEN,
+  MELDING_KAPSEL_AFLEVERING_VLAG,
   contextVoorSubdomein,
   kanaalLabel,
   klemVenster,
@@ -86,6 +89,7 @@ import {
   PulsMandaatStraalBlok,
 } from '../puls/PulsVisueelAnker';
 import { usePulsSlimmeStaat } from '../puls/puls-opslag';
+import MeldingAfleveringControle from './MeldingAfleveringControle';
 import MeldingAiPaneel from './MeldingAiPaneel';
 import MeldingBijlageSpeler from './MeldingBijlageSpeler';
 import MeldingVeegKaart, { schoonKaartTitel } from './MeldingVeegKaart';
@@ -208,6 +212,9 @@ type Props = {
   onToggleSound: () => void;
   onVervers: () => void;
   onSlaGeometrieOp: (geo: VensterGeometrie, direct?: boolean) => void;
+  onWerkProfielBij?: (updater: (oud: MeldingEcosysteemProfiel) => MeldingEcosysteemProfiel, directOpslaan?: boolean) => void;
+  onRegistreerAfgeleverd?: (gebeurtenissen: ReadonlyArray<Pick<MeldingEcosysteemGebeurtenis, 'id' | 'externeSleutel' | 'afgeleverdOp'>>) => void;
+  onRegistreerZichtGelezen?: (g: MeldingEcosysteemGebeurtenis) => void;
   onStatusWijzigen: (g: MeldingEcosysteemGebeurtenis, status: MeldingGebeurtenisStatus, uitstelMinuten?: number) => Promise<void>;
   onOntleden: (g: MeldingEcosysteemGebeurtenis, modus: 'intern' | 'extern', aanbieder?: AiAanbiederKeuze) => Promise<MeldingAiSamenvatting>;
   onMarkAll: () => void;
@@ -244,6 +251,9 @@ export default function MeldingenPortaal({
   onToggleSound,
   onVervers,
   onSlaGeometrieOp,
+  onWerkProfielBij,
+  onRegistreerAfgeleverd,
+  onRegistreerZichtGelezen,
   onStatusWijzigen,
   onOntleden,
   onMarkAll,
@@ -278,6 +288,7 @@ export default function MeldingenPortaal({
   const [dndMenuOpen, setDndMenuOpen] = useState(false);
   const [geselecteerdId, setGeselecteerdId] = useState<string>('');
   const [spatieOpenId, setSpatieOpenId] = useState<string>('');
+  const [globaalUitgeklapt, setGlobaalUitgeklapt] = useState<boolean | null>(null);
   const [detailMandaatDuur, setDetailMandaatDuur] = useState<'eenmalig' | '15m'>('eenmalig');
   const [detailBijlageIdx, setDetailBijlageIdx] = useState(0);
   const [modaalBijlage, setModaalBijlage] = useState<{ gebeurtenis: MeldingEcosysteemGebeurtenis; index: number } | null>(null);
@@ -1050,7 +1061,18 @@ export default function MeldingenPortaal({
     [alleGebeurtenissenMap, slim, registreerActieMetOngedaan, lang],
   );
 
+  useEffect(() => {
+    setGlobaalUitgeklapt(null);
+  }, [profiel.standaardUitgeklapt]);
+
+  useEffect(() => {
+    if (!open || !onRegistreerAfgeleverd || !stroom.length) return;
+    onRegistreerAfgeleverd(stroom);
+  }, [open, stroom, onRegistreerAfgeleverd]);
+
   if (!open && !geo.minimalePil && !modaalBijlage) return null;
+
+  const effectiefAllesOpen = globaalUitgeklapt ?? Boolean(profiel.standaardUitgeklapt);
 
   const renderLosseKaart = (geb: MeldingEcosysteemGebeurtenis) => (
     <MeldingVeegKaart
@@ -1059,9 +1081,20 @@ export default function MeldingenPortaal({
       gebeurtenis={geb}
       profiel={profiel}
       geselecteerd={isBreed && geselecteerd?.id === geb.id}
-      geforceerdOpen={spatieOpenId ? spatieOpenId === geb.id : undefined}
+      geforceerdOpen={
+        spatieOpenId === geb.id
+          ? true
+          : globaalUitgeklapt !== null
+            ? globaalUitgeklapt
+            : undefined
+      }
+      zichtActief={open && !toonVoorkeuren}
       bijlageVoorkeur={profiel.bijlageWeergave}
       onSelect={() => setGeselecteerdId(geb.id)}
+      onZichtGelezen={() => {
+        if (onRegistreerZichtGelezen) onRegistreerZichtGelezen(geb);
+        else if (geb.status === 'nieuw') void behandelKaartStatus(geb, 'gelezen');
+      }}
       onStatus={(st, min) => behandelKaartStatus(geb, st, min)}
       onVoorwaardelijkUitstel={(soort) => behandelVoorwaardelijkUitstel(geb, soort)}
       onOntleden={(modus, aanbieder) => onOntleden(geb, modus, aanbieder)}
@@ -1361,44 +1394,63 @@ export default function MeldingenPortaal({
           ) : null}
 
           {!toonVoorkeuren && (
-            <div ref={filtersRef} className='mel-filters puls-filters-slank'>
-              <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
-                {(
-                  [
-                    ['actief', t('Увага · Потребують дії', 'Actief · Vragen aandacht'), undefined],
+            <div ref={filtersRef} className='mel-filters puls-filters-slank' data-vlag={MELDING_KAPSEL_AFLEVERING_VLAG}>
+              <div className='puls-tabs-rij'>
+                <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
+                  {(
                     [
-                      'nieuw',
-                      tellers.nieuw > 0
-                        ? t(`Нові сповіщення (${tellers.nieuw})`, `Nieuwe meldingen (${tellers.nieuw})`)
-                        : t('Нові сповіщення', 'Nieuwe meldingen'),
-                      tellers.nieuw > 0 ? tellers.nieuw : undefined,
-                    ],
-                    [
-                      'uitgesteld',
-                      tellers.uitgesteld > 0
-                        ? t(`Відкладені за умовою (${tellers.uitgesteld})`, `Voorwaardelijk uitgesteld (${tellers.uitgesteld})`)
-                        : t('Відкладені за умовою', 'Voorwaardelijk uitgesteld'),
-                      tellers.uitgesteld > 0 ? tellers.uitgesteld : undefined,
-                    ],
-                    ['opgelost', t('Вирішені', 'Opgelost'), undefined],
-                    ['archief', t('Спокійний журнал', 'Rustig archief'), undefined],
-                    ['alle', t('Усі сповіщення', 'Alle meldingen'), undefined],
-                  ] as const
-                ).map(([sleutel, tekst, tabTeller]) => (
-                  <IcoonActieKnop
-                    key={sleutel}
-                    modus='tab'
-                    role='tab'
-                    toon={statusFilter === sleutel ? 'actief' : 'standaard'}
-                    aria-selected={statusFilter === sleutel}
-                    className={`mel-tab puls-tab is-tab-${sleutel}${statusFilter === sleutel ? ' is-actief' : ''}`}
-                    icoon={<TabIcoon sleutel={sleutel} />}
-                    teller={tabTeller}
-                    label={tekst}
-                    data-qa-id={`puls-tab-${sleutel}`}
-                    onClick={() => setStatusFilter(sleutel)}
-                  />
-                ))}
+                      ['actief', t('Увага · Потребують дії', 'Actief · Vragen aandacht'), undefined],
+                      [
+                        'nieuw',
+                        tellers.nieuw > 0
+                          ? t(`Нові сповіщення (${tellers.nieuw})`, `Nieuwe meldingen (${tellers.nieuw})`)
+                          : t('Нові сповіщення', 'Nieuwe meldingen'),
+                        tellers.nieuw > 0 ? tellers.nieuw : undefined,
+                      ],
+                      [
+                        'uitgesteld',
+                        tellers.uitgesteld > 0
+                          ? t(`Відкладені за умовою (${tellers.uitgesteld})`, `Voorwaardelijk uitgesteld (${tellers.uitgesteld})`)
+                          : t('Відкладені за умовою', 'Voorwaardelijk uitgesteld'),
+                        tellers.uitgesteld > 0 ? tellers.uitgesteld : undefined,
+                      ],
+                      ['opgelost', t('Вирішені', 'Opgelost'), undefined],
+                      ['archief', t('Спокійний журнал', 'Rustig archief'), undefined],
+                      ['alle', t('Усі сповіщення', 'Alle meldingen'), undefined],
+                    ] as const
+                  ).map(([sleutel, tekst, tabTeller]) => (
+                    <IcoonActieKnop
+                      key={sleutel}
+                      modus='tab'
+                      role='tab'
+                      toon={statusFilter === sleutel ? 'actief' : 'standaard'}
+                      aria-selected={statusFilter === sleutel}
+                      className={`mel-tab puls-tab is-tab-${sleutel}${statusFilter === sleutel ? ' is-actief' : ''}`}
+                      icoon={<TabIcoon sleutel={sleutel} />}
+                      teller={tabTeller}
+                      label={tekst}
+                      data-qa-id={`puls-tab-${sleutel}`}
+                      onClick={() => setStatusFilter(sleutel)}
+                    />
+                  ))}
+                </div>
+
+                <IcoonActieKnop
+                  className='puls-alles-klap-knop'
+                  toon={effectiefAllesOpen ? 'actief' : 'standaard'}
+                  icoon={effectiefAllesOpen ? <ChevronsDownUp aria-hidden='true' /> : <ChevronsUpDown aria-hidden='true' />}
+                  label={
+                    effectiefAllesOpen
+                      ? t('Згорнути всі сповіщення в капсули', 'Alle meldingen inklappen tot capsules')
+                      : t('Розгорнути всі сповіщення', 'Alle meldingen uitklappen')
+                  }
+                  aria-pressed={effectiefAllesOpen}
+                  data-qa-id='puls-alles-uitklappen'
+                  onClick={() => {
+                    setSpatieOpenId('');
+                    setGlobaalUitgeklapt(!effectiefAllesOpen);
+                  }}
+                />
               </div>
 
               {!filterOpen && (kanaalFilter !== 'alle' || alleenDitSubdomein) && (
@@ -1515,8 +1567,72 @@ export default function MeldingenPortaal({
           <div className='mel-lichaam mel-inhoud'>
             {toonVoorkeuren ? (
               <div className='mel-voorkeuren-kader'>
+                <section className='puls-kapsel-voorkeuren' data-qa-id='puls-kapsel-voorkeuren'>
+                  <div className='puls-kapsel-voorkeur-kop'>
+                    <strong>{t('Стан карток за замовчуванням та прочитання', 'Standaardweergave van capsules en leesstatus')}</strong>
+                    <small>
+                      {t(
+                        'У згорнутому вигляді сповіщення не створюють візуального шуму, а натиск розгортає подробиці й кнопки.',
+                        'Ingeklapte capsules vermijden knoppenruis; één tik klapt details en acties uit.',
+                      )}
+                    </small>
+                  </div>
+
+                  <div className='puls-kapsel-stand-keuze' role='radiogroup' aria-label={t('Стан сповіщень за замовчуванням', 'Standaardstaat van meldingen')}>
+                    <button
+                      type='button'
+                      role='radio'
+                      aria-checked={!profiel.standaardUitgeklapt}
+                      className={`puls-stand-knop${!profiel.standaardUitgeklapt ? ' is-actief' : ''}`}
+                      data-qa-id='puls-standaard-ingeklapt'
+                      onClick={() => {
+                        setGlobaalUitgeklapt(null);
+                        onWerkProfielBij?.((oud) => ({ ...oud, standaardUitgeklapt: false }));
+                      }}
+                    >
+                      <ChevronsDownUp aria-hidden='true' />
+                      <span>{t('Згортати в компактні капсули', 'Standaard inklappen tot capsules')}</span>
+                    </button>
+                    <button
+                      type='button'
+                      role='radio'
+                      aria-checked={Boolean(profiel.standaardUitgeklapt)}
+                      className={`puls-stand-knop${profiel.standaardUitgeklapt ? ' is-actief' : ''}`}
+                      data-qa-id='puls-standaard-uitgeklapt'
+                      onClick={() => {
+                        setGlobaalUitgeklapt(null);
+                        onWerkProfielBij?.((oud) => ({ ...oud, standaardUitgeklapt: true }));
+                      }}
+                    >
+                      <ChevronsUpDown aria-hidden='true' />
+                      <span>{t('Розгортати автоматично', 'Automatisch uitklappen')}</span>
+                    </button>
+                  </div>
+
+                  <label className='puls-kapsel-auto-lees'>
+                    <input
+                      type='checkbox'
+                      checked={profiel.autoGelezenBijZicht !== false}
+                      onChange={(e) => {
+                        const aan = e.target.checked;
+                        onWerkProfielBij?.((oud) => ({ ...oud, autoGelezenBijZicht: aan }));
+                      }}
+                    />
+                    <span>
+                      {t(
+                        'Автоматично позначати прочитаним (✓✓) при появі сповіщення на очах',
+                        'Automatisch als gelezen markeren (✓✓) zodra de melding in beeld komt',
+                      )}
+                    </span>
+                  </label>
+                </section>
+
                 <MeldingModusKiezer lang={lang} />
                 <MeldingVoorkeurenPaneel lang={lang} techTypen={techTypen} />
+
+                {techTypen && (
+                  <MeldingAfleveringControle lang={lang} ruimte={ruimte} fallbackStroom={stroom} compact />
+                )}
               </div>
             ) : (
               <>
@@ -1606,6 +1722,8 @@ export default function MeldingenPortaal({
                             lang={lang}
                             keten={eenheid.keten}
                             geselecteerd={isBreed && Boolean(geselecteerd && eenheid.keten.alleIds.includes(geselecteerd.id))}
+                            standaardUitgeklapt={Boolean(profiel.standaardUitgeklapt)}
+                            geforceerdOpen={globaalUitgeklapt !== null ? globaalUitgeklapt : undefined}
                             onSelect={(wortel) => setGeselecteerdId(wortel.id)}
                             onHerstelKeten={behandelKetenActie}
                             renderLosseKaart={renderLosseKaart}

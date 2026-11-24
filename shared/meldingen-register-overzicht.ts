@@ -156,7 +156,7 @@ export function bouwMeldingRegisterOverzicht(): {
   }
 
   // 2. Усі серверні коди дій з ACTIE_LABELS (shared/beheer-journaal.ts)
-  const stilleExtraRe = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.ecosysteem\.(actie|profiel)$)/;
+  const stilleExtraRe = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.ecosysteem\.(actie|profiel|ontvangst|aflevering_overzicht)$)/;
   let onbekendOverig = 0;
 
   for (const [code, [titelUk, titelNl]] of Object.entries(ACTIE_LABELS)) {
