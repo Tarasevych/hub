@@ -553,7 +553,7 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     voegToe({
       ...geb,
       ruimte: invoer.ruimte,
-      afgeleverdOp: geb.afgeleverdOp ?? inc.laatstGezienOp,
+      afgeleverdOp: geb.afgeleverdOp ?? inc.laatsteTijd,
       acties: liveActies,
     });
   }
