@@ -7,7 +7,7 @@
 // Apparaatklasse komt uit de ECHTE containerbreedte (ResizeObserver), niet uit window.innerWidth. Elke klasse heeft een eigen laag;
 // een ontbrekende tablet-/telefoonlaag wordt één keer afgeleid van de computerlaag (aanpassenVanaf) en daarna onafhankelijk bewaard.
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { Check, Image, LayoutGrid, Library, RotateCcw, Settings2, Undo2, X } from 'lucide-react';
+import { Check, Image, LayoutGrid, Library, Plus, RotateCcw, Settings2, Undo2, X } from 'lucide-react';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { profielVan, useTech } from '../tech/tech-opslag';
 import { ACHTERGRONDEN, werkbladTekst, werkbladWidget, type WerkbladContext, type WerkbladWidgetId } from '../../shared/werkblad-indeling';
@@ -392,12 +392,14 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   const kiesAchtergrond = (nieuw: string) => { const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout; if (a && l) bewaar(a, l, { achtergrond: nieuw }); zetAchtergrond(nieuw); };
 
   const stijl = achtergrond === 'eigen' && achtergrondEigen ? ({ '--wb-eigen': `url("${achtergrondEigen}")` } as CSSProperties) : undefined;
+  const leegOpCanvas = Boolean(klasse && laag && !bewerken && !laag.layout.items.some((e) => !e.parent));
   return (
     <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad='klaar' data-werkblad-versie='3'
-      data-wb-ruimte={ruimte} data-wb3-klasse={klasse || ''} data-wb3-status={status} aria-labelledby='werkblad-kop'>
+      data-wb-ruimte={ruimte} data-wb3-klasse={klasse || ''} data-wb3-status={status} data-wb3-leeg={leegOpCanvas ? '1' : '0'} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
         <span id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</span>
-        {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span> : null}
+        {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span>
+          : leegOpCanvas ? <span className='wb3-leeg-kop-label'>{tr(lang, 'Віджети на столі', 'Widgets op het werkblad')}</span> : null}
         <div className='wb-balk-acties'>
           {magBewerken ? (bewerken ? (
             <>
@@ -454,7 +456,21 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       <p className='sr-only' aria-live='polite' data-wb3-melding=''>{melding}</p>
       {melding ? <p className='wb3-melding melding melding-info' data-wb3-zichtbaar-melding=''>{melding}<button type='button' className='wb-tip-sluit' aria-label={tr(lang, 'Закрити', 'Sluiten')} onClick={() => zetMelding('')}><X aria-hidden='true' /></button></p> : null}
       <div className='wb3-houder' ref={houder} data-wb3-houder='' onDragOver={(e) => { if (bewerken && [...e.dataTransfer.types].includes(BIBLIOTHEEK_MIME)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }} onDrop={opDrop}>
-        {klasse && laag ? (
+        {leegOpCanvas ? (
+          <div className='wb3-leeg-kaart' data-wb3-leeg-kaart='1'>
+            <span className='wb3-leeg-icoon' aria-hidden='true'><LayoutGrid /></span>
+            <div className='wb3-leeg-tekst'>
+              <strong>{tr(lang, 'Робочий стіл ще порожній', 'Uw werkblad is nog leeg')}</strong>
+              <p>{tr(lang, 'Додайте віджети пошти, календаря, завдань чи швидкі ярлики.', 'Voeg widgets voor e-mail, agenda, taken of snelkoppelingen toe.')}</p>
+            </div>
+            {magBewerken ? (
+              <button type='button' className='knop-primair is-klein wb3-leeg-knop' data-wb3='leeg-toevoegen' onClick={() => { zetBewerken(true); zetBib(true); }}>
+                <Plus aria-hidden='true' />
+                <span>{tr(lang, 'Додати', 'Toevoegen')}</span>
+              </button>
+            ) : null}
+          </div>
+        ) : klasse && laag ? (
           <Canvas key={klasse} layout={laag.layout} editMode={bewerken && magBewerken} limieten={limietenV3} lang={lang} status={status}
             onCommit={opCommit} onRetry={opnieuw} onReload={() => void herladen()} onRequestAdd={() => zetBib(true)} onRename={magBewerken ? vraagMapHernoem : undefined} titel={titel} render={render}
             interactief={blk.aan ? heeftBlok : undefined} />
