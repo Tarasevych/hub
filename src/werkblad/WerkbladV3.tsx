@@ -7,7 +7,7 @@
 // Apparaatklasse komt uit de ECHTE containerbreedte (ResizeObserver), niet uit window.innerWidth. Elke klasse heeft een eigen laag;
 // een ontbrekende tablet-/telefoonlaag wordt één keer afgeleid van de computerlaag (aanpassenVanaf) en daarna onafhankelijk bewaard.
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { Check, Image, LayoutGrid, Library, Plus, RotateCcw, Settings2, Undo2, X } from 'lucide-react';
+import { CalendarDays, Check, HardDrive, Image, LayoutGrid, Library, Mail, Plus, RotateCcw, Settings2, Undo2, X } from 'lucide-react';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { profielVan, useTech } from '../tech/tech-opslag';
 import { ACHTERGRONDEN, werkbladTekst, werkbladWidget, type WerkbladContext, type WerkbladWidgetId } from '../../shared/werkblad-indeling';
@@ -385,7 +385,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
     try {
       const r = await draaiV3Terug({ v3Wissen: false });
       zetMelding(r.hersteld
-        ? tr(lang, `Розкладку v2 відновлено (версія ${r.v2Versie}). Щоб бачити старий стіл, вимкніть прапорець «werkblad-v3». Дані v3 збережено.`, `De v2-indeling is hersteld (versie ${r.v2Versie}). Zet de vlag «werkblad-v3» uit om het oude werkblad te zien. De v3-gegevens blijven bewaard.`)
+        ? tr(lang, `Розкладку v2 відновлено (версія ${r.v2Versie}). Щоб бачити старий стіл, вимкніть прапорець «werkblad-v3». Дані v3 збережено.`, `De v2-indeling is hersteld (versie ${r.v2Versie}). Zet de vlag «werkblad-v3» uit om het oude werkblad te zien. Dom het oude werkblad te zien. De v3-gegevens blijven bewaard.`)
         : tr(lang, 'Резервної копії v2 немає — нічого відновлювати.', 'Er is geen v2-back-up — niets te herstellen.'));
     } catch (e) { zetMelding(weigeringZinUitFout(lang, e) ?? tr(lang, `Не вдалося (${String((e as Error)?.message || e)}).`, `Mislukt (${String((e as Error)?.message || e)}).`)); }
   };
@@ -399,7 +399,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       <div className='wb-balk'>
         <span id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</span>
         {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span>
-          : leegOpCanvas ? <span className='wb3-leeg-kop-label'>{tr(lang, 'Віджети на столі', 'Widgets op het werkblad')}</span> : null}
+          : leegOpCanvas ? <span className='wb3-leeg-kop-label'>{tr(lang, 'Вільна композиція', 'Vrije compositie')}</span> : null}
         <div className='wb-balk-acties'>
           {magBewerken ? (bewerken ? (
             <>
@@ -457,18 +457,45 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       {melding ? <p className='wb3-melding melding melding-info' data-wb3-zichtbaar-melding=''>{melding}<button type='button' className='wb-tip-sluit' aria-label={tr(lang, 'Закрити', 'Sluiten')} onClick={() => zetMelding('')}><X aria-hidden='true' /></button></p> : null}
       <div className='wb3-houder' ref={houder} data-wb3-houder='' onDragOver={(e) => { if (bewerken && [...e.dataTransfer.types].includes(BIBLIOTHEEK_MIME)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }} onDrop={opDrop}>
         {leegOpCanvas ? (
-          <div className='wb3-leeg-kaart' data-wb3-leeg-kaart='1'>
-            <span className='wb3-leeg-icoon' aria-hidden='true'><LayoutGrid /></span>
-            <div className='wb3-leeg-tekst'>
-              <strong>{tr(lang, 'Робочий стіл ще порожній', 'Uw werkblad is nog leeg')}</strong>
-              <p>{tr(lang, 'Додайте віджети пошти, календаря, завдань чи швидкі ярлики.', 'Voeg widgets voor e-mail, agenda, taken of snelkoppelingen toe.')}</p>
+          <div className='wb3-leeg-kaart wb3-leeg-eiland' data-wb3-leeg-kaart='1'>
+            <div className='wb3-leeg-hoofd'>
+              <div className='wb3-leeg-koprij'>
+                <span className='wb3-leeg-icoon' aria-hidden='true'><LayoutGrid /></span>
+                <strong>{tr(lang, 'Віджети на столі', 'Widgets op het werkblad')}</strong>
+                <span className='wb3-leeg-streep' aria-hidden='true' />
+              </div>
+              <p>{tr(lang, 'Швидкий доступ до найважливішого: пошта, календар, файли, ярлики.', 'Snelle toegang tot wat telt: e-mail, agenda, bestanden en snelkoppelingen.')}</p>
+              {magBewerken ? (
+                <button type='button' className='knop-primair is-klein wb3-leeg-knop' data-wb3='leeg-toevoegen' onClick={() => { zetBewerken(true); zetBib(true); }}>
+                  <Plus aria-hidden='true' />
+                  <span>{tr(lang, 'Додати віджет', 'Widget toevoegen')}</span>
+                </button>
+              ) : null}
             </div>
-            {magBewerken ? (
-              <button type='button' className='knop-primair is-klein wb3-leeg-knop' data-wb3='leeg-toevoegen' onClick={() => { zetBewerken(true); zetBib(true); }}>
-                <Plus aria-hidden='true' />
-                <span>{tr(lang, 'Додати', 'Toevoegen')}</span>
+
+            <div className='wb3-leeg-modules' aria-label={tr(lang, 'Доступні модулі робочого столу', 'Beschikbare werkbladmodules')}>
+              <button type='button' className='wb3-mini-module is-mod-1' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                <span className='wb3-mini-icoon' aria-hidden='true'><Mail /></span>
+                <span className='wb3-mini-tekst'>
+                  <b>{tr(lang, 'Пошта', 'E-mail')}</b>
+                  <small>{tr(lang, 'Листи', 'Berichten')}</small>
+                </span>
               </button>
-            ) : null}
+              <button type='button' className='wb3-mini-module is-mod-2' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                <span className='wb3-mini-icoon' aria-hidden='true'><CalendarDays /></span>
+                <span className='wb3-mini-tekst'>
+                  <b>{tr(lang, 'Календар', 'Agenda')}</b>
+                  <small>{tr(lang, 'Події', 'Afspraken')}</small>
+                </span>
+              </button>
+              <button type='button' className='wb3-mini-module is-mod-3' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                <span className='wb3-mini-icoon' aria-hidden='true'><HardDrive /></span>
+                <span className='wb3-mini-tekst'>
+                  <b>{tr(lang, 'Диск', 'Drive')}</b>
+                  <small>{tr(lang, 'Файли та сховище', 'Bestanden en opslag')}</small>
+                </span>
+              </button>
+            </div>
           </div>
         ) : klasse && laag ? (
           <Canvas key={klasse} layout={laag.layout} editMode={bewerken && magBewerken} limieten={limietenV3} lang={lang} status={status}

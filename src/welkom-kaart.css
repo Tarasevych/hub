@@ -1,70 +1,174 @@
-/* Картка «Що далі» (src/WelkomKaart.tsx): компактне сучасне скляне оформлення без зайвої висоти й без перебиття шрифтом Georgia. */
+/* «Живий простір» для картки «Що далі» (src/WelkomKaart.tsx):
+   відмова від одноманітних вкладених прямокутників, органічні поверхні різного радіуса,
+   природні матові тони лише зі змінних теми (без неону), єдина лінія взаємодії та вбудовані кнопки. */
 .welkom-kaart {
+  --wk-steen: color-mix(in srgb, var(--panel) 84%, var(--surface));
+  --wk-salie: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  --wk-salie-diep: color-mix(in srgb, var(--accent) 44%, var(--text));
+  --wk-rand-zacht: color-mix(in srgb, var(--text) 9%, var(--line));
+  --wk-glans: color-mix(in srgb, var(--panel) 78%, transparent);
+  position: relative;
   display: grid;
-  gap: 10px;
-  margin: 0 0 12px;
-  padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--panel) 86%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: var(--schaduw-1, 0 8px 24px rgb(15 23 42 / 0.06));
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 20px 22px 22px;
+  border: 0;
+  border-radius: 34px 48px 36px 28px / 24px 34px 28px 24px;
+  background:
+    radial-gradient(ellipse 68% 58% at 96% 4%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 68%),
+    radial-gradient(ellipse 52% 48% at 4% 96%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 72%),
+    color-mix(in srgb, var(--panel) 74%, var(--bg));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    inset 0 1px 0 var(--wk-glans),
+    0 12px 32px color-mix(in srgb, var(--text) 5%, transparent);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--text);
+  overflow: hidden;
 }
 
 .welkom-kaart header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 14px;
 }
 
 .welkom-kop {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 
 .welkom-titel-rij {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .welkom-kaart h2 {
   margin: 0;
   font-family: inherit;
-  font-size: 1.02rem;
+  font-size: 1.24rem;
   font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.25;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
   color: var(--text);
 }
 
 .welkom-teller {
   display: inline-flex;
   align-items: center;
-  height: 20px;
-  padding: 0 8px;
+  height: 22px;
+  padding: 0 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--wk-salie-diep);
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 650;
   line-height: 1;
   white-space: nowrap;
 }
 
 .welkom-kaart header p {
   margin: 0;
+  max-width: 44ch;
   color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.38;
+  font-size: 0.84rem;
+  line-height: 1.42;
 }
 
+.welkom-accent-lijn {
+  display: block;
+  width: 30px;
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 42%, var(--muted));
+}
+
+.welkom-kop-acties {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+/* Кільце поступу 0/2 або 0/3 */
+.welkom-voortgang {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+}
+
+.welkom-voortgang svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.welkom-ring-spoor {
+  fill: color-mix(in srgb, var(--panel) 72%, transparent);
+  stroke: color-mix(in srgb, var(--text) 12%, transparent);
+  stroke-width: 3.5;
+}
+
+.welkom-ring-boog {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 72%, var(--text));
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 125.6;
+  stroke-dashoffset: 94;
+}
+
+.welkom-voortgang span {
+  position: relative;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Вбудована темна/акцентна кругла кнопка швидкого початку */
+.welkom-snelstart {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wk-salie-diep);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--text) 14%, transparent);
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.welkom-snelstart:hover,
+.welkom-snelstart:focus-visible {
+  background: var(--accent);
+  transform: translateX(2px);
+}
+
+.welkom-snelstart svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Делікатна кнопка закриття */
 .welkom-kaart .welkom-sluit {
   position: relative;
   flex: none;
@@ -75,17 +179,17 @@
   height: 32px;
   min-height: 32px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border: 1px solid var(--wk-rand-zacht);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  background: color-mix(in srgb, var(--panel) 66%, transparent);
   color: var(--muted);
   cursor: pointer;
-  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  transition: background-color 0.16s ease, color 0.16s ease;
 }
 
 .welkom-kaart .welkom-sluit:hover,
 .welkom-kaart .welkom-sluit:focus-visible {
-  background: var(--surface2, var(--surface));
+  background: var(--panel);
   color: var(--text);
 }
 
@@ -94,64 +198,133 @@
   height: 15px;
 }
 
-.welkom-kaart ol {
+/* Ландшафт кроків + бокова вісь спокійного ритму */
+.welkom-landschap {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 118px;
+  gap: 18px;
+  align-items: center;
+}
+
+.welkom-stappen-baan {
+  position: relative;
+  min-width: 0;
+}
+
+/* Єдина плавна лінія зв'язку між поштою, хмарою й ШІ */
+.welkom-verbindingslijn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.welkom-verbindingslijn path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 44%, var(--line));
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.72;
+}
+
+.welkom-kaart ol {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.welkom-kaart li {
+/* Органічні асиметричні поверхні кроків (різні радіуси та природний зсув ритму) */
+.welkom-kaart li.welkom-stap-vorm {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: 14px;
   align-items: center;
-  padding: 10px 11px;
-  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface) 64%, var(--panel));
+  padding: 12px 16px 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--panel) 72%, var(--wk-rand-zacht));
+  background: color-mix(in srgb, var(--panel) 90%, var(--surface));
+  box-shadow:
+    inset 0 1px 0 var(--wk-glans),
+    0 10px 26px color-mix(in srgb, var(--text) 7%, transparent);
   cursor: pointer;
-  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.welkom-kaart li:hover {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+.welkom-kaart li.is-stap-1 {
+  margin-inline-end: 6%;
+  border-radius: 38px 28px 46px 26px / 28px 34px 26px 32px;
+}
+
+.welkom-kaart li.is-stap-2 {
+  margin-inline-start: 7%;
+  border-radius: 26px 42px 28px 44px / 32px 26px 34px 28px;
+}
+
+.welkom-kaart li.is-stap-3 {
+  margin-inline-start: 2%;
+  margin-inline-end: 4%;
+  border-radius: 34px 40px 30px 38px / 26px 32px 28px 34px;
+}
+
+.welkom-kaart li.welkom-stap-vorm:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
   background: var(--panel);
-  box-shadow: 0 4px 14px rgb(15 23 42 / 0.05);
+  box-shadow:
+    inset 0 1px 0 var(--wk-glans),
+    0 14px 30px color-mix(in srgb, var(--text) 10%, transparent);
 }
 
+/* Органічна галькова форма значка */
 .welkom-icoon {
   position: relative;
   display: grid;
   place-items: center;
   flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--accent) 13%, var(--panel));
-  color: var(--accent);
+  width: 50px;
+  height: 46px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 22%, var(--surface)), color-mix(in srgb, var(--accent) 10%, var(--panel)));
+  color: var(--wk-salie-diep);
+  box-shadow: inset 0 1px 0 var(--wk-glans);
+}
+
+.welkom-icoon.is-vorm-1 {
+  border-radius: 56% 44% 58% 42% / 48% 54% 46% 52%;
+}
+
+.welkom-icoon.is-vorm-2 {
+  border-radius: 44% 56% 46% 54% / 58% 42% 56% 44%;
+}
+
+.welkom-icoon.is-vorm-3 {
+  border-radius: 52% 48% 44% 56% / 44% 56% 52% 48%;
 }
 
 .welkom-icoon svg {
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
 }
 
 .welkom-nr {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -3px;
+  right: -3px;
   display: inline-grid;
   place-items: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--wk-salie-diep);
   color: var(--text-on-accent);
-  font-size: 0.64rem;
+  font-size: 0.66rem;
   font-weight: 700;
   line-height: 1;
   box-shadow: 0 0 0 2px var(--panel);
@@ -164,75 +337,183 @@
 }
 
 .welkom-inhoud strong {
-  font-size: 0.88rem;
+  font-size: 0.94rem;
   font-weight: 700;
-  line-height: 1.25;
+  letter-spacing: -0.012em;
+  line-height: 1.24;
   color: var(--text);
 }
 
 .welkom-kaart li p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.35;
+  font-size: 0.8rem;
+  line-height: 1.36;
 }
 
+/* Вбудована тактильна кнопка-диск (органічне продовження поверхні, а не прямокутник) */
 .welkom-kaart li .welkom-actie {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 5px;
   flex: none;
-  min-height: 32px;
-  padding: 5px 10px 5px 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
   border-radius: 999px;
-  background: var(--panel);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--surface) 76%, var(--panel));
+  color: var(--text);
   font-size: 0.78rem;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  box-shadow:
+    inset 0 1px 0 var(--wk-glans),
+    0 3px 8px color-mix(in srgb, var(--text) 6%, transparent);
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .welkom-kaart li .welkom-actie svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   flex: none;
 }
 
 .welkom-kaart li:hover .welkom-actie,
 .welkom-kaart li .welkom-actie:hover,
 .welkom-kaart li .welkom-actie:focus-visible {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--wk-salie-diep);
+  border-color: var(--wk-salie-diep);
   color: var(--text-on-accent);
+  transform: translateX(2px);
+}
+
+/* Тиха вертикальна вісь шляху праворуч */
+.welkom-zijpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 6px 4px;
+  color: var(--muted);
+}
+
+.welkom-zijpad-blad {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--wk-salie-diep);
+  color: var(--text-on-accent);
+}
+
+.welkom-zijpad-blad svg {
+  width: 14px;
+  height: 14px;
+}
+
+.welkom-zijpad-lijn {
+  width: 1px;
+  height: 14px;
+  background: color-mix(in srgb, var(--text) 20%, transparent);
+}
+
+.welkom-zijpad-stip {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 26%, transparent);
+}
+
+.welkom-zijpad-stip.is-actief {
+  width: 7px;
+  height: 7px;
+  background: var(--wk-salie-diep);
+}
+
+.welkom-zijpad-tekst {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--muted);
+  max-width: 14ch;
+}
+
+@media (max-width: 760px) {
+  .welkom-landschap {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .welkom-zijpad {
+    display: none;
+  }
 }
 
 @media (max-width: 700px) {
   .welkom-kaart {
-    padding: 12px 13px;
-    border-radius: 16px;
-    gap: 9px;
+    padding: 15px 14px 16px;
+    border-radius: 24px 30px 26px 20px / 20px 26px 22px 20px;
+    gap: 12px;
+    margin: 0 0 14px;
+  }
+
+  .welkom-kaart h2 {
+    font-size: 1.12rem;
+  }
+
+  .welkom-voortgang {
+    width: 40px;
+    height: 40px;
   }
 
   .welkom-kaart ol {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 7px;
+    gap: 10px;
   }
 
-  .welkom-kaart li {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    padding: 9px 10px;
-    gap: 9px;
-    border-radius: 13px;
+  .welkom-kaart li.welkom-stap-vorm {
+    padding: 10px 11px;
+    gap: 11px;
   }
 
-  /* Висока специфічність переважає базову вимогу min-height: 44px для вузьких кнопок, а прозорий ::after зберігає зону дотику >= 44px */
-  .canonical-chrome .canonical-content .welkom-kaart .welkom-sluit {
+  .welkom-kaart li.is-stap-1 {
+    margin-inline-end: 3%;
+    border-radius: 28px 22px 32px 20px / 22px 26px 22px 24px;
+  }
+
+  .welkom-kaart li.is-stap-2 {
+    margin-inline-start: 4%;
+    border-radius: 20px 30px 22px 30px / 26px 22px 26px 22px;
+  }
+
+  .welkom-kaart li.is-stap-3 {
+    margin-inline-start: 1%;
+    margin-inline-end: 2%;
+  }
+
+  .welkom-icoon {
+    width: 44px;
+    height: 40px;
+  }
+
+  .welkom-icoon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .welkom-kaart li .welkom-actie-tekst {
+    display: none;
+  }
+
+  /* Вбудовані круглі кнопки на телефоні зберігають дотикову зону >= 44px через прозорий ::after */
+  .canonical-chrome .canonical-content .welkom-kaart .welkom-sluit,
+  .canonical-chrome .canonical-content .welkom-kaart .welkom-snelstart,
+  .canonical-chrome .canonical-content .welkom-kaart li .welkom-actie {
     width: 34px;
     min-width: 34px;
     height: 34px;
@@ -240,18 +521,8 @@
     padding: 0;
   }
 
-  .canonical-chrome .canonical-content .welkom-kaart .welkom-sluit::after {
-    content: '';
-    position: absolute;
-    inset: -5px;
-  }
-
-  .canonical-chrome .canonical-content .welkom-kaart li .welkom-actie {
-    min-height: 34px;
-    padding: 5px 8px 5px 10px;
-    font-size: 0.76rem;
-  }
-
+  .canonical-chrome .canonical-content .welkom-kaart .welkom-sluit::after,
+  .canonical-chrome .canonical-content .welkom-kaart .welkom-snelstart::after,
   .canonical-chrome .canonical-content .welkom-kaart li .welkom-actie::after {
     content: '';
     position: absolute;
@@ -259,25 +530,14 @@
   }
 }
 
-@media (max-width: 400px) {
-  .welkom-kaart li .welkom-actie-tekst {
-    display: none;
-  }
-
-  .canonical-chrome .canonical-content .welkom-kaart li .welkom-actie {
-    width: 34px;
-    min-width: 34px;
-    height: 34px;
-    min-height: 34px;
-    padding: 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .welkom-kaart li,
+  .welkom-kaart li.welkom-stap-vorm,
   .welkom-kaart .welkom-sluit,
+  .welkom-snelstart,
   .welkom-kaart li .welkom-actie {
     transition: none;
+    transform: none;
   }
 }
+
 
