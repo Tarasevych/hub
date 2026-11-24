@@ -465,36 +465,59 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
                 <span className='wb3-leeg-streep' aria-hidden='true' />
               </div>
               <p>{tr(lang, 'Швидкий доступ до найважливішого: пошта, календар, файли, ярлики.', 'Snelle toegang tot wat telt: e-mail, agenda, bestanden en snelkoppelingen.')}</p>
-              {magBewerken ? (
-                <button type='button' className='knop-primair is-klein wb3-leeg-knop' data-wb3='leeg-toevoegen' onClick={() => { zetBewerken(true); zetBib(true); }}>
-                  <Plus aria-hidden='true' />
-                  <span>{tr(lang, 'Додати віджет', 'Widget toevoegen')}</span>
-                </button>
-              ) : null}
+              <div className='wb3-leeg-actierij'>
+                {magBewerken ? (
+                  <button type='button' className='knop-primair is-klein wb3-leeg-knop is-bloemblad-knop' data-wb3='leeg-toevoegen' onClick={() => { zetBewerken(true); zetBib(true); }}>
+                    <Plus aria-hidden='true' />
+                    <span>{tr(lang, 'Додати віджет', 'Widget toevoegen')}</span>
+                  </button>
+                ) : null}
+                <div className='wb3-snel-kapsel' role='toolbar' aria-label={tr(lang, 'Швидкі дії простору', 'Snelle acties van de ruimte')}>
+                  {magBewerken ? (
+                    <button type='button' onClick={() => { zetBewerken(true); zetBib(true); }} aria-label={tr(lang, 'Відкрити бібліотеку віджетів', 'Widgetbibliotheek openen')} title={tr(lang, 'Бібліотека віджетів', 'Widgetbibliotheek')}>
+                      <Plus aria-hidden='true' />
+                    </button>
+                  ) : null}
+                  <button type='button' onClick={() => acties.dienst('mail')} aria-label={tr(lang, 'Відкрити пошту', 'E-mail openen')} title={tr(lang, 'Пошта', 'E-mail')}>
+                    <Mail aria-hidden='true' />
+                  </button>
+                  <button type='button' onClick={() => acties.hubTab('calendar')} aria-label={tr(lang, 'Відкрити календар', 'Agenda openen')} title={tr(lang, 'Календар', 'Agenda')}>
+                    <CalendarDays aria-hidden='true' />
+                  </button>
+                  <button type='button' onClick={() => acties.dienst('cloud')} aria-label={tr(lang, 'Відкрити хмарне сховище', 'Cloudopslag openen')} title={tr(lang, 'Хмара', 'Cloud')}>
+                    <HardDrive aria-hidden='true' />
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className='wb3-leeg-modules' aria-label={tr(lang, 'Доступні модулі робочого столу', 'Beschikbare werkbladmodules')}>
-              <button type='button' className='wb3-mini-module is-mod-1' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
-                <span className='wb3-mini-icoon' aria-hidden='true'><Mail /></span>
-                <span className='wb3-mini-tekst'>
-                  <b>{tr(lang, 'Пошта', 'E-mail')}</b>
-                  <small>{tr(lang, 'Листи', 'Berichten')}</small>
-                </span>
-              </button>
-              <button type='button' className='wb3-mini-module is-mod-2' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
-                <span className='wb3-mini-icoon' aria-hidden='true'><CalendarDays /></span>
-                <span className='wb3-mini-tekst'>
-                  <b>{tr(lang, 'Календар', 'Agenda')}</b>
-                  <small>{tr(lang, 'Події', 'Afspraken')}</small>
-                </span>
-              </button>
-              <button type='button' className='wb3-mini-module is-mod-3' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
-                <span className='wb3-mini-icoon' aria-hidden='true'><HardDrive /></span>
-                <span className='wb3-mini-tekst'>
-                  <b>{tr(lang, 'Диск', 'Drive')}</b>
-                  <small>{tr(lang, 'Файли та сховище', 'Bestanden en opslag')}</small>
-                </span>
-              </button>
+            <div className='wb3-leeg-modules-vlak'>
+              <svg className='wb3-vloei-golf' viewBox='0 0 360 150' preserveAspectRatio='none' aria-hidden='true'>
+                <path d='M 16 62 C 88 22, 148 110, 218 52 C 266 12, 316 44, 344 76 C 324 126, 250 144, 178 128 C 110 112, 52 132, 16 62 Z' />
+              </svg>
+              <div className='wb3-leeg-modules' aria-label={tr(lang, 'Доступні модулі робочого столу', 'Beschikbare werkbladmodules')}>
+                <button type='button' className='wb3-mini-module is-mod-1' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                  <span className='wb3-mini-icoon' aria-hidden='true'><Mail /></span>
+                  <span className='wb3-mini-tekst'>
+                    <b>{tr(lang, 'Пошта', 'E-mail')}</b>
+                    <small>{tr(lang, 'Листи', 'Berichten')}</small>
+                  </span>
+                </button>
+                <button type='button' className='wb3-mini-module is-mod-2' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                  <span className='wb3-mini-icoon' aria-hidden='true'><CalendarDays /></span>
+                  <span className='wb3-mini-tekst'>
+                    <b>{tr(lang, 'Календар', 'Agenda')}</b>
+                    <small>{tr(lang, 'Події', 'Afspraken')}</small>
+                  </span>
+                </button>
+                <button type='button' className='wb3-mini-module is-mod-3' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                  <span className='wb3-mini-icoon' aria-hidden='true'><HardDrive /></span>
+                  <span className='wb3-mini-tekst'>
+                    <b>{tr(lang, 'Диск', 'Drive')}</b>
+                    <small>{tr(lang, 'Файли та сховище', 'Bestanden en opslag')}</small>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         ) : klasse && laag ? (

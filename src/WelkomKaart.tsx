@@ -1,8 +1,8 @@
-// Початкова картка «Живий простір» (аудит 19.10.2026, пункт 4): органічна асиметрична композиція без вкладених прямокутників,
+// Початкова картка «Живий простір» (аудит 19.10.2026, пункт 4): пелюсткова геометрія без вкладених прямокутників,
 // єдина лінія взаємодії між кроками (пошта → хмара й календар → ШІ, останній лише за права «api-platform»), кільце поступу
-// та вбудовані тактильні кнопки дії. Закриття зберігається на сервері (ui-voorkeuren.welkomGesloten) на всіх пристроях.
-import type { ReactElement } from 'react';
-import { ArrowRight, Bot, CalendarDays, Leaf, Mail, X } from 'lucide-react';
+// та перемикання у спокійний однорядковий режим через м'яку кнопку-ромб. Закриття зберігається на сервері (welkomGesloten).
+import { useState, type ReactElement } from 'react';
+import { ArrowRight, Bot, CalendarDays, ChevronDown, ChevronUp, Leaf, Mail, X } from 'lucide-react';
 import { canonicalNavigationUrl } from './canoniek-navigatie';
 import { useIsMaquette } from './thema/useThema';
 import './welkom-kaart.css';
@@ -13,6 +13,8 @@ type Props = { lang: 'uk' | 'nl'; ai: boolean; onOpen: (service: 'mail' | 'cloud
 export default function WelkomKaart({ lang, ai, onOpen, onClose }: Props) {
   const uk = lang === 'uk';
   const isMaquette = useIsMaquette();
+  const [rustig, setRustig] = useState(false);
+
   const stappen: Array<{ id: Service; nr: number; icoon: ReactElement; titel: string; tekst: string; knop: string; ga: () => void }> = [
     {
       id: 'mail',
@@ -50,15 +52,82 @@ export default function WelkomKaart({ lang, ai, onOpen, onClose }: Props) {
   const aantalTekst = uk ? `${aantal} кроки` : `${aantal} stappen`;
   const eersteActie = stappen[0];
 
+  if (rustig) {
+    return (
+      <section
+        className={`welkom-kaart welkom-levend is-rustig${isMaquette ? ' is-maquette' : ''}`}
+        data-hub-welkom={ai ? 'met-ai' : 'zonder-ai'}
+        data-welkom-stijl='levende-ruimte'
+        data-welkom-modus='rustig'
+        data-mq-dienst={isMaquette ? 'hub' : undefined}
+        aria-labelledby='welkom-kaart-titel'
+      >
+        <div className='welkom-rustig-rij'>
+          <h2 id='welkom-kaart-titel'>{uk ? 'Що далі' : 'Wat nu'}</h2>
+          <div className='welkom-rustig-spoor' role='list' aria-label={uk ? 'Кроки налаштування' : 'Instelstappen'}>
+            {stappen.map((s, idx) => (
+              <div key={s.id} className='welkom-rustig-node' role='listitem' data-welkom-stap={s.id}>
+                {idx > 0 ? <span className='welkom-rustig-draad' aria-hidden='true' /> : null}
+                <button
+                  type='button'
+                  className={`welkom-rustig-punt${idx === 0 ? ' is-volgende' : ''}`}
+                  onClick={s.ga}
+                  title={`${s.nr}. ${s.titel}`}
+                  aria-label={`${s.nr}. ${s.titel}`}
+                >
+                  {s.icoon}
+                </button>
+              </div>
+            ))}
+          </div>
+          <span className='welkom-rustig-teller'>{uk ? `0 з ${aantal}` : `0 van ${aantal}`}</span>
+          <div className='welkom-rustig-acties'>
+            <button
+              type='button'
+              className='secondary welkom-rustig-ga'
+              onClick={eersteActie.ga}
+              aria-label={uk ? `Перейти до кроку: ${eersteActie.titel}` : `Ga naar stap: ${eersteActie.titel}`}
+              title={eersteActie.titel}
+            >
+              <ArrowRight aria-hidden='true' />
+            </button>
+            <button
+              type='button'
+              className='welkom-ruit-knop'
+              data-welkom-rustig='0'
+              onClick={() => setRustig(false)}
+              aria-expanded='false'
+              aria-label={uk ? 'Розгорнути блок «Що далі»' : 'Onderdeel «Wat nu» uitklappen'}
+              title={uk ? 'Розгорнути кроки' : 'Stappen uitklappen'}
+            >
+              <ChevronDown aria-hidden='true' />
+            </button>
+            <button
+              type='button'
+              className='icon-button welkom-sluit'
+              onClick={onClose}
+              aria-label={uk ? 'Закрити блок «Що далі»' : 'Onderdeel «Wat nu» sluiten'}
+              title={uk ? 'Закрити й більше не показувати' : 'Sluiten en niet meer tonen'}
+              data-hub-welkom-sluiten='1'
+            >
+              <X aria-hidden='true' />
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className={`welkom-kaart welkom-levend${isMaquette ? ' is-maquette' : ''}`}
       data-hub-welkom={ai ? 'met-ai' : 'zonder-ai'}
       data-welkom-stijl='levende-ruimte'
+      data-welkom-modus='volledig'
       data-mq-dienst={isMaquette ? 'hub' : undefined}
       aria-labelledby='welkom-kaart-titel'
     >
-      <header>
+      <header className='welkom-brug-kop'>
         <div className='welkom-kop'>
           {isMaquette ? <span className='welkom-bovenregel'>{uk ? 'Живий простір · Мій простір' : 'Levende ruimte · Mijn Ruimte'}</span> : null}
           <div className='welkom-titel-rij'>
@@ -74,20 +143,25 @@ export default function WelkomKaart({ lang, ai, onOpen, onClose }: Props) {
             aria-label={uk ? `Виконано 0 з ${aantal} кроків` : `0 van ${aantal} stappen voltooid`}
             title={uk ? `Поступ: 0 з ${aantal}` : `Voortgang: 0 van ${aantal}`}
           >
-            <svg viewBox='0 0 48 48' aria-hidden='true'>
-              <circle className='welkom-ring-spoor' cx='24' cy='24' r='20' />
-              <circle className='welkom-ring-boog' cx='24' cy='24' r='20' />
+            <svg viewBox='0 0 52 52' aria-hidden='true'>
+              <circle className='welkom-ring-spoor' cx='26' cy='26' r='22' />
+              <circle className='welkom-ring-boog' cx='26' cy='26' r='22' />
             </svg>
-            <span>0/{aantal}</span>
+            <div className='welkom-voortgang-binnen'>
+              <strong>0/{aantal}</strong>
+              <small>{uk ? 'кроки' : 'stappen'}</small>
+            </div>
           </div>
           <button
             type='button'
-            className='welkom-snelstart'
-            onClick={eersteActie.ga}
-            aria-label={uk ? `Почати з першого кроку: ${eersteActie.titel}` : `Start met eerste stap: ${eersteActie.titel}`}
-            title={eersteActie.titel}
+            className='welkom-ruit-knop'
+            data-welkom-rustig='1'
+            onClick={() => setRustig(true)}
+            aria-expanded='true'
+            aria-label={uk ? 'Згорнути у спокійний режим' : 'Inklappen naar rustige modus'}
+            title={uk ? 'Спокійний однорядковий режим' : 'Rustige modus op één regel'}
           >
-            <ArrowRight aria-hidden='true' />
+            <ChevronUp aria-hidden='true' />
           </button>
           <button
             type='button'
@@ -104,21 +178,23 @@ export default function WelkomKaart({ lang, ai, onOpen, onClose }: Props) {
 
       <div className='welkom-landschap'>
         <div className='welkom-stappen-baan'>
-          <svg className='welkom-verbindingslijn' viewBox='0 0 600 220' preserveAspectRatio='none' aria-hidden='true'>
-            <path d='M 430 58 C 520 96, 120 112, 165 162 C 195 196, 460 198, 495 215' />
+          <svg className='welkom-stengel' viewBox='0 0 54 220' preserveAspectRatio='none' aria-hidden='true'>
+            <path d='M 24 14 C 6 58, 42 96, 22 142 C 10 172, 26 196, 30 212' />
+            <circle cx='24' cy='14' r='2.5' />
+            <circle cx='30' cy='212' r='2.5' />
           </svg>
           <ol>
             {stappen.map((s) => (
               <li
                 key={s.id}
-                className={`welkom-stap-vorm is-stap-${s.nr}`}
+                className={`welkom-stap-vorm is-bloemblad is-stap-${s.nr}`}
                 data-welkom-stap={s.id}
                 onClick={(e) => {
                   if ((e.target as HTMLElement | null)?.closest('button')) return;
                   s.ga();
                 }}
               >
-                <span className={`welkom-icoon is-vorm-${s.nr}`}>
+                <span className={`welkom-icoon is-bloemblad-icoon is-vorm-${s.nr}`}>
                   {s.icoon}
                   <span className='welkom-nr' aria-hidden='true'>{s.nr}</span>
                 </span>
