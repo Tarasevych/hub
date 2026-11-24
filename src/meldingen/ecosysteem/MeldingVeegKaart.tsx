@@ -44,7 +44,6 @@ import IcoonActieKnop from '../IcoonActieKnop';
 import {
   PulsBestandChip,
   PulsBronTeken,
-  PulsIcoon,
   PulsKlimopZegel,
   PulsMandaatStraalBlok,
   PulsUitstelMenu,
@@ -332,6 +331,21 @@ export default function MeldingVeegKaart({
   const kaartStaat = bepaalKaartStaat(gebeurtenis, verrijkt.niveau);
   const schemaNaam = MELDING_SCHEMAS[verrijkt.schemaId]?.naam[lang === 'nl' ? 1 : 0] || verrijkt.schemaNaam;
   const zichtbareTitel = schoonKaartTitel(gebeurtenis.titel);
+  const kortOnderdeel = (() => {
+    const Vol = subdomeinMenselijkLabel(gebeurtenis.subdomein, lang);
+    const kaart: Partial<Record<string, [string, string]>> = {
+      admin: ['Керування', 'Beheer'],
+      github: ['GitHub', 'GitHub'],
+      hub: ['Простір', 'Ruimte'],
+      id: ['Вхід і ключі', 'Toegang'],
+      cloud: ['Хмара', 'Cloud'],
+      mcp: ['Міст ШІ', 'AI-brug'],
+      api: ['Інтеграції', 'API'],
+      crm: ['Контакти', 'CRM'],
+    };
+    const paar = kaart[gebeurtenis.subdomein];
+    return paar ? paar[lang === 'nl' ? 1 : 0] : Vol;
+  })();
 
   return (
     <div className='mel-veeg-houder' data-testid={`mel-kaart-${gebeurtenis.id}`}>
@@ -357,25 +371,22 @@ export default function MeldingVeegKaart({
         }}
       >
         <div className='mel-kaart-kop'>
-          <PulsBronTeken anker={verrijkt.anker} maat={36} />
+          <PulsBronTeken anker={verrijkt.anker} maat={34} />
 
           <div className='mel-kaart-hoofd'>
-            <div className='mel-kaart-meta'>
+            <div className='mel-kaart-meta puls-meta-slank'>
+              <span className='puls-meta-onderdeel' title={subdomeinMenselijkLabel(gebeurtenis.subdomein, lang)}>
+                {kortOnderdeel}
+              </span>
+              <span className='puls-meta-punt' aria-hidden='true'>·</span>
               <span
                 className={`puls-schema-chip is-staat-${kaartStaat}`}
                 data-puls-schema={verrijkt.schemaId}
                 data-puls-staat={kaartStaat}
               >
-                <i className='puls-staat-stip' aria-hidden='true' />
-                <span>{schemaNaam}</span>
+                {schemaNaam}
               </span>
-              <span className='mel-subdomein-chip puls-onderdeel-chip'>
-                <PulsIcoon soort={verrijkt.anker.icoon} />
-                <span>{subdomeinMenselijkLabel(gebeurtenis.subdomein, lang)}</span>
-              </span>
-              <span className='mel-kanaal-naam'>{verrijkt.anker.label}</span>
-              {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} />}
-              {kaartStaat !== 'goed' && gebeurtenis.prioriteit !== 'normaal' && gebeurtenis.prioriteit !== 'laag' && (
+              {kaartStaat !== 'goed' && gebeurtenis.prioriteit === 'kritiek' && (
                 <span className={`mel-prio is-${gebeurtenis.prioriteit}`}>
                   {prioriteitLabel(gebeurtenis.prioriteit, lang)}
                 </span>
@@ -385,7 +396,10 @@ export default function MeldingVeegKaart({
                   ×{gebeurtenis.herhalingen}
                 </span>
               )}
-              <span className='mel-tijd'>{relatieveTijd(gebeurtenis.bijgewerktOp, lang)}</span>
+              <span className='puls-meta-rechts'>
+                {verrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} compact />}
+                <span className='mel-tijd'>{relatieveTijd(gebeurtenis.bijgewerktOp, lang)}</span>
+              </span>
             </div>
 
             <button
@@ -399,7 +413,6 @@ export default function MeldingVeegKaart({
                 if (gebeurtenis.status === 'nieuw') void onStatus('gelezen');
               }}
             >
-              {gebeurtenis.status === 'nieuw' && <i className='mel-nieuw-stip' aria-hidden='true' />}
               <strong>{zichtbareTitel}</strong>
               <ChevronDown className={`mel-pijl-klap${open ? ' is-open' : ''}`} aria-hidden='true' />
             </button>
@@ -478,7 +491,9 @@ export default function MeldingVeegKaart({
         })()}
 
         <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
-          {verrijkt.gevolgHint ? <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span> : null}
+          {verrijkt.gevolgHint && verrijkt.niveau !== 'gewoon' ? (
+            <span className='puls-gevolg-hint'>{verrijkt.gevolgHint}</span>
+          ) : null}
 
           <div className='puls-actie-groep puls-kaart-knoppen-rij'>
             {verrijkt.niveau === 'gevaar' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
@@ -554,11 +569,11 @@ export default function MeldingVeegKaart({
                   />
                 )}
 
-                {gebeurtenis.bijlagen.length > 0 && inlineBijlageIdx === null && (
+                {gebeurtenis.bijlagen.length > 1 && inlineBijlageIdx === null && (
                   <IcoonActieKnop
                     icoon={<Paperclip aria-hidden='true' />}
-                    teller={gebeurtenis.bijlagen.length > 1 ? gebeurtenis.bijlagen.length : undefined}
-                    label={t('Переглянути вкладення тут', 'Bijlage hier bekijken')}
+                    teller={gebeurtenis.bijlagen.length}
+                    label={t('Переглянути всі вкладення', 'Alle bijlagen bekijken')}
                     stopPropagatie
                     onClick={() => {
                       setOpen(true);
@@ -584,39 +599,52 @@ export default function MeldingVeegKaart({
 
             {gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
               <>
-                <div className='puls-uitstel-anker'>
-                  <IcoonActieKnop
-                    toon={uitstelMenuOpen ? 'actief' : 'standaard'}
-                    icoon={<Clock3 aria-hidden='true' />}
-                    label={t('Відкласти за умовою або часом', 'Uitstellen op voorwaarde of tijd')}
-                    ariaLabel={t('Розумне відкладення за умовою', 'Slim voorwaardelijk uitstel')}
-                    aria-expanded={uitstelMenuOpen}
-                    stopPropagatie
-                    onClick={() => {
-                      if (onVoorwaardelijkUitstel) {
-                        setUitstelMenuOpen((v) => !v);
-                      } else {
-                        void onStatus('uitgesteld', 30);
-                      }
-                    }}
-                  />
-                  {uitstelMenuOpen && onVoorwaardelijkUitstel ? (
-                    <PulsUitstelMenu
-                      lang={lang}
-                      doelSubdomein={gebeurtenis.subdomein}
-                      onKies={(soort) => {
-                        setUitstelMenuOpen(false);
-                        onVoorwaardelijkUitstel(soort);
+                {kaartStaat !== 'goed' && (
+                  <div className='puls-uitstel-anker'>
+                    <IcoonActieKnop
+                      toon={uitstelMenuOpen ? 'actief' : 'standaard'}
+                      icoon={<Clock3 aria-hidden='true' />}
+                      label={t('Відкласти за умовою або часом', 'Uitstellen op voorwaarde of tijd')}
+                      ariaLabel={t('Розумне відкладення за умовою', 'Slim voorwaardelijk uitstel')}
+                      aria-expanded={uitstelMenuOpen}
+                      stopPropagatie
+                      onClick={() => {
+                        if (onVoorwaardelijkUitstel) {
+                          setUitstelMenuOpen((v) => !v);
+                        } else {
+                          void onStatus('uitgesteld', 30);
+                        }
                       }}
                     />
-                  ) : null}
-                </div>
-                <IcoonActieKnop
-                  icoon={<CheckCheck aria-hidden='true' />}
-                  label={t('Позначити виконаним', 'Als opgelost markeren')}
-                  stopPropagatie
-                  onClick={() => void onStatus('opgelost')}
-                />
+                    {uitstelMenuOpen && onVoorwaardelijkUitstel ? (
+                      <PulsUitstelMenu
+                        lang={lang}
+                        doelSubdomein={gebeurtenis.subdomein}
+                        onKies={(soort) => {
+                          setUitstelMenuOpen(false);
+                          onVoorwaardelijkUitstel(soort);
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                )}
+
+                {kaartStaat === 'goed' && gebeurtenis.status === 'nieuw' ? (
+                  <IcoonActieKnop
+                    icoon={<Check aria-hidden='true' />}
+                    label={t('Позначити прочитаним', 'Als gelezen markeren')}
+                    stopPropagatie
+                    onClick={() => void onStatus('gelezen')}
+                  />
+                ) : (
+                  <IcoonActieKnop
+                    icoon={<CheckCheck aria-hidden='true' />}
+                    label={t('Позначити виконаним', 'Als opgelost markeren')}
+                    stopPropagatie
+                    onClick={() => void onStatus('opgelost')}
+                  />
+                )}
+
                 <IcoonActieKnop
                   icoon={<Archive aria-hidden='true' />}
                   label={t('Перенести в архів', 'Archiveren')}
@@ -636,15 +664,6 @@ export default function MeldingVeegKaart({
               <IcoonActieKnop
                 icoon={<RotateCcw aria-hidden='true' />}
                 label={t('Повернути з архіву', 'Uit archief terugzetten')}
-                stopPropagatie
-                onClick={() => void onStatus('gelezen')}
-              />
-            )}
-
-            {gebeurtenis.status === 'nieuw' && (
-              <IcoonActieKnop
-                icoon={<Check aria-hidden='true' />}
-                label={t('Позначити прочитаним', 'Als gelezen markeren')}
                 stopPropagatie
                 onClick={() => void onStatus('gelezen')}
               />

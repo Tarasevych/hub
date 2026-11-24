@@ -226,7 +226,7 @@ export async function main(): Promise<number> {
       '3c відмальований HTML PulsOorzaakKetenKaart містить рівно 1 згрупований чип «Адміністрування · ×15» замість 15 дублів',
       aantalChipsInHtml === 1 &&
         ketenHtml.includes('Адміністрування · ×15') &&
-        ketenHtml.includes('— Відновиться одразу після дії'),
+        ketenHtml.includes('title="Відновиться одразу після дії"'),
     );
   }
 

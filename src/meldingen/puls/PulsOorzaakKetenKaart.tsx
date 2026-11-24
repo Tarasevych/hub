@@ -48,6 +48,19 @@ export default function PulsOorzaakKetenKaart({
   const [uitstelOpen, setUitstelOpen] = useState(false);
   const wortelVerrijkt = verrijkGebeurtenisVoorPuls(keten.wortel, lang);
   const gegroepeerdeGevolgen = groepeerOorzaakGevolgen(keten.gevolgen);
+  const nDiensten = gegroepeerdeGevolgen.length;
+  const kortOorzaakLabel =
+    lang === 'nl'
+      ? `Oorzaak · ${nDiensten} ${nDiensten === 1 ? 'onderdeel' : 'onderdelen'}`
+      : `Першопричина · ${nDiensten} ${
+          nDiensten % 100 >= 11 && nDiensten % 100 <= 14
+            ? 'служб'
+            : nDiensten % 10 === 1
+              ? 'служба'
+              : nDiensten % 10 >= 2 && nDiensten % 10 <= 4
+                ? 'служби'
+                : 'служб'
+        }`;
   const primaireHref =
     keten.wortel.acties.map((a) => veiligeMeldingUrl(a.href, 500)).find(Boolean) ||
     veiligeMeldingUrl(keten.wortel.meta?.link, 500) ||
@@ -61,14 +74,16 @@ export default function PulsOorzaakKetenKaart({
         onClick={() => onSelect(keten.wortel)}
       >
         <div className='mel-kaart-kop'>
-          <PulsBronTeken anker={wortelVerrijkt.anker} maat={36} />
+          <PulsBronTeken anker={wortelVerrijkt.anker} maat={34} />
           <div className='mel-kaart-hoofd'>
-            <div className='mel-kaart-meta'>
-              <span className='puls-oorzaak-badge'>
+            <div className='mel-kaart-meta puls-meta-slank'>
+              <span className='puls-oorzaak-badge' title={keten.samenvatting}>
                 <Network aria-hidden='true' />
-                <span>{keten.samenvatting}</span>
+                <span>{kortOorzaakLabel}</span>
               </span>
-              {wortelVerrijkt.klimopKernZegel ? <PulsKlimopZegel lang={lang} /> : null}
+              <span className='puls-meta-rechts'>
+                {wortelVerrijkt.klimopKernZegel ? <PulsKlimopZegel lang={lang} compact /> : null}
+              </span>
             </div>
 
             <div className='puls-keten-titel-rij'>
@@ -78,7 +93,7 @@ export default function PulsOorzaakKetenKaart({
         </div>
 
         <div className='puls-keten-gevolgen' data-geen-veeg='1'>
-          <span className='puls-keten-label'>{t('Автоматично розблокує:', 'Herstelt automatisch:')}</span>
+          <span className='puls-keten-label'>{t('Розблокує:', 'Herstelt mee:')}</span>
           <div className='puls-keten-chips'>
             {gegroepeerdeGevolgen.map((gev) => (
               <PulsDienstChip
@@ -87,17 +102,14 @@ export default function PulsOorzaakKetenKaart({
                 icoon={gev.icoon}
                 toon={gev.toon}
                 label={gev.label}
-                sub={gev.herstelTekst ? (gev.herstelTekst.startsWith('—') ? ` ${gev.herstelTekst}` : ` — ${gev.herstelTekst}`) : undefined}
+                toonIcoon={Boolean(gev.merkSleutel && gev.merkSleutel !== wortelVerrijkt.anker.merkSleutel)}
+                titelHint={gev.herstelTekst}
               />
             ))}
           </div>
         </div>
 
         <div className='mel-kaart-acties puls-kaart-acties' data-geen-veeg='1'>
-          <span className='puls-gevolg-hint'>
-            {t('Одне підтвердження закриє всі пов’язані збої', 'Één bevestiging sluit alle verbonden meldingen')}
-          </span>
-
           <div className='puls-actie-groep puls-keten-acties'>
             <IcoonActieKnop
               href={primaireHref || undefined}

@@ -2474,21 +2474,10 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   line-height: 1.3;
 }
 
-.puls-staat-stip {
-  width: 7px;
-  height: 7px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--mel-accent, var(--accent));
-}
-
 .puls-schema-chip.is-staat-goed {
   border-color: color-mix(in srgb, var(--staat-goed) 38%, var(--line));
   background: color-mix(in srgb, var(--staat-goed) 9%, var(--panel));
   color: var(--staat-goed);
-}
-.puls-schema-chip.is-staat-goed .puls-staat-stip {
-  background: var(--staat-goed);
 }
 
 .puls-schema-chip.is-staat-let {
@@ -2496,17 +2485,145 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   background: color-mix(in srgb, var(--staat-let) 9%, var(--panel));
   color: var(--staat-let);
 }
-.puls-schema-chip.is-staat-let .puls-staat-stip {
-  background: var(--staat-let);
-}
 
 .puls-schema-chip.is-staat-fout {
   border-color: color-mix(in srgb, var(--staat-fout) 40%, var(--line));
   background: color-mix(in srgb, var(--staat-fout) 9%, var(--panel));
   color: var(--staat-fout);
 }
-.puls-schema-chip.is-staat-fout .puls-staat-stip {
-  background: var(--staat-fout);
+
+/* Однорядковий тихий мета-рядок картки без багатоповерхових рамок і дублювання марок */
+.puls-portaal .puls-kaart .mel-kaart-kop,
+.puls-kaart .mel-kaart-kop {
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+}
+
+.puls-kaart .mel-kaart-meta.puls-meta-slank {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--muted);
+}
+
+.puls-meta-onderdeel {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-meta-punt {
+  flex: none;
+  opacity: 0.52;
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: 650;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip.is-staat-goed {
+  color: var(--staat-goed);
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip.is-staat-let {
+  color: var(--staat-let);
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip.is-staat-fout {
+  color: var(--staat-fout);
+}
+
+.puls-meta-rechts {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  flex: none;
+  white-space: nowrap;
+}
+
+.puls-meta-rechts .mel-tijd {
+  margin-left: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.puls-klimop-zegel .mr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.puls-klimop-zegel.is-compact {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--staat-goed);
+  opacity: 0.88;
+}
+
+.puls-klimop-zegel.is-compact > svg {
+  width: 13px;
+  height: 13px;
+}
+
+.puls-kaart .puls-meta-slank .puls-oorzaak-badge {
+  padding: 1.5px 7px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.puls-kaart .puls-keten-gevolgen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.puls-kaart .puls-keten-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.puls-kaart .puls-dienst-chip {
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  font-size: 11px;
 }
 
 /* Однорядкові смуги дій у картках першопричини й окремих сповіщень та підвал */

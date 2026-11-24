@@ -90,20 +90,26 @@ export function PulsDienstChip({
   toon,
   label,
   sub,
+  toonIcoon = true,
+  titelHint,
 }: {
   merkSleutel: string | null;
   icoon: PulsIcoonSoort;
   toon: PulsKleurToon;
   label: string;
   sub?: string;
+  toonIcoon?: boolean;
+  titelHint?: string;
 }) {
   return (
-    <span className={`puls-dienst-chip is-toon-${toon}`}>
-      {merkSleutel ? (
-        <MerkLogo id={merkSleutel} logo={merkSleutel} naam={label} maat={16} />
-      ) : (
-        <PulsIcoon soort={icoon} />
-      )}
+    <span className={`puls-dienst-chip is-toon-${toon}`} title={titelHint}>
+      {toonIcoon ? (
+        merkSleutel ? (
+          <MerkLogo id={merkSleutel} logo={merkSleutel} naam={label} maat={14} />
+        ) : (
+          <PulsIcoon soort={icoon} />
+        )
+      ) : null}
       <strong className='puls-dienst-naam'>{label}</strong>
       {sub ? <small className='puls-dienst-sub'>{sub}</small> : null}
     </span>
@@ -154,19 +160,19 @@ export function PulsBestandChip({
   );
 }
 
-export function PulsKlimopZegel({ lang }: { lang: Taal }) {
+export function PulsKlimopZegel({ lang, compact = false }: { lang: Taal; compact?: boolean }) {
   return (
     <span
-      className='puls-klimop-zegel'
+      className={`puls-klimop-zegel${compact ? ' is-compact' : ''}`}
       data-puls-zegel='klimop'
       title={
         lang === 'nl'
-          ? 'Authentieke systeemgebeurtenis uit de beveiligde serverkern van Mijn Ruimte («Klimop»)'
-          : 'Достовірна внутрішня подія захищеного ядра системи («Плющ») — не може бути підроблена листом чи зовнішнім сайтом'
+          ? 'Klimop-kernzegel · authentieke systeemgebeurtenis uit de beveiligde serverkern van Mijn Ruimte'
+          : 'Підпис ядра «Плющ» · достовірна внутрішня подія захищеного ядра системи'
       }
     >
       <ShieldCheck aria-hidden='true' />
-      <span>{lang === 'nl' ? 'Klimop-kernzegel' : 'Підпис ядра «Плющ»'}</span>
+      <span className={compact ? 'mr-sr' : undefined}>{lang === 'nl' ? 'Klimop-kernzegel' : 'Підпис ядра «Плющ»'}</span>
     </span>
   );
 }

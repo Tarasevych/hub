@@ -35,6 +35,7 @@ import {
   PinOff,
   RefreshCw,
   Search,
+  Settings,
   SlidersHorizontal,
   Sparkles,
   Undo2,
@@ -1171,10 +1172,8 @@ export default function MeldingenPortaal({
               <div>
                 <strong>{t('Сповіщення', 'Meldingen')}</strong>
                 <small>
-                  {subdomeinMenselijkLabel(subdomeinNu, lang)} ·{' '}
-                  {tellers.nieuw > 0
-                    ? t(`нових: ${tellers.nieuw}`, `nieuw: ${tellers.nieuw}`)
-                    : t('спокійно', 'alles rustig')}
+                  {subdomeinMenselijkLabel(subdomeinNu, lang)}
+                  {tellers.nieuw === 0 ? ` · ${t('спокійно', 'alles rustig')}` : ''}
                 </small>
               </div>
             </div>
@@ -1768,7 +1767,7 @@ export default function MeldingenPortaal({
               <IcoonActieKnop
                 href={instellingenHref}
                 toon='actief'
-                icoon={<SlidersHorizontal aria-hidden='true' />}
+                icoon={<Settings aria-hidden='true' />}
                 label={t('Правила та налаштування сповіщень', 'Regels en voorkeuren')}
                 data-qa-id='puls-open-regels'
               />
