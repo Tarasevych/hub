@@ -234,7 +234,9 @@ export async function main(): Promise<number> {
         return new Response(JSON.stringify({ ok: true, result: { message_id: ++nextMsgId } }), { status: 200 });
       }
       if (url.endsWith('/sendDocument')) {
-        const fd = init?.body as FormData;
+        const fd = init?.body instanceof FormData
+          ? init.body
+          : await new Response(init?.body as BodyInit, { headers: init?.headers }).formData();
         const doc = fd.get('document') as File;
         const caption = String(fd.get('caption') || '');
         const buf = Buffer.from(await doc.arrayBuffer());

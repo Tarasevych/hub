@@ -4,6 +4,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEq
 import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdir, open, readdir, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { error, fileDownload, json } from '../server/platform';
 import { rateLimit } from '../server/platform/beveiliging';
@@ -31,9 +32,13 @@ export const VAULT_TELEGRAM_BOT_NAAM = 'TELEGRAM_UITROL_BOT_TOKEN';
 export const VAULT_TELEGRAM_SLEUTEL_NAAM = 'UITROL_ARCHIEF_SLEUTEL';
 export const VAULT_TELEGRAM_WEBHOOK_GEHEIM_NAAM = 'TELEGRAM_UITROL_WEBHOOK_GEHEIM';
 
-const STANDAARD_DEEL_BYTES = 45 * 1024 * 1024;
+// HERSTEL-001 (24.11.2026): менші частини (15 МБ замість 45 МБ) і суто потокове надсилання без копій Buffer/Blob.
+const STANDAARD_DEEL_BYTES = 15 * 1024 * 1024;
+const STREAM_CHUNK_BYTES = 64 * 1024;
 const MAX_POGINGEN = 3;
 const HERSTEL_TTL_MS = 5 * 60_000;
+const BEZIG_VERLOPEN_MIN = 15;
+const TMP_OPRUIM_MS = 30 * 60_000;
 const MAGIC = Buffer.from('MRTG1\x01', 'ascii'); // 6 байт: магічний заголовок + версія формату
 
 const sys = () => getPool('systeem');
@@ -305,23 +310,112 @@ async function tgApi<T = Record<string, unknown>>(token: string, methode: string
   throw laatsteFout;
 }
 
-async function leesDeelBytes(pad: string, start: number, endInclusive: number): Promise<Buffer> {
-  const lengte = endInclusive - start + 1;
-  const buf = Buffer.allocUnsafe(lengte);
-  const fh = await open(pad, 'r');
-  try {
-    let gelezen = 0;
-    while (gelezen < lengte) {
-      const r = await fh.read(buf, gelezen, lengte - gelezen, start + gelezen);
-      if (r.bytesRead === 0) break;
-      gelezen += r.bytesRead;
-    }
-    return gelezen === lengte ? buf : buf.subarray(0, gelezen);
-  } finally {
-    await fh.close();
+/** Потоковий підрахунок SHA-256 та фактичної довжини зрізу файла без завантаження частини в пам'ять. */
+export async function sha256Deel(pad: string, start: number, endInclusive: number): Promise<{ sha256: string; bytes: number }> {
+  const h = createHash('sha256');
+  let bytes = 0;
+  const st = createReadStream(pad, { start, end: endInclusive, highWaterMark: STREAM_CHUNK_BYTES });
+  for await (const chunk of st) {
+    const b = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    bytes += b.length;
+    h.update(b);
   }
+  return { sha256: h.digest('hex'), bytes };
 }
 
+const schoonMultipartWaarde = (s: string) => s.replace(/[\r\n"]/g, '_');
+
+/**
+ * Потоково надсилає діапазон [start..endInclusive] файла як RFC 7578 multipart/form-data у Telegram sendDocument.
+ * Не тримає частину архіву в Buffer/Uint8Array/Blob: у пам'яті одночасно лише порції ~64 КБ.
+ */
+export async function stuurDocumentVanBestand(
+  token: string,
+  chatId: string,
+  messageThreadId: number | null,
+  naam: string,
+  bestandPad: string,
+  start: number,
+  endInclusive: number,
+  deelBytes: number,
+  caption: string,
+): Promise<{ messageId: number; fileId: string; fileUniqueId: string }> {
+  const boundary = `----MijnRuimteTg${randomBytes(12).toString('hex')}`;
+  const velden: Array<[string, string]> = [
+    ['chat_id', chatId],
+    ...(messageThreadId ? [['message_thread_id', String(messageThreadId)] as [string, string]] : []),
+    ['disable_notification', 'true'],
+    ['caption', caption.slice(0, 900)],
+  ];
+  const kopDelen: string[] = [];
+  for (const [k, v] of velden) {
+    kopDelen.push(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`);
+  }
+  kopDelen.push(
+    `--${boundary}\r\nContent-Disposition: form-data; name="document"; filename="${schoonMultipartWaarde(naam)}"\r\nContent-Type: application/octet-stream\r\n\r\n`,
+  );
+  const kopBuf = Buffer.from(kopDelen.join(''), 'utf8');
+  const staartBuf = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
+  const totaalBytes = kopBuf.length + deelBytes + staartBuf.length;
+
+  let laatsteFout: TelegramArchiefFout = new TelegramArchiefFout('TELEGRAM_BOT_FOUT', 502, true);
+  for (let poging = 1; poging <= MAX_POGINGEN; poging++) {
+    const nodeStream = Readable.from((async function* () {
+      yield kopBuf;
+      const rs = createReadStream(bestandPad, { start, end: endInclusive, highWaterMark: STREAM_CHUNK_BYTES });
+      for await (const chunk of rs) {
+        yield Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      }
+      yield staartBuf;
+    })());
+    const webStream = Readable.toWeb(nodeStream) as unknown as RequestInit['body'];
+    try {
+      const init: RequestInit & { duplex?: 'half' } = {
+        method: 'POST',
+        duplex: 'half',
+        signal: AbortSignal.timeout(120_000),
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': String(totaalBytes),
+        },
+        body: webStream,
+      };
+      const res = await doFetch(`${telegramBasis()}/bot${token}/sendDocument`, init);
+      const jsonBody = await res.json().catch(() => null) as {
+        ok?: boolean;
+        result?: { message_id?: number; document?: { file_id?: string; file_unique_id?: string } };
+        parameters?: { retry_after?: number };
+      } | null;
+      if (res.ok && jsonBody?.ok && jsonBody.result !== undefined) {
+        return {
+          messageId: Number(jsonBody.result?.message_id || 0),
+          fileId: String(jsonBody.result?.document?.file_id || ''),
+          fileUniqueId: String(jsonBody.result?.document?.file_unique_id || ''),
+        };
+      }
+      const retryAfter = Number(jsonBody?.parameters?.retry_after || 0);
+      const status = res.status;
+      if (status === 401 || status === 403) throw new TelegramArchiefFout('TELEGRAM_BOT_ONGELDIG', 400, false);
+      if (status === 400 || status === 404) throw new TelegramArchiefFout(`TELEGRAM_HTTP_${status}`, 400, false);
+      laatsteFout = new TelegramArchiefFout(`TELEGRAM_HTTP_${status || 502}`, 502, status === 429 || status >= 500);
+      if (!laatsteFout.tijdelijk || poging === MAX_POGINGEN) throw laatsteFout;
+      await slaap(retryAfter > 0 ? Math.min(retryAfter, 15) * 1000 : poging * 1000);
+    } catch (e) {
+      nodeStream.destroy();
+      if (e instanceof TelegramArchiefFout) {
+        if (!e.tijdelijk || poging === MAX_POGINGEN) throw e;
+        laatsteFout = e;
+      } else {
+        laatsteFout = new TelegramArchiefFout('TELEGRAM_NETWERK', 502, true);
+        if (poging === MAX_POGINGEN) throw laatsteFout;
+      }
+      await slaap(poging * 1000);
+    }
+  }
+  throw laatsteFout;
+}
+
+/** Для дрібних службових документів (маніфест частин, текстовий пробний файл <= 256 КБ). */
 async function stuurDocument(
   token: string,
   chatId: string,
@@ -628,6 +722,41 @@ export async function telegramVerbindingTesten(
 
 // ------------------------------------------------------------------------------------------------ архівування випуску
 const lopendeArchieven = new Set<string>();
+let archiefBezigGlobaal = false;
+let autoWachtrij: Promise<void> = Promise.resolve();
+
+/** Прибирає завислі записи bezig старше BEZIG_VERLOPEN_MIN хв та осиротілі тимчасові enc/dec-файли. */
+export async function ruimOudeTgTmpEnBezigOp(): Promise<{ tmpVerwijderd: number; bezigHersteld: number }> {
+  let tmpVerwijderd = 0;
+  let bezigHersteld = 0;
+  const nu = Date.now();
+  const dir = telegramTmpDir();
+  const bestanden = await readdir(dir).catch(() => [] as string[]);
+  for (const f of bestanden) {
+    if (!/^(?:enc|dec)-.+\.bin$/.test(f)) continue;
+    const p = path.join(dir, f);
+    const s = await stat(p).catch(() => null);
+    if (s && nu - s.mtimeMs > TMP_OPRUIM_MS) {
+      await unlink(p).catch(() => undefined);
+      tmpVerwijderd += 1;
+    }
+  }
+  try {
+    const r = await sys().query(
+      `UPDATE app.uitrol_telegram_archief
+          SET status = 'mislukt',
+              fout_code = CASE WHEN fout_code = '' THEN 'AFGEBROKEN_HERSTART' ELSE fout_code END,
+              bijgewerkt_op = now()
+        WHERE status = 'bezig'
+          AND bijgewerkt_op < now() - make_interval(mins => $1)`,
+      [BEZIG_VERLOPEN_MIN],
+    );
+    bezigHersteld = r.rowCount || 0;
+  } catch (e) {
+    if (!isOntbrekendeTabel(e)) { /* не блокуємо основну дію */ }
+  }
+  return { tmpVerwijderd, bezigHersteld };
+}
 
 export async function archiveerReleaseNaarTelegram(invoer: {
   eigenaarId: string;
@@ -652,32 +781,33 @@ export async function archiveerReleaseNaarTelegram(invoer: {
 
   const origineelInfo = await sha256Bestand(invoer.bestandPad);
   const lockKey = `${invoer.eigenaarId}:${invoer.versie}:${origineelInfo.sha256}`;
-  if (lopendeArchieven.has(lockKey)) throw new TelegramArchiefFout('AL_BEZIG', 409);
+  if (archiefBezigGlobaal || lopendeArchieven.has(lockKey)) throw new TelegramArchiefFout('AL_BEZIG', 409);
+  archiefBezigGlobaal = true;
   lopendeArchieven.add(lockKey);
-
-  // Повторостійкість: якщо такий самий оригінал цієї версії вже успішно збережено в Telegram, повертаємо наявний запис.
-  const bestaand = await sys().query(
-    `SELECT * FROM app.uitrol_telegram_archief WHERE user_id = $1 AND versie = $2 AND origineel_sha256 = $3 AND status = 'voltooid' LIMIT 1`,
-    [invoer.eigenaarId, invoer.versie, origineelInfo.sha256],
-  );
-  if (bestaand.rows[0]) {
-    lopendeArchieven.delete(lockKey);
-    return {
-      ok: true,
-      reedsBestaand: true,
-      id: String(bestaand.rows[0].id),
-      versie: invoer.versie,
-      aantalDelen: Number(bestaand.rows[0].aantal_delen),
-      origineelSha256: origineelInfo.sha256,
-      versleuteldSha256: String(bestaand.rows[0].versleuteld_sha256),
-    };
-  }
 
   const tmpId = randomBytes(8).toString('hex');
   const tmpEnc = path.join(telegramTmpDir(), `enc-${invoer.versie}-${tmpId}.bin`);
   let recordId = '';
 
   try {
+    // Повторостійкість: якщо такий самий оригінал цієї версії вже успішно збережено в Telegram, повертаємо наявний запис.
+    const bestaand = await sys().query(
+      `SELECT * FROM app.uitrol_telegram_archief WHERE user_id = $1 AND versie = $2 AND origineel_sha256 = $3 AND status = 'voltooid' LIMIT 1`,
+      [invoer.eigenaarId, invoer.versie, origineelInfo.sha256],
+    );
+    if (bestaand.rows[0]) {
+      return {
+        ok: true,
+        reedsBestaand: true,
+        id: String(bestaand.rows[0].id),
+        versie: invoer.versie,
+        aantalDelen: Number(bestaand.rows[0].aantal_delen),
+        origineelSha256: origineelInfo.sha256,
+        versleuteldSha256: String(bestaand.rows[0].versleuteld_sha256),
+      };
+    }
+
+    await ruimOudeTgTmpEnBezigOp();
     const ins = await sys().query(
       `INSERT INTO app.uitrol_telegram_archief
          (user_id, ruimte, versie, run_id, voorstel_id, chat_id, message_thread_id, origineel_sha256, origineel_bytes, status, pogingen)
@@ -709,8 +839,7 @@ export async function archiveerReleaseNaarTelegram(invoer: {
     for (let i = 0; i < totaalDelen; i++) {
       const start = i * deelMax;
       const end = Math.min(encMeta.versleuteldBytes - 1, start + deelMax - 1);
-      const buf = await leesDeelBytes(tmpEnc, start, end);
-      const deelSha = createHash('sha256').update(buf).digest('hex');
+      const { sha256: deelSha, bytes: deelLen } = await sha256Deel(tmpEnc, start, end);
       const suffix = totaalDelen === 1 ? '' : `.part${String(i + 1).padStart(3, '0')}of${String(totaalDelen).padStart(3, '0')}`;
       const naam = `mijn-ruimte-${invoer.versie}.tar.gz.enc${suffix}`;
       const caption = [
@@ -719,13 +848,23 @@ export async function archiveerReleaseNaarTelegram(invoer: {
         `sha256(orig): ${encMeta.origineelSha256}`,
         `sha256(deel): ${deelSha}`,
       ].join('\n');
-      const verzonden = await stuurDocument(bot.token, inst.chatId, inst.messageThreadId, naam, buf, caption);
+      const verzonden = await stuurDocumentVanBestand(
+        bot.token,
+        inst.chatId,
+        inst.messageThreadId,
+        naam,
+        tmpEnc,
+        start,
+        end,
+        deelLen,
+        caption,
+      );
       delen.push({
         deelNr: i + 1,
         totaalDelen,
         naam,
         sha256: deelSha,
-        bytes: buf.length,
+        bytes: deelLen,
         messageId: verzonden.messageId,
         fileId: verzonden.fileId,
         fileUniqueId: verzonden.fileUniqueId,
@@ -819,6 +958,7 @@ export async function archiveerReleaseNaarTelegram(invoer: {
     });
     throw e instanceof TelegramArchiefFout ? e : new TelegramArchiefFout(code, 502);
   } finally {
+    archiefBezigGlobaal = false;
     lopendeArchieven.delete(lockKey);
     await rm(tmpEnc, { force: true }).catch(() => undefined);
   }
@@ -850,20 +990,22 @@ export async function archiveerRunNaarTelegram(eigenaar: { id: string; email?: s
   });
 }
 
-/** Викликається неблокувально після успішного встановлення випуску (backend/uitrol-runs.ts). */
+/** Викликається неблокувально після успішного встановлення випуску (backend/uitrol-runs.ts), суворо послідовно в черзі. */
 export function naInstallatieTelegram(runId: string) {
-  void (async () => {
-    try {
-      const r = await sys().query(
-        `SELECT user_id FROM app.uitrol_telegram_instellingen WHERE actief = true AND chat_id <> '' ORDER BY bijgewerkt_op DESC LIMIT 1`,
-      );
-      const eigenaarId = r.rows[0]?.user_id ? String(r.rows[0].user_id) : '';
-      if (!eigenaarId) return;
-      await archiveerRunNaarTelegram('automatisch', runId, eigenaarId);
-    } catch (err) {
-      if (!isOntbrekendeTabel(err)) console.error('[uitrol-telegram] wachtrij:', (err as Error).message);
-    }
-  })();
+  autoWachtrij = autoWachtrij
+    .catch(() => undefined)
+    .then(async () => {
+      try {
+        const r = await sys().query(
+          `SELECT user_id FROM app.uitrol_telegram_instellingen WHERE actief = true AND chat_id <> '' ORDER BY bijgewerkt_op DESC LIMIT 1`,
+        );
+        const eigenaarId = r.rows[0]?.user_id ? String(r.rows[0].user_id) : '';
+        if (!eigenaarId) return;
+        await archiveerRunNaarTelegram('automatisch', runId, eigenaarId);
+      } catch (err) {
+        if (!isOntbrekendeTabel(err)) console.error('[uitrol-telegram] wachtrij:', (err as Error).message);
+      }
+    });
 }
 
 // ------------------------------------------------------------------------------------------------ перевірка обов’язковості перед схваленням
@@ -880,16 +1022,35 @@ export async function controleerTelegramBlokkade(eigenaarId: string): Promise<
   }
   if (!inst.verplichtVoorInstallatie) return { geblokkeerd: false };
 
-  const { rows: runRows } = await sys().query(
-    `SELECT id, versie, pakket_sha256
-       FROM app.uitrol_runs
-      WHERE staat = 'klaar' AND versie <> '' AND pakket_sha256 <> ''
-      ORDER BY geeindigd_op DESC NULLS LAST, gestart_op DESC
-      LIMIT 1`,
-  );
+  // HERSTEL-001 (24.11.2026): перевіряємо саме фактично запущену на сервері версію (якщо відома з UITROL-VERSIE),
+  // щоб відкочена чи застаріла версія в app.uitrol_runs не створювала глухого кута.
+  const actiefVersie = String(releaseInfo().versie || '').trim();
+  const runRows = VERSIE_RE.test(actiefVersie)
+    ? (await sys().query(
+      `SELECT id, versie, pakket_sha256, pakket_pad
+         FROM app.uitrol_runs
+        WHERE staat = 'klaar' AND versie = $1 AND pakket_sha256 <> ''
+        ORDER BY geeindigd_op DESC NULLS LAST, gestart_op DESC
+        LIMIT 1`,
+      [actiefVersie],
+    )).rows
+    : (await sys().query(
+      `SELECT id, versie, pakket_sha256, pakket_pad
+         FROM app.uitrol_runs
+        WHERE staat = 'klaar' AND versie <> '' AND pakket_sha256 <> ''
+        ORDER BY geeindigd_op DESC NULLS LAST, gestart_op DESC
+        LIMIT 1`,
+    )).rows;
   const huidig = runRows[0];
   if (!huidig || !SHA256_RE.test(String(huidig.pakket_sha256 || ''))) {
     // Перше встановлення (або ще немає збереженого попереднього архіву на сервері) — блокувати нема чого.
+    return { geblokkeerd: false };
+  }
+  const verwachtPad = path.join(pakkettenDir(), `mijn-ruimte-${String(huidig.versie)}.tar.gz`);
+  const bestandPad = huidig.pakket_pad ? path.resolve(String(huidig.pakket_pad)) : verwachtPad;
+  const bestandAanwezig = await stat(bestandPad).then((s) => s.isFile() && s.size > 0).catch(() => false);
+  if (!bestandAanwezig) {
+    // Файл архіву на диску вже відсутній — фізично заархівувати його неможливо, тому не блокуємо схвалення наглухо.
     return { geblokkeerd: false };
   }
   const { rows: archRows } = await sys().query(
@@ -956,7 +1117,7 @@ export async function herstelTelegramArchief(eigenaar: { id: string; email?: str
   const herstelPad = path.join(telegramHerstelDir(), `${downloadId}.tar.gz`);
 
   try {
-    // Очищуємо цільовий файл для послідовного дописування частин
+    // Потоково завантажуємо частини з Telegram і дописуємо на диск без буферизації цілого файла в пам'яті.
     await writeFile(tmpEnc, Buffer.alloc(0), { mode: 0o600 });
     for (const d of delen) {
       const fMeta = await tgApi<{ file_path?: string }>(bot.token, 'getFile', { file_id: d.fileId });
@@ -966,13 +1127,43 @@ export async function herstelTelegramArchief(eigenaar: { id: string; email?: str
         signal: AbortSignal.timeout(120_000),
       });
       if (!res.ok) throw new TelegramArchiefFout(`TELEGRAM_HTTP_${res.status}`, 502);
-      const buf = Buffer.from(await res.arrayBuffer());
-      const sha = createHash('sha256').update(buf).digest('hex');
-      if (sha !== d.sha256 || buf.length !== d.bytes) {
+      const shaHash = createHash('sha256');
+      let deelBytes = 0;
+      const ws = createWriteStream(tmpEnc, { flags: 'a', mode: 0o600 });
+      try {
+        if (res.body) {
+          const reader = res.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (!value || !value.byteLength) continue;
+            const chunk = Buffer.from(value.buffer, value.byteOffset, value.byteLength);
+            deelBytes += chunk.length;
+            shaHash.update(chunk);
+            if (!ws.write(chunk)) {
+              await new Promise<void>((resolve, reject) => {
+                ws.once('drain', resolve);
+                ws.once('error', reject);
+              });
+            }
+          }
+        } else {
+          const buf = Buffer.from(await res.arrayBuffer());
+          deelBytes = buf.length;
+          shaHash.update(buf);
+          ws.write(buf);
+        }
+        await new Promise<void>((resolve, reject) => {
+          ws.end(() => resolve());
+          ws.once('error', reject);
+        });
+      } catch (streamErr) {
+        ws.destroy();
+        throw streamErr;
+      }
+      if (shaHash.digest('hex') !== d.sha256 || deelBytes !== d.bytes) {
         throw new TelegramArchiefFout('TELEGRAM_HERSTEL_INTEGRITEIT', 422);
       }
-      const fh = await open(tmpEnc, 'a', 0o600);
-      try { await fh.write(buf); } finally { await fh.close(); }
     }
 
     const samengevoegd = await sha256Bestand(tmpEnc);
