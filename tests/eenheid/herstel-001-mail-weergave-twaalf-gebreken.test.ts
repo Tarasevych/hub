@@ -1,4 +1,4 @@
-// HERSTEL-001 — Перевірочні випробування 12 вад перегляду листа та контексту Пошти (mail.tarasevych.com)
+// HERSTEL-001 — Перевірочні випробування 20 вад перегляду листа, динамічного простору, інтерпретації та походження Пошти (mail.tarasevych.com)
 // за одинадцятьма мобільними знімками екрана власника:
 //   - Screenshot_20261125_134333_com.android.chrome.jpg
 //   - Screenshot_20261125_134339_com.android.chrome.jpg
@@ -13,7 +13,7 @@
 //   - Screenshot_20261125_134722_com.android.chrome.jpg
 //
 // Цей тестовий набір зберігає точні вимоги та перевіряє як наявність цільових точок у коді,
-// так і функцію автоматичної оцінки виправлення кожного з 12 пунктів (MAIL-1..MAIL-12).
+// так і функцію автоматичної оцінки виправлення кожного з 20 пунктів (MAIL-1..MAIL-20).
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -31,7 +31,15 @@ export interface MailGebrekContract {
     | 'MAIL-9'
     | 'MAIL-10'
     | 'MAIL-11'
-    | 'MAIL-12';
+    | 'MAIL-12'
+    | 'MAIL-13'
+    | 'MAIL-14'
+    | 'MAIL-15'
+    | 'MAIL-16'
+    | 'MAIL-17'
+    | 'MAIL-18'
+    | 'MAIL-19'
+    | 'MAIL-20';
   readonly schermafdrukken: readonly string[];
   readonly titelUk: string;
   readonly titelNl: string;
@@ -40,7 +48,7 @@ export interface MailGebrekContract {
   readonly herstelEisUk: string;
 }
 
-export const TWAALF_MAILGEBREKEN_CONTRACTEN: readonly MailGebrekContract[] = [
+export const TWINTIG_MAILGEBREKEN_CONTRACTEN: readonly MailGebrekContract[] = [
   {
     id: 'MAIL-1',
     schermafdrukken: ['Screenshot_20261125_134459_com.android.chrome.jpg'],
@@ -244,7 +252,146 @@ export const TWAALF_MAILGEBREKEN_CONTRACTEN: readonly MailGebrekContract[] = [
     herstelEisUk:
       'Зменшити висоту шапки переглядача листа на смартфоні до компактного одно-/дворядкового вигляду та прибрати зайвий порожній відступ над тілом HTML-листа.',
   },
+  {
+    id: 'MAIL-13',
+    schermafdrukken: [
+      'Screenshot_20261125_134333_com.android.chrome.jpg',
+      'Screenshot_20261125_134339_com.android.chrome.jpg',
+      'Screenshot_20261125_134421_com.android.chrome.jpg',
+      'Screenshot_20261125_134431_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Відсутність розумного приховування панелей інструментів при гортанні листа вниз і їх появи при гортанні назад угору (scroll-driven hide/reveal)',
+    titelNl:
+      'Ontbreken van slim verbergen van werkbalken bij omlaag scrollen en opnieuw tonen bij omhoog scrollen (scroll-driven hide/reveal)',
+    doelBestanden: ['src/mail/LeesVenster.tsx', 'src/MailLezerWerkbalk.tsx', 'src/MailGesprekInhoud.tsx'],
+    oorzaakUk:
+      'У LeesVenster.tsx, MailLezerWerkbalk.tsx та MailGesprekInhoud.tsx немає відстеження напрямку прокручування (deltaY / scrollTop), тому верхня й нижня панелі постійно займають ~40% висоти екрана смартфона.',
+    herstelEisUk:
+      'Автоматично ховати панелі керування під час гортання листа вниз і плавно повертати їх при зворотному русі пальцем угору.',
+  },
+  {
+    id: 'MAIL-14',
+    schermafdrukken: [
+      'Screenshot_20261125_134339_com.android.chrome.jpg',
+      'Screenshot_20261125_134459_com.android.chrome.jpg',
+      'Screenshot_20261125_134516_com.android.chrome.jpg',
+      'Screenshot_20261125_134521_com.android.chrome.jpg',
+      'Screenshot_20261125_134542_com.android.chrome.jpg',
+      'Screenshot_20261125_134722_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Неприховування неактивних панелей переглядача під час відкриття спливних вікон («Що від вас потрібно?», «Контекст», «Вигляд») або роботи в редакторі «Відповісти»',
+    titelNl:
+      'Niet verbergen van inactieve werkbalken tijdens interactie met pop-upbladen («Wat wordt er van u verwacht?», «Context», «Weergave») of de geopende antwoordeditor',
+    doelBestanden: ['src/mail/context-paneel.css', 'src/MailLezerWerkbalk.tsx', 'src/mail/WatNodigBlok.tsx'],
+    oorzaakUk:
+      'У context-paneel.css .ctx-paneel займає лише grid-area: 2/1/-1/-1 (залишаючи триповерхову шапку зверху), а .mail-reader-onderbalk залишається видимою знизу під усіма спливними вікнами та відкритим редактором відповіді.',
+    herstelEisUk:
+      'Приховувати або перекривати неактивні верхню та нижню панелі переглядача під час роботи зі спливними аркушами й активним редактором відповіді.',
+  },
+  {
+    id: 'MAIL-15',
+    schermafdrukken: [
+      'Screenshot_20261125_134516_com.android.chrome.jpg',
+      'Screenshot_20261125_134521_com.android.chrome.jpg',
+      'Screenshot_20261125_134542_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Напівпрозорий фон модальної шторки «Контекст» (.ctx-paneel), крізь який просвічується великий зелений логотип TOO GOOD TO GO і текст листа знизу',
+    titelNl:
+      'Halfdoorzichtige achtergrond van het modale contextblad (.ctx-paneel), waardoor het groene logo TOO GOOD TO GO en de berichttekst eronder doorschijnen',
+    doelBestanden: ['src/mail/context-paneel.css'],
+    oorzaakUk:
+      'У src/mail/context-paneel.css для .ctx-paneel задано background: var(--panel), який у поточній темі має часткову прозорість без суцільної непрозорої підкладки.',
+    herstelEisUk:
+      'Забезпечити повністю непрозору поверхню для модального аркуша .ctx-paneel, щоб вміст листа знизу не просвічувався крізь текст хронології.',
+  },
+  {
+    id: 'MAIL-16',
+    schermafdrukken: [
+      'Screenshot_20261125_134333_com.android.chrome.jpg',
+      'Screenshot_20261125_134339_com.android.chrome.jpg',
+      'Screenshot_20261125_134353_com.android.chrome.jpg',
+      'Screenshot_20261125_134412_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Хаотичний роз’їзд і несумісність форм кнопок, 7-поверхова шапка блока «Відповісти» висотою > 360 px із порожніми смугами та подвійна рамка вибору тону «Як зазвичай»',
+    titelNl:
+      'Chaotische spreiding en onverenigbare vormen van knoppen, 7-laagse kop van het antwoordblok (> 360 px hoog) met lege stroken en dubbele rand rond de toonkeuze «Zoals gewoonlijk»',
+    doelBestanden: ['src/MailGesprekInhoud.tsx', 'src/MailLezerAi.tsx', 'src/mail-lezer-ai.css', 'src/mail-mobiel-passend.css'],
+    oorzaakUk:
+      'Кнопки керування у відповіді рознесені на 7 окремих рядків із різними формами й порожніми смугами на 70–80% ширини, а label.mra-veld та вкладений <select> у MailLezerAi.tsx мають подвійну несумісну рамку.',
+    herstelEisUk:
+      'Узгодити геометрію кнопок, прибрати подвійну рамку вибору тону в .mra-veld і компактно згрупувати шапку блока відповіді.',
+  },
+  {
+    id: 'MAIL-17',
+    schermafdrukken: [
+      'Screenshot_20261125_134333_com.android.chrome.jpg',
+      'Screenshot_20261125_134421_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Дублювання двох великих карток поспіль для одного файла pickup-reminder.ics та безглузда кнопка [↩] («Додати до відповіді») для нагадування від no-reply@',
+    titelNl:
+      'Twee grote dubbele kaarten onder elkaar voor één pickup-reminder.ics-bestand en zinloze knop [↩] («Aan antwoord toevoegen») bij een herinnering van no-reply@',
+    doelBestanden: ['src/MailGesprekInhoud.tsx', 'src/MailBijlageKaart.tsx'],
+    oorzaakUk:
+      'Для одного вкладення .ics у MailGesprekInhoud.tsx одночасно малюється роздута картка MailAttachmentCard із 5 кнопками та картка події BriefAfspraken одразу під нею.',
+    herstelEisUk:
+      'Об’єднати або узгодити відображення .ics-вкладення та картки події без дублювання й без кнопки додавання .ics у відповідь на no-reply@.',
+  },
+  {
+    id: 'MAIL-18',
+    schermafdrukken: [
+      'Screenshot_20261125_134431_com.android.chrome.jpg',
+      'Screenshot_20261125_134459_com.android.chrome.jpg',
+      'Screenshot_20261125_134516_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Провал інтерпретації мови листа: визначення 100% англійського листа як українського (uk) через кириличне ім’я одержувача «Павло Тарасевич» у taalVan, що повністю вимикає штатну смугу перекладу VertaalStrook',
+    titelNl:
+      'Foute taalherkenning van het bericht: een volledig Engels bericht wordt als Oekraïens (uk) bestempeld vanwege de Cyrillische ontvangersnaam «Павло Тарасевич» in taalVan, waardoor VertaalStrook wegblijft',
+    doelBestanden: ['shared/ai-bronnen.ts', 'src/MailGesprekInhoud.tsx'],
+    oorzaakUk:
+      'taalVan у shared/ai-bronnen.ts повертає "uk" за першою ж кириличною літерою (if (/[іїєґІЇЄҐ]/.test(sample)) return "uk"). Через ім’я одержувача "Павло Тарасевич" в англійському листі bronTaal стає "uk", і taalStrookMogelijk у MailGesprekInhoud.tsx вимикає смугу перекладу.',
+    herstelEisUk:
+      'Визначати мову листа за переважною часткою слів/літер основного тексту (ігноруючи власне ім’я одержувача у привітанні), щоб для іншомовних листів завжди з’являлася штатна смуга перекладу.',
+  },
+  {
+    id: 'MAIL-19',
+    schermafdrukken: ['Screenshot_20261125_134431_com.android.chrome.jpg'],
+    titelUk:
+      'Суперечність і некоректність відображення повного походження відправника: показ офіційного логотипа бренду Too Good To Go (обрізаного зліва в аватарі відкритого листа) одночасно з тривожним щитом [🛡️?] («Не підтверджено») попри успішні SPF / DKIM / DMARC',
+    titelNl:
+      'Tegenstrijdige en onjuiste weergave van de volledige afzenderherkomst: gelijktijdige weergave van het officiële merklogo Too Good To Go (links afgekapt in de avatar) en het waarschuwingsschild [🛡️?] («Niet bevestigd») ondanks geldige SPF / DKIM / DMARC',
+    doelBestanden: ['shared/mail-afzenders.ts', 'src/afzenders/AfzenderBadge.tsx', 'src/afzenders/afzenders.css'],
+    oorzaakUk:
+      'classificeer у shared/mail-afzenders.ts ніколи не виставляє статус підтвердженого домену за SPF+DKIM+DMARC поза статичним списком BEKENDE_DIENSTEN, а правило .mail-row-avatar[data-afzender-foto="merk"] .avatar-img { object-fit: contain; padding: 14% } у afzenders.css відсутнє для .mail-thread-avatar .afz-foto.',
+    herstelEisUk:
+      'Коректно відображати криптографічно підтверджене походження домену (SPF/DKIM/DMARC) без оманливого тривожного знака питання поруч із офіційним логотипом бренду та вписувати логотипи організацій (object-fit: contain) в аватар відкритого листа й контексту.',
+  },
+  {
+    id: 'MAIL-20',
+    schermafdrukken: [
+      'Screenshot_20261125_134333_com.android.chrome.jpg',
+      'Screenshot_20261125_134421_com.android.chrome.jpg',
+      'Screenshot_20261125_134431_com.android.chrome.jpg',
+      'Screenshot_20261125_134459_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Руйнування верстки та інтерпретації тіла HTML-листа: знищення @media-правил у flattenStyles, роздування другого (прихованого) логотипа TOO GOOD TO GO на весь екран і випадіння основного тексту замовлення',
+    titelNl:
+      'Verlies van opmaak en interpretatie van de HTML-berichtinhoud: flattenStyles vernietigt alle @media-regels, waardoor een tweede (verborgen) TOO GOOD TO GO-logo schermbreed wordt opgeblazen en de besteltekst wegvalt',
+    doelBestanden: ['src/MailBerichtTekst.tsx', 'src/mail/beeld-tegel.ts'],
+    oorzaakUk:
+      'flattenStyles у src/MailBerichtTekst.tsx ігнорує всі CSSMediaRule (@media) і видаляє <style>, а примусове node.style.height = "auto" роздуває приховані дублі зображень у тілі HTML-листа.',
+    herstelEisUk:
+      'Зберігати адаптивні @media-правила та приховані стани елементів HTML-листа під час підготовки документа в MailBerichtTekst.tsx.',
+  },
 ];
+
+export const TWAALF_MAILGEBREKEN_CONTRACTEN = TWINTIG_MAILGEBREKEN_CONTRACTEN;
 
 export interface MailGebrekHerstelStatus {
   readonly id: MailGebrekContract['id'];
@@ -252,12 +399,13 @@ export interface MailGebrekHerstelStatus {
   readonly detail: string;
 }
 
-export function evalueerTwaalfMailGebrekenHerstel(rootDir: string): readonly MailGebrekHerstelStatus[] {
+export function evalueerTwintigMailGebrekenHerstel(rootDir: string): readonly MailGebrekHerstelStatus[] {
   const lees = (rel: string) => readFileSync(join(rootDir, rel), 'utf8');
 
   const aiBronnen = lees('shared/ai-bronnen.ts');
   const watNodigBlok = lees('src/mail/WatNodigBlok.tsx');
   const mailLezerAi = lees('src/MailLezerAi.tsx');
+  const mailLezerAiCss = lees('src/mail-lezer-ai.css');
   const knopinfoLaag = lees('src/ViewportKnopinfoLaag.tsx');
   const mobielPassendCss = lees('src/mail-mobiel-passend.css');
   const persoonsMogelijkheden = lees('src/mail-persoonsgegevens-mogelijkheden.ts');
@@ -269,141 +417,68 @@ export function evalueerTwaalfMailGebrekenHerstel(rootDir: string): readonly Mai
   const leesVensterCss = lees('src/mail/lees-venster.css');
   const lezerWerkbalk = lees('src/MailLezerWerkbalk.tsx');
   const bijlageVoorbeeld = lees('src/MailBijlageVoorbeeld.tsx');
+  const afzendersCss = lees('src/afzenders/afzenders.css');
+  const berichtTekst = lees('src/MailBerichtTekst.tsx');
 
-  // MAIL-1: чи очищуються сирі теги <a href="..."> у простих пунктах / Коротко
   const mail1Hersteld =
     /<a\b[^>]*>/i.test(aiBronnen) || /replace\([^)]*<a\b/i.test(aiBronnen) || /replace\([^)]*<a\b/i.test(watNodigBlok);
-
-  // MAIL-2: чи відфільтровуються адреси no-reply@ / noreply@ у antwoordNodig
   const mail2Hersteld = /no-?reply|do-?not-?reply/i.test(aiBronnen);
-
-  // MAIL-3: чи не ховаються підписи кнопок у .mra-bar і чи приховується ViewportKnopinfoLaag поза екраном
   const mail3Hersteld =
     !mobielPassendCss.includes('html body .mra-bar > button:not(.mra-toggle) > span{position:absolute;width:1px;height:1px') &&
     (!mailLezerAi.includes('data-tooltip={uitleg}') || knopinfoLaag.includes('rect.bottom<top0') || knopinfoLaag.includes('rect.top>top0+height'));
-
-  // MAIL-4: чи не обрізається довгий підпис "iCalendar / зайнятість" у мініатюрі 64×64 px
   const mail4Hersteld = !persoonsMogelijkheden.includes("icalendar:{label:'iCalendar / зайнятість'");
-
-  // MAIL-5: чи замінено кальку "В Агенду" на "У Календар" / "До Календаря"
   const mail5Hersteld =
     !watNodigBlok.includes("t('В Агенду'") &&
     !contextPaneel.includes("t('В Агенду'") &&
     !gesprekInhoud.includes("t('В Агенду'");
-
-  // MAIL-6: чи виправляється спотворене "Ні " на початку привітання у витягу хронології
   const mail6Hersteld = gesprekContext.includes('Ні ') || contextPaneel.includes('Ні ');
-
-  // MAIL-7: чи підтримує шторка Контексту langscroll / повне прокручування
   const mail7Hersteld = !contextPaneelCss.includes('max-height:min(84%,680px)') || contextPaneel.includes('langscroll');
-
-  // MAIL-8: чи вміщуються 5 вкладок Контексту в один рядок і чи не обрізається назва події
   const mail8Hersteld =
     !contextPaneelCss.includes('.ctx-tabs{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:4px;padding:6px 12px') &&
     !contextPaneelCss.includes('.ctx-tl-tekst strong{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;font-size:13px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}');
-
-  // MAIL-9: чи усунуто триповерховий розрив шапки й порожню дірку справа для режиму telefoon
   const mail9Hersteld =
     leesVensterCss.includes("[data-lees-modus='telefoon']") &&
     leesVensterCss.includes('padding-right:12px') &&
     !compactKopCss.includes('order: 20;\n    flex: 1 0 100%;');
-
-  // MAIL-10: чи враховує нижня панель стан відкритого редактора відповіді
-  const mail10Hersteld = !lezerWerkbalk.includes("p.onReply&&<button type='button' className='mail-reader-onderbalk-knop primair'") || lezerWerkbalk.includes('replyOpen');
-
-  // MAIL-11: чи локалізовані одиниці КБ/МБ у formatMailAttachmentSize і чи відокремлено «Згорнути лист»
+  const mail10Hersteld =
+    !lezerWerkbalk.includes("p.onReply&&<button type='button' className='mail-reader-onderbalk-knop primair'") ||
+    lezerWerkbalk.includes('replyOpen');
   const mail11Hersteld = !bijlageVoorbeeld.includes("const units=['B','KB','MB','GB']");
-
-  // MAIL-12: чи зменшено висоту шапки переглядача на смартфоні
   const mail12Hersteld = mail9Hersteld;
+  const mail13Hersteld = lezerWerkbalk.includes('scrollVerborgen') || gesprekInhoud.includes('scrollRichting');
+  const mail14Hersteld = contextPaneelCss.includes('grid-area:1/1/-1/-1') || lezerWerkbalk.includes('onderBlad');
+  const mail15Hersteld = !contextPaneelCss.includes('.ctx-paneel{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--panel)');
+  const mail16Hersteld = mailLezerAiCss.includes('appearance:none') && !gesprekInhoud.includes("className='mail-reply-extra'");
+  const mail17Hersteld = gesprekInhoud.includes('!isIcs');
+  const mail18Hersteld = !aiBronnen.includes("if (/[іїєґІЇЄҐ]/.test(sample)) return 'uk';");
+  const mail19Hersteld = afzendersCss.includes('.afz-foto[data-afzender-foto="merk"]');
+  const mail20Hersteld = !berichtTekst.includes('if(!(rule instanceof CSSStyleRule))continue;');
 
   return [
-    {
-      id: 'MAIL-1',
-      hersteld: mail1Hersteld,
-      detail: mail1Hersteld
-        ? 'Сирі HTML-теги <a href="..."> очищуються або перетворюються на посилання в розділі «Коротко»'
-        : 'Очікує на виправлення: сирий HTML-тег <a href="...">Open in Maps</a> виводиться як текст у «Коротко»',
-    },
-    {
-      id: 'MAIL-2',
-      hersteld: mail2Hersteld,
-      detail: mail2Hersteld
-        ? 'Автоматичні адреси no-reply@ не позначаються як «Потребує відповіді»'
-        : 'Очікує на виправлення: antwoordNodig у shared/ai-bronnen.ts не відфільтровує адреси no-reply@',
-    },
-    {
-      id: 'MAIL-3',
-      hersteld: mail3Hersteld,
-      detail: mail3Hersteld
-        ? 'Кнопки панелі ШІ мають зрозумілі підписи, а підказка data-tooltip не залипає внизу екрана'
-        : 'Очікує на виправлення: кнопки ШІ німі на <=430px, а підказка mra-toggle залипає внизу екрана при прокрутці',
-    },
-    {
-      id: 'MAIL-4',
-      hersteld: mail4Hersteld,
-      detail: mail4Hersteld
-        ? 'Мініатюра .ics виводить короткий код формату без обрізання «iCalendar / зайнятіст»'
-        : 'Очікує на виправлення: у мініатюрі 64×64 px обрізається рядок «iCalendar / зайнятість»',
-    },
-    {
-      id: 'MAIL-5',
-      hersteld: mail5Hersteld,
-      detail: mail5Hersteld
-        ? 'Усі кнопки додавання події використовують питому назву «У Календар»'
-        : 'Очікує на виправлення: у трьох файлах пошти вжито нідерландську кальку «В Агенду»',
-    },
-    {
-      id: 'MAIL-6',
-      hersteld: mail6Hersteld,
-      detail: mail6Hersteld
-        ? 'Привітання «Hi» перед українським ім’ям не спотворюється на «Ні» у витягу хронології'
-        : 'Очікує на виправлення: витяг листа в хронології показує «Ні Павло Тарасевич» замість «Hi Павло Тарасевич»',
-    },
-    {
-      id: 'MAIL-7',
-      hersteld: mail7Hersteld,
-      detail: mail7Hersteld
-        ? 'Шторка Контексту підтримує знімок екрана з прокручуванням і показує орієнтир попередніх листів'
-        : 'Очікує на виправлення: модальний аркуш .ctx-paneel блокує знімок екрана з прокручуванням',
-    },
-    {
-      id: 'MAIL-8',
-      hersteld: mail8Hersteld,
-      detail: mail8Hersteld
-        ? 'Усі 5 вкладок Контексту стоять в одному рядку, а назва події не обрізається'
-        : 'Очікує на виправлення: 5-та вкладка «Відправник» падає на другий рядок, а назва події обрізається',
-    },
-    {
-      id: 'MAIL-9',
-      hersteld: mail9Hersteld,
-      detail: mail9Hersteld
-        ? 'Верхня шапка переглядача листа компактна, без порожньої дірки справа і без розриву на 3 поверхи'
-        : 'Очікує на виправлення: шапка розірвана на 3 поверхи (>170 px) із порожньою діркою 64 px справа',
-    },
-    {
-      id: 'MAIL-10',
-      hersteld: mail10Hersteld,
-      detail: mail10Hersteld
-        ? 'Кнопка «Відповісти» в нижній панелі не дублюється під час відкритого редактора відповіді'
-        : 'Очікує на виправлення: чорна кнопка «↩ Відповісти» світиться внизу навіть під відкритим редактором відповіді',
-    },
-    {
-      id: 'MAIL-11',
-      hersteld: mail11Hersteld,
-      detail: mail11Hersteld
-        ? 'Одиниці розміру файлів локалізовано (КБ/МБ), а закриття налаштувань відокремлено від згортання листа'
-        : 'Очікує на виправлення: formatMailAttachmentSize використовує латинські KB/MB, а «Згорнути лист» стоїть унизу налаштувань',
-    },
-    {
-      id: 'MAIL-12',
-      hersteld: mail12Hersteld,
-      detail: mail12Hersteld
-        ? 'Область читання HTML-листа має достатню висоту без зарізання під триповерховою шапкою'
-        : 'Очікує на виправлення: триповерхова шапка зарізає область читання HTML-листа на смартфоні',
-    },
+    { id: 'MAIL-1', hersteld: mail1Hersteld, detail: mail1Hersteld ? 'Сирі HTML-теги <a href="..."> очищено в «Коротко»' : 'Очікує на виправлення: сирий <a href="..."> у «Коротко»' },
+    { id: 'MAIL-2', hersteld: mail2Hersteld, detail: mail2Hersteld ? 'Адреси no-reply@ відфільтровано в antwoordNodig' : 'Очікує на виправлення: no-reply@ позначається як «Потребує відповіді»' },
+    { id: 'MAIL-3', hersteld: mail3Hersteld, detail: mail3Hersteld ? 'Кнопки ШІ мають підписи, а підказка не залипає внизу' : 'Очікує на виправлення: кнопки ШІ німі на <=430px і підказка залипає внизу' },
+    { id: 'MAIL-4', hersteld: mail4Hersteld, detail: mail4Hersteld ? 'Мініатюра .ics має короткий код формату' : 'Очікує на виправлення: обрізається «iCalendar / зайнятіст» у мініатюрі 64×64 px' },
+    { id: 'MAIL-5', hersteld: mail5Hersteld, detail: mail5Hersteld ? 'Кальку «В Агенду» замінено на «У Календар»' : 'Очікує на виправлення: у трьох файлах вжито кальку «В Агенду»' },
+    { id: 'MAIL-6', hersteld: mail6Hersteld, detail: mail6Hersteld ? 'Привітання «Hi» не спотворюється на «Ні»' : 'Очікує на виправлення: «Ні Павло Тарасевич» у витягу хронології' },
+    { id: 'MAIL-7', hersteld: mail7Hersteld, detail: mail7Hersteld ? 'Шторка Контексту підтримує довгий знімок екрана' : 'Очікує на виправлення: .ctx-paneel блокує знімок екрана з прокручуванням' },
+    { id: 'MAIL-8', hersteld: mail8Hersteld, detail: mail8Hersteld ? '5 вкладок Контексту вміщуються в один рядок' : 'Очікує на виправлення: вкладка «Відправник» падає на другий рядок' },
+    { id: 'MAIL-9', hersteld: mail9Hersteld, detail: mail9Hersteld ? 'Шапка переглядача компактна без розриву на 3 поверхи' : 'Очікує на виправлення: триповерхова шапка (>170 px) і дірка 64 px справа' },
+    { id: 'MAIL-10', hersteld: mail10Hersteld, detail: mail10Hersteld ? 'Кнопка «Відповісти» не дублюється під відкритим редактором' : 'Очікує на виправлення: дублювання чорної кнопки «↩ Відповісти»' },
+    { id: 'MAIL-11', hersteld: mail11Hersteld, detail: mail11Hersteld ? 'Одиниці розміру локалізовано (КБ/МБ)' : 'Очікує на виправлення: латинські одиниці KB/MB та «Згорнути лист» унизу налаштувань' },
+    { id: 'MAIL-12', hersteld: mail12Hersteld, detail: mail12Hersteld ? 'Область читання листа не зарізається шапкою' : 'Очікує на виправлення: зарізання вмісту листа під триповерховою шапкою' },
+    { id: 'MAIL-13', hersteld: mail13Hersteld, detail: mail13Hersteld ? 'Панелі ховаються при гортанні вниз і з’являються при гортанні вгору' : 'Очікує на виправлення: панелі не ховаються під час гортання листа' },
+    { id: 'MAIL-14', hersteld: mail14Hersteld, detail: mail14Hersteld ? 'Неактивні панелі ховаються під час роботи зі спливними вікнами' : 'Очікує на виправлення: шапка й нижня панель затискають відкриті спливні вікна' },
+    { id: 'MAIL-15', hersteld: mail15Hersteld, detail: mail15Hersteld ? 'Фон шторки Контексту непрозорий' : 'Очікує на виправлення: логотип TOO GOOD TO GO просвічується крізь .ctx-paneel' },
+    { id: 'MAIL-16', hersteld: mail16Hersteld, detail: mail16Hersteld ? 'Кнопки відповіді компактні, без подвійної рамки селекта' : 'Очікує на виправлення: 7-поверхова шапка відповіді (>360 px) та подвійна рамка селекта тону' },
+    { id: 'MAIL-17', hersteld: mail17Hersteld, detail: mail17Hersteld ? 'Вкладення .ics не дублюється двома великими картками' : 'Очікує на виправлення: дві великі картки поспіль для одного файла .ics' },
+    { id: 'MAIL-18', hersteld: mail18Hersteld, detail: mail18Hersteld ? 'taalVan визначає мову листа за основним текстом, а не за ім’ям одержувача' : 'Очікує на виправлення: taalVan вважає англійський лист українським через ім’я «Павло Тарасевич»' },
+    { id: 'MAIL-19', hersteld: mail19Hersteld, detail: mail19Hersteld ? 'Логотип бренду вписаний (contain) в аватар відкритого листа і узгоджений зі статусом походження' : 'Очікує на виправлення: логотип бренду обрізаний в аватарі листа і суперечить щиту [🛡️?]' },
+    { id: 'MAIL-20', hersteld: mail20Hersteld, detail: mail20Hersteld ? 'flattenStyles зберігає @media-правила і не роздуває приховані логотипи' : 'Очікує на виправлення: flattenStyles знищує @media-правила й роздуває другий логотип у тілі листа' },
   ];
 }
+
+export const evalueerTwaalfMailGebrekenHerstel = evalueerTwintigMailGebrekenHerstel;
 
 export async function main(): Promise<number> {
   const rootDir = process.cwd();
@@ -421,13 +496,13 @@ export async function main(): Promise<number> {
   };
 
   controleer(
-    'реєстр містить рівно 12 перевірочних контрактів перегляду листа та контексту Пошти (MAIL-1..MAIL-12)',
-    TWAALF_MAILGEBREKEN_CONTRACTEN.length === 12 &&
-      TWAALF_MAILGEBREKEN_CONTRACTEN.map((c) => c.id).join(',') ===
-        'MAIL-1,MAIL-2,MAIL-3,MAIL-4,MAIL-5,MAIL-6,MAIL-7,MAIL-8,MAIL-9,MAIL-10,MAIL-11,MAIL-12',
+    'реєстр містить рівно 20 перевірочних контрактів перегляду листа, простору, інтерпретації та походження Пошти (MAIL-1..MAIL-20)',
+    TWINTIG_MAILGEBREKEN_CONTRACTEN.length === 20 &&
+      TWINTIG_MAILGEBREKEN_CONTRACTEN.map((c) => c.id).join(',') ===
+        'MAIL-1,MAIL-2,MAIL-3,MAIL-4,MAIL-5,MAIL-6,MAIL-7,MAIL-8,MAIL-9,MAIL-10,MAIL-11,MAIL-12,MAIL-13,MAIL-14,MAIL-15,MAIL-16,MAIL-17,MAIL-18,MAIL-19,MAIL-20',
   );
 
-  for (const contract of TWAALF_MAILGEBREKEN_CONTRACTEN) {
+  for (const contract of TWINTIG_MAILGEBREKEN_CONTRACTEN) {
     const alleBestandenAanwezig = contract.doelBestanden.every((rel) => existsSync(join(rootDir, rel)));
     controleer(
       `${contract.id}: усі цільові файли існують у сховищі (${contract.doelBestanden.join(', ')})`,
@@ -442,22 +517,22 @@ export async function main(): Promise<number> {
     );
   }
 
-  const statussen = evalueerTwaalfMailGebrekenHerstel(rootDir);
+  const statussen = evalueerTwintigMailGebrekenHerstel(rootDir);
   controleer(
-    'функція оцінювання стану виправлення evalueerTwaalfMailGebrekenHerstel повертає звіти для всіх 12 пунктів',
-    statussen.length === 12 && statussen.every((s) => typeof s.hersteld === 'boolean' && s.detail.length > 0),
+    'функція оцінювання стану виправлення evalueerTwintigMailGebrekenHerstel повертає звіти для всіх 20 пунктів',
+    statussen.length === 20 && statussen.every((s) => typeof s.hersteld === 'boolean' && s.detail.length > 0),
   );
 
   const ukDocPad = join(rootDir, 'docs/mail/ВИПРОБУВАННЯ-12-ВАД-ПОШТИ-HERSTEL-001.uk.md');
   const nlDocPad = join(rootDir, 'docs/mail/PROEVEN-12-MAILGEBREKEN-HERSTEL-001.nl.md');
   controleer(
-    'парні статті 12 випробувань перегляду листа та контексту Пошти (uk / nl) існують у docs/mail/ і посилаються одна на одну',
+    'парні статті 20 випробувань перегляду листа та контексту Пошти (uk / nl) існують у docs/mail/ і посилаються одна на одну',
     existsSync(ukDocPad) &&
       existsSync(nlDocPad) &&
       readFileSync(ukDocPad, 'utf8').includes('PROEVEN-12-MAILGEBREKEN-HERSTEL-001.nl.md') &&
       readFileSync(nlDocPad, 'utf8').includes('ВИПРОБУВАННЯ-12-ВАД-ПОШТИ-HERSTEL-001.uk.md'),
   );
 
-  console.log(`\n${geslaagd}/${geslaagd + gefaald} geslaagd (herstel-001-mail-weergave-twaalf-gebreken)`);
+  console.log(`\n${geslaagd}/${geslaagd + gefaald} geslaagd (herstel-001-mail-weergave-twintig-gebreken)`);
   return gefaald === 0 ? 0 : 1;
 }
