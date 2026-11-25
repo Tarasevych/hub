@@ -184,6 +184,14 @@ const AANMELDEN: Record<string, Paar> = {
   TOKEN_ONGELDIG: ['Провайдер не підтвердив вхід. Спробуйте ще раз або іншим способом.', 'De aanbieder bevestigde de aanmelding niet. Probeer opnieuw of op een andere manier.'],
   HANDTEKENING_ONGELDIG: ['Підпис відповіді провайдера не пройшов перевірку — вхід не виконано.', 'De handtekening van de aanbieder klopte niet — niet aangemeld.'],
   VERLOPEN: ['Час вийшов. Почніть вхід знову.', 'De tijd is om. Begin opnieuw.'],
+  // HERSTEL-001 (GOOG-4): коди повернення входу Google після переходу за ?aanmeld_fout=<КОД> на сторінку входу.
+  STATE_EXPIRED: ['Захищене вікно підтвердження Google застаріло (минуло забагато часу між початком входу та поверненням). Нічого не змінено — почніть вхід знову.', 'Het beveiligde Google-bevestigingsvenster is verlopen (er zat te veel tijd tussen starten en terugkeren). Er is niets gewijzigd — begin de aanmelding opnieuw.'],
+  STATE_NOT_FOUND: ['Одноразове підтвердження цієї спроби входу Google не знайдено або вже використане. Почніть вхід знову у цій вкладці.', 'De eenmalige bevestiging van deze Google-aanmeldpoging is niet gevonden of al gebruikt. Begin de aanmelding opnieuw in dit tabblad.'],
+  TIMEOUT: ['Час, відведений на завершення входу Google, вичерпано. Нічого не змінено — почніть вхід знову.', 'De tijd om het aanmelden met Google af te ronden is verstreken. Er is niets gewijzigd — begin opnieuw.'],
+  TRANSACTION_NOT_FOUND: ['Запис цієї спроби входу не знайдено (можливо, вкладку давно не оновлювали). Почніть вхід знову.', 'Deze aanmeldpoging is niet gevonden (mogelijk stond het tabblad te lang open). Begin de aanmelding opnieuw.'],
+  TRANSACTION_NOT_ATTACHED: ['Попередню спробу входу вже завершено або скасовано. Почніть нову спробу входу.', 'De eerdere aanmeldpoging is al afgerond of geannuleerd. Start een nieuwe poging.'],
+  STATE_TRANSACTION_MISMATCH: ['Одноразовий стан Google не відповідає поточній спробі входу у цій вкладці. Почніть вхід знову.', 'De eenmalige Google-status hoort niet bij de huidige aanmeldpoging in dit tabblad. Begin opnieuw.'],
+  OWNER_CALLBACK_TIMEOUT: ['Сервер занадто довго не відповідав під час завершення входу Google. Перевірте з’єднання й почніть вхід знову.', 'De server reageerde te lang niet bij het afronden van de Google-aanmelding. Controleer de verbinding en begin opnieuw.'],
   // TELEGRAM-004: «Вимагати місце пристрою» ввімкнено для цього способу входу, а браузер місця не надав.
   PLAATS_NODIG: ['Цей обліковий запис вимагає місце пристрою для цього способу входу, а браузер його не надав. Надайте місце й увійдіть ще раз.', 'Dit account eist bij deze aanmeldmethode de plaats van het apparaat en de browser gaf die niet. Deel de plaats en meld u opnieuw aan.'],
   ACCOUNT_NOT_APPROVED: ['Обліковий запис ще не схвалено власником сайту, тож вхід поки неможливий.', 'Het account is nog niet goedgekeurd door de site-eigenaar; aanmelden kan nog niet.'],

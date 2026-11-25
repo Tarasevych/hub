@@ -1,0 +1,337 @@
+/* HERSTEL-001 (GOOG-1..GOOG-4): оформлення картки повернення входу Google (id.tarasevych.com).
+   Працює у світлому й темному оформленні «Мого простору», з сенсорними зонами щонайменше 44 px. */
+
+.mr-google-terug-scherm {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 20px 16px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(20, 107, 109, 0.10), transparent 58%),
+    var(--bg, #f4f7f6);
+  color: var(--text, #153638);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+}
+
+html.theme-dark .mr-google-terug-scherm {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(45, 164, 168, 0.16), transparent 60%),
+    var(--bg, #0e1719);
+  color: var(--text, #e8f1f2);
+}
+
+.mr-google-terug-kaart {
+  width: min(100%, 480px);
+  box-sizing: border-box;
+  padding: 26px 22px 22px;
+  border-radius: 22px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, rgba(20, 62, 66, 0.14));
+  box-shadow: 0 16px 40px rgba(13, 42, 45, 0.08);
+  text-align: left;
+  line-height: 1.55;
+}
+
+html.theme-dark .mr-google-terug-kaart {
+  background: var(--surface, #152225);
+  border-color: var(--border, rgba(168, 214, 216, 0.16));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+}
+
+.mr-google-terug-kop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mr-google-terug-merk {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface-2, #eef4f4);
+  border: 1px solid var(--border, rgba(20, 62, 66, 0.12));
+}
+
+html.theme-dark .mr-google-terug-merk {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.mr-google-terug-boventitel {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted, #536b6e);
+}
+
+html.theme-dark .mr-google-terug-boventitel {
+  color: var(--muted, #9bb2b5);
+}
+
+.mr-google-terug-titel {
+  margin: 2px 0 0;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.28;
+  color: var(--text, #153638);
+}
+
+html.theme-dark .mr-google-terug-titel {
+  color: var(--text, #eef6f6);
+}
+
+.mr-google-terug-wacht {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-2, #eff5f5);
+  color: var(--text, #153638);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+html.theme-dark .mr-google-terug-wacht {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text, #e8f1f2);
+}
+
+.mr-google-terug-ring {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(20, 107, 109, 0.22);
+  border-top-color: var(--accent, #146b6d);
+  animation: mr-google-terug-draai 0.85s linear infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes mr-google-terug-draai {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mr-google-terug-tekst {
+  margin: 0;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: rgba(20, 107, 109, 0.06);
+  border: 1px solid rgba(20, 107, 109, 0.16);
+  font-size: 14.5px;
+  line-height: 1.52;
+  color: var(--text, #173b3d);
+}
+
+html.theme-dark .mr-google-terug-tekst {
+  background: rgba(45, 164, 168, 0.11);
+  border-color: rgba(45, 164, 168, 0.26);
+  color: var(--text, #e8f1f2);
+}
+
+.mr-google-terug-acties {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.mr-google-terug-knop-primair,
+.mr-google-terug-knop-secundair {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 11px 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.mr-google-terug-knop-primair {
+  min-height: 48px;
+  background: var(--accent, #146b6d);
+  color: var(--text-on-accent, #ffffff);
+  border: 1px solid transparent;
+  box-shadow: 0 6px 16px rgba(20, 107, 109, 0.22);
+}
+
+.mr-google-terug-knop-primair:hover,
+.mr-google-terug-knop-primair:focus-visible {
+  background: var(--accent-strong, #0f5658);
+}
+
+.mr-google-terug-knop-secundair {
+  min-height: 44px;
+  background: var(--surface-2, #f1f5f5);
+  color: var(--text, #173b3d);
+  border: 1px solid var(--border, rgba(20, 62, 66, 0.18));
+}
+
+html.theme-dark .mr-google-terug-knop-secundair {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text, #e8f1f2);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.mr-google-terug-details {
+  margin-top: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border, rgba(20, 62, 66, 0.15));
+  background: var(--surface-2, #f7f9f9);
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--muted, #526669);
+}
+
+html.theme-dark .mr-google-terug-details {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--muted, #9fb4b7);
+}
+
+.mr-google-terug-details summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 12px;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text, #1c3f42);
+}
+
+html.theme-dark .mr-google-terug-details summary {
+  color: var(--text, #e2eeee);
+}
+
+.mr-google-terug-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.mr-google-terug-code-rij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.mr-google-terug-code-pil {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(20, 107, 109, 0.10);
+  color: var(--accent, #146b6d);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+html.theme-dark .mr-google-terug-code-pil {
+  background: rgba(45, 164, 168, 0.18);
+  color: #7ee0e3;
+}
+
+.mr-google-terug-pijl {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent, #146b6d);
+  transition: transform 0.16s ease;
+}
+
+html.theme-dark .mr-google-terug-pijl {
+  color: #7ee0e3;
+}
+
+.mr-google-terug-details[open] .mr-google-terug-pijl {
+  transform: rotate(180deg);
+}
+
+.mr-google-terug-details-inhoud {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border, rgba(20, 62, 66, 0.11));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+html.theme-dark .mr-google-terug-details-inhoud {
+  border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+.mr-google-terug-verklaring {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.48;
+  color: var(--text, #1e4244);
+}
+
+html.theme-dark .mr-google-terug-verklaring {
+  color: var(--text, #dce9ea);
+}
+
+.mr-google-terug-kopieer {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(20, 62, 66, 0.22));
+  background: var(--surface, #ffffff);
+  color: var(--text, #153638);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+html.theme-dark .mr-google-terug-kopieer {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--text, #eef6f6);
+}
+
+.mr-google-terug-kopieer[data-gekopieerd="ja"] {
+  border-color: var(--accent, #146b6d);
+  color: var(--accent, #146b6d);
+}
+
+html.theme-dark .mr-google-terug-kopieer[data-gekopieerd="ja"] {
+  border-color: #7ee0e3;
+  color: #7ee0e3;
+}
+
+.mr-google-terug-veilig-noot {
+  display: block;
+  font-size: 12px;
+  line-height: 1.42;
+  color: var(--muted, #5d6b70);
+}
+
+html.theme-dark .mr-google-terug-veilig-noot {
+  color: var(--muted, #97adb0);
+}

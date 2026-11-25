@@ -206,6 +206,18 @@ export async function main(): Promise<number> {
     'функція оцінювання стану виправлення evalueerVierGoogleTerugkeerGebrekenHerstel повертає звіти для всіх 4 пунктів',
     statussen.length === 4 && statussen.every((s) => typeof s.hersteld === 'boolean' && s.detail.length > 0),
   );
+  for (const s of statussen) {
+    controleer(`${s.id}: виправлення впроваджено (${s.detail})`, s.hersteld === true, s.detail);
+  }
+
+  const { aanmeldWeigering } = await import('../../src/weigeringen');
+  for (const code of ['STATE_EXPIRED', 'STATE_NOT_FOUND', 'TIMEOUT', 'TRANSACTION_NOT_FOUND', 'STATE_TRANSACTION_MISMATCH']) {
+    const paar = aanmeldWeigering({ message: code });
+    controleer(
+      `GOOG-4: aanmeldWeigering('${code}') повертає двомовну пару [uk, nl] без сирого коду`,
+      Array.isArray(paar) && paar[0].length > 20 && paar[1].length > 20 && !/[ЁёЪъЫыЭэ]/.test(paar[0]),
+    );
+  }
 
   const ukDocPad = join(rootDir, 'docs/identiteit/ВИПРОБУВАННЯ-СТОРИНКИ-ПОВЕРНЕННЯ-GOOGLE-HERSTEL-001.uk.md');
   const nlDocPad = join(rootDir, 'docs/identiteit/PROEVEN-GOOGLE-TERUGKEERPAGINA-HERSTEL-001.nl.md');
