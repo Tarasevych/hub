@@ -499,6 +499,9 @@ export async function main(): Promise<number> {
     'функція оцінювання стану виправлення evalueerTienTelegramAanmeldGebrekenHerstel повертає звіти для всіх 10 пунктів',
     herstelOverzicht.length === 10 && herstelOverzicht.every((item) => item.details.length > 10),
   );
+  for (const item of herstelOverzicht) {
+    check(`${item.id}: ваду повністю виправлено (${item.details})`, item.hersteld === true);
+  }
 
   // 3. Перевірка парної двомовної документації випробувань у docs/telegram-aanmelden/
   const docUkPad = 'docs/telegram-aanmelden/ВИПРОБУВАННЯ-10-ВАД-ВХОДУ-ТЕЛЕГРАМ-HERSTEL-001.uk.md';

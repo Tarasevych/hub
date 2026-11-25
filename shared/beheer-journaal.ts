@@ -559,6 +559,7 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner_role_restored': ['Відновлено права власника системи', 'Eigenaarsrechten hersteld'],
   'owner_sign_in_refused_identity_mismatch': ['Вхід відхилено: обліковий запис провайдера не збігається з власником', 'Aanmelding geweigerd: identiteit komt niet overeen met eigenaar'],
   'plaats-eis.gewijzigd': ['Змінено вимогу перевірки місця під час входу', 'Locatievereiste voor aanmelding gewijzigd'],
+  'telegram.rechtstreeks-bevestigen': ['Змінено дозвіл прямого підтвердження входу в боті Telegram', 'Toestemming voor rechtstreekse aanmeldbevestiging in Telegram-bot gewijzigd'],
   'privacy.afronden_mislukt': ['Не вдалося завершити операцію центру приватності', 'Afronden van privacybewerking mislukt'],
   'service_handoff_created': ['Підготовлено захищений перехід між піддоменами', 'Beveiligde overgang tussen subdomeinen voorbereid'],
   'sessie.ingetrokken.bot': ['Сеанс негайно закрито власником через бота безпеки Telegram', 'Sessie direct ingetrokken via Telegram-beveiligingsbot'],

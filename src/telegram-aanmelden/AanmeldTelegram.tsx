@@ -21,7 +21,6 @@ import {
   TelegramBotVoorbeeld,
   TelegramSlotBevestigd,
   TelegramStappenBalk,
-  TelegramStijlKiezer,
   TelegramTijdBalk,
 } from './TelegramInlogMaketHulp';
 import { useEenmalig } from './Bevestigen';
@@ -104,7 +103,7 @@ export default function AanmeldTelegram({
   const [rest, setRest] = useState(0);
   const { bezig, doe } = useEenmalig();
   const pauze = useTelegramPauze();
-  const [inlogStijl, zetInlogStijl] = useTelegramInlogStijl();
+  const [inlogStijl] = useTelegramInlogStijl();
   const klaar = useRef(false);
 
   useEffect(() => {
@@ -230,8 +229,7 @@ export default function AanmeldTelegram({
     void p.query({ name: 'geolocation' }).then((s) => { if (actief && s.state === 'granted') plaatsDelen(lopend); }).catch(() => undefined);
     return () => { actief = false; };
   }, [lopend, stand]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Eist het account de plaats en vroegen we er nog niet om, dan vragen we het nu meteen (de browser toont zijn eigen vraag).
-  useEffect(() => { if (lopend && stand === 'wacht' && geoVereist && geo === '') plaatsDelen(lopend); }, [geoVereist]); // eslint-disable-line react-hooks/exhaustive-deps
+  // HERSTEL-001 (TG-1): niet automatisch in een achtergrond-useEffect om locatie vragen zonder klikgebaar — anders weigert Chrome stil met PERMISSION_DENIED.
 
   const start = () => {
     if (pauze.actief) return;
@@ -338,7 +336,6 @@ export default function AanmeldTelegram({
         <TelegramLogo maat={24} /> {tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}
         {(stand === 'ingelogd' || stand === 'goedgekeurd') && <TelegramSlotBevestigd lang={lang} />}
       </h2>
-      <TelegramStijlKiezer lang={lang} stijl={inlogStijl} onKies={zetInlogStijl} />
     </div>
     {stand !== 'ingelogd' && rest > 0 ? <TelegramTijdBalk lang={lang} restSec={rest} /> : null}
     {inlogStijl === 'maket' ? (
@@ -354,13 +351,21 @@ export default function AanmeldTelegram({
         <li className={codeInVenster ? 'is-nu' : ''}>{tr(lang, 'Якщо ви ввімкнули таємний код — введіть його в тому ж вікні (ніколи не в чаті).', 'Hebt u een geheime code ingesteld, vul die dan in hetzelfde venster in (nooit in de chat).')}</li>
         <li>{tr(lang, 'Сторінка відкриється сама.', 'De pagina opent vanzelf.')}</li>
       </ol>
-      {!symboolOk && stand === 'wacht' && <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={20} /><span>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span></a>}
+      {!symboolOk && stand === 'wacht' && <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'>
+        <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={34} /></span>
+        <span className='tga-aanmeld-tekst'>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span>
+        <span className='tga-aanmeld-eind' aria-hidden='true'>↗</span>
+      </a>}
       {!symboolOk && stand === 'wacht' && geoVereist && geo !== 'gegeven' && <div className='tga-fout tg2-plaats-eis' role='alert' data-tg-plaats-eis>
         <b>{tr(lang, '❗ Цей обліковий запис вимагає місце пристрою', '❗ Dit account eist de plaats van het apparaat')}</b>
         <p className='tga-klein'>{geo === 'geweigerd' || geo === 'mislukt'
-          ? tr(lang, 'Без місця вхід через Telegram не відбудеться. Дозвольте доступ до місця в налаштуваннях сайту в браузері й натисніть кнопку ще раз, або увійдіть іншим способом (ключ доступу, Google). Вимогу можна вимкнути після входу: «Способи входу» → Telegram.', 'Zonder plaats lukt aanmelden met Telegram niet. Sta de locatie toe in de site-instellingen van de browser en druk nogmaals op de knop, of meld u op een andere manier aan (toegangssleutel, Google). De eis zet u na het aanmelden uit: «Aanmeldmethoden» → Telegram.')
-          : tr(lang, 'Дозвольте браузеру доступ до місця, потім оберіть піктограму в Telegram ще раз. Спроба не втрачена.', 'Geef de browser toegang tot de locatie en kies daarna het pictogram in Telegram opnieuw. De poging is niet verbruikt.')}</p>
-        {geo !== 'bezig' && <button type='button' className='tga-aanmeld-knop' onClick={() => plaatsDelen(lopend)}>{tr(lang, '📍 Надати місце пристрою', '📍 Plaats van het apparaat delen')}</button>}
+          ? tr(lang, 'Без місця вхід через Telegram не відбудеться. Дозвольте доступ до місця в налаштуваннях сайту в оглядачі й натисніть кнопку ще раз, або увійдіть іншим способом (ключ доступу, Google). Вимогу можна вимкнути після входу: «Способи входу» → Telegram.', 'Zonder plaats lukt aanmelden met Telegram niet. Sta de locatie toe in de site-instellingen van de browser en druk nogmaals op de knop, of meld u op een andere manier aan (toegangssleutel, Google). De eis zet u na het aanmelden uit: «Aanmeldmethoden» → Telegram.')
+          : tr(lang, 'Натисніть кнопку нижче, щоб оглядач запитав дозвіл на місце пристрою, а потім завершіть підтвердження у вікні Telegram. Спроба не втрачена.', 'Druk op de knop hieronder zodat de browser om toestemming voor de apparaatlocatie vraagt, en rond daarna de bevestiging in het Telegram-venster af. De poging is niet verbruikt.')}</p>
+        {geo !== 'bezig' && <button type='button' className='tga-aanmeld-knop tga-plaats-knop' onClick={() => plaatsDelen(lopend)}>
+          <span className='tga-aanmeld-logo' aria-hidden='true'>📍</span>
+          <span className='tga-aanmeld-tekst'>{tr(lang, 'Надати місце пристрою', 'Plaats van het apparaat delen')}</span>
+          <span className='tga-aanmeld-eind' aria-hidden='true'>→</span>
+        </button>}
       </div>}
       {!symboolOk && stand === 'wacht' && !(geoVereist && geo !== 'gegeven') && <div className='tg2-plaats' data-tg-plaats={geo || 'open'}>
         {geo === 'gegeven' ? <p className='tga-klein' role='status'>{tr(lang, '📍 Місце цього пристрою додано до запиту. У вікні Telegram ви побачите його поруч із місцем за IP-адресою.', '📍 De plaats van dit apparaat is aan het verzoek toegevoegd. In het Telegram-venster ziet u die naast de plaats volgens het IP-adres.')}</p>

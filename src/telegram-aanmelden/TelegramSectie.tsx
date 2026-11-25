@@ -3,7 +3,7 @@
 //   · прив’язування у 3 кроки з поясненням кожного кроку (підтвердження власного номера та ключа доступу обов’язкове);
 //   · картка виявлених змін даних («Було → Стало», «Ні, це не я» діє одразу, «Так, це я» — після відліку та ключа доступу);
 //   · згрупована таблиця підтверджень за 3 категоріями, таємний і тривожний код та журнал останніх входів через Telegram.
-import { ChevronDown, Fingerprint, KeyRound, MapPin } from 'lucide-react';
+import { ChevronDown, Fingerprint, KeyRound, MapPin, ShieldAlert } from 'lucide-react';
 import MethodeMerk from '../merk/MethodeMerk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { leesBewaard } from '../lees-cache';
@@ -81,6 +81,8 @@ type Mijn = {
   /** 0299: aanmelden met Telegram alleen met de plaats van het toestel. */
   /** TELEGRAM-004 (0299): способи входу, для яких обліковий запис вимагає місце пристрою. */
   plaatsEis?: string[];
+  /** HERSTEL-001 (TG-2): дозвіл викликати активний запит на вхід безпосередньо в боті Telegram (типово false). */
+  rechtstreeksBevestigen?: boolean;
   geblokkeerd: Array<{ apparaat: string; op: string; reden?: string }>;
   aanmeldingen: AanmeldingRij[];
   status: { stand: string; soort: string };
@@ -229,6 +231,20 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
 
     <PlaatsEis lang={lang} methoden={mijn.plaatsEis || []}
       zetten={(methoden) => doeMet(() => tgPost(ctx, '/api/owner/telegram/plaats-eis', { methoden }), methoden.length ? tr(lang, 'Вимогу місця пристрою збережено.', 'De eis van de plaats van het apparaat is opgeslagen.') : tr(lang, 'Вимогу місця пристрою вимкнено.', 'De eis van de plaats van het apparaat staat uit.'))} />
+
+    <RechtstreeksBevestigen
+      lang={lang}
+      bot={mijn.bot}
+      aan={mijn.rechtstreeksBevestigen === true}
+      zetten={(aan) =>
+        doeMet(
+          () => tgPost(ctx, '/api/owner/telegram/rechtstreeks-bevestigen', { aan }),
+          aan
+            ? tr(lang, 'Пряме підтвердження входу в боті Telegram увімкнено.', 'Rechtstreekse aanmeldbevestiging in de Telegram-bot staat aan.')
+            : tr(lang, 'Пряме підтвердження входу в боті Telegram вимкнено.', 'Rechtstreekse aanmeldbevestiging in de Telegram-bot staat uit.'),
+        )
+      }
+    />
 
     {maketVlagAan && (
       <div className='tga-blok' data-tg-maket-voorkeur=''>
@@ -685,6 +701,63 @@ export function PlaatsEis({ lang, methoden, zetten }: { lang: Lang; methoden: st
       </ul>
     </details>
   </div>;
+}
+
+export function RechtstreeksBevestigen({
+  lang,
+  bot,
+  aan,
+  zetten,
+}: {
+  lang: Lang;
+  bot: string;
+  aan: boolean;
+  zetten: (aan: boolean) => Promise<void>;
+}) {
+  const { bezig, doe } = useEenmalig();
+  return (
+    <div className='tga-blok' data-rechtstreeks-bevestigen={aan ? 'aan' : 'uit'}>
+      <div className='tga-plaats-kop'>
+        <span className='tga-plaats-kop-icoon' aria-hidden='true'><ShieldAlert /></span>
+        <div className='tga-schakel-tekst'>
+          <h3>
+            <span>{tr(lang, 'Підтвердження входу безпосередньо в боті Telegram', 'Aanmelding rechtstreeks in de Telegram-bot bevestigen')}</span>
+            <span className={`tga-pil ${aan ? 'tga-pil-actief' : ''}`}>
+              {aan ? tr(lang, 'Увімкнено', 'Aan') : tr(lang, 'Вимкнено (рекомендовано)', 'Uit (aanbevolen)')}
+            </span>
+          </h3>
+          <small>
+            {tr(
+              lang,
+              `Дозволяє викликати активний запит на вхід у чаті з @${bot} командою /inloggen або кнопкою «Підтвердити вхід на сайті» без обов’язкового переходу за посиланням з оглядача.`,
+              `Maakt het mogelijk een actief aanmeldverzoek in de chat met @${bot} met /inloggen of de knop «Aanmelding op de site bevestigen» op te roepen zonder verplichte link vanuit de browser.`,
+            )}
+          </small>
+        </div>
+      </div>
+      <label className='tga-schakel-rij tga-plaats-methode'>
+        <span className='tga-plaats-logo is-merk' aria-hidden='true'><TelegramLogo maat={24} /></span>
+        <span className='tga-schakel-tekst'>
+          <strong>{tr(lang, 'Дозволити виклик запиту прямо в боті без посилання з сайту', 'Oproepen van verzoek rechtstreeks in de bot zonder sitelink toestaan')}</strong>
+        </span>
+        <input
+          type='checkbox'
+          role='switch'
+          className='tga-schakel-invoer'
+          checked={aan}
+          disabled={bezig}
+          onChange={(e) => void doe(() => zetten(e.target.checked))}
+        />
+      </label>
+      <p className='waarschuwing tga-klein' role='note'>
+        {tr(
+          lang,
+          '⚠️ Захист від шахраїв: за замовчуванням цю можливість вимкнено. Якщо сторонній співрозмовник по телефону переконує відкрити Telegram і натиснути кнопку підтвердження входу — це спроба віддаленого зламу шахраями. Умикайте лише за власної потреби (наприклад, коли вхід відкрито на іншому комп’ютері); посилання з сайту та офіційне вікно входу залишаються доступними.',
+          '⚠️ Bescherming tegen oplichting: standaard staat deze optie uit. Vraagt iemand u telefonisch om Telegram te openen en op een bevestigingsknop te drukken, dan is dat telefonische oplichting. Zet alleen aan wanneer u dit bewust wilt (bijvoorbeeld bij aanmelden op een andere computer); de sitelink en het officiële aanmeldvenster blijven beschikbaar.',
+        )}
+      </p>
+    </div>
+  );
 }
 
 function GeheimeCode({ lang, code, telefoons, instellen, verwijderen, herstellen }: { lang: Lang; code: Mijn['code']; telefoons: string; instellen: (c: string, a: string) => Promise<void>; verwijderen: () => Promise<void>; herstellen: () => Promise<void> }) {

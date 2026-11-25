@@ -5,7 +5,7 @@
 // uitsluitend de browser met het geheim én de bindingscookie van de transactie. Een Telegram-aanmelding geeft GEEN extra bevestiging.
 import { createHash } from 'node:crypto';
 import { plaatsTekst } from '../../shared/telegram-aanmelden/plaatsnamen';
-import { plaatsVerplicht } from './beleid-poort';
+import { plaatsVerplicht, rechtstreeksBevestigenVoor, beschikbaarVoor, eisVoor } from './beleid-poort';
 import { geldigPunt, type GeoStand, type Punt } from '../../shared/telegram-aanmelden/plaats-vergelijking';
 import { apparaat as apparaatLabel } from '../../server/platform/audit';
 import { getPool } from '../../server/platform/pg';
@@ -15,7 +15,6 @@ import { botSleutel } from './sleutels';
 import { eenmaligClaimen, gebeurtenis, instellingen, koppeling as koppelingLezen, koppelingenVanTelegram, sql, vlagHoofdschakelaar, vlagVoor, type KoppelRij } from './opslag';
 import { gelijk, nieuweId, nieuwGeheim, sha256hex, widgetControle } from './cryptografie';
 import { codeControleren } from './code';
-import { beschikbaarVoor, eisVoor } from './beleid-poort';
 import { vingerafdrukControleren } from './wijzigingen';
 import { accountNaam, audit, beheerAlarm, siteMelding, tijdTekst } from './meldingen';
 import { knoppenMaken, SITE_BASIS, stuur, strook, succesTonen, taalVoor, type BotTaal, type Knop } from './berichten';
@@ -286,6 +285,57 @@ export async function eisenVoorAanmelden(userId: string, apparaatCookie: string 
 }
 
 // ------------------------------------------------------------------------------------------------ bot: /start i_<id>
+export async function heeftRechtstreeksAan(telegramId: string): Promise<boolean> {
+  const koppelingen = await koppelingenVanTelegram(telegramId);
+  for (const k of koppelingen) {
+    if (k.stand === 'actief' && k.rechten.includes('aanmelden') && (await rechtstreeksBevestigenVoor(k.user_id).catch(() => false))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** HERSTEL-001 (TG-2): пряме викликання активного запиту на вхід із бота без переходу за посиланням (лише якщо ввімкнено у налаштуваннях). */
+export async function inlogRechtstreeksVanBot(
+  van: TgGebruiker,
+  chatId: string,
+): Promise<'gevraagd' | 'uit' | 'geen-verzoek' | 'niet-gekoppeld' | 'gepauzeerd' | 'apparaat-geblokkeerd'> {
+  const tg = String(van.id);
+  const alle = await koppelingenVanTelegram(tg);
+  if (!alle.length) return 'niet-gekoppeld';
+  const toegestaanUsers = new Set<string>();
+  for (const k of alle) {
+    if (k.stand === 'actief' && k.rechten.includes('aanmelden') && (await rechtstreeksBevestigenVoor(k.user_id).catch(() => false))) {
+      toegestaanUsers.add(k.user_id);
+    }
+  }
+  if (!toegestaanUsers.size) return 'uit';
+  const [recent] = await sql<InlogRij>(
+    "SELECT * FROM app.tg_inlog_verzoeken WHERE stand = 'wacht' AND verloopt_op > now() AND (telegram_id IS NULL OR telegram_id = $1) ORDER BY aangemaakt_op DESC LIMIT 1",
+    [tg],
+  );
+  if (!recent || verlopen(recent)) return 'geen-verzoek';
+  const claim = await sql(
+    "UPDATE app.tg_inlog_verzoeken SET telegram_id = $2 WHERE id = $1 AND (telegram_id IS NULL OR telegram_id = $2) AND stand = 'wacht' RETURNING id",
+    [recent.id, tg],
+  );
+  if (!claim.length) return 'geen-verzoek';
+  const { lijst, gepauzeerd, geblokkeerd } = await kandidaten(
+    tg,
+    { gebruikersnaam: van.username, voornaam: van.first_name, achternaam: van.last_name },
+    blokSleutel(recent),
+    'bot',
+  );
+  const gefilterd = lijst.filter((item) => toegestaanUsers.has(item.k.user_id));
+  if (!gefilterd.length) {
+    if (gepauzeerd) return 'gepauzeerd';
+    if (geblokkeerd) return 'apparaat-geblokkeerd';
+    return 'uit';
+  }
+  await inlogVraagSturen(recent, tg, chatId, gefilterd);
+  return 'gevraagd';
+}
+
 export async function inlogVanBot(id: string, van: TgGebruiker, chatId: string): Promise<'gevraagd' | 'verlopen' | 'niet-gekoppeld' | 'gepauzeerd' | 'apparaat-geblokkeerd'> {
   const r = await inlog(id);
   if (!r || r.stand !== 'wacht' || verlopen(r)) return 'verlopen';
@@ -386,11 +436,11 @@ async function inlogVraagVenster(r: InlogRij, tg: string, chatId: string, lijst:
   const nieuw = await Promise.all(lijst.map((x) => apparaatBekend(x.k.user_id, r.apparaat_sleutel))).then((b) => b.some((v) => !v));
   const overgang = nieuw && (await Promise.all(lijst.map((x) => oudLabelBekend(x.k.user_id, r.apparaat)))).every(Boolean);
   const nieuwRegel = overgang ? `${overgangRegel(taal)}\n\n` : nieuw ? `${t(TEKST.inlogNieuwApparaat, taal)}\n\n` : '';
-  // TELEGRAM-002 + UPD-011: фірмова картка входу з піктограмою входу та круглим фото конкретного акаунта прямо на зображенні.
+  // TELEGRAM-002 + UPD-011: фірмова картка входу з піктограмою входу та круглим фото конкретного облікового запису прямо на зображенні.
   const beeld = lijst.length === 1 ? await accountBeeld(lijst[0].k.user_id).catch(() => null) : null;
   const compactInlog = tl === 'nl'
-    ? `${nieuwRegel ? `${nieuwRegel.trim()}\n` : ''}${waar('nl')} · ${tijdTekst('nl')}\nTik «Controleren en aanmelden» om het pictogram te kiezen.`
-    : `${nieuwRegel ? `${nieuwRegel.trim()}\n` : ''}${waar('uk')} · ${tijdTekst('uk')}\nНатисніть «Перевірити й увійти», щоб обрати піктограму.`;
+    ? `${nieuwRegel ? `${nieuwRegel.trim()}\n` : ''}${waar('nl')} · ${tijdTekst('nl')}\nTik «Aanmelding bevestigen» om het pictogram te kiezen.`
+    : `${nieuwRegel ? `${nieuwRegel.trim()}\n` : ''}${waar('uk')} · ${tijdTekst('uk')}\nНатисніть «Підтвердити вхід», щоб обрати піктограму.`;
   await stuur(chatId, `${kop}\n${compactInlog}`, taal, {
     accountFoto: beeld?.foto || undefined,
     actieKaart: {
@@ -431,11 +481,12 @@ export async function vensterAccounts(id: string, tg: string): Promise<Array<{ k
   return uit;
 }
 /** Wat het venster toont (geen geheimen: de kandidaten zijn openbaar, welk pictogram juist is NIET). */
-export async function inlogVoorVenster(id: string, tg: string): Promise<{ stand: string; apparaat: string; toestel: string; plaats: string; land: string; ipPunt: Punt | null; geoPunt: Punt | null; geoStand: GeoStand; geoNauwkeurig: number | null; kandidaten: number[]; verlooptOp: string; codeNodig: boolean; symboolOk: boolean; codeOk: boolean } | null> {
+export async function inlogVoorVenster(id: string, tg: string): Promise<{ stand: string; apparaat: string; toestel: string; plaats: string; land: string; dienst: string; terugUrl: string; ipPunt: Punt | null; geoPunt: Punt | null; geoStand: GeoStand; geoNauwkeurig: number | null; kandidaten: number[]; verlooptOp: string; codeNodig: boolean; symboolOk: boolean; codeOk: boolean } | null> {
   const r = await inlog(id);
   if (!r || r.telegram_id !== tg || !r.kandidaten) return null;
   const stand = (r.stand === 'wacht' || r.stand === 'goedgekeurd') && verlopen(r) ? 'verlopen' : r.stand;
-  return { stand, apparaat: r.apparaat, toestel: r.toestel, plaats: r.plaats, land: r.land,
+  const terugUrl = await inlogTerugUrl(r.id, r).catch(() => '');
+  return { stand, apparaat: r.apparaat, toestel: r.toestel, plaats: r.plaats, land: r.land, dienst: paginaWeergave(r), terugUrl,
     ipPunt: geldigPunt(r.ip_lat, r.ip_lon), geoPunt: r.geo_stand === 'gegeven' ? geldigPunt(r.geo_lat, r.geo_lon) : null, geoStand: r.geo_stand || '', geoNauwkeurig: r.geo_nauwkeurig ?? null,
     kandidaten: r.kandidaten.map(Number), verlooptOp: new Date(r.verloopt_op).toISOString(), codeNodig: r.code_nodig, symboolOk: r.symbool_ok, codeOk: r.code_ok };
 }
@@ -450,13 +501,6 @@ export async function inlogVensterKiezen(id: string, tg: string, koppelingId: st
   if (!k || k.telegram_id !== tg || k.stand !== 'actief' || !k.rechten.includes('aanmelden') || !(await vlagVoor(k.user_id))) return 'geweigerd';
   const [geblokt] = await sql('SELECT 1 FROM app.tg_geblokkeerd WHERE user_id = $1 AND sleutel = $2', [k.user_id, blokSleutel(r)]);
   if (geblokt) { await inlogAfwijzen(id, 'apparaat-geblokkeerd'); return 'geweigerd'; }
-  // TELEGRAM-004 (0299): eist het account de plaats van het toestel en gaf de browser die niet, dan gaat het niet door. Het verzoek
-  // blijft open en de poging met het pictogram is NIET verbruikt: de site vraagt nu om de plaats, daarna kan de gebruiker opnieuw tikken.
-  if (r.geo_stand !== 'gegeven' && (await plaatsVerplicht(k.user_id))) {
-    await sql("UPDATE app.tg_inlog_verzoeken SET geo_vereist = true WHERE id = $1 AND stand = 'wacht'", [id]);
-    await audit(k.user_id, 'aanmelden.plaats-nodig', 'denied', { koppeling: k.id, apparaat: r.apparaat, geo: r.geo_stand || 'niet-gevraagd', bron });
-    return 'plaats-nodig';
-  }
   if (pos !== Number(r.juist)) {
     const upd = await sql("UPDATE app.tg_inlog_verzoeken SET stand = 'geweigerd', reden = 'fout-symbool', user_id = $2, koppeling_id = $3, afgehandeld_op = now() WHERE id = $1 AND stand = 'wacht' RETURNING id", [id, k.user_id, k.id]);
     if (!upd.length) return 'verlopen';
@@ -468,6 +512,13 @@ export async function inlogVensterKiezen(id: string, tg: string, koppelingId: st
         nl: `In het Telegram-venster werd een ander pictogram gekozen dan de site toonde (apparaat «${r.apparaat}», ${brusselsTijd(Date.now(), 'nl')}). De aanmelding is geannuleerd. Deed u niets, dan probeerde iemand zich als u aan te melden.` });
     await gebeurtenis('aanmelden', false);
     return 'fout-symbool';
+  }
+  // TELEGRAM-004 (0299) + HERSTEL-001 (TG-7): eist het account de plaats van het toestel en gaf de browser die niet, dan gaat het niet door.
+  // Het verzoek blijft open en de juiste pictogramkeuze is bevestigd zonder het verzoek te sluiten.
+  if (r.geo_stand !== 'gegeven' && (await plaatsVerplicht(k.user_id))) {
+    await sql("UPDATE app.tg_inlog_verzoeken SET geo_vereist = true WHERE id = $1 AND stand = 'wacht'", [id]);
+    await audit(k.user_id, 'aanmelden.plaats-nodig', 'denied', { koppeling: k.id, apparaat: r.apparaat, geo: r.geo_stand || 'niet-gevraagd', bron });
+    return 'plaats-nodig';
   }
   const e = await eisenVoorAanmelden(k.user_id, r.apparaat_sleutel);
   if (!e.kan) {
