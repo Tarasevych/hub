@@ -2,8 +2,10 @@
 // за знімком екрана власника:
 //   - Screenshot_20261125_125840_com.android.chrome.jpg
 //
-// Цей тестовий набір зберігає точні вимоги та перевіряє як поточну наявність цільових точок у коді,
-// так і функцію автоматичної оцінки виправлення (GOOG-1..GOOG-4).
+// Цей тестовий набір зберігає точні вимоги, оцінює стан виправлення (GOOG-1..GOOG-4) та захищає всі 6 інженерних
+// гарантій D-1..D-6 (реєстрація завіси, безпечний вивід <code>{diagnostic.code}</code>, ідеальне коло (i) 32×32 px
+// з вагою (0,4,1), повнорозмірна завіса без смуги 16 px і role='dialog' на аркуші, рівна висота кнопок 44 px на
+// змінних tokens.css із підтримкою theme-plum-dark, прокручування на низьких екранах, керування фокусом та двомовність).
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -26,30 +28,30 @@ export const VIER_GOOGLE_TERUGKEER_GEBREKEN_CONTRACTEN: readonly GoogleTerugkeer
     schermafdruk: 'Screenshot_20261125_125840_com.android.chrome.jpg',
     titelUk: 'Дизайн сторінки повернення id.tarasevych.com: голий білий екран без картки «Мого простору» та чорне слово «Назад» без вигляду кнопки',
     titelNl: 'Ontwerp van de terugkeerpagina id.tarasevych.com: kaal wit scherm zonder Mijn Ruimte-kaart en zwart woord «Terug» zonder knopvorm',
-    doelBestanden: ['src/EigenaarIdentiteitTerug.tsx'],
+    doelBestanden: ['src/EigenaarIdentiteitTerug.tsx', 'src/google-terugkeer-kaart.css'],
     oorzaakUk:
       'OwnerIdentityCallback відмальовує голий <main> і <section> з вбудованими стилями без картки стану входу, знака «Мій простір» чи значка Google із src/merk, а посилання «Назад» не має рамки, плашки й висоти 44 px.',
     oorzaakNl:
       'OwnerIdentityCallback tekent een kale <main> en <section> met ingebedde stijlen zonder aanmeldkaart, Mijn Ruimte-teken of Google-merk uit src/merk, en de koppeling «Terug» mist rand, vlak en aanraakhoogte van 44 px.',
     herstelEisUk:
-      'Оформити сторінку повернення id.tarasevych.com як повноцінну картку «Мого простору» з підтримкою світлої й темної теми, знаком із реєстру src/merk та виразними кнопками дій висотою щонайменше 44 px.',
+      'Оформити сторінку повернення id.tarasevych.com як компактну картку «Мого простору» (min(100%, 388px)) зі змінними оформлення tokens.css, підтримкою світлої й темних тем, знаком із реєстру src/merk, ідеально круглою кнопкою (i) 32×32 px та двома рівновисокими кнопками дій 44 px.',
     herstelEisNl:
-      'Geef de terugkeerpagina id.tarasevych.com vorm als een volwaardige Mijn Ruimte-kaart met ondersteuning voor licht en donker thema, merk uit src/merk en duidelijke actieknoppen van minstens 44 px hoog.',
+      'Geef de terugkeerpagina id.tarasevych.com vorm als een compacte Mijn Ruimte-kaart (min(100%, 388px)) op basis van tokens.css, ondersteuning voor lichte en donkere thema’s, merk uit src/merk, een ronde knop (i) van 32×32 px en twee even hoge actieknoppen van 44 px.',
   },
   {
     id: 'GOOG-2',
     schermafdruk: 'Screenshot_20261125_125840_com.android.chrome.jpg',
     titelUk: 'Взаємодія з кодом проблеми: «Код збою: STATE_EXPIRED · HTTP 400» виглядає як мертвий текст без кнопки копіювання та розшифрування',
     titelNl: 'Interactie met de foutcode: «Foutcode: STATE_EXPIRED · HTTP 400» oogt als dode tekst zonder kopieerknop en verklaring',
-    doelBestanden: ['src/EigenaarIdentiteitTerug.tsx'],
+    doelBestanden: ['src/EigenaarIdentiteitTerug.tsx', 'src/google-terugkeer-kaart.css', 'scripts/plaatsing-vaste-elementen.json'],
     oorzaakUk:
-      'Блок <details><summary> у EigenaarIdentiteitTerug.tsx не має видимого покажчика взаємодії, кнопки копіювання коду збою в буфер обміну та людського розшифрування коду всередині блоку.',
+      'Блок <details><summary> у EigenaarIdentiteitTerug.tsx не мав видимого покажчика взаємодії, кнопки копіювання коду збою в буфер обміну та людського розшифрування коду всередині спливного вікна.',
     oorzaakNl:
-      'Het <details><summary>-blok in EigenaarIdentiteitTerug.tsx mist een zichtbare interactie-aanduiding, een knop om de foutcode te kopiëren en een menselijke verklaring van de code binnen het blok.',
+      'Het <details><summary>-blok in EigenaarIdentiteitTerug.tsx miste een zichtbare interactie-aanduiding, een knop om de foutcode te kopiëren en een menselijke verklaring van de code binnen het dialoogvenster.',
     herstelEisUk:
-      'Оформити блок коду збою як інтерактивну плашку з чітким розкриттям, кнопкою «Скопіювати код» зі зворотним зв’язком та зрозумілим поясненням технічного коду.',
+      'Винести причини та інтерактивну плашку коду збою (<code>{diagnostic.code}</code>) у спливний аркуш «Чому так сталося» за круглою кнопкою (i) з повнорозмірною завісою 100%×100%, копіюванням у буфер обміну та розкривним поясненням «Докладно».',
     herstelEisNl:
-      'Geef het foutcodeblok vorm als een interactieve strook met duidelijke uitklap, een knop «Code kopiëren» met terugkoppeling en een heldere uitleg van de technische code.',
+      'Breng de oorzaken en het interactieve foutcodeblok (<code>{diagnostic.code}</code>) onder in het venster «Waarom dit gebeurde» achter de ronde knop (i) met volledige sluier van 100%×100%, kopieerknop en uitklapbare uitleg «Meer details».',
   },
   {
     id: 'GOOG-3',
@@ -58,9 +60,9 @@ export const VIER_GOOGLE_TERUGKEER_GEBREKEN_CONTRACTEN: readonly GoogleTerugkeer
     titelNl: 'Antwoord voor de gebruiker: servercode STATE_EXPIRED wordt niet herkend in callbackUitleg/failureCopy en valt terug op een algemene fouttekst',
     doelBestanden: ['src/EigenaarIdentiteitTerug.tsx', 'backend/index.ts'],
     oorzaakUk:
-      'ownerGoogleCallbackPost повертає STATE_EXPIRED, STATE_NOT_FOUND, TIMEOUT, TRANSACTION_NOT_FOUND, TRANSACTION_NOT_ATTACHED, STATE_TRANSACTION_MISMATCH, але failureCopy та callbackUitleg перевіряють лише GOOGLE_SUITE_STATE_EXPIRED і OWNER_OAUTH_EXPIRED, а текст c.expired хибно скеровує в «Пошта → Акаунти».',
+      'ownerGoogleCallbackPost повертає STATE_EXPIRED, STATE_NOT_FOUND, TIMEOUT, TRANSACTION_NOT_FOUND, TRANSACTION_NOT_ATTACHED, STATE_TRANSACTION_MISMATCH, але failureCopy та callbackUitleg раніше перевіряли лише GOOGLE_SUITE_STATE_EXPIRED і OWNER_OAUTH_EXPIRED.',
     oorzaakNl:
-      'ownerGoogleCallbackPost geeft STATE_EXPIRED, STATE_NOT_FOUND, TIMEOUT, TRANSACTION_NOT_FOUND, TRANSACTION_NOT_ATTACHED en STATE_TRANSACTION_MISMATCH terug, maar failureCopy en callbackUitleg controleren alleen GOOGLE_SUITE_STATE_EXPIRED en OWNER_OAUTH_EXPIRED, en c.expired verwijst ten onrechte naar «E-mail → Accounts».',
+      'ownerGoogleCallbackPost geeft STATE_EXPIRED, STATE_NOT_FOUND, TIMEOUT, TRANSACTION_NOT_FOUND, TRANSACTION_NOT_ATTACHED en STATE_TRANSACTION_MISMATCH terug, maar failureCopy en callbackUitleg controleerden eerder alleen GOOGLE_SUITE_STATE_EXPIRED en OWNER_OAUTH_EXPIRED.',
     herstelEisUk:
       'Додати в callbackUitleg та failureCopy точні двомовні пояснення для STATE_EXPIRED, STATE_NOT_FOUND, TIMEOUT, TRANSACTION_NOT_FOUND, TRANSACTION_NOT_ATTACHED, STATE_TRANSACTION_MISMATCH окремо для входу в «Мій простір» і окремо для підключення пошти.',
     herstelEisNl:
@@ -73,9 +75,9 @@ export const VIER_GOOGLE_TERUGKEER_GEBREKEN_CONTRACTEN: readonly GoogleTerugkeer
     titelNl: 'Vervolgstappen met oorzaak: verlies van returnTo bij STATE_EXPIRED op de server en ontbreken van ?aanmeld_fout-overdracht en knop om opnieuw aan te melden',
     doelBestanden: ['backend/index.ts', 'src/EigenaarIdentiteitTerug.tsx', 'src/weigeringen.ts'],
     oorzaakUk:
-      'При STATE_EXPIRED сервер повертає порожній sourceOrigin і не передає returnTo з транзакції OwnerTx (хоча transactionRecordId є в oauthState і в структурованому state), а кнопка повернення не передає ?aanmeld_fout=<КОД> на сторінку входу й у weigeringen.ts немає текстів для цих кодів.',
+      'При STATE_EXPIRED сервер повертав порожній sourceOrigin і не передавав returnTo з транзакції OwnerTx, а кнопка повернення не передавала ?aanmeld_fout=<КОД> на сторінку входу.',
     oorzaakNl:
-      'Bij STATE_EXPIRED geeft de server een lege sourceOrigin terug zonder returnTo uit OwnerTx (hoewel transactionRecordId in oauthState en in de gestructureerde state zit), en de terugkeeractie geeft geen ?aanmeld_fout=<CODE> door naar de aanmeldpagina terwijl weigeringen.ts deze codes nog mist.',
+      'Bij STATE_EXPIRED gaf de server een lege sourceOrigin terug zonder returnTo uit OwnerTx en gaf de terugkeeractie geen ?aanmeld_fout=<CODE> door naar de aanmeldpagina.',
     herstelEisUk:
       'Відновлювати returnTo та sourceOrigin із транзакції OwnerTx навіть при STATE_EXPIRED, додати на сторінці повернення головну дію повторного входу з передачею причини (?aanmeld_fout) та додати відповідні коди до словника AANMELDEN у src/weigeringen.ts.',
     herstelEisNl:
@@ -91,55 +93,73 @@ export interface GoogleTerugkeerHerstelStatus {
 
 export function evalueerVierGoogleTerugkeerGebrekenHerstel(rootDir = process.cwd()): readonly GoogleTerugkeerHerstelStatus[] {
   const terugPad = join(rootDir, 'src/EigenaarIdentiteitTerug.tsx');
+  const kaartCssPad = join(rootDir, 'src/google-terugkeer-kaart.css');
+  const plaatsingPad = join(rootDir, 'scripts/plaatsing-vaste-elementen.json');
   const backendPad = join(rootDir, 'backend/index.ts');
   const weigeringenPad = join(rootDir, 'src/weigeringen.ts');
 
   const terugTekst = existsSync(terugPad) ? readFileSync(terugPad, 'utf8') : '';
+  const kaartCss = existsSync(kaartCssPad) ? readFileSync(kaartCssPad, 'utf8') : '';
+  const plaatsingTekst = existsSync(plaatsingPad) ? readFileSync(plaatsingPad, 'utf8') : '';
   const backendTekst = existsSync(backendPad) ? readFileSync(backendPad, 'utf8') : '';
   const weigeringenTekst = existsSync(weigeringenPad) ? readFileSync(weigeringenPad, 'utf8') : '';
 
   const goog1Hersteld =
-    terugTekst.includes('data-google-terug-kaart') ||
-    terugTekst.includes('mr-google-terug-kaart');
+    terugTekst.includes('data-google-terug-kaart') &&
+    terugTekst.includes("className='mr-google-terug-info-knop is-icoon'") &&
+    kaartCss.includes('width: min(100%, 388px);') &&
+    kaartCss.includes('.mr-google-terug-scherm .mr-google-terug-kaart .mr-google-terug-titelrij button.mr-google-terug-info-knop') &&
+    kaartCss.includes('min-height: 44px;') &&
+    !kaartCss.includes('!important') &&
+    !kaartCss.toLowerCase().includes('#0f9488') &&
+    kaartCss.includes('html.theme-plum-dark');
 
   const goog2Hersteld =
-    terugTekst.includes('data-google-foutcode-kopieer') ||
-    terugTekst.includes('navigator.clipboard');
+    plaatsingTekst.includes('"src/google-terugkeer-kaart.css :: .mr-google-terug-sluier"') &&
+    terugTekst.includes('<code>{diagnostic.code}</code>') &&
+    terugTekst.includes('data-google-foutcode-kopieer') &&
+    /<div[\s\S]*?className='mr-google-terug-blad'[\s\S]*?role='dialog'[\s\S]*?aria-modal='true'/.test(terugTekst) &&
+    !/<div[\s\S]*?className='mr-google-terug-sluier'[^>]*role='dialog'/.test(terugTekst) &&
+    kaartCss.includes('max-width: none;') &&
+    kaartCss.includes('max-height: none;');
 
   const goog3Hersteld =
     terugTekst.includes("'STATE_EXPIRED'") &&
     terugTekst.includes("'STATE_NOT_FOUND'") &&
-    terugTekst.includes("'TIMEOUT'");
+    terugTekst.includes("'TIMEOUT'") &&
+    !terugTekst.includes('Статус HTTP') &&
+    !terugTekst.includes('статусом HTTP');
 
   const goog4Hersteld =
     weigeringenTekst.includes('STATE_EXPIRED') &&
-    terugTekst.includes('aanmeld_fout');
+    terugTekst.includes('aanmeld_fout') &&
+    backendTekst.includes('STATE_EXPIRED');
 
   return [
     {
       id: 'GOOG-1',
       hersteld: goog1Hersteld,
       detail: goog1Hersteld
-        ? 'Сторінка повернення id.tarasevych.com оформлена як картка «Мого простору» з кнопками дій'
-        : 'Очікує на виправлення: EigenaarIdentiteitTerug.tsx все ще відмальовує голий білий екран і чорне посилання «Назад» без вигляду кнопки',
+        ? 'Сторінка повернення id.tarasevych.com оформлена як компактна картка 388 px із колом (i) 32×32 px та рівновисокими кнопками 44 px на tokens.css'
+        : 'Очікує на виправлення: потрібна компактна картка 388 px, коло (i) 32×32 px з вагою (0,4,1) та рівновисокі кнопки 44 px на tokens.css',
     },
     {
       id: 'GOOG-2',
       hersteld: goog2Hersteld,
       detail: goog2Hersteld
-        ? 'Блок коду збою інтерактивний і підтримує копіювання та розшифрування'
-        : 'Очікує на виправлення: блок «Код збою: STATE_EXPIRED · HTTP 400» не має кнопки копіювання та людського розшифрування',
+        ? 'Спливне вікно за (i) має повнорозмірну завісу 100%×100%, role=dialog на аркуші, <code>{diagnostic.code}</code>, копіювання й блок «Докладно»'
+        : 'Очікує на виправлення: потрібні реєстрація завіси, role=dialog на аркуші та безпечний вивід <code>{diagnostic.code}</code>',
     },
     {
       id: 'GOOG-3',
       hersteld: goog3Hersteld,
       detail: goog3Hersteld
-        ? 'Серверні коди STATE_EXPIRED, STATE_NOT_FOUND і TIMEOUT розпізнаються на клієнті з точним поясненням для користувача'
-        : 'Очікує на виправлення: STATE_EXPIRED відсутній у callbackUitleg/failureCopy і провалюється в загальну заглушку',
+        ? 'Серверні коди STATE_EXPIRED, STATE_NOT_FOUND і TIMEOUT розпізнаються на клієнті з точним двомовним поясненням без кальок'
+        : 'Очікує на виправлення: STATE_EXPIRED або мовні формулювання потребують уточнення у callbackUitleg/failureCopy',
     },
     {
       id: 'GOOG-4',
-      hersteld: goog4Hersteld && backendTekst.includes('STATE_EXPIRED'),
+      hersteld: goog4Hersteld,
       detail: goog4Hersteld
         ? 'Повернення передає returnTo та причину (?aanmeld_fout) для негайного продовження входу'
         : 'Очікує на виправлення: втрачається returnTo при STATE_EXPIRED і причина не передається на сторінку входу',
@@ -184,6 +204,8 @@ export async function main(): Promise<number> {
   }
 
   const terugInhoud = readFileSync(join(rootDir, 'src/EigenaarIdentiteitTerug.tsx'), 'utf8');
+  const kaartCssInhoud = readFileSync(join(rootDir, 'src/google-terugkeer-kaart.css'), 'utf8');
+  const plaatsingInhoud = readFileSync(join(rootDir, 'scripts/plaatsing-vaste-elementen.json'), 'utf8');
   const backendInhoud = readFileSync(join(rootDir, 'backend/index.ts'), 'utf8');
   const weigeringenInhoud = readFileSync(join(rootDir, 'src/weigeringen.ts'), 'utf8');
 
@@ -192,6 +214,40 @@ export async function main(): Promise<number> {
     terugInhoud.includes('export default function OwnerIdentityCallback') &&
       terugInhoud.includes('callbackUitleg') &&
       terugInhoud.includes('failureCopy'),
+  );
+
+  controleer(
+    'D-1..D-2: завіса зареєстрована у plaatsing-vaste-elementen.json, а діагностичний блок містить <code>{diagnostic.code}</code>',
+    plaatsingInhoud.includes('"src/google-terugkeer-kaart.css :: .mr-google-terug-sluier"') &&
+      terugInhoud.includes('<code>{diagnostic.code}</code>') &&
+      (kaartCssInhoud.match(/position:\s*fixed/g) || []).length === 1,
+  );
+
+  controleer(
+    'D-3..D-4: кнопка (i) має .is-icoon та вагу селектора (0,4,1) 32×32 px (inset: -6px), а role=dialog стоїть на .mr-google-terug-blad при завісі 100%×100%',
+    terugInhoud.includes("className='mr-google-terug-info-knop is-icoon'") &&
+      terugInhoud.includes("className='mr-google-terug-blad-sluit is-icoon'") &&
+      terugInhoud.includes("className='mr-google-terug-kopieer-icoon is-icoon'") &&
+      kaartCssInhoud.includes('.mr-google-terug-scherm .mr-google-terug-kaart .mr-google-terug-titelrij button.mr-google-terug-info-knop') &&
+      kaartCssInhoud.includes('inset: -6px;') &&
+      kaartCssInhoud.includes('max-width: none;') &&
+      kaartCssInhoud.includes('max-height: none;') &&
+      /<div[\s\S]*?className='mr-google-terug-blad'[\s\S]*?role='dialog'[\s\S]*?aria-modal='true'/.test(terugInhoud),
+  );
+
+  controleer(
+    'D-5..D-6: обидві кнопки дій мають єдину min-height: 44px на tokens.css (без !important і без --surface-2), підтримані прокручування, фокус, мова документа і prefers-reduced-motion',
+    !kaartCssInhoud.includes('!important') &&
+      !kaartCssInhoud.includes('--surface-2') &&
+      !kaartCssInhoud.includes('min-height: 48px') &&
+      !kaartCssInhoud.includes('min-height: 46px') &&
+      kaartCssInhoud.includes('overflow-y: auto;') &&
+      kaartCssInhoud.includes('place-items: safe center;') &&
+      kaartCssInhoud.includes('@media (prefers-reduced-motion: reduce)') &&
+      terugInhoud.includes('document.documentElement.lang') &&
+      terugInhoud.includes("data.locale==='nl'||data.locale==='uk'") &&
+      terugInhoud.includes('infoKnopRef') &&
+      terugInhoud.includes('sluitKnopRef'),
   );
 
   controleer(
@@ -217,6 +273,82 @@ export async function main(): Promise<number> {
       `GOOG-4: aanmeldWeigering('${code}') повертає двомовну пару [uk, nl] без сирого коду`,
       Array.isArray(paar) && paar[0].length > 20 && paar[1].length > 20 && !/[ЁёЪъЫыЭэ]/.test(paar[0]),
     );
+  }
+
+  const g = globalThis as unknown as Record<string, unknown>;
+  const opslag = () => {
+    const m = new Map<string, string>();
+    return {
+      getItem: (k: string) => m.get(k) ?? null,
+      setItem: (k: string, v: string) => void m.set(k, String(v)),
+      removeItem: (k: string) => void m.delete(k),
+      clear: () => m.clear(),
+      key: (i: number) => [...m.keys()][i] ?? null,
+      get length() {
+        return m.size;
+      },
+    };
+  };
+  const neppe: Record<string, unknown> = {
+    window: g,
+    localStorage: opslag(),
+    sessionStorage: opslag(),
+    navigator: { language: 'uk-UA' },
+    matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent: () => true,
+    location: {
+      href: 'https://id.tarasevych.com/',
+      hostname: 'id.tarasevych.com',
+      origin: 'https://id.tarasevych.com',
+      host: 'id.tarasevych.com',
+      pathname: '/',
+      search: '',
+      hash: '',
+      protocol: 'https:',
+    },
+    document: {
+      addEventListener() {},
+      removeEventListener() {},
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      getElementById: () => null,
+      createElement: () => ({ style: {}, dataset: {}, setAttribute() {}, getAttribute: () => null, appendChild() {}, remove() {}, classList: { add() {}, remove() {} } }),
+      documentElement: { classList: { add() {}, remove() {}, contains: () => false }, dataset: {}, style: {}, lang: 'uk' },
+      head: { appendChild() {} },
+      body: { appendChild() {} },
+      cookie: '',
+      visibilityState: 'visible',
+      referrer: '',
+    },
+  };
+  const bewaard = new Map<string, PropertyDescriptor | undefined>();
+  for (const k of Object.keys(neppe)) {
+    bewaard.set(k, Object.getOwnPropertyDescriptor(globalThis, k));
+    Object.defineProperty(globalThis, k, { value: neppe[k], configurable: true, writable: true });
+  }
+  try {
+    new Function(readFileSync(join(rootDir, 'public/canonical-service.js'), 'utf8'))();
+    const { failureCopy, callbackUitleg } = await import('../../src/EigenaarIdentiteitTerug');
+    const ukAanmeld = callbackUitleg('uk', 'STATE_EXPIRED', 0, false);
+    const nlAanmeld = callbackUitleg('nl', 'STATE_EXPIRED', 0, false);
+    const ukSuite = failureCopy('uk', 'STATE_EXPIRED', true);
+    const nlSuite = failureCopy('nl', 'STATE_EXPIRED', true);
+    controleer(
+      'GOOG-3: callbackUitleg і failureCopy повертають окремі змістовні тексти uk/nl для входу (!suiteState) і підключення пошти (suiteState)',
+      ukAanmeld.includes('Обліковий запис у безпеці') &&
+        !ukAanmeld.includes('Пошта →') &&
+        nlAanmeld.includes('Uw account is veilig') &&
+        ukSuite.includes('Пошта → Облікові записи') &&
+        nlSuite.includes('E-mail → Accounts'),
+    );
+  } finally {
+    for (const [k, d] of bewaard) {
+      if (d) Object.defineProperty(globalThis, k, d);
+      else delete g[k];
+    }
+    delete g.__TSV_CANONICAL_SERVICE__;
   }
 
   const ukDocPad = join(rootDir, 'docs/identiteit/ВИПРОБУВАННЯ-СТОРИНКИ-ПОВЕРНЕННЯ-GOOGLE-HERSTEL-001.uk.md');

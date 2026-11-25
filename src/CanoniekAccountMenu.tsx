@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom';
 import { ladeBediening } from './plaatsing/plaatsing-staat';
 import {
   Camera,
+  Check,
   ChevronDown,
   FileText,
   KeyRound,
@@ -450,10 +451,12 @@ export default function CanonicalAccountMenu({
   useEffect(() => { if (techUid !== undefined) { techGebruiker(techUid); weergaveGebruiker(techUid); } }, [techUid]);
   const root = useRef<HTMLDivElement>(null);
   const portaalRef = useRef<HTMLDivElement>(null);
+  const taalMenuRef = useRef<HTMLDivElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   // UI-008: de tooltip van de kleine avatar noemt ook hoeveel andere accounts er zijn; die lijst één keer ophalen bij aanwijzen.
   const geladenVoorTip = useRef(false);
   const [open, setOpen] = useState(false);
+  const [taalMenuOpen, setTaalMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [snapshot, setSnapshot] = useState<AccountMenuSnapshot>({ accounts: [], previews: [], externalCandidates: [] });
   const [history, setHistory] = useState<AccountPreviewHistoryItem[]>(readAccountPreviewHistory);
@@ -476,10 +479,31 @@ export default function CanonicalAccountMenu({
 
   const close = () => {
     setOpen(false);
+    setTaalMenuOpen(false);
     setExpanded(false);
     setGewisseld(null);
     setWisselFout(null);
   };
+
+  useEffect(() => {
+    if (!taalMenuOpen) return;
+    const buitenshuis = (event: PointerEvent) => {
+      if (taalMenuRef.current?.contains(event.target as Node)) return;
+      setTaalMenuOpen(false);
+    };
+    const bijEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setTaalMenuOpen(false);
+      taalMenuRef.current?.querySelector<HTMLButtonElement>('button.mr-sign-in-taal')?.focus();
+    };
+    window.addEventListener('pointerdown', buitenshuis, true);
+    window.addEventListener('keydown', bijEscape);
+    return () => {
+      window.removeEventListener('pointerdown', buitenshuis, true);
+      window.removeEventListener('keydown', bijEscape);
+    };
+  }, [taalMenuOpen]);
 
   const sluitMetLade = () => {
     close();
@@ -1056,17 +1080,76 @@ export default function CanonicalAccountMenu({
       data-account-menu-v3={am3 ? 'aan' : undefined}
     >
       {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
-        {/* Taal: echte vlag (SVG) + korte naam; klik wisselt. Dezelfde plek als voorheen, kleiner, met ruimte naast het thema-knopje. */}
-        <button type='button' className='mr-sign-in-taal' aria-label={lang === 'uk' ? `${MOVA_NAAM.uk} · змінити мову на нідерландську` : `${MOVA_NAAM.nl} · taal wijzigen naar Oekraïens`} title={lang === 'uk' ? 'Мова: українська' : 'Taal: Nederlands'} onClick={() => onLanguage(lang === 'uk' ? 'nl' : 'uk')}>
-          <MoviPrapor taal={lang} /><b>{MOVA_NAAM[lang]}</b>
-        </button>
-        <button type='button' aria-label={lang === 'uk' ? 'Перемкнути тему' : 'Thema wisselen'} title={lang === 'uk' ? 'Перемкнути світлу / темну тему' : 'Licht / donker wisselen'} onClick={() => onTheme(theme === 'dark' ? 'light' : theme === 'plum-dark' ? 'plum-light' : theme === 'plum-light' ? 'plum-dark' : 'dark')}>
+        {/* HERSTEL-001 (K1-T1): compacte taalpil (vlag + korte taalnaam, 38 px hoog) op één gelijke as en oppervlak
+            met de ronde knoppen voor thema (38×38 px) en profiel (38×38 px), tikvlak 44 px via ::after en compact keuzemenu. */}
+        <div ref={taalMenuRef} className='mr-sign-in-taal-wrap'>
+          <button
+            type='button'
+            className='mr-sign-in-taal'
+            aria-label={lang === 'uk' ? `Мова інтерфейсу: ${MOVA_VOLLEDIG.uk}` : `Taal: ${MOVA_VOLLEDIG.nl}`}
+            title={lang === 'uk' ? `Мова: ${MOVA_VOLLEDIG.uk}` : `Taal: ${MOVA_VOLLEDIG.nl}`}
+            aria-haspopup='menu'
+            aria-expanded={taalMenuOpen}
+            onClick={() => {
+              if (open) close();
+              setTaalMenuOpen((vorige) => !vorige);
+            }}
+          >
+            <MoviPrapor taal={lang} />
+            <b>{MOVA_NAAM[lang]}</b>
+          </button>
+          {taalMenuOpen && (
+            <div className='mr-sign-in-taal-menu' role='menu' aria-label={lang === 'uk' ? 'Вибір мови' : 'Taalkeuze'}>
+              <button
+                type='button'
+                role='menuitemradio'
+                aria-checked={lang === 'uk'}
+                className={`mr-sign-in-taal-optie${lang === 'uk' ? ' is-active' : ''}`}
+                lang='uk'
+                onClick={() => {
+                  onLanguage('uk');
+                  setTaalMenuOpen(false);
+                }}
+              >
+                <MoviPrapor taal='uk' />
+                <span className='mr-sign-in-taal-naam'>{MOVA_VOLLEDIG.uk}</span>
+                {lang === 'uk' ? <Check className='mr-sign-in-taal-check' aria-hidden='true' /> : <span className='mr-sign-in-taal-check-leeg' aria-hidden='true' />}
+              </button>
+              <span className='mr-sign-in-taal-scheiding' aria-hidden='true' />
+              <button
+                type='button'
+                role='menuitemradio'
+                aria-checked={lang === 'nl'}
+                className={`mr-sign-in-taal-optie${lang === 'nl' ? ' is-active' : ''}`}
+                lang='nl'
+                onClick={() => {
+                  onLanguage('nl');
+                  setTaalMenuOpen(false);
+                }}
+              >
+                <MoviPrapor taal='nl' />
+                <span className='mr-sign-in-taal-naam'>{MOVA_VOLLEDIG.nl}</span>
+                {lang === 'nl' ? <Check className='mr-sign-in-taal-check' aria-hidden='true' /> : <span className='mr-sign-in-taal-check-leeg' aria-hidden='true' />}
+              </button>
+            </div>
+          )}
+        </div>
+        <button
+          type='button'
+          className='mr-sign-in-thema is-icoon'
+          aria-label={lang === 'uk' ? 'Перемкнути тему' : 'Thema wisselen'}
+          title={lang === 'uk' ? 'Перемкнути світлу / темну тему' : 'Licht / donker wisselen'}
+          onClick={() => {
+            if (taalMenuOpen) setTaalMenuOpen(false);
+            onTheme(theme === 'dark' ? 'light' : theme === 'plum-dark' ? 'plum-light' : theme === 'plum-light' ? 'plum-dark' : 'dark');
+          }}
+        >
           {dark || theme === 'plum-dark' ? <Moon aria-hidden='true'/> : <Sun aria-hidden='true'/>}
         </button>
       </div>}
       <button
         type='button'
-        className='canonical-avatar-trigger'
+        className={`canonical-avatar-trigger${!displayUser ? ' is-icoon' : ''}`}
         aria-label={open ? t.close : (am2 || am3) && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
         title={(am2 || am3) && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
         data-am2-tip={am2 && displayUser ? 'ja' : undefined}
@@ -1074,7 +1157,10 @@ export default function CanonicalAccountMenu({
         onFocus={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
         aria-haspopup='dialog'
         aria-expanded={open}
-        onClick={() => open ? close() : setOpen(true)}
+        onClick={() => {
+          if (taalMenuOpen) setTaalMenuOpen(false);
+          open ? close() : setOpen(true);
+        }}
       >
         {open
           ? <span className='canonical-avatar-close' data-account-trigger-open='close'><X /></span>

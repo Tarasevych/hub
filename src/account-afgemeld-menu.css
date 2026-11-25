@@ -12,18 +12,26 @@
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account>.canonical-account-menu{position:static;pointer-events:auto}
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account .canonical-account-menu[data-signed-out='true'] .canonical-account-panel{left:50%;right:auto;transform:translateX(-50%);width:min(370px,calc(100% - 24px))}
 
- /* 2. Taalknop: de globale tikregel van de telefoon (min-height 44 px op elke knop) maakte de pil hoger (44 px) dan de themaknop en de
-    avatar (38 px) ernaast — «занадто велика». Die tikregel heeft specificiteit (0,3,1) (door :not(:has(> svg:only-child))), vandaar de zwaardere
-    selector (0,4,1) hier. Zichtbaar blijft de pil 32 px; het tikvlak is nog steeds 44 px hoog (onzichtbare rand via ::after). */
- .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal{min-height:32px;height:32px;position:relative}
- .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal::after{content:'';position:absolute;left:-4px;right:-4px;top:-7px;bottom:-7px}
- /* 3. Avatarknop rechtsboven: net als de taalknop zichtbaar 38×38 (rond, geen ovaal door min-height 44 px), met een tikvlak van 44×44. */
- .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] button.canonical-avatar-trigger{width:38px;height:38px;min-height:38px;aspect-ratio:1/1;flex:none;position:relative;overflow:visible}
+ /* 2. Єдина висота 38 px для капсули мови (прапор + «укр.» / «NL») та круглих кнопок теми й профілю (38×38 px),
+    сенсорне поле 44 px через ::after (inset: -3px). Вага селектора (0,4,1) переважає (0,3,1) у ontwerp/mobiel.css. */
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal{
+  height:38px;min-height:38px;max-height:38px;position:relative;overflow:visible
+ }
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal::after{
+  content:'';position:absolute;inset:-3px;border-radius:999px
+ }
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-thema,
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] button.canonical-avatar-trigger{
+  width:38px;height:38px;min-width:38px;min-height:38px;aspect-ratio:1/1;padding:0;flex:none;position:relative;overflow:visible
+ }
  .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] button.canonical-avatar-trigger :is(.canonical-avatar-close,.canonical-account-avatar){width:100%;height:100%;border-radius:50%;overflow:hidden}
- .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] button.canonical-avatar-trigger::after{content:'';position:absolute;inset:-3px}
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-thema::after,
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] button.canonical-avatar-trigger::after{content:'';position:absolute;inset:-3px;border-radius:50%}
 }
 @media(max-width:360px){
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account{padding:0 12px}
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'],
  .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls{gap:6px}
- .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal{padding:0 9px 0 8px;font-size:.74rem}
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal{padding:0 10px 0 9px;gap:6px;font-size:.78rem}
+ .mr-sign-in-taal-menu{right:-28px;width:206px}
 }

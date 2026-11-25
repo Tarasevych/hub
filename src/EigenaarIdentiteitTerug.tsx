@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
+import {Check,ChevronDown,Clock,Code2,Copy,ShieldCheck,X} from 'lucide-react';
 import {markeerGoogleTerugkeer} from './platform/google-terugkeer';
 import {api} from './platform/client';
 import {bewaarStapOpFout} from './platform/stap-op';
@@ -12,19 +13,19 @@ import './google-terugkeer-kaart.css';
 type Lang='uk'|'nl';
 type CallbackResult={ok?:boolean;stepUp?:boolean;result?:string;sourceOrigin?:string;locale?:Lang;flowMode?:'popup'|'redirect';returnTo?:string;reasonCode?:string;retryAfter?:number;sessionCreated?:boolean;user?:{id?:string;picture?:string|null}|null;mailboxAuthorized?:boolean;cloudStorageAuthorized?:boolean;suiteServiceAuthorized?:boolean;service?:'mail'|'drive'|'calendar'|'photos';nextService?:string;completedServices?:string[];technicalCookiePending?:boolean;handoffToken?:string};
 
-const localeFromCallbackUrl=(url:URL):Lang=>{const state=url.searchParams.get('state')||'';const match=/^(?:v2|mailg\.v1|mailm\.v1|cloudg\.v1|gsuite\.v2)\.(uk|nl)\./.exec(state);if(match)return match[1]as Lang;const query=url.searchParams.get('lang');if(query==='uk'||query==='nl')return query;return navigator.language.toLowerCase().startsWith('nl')?'nl':'uk'};
+const localeFromCallbackUrl=(url:URL):Lang=>{const state=url.searchParams.get('state')||'';const match=/^(?:v2|mailg\.v1|mailm\.v1|cloudg\.v1|gsuite\.v2)\.(uk|nl)\./.exec(state);if(match)return match[1]as Lang;const query=url.searchParams.get('lang');if(query==='uk'||query==='nl')return query;const docLang=typeof document!=='undefined'?document.documentElement.lang:'';if(docLang==='uk'||docLang==='nl')return docLang;return navigator.language.toLowerCase().startsWith('nl')?'nl':'uk'};
 
 const copy=(lang:Lang)=>lang==='nl'?{
-  bovenAanmelden:'Mijn Ruimte · Veilig aanmelden met Google',
-  bovenSuite:'Mijn Ruimte · Google-dienst koppelen',
+  bovenAanmelden:'Mijn Ruimte · Aanmelden met Google',
+  bovenSuite:'Mijn Ruimte · Google koppelen',
   working:'We ronden de veilige aanmelding af…',
   suiteWorking:'We slaan uw Google-toegang veilig op…',
   failed:'De Google-aanmelding kon niet worden voltooid. Uw account is veilig en er is niets gewijzigd — start hieronder een nieuwe aanmeldpoging.',
   oauthState:'De eenmalige Google-bevestiging ontbreekt of hoort bij een eerdere poging. Er is niets gewijzigd — start de aanmelding hieronder opnieuw.',
-  stateExpiredAanmelden:'Het beveiligde Google-bevestigingsvenster is verlopen: er zat te veel tijd tussen de start van het aanmelden en de terugkeer naar de site. Uw account is veilig en er is niets gewijzigd. Kies «Opnieuw aanmelden» voor een verse poging.',
-  stateNotFoundAanmelden:'De eenmalige bevestiging van deze Google-aanmeldpoging is niet gevonden of al gebruikt (bijvoorbeeld door vernieuwen of een tweede tabblad). Kies «Opnieuw aanmelden» in dit tabblad.',
-  timeoutAanmelden:'De toegestane tijd voor deze Google-aanmeldpoging is verstreken. Uw account is veilig en er is niets gewijzigd — start hieronder een nieuwe poging.',
-  txMismatchAanmelden:'Deze Google-terugkeer hoort niet meer bij de actieve aanmeldpoging in dit tabblad. Kies «Opnieuw aanmelden» om schoon te beginnen.',
+  stateExpiredAanmelden:'Het beveiligde Google-bevestigingsvenster is verlopen: er zat te veel tijd tussen de start van het aanmelden en de terugkeer naar de site. Uw account is veilig en er is niets gewijzigd.',
+  stateNotFoundAanmelden:'De eenmalige bevestiging van deze Google-aanmeldpoging is niet gevonden of al gebruikt (bijvoorbeeld door vernieuwen of een tweede tabblad).',
+  timeoutAanmelden:'De toegestane tijd voor deze Google-aanmeldpoging is verstreken. Uw account is veilig en er is niets gewijzigd.',
+  txMismatchAanmelden:'Deze Google-terugkeer hoort niet meer bij de actieve aanmeldpoging in dit tabblad.',
   ownerIdentity:'Dit Google-profiel hoort niet bij de vaste Google-identiteit van de eigenaar. Het adres van de eigenaar krijgt nooit een tweede account; de aanmelding is geweigerd en gemeld aan de eigenaar. Bent u de eigenaar met een nieuw Google-profiel: koppel eerst de oude identiteit los bij «Aanmeldmethoden».',
   configMissing:'De Google-aanmelding is nog niet volledig ingesteld door de beheerder. Probeer het later opnieuw of neem contact op met de beheerder.',
   wrongPrimary:'U koos een ander Google-profiel dan het primaire profiel van Mijn Ruimte. Kies voor de primaire Gmail hetzelfde Google-profiel waarmee u bij Mijn Ruimte bent aangemeld.',
@@ -34,18 +35,22 @@ const copy=(lang:Lang)=>lang==='nl'?{
   expiredSuite:'De beveiligde Google-koppeling is verlopen. Ga terug naar E-mail → Accounts en start één nieuwe poging.',
   retryLogin:'Opnieuw aanmelden',
   retrySuite:'Koppeling opnieuw starten',
-  back:'Terug naar de vorige pagina',
+  back:'Terug naar vorige pagina',
+  waaromTitel:'Waarom dit gebeurde',
+  veiligPunt:'Uw account is veilig, er is niets gewijzigd',
+  codeLabel:'Code:',
+  meerDetails:'Meer details',
 }:{
-  bovenAanmelden:'Мій простір · Безпечний вхід через Google',
-  bovenSuite:'Мій простір · Підключення служби Google',
+  bovenAanmelden:'Мій простір · Вхід через Google',
+  bovenSuite:'Мій простір · Підключення Google',
   working:'Завершуємо безпечний вхід…',
   suiteWorking:'Безпечно зберігаємо доступ Google…',
   failed:'Не вдалося завершити вхід через Google. Обліковий запис у безпеці й нічого не змінено — почніть нову спробу нижче.',
-  oauthState:'Одноразове підтвердження Google відсутнє або залишилося від попередньої спроби. Нічого не змінено — натисніть «Почати вхід знову».',
-  stateExpiredAanmelden:'Захищене вікно підтвердження Google застаріло: минуло забагато часу між початком входу та поверненням на сайт. Обліковий запис у безпеці й нічого не змінено. Натисніть «Почати вхід знову», щоб одразу виконати свіжу спробу.',
-  stateNotFoundAanmelden:'Одноразове підтвердження цієї спроби входу Google не знайдено або вже використане (наприклад, через оновлення сторінки чи іншу вкладку). Натисніть «Почати вхід знову» у цій вкладці.',
-  timeoutAanmelden:'Час, відведений на завершення цієї спроби входу Google, вичерпано. Обліковий запис у безпеці й нічого не змінено — почніть нову спробу нижче.',
-  txMismatchAanmelden:'Це повернення з Google більше не відповідає активній спробі входу у цій вкладці. Натисніть «Почати вхід знову», щоб почати чисто.',
+  oauthState:'Одноразове підтвердження Google відсутнє або залишилося від попередньої спроби. Нічого не змінено.',
+  stateExpiredAanmelden:'Захищене вікно підтвердження Google застаріло: минуло забагато часу між початком входу та поверненням на сайт. Обліковий запис у безпеці й нічого не змінено.',
+  stateNotFoundAanmelden:'Одноразове підтвердження цієї спроби входу Google не знайдено або вже використане (наприклад, через оновлення сторінки чи іншу вкладку).',
+  timeoutAanmelden:'Час, відведений на завершення цієї спроби входу Google, вичерпано. Обліковий запис у безпеці й нічого не змінено.',
+  txMismatchAanmelden:'Це повернення з Google більше не відповідає активній спробі входу у цій вкладці.',
   ownerIdentity:'Цей профіль Google не збігається з постійною ідентичністю власника. Адреса власника ніколи не отримує другий обліковий запис; вхід відхилено, власника повідомлено. Якщо ви власник із новим профілем Google: спершу від’єднайте стару ідентичність у розділі «Способи входу».',
   configMissing:'Вхід через Google ще не повністю налаштований адміністратором. Спробуйте пізніше або зверніться до адміністратора.',
   wrongPrimary:'Ви обрали інший профіль Google, ніж основний профіль «Мого простору». Для основної скриньки Gmail оберіть той самий профіль Google, з яким увійшли до «Мого простору».',
@@ -56,6 +61,10 @@ const copy=(lang:Lang)=>lang==='nl'?{
   retryLogin:'Почати вхід знову',
   retrySuite:'Почати підключення знову',
   back:'Повернутися назад',
+  waaromTitel:'Чому так сталося',
+  veiligPunt:'Обліковий запис у безпеці, нічого не змінено',
+  codeLabel:'Код:',
+  meerDetails:'Докладно',
 };
 
 export const failureCopy=(lang:Lang,reason:string,suiteState=false)=>{
@@ -76,7 +85,7 @@ export const failureCopy=(lang:Lang,reason:string,suiteState=false)=>{
   return c.failed;
 };
 
-// Zelf gehost: na het inloggen altijd terug naar de hub (geen AppDeploy-origin meer).
+// Zelf gehost: na het aanmelden altijd terug naar Mijn Ruimte.
 const defaultBack=()=>'https://hub.tarasevych.com/';
 const safeBack=(value:string)=>{const fallback=defaultBack();try{const url=new URL(value||fallback,location.origin),host=url.hostname.toLowerCase(),allowed=host==='tarasevych.com'||host.endsWith('.tarasevych.com');return url.protocol==='https:'&&allowed?url.toString():fallback}catch{return fallback}};
 const apiFailure=(caught:unknown)=>{let reason='OWNER_CALLBACK_REQUEST_FAILED',status='',locale:Lang|''='',returnTo='',retryAfter=0;if(caught&&typeof caught==='object'){const item=caught as Record<string,unknown>;const response=item.response&&typeof item.response==='object'?item.response as Record<string,unknown>:null;const data=response?.data&&typeof response.data==='object'?response.data as Record<string,unknown>:item.data&&typeof item.data==='object'?item.data as Record<string,unknown>:null;reason=String(data?.reasonCode||data?.error||item.message||reason);status=String(response?.status||item.status||'');retryAfter=Math.max(0,Math.ceil(Number(data?.retryAfter||item.retryAfter||0)||0));if(data?.locale==='uk'||data?.locale==='nl')locale=data.locale;returnTo=String(data?.returnTo||'')}return{reason,status,locale,returnTo,retryAfter}};
@@ -101,7 +110,6 @@ const pasAangemeldAccountToe=(data:CallbackResult)=>{
   broadcastCanonicalAuthChange();
 };
 
-// MAILFIX-001: servercode zichtbaar maken zonder ooit OAuth-code, state of URL te tonen.
 const veiligeFoutcode=(reason:string)=>/^[A-Za-z][A-Za-z0-9_]{2,89}$/.test(reason)?reason.toUpperCase():'OWNER_CALLBACK_REQUEST_FAILED';
 const kluisPad=()=>{try{const u=new URL(location.origin),d=u.hostname.split('.');if(d.length>2)d[0]='id';else d.unshift('id');return `${u.protocol}//${d.join('.')}${u.port?`:${u.port}`:''}/aanmeldmethoden#aanmeldmethoden-sleutelkluis`}catch{return 'https://id.tarasevych.com/aanmeldmethoden#aanmeldmethoden-sleutelkluis'}};
 
@@ -118,7 +126,7 @@ const maakOpnieuwUrl=(doel:string,code:string|undefined,suiteState:boolean):stri
   }
 };
 
-/** HERSTEL-001 (GOOG-1 / GOOG-3): короткий зрозумілий заголовок стану над поясненням. */
+/** Короткий зрозумілий заголовок стану на головній картці. */
 const foutTitel=(lang:Lang,code:string,suiteState:boolean):string=>{
   switch(code){
     case 'STATE_EXPIRED':
@@ -126,54 +134,118 @@ const foutTitel=(lang:Lang,code:string,suiteState:boolean):string=>{
     case 'TIMEOUT':
     case 'OWNER_CALLBACK_TIMEOUT':
     case 'GOOGLE_SUITE_STATE_EXPIRED':
-      return lang==='nl'?'Bevestigingstijd voor aanmelden is verlopen':'Час підтвердження входу минув';
+      return lang==='nl'?'Bevestigingstijd verlopen':'Час підтвердження минув';
     case 'STATE_NOT_FOUND':
     case 'TRANSACTION_NOT_FOUND':
     case 'TRANSACTION_NOT_ATTACHED':
     case 'STATE_TRANSACTION_MISMATCH':
     case 'LOGIN_BINDING_MISMATCH':
-      return lang==='nl'?'Deze aanmeldpoging is niet meer actief':'Ця спроба входу вже не активна';
+      return lang==='nl'?'Poging niet meer actief':'Спроба вже не активна';
     case 'ACCESS_DENIED':
     case 'GOOGLE_SUITE_CONSENT_DENIED':
-      return lang==='nl'?'Toegang bij Google geannuleerd':'Вхід у вікні Google скасовано';
+      return lang==='nl'?'Aanmelding geannuleerd':'Вхід скасовано';
     case 'RATE_LIMITED':
-      return lang==='nl'?'Even geduld vóór een nieuwe poging':'Тимчасова пауза між спробами';
+      return lang==='nl'?'Even geduld':'Тимчасова пауза';
+    case 'SLEUTELKLUIS_GESLOTEN':
+      return lang==='nl'?'Sleutelkluis is gesloten':'Сховище ключів закрите';
     default:
       return suiteState
-        ?(lang==='nl'?'Google-koppeling nog niet voltooid':'Підключення Google ще не завершено')
-        :(lang==='nl'?'Aanmelden met Google gepauzeerd':'Вхід через Google призупинено');
+        ?(lang==='nl'?'Koppeling niet voltooid':'Підключення не завершено')
+        :(lang==='nl'?'Aanmelden gepauzeerd':'Вхід призупинено');
   }
 };
 
-/** HERSTEL-001 (GOOG-2): людське розшифрування технічного коду всередині плашки подробиць. */
+/** Одне коротке речення на головній картці без зайвого візуального шуму (повне пояснення — у вікні «Чому так сталося» за кнопкою i). */
+const korteKaartZin=(lang:Lang,code:string,retryAfter:number,suiteState:boolean):string=>{
+  switch(code){
+    case 'STATE_EXPIRED':
+    case 'OWNER_OAUTH_EXPIRED':
+    case 'GOOGLE_SUITE_STATE_EXPIRED':
+      return suiteState
+        ?(lang==='nl'?'Het koppelvenster is verlopen. Er is niets gewijzigd.':'Вікно підключення застаріло. Нічого не змінено.')
+        :(lang==='nl'?'Het aanmeldvenster is verlopen. Er is niets gewijzigd.':'Вікно входу застаріло. Нічого не змінено.');
+    case 'STATE_NOT_FOUND':
+      return lang==='nl'?'Deze bevestiging is al gebruikt. Er is niets gewijzigd.':'Це підтвердження вже використане. Нічого не змінено.';
+    case 'TIMEOUT':
+    case 'OWNER_CALLBACK_TIMEOUT':
+      return lang==='nl'?'De wachttijd is verstreken. Er is niets gewijzigd.':'Час очікування минув. Нічого не змінено.';
+    case 'TRANSACTION_NOT_FOUND':
+    case 'TRANSACTION_NOT_ATTACHED':
+    case 'STATE_TRANSACTION_MISMATCH':
+    case 'LOGIN_BINDING_MISMATCH':
+      return lang==='nl'?'Poging hoort bij een ander tabblad. Er is niets gewijzigd.':'Спроба з іншої вкладки. Нічого не змінено.';
+    case 'ACCESS_DENIED':
+    case 'GOOGLE_SUITE_CONSENT_DENIED':
+      return lang==='nl'?'Toegang bij Google niet bevestigd. Er is niets gewijzigd.':'Доступ у Google не підтверджено. Нічого не змінено.';
+    case 'RATE_LIMITED':{
+      const d=duurTekst(retryAfter||60,lang);
+      return lang==='nl'?`Wacht ${d} en probeer opnieuw.`:`Зачекайте ${d} і спробуйте знову.`;
+    }
+    case 'SLEUTELKLUIS_GESLOTEN':
+      return lang==='nl'?'Open eerst uw persoonlijke sleutelkluis.':'Спершу відкрийте особисте сховище ключів.';
+    default:
+      return lang==='nl'?'Probeer het gerust opnieuw. Er is niets gewijzigd.':'Спробуйте увійти знову. Нічого не змінено.';
+  }
+};
+
+/** Перша коротка візуальна теза у спливному аркуші «Чому так сталося». */
+const redenBladPunt=(lang:Lang,code:string,retryAfter:number):string=>{
+  switch(code){
+    case 'STATE_EXPIRED':
+    case 'OWNER_OAUTH_EXPIRED':
+    case 'GOOGLE_SUITE_STATE_EXPIRED':
+      return lang==='nl'
+        ?'Er zat te veel tijd tussen de start van het aanmelden en de terugkeer'
+        :'Минуло забагато часу між початком входу і поверненням';
+    case 'STATE_NOT_FOUND':
+      return lang==='nl'
+        ?'De eenmalige bevestiging is al eerder gebruikt of vernieuwd'
+        :'Одноразове підтвердження вже використане або сторінку оновили';
+    case 'TIMEOUT':
+    case 'OWNER_CALLBACK_TIMEOUT':
+      return lang==='nl'
+        ?'De tijdslimiet voor het afronden van de aanmelding is overschreden'
+        :'Перевищено час очікування відповіді під час завершення входу';
+    case 'TRANSACTION_NOT_FOUND':
+    case 'TRANSACTION_NOT_ATTACHED':
+    case 'STATE_TRANSACTION_MISMATCH':
+    case 'LOGIN_BINDING_MISMATCH':
+      return lang==='nl'
+        ?'De aanmelding begon in een ander tabblad of andere sessie'
+        :'Спробу входу було розпочато в іншій вкладці або іншому сеансі';
+    case 'RATE_LIMITED':{
+      const d=duurTekst(retryAfter||60,lang);
+      return lang==='nl'
+        ?`Te veel pogingen per minuut vanaf dit netwerk (pauze ${d})`
+        :`Забагато спроб за хвилину з цієї мережі (пауза ${d})`;
+    }
+    default:
+      return lang==='nl'
+        ?'De beveiligde terugkeercontrole kon deze poging niet voltooien'
+        :'Захисна перевірка повернення зупинила цю спробу до створення сеансу';
+  }
+};
+
+/** Людське розшифрування технічного коду у розкривному блоці «Докладно». */
 const foutcodeVerklaring=(lang:Lang,code:string,status:string):string=>{
   const httpDeel=status==='400'
-    ?(lang==='nl'?' HTTP 400 betekent dat de server het verouderde of onvolledige verzoek veilig vóór de sleuteluitwisseling heeft gestopt.':' Статус HTTP 400 означає, що сервер безпечно зупинив застарілий або неповний запит ще до обміну ключами.')
+    ?(lang==='nl'?' HTTP 400 betekent dat de server het verouderde verzoek veilig vóór de sleuteluitwisseling heeft gestopt.':' Код відповіді HTTP 400 означає, що сервер безпечно зупинив застарілий запит ще до обміну ключами.')
     :status
-      ?(lang==='nl'?` De server antwoordde met HTTP-status ${status}.`:` Сервер відповів статусом HTTP ${status}.`)
+      ?(lang==='nl'?` De server antwoordde met HTTP ${status}.`:` Сервер повернув код відповіді HTTP ${status}.`)
       :'';
   switch(code){
     case 'STATE_EXPIRED':
       return (lang==='nl'
-        ?'STATE_EXPIRED betekent dat het eenmalige OAuth-state-bewijs zijn korte geldigheidsduur heeft overschreden om onderschepping te voorkomen.'
-        :'Код STATE_EXPIRED означає, що одноразовий захисний стан OAuth вичерпав свій короткий строк дії (захист від перехоплення посилання).')+httpDeel;
+        ?'STATE_EXPIRED geeft aan dat het eenmalige OAuth-bewijs zijn korte geldigheidsduur heeft overschreden.'
+        :'Одноразовий стан OAuth дійсний лише кілька хвилин для захисту від перехоплення посилання.')+httpDeel;
     case 'STATE_NOT_FOUND':
       return (lang==='nl'
-        ?'STATE_NOT_FOUND betekent dat dit eenmalige OAuth-bewijs al eerder is verbruikt of niet in deze sessie is aangemaakt.'
-        :'Код STATE_NOT_FOUND означає, що одноразовий стан OAuth уже був використаний раніше або створений не в цьому сеансі.')+httpDeel;
-    case 'TIMEOUT':
-    case 'OWNER_CALLBACK_TIMEOUT':
-      return (lang==='nl'
-        ?'De aanmeldtransactie heeft de tijdslimiet overschreden voordat Google en de server de controle afrondden.'
-        :'Транзакція входу перевищила дозволений час очікування до завершення перевірки між Google та сервером.')+httpDeel;
-    case 'LOGIN_BINDING_MISMATCH':
-      return (lang==='nl'
-        ?'Het beveiligingsbewijs van het tabblad kwam niet overeen met het tabblad waarin de aanmelding startte.'
-        :'Захисна прив’язка оглядача не збіглася з вкладкою, у якій починався вхід.')+httpDeel;
+        ?'STATE_NOT_FOUND geeft aan dat dit eenmalige OAuth-bewijs niet meer actief is op de server.'
+        :'Цей одноразовий стан OAuth більше не активний на сервері.')+httpDeel;
     default:
       return (lang==='nl'
-        ?`Diagnostische servercode ${code} geeft aan op welke controle de OAuth-terugkeer stopte.`
-        :`Діагностичний код ${code} вказує точний захисний крок, на якому зупинилося повернення OAuth.`)+httpDeel;
+        ?`Diagnostische code ${code} voor veilig delen met ondersteuning (zonder OAuth-geheimen).`
+        :`Діагностичний код ${code} не містить особистих даних чи параметрів OAuth.`)+httpDeel;
   }
 };
 
@@ -227,13 +299,33 @@ export default function OwnerIdentityCallback(){
   const initialSuite=/^gsuite\.v2\./.test(initialUrl.searchParams.get('state')||'');
   const started=useRef(false);
   const kopieTimer=useRef(0);
+  const infoKnopRef=useRef<HTMLButtonElement|null>(null);
+  const sluitKnopRef=useRef<HTMLButtonElement|null>(null);
   const[locale,setLocale]=useState<Lang>(initialLocale);
   const[isSuite,setIsSuite]=useState(initialSuite);
   const[message,setMessage]=useState(initialSuite?copy(initialLocale).suiteWorking:copy(initialLocale).working);
   const[failed,setFailed]=useState(false);
+  const[retrySec,setRetrySec]=useState(0);
   const[backTo,setBackTo]=useState('https://hub.tarasevych.com/');
   const[diagnostic,setDiagnostic]=useState<{code:string;status:string}|null>(null);
+  const[infoOpen,setInfoOpen]=useState(false);
   const[gekopieerd,setGekopieerd]=useState(false);
+
+  const sluitInfo=()=>{
+    setInfoOpen(false);
+    window.requestAnimationFrame(()=>infoKnopRef.current?.focus());
+  };
+
+  useEffect(()=>{
+    if(!infoOpen)return undefined;
+    const focusRaam=window.requestAnimationFrame(()=>sluitKnopRef.current?.focus());
+    const opEsc=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();sluitInfo()}};
+    window.addEventListener('keydown',opEsc);
+    return()=>{
+      window.cancelAnimationFrame(focusRaam);
+      window.removeEventListener('keydown',opEsc);
+    };
+  },[infoOpen]);
 
   useEffect(()=>{
     if(started.current)return;
@@ -247,18 +339,19 @@ export default function OwnerIdentityCallback(){
     setIsSuite(suiteState);
     const callbackEndpoint=suiteState?'/api/owner/google-suite/callback':'/api/owner/auth/google/callback';
     if(suiteState)setMessage(copy(initialLocale).suiteWorking);
-    markeerGoogleTerugkeer(); /* IDENTITEIT-015 (C2): до очищення адреси — прапорці на цій сторінці не питаються (401 без контексту вкладки) */
+    markeerGoogleTerugkeer();
     try{history.replaceState({},'',current.pathname||'/')}catch{}
     let stopped=false;
     let retryTimer=0;let watchdog=0;
-    const showFailure=(reason:string,nextLocale:Lang=initialLocale,status='',returnTo='',retryAfter=0)=>{if(stopped)return;setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(true);setMessage(callbackUitleg(nextLocale,reason,retryAfter,suiteState));setDiagnostic({code:veiligeFoutcode(reason),status:/^[0-9]{3}$/.test(status)?status:''});setBackTo(safeBack(returnTo||(suiteState?'https://mail.tarasevych.com/accounts':'')));window.clearTimeout(watchdog)};
+    const showFailure=(reason:string,nextLocale:Lang=initialLocale,status='',returnTo='',retryAfter=0)=>{if(stopped)return;setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(true);setRetrySec(retryAfter);setMessage(callbackUitleg(nextLocale,reason,retryAfter,suiteState));setDiagnostic({code:veiligeFoutcode(reason),status:/^[0-9]{3}$/.test(status)?status:''});setBackTo(safeBack(returnTo||(suiteState?'https://mail.tarasevych.com/accounts':'')));window.clearTimeout(watchdog)};
     watchdog=window.setTimeout(()=>showFailure('OWNER_CALLBACK_TIMEOUT'),25000);if(!state){showFailure('OWNER_CALLBACK_STATE_MISSING');return()=>{stopped=true;window.clearTimeout(watchdog)}};
-    const submit=(attempt=0)=>{void api.post(callbackEndpoint,{state,code,error:providerError}).then(response=>{if(stopped)return;const data=(response.data||{})as CallbackResult;const nextLocale=initialLocale;const reason=providerError||String(data.reasonCode||'OWNER_REDIRECT_COMPLETE_FAILED');const dataRetryAfter=Math.max(0,Math.ceil(Number(data.retryAfter||0)||0));if(reason==='CALLBACK_IN_PROGRESS'&&attempt<20){retryTimer=window.setTimeout(()=>submit(attempt+1),Math.min(300+attempt*100,1000));return}if(data.flowMode==='redirect'){const authorized=Boolean(data.sessionCreated||data.mailboxAuthorized||data.cloudStorageAuthorized||data.suiteServiceAuthorized);if(!data.ok||!authorized){/* mislukte step-up («Підтвердіть доступ»): terug naar de pagina, het venster toont de reden */if(data.stepUp&&data.returnTo){bewaarStapOpFout(reason);location.replace(safeBack(String(data.returnTo)));return}/* TELEGRAM-004: обліковий запис вимагає місце пристрою — назад на сторінку входу, там пояснення й кнопка «Надати місце пристрою» */if(reason==='PLAATS_NODIG'&&data.returnTo){let terug=safeBack(String(data.returnTo));try{const u=new URL(terug,location.origin);u.searchParams.set('aanmeld_fout','PLAATS_NODIG');terug=safeBack(u.toString())}catch{}location.replace(terug);return}showFailure(reason,nextLocale,'',String(data.returnTo||''),dataRetryAfter);return}pasAangemeldAccountToe(data);const returnTo=safeBack(String(data.returnTo||'https://hub.tarasevych.com/'));if(data.suiteServiceAuthorized){setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(false);setMessage(nextLocale==='nl'?'Google-toestemming is opgeslagen. Het koppelplan wordt bijgewerkt…':'Дозвіл Google збережено. Оновлюємо план підключення…');let target=returnTo;try{const next=new URL(returnTo,location.origin);if(data.service)next.searchParams.set('google_suite_connected',data.service);next.searchParams.set('google_suite_callback','success');target=safeBack(next.toString())}catch{}retryTimer=window.setTimeout(()=>location.replace(target),250);return}location.replace(returnTo);return}if(data.ok){pasAangemeldAccountToe(data);const fallbackTo=safeBack(String(data.returnTo||'https://hub.tarasevych.com/'));location.replace(fallbackTo);return}showFailure(reason,nextLocale,'',String(data.returnTo||''),dataRetryAfter)}).catch(caught=>{const{reason,status,locale:errLocale,returnTo,retryAfter}=apiFailure(caught);if(!providerError&&attempt<2&&(reason==='NETWORK_ERROR'||['502','503','504'].includes(status))){retryTimer=window.setTimeout(()=>submit(attempt+1),500*(attempt+1));return}showFailure(providerError||reason,errLocale||initialLocale,status,returnTo,retryAfter)})};
+    const submit=(attempt=0)=>{void api.post(callbackEndpoint,{state,code,error:providerError}).then(response=>{if(stopped)return;const data=(response.data||{})as CallbackResult;const nextLocale=data.locale==='nl'||data.locale==='uk'?data.locale:initialLocale;const reason=providerError||String(data.reasonCode||'OWNER_REDIRECT_COMPLETE_FAILED');const dataRetryAfter=Math.max(0,Math.ceil(Number(data.retryAfter||0)||0));if(reason==='CALLBACK_IN_PROGRESS'&&attempt<20){retryTimer=window.setTimeout(()=>submit(attempt+1),Math.min(300+attempt*100,1000));return}if(data.flowMode==='redirect'){const authorized=Boolean(data.sessionCreated||data.mailboxAuthorized||data.cloudStorageAuthorized||data.suiteServiceAuthorized);if(!data.ok||!authorized){if(data.stepUp&&data.returnTo){bewaarStapOpFout(reason);location.replace(safeBack(String(data.returnTo)));return}if(reason==='PLAATS_NODIG'&&data.returnTo){let terug=safeBack(String(data.returnTo));try{const u=new URL(terug,location.origin);u.searchParams.set('aanmeld_fout','PLAATS_NODIG');terug=safeBack(u.toString())}catch{}location.replace(terug);return}showFailure(reason,nextLocale,'',String(data.returnTo||''),dataRetryAfter);return}pasAangemeldAccountToe(data);const returnTo=safeBack(String(data.returnTo||'https://hub.tarasevych.com/'));if(data.suiteServiceAuthorized){setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(false);setMessage(nextLocale==='nl'?'Google-toestemming is opgeslagen. Het koppelplan wordt bijgewerkt…':'Дозвіл Google збережено. Оновлюємо план підключення…');let target=returnTo;try{const next=new URL(returnTo,location.origin);if(data.service)next.searchParams.set('google_suite_connected',data.service);next.searchParams.set('google_suite_callback','success');target=safeBack(next.toString())}catch{}retryTimer=window.setTimeout(()=>location.replace(target),250);return}location.replace(returnTo);return}if(data.ok){pasAangemeldAccountToe(data);const fallbackTo=safeBack(String(data.returnTo||'https://hub.tarasevych.com/'));location.replace(fallbackTo);return}showFailure(reason,nextLocale,'',String(data.returnTo||''),dataRetryAfter)}).catch(caught=>{const{reason,status,locale:errLocale,returnTo,retryAfter}=apiFailure(caught);if(!providerError&&attempt<2&&(reason==='NETWORK_ERROR'||['502','503','504'].includes(status))){retryTimer=window.setTimeout(()=>submit(attempt+1),500*(attempt+1));return}showFailure(providerError||reason,errLocale||initialLocale,status,returnTo,retryAfter)})};
     submit();
     return()=>{stopped=true;if(retryTimer)window.clearTimeout(retryTimer);if(watchdog)window.clearTimeout(watchdog);if(kopieTimer.current)window.clearTimeout(kopieTimer.current)};
   },[initialLocale]);
 
   const c=copy(locale);
+  const code=diagnostic?.code||'OWNER_CALLBACK_REQUEST_FAILED';
   const opnieuwUrl=maakOpnieuwUrl(backTo,diagnostic?.code,isSuite);
   const volledigeFoutcode=diagnostic?`${diagnostic.code}${diagnostic.status?` · HTTP ${diagnostic.status}`:''}`:'';
 
@@ -294,19 +387,34 @@ export default function OwnerIdentityCallback(){
   return (
     <main lang={locale} className='mr-google-terug-scherm'>
       <section className='mr-google-terug-kaart' data-google-terug-kaart={failed?'fout':'bezig'}>
-        <header className='mr-google-terug-kop'>
-          <span className='mr-google-terug-merk' aria-hidden='true'>
-            <Merk merk='google' maat={26} vorm='gliefje' />
+        <div className='mr-google-terug-merkrij'>
+          <span className='mr-google-terug-merk-icoon' aria-hidden='true'>
+            <Merk merk='google' maat={20} vorm='gliefje' />
           </span>
-          <div>
-            <p className='mr-google-terug-boventitel'>{isSuite?c.bovenSuite:c.bovenAanmelden}</p>
-            <h1 className='mr-google-terug-titel'>
-              {failed
-                ?foutTitel(locale,diagnostic?.code||'OWNER_CALLBACK_REQUEST_FAILED',isSuite)
-                :(locale==='nl'?'Even geduld…':'Зачекайте мить…')}
-            </h1>
-          </div>
-        </header>
+          <p className='mr-google-terug-boventitel'>{isSuite?c.bovenSuite:c.bovenAanmelden}</p>
+        </div>
+
+        <div className='mr-google-terug-titelrij'>
+          <h1 className='mr-google-terug-titel'>
+            {failed
+              ?foutTitel(locale,code,isSuite)
+              :(locale==='nl'?'Even geduld…':'Зачекайте мить…')}
+          </h1>
+          {failed&&(
+            <button
+              ref={infoKnopRef}
+              type='button'
+              className='mr-google-terug-info-knop is-icoon'
+              data-google-terug-info-knop='1'
+              aria-label={c.waaromTitel}
+              aria-haspopup='dialog'
+              aria-expanded={infoOpen}
+              onClick={()=>setInfoOpen(true)}
+            >
+              i
+            </button>
+          )}
+        </div>
 
         {!failed?(
           <div className='mr-google-terug-wacht' role='status'>
@@ -315,10 +423,12 @@ export default function OwnerIdentityCallback(){
           </div>
         ):(
           <>
-            <p className='mr-google-terug-tekst' role='alert' data-google-terug-uitleg={diagnostic?.code||''}>{message}</p>
+            <p className='mr-google-terug-kort' role='alert' data-google-terug-uitleg={code}>
+              {korteKaartZin(locale,code,retrySec,isSuite)}
+            </p>
 
             <div className='mr-google-terug-acties'>
-              {diagnostic?.code==='SLEUTELKLUIS_GESLOTEN'?(
+              {code==='SLEUTELKLUIS_GESLOTEN'?(
                 <a href={kluisPad()} className='mr-google-terug-knop-primair' data-google-terug-primair='kluis'>
                   {locale==='uk'?'Відкрити сховище ключів':'Sleutelkluis ontgrendelen'}
                 </a>
@@ -331,43 +441,90 @@ export default function OwnerIdentityCallback(){
                 {c.back}
               </a>
             </div>
-
-            {diagnostic&&(
-              <details className='mr-google-terug-details' data-google-foutcode-blok={diagnostic.code}>
-                <summary>
-                  <span className='mr-google-terug-code-rij'>
-                    <span>{locale==='uk'?'Код збою:':'Foutcode:'}</span>
-                    <code className='mr-google-terug-code-pil'>{diagnostic.code}</code>
-                    {diagnostic.status?<span>{`· HTTP ${diagnostic.status}`}</span>:null}
-                  </span>
-                  <span className='mr-google-terug-pijl' aria-hidden='true'>▾</span>
-                </summary>
-                <div className='mr-google-terug-details-inhoud'>
-                  <p className='mr-google-terug-verklaring'>
-                    {foutcodeVerklaring(locale,diagnostic.code,diagnostic.status)}
-                  </p>
-                  <button
-                    type='button'
-                    className='mr-google-terug-kopieer'
-                    data-google-foutcode-kopieer={diagnostic.code}
-                    data-gekopieerd={gekopieerd?'ja':'nee'}
-                    onClick={()=>{void kopieerFoutcode();}}
-                  >
-                    {gekopieerd
-                      ?(locale==='uk'?'Код скопійовано ✓':'Code gekopieerd ✓')
-                      :(locale==='uk'?'Скопіювати код збою':'Foutcode kopiëren')}
-                  </button>
-                  <small className='mr-google-terug-veilig-noot'>
-                    {locale==='uk'
-                      ?'Цей код не містить особистих даних чи одноразових параметрів OAuth — за потреби його безпечно передати розробникові.'
-                      :'Deze code bevat geen persoonsgegevens of eenmalige OAuth-parameters — u kunt hem veilig met de ontwikkelaar delen.'}
-                  </small>
-                </div>
-              </details>
-            )}
           </>
         )}
       </section>
+
+      {failed&&infoOpen&&(
+        <div
+          className='mr-google-terug-sluier'
+          data-google-terug-sluier='1'
+          onClick={e=>{if(e.target===e.currentTarget)sluitInfo()}}
+        >
+          <div
+            className='mr-google-terug-blad'
+            data-google-terug-blad={code}
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby='mr-google-terug-blad-titel'
+          >
+            <div className='mr-google-terug-blad-kop'>
+              <h2 id='mr-google-terug-blad-titel'>{c.waaromTitel}</h2>
+              <button
+                ref={sluitKnopRef}
+                type='button'
+                className='mr-google-terug-blad-sluit is-icoon'
+                aria-label={locale==='uk'?'Закрити':'Sluiten'}
+                onClick={sluitInfo}
+              >
+                <X size={20} aria-hidden='true' />
+              </button>
+            </div>
+
+            <div className='mr-google-terug-blad-punten'>
+              <div className='mr-google-terug-punt'>
+                <span className='mr-google-terug-punt-icoon is-tijd' aria-hidden='true'>
+                  <Clock size={20} />
+                </span>
+                <p>{redenBladPunt(locale,code,retrySec)}</p>
+              </div>
+              <div className='mr-google-terug-punt'>
+                <span className='mr-google-terug-punt-icoon is-schild' aria-hidden='true'>
+                  <ShieldCheck size={20} />
+                </span>
+                <p>{c.veiligPunt}</p>
+              </div>
+            </div>
+
+            {diagnostic&&(
+              <div className='mr-google-terug-codekaart' data-google-foutcode-blok={diagnostic.code}>
+                <div className='mr-google-terug-codebalk'>
+                  <span className='mr-google-terug-codelabel'>
+                    <Code2 size={17} aria-hidden='true' />
+                    <span>{c.codeLabel}</span>
+                    <span className='mr-google-terug-codewaarde'>
+                      <code>{diagnostic.code}</code>
+                      {diagnostic.status?<span className='mr-google-terug-codestatus'>{` · HTTP ${diagnostic.status}`}</span>:null}
+                    </span>
+                  </span>
+                  <button
+                    type='button'
+                    className='mr-google-terug-kopieer-icoon is-icoon'
+                    data-google-foutcode-kopieer={diagnostic.code}
+                    data-gekopieerd={gekopieerd?'ja':'nee'}
+                    aria-label={gekopieerd?(locale==='uk'?'Код скопійовано':'Code gekopieerd'):(locale==='uk'?'Скопіювати код збою':'Foutcode kopiëren')}
+                    title={gekopieerd?(locale==='uk'?'Код скопійовано':'Code gekopieerd'):(locale==='uk'?'Скопіювати код збою':'Foutcode kopiëren')}
+                    onClick={()=>{void kopieerFoutcode();}}
+                  >
+                    {gekopieerd?<Check size={17} aria-hidden='true' />:<Copy size={17} aria-hidden='true' />}
+                  </button>
+                </div>
+
+                <details className='mr-google-terug-meer'>
+                  <summary>
+                    <ChevronDown size={16} className='mr-google-terug-meer-pijl' aria-hidden='true' />
+                    <span>{c.meerDetails}</span>
+                  </summary>
+                  <div className='mr-google-terug-meer-inhoud'>
+                    <p>{message}</p>
+                    <p>{foutcodeVerklaring(locale,diagnostic.code,diagnostic.status)}</p>
+                  </div>
+                </details>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

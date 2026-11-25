@@ -421,6 +421,10 @@
   {
    "sleutel": "src/bijlage-weergave/weergave.css :: .weergave-dialoog-laag",
    "reden": "SPIL-WEERGAVE (22.11.2026): затемнений шар під модальним вікном дій спільного переглядача вкладень (переслати, зберегти, ШІ); вікно, не плаваюча кнопка; відкривається лише за прапорцем bijlage-weergave-gedeeld-v1 і зникає після закриття."
+  },
+  {
+   "sleutel": "src/google-terugkeer-kaart.css :: .mr-google-terug-sluier",
+   "reden": "HERSTEL-001 (GOOG-1..GOOG-4): затемнена модальна завіса під нижнім аркушем / вікном пояснення «Чому так сталося» за натисканням кнопки (i) на сторінці повернення входу Google (id.tarasevych.com); закривається натисканням на завісу, кнопкою закриття або клавішею Escape; вікно діалогу, не окрема кнопка."
   }
  ],
  "kopReserves": [
