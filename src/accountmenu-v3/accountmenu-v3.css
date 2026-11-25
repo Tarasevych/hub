@@ -2193,26 +2193,8 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 }
 
-/* Надвузькі екрани (<= 360 px): дворядковий вибір мови, охайна орбіта та одностовпцеві картки без обрізання написів */
+/* Вузькі екрани (<= 360 px): охайна орбіта та одностовпцеві картки без обрізання написів */
 @media (max-width: 360px) {
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row {
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-pref-label {
-    width: 100%;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-seg {
-    width: 100%;
-    display: flex;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row .am3-seg-btn {
-    flex: 1 1 0;
-  }
-
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-orbit-wing.is-left {
     padding-right: 8px;
   }
@@ -2236,6 +2218,44 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   [data-account-menu-v3] .am3-shell.am3-shell .am3-palette-sys-grid,
   [data-account-menu-v3] .am3-shell.am3-shell .am3-exit-row {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Надвузькі екрани (<= 340 px): дворядковий вибір мови та ущільнений рядок теми без виходу за межі картки */
+@media (max-width: 340px) {
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-pref-label {
+    width: 100%;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-seg {
+    width: 100%;
+    display: flex;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row .am3-seg-btn {
+    flex: 1 1 0;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg {
+    min-width: 0;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn {
+    min-width: 0;
+    padding: 0 4px;
+    gap: 3px;
+    font-size: 0.68rem;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row :is(.am3-achtergrond-btn, .am3-palette-btn) {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
   }
 }
 

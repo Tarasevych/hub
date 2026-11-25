@@ -66,7 +66,7 @@ export function beheerWeigering(e: unknown): Paar | null {
 }
 
 // IDENTITEIT-013: загальні відмови для видалення облікового запису, віджетів, способів входу й спільного доступу. Код береться і з
-// `error`, і з `reasonCode` (step-up віддає саме його). Спершу — точніші таблиці deelWeigering/beheerWeigering.
+// `error`, і з `reasonCode` (додаткове підтвердження віддає саме його). Спершу — точніші таблиці deelWeigering/beheerWeigering.
 // Algemene weigeringen voor account verwijderen, widgets, aanmeldmethoden en delen; leest error én reasonCode.
 const volleCode = (e: unknown): string => {
   const f = (e ?? {}) as { message?: unknown; response?: { data?: { error?: unknown; reasonCode?: unknown } } };
@@ -192,6 +192,7 @@ const AANMELDEN: Record<string, Paar> = {
   TRANSACTION_NOT_ATTACHED: ['Попередню спробу входу вже завершено або скасовано. Почніть нову спробу входу.', 'De eerdere aanmeldpoging is al afgerond of geannuleerd. Start een nieuwe poging.'],
   STATE_TRANSACTION_MISMATCH: ['Одноразовий стан Google не відповідає поточній спробі входу у цій вкладці. Почніть вхід знову.', 'De eenmalige Google-status hoort niet bij de huidige aanmeldpoging in dit tabblad. Begin opnieuw.'],
   OWNER_CALLBACK_TIMEOUT: ['Сервер занадто довго не відповідав під час завершення входу Google. Перевірте з’єднання й почніть вхід знову.', 'De server reageerde te lang niet bij het afronden van de Google-aanmelding. Controleer de verbinding en begin opnieuw.'],
+  ACCESS_DENIED: ['Підтвердження входу у вікні Google скасовано. Нічого не змінено — ви можете спокійно почати вхід знову або обрати інший спосіб.', 'De aanmelding in het Google-venster is geannuleerd. Er is niets gewijzigd — u kunt rustig opnieuw beginnen of een andere aanmeldmethode kiezen.'],
   // TELEGRAM-004: «Вимагати місце пристрою» ввімкнено для цього способу входу, а браузер місця не надав.
   PLAATS_NODIG: ['Цей обліковий запис вимагає місце пристрою для цього способу входу, а браузер його не надав. Надайте місце й увійдіть ще раз.', 'Dit account eist bij deze aanmeldmethode de plaats van het apparaat en de browser gaf die niet. Deel de plaats en meld u opnieuw aan.'],
   ACCOUNT_NOT_APPROVED: ['Обліковий запис ще не схвалено власником сайту, тож вхід поки неможливий.', 'Het account is nog niet goedgekeurd door de site-eigenaar; aanmelden kan nog niet.'],

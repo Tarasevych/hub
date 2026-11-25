@@ -55,7 +55,7 @@ export async function main(): Promise<number> {
   check('instellingencentrum gebruikt MoviPrapor voor de taalkeuze', (instel.match(/<MoviPrapor taal='(uk|nl)'\/>/g) || []).length === 2 && !/LanguageFlag/.test(instel));
   check('geen emoji-vlag meer in src', !/[\u{1F1E6}-\u{1F1FF}]{2}/u.test(['src/CanoniekAccountMenu.tsx', 'src/GastToegang.tsx', 'src/MailInvoerHulpmiddelen.tsx', 'src/InstellingencentrumWeergave.tsx', 'src/CanoniekOmlijsting.tsx', 'src/MoviPrapor.tsx'].map(lees).join('\n')));
 
-  // ═══ C. het menu echt gerenderd (afgemeld: de drie ronde snelknoppen op het aanmeldscherm) ═══
+  // ═══ C. het menu echt gerenderd (afgemeld: compacte taalpil en ronde thema-/profielknoppen op 38 px) ═══
   // De menu-modules lezen bij het laden window/document/opslag; tijdelijke nepversies, na afloop precies teruggezet (andere tests delen het proces).
   const g = globalThis as unknown as Record<string, unknown>;
   const opslag = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: (i: number) => [...m.keys()][i] ?? null, get length() { return m.size; } }; };
@@ -115,7 +115,7 @@ export async function main(): Promise<number> {
   const sheetL = '#eff2f8', inktL = '#222b39', sheetD = '#1b222d', inktD = '#f1f4f8';
   check('aanmeldscherm: inkt op blad licht ≥ 7 en donker ≥ 7 (waarden uit aanmeld-herontwerp.css)', loginCss.includes(`--mr-login-sheet:${sheetL}`) && loginCss.includes(`--mr-login-ink:${inktL}`) && loginCss.includes(`--mr-login-sheet:${sheetD}`) && loginCss.includes(`--mr-login-ink:${inktD}`) && contrast(inktL, sheetL) >= 7 && contrast(inktD, sheetD) >= 7);
 
-  // ═══ E. lijst, kop, «по центру», drie gelijke ronde snelknoppen ═══
+  // ═══ E. lijst, kop, «по центру», taalpil en ronde thema-/profielknoppen op gelijke hoogte (38 px) ═══
   check('accountlijst: hover/focus kleurt de HELE rij (geen aparte tint voor het linkerdeel; kruisje blijft in dezelfde tint)',
     /\.canonical-account-row:hover[^{]*,\.canonical-account-row:focus-within\{background:var\(--canonical-surface\)\}/.test(menuCss) && !/\.canonical-account-select:hover:not\(:disabled\)\{background/.test(menuCss));
   check('accountlijst: tekst blijft bij hover in tekst-/dempkleur van het thema', /\.canonical-account-row:hover \.canonical-account-copy strong[^{]*\{color:var\(--canonical-text\)\}/.test(menuCss) && /\.canonical-account-row:hover \.canonical-account-copy small[^{]*\{color:var\(--canonical-muted\)\}/.test(menuCss));

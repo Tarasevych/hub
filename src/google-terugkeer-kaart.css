@@ -9,6 +9,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: safe center;
   padding: max(20px, env(safe-area-inset-top, 0px)) 16px max(20px, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
@@ -24,6 +25,7 @@
 
 .mr-google-terug-kaart {
   width: min(100%, 388px);
+  min-width: 0;
   margin: auto;
   box-sizing: border-box;
   padding: 22px 20px 20px;
@@ -44,6 +46,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   margin-bottom: 16px;
 }
 
@@ -58,6 +61,7 @@
 
 .mr-google-terug-boventitel {
   margin: 0;
+  min-width: 0;
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1.3;
@@ -80,6 +84,8 @@
 
 .mr-google-terug-scherm h1.mr-google-terug-titel {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: break-word;
   font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
   font-size: 22px;
   font-weight: 700;
@@ -184,13 +190,14 @@
 }
 
 .mr-google-terug-acties {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: 1fr;
   gap: 10px;
   margin-top: 20px;
 }
 
-/* Єдина геометрія обох кнопок дій: однакова висота min-height: 44px, скруглення та шрифт. */
+/* Єдина геометрія обох кнопок дій: однакова висота min-height: 44px, заокруглення та шрифт. */
 .mr-google-terug-knop-primair,
 .mr-google-terug-knop-secundair {
   display: inline-flex;
@@ -204,6 +211,7 @@
   font-size: 14.5px;
   font-weight: 600;
   line-height: 1.25;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
@@ -252,7 +260,19 @@
   background: var(--surface, #262d36);
 }
 
-/* Модальна завіса 100% × 100% без обрізання на вузьких екранах */
+@media (max-width: 359px) {
+  .mr-google-terug-kaart {
+    padding: 20px 16px 18px;
+  }
+
+  .mr-google-terug-knop-primair,
+  .mr-google-terug-knop-secundair {
+    padding: 10px 12px;
+    font-size: 13.75px;
+  }
+}
+
+/* Затемнена завіса вікна 100% × 100% без обрізання на вузьких екранах */
 .mr-google-terug-sluier {
   position: fixed;
   inset: 0;
@@ -582,6 +602,18 @@
 
 .mr-google-terug-meer summary::-webkit-details-marker {
   display: none;
+}
+
+.mr-google-terug-meer summary:focus-visible {
+  outline: 2px solid var(--accent, #2f6f73);
+  outline-offset: -2px;
+  border-radius: 0 0 15px 15px;
+  color: var(--text, #17212b);
+}
+
+:is(html.theme-dark, html.theme-plum-dark) .mr-google-terug-meer summary:focus-visible {
+  outline-color: var(--accent, #8dbab7);
+  color: var(--text, #f3f6f8);
 }
 
 .mr-google-terug-meer-pijl {

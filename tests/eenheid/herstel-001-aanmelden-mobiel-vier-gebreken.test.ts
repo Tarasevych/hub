@@ -169,19 +169,23 @@ export function evalueerVierAanmeldGebrekenHerstel(): readonly HerstelProefStatu
     aanmeldCss.includes('width:38px;height:38px;min-width:38px;min-height:38px') &&
     aanmeldCss.includes('inset:-3px;border-radius:999px') &&
     afgemeldCss.includes('.canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal{') &&
+    afgemeldCss.includes('width:100%;max-width:none;') &&
+    afgemeldCss.includes('.mr-guest-mobile-account .mr-sign-in-quick-controls .mr-sign-in-taal-menu{') &&
     afgemeldCss.includes('height:38px;min-height:38px;max-height:38px') &&
     afgemeldCss.includes('inset:-3px;border-radius:999px') &&
     afgemeldCss.includes('inset:-3px;border-radius:50%');
 
   // T-2: значок Telegram на екрані входу має діаметр 34×34 px, max-width/max-height 100% та 30×30 px при <= 380px, узгоджено з Google
   const t2Hersteld =
+    aanmeldCss.includes('grid-template:minmax(0,1fr) / minmax(0,1fr)') &&
     /\.canonical-signed-out\.mr-sign-in\s+\.tga-aanmeld-logo\{[^}]*width:34px;height:34px;flex:0 0 34px;aspect-ratio:1 \/ 1/.test(aanmeldCss) &&
     /\.canonical-signed-out\.mr-sign-in\s+\.tga-aanmeld-logo\s+:is\(\.merk,\.tga-logo,img,svg\)\{[^}]*max-width:100%;max-height:100%;border-radius:50%/.test(aanmeldCss) &&
     /@media\(max-width:380px\)\{[\s\S]*?\.canonical-signed-out\.mr-sign-in\s+\.tga-aanmeld-logo\{width:30px;height:30px;flex:0 0 30px\}/.test(aanmeldCss) &&
+    aanmeldCss.includes('.canonical-signed-out.mr-sign-in .tga-aanmeld-logo :is(.merk,.tga-logo){max-width:30px;max-height:30px}') &&
     /maat=\{34\}/.test(telegramTsx);
 
   // T-3 (K1-T3): у AccountMenuV3 підпис 'Нід.' з великої літери, орбітальний + ЗАВЖДИ видимий без умов displayUser/visibleRows,
-  // перемикач мови лишається компактним однорядковим, а .is-theme-row адаптується у 2 лінії (1 : 2.1) на @media (max-width: 700px).
+  // перемикач мови лишається компактним однорядковим (перенесення лише на <= 340px), а .is-theme-row адаптується у 2 лінії (1 : 2.1) на @media (max-width: 700px).
   const t3GeenKleineNid =
     !/uk\s*\?\s*'нід\.'\s*:\s*'Nederlands'/.test(am3Tsx) &&
     am3Tsx.includes("uk ? 'Українська' : 'Oekr.'") &&
@@ -192,20 +196,25 @@ export function evalueerVierAanmeldGebrekenHerstel(): readonly HerstelProefStatu
     rechterVleugelInhoud.includes("className='am3-orbit-node is-add'") &&
     !/displayUser|visibleRows/.test(rechterVleugelInhoud) &&
     !/\(displayUser\s*\|\|\s*visibleRows\.length\s*>\s*0\)\s*[?&]+\s*\(\s*<div className='am3-orbit-wing is-right'/.test(am3Tsx);
-  const t3CompactBehouden = !/\.am3-pref-row\.is-lang-row\s+\.am3-seg\s*\{[^}]*width:\s*100%/.test(am3Css);
+  const t3CompactBehouden =
+    !/\.am3-pref-row\.is-lang-row\s+\.am3-seg\s*\{[^}]*width:\s*100%/.test(am3Css) &&
+    am3Css.includes('@media (max-width: 340px)') &&
+    am3Css.includes('[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row :is(.am3-achtergrond-btn, .am3-palette-btn)');
   const t3ThemaMobiel700 =
     /@media\s*\(max-width:\s*700px\)\s*\{[\s\S]*?\.am3-pref-row\.is-theme-row\s*\{\s*flex-wrap:\s*wrap;[\s\S]*?\.am3-pref-row\.is-theme-row\s+\.am3-seg-btn\s*\{\s*flex:\s*1\s+1\s+0;\s*\}[\s\S]*?\.am3-pref-row\.is-theme-row\s+\.am3-seg-btn:last-child\s*\{\s*flex:\s*2\.1\s+1\s+0;\s*\}/.test(
       am3Css,
     );
   const t3Hersteld = t3GeenKleineNid && t3OrbitPlusBehouden && t3CompactBehouden && t3ThemaMobiel700;
 
-  // T-4 (K1-T4): startPrimaryRedirectLogin виставляє mr-aanmelden-bezig, .canonical-boot-account має 38×38 px (top: 14px; right: 24px),
+  // T-4 (K1-T4): startPrimaryRedirectLogin виставляє mr-aanmelden-bezig, .canonical-boot-account має 38×38 px (top: 14px; right: 24px / 12px <= 360px),
   // а #tsv-laad-kapsel, #tsv-voortgang і .canonical-boot-spin повністю збережені видимими без жодного приховування!
   const t4AanmeldenBezig =
     omleidingTs.includes('mr-aanmelden-bezig') ||
     omleidingTs.includes('zetAanmeldenBezig') ||
     omleidingTs.includes('AANMELD_BEZIG_SLEUTEL');
-  const t4BootAccountGelijk = indexHtml.includes('.canonical-boot-account{top:14px;right:24px;width:38px;height:38px}');
+  const t4BootAccountGelijk =
+    indexHtml.includes('.canonical-boot-account{top:14px;right:24px;width:38px;height:38px}') &&
+    indexHtml.includes('@media(max-width:360px){.canonical-boot-account{right:12px}}');
   const t4KapselBehouden =
     !indexHtml.includes('html.boot-active #tsv-laad-kapsel') &&
     !aanmeldCss.includes('#tsv-laad-kapsel') &&
@@ -357,7 +366,8 @@ export async function main(): Promise<number> {
       omlijstingTsx.includes('export function aanmeldenBezig') &&
       omlijstingTsx.includes('export function zetAanmeldenBezig') &&
       omleidingTs.includes('export async function startPrimaryRedirectLogin') &&
-      indexHtml.includes('.canonical-boot-account{top:14px;right:24px;width:38px;height:38px}'),
+      indexHtml.includes('.canonical-boot-account{top:14px;right:24px;width:38px;height:38px}') &&
+      indexHtml.includes('@media(max-width:360px){.canonical-boot-account{right:12px}}'),
   );
   check(
     'T-4: двомовні підписи капсули завантаження (Завантаження… / Laden…) синхронні й жоден покажчик завантаження не прихований',

@@ -2,13 +2,17 @@
 // за знімком екрана власника:
 //   - Screenshot_20261125_125840_com.android.chrome.jpg
 //
-// Цей тестовий набір зберігає точні вимоги, оцінює стан виправлення (GOOG-1..GOOG-4) та захищає всі 6 інженерних
-// гарантій D-1..D-6 (реєстрація завіси, безпечний вивід <code>{diagnostic.code}</code>, ідеальне коло (i) 32×32 px
-// з вагою (0,4,1), повнорозмірна завіса без смуги 16 px і role='dialog' на аркуші, рівна висота кнопок 44 px на
-// змінних tokens.css із підтримкою theme-plum-dark, прокручування на низьких екранах, керування фокусом та двомовність).
+// Цей тестовий набір зберігає точні вимоги, оцінює стан виправлення (GOOG-1..GOOG-4) та захищає всі інженерні
+// гарантії D-1..D-7 і межові інваріанти U2-1..U2-6 (реєстрація завіси, безпечний вивід <code>{diagnostic.code}</code>,
+// ідеальне коло (i) 32×32 px з вагою (0,4,1), повнорозмірна завіса без смуги 16 px і role='dialog' на аркуші з циклічним
+// утриманням фокуса Tab/Shift+Tab, рівновисока сітка кнопок дій grid-auto-rows: 1fr (min-height: 44 px) на змінних tokens.css
+// із підтримкою theme-plum-dark та надвузьких екранів 320 px, нормалізований код у failureCopy, захист safeBack від вбудованих
+// повноважень username:password@ та повна двомовність для входу й підключення служби).
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+const VERBODEN_TEKENREEKS = /[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/;
 
 export interface GoogleTerugkeerGebrekContract {
   readonly id: 'GOOG-1' | 'GOOG-2' | 'GOOG-3' | 'GOOG-4';
@@ -108,6 +112,8 @@ export function evalueerVierGoogleTerugkeerGebrekenHerstel(rootDir = process.cwd
     terugTekst.includes('data-google-terug-kaart') &&
     terugTekst.includes("className='mr-google-terug-info-knop is-icoon'") &&
     kaartCss.includes('width: min(100%, 388px);') &&
+    kaartCss.includes('grid-template-columns: minmax(0, 1fr);') &&
+    kaartCss.includes('grid-auto-rows: 1fr;') &&
     kaartCss.includes('.mr-google-terug-scherm .mr-google-terug-kaart .mr-google-terug-titelrij button.mr-google-terug-info-knop') &&
     kaartCss.includes('min-height: 44px;') &&
     !kaartCss.includes('!important') &&
@@ -118,6 +124,7 @@ export function evalueerVierGoogleTerugkeerGebrekenHerstel(rootDir = process.cwd
     plaatsingTekst.includes('"src/google-terugkeer-kaart.css :: .mr-google-terug-sluier"') &&
     terugTekst.includes('<code>{diagnostic.code}</code>') &&
     terugTekst.includes('data-google-foutcode-kopieer') &&
+    terugTekst.includes('bladRef') &&
     /<div[\s\S]*?className='mr-google-terug-blad'[\s\S]*?role='dialog'[\s\S]*?aria-modal='true'/.test(terugTekst) &&
     !/<div[\s\S]*?className='mr-google-terug-sluier'[^>]*role='dialog'/.test(terugTekst) &&
     kaartCss.includes('max-width: none;') &&
@@ -127,11 +134,14 @@ export function evalueerVierGoogleTerugkeerGebrekenHerstel(rootDir = process.cwd
     terugTekst.includes("'STATE_EXPIRED'") &&
     terugTekst.includes("'STATE_NOT_FOUND'") &&
     terugTekst.includes("'TIMEOUT'") &&
+    terugTekst.includes("code==='ACCESS_DENIED'") &&
     !terugTekst.includes('Статус HTTP') &&
     !terugTekst.includes('статусом HTTP');
 
   const goog4Hersteld =
     weigeringenTekst.includes('STATE_EXPIRED') &&
+    weigeringenTekst.includes('ACCESS_DENIED') &&
+    terugTekst.includes('!url.username&&!url.password') &&
     terugTekst.includes('aanmeld_fout') &&
     backendTekst.includes('STATE_EXPIRED');
 
@@ -154,14 +164,14 @@ export function evalueerVierGoogleTerugkeerGebrekenHerstel(rootDir = process.cwd
       id: 'GOOG-3',
       hersteld: goog3Hersteld,
       detail: goog3Hersteld
-        ? 'Серверні коди STATE_EXPIRED, STATE_NOT_FOUND і TIMEOUT розпізнаються на клієнті з точним двомовним поясненням без кальок'
+        ? 'Серверні коди STATE_EXPIRED, STATE_NOT_FOUND, TIMEOUT і ACCESS_DENIED розпізнаються на клієнті з точним двомовним поясненням без кальок'
         : 'Очікує на виправлення: STATE_EXPIRED або мовні формулювання потребують уточнення у callbackUitleg/failureCopy',
     },
     {
       id: 'GOOG-4',
       hersteld: goog4Hersteld,
       detail: goog4Hersteld
-        ? 'Повернення передає returnTo та причину (?aanmeld_fout) для негайного продовження входу'
+        ? 'Повернення передає безпечний returnTo та причину (?aanmeld_fout) для негайного продовження входу'
         : 'Очікує на виправлення: втрачається returnTo при STATE_EXPIRED і причина не передається на сторінку входу',
     },
   ];
@@ -199,7 +209,7 @@ export async function main(): Promise<number> {
       contract.titelUk.length > 10 &&
         contract.titelNl.length > 10 &&
         contract.schermafdruk === 'Screenshot_20261125_125840_com.android.chrome.jpg' &&
-        !/[ЁёЪъЫыЭэ]/.test(contract.titelUk + contract.oorzaakUk + contract.herstelEisUk),
+        !VERBODEN_TEKENREEKS.test(contract.titelUk + contract.oorzaakUk + contract.herstelEisUk),
     );
   }
 
@@ -236,12 +246,15 @@ export async function main(): Promise<number> {
   );
 
   controleer(
-    'D-5..D-6: обидві кнопки дій мають єдину min-height: 44px на tokens.css (без !important і без --surface-2), підтримані прокручування, фокус, мова документа і prefers-reduced-motion',
+    'D-5..D-6: обидві кнопки дій мають єдину min-height: 44px та grid-auto-rows: 1fr на tokens.css (без !important і без --surface-2), підтримані прокручування, фокус, мова документа і prefers-reduced-motion',
     !kaartCssInhoud.includes('!important') &&
       !kaartCssInhoud.includes('--surface-2') &&
       !kaartCssInhoud.includes('min-height: 48px') &&
       !kaartCssInhoud.includes('min-height: 46px') &&
       kaartCssInhoud.includes('overflow-y: auto;') &&
+      kaartCssInhoud.includes('grid-template-columns: minmax(0, 1fr);') &&
+      kaartCssInhoud.includes('grid-auto-rows: 1fr;') &&
+      kaartCssInhoud.includes('@media (max-width: 359px)') &&
       kaartCssInhoud.includes('place-items: safe center;') &&
       kaartCssInhoud.includes('@media (prefers-reduced-motion: reduce)') &&
       terugInhoud.includes('document.documentElement.lang') &&
@@ -251,9 +264,22 @@ export async function main(): Promise<number> {
   );
 
   controleer(
-    'GOOG-3..GOOG-4: backend/index.ts та src/weigeringen.ts містять ownerGoogleCallbackPost, STATE_EXPIRED і aanmeldWeigering',
+    'U2-2..U2-6: safeBack блокує !url.username&&!url.password, failureCopy перевіряє нормалізовані коди верхнього регістру, а діалог (i) утримує фокус Tab/Shift+Tab за участю summary',
+    terugInhoud.includes('!url.username&&!url.password') &&
+      terugInhoud.includes("code==='ACCESS_DENIED'") &&
+      terugInhoud.includes("code==='EXPIRED'") &&
+      terugInhoud.includes("code==='INVALID_STATE'||code==='STATE_MISMATCH'") &&
+      terugInhoud.includes('bladRef') &&
+      terugInhoud.includes("e.key!=='Tab'") &&
+      terugInhoud.includes('summary, input:not([disabled])') &&
+      terugInhoud.includes('redenBladPunt(locale,code,retrySec,isSuite)'),
+  );
+
+  controleer(
+    'GOOG-3..GOOG-4: backend/index.ts та src/weigeringen.ts містять ownerGoogleCallbackPost, STATE_EXPIRED, ACCESS_DENIED і aanmeldWeigering',
     backendInhoud.includes('ownerGoogleCallbackPost') &&
       backendInhoud.includes('STATE_EXPIRED') &&
+      weigeringenInhoud.includes('ACCESS_DENIED') &&
       weigeringenInhoud.includes('export function aanmeldWeigering'),
   );
 
@@ -267,11 +293,11 @@ export async function main(): Promise<number> {
   }
 
   const { aanmeldWeigering } = await import('../../src/weigeringen');
-  for (const code of ['STATE_EXPIRED', 'STATE_NOT_FOUND', 'TIMEOUT', 'TRANSACTION_NOT_FOUND', 'STATE_TRANSACTION_MISMATCH']) {
+  for (const code of ['STATE_EXPIRED', 'STATE_NOT_FOUND', 'TIMEOUT', 'TRANSACTION_NOT_FOUND', 'STATE_TRANSACTION_MISMATCH', 'ACCESS_DENIED']) {
     const paar = aanmeldWeigering({ message: code });
     controleer(
       `GOOG-4: aanmeldWeigering('${code}') повертає двомовну пару [uk, nl] без сирого коду`,
-      Array.isArray(paar) && paar[0].length > 20 && paar[1].length > 20 && !/[ЁёЪъЫыЭэ]/.test(paar[0]),
+      Array.isArray(paar) && paar[0].length > 20 && paar[1].length > 20 && !VERBODEN_TEKENREEKS.test(paar[0]),
     );
   }
 
@@ -335,13 +361,21 @@ export async function main(): Promise<number> {
     const nlAanmeld = callbackUitleg('nl', 'STATE_EXPIRED', 0, false);
     const ukSuite = failureCopy('uk', 'STATE_EXPIRED', true);
     const nlSuite = failureCopy('nl', 'STATE_EXPIRED', true);
+    const ukDeniedUpper = failureCopy('uk', 'ACCESS_DENIED', false);
+    const nlDeniedUpper = failureCopy('nl', 'ACCESS_DENIED', false);
+    const ukSuiteFallback = failureCopy('uk', 'UNKNOWN_SUITE_CODE', true);
+    const nlSuiteFallback = failureCopy('nl', 'UNKNOWN_SUITE_CODE', true);
     controleer(
-      'GOOG-3: callbackUitleg і failureCopy повертають окремі змістовні тексти uk/nl для входу (!suiteState) і підключення пошти (suiteState)',
+      'GOOG-3: callbackUitleg і failureCopy повертають окремі змістовні тексти uk/nl для входу (!suiteState), підключення (suiteState) та нормалізованого ACCESS_DENIED',
       ukAanmeld.includes('Обліковий запис у безпеці') &&
         !ukAanmeld.includes('Пошта →') &&
         nlAanmeld.includes('Uw account is veilig') &&
         ukSuite.includes('Пошта → Облікові записи') &&
-        nlSuite.includes('E-mail → Accounts'),
+        nlSuite.includes('E-mail → Accounts') &&
+        ukDeniedUpper.includes('Доступ Google не надано') &&
+        nlDeniedUpper.includes('Google-toegang is niet verleend') &&
+        ukSuiteFallback.includes('підключення Google') &&
+        nlSuiteFallback.includes('Google-koppeling'),
     );
   } finally {
     for (const [k, d] of bewaard) {

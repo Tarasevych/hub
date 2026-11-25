@@ -8,7 +8,7 @@
    (left:50% + translateX(-50%)), 12 px lucht links en rechts; de knoppen rechtsboven blijven waar ze waren. Boven 700 px verandert
    niets: daar hangt het paneel onder de avatar. */
 @media(max-width:700px){
- .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account{left:0;right:0;box-sizing:border-box;padding:0 24px;pointer-events:none}
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account{left:0;right:0;width:100%;max-width:none;box-sizing:border-box;padding:0 24px;pointer-events:none}
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account>.canonical-account-menu{position:static;pointer-events:auto}
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account .canonical-account-menu[data-signed-out='true'] .canonical-account-panel{left:50%;right:auto;transform:translateX(-50%);width:min(370px,calc(100% - 24px))}
 
@@ -30,8 +30,8 @@
 }
 @media(max-width:360px){
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account{padding:0 12px}
- .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'],
- .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls{gap:6px}
- .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal{padding:0 10px 0 9px;gap:6px;font-size:.78rem}
- .mr-sign-in-taal-menu{right:-28px;width:206px}
+ .canonical-chrome:has(.mr-sign-in) .mr-guest-mobile-account .canonical-account-menu[data-signed-out='true'],
+ .canonical-chrome:has(.mr-sign-in) .mr-guest-mobile-account .mr-sign-in-quick-controls{gap:6px}
+ .canonical-chrome:has(.mr-sign-in) .mr-guest-mobile-account .mr-sign-in-quick-controls button.mr-sign-in-taal{padding:0 10px 0 9px;gap:6px;font-size:.78rem}
+ .canonical-chrome:has(.mr-sign-in) .mr-guest-mobile-account .mr-sign-in-quick-controls .mr-sign-in-taal-menu{right:-44px;width:min(206px,calc(100vw - 24px));max-width:calc(100vw - 24px)}
 }

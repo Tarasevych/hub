@@ -303,8 +303,8 @@ body:has([role='dialog'][aria-modal='true']:not(.canonical-account-panel)) .cano
 .canonical-chrome:has(.mr-sign-in) .canonical-signed-out.mr-sign-in .tga-aanmeld-knop{
  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .12s ease!important
 }
-.canonical-signed-out.mr-sign-in .tga-aanmeld-logo{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;aspect-ratio:1 / 1;border-radius:50%;overflow:hidden;font-size:1.08rem}
-.canonical-signed-out.mr-sign-in .tga-aanmeld-logo :is(.merk,.tga-logo,img,svg){width:100%;height:100%;max-width:100%;max-height:100%;border-radius:50%;display:block}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-logo{display:grid;grid-template:minmax(0,1fr) / minmax(0,1fr);place-items:center;width:34px;height:34px;flex:0 0 34px;aspect-ratio:1 / 1;border-radius:50%;overflow:hidden;font-size:1.08rem}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-logo :is(.merk,.tga-logo,img,svg){width:100%;height:100%;min-width:0;min-height:0;max-width:100%;max-height:100%;border-radius:50%;display:block}
 .canonical-signed-out.mr-sign-in .tga-plaats-knop .tga-aanmeld-logo{background:color-mix(in srgb,var(--fout,#b42318) 12%,var(--papier,#fff))}
 .canonical-signed-out.mr-sign-in .tga-aanmeld-eind{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;font-size:1.22rem;opacity:1;color:var(--mr-login-muted);transition:transform .16s ease,color .16s ease}
 .canonical-signed-out.mr-sign-in .tga-aanmeld-knop:hover:not(:disabled):not([aria-disabled='true']){
@@ -603,6 +603,7 @@ body:has([role='dialog'][aria-modal='true']:not(.canonical-account-panel)) .cano
  .canonical-signed-out.mr-sign-in .mr-sign-in-main-button .mr-sign-in-arrow{width:24px;height:24px;flex-basis:24px}
  .canonical-signed-out.mr-sign-in .tga-aanmeld-knop{grid-template-columns:30px minmax(0,1fr) 24px;gap:8px;padding:10px;font-size:.92rem}
  .canonical-signed-out.mr-sign-in .tga-aanmeld-logo{width:30px;height:30px;flex:0 0 30px}
+ .canonical-signed-out.mr-sign-in .tga-aanmeld-logo :is(.merk,.tga-logo){max-width:30px;max-height:30px}
  .canonical-signed-out.mr-sign-in .tga-aanmeld-eind{width:24px;height:24px;font-size:1.1rem}
  .mr-sign-in-pauze,.canonical-signed-out.mr-sign-in .tga-let{padding:10px 12px;font-size:.79rem}
 }
