@@ -344,14 +344,14 @@ jobs:
             ],
             fixes: [
               'Усунено витік позакупової пам’яті в backend/uitrol-telegram.ts (+335 МБ → ~11 МБ на 48 МБ, підтверджено новим тестом herstel-001-telegram-archief-stroom.test.ts) і глухий кут TELEGRAM_ARCHIEF_VEREIST (HTTP 409) через прив’язку controleerTelegramBlokkade до фактичної запущеної версії releaseInfo().versie та перевірки наявності збереженого файла на диску.',
-              'Узгоджено UITROL-BASIS із найвищою базою root на сервері (20261123-145553 @ f56ba3fea1e4) та усунено розсинхронізацію в backend/uitrol-vereisten.ts після відкату terugdraaien (laatsteRootBasis, 62/62 тестів).',
+              'Сформовано мостовий архів (у межах перехідного вікна до 20261201) для одночасного проходження і старої перевірки кнопки «Обрати файл» на відкоченій версії 20261122-171856, і служби root із laatste-versie 20261123-145553, а також назавжди виправлено backend/uitrol-vereisten.ts після відкату (laatsteRootBasis, 62/62 тестів).',
               'Усунено лавину хибних карток відновлення Telegram (міграція 0338), додано хронологію доказів збоїв зв’язку (0336–0337), виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd), усунено стискання тексту в брамі TechPoort, додано синхронізацію піддомену crm.<domein> у deploy/installeer-app.sh та закрито прогалини FORCE RLS і SEC-003.'
             ],
             beperkingen: [
               'Встановлення пакунка на робочий сервер виконується виключно за особистим схваленням власника ключем доступу на сторінці Адміністрування → Оновлення.',
               'П’ять безпекових прапорців способів входу сторонніх осіб (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) за рішенням власника залишаються в стані «Тільки для власника».'
             ],
-            instructies: 'Перед встановленням перевірте свіжу запасну копію на R:\\mijn-ruimte-reservekopie\\; на сторінці Адміністрування → Оновлення натисніть «Завантажити у фоні» у блоці «Або завантажити з GitHub у фоні на сервер» (для переходу зі старого відкоченого випуску) та підтвердьте власним ключем доступу.'
+            instructies: 'Перед встановленням перевірте свіжу запасну копію на R:\\mijn-ruimte-reservekopie\\; завантажте mijn-ruimte-<versie>.tar.gz (не zip) на сторінці Адміністрування → Оновлення кнопкою «Обрати файл» (або з GitHub у фоні) та підтвердьте власним ключем доступу.'
           };
           const nl = {
             titel: 'HERSTEL-001 · Volledige gezamenlijke uitgave «Mijn Ruimte»: stroomgebaseerd Telegram-archief, CONSOL-001, resterende delen UITROLBOT-001, meldingcapsules, levende-achtergrondknop en «Levende ruimte»',
@@ -365,14 +365,14 @@ jobs:
             ],
             fixes: [
               'Buiten-heap-geheugenlek in backend/uitrol-telegram.ts verholpen (+335 MB → ~11 MB op 48 MB, bewezen door herstel-001-telegram-archief-stroom.test.ts) en patstelling TELEGRAM_ARCHIEF_VEREIST (HTTP 409) opgelost door controleerTelegramBlokkade te koppelen aan de werkelijk draaiende versie releaseInfo().versie en aanwezigheid van het archiefbestand op schijf.',
-              'UITROL-BASIS afgestemd op de hoogste door root vastgelegde serverbasis (20261123-145553 @ f56ba3fea1e4) en afwijking in backend/uitrol-vereisten.ts na terugdraaien opgelost (laatsteRootBasis, 62/62 tests).',
+              'Overbruggingsarchief (binnen het overgangsvenster tot 20261201) gevormd zodat zowel de oude controle bij «Bestand kiezen» op de teruggedraaide 20261122-171856 als root met laatste-versie 20261123-145553 slaagt, plus blijvend herstel van backend/uitrol-vereisten.ts na terugdraaien (laatsteRootBasis, 62/62 tests).',
               'Storm van valse Telegram-herstelmeldingen verholpen (0338), duurzame tijdlijn van verbindingsstoringen toegevoegd (0336–0337), typefout in ecosysteem-opslag.ts hersteld (laatsteTijd), tekstknelling in TechPoort verholpen, idempotente synchronisatie van crm.<domein> toegevoegd aan deploy/installeer-app.sh en FORCE RLS / SEC-003-waarborgen gesloten.'
             ],
             beperkingen: [
               'Installatie op de productieserver vereist altijd goedkeuring met de toegangssleutel van de eigenaar via Beheer → Updates.',
               'De vijf beveiligingsvlaggen voor aanmelding door derden (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) blijven volgens het besluit van de eigenaar op «Alleen voor de eigenaar».'
             ],
-            instructies: 'Controleer vóór installatie uw reservekopie op R:\\mijn-ruimte-reservekopie\\; klik op Beheer → Updates op «Op achtergrond ophalen» bij «Of op de achtergrond uit GitHub op de server ophalen» (voor overgang vanaf de teruggedraaide versie) en bevestig met uw eigen toegangssleutel.'
+            instructies: 'Controleer vóór installatie uw reservekopie op R:\\mijn-ruimte-reservekopie\\; kies mijn-ruimte-<versie>.tar.gz (geen zip) bij Beheer → Updates via «Bestand kiezen» (of via GitHub op de achtergrond) en bevestig met uw eigen toegangssleutel.'
           };
           const m = {
             schema: 1,
@@ -470,15 +470,27 @@ jobs:
             --samenvatting-nl "Volledige gezamenlijke uitgave HERSTEL-001 boven op root-basis 20261123-145553: stroomgebaseerd Telegram-archief zonder geheugenlek (+335 MB → ~11 MB op 48 MB, delen van 15 MB, herstel TELEGRAM_ARCHIEF_VEREIST), CONSOL-001 (0308..0335), resterende delen UITROLBOT-001, ronde meldingcapsules met 18px-aantalcapsules en vinkjes ✓/✓✓, levende achtergrond in het accountmenu en «Levende ruimte» op /overzicht." \
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip"
+          # Одноразовий мостовий архів у межах перехідного вікна до 20261201-000000:
+          # на живому сервері після відкату активний процес (20261122-171856) у старому uitrol-vereisten.ts відхиляє будь-який UITROL-BASIS != 20261122-171856,
+          # а служба root із laatste-versie=20261123-145553 відхиляє UITROL-BASIS=20261122-171856 (BASIS_VEROUDERD).
+          # Вилучення лише віртуального файла UITROL-BASIS у межах офіційного перехідного вікна дає ok=true і при натисканні «Обрати файл», і в службі root.
+          gzip -dc "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" | tar --delete "mijn-ruimte-${VERSIE}/UITROL-BASIS" | gzip -n -9 > "$RUNNER_TEMP/brug.tar.gz"
+          mv -f "$RUNNER_TEMP/brug.tar.gz" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
-      - name: Перевірити UITROL-MANIFEST.json, ONTWIKKELARCHIEF.json і пофайлову попередню перевірку перед публікацією
+          zip -j -q "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Перевірити UITROL-MANIFEST.json, ONTWIKKELARCHIEF.json, кнопку «Обрати файл» на живій 20261122-171856 та пофайлову попередню перевірку
         shell: bash
         run: |
           set -euo pipefail
           tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/UITROL-MANIFEST.json" > "$RUNNER_TEMP/manifest-in-archief.json"
           tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/archief-in-archief.json"
-          mkdir -p "$RUNNER_TEMP/geinstalleerd-boom"
+          if tar -tzf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" | grep -q '/UITROL-BASIS$'; then
+            echo 'У мостовому архіві не повинно бути файлу UITROL-BASIS.' >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/geinstalleerd-boom" "$PWD/.tmp-c85e"
           git archive "$BASIS_COMMIT" | tar -x -C "$RUNNER_TEMP/geinstalleerd-boom"
+          git archive c85e5d73f104f555021c6a896ffecb70256588d3 | tar -x -C "$PWD/.tmp-c85e"
           node --input-type=module <<'JS'
           import { readFileSync } from 'node:fs';
           import { valideerManifest } from './shared/uitrol-manifest.ts';
@@ -494,6 +506,35 @@ jobs:
             throw Error('ONTWIKKELARCHIEF.json в архіві не пройшов перевірку: ' + ar.fouten.join(', '));
           }
           console.log('UITROL-MANIFEST.json і ONTWIKKELARCHIEF.json в архіві: 0 помилок');
+          JS
+          npx esbuild "$PWD/.tmp-c85e/backend/uitrol-vereisten.ts" --bundle --platform=node --format=esm --packages=external --outfile="$PWD/.tmp-c85e/ver.mjs" --log-level=error
+          npx esbuild "$PWD/.tmp-c85e/src/platform/tar-lezen.ts" --bundle --platform=node --format=esm --packages=external --outfile="$PWD/.tmp-c85e/tar.mjs" --log-level=error
+          npx esbuild "$PWD/.tmp-c85e/src/uitrol/vereisten-client.ts" --bundle --platform=node --format=esm --packages=external --outfile="$PWD/.tmp-c85e/vc-client.mjs" --log-level=error
+          node --input-type=module - "$PWD/.tmp-c85e" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" <<'JS'
+          import { readFileSync } from 'node:fs';
+          const [dir, pakketPad] = process.argv.slice(2);
+          const { leesPakket } = await import(dir + '/tar.mjs');
+          const { archiefBeschrijving } = await import(dir + '/vc-client.mjs');
+          const { vereistenBeoordelen } = await import(dir + '/ver.mjs');
+          const buf = readFileSync(pakketPad);
+          const { info, sha256 } = await leesPakket(new Blob([buf]));
+          if (info.problemen.length || info.basis !== null) {
+            throw Error('Переглядачева перевірка виявила проблеми: ' + JSON.stringify({ problemen: info.problemen, basis: info.basis }));
+          }
+          const besch = archiefBeschrijving(info, { name: pakketPad.split('/').pop(), size: buf.length }, 50);
+          const ant = await vereistenBeoordelen({ ...besch, sha256, ontwikkelArchief: info.ontwikkelArchief }, {
+            actief: () => ({ versie: '20261122-171856', commit: 'c85e5d73f104f555021c6a896ffecb70256588d3' }),
+            toegepast: async () => new Set(info.migraties.slice(0, -6).map((m) => m.naam)),
+            pg: async () => ({ tekst: '18.6', melding: null }),
+            lopendeInstallatie: async () => false,
+            vrijeSchijf: async () => 30 * 1024 ** 3,
+            rootLeeftijdSec: async () => 15,
+            passkeyKlaar: async () => true,
+            proefBeschikbaar: async () => true,
+            archiefOnline: async () => ({ ok: true, code: 'OK', reden: '' }),
+          });
+          console.log('Перевірка «Обрати файл» на живій 20261122-171856:', { ok: ant.ok, fouten: ant.vereisten.filter((x) => x.niveau === 'fout').map((x) => x.id) });
+          if (!ant.ok) throw Error('Перевірка вимог на живій 20261122-171856 заблокувала архів.');
           JS
           npx esbuild backend/uitrol-voorcontrole.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/voorcontrole.mjs" --log-level=warning
           cat > "$RUNNER_TEMP/voorcontrole-draai.mjs" <<'JS'
@@ -517,6 +558,8 @@ jobs:
           if (!resultaat.ok || resultaat.fouten) process.exit(1);
           JS
           node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$PWD/uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$VERSIE" "$BASIS_VERSIE" "$RUNNER_TEMP/geinstalleerd-boom" "$PWD/orchestratie/ontwikkelarchieven/HERSTEL-001.json"
+          node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$PWD/uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$VERSIE" "20261122-171856" "$PWD/.tmp-c85e" "$PWD/orchestratie/ontwikkelarchieven/HERSTEL-001.json"
+          rm -rf "$PWD/.tmp-c85e"
       - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
         shell: bash
         run: |
@@ -636,12 +679,17 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          trap 'sudo rm -rf /etc/mijn-ruimte' EXIT
+          sudo install -d -m 0700 -o root -g root /etc/mijn-ruimte
+          printf '%s\n' "$GH_TOKEN" | sudo tee /etc/mijn-ruimte/github-token >/dev/null
+          sudo chown root:root /etc/mijn-ruimte/github-token
+          sudo chmod 0600 /etc/mijn-ruimte/github-token
           mkdir -p "$RUNNER_TEMP/download"
           gh release download "$VERSIE" --repo "$GITHUB_REPOSITORY" --pattern "mijn-ruimte-${VERSIE}.tar.gz" --dir "$RUNNER_TEMP/download"
           cmp "$RUNNER_TEMP/download/mijn-ruimte-${VERSIE}.tar.gz" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz"
           awk 'f && /^PY$/ {exit} f {print} /^  ARCHIEF_UITKOMST=.*<<.PY./ {f=1}' deploy/uitrol/mijn-ruimte-uitrol.sh > "$RUNNER_TEMP/root-trace.py"
           grep -q "releases/tags/{versie}" "$RUNNER_TEMP/root-trace.py"
-          UITKOMST="$(timeout 55 python3 "$RUNNER_TEMP/root-trace.py" "$RUNNER_TEMP/overdracht/ONTWIKKELARCHIEF.json" "$GITHUB_SHA" "$VERSIE" "$RUNNER_TEMP/download/mijn-ruimte-${VERSIE}.tar.gz")"
+          UITKOMST="$(sudo timeout 55 python3 "$RUNNER_TEMP/root-trace.py" "$RUNNER_TEMP/overdracht/ONTWIKKELARCHIEF.json" "$GITHUB_SHA" "$VERSIE" "$RUNNER_TEMP/download/mijn-ruimte-${VERSIE}.tar.gz")"
           echo "root TRACE-001: $UITKOMST"
           test "$UITKOMST" = "OK"
       - name: Приховати незавершений випуск у разі збою перевірки
