@@ -71,18 +71,18 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
     id: 'MELD-2',
     schermafdrukken: ['Screenshot_20261125_132707_com.android.chrome.jpg'],
     titelUk:
-      'Непрацююче перемикання «Компактна панель / Вікно» на смартфоні (<= 768 px) при збереженому modus === "volledig"',
+      'Непрацююче перемикання «Компактна панель / Вікно» на смартфоні (<= 768 px) при збереженому modus === "volledig" (за збереження канонічного розміщення дзвіночка в меню для простору екрана)',
     titelNl:
-      'Niet-werkende omschakeling «Compact paneel / Venster» op smartphone (<= 768 px) bij opgeslagen modus === "volledig"',
+      'Niet-werkende omschakeling «Compact paneel / Venster» op smartphone (<= 768 px) bij opgeslagen modus === "volledig" (met behoud van de canonieke plaats van de bel in het menu voor schermruimte)',
     doelBestanden: ['src/meldingen/ecosysteem/MeldingenPortaal.tsx', 'src/CanoniekMeldingencentrum.tsx'],
     oorzaakUk:
-      'У MeldingenPortaal.tsx isMobielLangscroll залишається true, якщо geo.modus === "volledig" або profiel.geometrie.modus === "volledig", навіть коли compactBijBel === true, тому натискання кнопки «Компактна панель» не змінює вигляд вікна.',
+      'Розміщення дзвіночка в мобільному меню є свідомим задумом власника для збереження робочого простору екрана, але в MeldingenPortaal.tsx isMobielLangscroll залишається true, якщо geo.modus === "volledig" або profiel.geometrie.modus === "volledig", навіть коли compactBijBel === true, тому натискання кнопки «Компактна панель» не перемикає вигляд вікна.',
     oorzaakNl:
-      'In MeldingenPortaal.tsx blijft isMobielLangscroll true wanneer geo.modus === "volledig" of profiel.geometrie.modus === "volledig", zelfs als compactBijBel === true, waardoor tikken op «Compact paneel» de weergave niet wijzigt.',
+      'De plaatsing van de bel in het mobiele menu is een bewust ontwerpbesluit van de eigenaar voor meer werkruimte, maar in MeldingenPortaal.tsx blijft isMobielLangscroll true wanneer geo.modus === "volledig" of profiel.geometrie.modus === "volledig", zelfs als compactBijBel === true, waardoor tikken op «Compact paneel» de weergave niet wijzigt.',
     herstelEisUk:
-      'Узгодити перемикання між компактним та розгорнутим режимами на мобільних екранах так, щоб натискання кнопки «Компактна панель» справді перемикало режим і показувало кнопку повернення «Вікно».',
+      'Зберігаючи дзвіночок у мобільному меню без зайвих кнопок на робочому просторі, узгодити перемикання між компактним та розгорнутим режимами так, щоб натискання кнопки «Компактна панель» справді перемикало режим і показувало кнопку повернення «Вікно».',
     herstelEisNl:
-      'Stem het schakelen tussen compacte en uitgebreide modus op mobiele schermen af zodat tikken op «Compact paneel» daadwerkelijk omschakelt en de terugkeerknop «Venster» toont.',
+      'Behoud de bel in het mobiele menu zonder extra knoppen op het werkblad en stem het schakelen tussen compacte en uitgebreide modus af zodat tikken op «Compact paneel» daadwerkelijk omschakelt en de terugkeerknop «Venster» toont.',
   },
   {
     id: 'MELD-3',
@@ -105,18 +105,23 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
     id: 'MELD-4',
     schermafdrukken: ['Screenshot_20261125_132441_com.android.chrome.jpg'],
     titelUk:
-      'Помилковий логотип та підпис «Gmail · Вхід і пристрій» у картках безпеки «Новий вхід на новому пристрої» через спрацювання /\\bgmail\\b/i на адресу @gmail.com',
+      'Неофіційний одноколірний дубль-логотип Gmail (просто червона буква M із merk-logos.ts замість офіційного багатоколірного знака з єдиного реєстру src/merk/officieel/) та хибний підпис «Gmail · Вхід і пристрій» через спрацювання /\\bgmail\\b/i на @gmail.com',
     titelNl:
-      'Foutief logo en opschrift «Gmail · Aanmelding en apparaat» bij beveiligingsmeldingen «Nieuwe aanmelding op een nieuw apparaat» door match van /\\bgmail\\b/i op @gmail.com',
-    doelBestanden: ['src/MenuMeldingen.tsx'],
+      'Onofficieel eenkleurig duplicaat-logo van Gmail (enkel rode letter M uit merk-logos.ts in plaats van het officiële meerkleurige teken uit src/merk/officieel/) en foutief opschrift «Gmail · Aanmelding en apparaat» door match op @gmail.com',
+    doelBestanden: [
+      'src/MenuMeldingen.tsx',
+      'src/merk/merk-logos.ts',
+      'scripts/merk-officieel-maken.mjs',
+      'src/merk/officieel-sleutels.ts',
+    ],
     oorzaakUk:
-      'zoekMerkInTekst у src/MenuMeldingen.tsx перевіряє весь текст повідомлення разом з електронною адресою tarasevych.pavlo@gmail.com; шаблон /\\bgmail\\b/i спрацьовує на домен @gmail.com раніше за /\\bgoogle\\b/i.',
+      'По-перше, за правилом REESTR-LOGO-001 усі логотипи мають походити з одного офіційного джерела (src/merk/officieel/), але gmail забули додати до KEUZE у scripts/merk-officieel-maken.mjs і залишили одноколірний червоний контур-букву M у src/merk/merk-logos.ts. По-друге, zoekMerkInTekst у src/MenuMeldingen.tsx спрацьовує на домен @gmail.com у поштовій адресі tarasevych.pavlo@gmail.com раніше за /\\bgoogle\\b/i.',
     oorzaakNl:
-      'zoekMerkInTekst in src/MenuMeldingen.tsx doorzoekt de volledige berichttekst inclusief het e-mailadres tarasevych.pavlo@gmail.com; het patroon /\\bgmail\\b/i matcht op het domein @gmail.com vóór /\\bgoogle\\b/i.',
+      'Ten eerste moeten volgens REESTR-LOGO-001 alle logo’s uit één officiële bron (src/merk/officieel/) komen, maar gmail ontbreekt in KEUZE van scripts/merk-officieel-maken.mjs en staat nog als eenkleurige rode letter M in src/merk/merk-logos.ts. Ten tweede matcht zoekMerkInTekst in src/MenuMeldingen.tsx op het domein @gmail.com in tarasevych.pavlo@gmail.com vóór /\\bgoogle\\b/i.',
     herstelEisUk:
-      'Очищувати поштові адреси (або не зіставляти @gmail.com як службу Gmail) у zoekMerkInTekst і для категорії beveiliging / розділу identity показувати справжній спосіб входу (Google, Telegram, Ключ входу), а не Gmail.',
+      'Додати офіційний чотириколірний логотип gmail (google-gmail із @iconify-json/logos) до єдиного реєстру src/merk/officieel/ через scripts/merk-officieel-maken.mjs, прибрати одноколірний дубль із src/merk/merk-logos.ts та не зіставляти домен поштової адреси @gmail.com як службу Gmail у сповіщеннях безпеки входу.',
     herstelEisNl:
-      'Filter e-mailadressen vóór merkherkenning in zoekMerkInTekst en toon voor categorie beveiliging / onderdeel identity de echte aanmeldmethode (Google, Telegram, Passkey) in plaats van Gmail.',
+      'Voeg het officiële vierkleurige gmail-logo (google-gmail uit @iconify-json/logos) toe aan src/merk/officieel/ via scripts/merk-officieel-maken.mjs, verwijder het eenkleurige duplicaat uit src/merk/merk-logos.ts en herken het e-maildomein @gmail.com niet als de dienst Gmail in aanmeldbeveiligingsmeldingen.',
   },
   {
     id: 'MELD-5',
@@ -288,9 +293,15 @@ export function evalueerTienMeldingsGebrekenHerstel(rootDir = process.cwd()): re
     menuMeldingenTekst.includes("bron === 'teller'") &&
     menuMeldingenTekst.includes('voetStatus');
 
+  const officieelSleutelsPad = join(rootDir, 'src/merk/officieel-sleutels.ts');
+  const merkLogosPad = join(rootDir, 'src/merk/merk-logos.ts');
+  const officieelSleutelsTekst = existsSync(officieelSleutelsPad) ? readFileSync(officieelSleutelsPad, 'utf8') : '';
+  const merkLogosTekst = existsSync(merkLogosPad) ? readFileSync(merkLogosPad, 'utf8') : '';
+
   const meld4Hersteld =
-    menuMeldingenTekst.includes('@gmail.com') ||
-    menuMeldingenTekst.includes('zonderEmail');
+    officieelSleutelsTekst.includes("'gmail'") &&
+    !merkLogosTekst.includes('"gmail":') &&
+    (menuMeldingenTekst.includes('@gmail.com') || menuMeldingenTekst.includes('zonderEmail'));
 
   const meld5Hersteld =
     menuMeldingenTekst.includes('apparaat-bekend');

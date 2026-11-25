@@ -25,12 +25,13 @@ Geautomatiseerde eenheidsproef: [`tests/eenheid/herstel-001-meldingen-tien-gebre
 ## 2. `MELD-2` — Niet-werkende omschakeling «Compact paneel / Venster» op smartphone (`<= 768 px`)
 
 - **Schermafdruk:** `13:27:07`
-- **Interactie en gebruikersverwachting:**
-  - De tooltip van knop `[◨]` belooft: *«Compact paneel bij de bel. Terug met „Venster“.»*. De gebruiker verwacht dat het venster na tikken omschakelt naar het compacte paneel en dat de knop «Venster» verschijnt.
+- **Interactie, ontwerpbesluit van de eigenaar en gebruikersverwachting:**
+  - *Architecturaal uitgangspunt van de eigenaar:* op de mobiele versie staat de meldingenbel **bewust in het menu** om meer werkruimte op het scherm vrij te houden en het scherm niet te belasten met extra functieknoppen die altijd in het menu bereikbaar zijn.
+  - Tegelijkertijd belooft de tooltip van knop `[◨]` in het geopende meldingenvenster: *«Compact paneel bij de bel. Terug met „Venster“.»*. De gebruiker verwacht dat het venster na tikken omschakelt naar het compacte paneel en dat de knop «Venster» verschijnt.
 - **Oorzaak in de broncode:**
   - In [`src/meldingen/ecosysteem/MeldingenPortaal.tsx`](../../src/meldingen/ecosysteem/MeldingenPortaal.tsx) (regels 323–326) bevat `isMobielLangscroll` de voorwaarde `(!compactBijBel || geo.modus === 'volledig' || profiel.geometrie.modus === 'volledig')`. Wanneer `modus === 'volledig'` in het profiel staat, schakelt `compactBijBel` de schermvullende mobiele weergave niet uit.
 - **Hersteleis:**
-  - Zorg dat schakelen tussen compacte en venstermodus op mobiele schermen daadwerkelijk de modus wisselt en de terugkeerknop «Venster» toont.
+  - Behoud de bel in het mobiele menu zonder extra knoppen op het werkblad en zorg dat schakelen tussen compacte en venstermodus op mobiele schermen daadwerkelijk de modus wisselt en de terugkeerknop «Venster» toont.
 
 ---
 
@@ -46,15 +47,17 @@ Geautomatiseerde eenheidsproef: [`tests/eenheid/herstel-001-meldingen-tien-gebre
 
 ---
 
-## 4. `MELD-4` — Foutief logo en opschrift `Gmail · Вхід і пристрій` bij beveiligingsmeldingen «Новий вхід на новому пристрої»
+## 4. `MELD-4` — Onofficieel eenkleurig duplicaat-logo van `Gmail` (enkel rode letter `M` uit `merk-logos.ts` in plaats van het officiële meerkleurige teken uit `src/merk/officieel/`) en foutief opschrift `Gmail · Вхід і пристрій` bij beveiligingsmeldingen
 
 - **Schermafdruk:** `13:24:41`
-- **Interactie en gebruikersverwachting:**
-  - Drie beveiligingswaarschuwingen over aanmelding bij Mijn Ruimte dragen het postlogo van **Gmail (`[M]`)** en het opschrift **`Gmail · Вхід і пристрій`**, terwijl de gebeurtenis over een aanmelding bij Mijn Ruimte gaat en niet over een Gmail-postvak.
+- **Interactie, regel `REESTR-LOGO-001` en gebruikersverwachting:**
+  1. Op schermafdruk `13:24:41` wordt een eenkleurige rode letter `M` getoond die niet overeenkomt met het echte vierkleurige Gmail-logo. Volgens `REESTR-LOGO-001` moeten alle logo’s uit één bron (`src/merk/officieel/`) komen, waar `google`, `googledrive`, `googlekeep` en `gemini` al als officiële meerkleurige logo’s staan, maar `gmail` ontbreekt in `KEUZE` van [`scripts/merk-officieel-maken.mjs`](../../scripts/merk-officieel-maken.mjs) en staat nog als eenkleurig duplicaat in [`src/merk/merk-logos.ts`](../../src/merk/merk-logos.ts) (regel 41).
+  2. Drie beveiligingswaarschuwingen over aanmelding bij Mijn Ruimte dragen het opschrift **`Gmail · Вхід і пристрій`**, terwijl de gebeurtenis over een aanmelding bij Mijn Ruimte (methode: `Google`) gaat en niet over een Gmail-postvak.
 - **Oorzaak in de broncode:**
+  - Ontbreken van het officiële vierkleurige `gmail.svg` (`google-gmail` uit `@iconify-json/logos`) in `src/merk/officieel/` en aanwezigheid van de oude eenkleurige rij `"gmail"` in `src/merk/merk-logos.ts`.
   - In [`src/MenuMeldingen.tsx`](../../src/MenuMeldingen.tsx) (regels 64, 70, 76–90) doorzoekt `zoekMerkInTekst` de volledige berichttekst inclusief het e-mailadres `tarasevych.pavlo@gmail.com`; het patroon `/\bgmail\b/i` matcht op `@gmail.com` vóór `/\bgoogle\b/i`.
 - **Hersteleis:**
-  - Negeer e-mailadressen bij merkherkenning in `zoekMerkInTekst` en toon voor aanmeldbeveiliging de daadwerkelijke aanmeldmethode (`Google`, `Telegram`, `Passkey`).
+  - Voeg het officiële vierkleurige `gmail`-teken (`google-gmail`) toe aan `src/merk/officieel/` via `scripts/merk-officieel-maken.mjs`, verwijder het eenkleurige duplicaat uit `src/merk/merk-logos.ts`, negeer e-mailadressen bij merkherkenning in `zoekMerkInTekst` en toon voor aanmeldbeveiliging de daadwerkelijke aanmeldmethode (`Google`, `Telegram`, `Passkey`).
 
 ---
 
