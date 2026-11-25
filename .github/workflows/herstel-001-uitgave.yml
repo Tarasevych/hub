@@ -190,6 +190,7 @@ jobs:
           for t in \
             uitrolbot-uitleg-20261122 \
             herstel-001-telegram-archief-stroom \
+            uitrol-vereisten-001 \
             vlag-001-pakket \
             herstel-001-kapsel-aflevering \
             herstel-001-laad-kapsel \
@@ -343,14 +344,14 @@ jobs:
             ],
             fixes: [
               'Усунено витік позакупової пам’яті в backend/uitrol-telegram.ts (+335 МБ → ~11 МБ на 48 МБ, підтверджено новим тестом herstel-001-telegram-archief-stroom.test.ts) і глухий кут TELEGRAM_ARCHIEF_VEREIST (HTTP 409) через прив’язку controleerTelegramBlokkade до фактичної запущеної версії releaseInfo().versie та перевірки наявності збереженого файла на диску.',
-              'Узгоджено UITROL-BASIS із найвищою зафіксованою базою root на сервері (20261123-145553 @ f56ba3fea1e4), що знімає відмову BASIS_VEROUDERD.',
+              'Узгоджено UITROL-BASIS із найвищою базою root на сервері (20261123-145553 @ f56ba3fea1e4) та усунено розсинхронізацію в backend/uitrol-vereisten.ts після відкату terugdraaien (laatsteRootBasis, 62/62 тестів).',
               'Усунено лавину хибних карток відновлення Telegram (міграція 0338), додано хронологію доказів збоїв зв’язку (0336–0337), виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd), усунено стискання тексту в брамі TechPoort, додано синхронізацію піддомену crm.<domein> у deploy/installeer-app.sh та закрито прогалини FORCE RLS і SEC-003.'
             ],
             beperkingen: [
               'Встановлення пакунка на робочий сервер виконується виключно за особистим схваленням власника ключем доступу на сторінці Адміністрування → Оновлення.',
               'П’ять безпекових прапорців способів входу сторонніх осіб (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) за рішенням власника залишаються в стані «Тільки для власника».'
             ],
-            instructies: 'Перед встановленням перевірте свіжу запасну копію на R:\\mijn-ruimte-reservekopie\\; завантажте mijn-ruimte-<versie>.tar.gz (не zip) у розділі Адміністрування → Оновлення та підтвердьте власним ключем доступу.'
+            instructies: 'Перед встановленням перевірте свіжу запасну копію на R:\\mijn-ruimte-reservekopie\\; на сторінці Адміністрування → Оновлення натисніть «Завантажити у фоні» у блоці «Або завантажити з GitHub у фоні на сервер» (для переходу зі старого відкоченого випуску) та підтвердьте власним ключем доступу.'
           };
           const nl = {
             titel: 'HERSTEL-001 · Volledige gezamenlijke uitgave «Mijn Ruimte»: stroomgebaseerd Telegram-archief, CONSOL-001, resterende delen UITROLBOT-001, meldingcapsules, levende-achtergrondknop en «Levende ruimte»',
@@ -364,14 +365,14 @@ jobs:
             ],
             fixes: [
               'Buiten-heap-geheugenlek in backend/uitrol-telegram.ts verholpen (+335 MB → ~11 MB op 48 MB, bewezen door herstel-001-telegram-archief-stroom.test.ts) en patstelling TELEGRAM_ARCHIEF_VEREIST (HTTP 409) opgelost door controleerTelegramBlokkade te koppelen aan de werkelijk draaiende versie releaseInfo().versie en aanwezigheid van het archiefbestand op schijf.',
-              'UITROL-BASIS afgestemd op de hoogste door root vastgelegde serverbasis (20261123-145553 @ f56ba3fea1e4), waarmee BASIS_VEROUDERD is verholpen.',
+              'UITROL-BASIS afgestemd op de hoogste door root vastgelegde serverbasis (20261123-145553 @ f56ba3fea1e4) en afwijking in backend/uitrol-vereisten.ts na terugdraaien opgelost (laatsteRootBasis, 62/62 tests).',
               'Storm van valse Telegram-herstelmeldingen verholpen (0338), duurzame tijdlijn van verbindingsstoringen toegevoegd (0336–0337), typefout in ecosysteem-opslag.ts hersteld (laatsteTijd), tekstknelling in TechPoort verholpen, idempotente synchronisatie van crm.<domein> toegevoegd aan deploy/installeer-app.sh en FORCE RLS / SEC-003-waarborgen gesloten.'
             ],
             beperkingen: [
               'Installatie op de productieserver vereist altijd goedkeuring met de toegangssleutel van de eigenaar via Beheer → Updates.',
               'De vijf beveiligingsvlaggen voor aanmelding door derden (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) blijven volgens het besluit van de eigenaar op «Alleen voor de eigenaar».'
             ],
-            instructies: 'Controleer vóór installatie uw reservekopie op R:\\mijn-ruimte-reservekopie\\; upload mijn-ruimte-<versie>.tar.gz (geen zip) bij Beheer → Updates en bevestig met uw eigen toegangssleutel.'
+            instructies: 'Controleer vóór installatie uw reservekopie op R:\\mijn-ruimte-reservekopie\\; klik op Beheer → Updates op «Op achtergrond ophalen» bij «Of op de achtergrond uit GitHub op de server ophalen» (voor overgang vanaf de teruggedraaide versie) en bevestig met uw eigen toegangssleutel.'
           };
           const m = {
             schema: 1,

@@ -49,7 +49,9 @@
     "5987ed78783b0b074a44f3a86e0341ea0c66496b",
     "95ec7d9898aa6b2f2deebcbdcd3ed6ee8a82087b",
     "484a86437b429c1635699a8f2aa86e3bf28906dc",
-    "e04e489ccc75bbf48934e1565c4524ea4c33cd44"
+    "e04e489ccc75bbf48934e1565c4524ea4c33cd44",
+    "6c1e535e6126f926349c054fc6a07ba26b64ec60",
+    "4cc182187dab65220ec8667a8599e70e19ee54e3"
   ],
   "tijdlijn": [
     {
@@ -65,14 +67,14 @@
       "resultaat": "Перенесено кнопку живого фону з верхньої смуги до меню облікових записів між перемикачем тем і кнопкою кольорів у точному круглому розмірі (32×32 ПК / 34×34 мобільний), усунуто порожню висоту 60vh на /overzicht та втілено «Живий простір» із пелюстковими формами, кільцем поступу, кнопкою-ромбом спокійного однорядкового режиму, хвилею модулів і суцільною капсулою швидких дій."
     },
     {
-      "stap": "4) Перенесення решток UITROLBOT-001, усунення доведеного витоку позакупової пам’яті Telegram-архівування та узгодження UITROL-BASIS із базою root 20261123-145553.",
-      "resultaat": "Перенесено відсутні частини UITROLBOT-001, виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd), усунено витік позакупової пам’яті в backend/uitrol-telegram.ts (потокове RFC 7578 multipart-надсилання stuurDocumentVanBestand без Buffer/Uint8Array/Blob, частини 15 МБ замість 45 МБ, потокове відновлення, послідовна черга, прибирання bezig і enc-файлів, прив’язка controleerTelegramBlokkade до фактичної версії — пік позакупової пам’яті на 48 МБ зменшено з +335 МБ до ~11 МБ), та узгоджено UITROL-BASIS із базою root 20261123-145553 @ f56ba3fea1e4."
+      "stap": "4) Перенесення решток UITROLBOT-001, усунення витоку позакупової пам’яті Telegram-архівування, узгодження UITROL-BASIS із базою root 20261123-145553 та виправлення uitrol-vereisten.ts після відкату.",
+      "resultaat": "Перенесено відсутні частини UITROLBOT-001, виправлено помилку типізації в ecosysteem-opslag.ts (laatsteTijd), усунено витік позакупової пам’яті в backend/uitrol-telegram.ts (+335 МБ → ~11 МБ на 48 МБ), узгоджено UITROL-BASIS із базою root 20261123-145553 @ f56ba3fea1e4 та усунено розбіжність у backend/uitrol-vereisten.ts після відкату terugdraaien (додано laatsteRootBasis і тести 62/62)."
     }
   ],
   "keuzes": [
     {
-      "besluit": "Зібрати випуск поверх фактичної найвищої встановленої бази root 20261123-145553 (f56ba3fea1e4da191970e57c9a92272ba861e3ad), яка є прямим предком цієї гілки.",
-      "reden": "Спроба встановити попередній випуск із базою 20261122-171856 була відхилена root із кодом BASIS_VEROUDERD, бо в $WERK_ROOT/laatste-versie вже зафіксовано 20261123-145553; узгодження UITROL-BASIS із 20261123-145553 знімає відмову root при повному збереженні всіх міграцій 0308..0341."
+      "besluit": "Зібрати випуск поверх фактичної найвищої встановленої бази root 20261123-145553 (f56ba3fea1e4da191970e57c9a92272ba861e3ad) та навчити backend/uitrol-vereisten.ts читати laatsteRootBasis після відкату.",
+      "reden": "Після відкату з 20261123-145553 на 20261122-171856 файл laatste-versie у root лишається 20261123-145553, а releaseInfo() повертає 20261122-171856. У старому коді vereisten відхиляв базу 20261123-145553 до завантаження з браузера, а root відхиляв базу 20261122-171856 після схвалення (BASIS_VEROUDERD). Для встановлення на старому сервері використовується вбудоване фонове отримання з GitHub (pakketVoorcontrole → fouten=0), а в цьому випуску назавжди виправлено сам backend/uitrol-vereisten.ts."
     },
     {
       "besluit": "Повністю прибрати leesDeelBytes і new Blob для частин архіву в backend/uitrol-telegram.ts та перевести надсилання і відновлення на потоковий RFC 7578 multipart/form-data (createReadStream + duplex: 'half', частини по 15 МБ).",
@@ -91,8 +93,8 @@
     },
     {
       "soort": "gewijzigd",
-      "pad": "backend/uitrol-telegram.ts, src/uitrol/TelegramArchief.tsx, src/uitrol/fouten.ts, tests/eenheid/herstel-001-telegram-archief-stroom.test.ts, tests/eenheid/uitrolbot-uitleg-20261122.test.ts",
-      "omschrijving": "Усунено витік позакупової пам’яті Telegram-архівування (потокове RFC 7578 multipart-надсилання stuurDocumentVanBestand і потокове відновлення без Buffer/Blob, частини 15 МБ, послідовна черга, прибирання bezig і enc-файлів, прив’язка controleerTelegramBlokkade до фактичної версії), перенесено публікацію двомовного пояснення випуску в Telegram (UITROLBOT-001) і додано модульні тести на 48 МБ."
+      "pad": "backend/uitrol-telegram.ts, backend/uitrol-vereisten.ts, src/uitrol/TelegramArchief.tsx, src/uitrol/fouten.ts, tests/eenheid/herstel-001-telegram-archief-stroom.test.ts, tests/eenheid/uitrol-vereisten-001.test.ts, tests/eenheid/uitrolbot-uitleg-20261122.test.ts",
+      "omschrijving": "Усунено витік позакупової пам’яті Telegram-архівування (потокове RFC 7578 надсилання і відновлення без Buffer/Blob, частини 15 МБ, послідовна черга, прибирання bezig і enc-файлів, прив’язка controleerTelegramBlokkade до фактичної версії), усунено розбіжність між браузерною перевіркою backend/uitrol-vereisten.ts і базою root після відкату terugdraaien (laatsteRootBasis, 62/62 тестів), перенесено публікацію двомовного пояснення випуску в Telegram (UITROLBOT-001)."
     },
     {
       "soort": "gewijzigd",
