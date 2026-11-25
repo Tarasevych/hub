@@ -301,7 +301,7 @@ export default function AanmeldTelegram({
       disabled={uitgeschakeld}
       aria-disabled={uitgeschakeld}
     >
-      <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={22} /></span>
+      <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={34} /></span>
       <span className='tga-aanmeld-tekst'>
         {pauze.actief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Увійти через Telegram', 'Aanmelden met Telegram')}
       </span>

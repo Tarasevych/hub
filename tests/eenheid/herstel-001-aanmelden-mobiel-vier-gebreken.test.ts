@@ -331,8 +331,8 @@ export async function main(): Promise<number> {
 
   const herstelOverzicht = evalueerVierAanmeldGebrekenHerstel();
   check(
-    'функція оцінювання стану виправлення evalueerVierAanmeldGebrekenHerstel повертає звіти для всіх 4 пунктів',
-    herstelOverzicht.length === 4 && herstelOverzicht.every((item) => item.details.length > 10),
+    'функція оцінювання стану виправлення evalueerVierAanmeldGebrekenHerstel підтверджує виправлення всіх 4 пунктів (T-1..T-4)',
+    herstelOverzicht.length === 4 && herstelOverzicht.every((item) => item.hersteld && item.details.length > 10),
   );
 
   // 6. Перевірка парної двомовної документації випробувань у docs/identiteit/

@@ -299,7 +299,9 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 .canonical-chrome:has(.mr-sign-in) .canonical-signed-out.mr-sign-in .tga-aanmeld-knop{
  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .12s ease!important
 }
-.canonical-signed-out.mr-sign-in .tga-aanmeld-eind{color:var(--mr-login-muted);transition:transform .16s ease,color .16s ease}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-logo{width:34px;height:34px;flex:0 0 34px;border-radius:50%;overflow:hidden}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-logo :is(.merk,.tga-logo,img,svg){width:100%;height:100%;display:block}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-eind{width:34px;height:34px;flex:0 0 34px;font-size:1.22rem;opacity:1;color:var(--mr-login-muted);transition:transform .16s ease,color .16s ease}
 .canonical-signed-out.mr-sign-in .tga-aanmeld-knop:hover:not(:disabled):not([aria-disabled='true']){
  border-color:var(--mr-login-sec-border-hover);background:var(--mr-login-sec-bg-hover);
  box-shadow:0 0 0 3px var(--mr-login-sec-ring)
@@ -397,6 +399,7 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
  display:grid;grid-template-rows:1fr;place-content:center
 }
 .canonical-signed-out.mr-sign-in.checking{display:grid;place-content:center}
+body:has(.canonical-signed-out.checking) #tsv-laad-kapsel{opacity:0;visibility:hidden;pointer-events:none}
 
 /* Hoekbediening rechtsboven + compatibiliteit met AccountMenuV3 (raakt am3-padding en -achtergrond niet aan). */
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']{

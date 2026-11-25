@@ -206,9 +206,23 @@ export async function startPrimaryRedirectLogin(input: StartInput): Promise<Star
     throw failure('OWNER_REDIRECT_URI_INVALID');
   }
   if (data.flowMode !== 'redirect') throw failure('OWNER_REDIRECT_MODE_INVALID');
+  if (input.intent !== 'step-up') {
+    try {
+      sessionStorage.setItem('mr-aanmelden-bezig', String(Date.now()));
+    } catch {
+      /* сховище сеансу недоступне */
+    }
+  }
   try {
     location.assign(authUrl);
   } catch {
+    if (input.intent !== 'step-up') {
+      try {
+        sessionStorage.removeItem('mr-aanmelden-bezig');
+      } catch {
+        /* сховище сеансу недоступне */
+      }
+    }
     throw failure('OWNER_REDIRECT_NAVIGATION_FAILED');
   }
   return {held: false, reasonCode};

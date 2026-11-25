@@ -651,16 +651,18 @@ export function AccountMenuV3({
             </div>
 
             <div className='am3-orbit-wing is-right'>
-              <button
-                type='button'
-                className='am3-orbit-node is-add'
-                disabled={busy}
-                title={addKnopTitel}
-                aria-label={addKnopTitel}
-                onClick={onAddAccount}
-              >
-                <Plus />
-              </button>
+              {(displayUser || visibleRows.length > 0) ? (
+                <button
+                  type='button'
+                  className='am3-orbit-node is-add'
+                  disabled={busy}
+                  title={addKnopTitel}
+                  aria-label={addKnopTitel}
+                  onClick={onAddAccount}
+                >
+                  <Plus />
+                </button>
+              ) : null}
             </div>
           </div>
         ) : (
@@ -1270,7 +1272,7 @@ export function AccountMenuV3({
               <span className='am3-flag' aria-hidden='true'>
                 <MoviPrapor taal='uk' />
               </span>
-              <span>{uk ? 'Українська' : 'Oekr.'}</span>
+              <span>{MOVA_VOLLEDIG.uk}</span>
             </button>
             <button
               type='button'
@@ -1283,7 +1285,7 @@ export function AccountMenuV3({
               <span className='am3-flag' aria-hidden='true'>
                 <MoviPrapor taal='nl' />
               </span>
-              <span>{uk ? 'нід.' : 'Nederlands'}</span>
+              <span>{MOVA_VOLLEDIG.nl}</span>
             </button>
           </div>
         </div>
