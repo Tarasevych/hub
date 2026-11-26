@@ -20,6 +20,8 @@ type Props = {
   style?: CSSProperties;
   ariaLabelledBy?: string;
   ariaDescribedBy?: string;
+  /** aria-invalid: поле відхилено (наприклад, сервер не прийняв пароль). */
+  ariaInvalid?: boolean;
   /** data-geheim-invoer. Типово кодове слово. */
   soort?: string;
   /** Додаткові data-атрибути, які вже шукають тести (наприклад mail-koppel-wachtwoord). */
@@ -34,14 +36,14 @@ type Props = {
  * Секретне поле + кнопка екранної клавіатури (4.4).
  * Клавіатура пише в value сама. Клавіші не є полями, які ШІ-розширення може «натиснути».
  */
-export default function GeheimInvoer({ lang, t, value, onChange, placeholder, children, id, name, autoComplete = 'off', autoFocus, required, minLength, spellCheck, max = 200, style, ariaLabelledBy, ariaDescribedBy, soort = 'codewoord', data, rijen, verborgen = false }: Props) {
+export default function GeheimInvoer({ lang, t, value, onChange, placeholder, children, id, name, autoComplete = 'off', autoFocus, required, minLength, spellCheck, max = 200, style, ariaLabelledBy, ariaDescribedBy, ariaInvalid, soort = 'codewoord', data, rijen, verborgen = false }: Props) {
   const zeg = t || ((uk: string, nl: string) => ((lang || 'uk') === 'uk' ? uk : nl));
   const [open, setOpen] = useState(false);
   const veld = useRef<HTMLInputElement | null>(null);
   const grens = Math.max(1, rijen ? Math.max(max, 16384) : max);
   const zet = (volgende: string) => onChange(volgende.slice(0, grens));
   const extra = Object.fromEntries(Object.entries(data || {}).map(([k, v]) => [k.startsWith('data-') ? k : `data-${k}`, v]));
-  const gemeen = { id, name, value, autoComplete, autoFocus, required, minLength, spellCheck, placeholder, 'aria-labelledby': ariaLabelledBy, 'aria-describedby': ariaDescribedBy, 'data-geheim-invoer': soort, ...extra, onChange: (e: { target: { value: string } }) => zet(e.target.value) };
+  const gemeen = { id, name, value, autoComplete, autoFocus, required, minLength, spellCheck, placeholder, 'aria-labelledby': ariaLabelledBy, 'aria-describedby': ariaDescribedBy, 'aria-invalid': ariaInvalid || undefined, 'data-geheim-invoer': soort, ...extra, onChange: (e: { target: { value: string } }) => zet(e.target.value) };
   return (
     <span className='geheim-invoer' style={{ position: 'relative', display: 'block' }}>
       {children}

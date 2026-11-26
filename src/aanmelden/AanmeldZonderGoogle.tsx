@@ -3,7 +3,7 @@
 // Показуються лише способи, які сервер назвав робочими (GET /api/aanmelden/telegram/config → methoden; прапорці aanmelden-*).
 // Кожен шлях: start → (браузер / провайдер / форма) → voltooien; сеанс видає той самий механізм, що й для Google.
 // Повторне натискання під час роботи нічого не надсилає вдруге; перерваний вхід (закрите вікно ключа) — чесний текст і «Спробувати ще».
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { Fingerprint, KeyRound, LogIn, MapPin } from 'lucide-react';
 import { cleanRedirectReturnTo } from '../aanmeld-omleiding';
 import { broadcastCanonicalAuthChange } from '../canoniek-gebeurtenissen';
@@ -137,13 +137,19 @@ export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd =
   const loopt = useRef(false);
   const [geenPlaats, setGeenPlaats] = useState(false); // TELEGRAM-004: сервер відмовив, бо обліковий запис вимагає місце пристрою
   const opnieuw = useRef<(() => void) | null>(null);
+  /* SITE-001 (пункт 17): помилку пов'язано з полями (aria-describedby), після відмови фокус повертається в поле пароля. */
+  const foutId = `${useId()}-fout`;
+  const wachtwoordId = `${foutId}-wachtwoord`;
   const klas = hoofd ? 'mr-sign-in-main-button mr-sign-in-zonder-google' : 'mr-sign-in-optie';
 
   const doe = async (werk: () => Promise<void>) => {
     if (loopt.current) return; // повторне натискання під час роботи — нічого
     loopt.current = true; setBezig(true); setFout(''); setGeenPlaats(false);
     try { await werk(); }
-    catch (e) { setFout(tekst(lang, e)); setGeenPlaats(plaatsNodig(e)); }
+    catch (e) {
+      setFout(tekst(lang, e)); setGeenPlaats(plaatsNodig(e));
+      if (id === 'wachtwoord') window.setTimeout(() => { const v = document.getElementById(wachtwoordId) as HTMLInputElement | null; v?.focus(); v?.select(); }, 0);
+    }
     finally { loopt.current = false; setBezig(false); }
   };
 
@@ -171,7 +177,7 @@ export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd =
     naSessie(r);
   }); };
 
-  const foutRegel = fout ? <><p className='mr-sign-in-fout' role='alert' data-aanmeld-zonder-google-fout={id}>{fout}</p>{geenPlaats && <PlaatsNodig lang={lang} daarna={() => opnieuw.current?.()} />}</> : null;
+  const foutRegel = fout ? <><p id={foutId} className='mr-sign-in-fout' role='alert' data-aanmeld-zonder-google-fout={id}>{fout}</p>{geenPlaats && <PlaatsNodig lang={lang} daarna={() => opnieuw.current?.()} />}</> : null;
   if (id === 'wachtwoord') {
     return <div className='mr-sign-in-wachtwoord' data-aanmeld-zonder-google='wachtwoord'>
       <button type='button' className={klas} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
@@ -180,11 +186,11 @@ export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd =
       </button>
       {open && <form className='mr-sign-in-wachtwoord-form' onSubmit={wachtwoordInloggen} aria-busy={bezig}>
         <label><span>{tr(lang, 'Електронна пошта', 'E-mailadres')}</span>
-          <input type='email' autoComplete='username' required value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} autoFocus /></label>
+          <input type='email' autoComplete='username' required aria-invalid={fout ? true : undefined} aria-describedby={fout ? foutId : undefined} value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} autoFocus /></label>
         <label><span>{tr(lang, 'Пароль', 'Wachtwoord')}</span>
-          <GeheimInvoer lang={lang} value={wachtwoord} onChange={setWachtwoord} autoComplete='current-password' required max={1024} soort='wachtwoord' /></label>
+          <GeheimInvoer lang={lang} id={wachtwoordId} value={wachtwoord} onChange={setWachtwoord} autoComplete='current-password' required max={1024} soort='wachtwoord' ariaInvalid={!!fout} ariaDescribedBy={fout ? foutId : undefined} /></label>
         <label><span>{tr(lang, 'Код із застосунку або код відновлення (якщо налаштовано)', 'App-code of herstelcode (als ingesteld)')}</span>
-          <input inputMode='text' autoComplete='one-time-code' value={code} onChange={(e) => setCode(e.target.value.slice(0, 40))} maxLength={40} /></label>
+          <input inputMode='text' autoComplete='one-time-code' aria-invalid={fout && code ? true : undefined} aria-describedby={fout ? foutId : undefined} value={code} onChange={(e) => setCode(e.target.value.slice(0, 40))} maxLength={40} /></label>
         <small className='mr-sign-in-hint'>{tr(lang, 'Після кількох помилок спроби тимчасово блокуються — це захищає ваш обліковий запис від підбору пароля.', 'Na enkele fouten worden pogingen tijdelijk geblokkeerd — dat beschermt uw account tegen raden.')}</small>
         <button type='submit' className='mr-sign-in-optie-actie' disabled={bezig || !email || !wachtwoord}><LogIn aria-hidden='true' />{bezig ? tr(lang, 'Перевіряємо…', 'Controleren…') : tr(lang, 'Увійти', 'Aanmelden')}</button>
         {foutRegel}

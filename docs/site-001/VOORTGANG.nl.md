@@ -34,7 +34,7 @@
 | 14 | Geschiktheid voor mobiel | ✅ klaar | 174 → 0 fouten op breedtes 320–768: zijwaarts schuiven van juridische pagina's, te kleine tekst, te kleine aanraakdoelen; Fastmail kreeg een plek op de e-mailbaan; test 18/18 |
 | 15 | Eigen 404-pagina | ✅ klaar | Echte statuscode 404 voor onbekende adressen (was 200); zonder aanmelding een losse pagina zonder menu; pad gedecodeerd; test 24/24; axe 0 |
 | 16 | Kapotte koppelingen | ✅ klaar | 305 interne en 3 externe adressen: één echt kapotte koppeling (bevestigingsvenster op mcp/api leidde naar 404) — verholpen; naam «Умови використання» gelijkgetrokken; bewakingstest 6/6 |
-| 17 | Validatie van alle formulieren | wacht | — |
+| 17 | Validatie van alle formulieren | ✅ klaar | Server: 400 kapotte verzoeken op 50 openbare formulieren — 0 crashes. Browser: 7 fouten (Cyrillische dubbelgangers in de gastcode, fouten niet aan velden gekoppeld, focus ging verloren) — alle verholpen; bewakingstest 22/22 |
 | 18 | Bescherming tegen spam | wacht | — |
 | 19 | Siteanalyse | ✅ klaar | Eigen anonieme analyse werkt nu echt en alleen met toestemming; tabblad «Bezoeken» voor de beheerder; 12/12 tests |
 | 20 | Eén duidelijke oproep tot actie | wacht | — |
@@ -210,6 +210,28 @@ Nieuwe bewakingstest `tests/eenheid/site-001-koppelingen.test.ts` — 6/6: gedee
 | ![voor: kandidaten](schermafdrukken/p16-kaart-voor.webp) | ![na](schermafdrukken/p16-kaart-na.webp) |
 | ![voor: «Умови користування», «власник — власник / eigenaar»](schermafdrukken/p16-terms-voor.webp) | ![na](schermafdrukken/p16-terms-na.webp) |
 
+### 17. Validatie van alle formulieren
+
+**Server.** Een nieuw hulpmiddel stuurt naar elk van de 50 openbare POST-routes (aanmelden, gasttoegang, toegangsverzoeken, registratie van aanmeldmethoden enz.) acht kapotte inhouden: geen JSON, een lijst, `null`, een tekenreeks, verkeerde typen, te lange tekenreeksen, stuurtekens, een inhoud van 2 MB — samen 400 gevallen. Geen enkele crash (500 of verbroken verbinding): 116 × 400, 100 × 413, 63 × 401, 42 × 404 (geen dergelijke poging, transactie of ingeschakelde methode), 12 × 403, 6 × 409, 1 × 429 — steeds met een redencode; 48 × 200 — alleen-lezen routes (catalogus) die de kapotte inhoud gewoon negeren. De enige 12 antwoorden 503 zijn `ACCESS_WEBAUTHN_DISABLED` op twee eigenaarsroutes waar deze mogelijkheid op de proefomgeving bewust uit staat; dat is geen fout.
+
+**Browser.** Het hulpmiddel controleert het gastformulier en het wachtwoordformulier zoals een mens en een schermlezer ze zien. Op de oude bouw — 7 fouten:
+- een gastcode getypt op een Oekraïense indeling (А, В, Е, К, М, Н, О, Р, С, Т, Х, І) werd door de server geweigerd, hoewel hij er juist uitziet;
+- ongeldige tekens (bijvoorbeeld U of «!») werden pas na weigering door de server zichtbaar;
+- na weigering werd het veld niet als onjuist gemarkeerd (`aria-invalid`), was de melding niet aan het veld gekoppeld (`aria-describedby`) en ging de focus verloren — hetzelfde in het wachtwoordformulier (adres en wachtwoord).
+
+**Verbeteringen:**
+- nieuwe module `src/gast-code.ts`: Cyrillische dubbelgangers worden al tijdens het typen Latijn; ongeldige tekens worden meteen met uitleg getoond (`role=alert`); teller «N van 16 ingevoerd»; de knop «Verzenden» werkt alleen bij een volledige code; een code uit de koppeling `#code=` krijgt dezelfde opschoning;
+- `src/GastToegang.tsx`: het veld heeft `aria-invalid` en `aria-describedby` naar de hint, de tekenmelding en de serverfout; na weigering keren focus en selectie terug naar het veld;
+- `src/aanmelden/AanmeldZonderGoogle.tsx`: de foutmelding heeft een eigen `id`, de velden adres, wachtwoord en code worden gemarkeerd en verwijzen ernaar; na weigering komt de focus in het wachtwoordveld; `src/geheim/GeheimInvoer.tsx` kreeg de eigenschap `ariaInvalid`.
+
+Herhaalde controle in de browser — 0 fouten. Nieuwe bewakingstest `tests/eenheid/site-001-formulieren.test.ts` — 22/22.
+
+| Voor | Na |
+|---|---|
+| ![voor: overzicht](schermafdrukken/p17-kaart-voor.webp) | ![na](schermafdrukken/p17-kaart-na.webp) |
+| ![voor: ongeldige tekens niet zichtbaar](schermafdrukken/p17-gast-ongeldig-voor.webp) | ![na](schermafdrukken/p17-gast-ongeldig-na.webp) |
+| ![voor: wachtwoordfout zonder veldmarkering](schermafdrukken/p17-wachtwoord-fout-voor.webp) | ![na](schermafdrukken/p17-wachtwoord-fout-na.webp) |
+
 ### 19. Siteanalyse (samen met punt 5 uitgevoerd)
 
 De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
@@ -230,3 +252,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **26.11.2026 06:40** — punt 15 klaar: echte 404 op de server, losse pagina zonder aanmelding, gedecodeerd pad.
 - **26.11.2026 07:10** — punt 14 klaar: meting op breedtes 320–768 gaf 174 fouten, na de verbetering 0; Fastmail kreeg een plek op de e-mailbaan.
 - **26.11.2026 07:30** — punt 16 klaar: één echt kapotte koppeling verholpen, naam van de voorwaarden gelijkgetrokken, nieuwe bewakingstest.
+- **26.11.2026 07:55** — punt 17 klaar: de server doorstond 400 kapotte verzoeken zonder crash; 7 formulierfouten in de browser verholpen, nieuwe bewakingstest.
