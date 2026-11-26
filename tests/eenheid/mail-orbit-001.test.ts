@@ -16,8 +16,11 @@ export async function main(): Promise<number> {
 
   const echt = MAIL_AANBIEDERS.filter(mailAanbiederHeeftKnop);
   const nogNiet = MAIL_AANBIEDERS.filter((a) => !mailAanbiederHeeftKnop(a));
-  check('zes aanbieders hebben een echte, bestaande actie', echt.length === 6,
+  // SITE-001 (пункт 14): Fastmail kreeg een echte IMAP-knop → zeven aanbieders; elk heeft een plek op de baan (breed én mobiel).
+  check('zeven aanbieders hebben een echte, bestaande actie', echt.length === 7,
     echt.map((a) => a.id).join(', '));
+  const zonderPlek = echt.filter((a) => (css.match(new RegExp(`data-mail-orbit-provider='${a.id}'\\]\\{--orbit-x:`, 'g')) || []).length < 2);
+  check('elke aanbieder met knop heeft een plek op de baan, breed en mobiel', zonderPlek.length === 0, zonderPlek.map((a) => a.id).join(', '));
   check('onbeschikbare aanbieders hebben geen verbindingknop', nogNiet.length === 2
     && nogNiet.every((a) => a.wijze === 'nog-niet' && (a.ontbreekt || []).length >= 2));
   check('alle aanbieders komen uit het ene register, nooit uit tweede hardcoded lijst',

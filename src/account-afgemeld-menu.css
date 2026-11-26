@@ -25,5 +25,5 @@
 @media(max-width:360px){
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account{padding:0 12px}
  .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls{gap:6px}
- .canonical-chrome .mr-sign-in-quick-controls button.mr-sign-in-taal{padding:0 9px 0 8px;font-size:.74rem}
+ .canonical-chrome .mr-sign-in-quick-controls button.mr-sign-in-taal{padding:0 9px 0 8px;font-size:.76rem} /* SITE-001 (пункт 14): не дрібніше 12 px · niet kleiner dan 12 px */
 }

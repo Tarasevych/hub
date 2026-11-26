@@ -31,7 +31,7 @@
 | 11 | Afbeeldingen comprimeren | ✅ klaar | PNG-pictogrammen en voorbeeldafbeelding: 69 319 → 47 395 B (−32 %); 1744 webp al gecomprimeerd; officiële logo's onveranderd (SHA-256) |
 | 12 | Laadsnelheid | wacht | — |
 | 13 | Kleurcontrast | ✅ klaar | Bewaker groen (2190 paren); axe-core vond 22 knooppunten op `/privacy` en `/terms`; verholpen, nu 0 in lichte en donkere weergave |
-| 14 | Geschiktheid voor mobiel | wacht | — |
+| 14 | Geschiktheid voor mobiel | ✅ klaar | 174 → 0 fouten op breedtes 320–768: zijwaarts schuiven van juridische pagina's, te kleine tekst, te kleine aanraakdoelen; Fastmail kreeg een plek op de e-mailbaan; test 18/18 |
 | 15 | Eigen 404-pagina | ✅ klaar | Echte statuscode 404 voor onbekende adressen (was 200); zonder aanmelding een losse pagina zonder menu; pad gedecodeerd; test 24/24; axe 0 |
 | 16 | Kapotte koppelingen | wacht | — |
 | 17 | Validatie van alle formulieren | wacht | — |
@@ -152,6 +152,25 @@ Na de correctie: 0 schendingen in lichte en donkere weergave.
 | ![voor](schermafdrukken/p13-voor.webp) | ![na](schermafdrukken/p13-na.webp) |
 | ![voor, donker](schermafdrukken/p13-voor-donker.webp) | ![na, donker](schermafdrukken/p13-na-donker.webp) |
 
+### 14. Geschiktheid voor mobiel
+
+Nieuwe meting van weergegeven pagina's op breedtes van 320, 360, 390 en 768 pixels (zijwaarts schuiven, elementen voorbij de rechterrand, aanraakdoelen kleiner dan 24×24 volgens WCAG 2.2 · 2.5.8, tekst kleiner dan 12 pixels): aanmelden `id/`, gasttoegang `id/toegang`, `/privacy`, `/terms`, 404-pagina, e-mail. **Voor — 174 fouten, na — 0.** Verholpen:
+- **`/privacy` en `/terms` schoven zijwaarts** op 320 (inhoudsbreedte 330 en 356 pixels): lange woorden en adressen braken niet af. Toegevoegd: `overflow-wrap:break-word` en `hyphens:auto`, voor `code` — `overflow-wrap:anywhere`; de kop `h1` schaalt met `clamp(1.4rem, 6.5vw, 1.7rem)`;
+- **`code` was 11,44 pixels**: zonder uitdrukkelijke lettertypefamilie verkleint de browser het vastebreedtelettertype. Er is nu een uitdrukkelijke familie opgegeven;
+- **te kleine aanraakdoelen**: de navigatiekoppelingen van de juridische pagina's, de koppelingen «Beleid» / «Voorwaarden» en het vakje «Onthouden» op het aanmeldscherm zijn nu minstens 24 pixels hoog; de taalknop — 0,76 rem;
+- **Fastmail op de e-mailbaan** heeft een echte aanmeldknop (IMAP), maar had geen eigen plek en stond afgesneden in een hoek op een breed scherm. Nu staan de zeven enveloppen zonder overlapping: op een breed scherm staat Fastmail boven naast Outlook, op mobiel drie aan elke kant; de test `mail-orbit-001` controleert nu dat elk van de 7 aanbieders een plek op de baan heeft (voor de wijziging faalde hij: 16/17, nu 18/18).
+
+Tests: `mail-orbit-001` 18/18, `mailmob-001` 22/22, `site-001-404` 24/24.
+
+| Voor | Na |
+|---|---|
+| ![voor: 174 fouten](schermafdrukken/p14-kaart-voor.webp) | ![na: 0 fouten](schermafdrukken/p14-kaart-na.webp) |
+| ![voor: privacy op 320](schermafdrukken/p14-privacy-320-voor.webp) | ![na](schermafdrukken/p14-privacy-320-na.webp) |
+| ![voor: terms op 320](schermafdrukken/p14-terms-320-voor.webp) | ![na](schermafdrukken/p14-terms-320-na.webp) |
+| ![voor: aanmelden op 320](schermafdrukken/p14-id-320-voor.webp) | ![na](schermafdrukken/p14-id-320-na.webp) |
+| ![voor: Fastmail afgesneden in de hoek](schermafdrukken/p14-mail-breed-voor.webp) | ![na: Fastmail op de baan](schermafdrukken/p14-mail-breed-na.webp) |
+| ![voor: e-mail, telefoon](schermafdrukken/p14-mail-mobiel-voor.webp) | ![na](schermafdrukken/p14-mail-mobiel-na.webp) |
+
 ### 15. Eigen 404-pagina
 
 De pagina «Pagina niet gevonden» (`src/NietGevonden.tsx`) bestond al, maar had vier fouten — alle verholpen:
@@ -190,3 +209,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **26.11.2026 06:00** — punten 10 en 11 klaar. De eigenaar gaf opdracht «акаунт» overal in de interface te vervangen door «обліковий запис».
 - **26.11.2026 06:20** — punt 13 klaar: datumkleur en koppelingen in donkere weergave op de juridische pagina's verholpen; axe-core 0 schendingen.
 - **26.11.2026 06:40** — punt 15 klaar: echte 404 op de server, losse pagina zonder aanmelding, gedecodeerd pad.
+- **26.11.2026 07:10** — punt 14 klaar: meting op breedtes 320–768 gaf 174 fouten, na de verbetering 0; Fastmail kreeg een plek op de e-mailbaan.
