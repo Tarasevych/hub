@@ -42,13 +42,13 @@ Dit document legt de volledige analyse en de verificatieproeven vast voor tien w
 
 - **Gebrek:** in het rode kader «❗ Dit account eist de plaats van het apparaat» was de grote knop «📍 Plaats van het apparaat delen» voor `85%` rechts leeg, terwijl het speldpictogram `📍` en de drie woorden in een smalle kolom van `34 px` links tegen en over de ronde rand werden samengedrukt.
 - **Oorzaak:** in `src/telegram-aanmelden/AanmeldTelegram.tsx` had deze knop `className='tga-aanmeld-knop'` met slechts één tekstknoop, terwijl `src/aanmeld-herontwerp.css` op `.canonical-signed-out.mr-sign-in .tga-aanmeld-knop` een driekolomsrooster `grid-template-columns: 34px minmax(0,1fr) 34px` (`30px minmax(0,1fr) 24px` bij `<= 380 px`) toepast.
-- **Hersteleis:** de knop «Plaats van het apparaat delen» (`tga-plaats-knop`) gebruikt de volledige driekolomsopmaak (`.tga-aanmeld-logo` met `<MapPin size={18} />`, `.tga-aanmeld-tekst`, `.tga-aanmeld-eind` met `<ArrowRight size={18} />`) en een beknopte toelichting.
+- **Hersteleis:** de knop «Plaats van het apparaat delen» (`tga-plaats-knop`) gebruikt de volledige driekolomsopmaak (`.tga-aanmeld-logo` met `<MapPin size={18} />` op exacte maat `18×18 px` zonder oprekking, `.tga-aanmeld-tekst`, `.tga-aanmeld-eind` met `<ArrowRight size={18} />`) en een beknopte toelichting.
 
 ### 4. Proef `TG-4` — Knoppen rechtsboven `[🇺🇦 укр.] [☀️] [👤]` zweven bij het verschuiven over de koppen en tekst van de aanmeldkaart (opnamen `11:21:25`, `11:23:17`, `11:25:32`)
 
 - **Gebrek:** wanneer de kaart «Aanmelden met Telegram» uitgeklapt was en de pagina omlaag werd verschoven, zweefden de vaste knoppen `[🇺🇦 укр.]`, `[☀️]` en `[👤]` zonder achtergrond midden over de koptekst (`11:21:25`), de uitlegregels (`11:23:17`) of de pictogramtegel (`11:25:32`).
 - **Oorzaak:** in `src/aanmeld-herontwerp.css` en `src/account-afgemeld-menu.css` bleef `.canonical-account-anchor` `position: fixed` boven een transparante `.canonical-topbar`.
-- **Hersteleis:** op het aanmeldscherm heeft de bedieningsgroep rechtsboven `position: absolute` (zodat zij met de bovenkant van de pagina meebeweegt zonder tekst te bedekken), en wanneer het dialoogvenster `i` geopend is wordt zij gedempt en afgedekt door de sluier `.tg2-info-sluier` (`z-index: 1400`).
+- **Hersteleis:** op het aanmeldscherm heeft de bedieningsgroep rechtsboven `position: absolute` (zodat zij met de bovenkant van de pagina meebeweegt zonder tekst te bedekken), en wanneer het dialoogvenster `i` geopend is wordt zij gedempt, uitgeschakeld voor mobiele aanrakingen en fysiek afgedekt door de sluier `.tg2-info-sluier` (`z-index: 1400`, met vrijgave van `view-transition-name: none` en `z-index: auto`).
 
 ### 5. Proef `TG-5` — Ontbrekende land- en plaatsnaam in de rij «Звідки / Vanwaar» van het beveiligde venster (opname `11:24:51`)
 
@@ -68,7 +68,7 @@ Dit document legt de volledige analyse en de verificatieproeven vast voor tien w
 
 - **Gebrek:** wanneer de gebruiker in het beveiligde venster het juiste pictogram koos terwijl het account de apparaatlocatie eiste, verscheen alleen de rode tekst «Ga terug naar de site, geef de browser toegang tot de locatie en kies het pictogram opnieuw» met daaronder enkel de weigerknop `⛔ Dit ben ik niet`. Door het heen en weer schakelen liep de teller van 3 minuten bijna af (`0:05` op `11:21:25`, `0:07` op `11:25:32`).
 - **Oorzaak:** in `backend/telegram-aanmelden/venster.ts` en `backend/telegram-aanmelden/inloggen.ts` bood het venster bij `plaats-nodig` geen directe vervolgactie en werd het gekozen pictogram niet in `sessionStorage` van het beveiligde venster bewaard.
-- **Hersteleis:** controleer eerst of het pictogram juist is vóór `plaats-nodig` (zonder het verzoek te sluiten en met behoud van `symboolOk === false` tot de locatie binnenkomt), bewaar de gekozen tegelpositie en het account veilig in `sessionStorage` van `VENSTER_JS` en toon `#plaats-acties` met de knoppen `✅ Locatie op de site gedeeld — aanmelding afronden` en `↩️ Aanmeldpagina openen om locatie te delen`, zodat één tik volstaat zonder het pictogram opnieuw te moeten onthouden.
+- **Hersteleis:** controleer eerst of het pictogram juist is vóór `plaats-nodig` (zonder het verzoek te sluiten en met behoud van `symboolOk === false` tot de locatie binnenkomt), bewaar de gekozen tegelpositie en het account veilig in `sessionStorage` van `VENSTER_JS`, begrens de profiellijst `fieldset.accounts` tegen horizontale overloop bij lange namen zonder spaties en toon `#plaats-acties` met de in licht en donker thema contrastrijke (`--op-accent`) knoppen `✅ Locatie op de site gedeeld — aanmelding afronden` en `↩️ Aanmeldpagina openen om locatie te delen`, zodat één tik volstaat zonder het pictogram opnieuw te moeten onthouden.
 
 ### 8. Proef `TG-8` — Onvolledige driekolomsopbouw van de knop «Telegram openen» en afwijkende knopnaam in het botbericht (opnamen `11:21:25`, `11:22:53`, `11:23:17`, `11:25:32`)
 

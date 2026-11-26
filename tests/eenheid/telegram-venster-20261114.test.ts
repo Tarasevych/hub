@@ -128,6 +128,32 @@ export async function main(): Promise<number> {
       ukPuur.includes('id="plaats-acties"') && ukPuur.includes('id="plaats-opnieuw"') && ukPuur.includes('id="m-plaats-nodig"')
       && venPuur.VENSTER_JS.includes("r.uitkomst==='plaats-nodig'") && venPuur.VENSTER_JS.includes('sessionStorage')
       && venPuur.VENSTER_JS.includes('mr_tg_venster_'));
+    const langAccountNaam = 'PavloZonderSpatiesAccountnaamVanHonderddertigTekensVoorControleOpGeenHorizontaleOverloopInFieldsetAccountsBinnenHetBeveiligdeVenster130';
+    const meerAccountsHtml = venPuur.paginaHtml({
+      ...basisPuur,
+      accounts: [
+        basisPuur.accounts[0],
+        { koppelingId: 'k2', naam: langAccountNaam, email: 'tweede@voorbeeld.test', foto: '', letter: 'T' },
+      ],
+    } as never, 'nl');
+    const vensterCss = meerAccountsHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] || '';
+    const hex6 = (h: string) => (h.length === 4 ? `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}` : h);
+    const ratio = (a: string, b: string) => { const la = lum(hex6(a)), lb = lum(hex6(b)); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
+    const lichtVars = vensterCss.match(/:root\{([^}]+)\}/)?.[1] || '';
+    const donkerVars = vensterCss.match(/@media\s*\(prefers-color-scheme:dark\)\{:root\{([^}]+)\}\}/)?.[1] || '';
+    const accL = lichtVars.match(/--accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    const opAccL = lichtVars.match(/--op-accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    const accD = donkerVars.match(/--accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    const opAccD = donkerVars.match(/--op-accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    check('puur venster (V-M2-U2-1): meerdere accounts met 130-teken naam krijgen minmax(0,1fr), min-width:0 en overflow-wrap:anywhere',
+      meerAccountsHtml.includes('<fieldset class="accounts"') && meerAccountsHtml.includes(langAccountNaam)
+      && vensterCss.includes('.accounts{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:5px}')
+      && vensterCss.includes('.accounts label>span:last-child{min-width:0;overflow-wrap:anywhere}')
+      && !/juist|is-uitgelicht|aria-current/.test(meerAccountsHtml));
+    check('puur venster (V-M2-U2-2): contrast van .knop.hoofd en .rond.leeg (--op-accent op --accent) ≥ 4,5:1 in licht en ≥ 8,0:1 in donker',
+      vensterCss.includes('.knop.hoofd,a.knop.hoofd{background:var(--accent);border-color:var(--accent);color:var(--op-accent)}')
+      && vensterCss.includes('.rond.leeg{display:grid;place-items:center;background:var(--accent);color:var(--op-accent);')
+      && ratio(accL, opAccL) >= 4.5 && ratio(accD, opAccD) >= 8.0);
   }
 
   if (!process.env.DATABASE_URL) { console.log('OK   databasedeel overgeslagen: geen DATABASE_URL'); return einde(); }

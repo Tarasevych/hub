@@ -328,19 +328,26 @@ export function evalueerTienTelegramAanmeldGebrekenHerstel(): readonly TelegramH
     (webhookTs.includes('inlog') || inloggenTs.includes('rechtstreeks') || inloggenTs.includes('zonderLink') || inloggenTs.includes('botBevestig')) &&
     (tgSectieTsx.includes('шахра') || tgSectieTsx.includes('oplicht'));
 
-  // TG-3: кнопка «Надати місце пристрою» має триколонкову верстку tga-plaats-knop без стискання в першу колонку 34px
+  const telegramCss = lees('src/telegram-aanmelden/telegram.css');
+
+  // TG-3: кнопка «Надати місце пристрою» має триколонкову верстку tga-plaats-knop із векторним знаком 18×18 px без стискання в 34px
   const tg3Hersteld =
     aanmeldTgTsx.includes('tga-plaats-knop') &&
     aanmeldTgTsx.includes('Надати місце пристрою') &&
+    /\.tga-plaats-knop\s+\.tga-aanmeld-logo\s+svg\{width:18px;height:18px;border-radius:0\}/.test(telegramCss) &&
     !aanmeldTgTsx.includes(
       `<button type='button' className='tga-aanmeld-knop' onClick={() => plaatsDelen(lopend)}>{tr(lang, '📍 Надати місце пристрою', '📍 Plaats van het apparaat delen')}</button>`,
     );
 
-  // TG-4: верхні кнопки на екрані входу не перекривають текст при прокручуванні
+  // TG-4: верхні кнопки на екрані входу не перекривають текст при прокручуванні, а завіса вікна (i) перекриває й вимикає верхню панель
   const tg4Hersteld =
-    /\.canonical-chrome:has\(\.mr-sign-in\)\s+\.canonical-account-anchor[^{]*\{[^}]*position:\s*(?:absolute|static|sticky)/.test(
+    (/\.canonical-chrome:has\(\.mr-sign-in\)\s+\.canonical-account-anchor[^{]*\{[^}]*position:\s*(?:absolute|static|sticky)/.test(
       aanmeldCss,
-    ) || aanmeldCss.includes('mr-sign-in-topbar');
+    ) ||
+      aanmeldCss.includes('mr-sign-in-topbar')) &&
+    telegramCss.includes('view-transition-name:none') &&
+    /\.mr-sign-in-content:has\(\.tg2-info-sluier\)\{[^}]*z-index:auto\}/.test(telegramCss) &&
+    /\.mr-guest-mobile-account>\.canonical-account-menu\{pointer-events:none\}/.test(telegramCss);
 
   // TG-5: рядок «Звідки» у venster.ts виводить назву місця esc(bekendePlaats) один раз перед <small class="bron">, а у .meta-chips — «за IP» / «via IP»
   const tg5Hersteld =
@@ -543,6 +550,21 @@ export async function main(): Promise<number> {
       aanmeldTgTsx.includes("e.key === 'Escape'") &&
       aanmeldTgTsx.includes("e.key !== 'Tab'"),
   );
+  check(
+    'V-M2-U1-1 та V-M2-U1-2: розімкнення view-transition-name і z-index для накриття верхньої панелі завісою .tg2-info-sluier, вимкнення мобільних натискань шапки та розмір 18×18 px знака місця без !important',
+    /main\.canonical-chrome:has\(\.tga-aanmeld-open\s+\.tg2-info-sluier\)\s+\.canonical-workspace\{z-index:auto;view-transition-name:none\}/.test(
+      telegramCss,
+    ) &&
+      /html\.palet-maquette\s+\.canonical-signed-out\.mr-sign-in\s+\.mr-sign-in-content:has\(\.tg2-info-sluier\)\{backdrop-filter:none;-webkit-backdrop-filter:none;z-index:auto\}/.test(
+        telegramCss,
+      ) &&
+      /body:has\(\.tga-aanmeld-open\s+\.tg2-info-sluier\)\s+\.canonical-chrome:has\(\.mr-sign-in\)\s+\.canonical-account-anchor\.mr-guest-mobile-account>\.canonical-account-menu\{pointer-events:none\}/.test(
+        telegramCss,
+      ) &&
+      /\.canonical-signed-out\.mr-sign-in\s+\.tga-aanmeld-open\s+\.tga-plaats-knop\s+\.tga-aanmeld-logo\s+svg[^{]*\{width:18px;height:18px;border-radius:0\}/.test(
+        telegramCss,
+      ),
+  );
 
   // 4. Живі поведінкові перевірки функцій plaatsVoorStart та paginaHtml / VENSTER_JS без бази даних
   const plaatsMod = await import('../../src/aanmelden/plaats');
@@ -598,6 +620,51 @@ export async function main(): Promise<number> {
       htmlUk.includes('id="plaats-acties"') &&
       htmlUk.includes('id="plaats-opnieuw"') &&
       venMod.VENSTER_JS.includes('sessionStorage'),
+  );
+
+  const langNaam = 'ОленаКовальДовгеБезпробільнеІмяОбліковогоЗаписуДляПеревіркиВідсутностіГоризонтальногоПереповненняКарткиВиборуПрофілюУЗахищеномуВікні130Симв';
+  const htmlTweeAccounts = venMod.paginaHtml(
+    {
+      ...testWeergave,
+      accounts: [
+        testWeergave.accounts[0],
+        { koppelingId: 'kp2', naam: langNaam, email: 'lang@voorbeeld.test', foto: '', letter: 'Л' },
+      ],
+    } as never,
+    'uk',
+  );
+  const stijlBlok = htmlTweeAccounts.match(/<style>([\s\S]*?)<\/style>/)?.[1] || '';
+  const hexVol = (kortOfVol: string): string =>
+    kortOfVol.length === 4 ? `#${kortOfVol[1]}${kortOfVol[1]}${kortOfVol[2]}${kortOfVol[2]}${kortOfVol[3]}${kortOfVol[3]}` : kortOfVol;
+  const relHelderheid = (hex: string): number => {
+    const h = hexVol(hex);
+    const k = [1, 3, 5]
+      .map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * k[0] + 0.7152 * k[1] + 0.0722 * k[2];
+  };
+  const contrastVerhouding = (a: string, b: string): number => {
+    const la = relHelderheid(a);
+    const lb = relHelderheid(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  };
+  const lichtRoot = stijlBlok.match(/:root\{([^}]+)\}/)?.[1] || '';
+  const donkerRoot = stijlBlok.match(/@media\s*\(prefers-color-scheme:dark\)\{:root\{([^}]+)\}\}/)?.[1] || '';
+  const accentLicht = lichtRoot.match(/--accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000000';
+  const opAccentLicht = lichtRoot.match(/--op-accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000000';
+  const accentDonker = donkerRoot.match(/--accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000000';
+  const opAccentDonker = donkerRoot.match(/--op-accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000000';
+  check(
+    'V-M2-U2-1 та V-M2-U2-2: перенесення довгих імен у fieldset.accounts без переповнення та контрастність >= 4.5:1 (світла) і >= 8.0:1 (темна) на .knop.hoofd і .rond.leeg',
+    htmlTweeAccounts.includes('<fieldset class="accounts"') &&
+      htmlTweeAccounts.includes(langNaam) &&
+      stijlBlok.includes('.accounts{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:5px}') &&
+      stijlBlok.includes('.accounts label{display:flex;align-items:center;gap:8px;min-width:0;') &&
+      stijlBlok.includes('.accounts label>span:last-child{min-width:0;overflow-wrap:anywhere}') &&
+      stijlBlok.includes('.rond.leeg{display:grid;place-items:center;background:var(--accent);color:var(--op-accent);') &&
+      stijlBlok.includes('.knop.hoofd,a.knop.hoofd{background:var(--accent);border-color:var(--accent);color:var(--op-accent)}') &&
+      contrastVerhouding(accentLicht, opAccentLicht) >= 4.5 &&
+      contrastVerhouding(accentDonker, opAccentDonker) >= 8.0,
   );
 
   // 5. Перевірка парної двомовної документації випробувань у docs/telegram-aanmelden/ та Мовного закону

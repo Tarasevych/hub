@@ -284,6 +284,7 @@ html.palet-puur :is(.canonical-chrome.theme-dark,.theme-dark) .tga-aanmeld-open 
 :is(.canonical-chrome:is(.theme-dark,.theme-plum-dark),html:is(.theme-dark,.theme-plum-dark)) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon:focus-visible{border-color:#5ec2f0;color:#7dd3fc;background:rgba(94,194,240,.14)}
 
 .tga-aanmeld-open .tg2-plaats-eis{display:grid;gap:8px;min-width:0}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-open .tga-plaats-knop .tga-aanmeld-logo svg,.tga-aanmeld-open .tga-plaats-knop .tga-aanmeld-logo svg{width:18px;height:18px;border-radius:0}
 .tga-aanmeld-open .tg2-annuleer-knop{width:100%;min-height:42px;border-radius:999px}
 
 .tg2-info-sluier{
@@ -292,9 +293,10 @@ html.palet-puur :is(.canonical-chrome.theme-dark,.theme-dark) .tga-aanmeld-open 
   display:flex;align-items:flex-end;justify-content:center;padding:0;margin:0;box-sizing:border-box;
   animation:tg2-sluier-in .16s ease-out
 }
-main.canonical-chrome:has(.tga-aanmeld-open .tg2-info-sluier) .canonical-workspace{z-index:auto}
+main.canonical-chrome:has(.tga-aanmeld-open .tg2-info-sluier) .canonical-workspace{z-index:auto;view-transition-name:none}
 html.palet-maquette .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in:has(.tg2-info-sluier){isolation:auto}
-html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content:has(.tg2-info-sluier){backdrop-filter:none;-webkit-backdrop-filter:none}
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content:has(.tg2-info-sluier){backdrop-filter:none;-webkit-backdrop-filter:none;z-index:auto}
+body:has(.tga-aanmeld-open .tg2-info-sluier) .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account>.canonical-account-menu{pointer-events:none}
 @keyframes tg2-sluier-in{from{opacity:0}to{opacity:1}}
 @keyframes tg2-blad-op{from{transform:translateY(16px);opacity:.72}to{transform:translateY(0);opacity:1}}
 

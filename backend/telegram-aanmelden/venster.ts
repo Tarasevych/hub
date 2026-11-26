@@ -117,8 +117,8 @@ async function weergave(tok: VensterToken, taal: Taal): Promise<Weergave | null>
 
 const SCHILD = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
 
-const CSS = `:root{color-scheme:light dark;--bg:#f4f7fb;--kaart:#fff;--tekst:#17212b;--zacht:#4b5966;--rand:#d9e1ea;--accent:#1d77b5;--gevaar:#b3261e;--ok:#1b6b3a}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1621;--kaart:#17212b;--tekst:#f2f5f8;--zacht:#a9b6c3;--rand:#2b3946;--accent:#5eb5f7;--gevaar:#ff8a80;--ok:#7fd99a}}
+const CSS = `:root{color-scheme:light dark;--bg:#f4f7fb;--kaart:#fff;--tekst:#17212b;--zacht:#4b5966;--rand:#d9e1ea;--accent:#1d77b5;--op-accent:#fff;--gevaar:#b3261e;--ok:#1b6b3a}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1621;--kaart:#17212b;--tekst:#f2f5f8;--zacht:#a9b6c3;--rand:#2b3946;--accent:#5eb5f7;--op-accent:#0b1622;--gevaar:#ff8a80;--ok:#7fd99a}}
 *{box-sizing:border-box}html,body{margin:0}body{font:15px/1.38 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tekst);padding:10px 12px 16px}
 main{max-width:440px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:9px}
 .kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}.kop-links{display:flex;align-items:center;gap:7px}.kop b{font-size:.95rem}.kop small{color:var(--zacht);font-size:.76rem}
@@ -140,16 +140,16 @@ h1{font-size:1rem;line-height:1.25;margin:0;overflow-wrap:anywhere}h2{font-size:
 .rij{display:flex;align-items:flex-start;gap:7px}.rij>span:last-child{min-width:0;overflow-wrap:anywhere}.rij img{width:18px;height:18px;border-radius:4px;flex:none;margin-top:2px}.rij small.bron{display:block;color:var(--zacht);font-size:.76rem}.rij img.vlag{width:22px;height:15px;border-radius:2px;box-shadow:0 0 0 1px var(--rand)}
 .label{color:var(--zacht);min-width:6.2em;font-size:.8rem;flex:none}
 .wie{display:grid;gap:4px}.persoon{display:flex;align-items:center;gap:8px;min-width:0}.persoon b{display:block;font-size:.88rem;overflow-wrap:anywhere}.persoon small{display:block;color:var(--zacht);font-size:.78rem;overflow-wrap:anywhere}
-.rond{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 2px var(--rand)}.rond.leeg{display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:700;font-size:.95rem}
+.rond{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 2px var(--rand)}.rond.leeg{display:grid;place-items:center;background:var(--accent);color:var(--op-accent);font-weight:700;font-size:.95rem}
 .accounts .rond{width:30px;height:30px;font-size:.85rem}
 .raster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .keuze{appearance:none;border:0;padding:0;background:none;border-radius:20px;cursor:pointer;display:block;width:100%}
 .keuze:focus-visible{outline:3px solid var(--accent);outline-offset:2px}.keuze[disabled]{cursor:not-allowed;opacity:.45}
 .keuze.gekozen{outline:3px solid var(--accent);outline-offset:2px}
-.accounts{display:grid;gap:5px}.accounts label{display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid var(--rand);border-radius:11px;cursor:pointer}
+.accounts{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:5px}.accounts label{display:flex;align-items:center;gap:8px;min-width:0;padding:6px 9px;border:1px solid var(--rand);border-radius:11px;cursor:pointer}.accounts input{flex:none;margin:0}.accounts label>span:last-child{min-width:0;overflow-wrap:anywhere}
 .waarschuwing{border-left:3px solid var(--gevaar);padding:6px 9px;background:color-mix(in srgb,var(--gevaar) 8%,transparent);border-radius:7px;font-size:.79rem;margin:0;line-height:1.32}
 .knop,a.knop{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;overflow-wrap:anywhere;text-decoration:none;text-align:center;border:1px solid var(--rand);background:var(--kaart);color:var(--tekst);border-radius:999px;min-height:44px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;width:100%}
-.knop.hoofd,a.knop.hoofd{background:var(--accent);border-color:var(--accent);color:#fff}.knop.nee{color:var(--gevaar);background:color-mix(in srgb,var(--gevaar) 6%,var(--kaart))}
+.knop.hoofd,a.knop.hoofd{background:var(--accent);border-color:var(--accent);color:var(--op-accent)}.knop.nee{color:var(--gevaar);background:color-mix(in srgb,var(--gevaar) 6%,var(--kaart))}
 .plaats-acties{display:grid;gap:7px;margin-top:4px}
 input[type=password],input[type=text]{width:100%;min-height:44px;font:inherit;font-size:1.15rem;letter-spacing:.15em;padding:7px 10px;border-radius:11px;border:1px solid var(--rand);background:var(--bg);color:var(--tekst);text-align:center}
 .uitkomst{font-weight:600;text-align:center;margin:0;font-size:.9rem}.uitkomst.goed{color:var(--ok)}.uitkomst.slecht{color:var(--gevaar)}[hidden]{display:none!important}
