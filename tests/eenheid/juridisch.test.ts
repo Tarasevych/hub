@@ -42,9 +42,14 @@ export async function main(): Promise<number> {
     const ukEerst = p.body.indexOf('id="uk"') > 0 && p.body.indexOf('id="uk"') < p.body.indexOf('id="nl"') && t.body.indexOf('id="uk"') < t.body.indexOf('id="nl"');
     check('talen: Oekraïens eerst, dan Nederlands, met ankers; geen Engelse versie', ukEerst && pt.includes('Політика конфіденційності') && pt.includes('Privacybeleid') && tt.includes('Умови користування') && tt.includes('Gebruiksvoorwaarden') && !/\bPrivacy Policy\b|\bTerms of Service\b/.test(pt + tt));
     check('privacy: verantwoordelijke + contact, Google-gegevens (sub/e-mail/naam/foto/auth_time), scopes, Limited Use + beleidslink, geen AI, Cloudflare, back-ups, 30 dagen, GBA/APD, cookies',
-      [EIGENAAR_NAAM, 'sub', 'auth_time', 'openid', 'gmail.readonly', 'gmail.send', 'calendar.readonly', 'calendar.events', 'photospicker.mediaitems.readonly', 'Limited Use', 'api-services-user-data-policy', 'штучного інтелекту', 'AI-model', 'Cloudflare', 'age', '30 днів', '30 dagen', 'Gegevensbeschermingsautoriteit', 'cookie', '2026-10-20']
+      [EIGENAAR_NAAM, 'sub', 'auth_time', 'openid', 'gmail.readonly', 'gmail.send', 'calendar.readonly', 'calendar.events', 'photospicker.mediaitems.readonly', 'Limited Use', 'api-services-user-data-policy', 'штучного інтелекту', 'AI-model', 'Cloudflare', 'age', '30 днів', '30 dagen', 'Gegevensbeschermingsautoriteit', 'cookie', '2026-11-26']
         .every((w) => p.body.includes(w)));
     check('terms: goedkeuring, aanvaardbaar gebruik, geen garantie, beëindiging, Belgisch recht', ['схвалення', 'Допустиме', '«як є»', 'Припинення', 'право Бельгії', 'goedkeuring', 'Aanvaardbaar gebruik', 'zoals hij is', 'Beëindiging', 'Belgisch recht'].every((w) => t.body.includes(w)));
+    check('SITE-001: meta description, canonical, favicon en de clausule over wijziging van de voorwaarden (uk + nl)',
+      [p, t].every((a) => /<meta name="description" content="[^"]{40,}">/.test(a.body) && a.body.includes('rel="canonical"') && a.body.includes('href="/favicon.svg"'))
+        && tt.includes('Зміни умов') && tt.includes('Wijziging van de voorwaarden'));
+    check('SITE-001: Oekraïense tekst zonder Engelse vaktermen (браузер, токен, кеш, хостинг, трафік, онлайн, e-mail) en zonder Russische letters',
+      [p, t].every((a) => { const uk = tekst(a.body.slice(a.body.indexOf('id="uk"'), a.body.indexOf('id="nl"'))); return uk.length > 1500 && !/браузер|[Тт]окен|кеш|хостинг|трафік|онлайн|e-mail|[ЁёЪъЫыЭэ]/.test(uk); }));
     check('links naar elkaar en naar de start', p.body.includes('href="/terms"') && t.body.includes('href="/privacy"') && p.body.includes('href="/"') && t.body.includes('href="/"'));
     const head = await haal(poort, '/privacy', 'hub.tarasevych.com', 'HEAD'), post = await haal(poort, '/privacy', 'hub.tarasevych.com', 'POST');
     const prefix = await haal(poort, '/privacy/extra'), slash = await haal(poort, '/privacyx'), spa = await haal(poort, '/inbox');
