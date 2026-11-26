@@ -32,7 +32,7 @@
 | 12 | Laadsnelheid | wacht | — |
 | 13 | Kleurcontrast | ✅ klaar | Bewaker groen (2190 paren); axe-core vond 22 knooppunten op `/privacy` en `/terms`; verholpen, nu 0 in lichte en donkere weergave |
 | 14 | Geschiktheid voor mobiel | wacht | — |
-| 15 | Eigen 404-pagina | wacht | Bestaande `src/NietGevonden.tsx` — controleren |
+| 15 | Eigen 404-pagina | ✅ klaar | Echte statuscode 404 voor onbekende adressen (was 200); zonder aanmelding een losse pagina zonder menu; pad gedecodeerd; test 24/24; axe 0 |
 | 16 | Kapotte koppelingen | wacht | — |
 | 17 | Validatie van alle formulieren | wacht | — |
 | 18 | Bescherming tegen spam | wacht | — |
@@ -48,7 +48,6 @@
 
 | Fout | Waar | Punt |
 |---|---|---|
-| Onbekende paden geven HTTP 200 («zachte 404»); de 404-pagina toont zonder aanmelding het hele menu, wordt op 1366 breed door het zijmenu bedekt en toont het pad gecodeerd | `server/start.ts` (`serveStatic`), `src/NietGevonden.tsx` | 15 |
 | Pagina's zonder aanmelding sturen `POST /api/owner/meldingen/regels` en `/api/owner/uitrol/achtergrond` → 401; `meldingen/regels` geeft 401 ook met aanmelding | `UitrolAchtergrondBand`, meldingen | 21 |
 | De weergavecontrole van het installatieprogramma (`server/rook.ts`) stopt met code 2: `/api/owner/tech/activeren` → 409 `GEBRUIK_RUIMTES_V2` sinds ruimtes v2 aan staan | `server/rook.ts`, `backend/tech-profiel.ts:156` | 22 |
 | Het woord «акаунт» staat 264 keer in de interface (volgens de taalwet: «обліковий запис») | `src/**` | beslissing van de eigenaar |
@@ -153,6 +152,26 @@ Na de correctie: 0 schendingen in lichte en donkere weergave.
 | ![voor](schermafdrukken/p13-voor.webp) | ![na](schermafdrukken/p13-na.webp) |
 | ![voor, donker](schermafdrukken/p13-voor-donker.webp) | ![na, donker](schermafdrukken/p13-na-donker.webp) |
 
+### 15. Eigen 404-pagina
+
+De pagina «Pagina niet gevonden» (`src/NietGevonden.tsx`) bestond al, maar had vier fouten — alle verholpen:
+- **«zachte 404»:** de server antwoordde op elk onbekend adres met 200, zodat zoekmachines en koppelingscontroles het als echte pagina zagen. Nu voert `server/platform/onbekend-pad.ts` dezelfde functie `resolve` uit `canonical-service.js` uit als de browser (in een afgeschermde `vm`-context, zonder tweede lijst van tabbladen), en antwoordt de server bij een onbekend adres met **404**. Tabbladen, oude adressen en aliassen, gasttoegang `id/toegang`, OAuth-terugkeer en gedeelde cloudkoppelingen blijven 200. Bij elke fout in de controle: oud gedrag (200);
+- **zonder aanmelding** zag men het hele dienstenmenu (op hub bedekte het op 1366 breed ook de kaart), en op andere diensten in plaats van 404 het aanmeldscherm. Nu staat de 404-pagina zonder aanmelding op zichzelf, gecentreerd; met aanmelding de gewone schil (geen bedekking);
+- **gecodeerd pad** (`/%D1%89%D0%BE`) → getoond zoals een mens het leest (`/що`);
+- titel van het tabblad — «Сторінку не знайдено — <служба>» / «Pagina niet gevonden — <dienst>».
+
+Bewakingstest `tests/eenheid/site-001-404.test.ts` — 24/24. axe-core — 0 schendingen.
+
+| Voor | Na |
+|---|---|
+| ![voor: menu bedekt de kaart](schermafdrukken/p15-voor.webp) | ![na](schermafdrukken/p15-na.webp) |
+| ![voor: pad gecodeerd](schermafdrukken/p15-voor-kodovanyi.webp) | ![na: pad gedecodeerd](schermafdrukken/p15-na-kodovanyi.webp) |
+| ![voor: e-mail toont aanmelden](schermafdrukken/p15-voor-mail.webp) | ![na: e-mail](schermafdrukken/p15-na-mail.webp) |
+| ![voor: telefoon](schermafdrukken/p15-voor-mobiel.webp) | ![na: telefoon](schermafdrukken/p15-na-mobiel.webp) |
+| ![voor: statuscodes](schermafdrukken/p15-kody-voor.webp) | ![na: statuscodes](schermafdrukken/p15-kody-na.webp) |
+| | ![na: Nederlands](schermafdrukken/p15-na-nl.webp) |
+| | ![na: aangemeld, zonder bedekking](schermafdrukken/p15-na-aangemeld.webp) |
+
 ### 19. Siteanalyse (samen met punt 5 uitgevoerd)
 
 De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
@@ -170,3 +189,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **26.11.2026 00:25** — punten 6–9 klaar (titels, voorbeeldafbeelding, pictogrammen, `sitemap.xml`, `robots.txt`); zwarte pagina van het tabblad «Bezoeken» verholpen; volledige bouw groen.
 - **26.11.2026 06:00** — punten 10 en 11 klaar. De eigenaar gaf opdracht «акаунт» overal in de interface te vervangen door «обліковий запис».
 - **26.11.2026 06:20** — punt 13 klaar: datumkleur en koppelingen in donkere weergave op de juridische pagina's verholpen; axe-core 0 schendingen.
+- **26.11.2026 06:40** — punt 15 klaar: echte 404 op de server, losse pagina zonder aanmelding, gedecodeerd pad.

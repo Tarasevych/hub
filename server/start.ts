@@ -48,6 +48,7 @@ import { isCanoniekPad, type LambdaEvent, type RouterResponse } from './platform
 import { schakelaarsVerversen } from './platform/schakelaars';
 import { procesVangnetInstellen } from './platform/proces-vangnet';
 import { statischDoel } from './platform/statisch-pad'; /* SEC-002 http-rand-04 */
+import { onbekendAppPad } from './platform/onbekend-pad'; /* SITE-001 пункт 15: справжня 404 */
 import { limietSleutel } from '../shared/ip-limiet';
 import { leesBodyBegrensd, zetAanmeldControle } from './platform/tekst-budget';
 import { aanmeldingEcht } from './platform/tekst-aanmelding';
@@ -239,7 +240,8 @@ async function fileStat(p: string) {
   try { const s = await stat(p); return s.isFile() ? s : null; } catch { return null; }
 }
 
-async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, file: string, csp: string, immutable: boolean, extra?: Readonly<Record<string, string>>) {
+// SITE-001 (пункт 15): `status` — 404 для невідомої адреси застосунку (тіло — та сама index.html, сторінку «не знайдено» малює застосунок).
+async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, file: string, csp: string, immutable: boolean, extra?: Readonly<Record<string, string>>, status = 200) {
   const s = await fileStat(file);
   if (!s) return false;
   const ext = path.extname(file).toLowerCase();
@@ -273,18 +275,18 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     if (codering && buf) {
       const etagGz = `${etag.slice(0, -1)}-${codering === 'br' ? 'br' : 'gz'}"`;
       headers.ETag = etagGz;
-      if (req.headers['if-none-match'] === etagGz) { send(res, 304, headers); return true; }
+      if (status === 200 && req.headers['if-none-match'] === etagGz) { send(res, 304, headers); return true; }
       headers['Content-Encoding'] = codering;
       headers['Content-Length'] = String(buf.length);
-      if (req.method === 'HEAD') { send(res, 200, headers); return true; }
-      send(res, 200, headers, buf);
+      if (req.method === 'HEAD') { send(res, status, headers); return true; }
+      send(res, status, headers, buf);
       return true;
     }
   }
-  if (req.headers['if-none-match'] === etag) { send(res, 304, headers); return true; }
+  if (status === 200 && req.headers['if-none-match'] === etag) { send(res, 304, headers); return true; }
   headers['Content-Length'] = String(s.size);
-  if (req.method === 'HEAD') { send(res, 200, headers); return true; }
-  res.writeHead(200, { ...BASE_HEADERS, ...headers });
+  if (req.method === 'HEAD') { send(res, status, headers); return true; }
+  res.writeHead(status, { ...BASE_HEADERS, ...headers });
   createReadStream(file).on('error', () => res.destroy()).pipe(res);
   return true;
 }
@@ -315,7 +317,9 @@ async function serveStatic(req: http.IncomingMessage, res: http.ServerResponse, 
   if (await serveFile(req, res, file, csp, immutable)) return;
   // SPA-fallback: alleen voor "pagina"-paden zonder extensie (tabpaden zoals /inbox).
   if (spa && !path.posix.extname(doel.pad)) {
-    if (await serveFile(req, res, path.join(root, 'index.html'), csp, false)) return;
+    // SITE-001 (пункт 15): адреса, якої застосунок не знає (та сама перевірка, що в оглядачі), — код 404 замість «м'якої» 200.
+    const status = onbekendAppPad(root, String(req.headers.host || ''), url) ? 404 : 200;
+    if (await serveFile(req, res, path.join(root, 'index.html'), csp, false, undefined, status)) return;
   }
   return sendText(res, 404, 'Niet gevonden');
 }

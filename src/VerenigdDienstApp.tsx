@@ -1014,6 +1014,8 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     />
   );
 
+  // SITE-001 (пункт 15): невідома адреса без входу — сторінка 404 сама, а не вхід чи меню служб. nl: onbekend adres zonder aanmelding → losse 404-pagina.
+  if(routeOnbekend()&&state==='signed_out')return <NietGevonden lang={lang} los/>;
   return (
     <>
       <CanonicalChrome
