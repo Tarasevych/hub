@@ -296,6 +296,7 @@ export default function MeldingenPortaal({
   const laatsteGeoRef = useRef<VensterGeometrie>(geo);
   laatsteGeoRef.current = geo;
   const vorigeVoorVolledigRef = useRef<VensterGeometrie | null>(null);
+  const compactMaatDoorGebruikerRef = useRef<{ breedte: number; hoogte: number } | null>(null);
 
   const [schermBreedte, setSchermBreedte] = useState<number>(() => leesScherm().breedte);
   const [zoek, setZoek] = useState('');
@@ -458,13 +459,26 @@ export default function MeldingenPortaal({
     const onResize = () => {
       const scherm = leesScherm();
       setSchermBreedte(scherm.breedte);
+      if (sleepStaat.current) return;
       setGeo((h) => {
         if (compactBijBel) {
+          const m = compactMaatDoorGebruikerRef.current ?? leesCompactMaat();
           const r = vindZichtbareBel();
           if (r) {
-            const bijBel = klemVenster({ ...h, x: r.right - h.breedte, y: r.bottom + 10 }, scherm);
+            const bijBel = klemVenster(
+              { ...h, breedte: m.breedte, hoogte: m.hoogte, modus: 'normaal', x: r.right - m.breedte, y: r.bottom + 10 },
+              scherm,
+            );
             laatsteGeoRef.current = bijBel;
             return bijBel;
+          }
+          if (scherm.breedte > 768) {
+            const hersteldCompact = klemVenster(
+              { ...h, breedte: m.breedte, hoogte: m.hoogte, modus: 'normaal', x: scherm.breedte - m.breedte - 16, y: 66 },
+              scherm,
+            );
+            laatsteGeoRef.current = hersteldCompact;
+            return hersteldCompact;
           }
         }
         if (!compactBijBel && scherm.breedte > 768 && h.breedte < 620 && (h.modus === 'breed' || h.modus === 'volledig')) {
@@ -744,6 +758,7 @@ export default function MeldingenPortaal({
       sleepStaat.current = null;
       const eindGeo = pasSleepBewegingToe(clientX, clientY) ?? laatsteGeoRef.current;
       if (s.compactModus) {
+        compactMaatDoorGebruikerRef.current = { breedte: Math.round(eindGeo.breedte), hoogte: Math.round(eindGeo.hoogte) };
         bewaarCompactMaat(eindGeo.breedte, eindGeo.hoogte);
       } else {
         onSlaGeometrieOp(eindGeo, true);

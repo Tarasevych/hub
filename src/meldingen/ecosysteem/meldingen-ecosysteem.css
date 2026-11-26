@@ -2454,6 +2454,7 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
 
 /* Однорядкова смуга 6 компактних піктограмних вкладок у .mel-filters */
 .mel-filters.puls-filters-slank {
+  container-type: inline-size;
   padding: 6px 10px;
 }
 
@@ -3616,6 +3617,54 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   .mel-filters.puls-filters-slank {
     padding: 6px 6px;
   }
+  .mel-filters.puls-filters-slank .puls-tabs-rij {
+    gap: 3px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 2px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.heeft-teller:not(.is-actief) {
+    margin-right: 1px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .mel-filters.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop.mel-ikoon-knop {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 28px;
+    min-height: 28px;
+    max-width: 102px;
+    padding: 0 6px;
+    gap: 3px;
+  }
+}
+
+@container (max-width: 424px) {
+  .mel-filters.puls-filters-slank .puls-tabs-rij {
+    gap: 4px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 3px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .mel-filters.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop.mel-ikoon-knop {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 30px;
+    min-height: 30px;
+    max-width: 126px;
+    padding: 0 8px;
+  }
+}
+
+@container (max-width: 368px) {
   .mel-filters.puls-filters-slank .puls-tabs-rij {
     gap: 3px;
   }

@@ -455,7 +455,9 @@ export async function main(): Promise<number> {
   const { nieuwApparaatTekst } = await import('../../backend/nieuw-apparaat');
   const { siteEventsFromAudit } = await import('../../backend/site-activiteit');
   const { interpreteerGebeurtenis } = await import('../../shared/meldingen-ecosysteem/tolk');
-  const { herkenMerkEnAnker, verrijkGebeurtenisVoorPuls } = await import('../../shared/meldingen-puls/kern');
+  const { bepaalOorzaakSleutel, bundelOorzaakKetens, herkenMerkEnAnker, verrijkGebeurtenisVoorPuls } = await import(
+    '../../shared/meldingen-puls/kern'
+  );
   const { bouwUniformeStroom, leesLokaalProfiel } = await import('../../src/meldingen/ecosysteem/ecosysteem-opslag');
   const { default: MeldingVeegKaart } = await import('../../src/meldingen/ecosysteem/MeldingVeegKaart');
   const { default: MeldingenPortaal } = await import('../../src/meldingen/ecosysteem/MeldingenPortaal');
@@ -759,6 +761,66 @@ export async function main(): Promise<number> {
       !gemengdHtmlUk.includes('Показано 5 із 20') &&
       gemengdHtmlNl.includes('5 van 7 getoond') &&
       !gemengdHtmlNl.includes('5 van 20 getoond'),
+  );
+
+  // Регресія V-M3-5 (Ітерація 3 · Вада А): українське «Gmail підключено» не вважається аварією ключа і не склеюється з новим входом Google у «Першопричину»
+  const auditGoogleOauthEnApp = siteEventsFromAudit([
+    { id: '601', action: 'owner.mail.google-oauth.completed', result: 'success', createdAt: nu - 5_000, details: { email: 'olesia.koval@gmail.com' } },
+    { id: '602', action: 'owner.apparaat.nieuw', result: 'success', createdAt: nu - 8_000, details: { id: '55555555-6666-4777-8888-999999999999', apparaat: 'Chrome/Android', methode: 'google' } },
+  ]);
+  const stroomGoogleUk = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: auditGoogleOauthEnApp,
+    activityRead: new Set(),
+    titelVanActiviteit: (ev) =>
+      ev.type === 'owner.mail.google-oauth.completed'
+        ? 'Gmail підключено'
+        : 'Виявлено вхід із нового незнайомого пристрою',
+  });
+  const stroomGoogleNl = bouwUniformeStroom({
+    lang: 'nl',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: auditGoogleOauthEnApp,
+    activityRead: new Set(),
+    titelVanActiviteit: (ev) =>
+      ev.type === 'owner.mail.google-oauth.completed'
+        ? 'Gmail gekoppeld'
+        : 'Nieuwe aanmelding op een nieuw apparaat',
+  });
+  const gmailUkItem = stroomGoogleUk.find((g) => g.meta?.actieCode === 'owner.mail.google-oauth.completed')!;
+  const bundelGoogleUk = bundelOorzaakKetens(stroomGoogleUk, 'uk');
+  const bundelGoogleNl = bundelOorzaakKetens(stroomGoogleNl, 'nl');
+  controleer(
+    'регресія V-M3-5: «Gmail підключено» в uk дає bepaalOorzaakSleutel === null і bundelOorzaakKetens залишає 2 окремі картки без фальшивої «Першопричини» (як і в nl)',
+    Boolean(gmailUkItem) &&
+      bepaalOorzaakSleutel(gmailUkItem, 'uk') === null &&
+      bundelGoogleUk.length === 2 &&
+      bundelGoogleUk.every((e) => e.soort === 'los') &&
+      bundelGoogleNl.length === 2 &&
+      bundelGoogleNl.every((e) => e.soort === 'los'),
+  );
+
+  // Регресія V-M3-6 (Ітерація 3 · Вада Б): ущільнення смуги 6 вкладок .puls-tabs через container-type: inline-size та @container для вузької панелі 310 px на ПК
+  const ecoCssInhoud = readFileSync(join(rootDir, 'src/meldingen/ecosysteem/meldingen-ecosysteem.css'), 'utf8');
+  controleer(
+    'регресія V-M3-6: meldingen-ecosysteem.css містить container-type: inline-size та правила @container для адаптивного ущільнення .puls-tabs без !important',
+    /\.mel-filters\.puls-filters-slank\s*\{[^}]*container-type:\s*inline-size/s.test(ecoCssInhoud) &&
+      ecoCssInhoud.includes('@container (max-width: 424px)') &&
+      ecoCssInhoud.includes('@container (max-width: 368px)') &&
+      !/!important/i.test(ecoCssInhoud),
   );
 
   const ukDocPad = join(rootDir, 'docs/meldingen/ВИПРОБУВАННЯ-10-ВАД-СПОВІЩЕНЬ-HERSTEL-001.uk.md');

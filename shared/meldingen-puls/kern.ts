@@ -574,19 +574,47 @@ export function verrijkGebeurtenisVoorPuls(geb: MeldingEcosysteemGebeurtenis, la
   };
 }
 
-function bepaalOorzaakSleutel(geb: MeldingEcosysteemGebeurtenis, lang: Taal): { sleutel: string; aanbiederLabel: string } | null {
+export function bepaalOorzaakSleutel(
+  geb: MeldingEcosysteemGebeurtenis,
+  lang: Taal,
+): { sleutel: string; aanbiederLabel: string } | null {
   if (geb.status === 'archief' || geb.status === 'opgelost') return null;
   const volBericht = `${geb.titel} ${geb.bericht}`;
   if (/(зв’язок відновлено|знову працює|verbinding hersteld|werkt weer)/i.test(volBericht) && !/(не працює|werkt niet)/i.test(volBericht)) {
     return null;
   }
+  const bronSoort = `${geb.bron} ${geb.externeSleutel} ${String(geb.meta?.actieCode || '')}`;
+  const heeftFoutOfWachtSignaal =
+    /\b(?:error|failed|rejected|timeout|denied|expired|revoked)\b/i.test(bronSoort) ||
+    /(?:(?<![\p{L}])не(?![\p{L}])|помилк|не вда|відхилен|заблокован|прострочен|відкликан|відсутн|зупинен|зупинив|немає|тривог|очікує|просить|потребує|потрібн|виявлен|підозріл|перерван|втрачен|\bniet\b|\bgeen\b|fout|mislukt|verlopen|ingetrokken|geblokkeerd|geweigerd|storing|alarm|wacht|vereist|verzoek|verdacht|onderbroken|verloren)/iu.test(
+      volBericht,
+    );
+  const isAfgerondeSuccesActie =
+    geb.prioriteit !== 'kritiek' &&
+    !heeftFoutOfWachtSignaal &&
+    (/(?:^|[._\s-])(?:completed|connected|linked|disconnected|recorded|modified|updated|enrolled|gekoppeld|verbonden|geslaagd|bevestigd|goedgekeurd|hersteld|gedeblokkeerd|klaar|ingesteld|vertrouwd)(?:$|[._\s-])/i.test(
+      bronSoort,
+    ) ||
+      /(?:\b(?:gekoppeld|verbonden|geslaagd|voltooid)\b|(?<![\p{L}])(?:підключено|прив[’']язано|відновлено|завершено|збережено)(?![\p{L}]))/iu.test(
+        volBericht,
+      ));
+  if (isAfgerondeSuccesActie) return null;
+
   const tekst = zonderEmailAdressen(
     `${geb.bron} ${geb.titel} ${geb.bericht} ${geb.contextLabel} ${String(geb.meta?.provider || '')}`,
   ).toLowerCase();
+  const heeftSleutelStoring =
+    /(?<![\p{L}])ключ(?:і|а|у|ем|еві|ів)?(?![\p{L}])/iu.test(tekst) &&
+    /(простроч|відклик|недійсн|втрач|закінч|минув|помилк|збій|не прац|очікує|потріб|потребує|оновіть|замініть|підтверд|заблоков|відсутн|перевір|verlopen|ingetrokken|ongeldig|fout|wacht|vereist|bevestig|geblokkeerd)/iu.test(
+      tekst,
+    );
   const isStoringOfWacht =
     geb.prioriteit === 'hoog' ||
     geb.prioriteit === 'kritiek' ||
-    /(не синхроніз|відкликав|увійдіть|помилка|не вдалася|зупинен|немає з’єднання|ключ|mislukt|verlopen|ingetrokken|geen verbinding|fout|storing|geblokkeerd)/i.test(tekst);
+    heeftSleutelStoring ||
+    /(не синхроніз|відкликав|відкликан|прострочен|недійсн|увійдіть|помилка|не вдалася|зупинен|немає з’єднання|mislukt|verlopen|ingetrokken|geen verbinding|fout|storing|geblokkeerd)/i.test(
+      tekst,
+    );
   if (!isStoringOfWacht) return null;
 
   if (/\b(google|gmail|googledrive|google-drive)\b/.test(tekst)) return { sleutel: 'aanbieder:google', aanbiederLabel: 'Google' };
