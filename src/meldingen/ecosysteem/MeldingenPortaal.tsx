@@ -26,6 +26,7 @@ import {
   ChevronsUpDown,
   Clock3,
   Columns2,
+  Info,
   Layers,
   Maximize2,
   Minimize2,
@@ -78,6 +79,7 @@ import {
   type VoorwaardelijkUitstelSoort,
 } from '../../../shared/meldingen-puls/kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
+import { vertaalAanmeldMethode } from '../../../shared/meldingen-ecosysteem/tolk';
 import Merk from '../../merk/Merk';
 import { useZijbalkVoorkeuren } from '../../zijbalk-voorkeuren';
 import IcoonActieKnop from '../IcoonActieKnop';
@@ -1186,6 +1188,15 @@ export default function MeldingenPortaal({
         </div>
       )}
 
+      {open && compactBijBel && schermBreedte <= 768 && (
+        <div
+          className='mel-compact-sluier'
+          data-qa-id='mel-compact-sluier'
+          aria-hidden='true'
+          onClick={onSluiten}
+        />
+      )}
+
       {open && (
         <section
           ref={vensterRef}
@@ -1831,7 +1842,18 @@ export default function MeldingenPortaal({
                             {geselecteerdVerrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} />}
                           </div>
                           <strong>{schoonKaartTitel(geselecteerd.titel)}</strong>
-                          {geselecteerd.contextLabel && <small>{geselecteerd.contextLabel}</small>}
+                          {(() => {
+                            const ruwDetailCtx = (geselecteerd.contextLabel || '').trim();
+                            const schoonDetailCtx =
+                              !ruwDetailCtx || /^[a-z_]+\s*·\s*[a-z_]+$/i.test(ruwDetailCtx)
+                                ? `${subdomeinMenselijkLabel(geselecteerd.subdomein, lang)} · ${kanaalLabel(geselecteerd.kanaal, lang)}`
+                                : ruwDetailCtx
+                                    .split(/\s*·\s*/)
+                                    .map((stuk) => vertaalAanmeldMethode(stuk, lang) || stuk.trim())
+                                    .filter(Boolean)
+                                    .join(' · ');
+                            return schoonDetailCtx ? <small>{schoonDetailCtx}</small> : null;
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1889,6 +1911,39 @@ export default function MeldingenPortaal({
                       />
                     )}
 
+                    <details className='puls-technische-details' data-geen-veeg='1'>
+                      <summary>
+                        <Info aria-hidden='true' />
+                        <span>{t('Технічні подробиці', 'Technische details')}</span>
+                      </summary>
+                      <dl className='puls-technische-dl'>
+                        {typeof geselecteerd.meta?.actieCode === 'string' && geselecteerd.meta.actieCode.trim() && (
+                          <div>
+                            <dt>{t('Код дії', 'Actiecode')}</dt>
+                            <dd><code>{geselecteerd.meta.actieCode.trim()}</code></dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt>{t('Розділ і канал', 'Onderdeel en kanaal')}</dt>
+                          <dd><code>{`${geselecteerd.subdomein} · ${geselecteerd.kanaal}`}</code></dd>
+                        </div>
+                        <div>
+                          <dt>{t('Джерело', 'Bron')}</dt>
+                          <dd><code>{geselecteerd.bron}</code></dd>
+                        </div>
+                        {typeof geselecteerd.meta?.foutCode === 'string' && geselecteerd.meta.foutCode.trim() && (
+                          <div>
+                            <dt>{t('Код причини', 'Redencode')}</dt>
+                            <dd><code>{geselecteerd.meta.foutCode.trim()}</code></dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt>{t('Ключ запису', 'Sleutel')}</dt>
+                          <dd><code>{geselecteerd.externeSleutel || geselecteerd.id}</code></dd>
+                        </div>
+                      </dl>
+                    </details>
+
                     <MeldingAiPaneel
                       lang={lang}
                       gebeurtenis={geselecteerd}
@@ -1914,7 +1969,12 @@ export default function MeldingenPortaal({
 
           <div className='mel-voet puls-voet' role='region' aria-label={t('Дії екосистеми', 'Ecosysteemacties')}>
             <span className='puls-voet-teller'>
-              {t(`Подій: ${gefilterd.length}`, `Gebeurtenissen: ${gefilterd.length}`)}
+              {statusFilter === 'actief'
+                ? t(
+                    `Увага: ${gefilterd.length} · Усього: ${tellers.totaal}`,
+                    `Aandacht: ${gefilterd.length} · Totaal: ${tellers.totaal}`,
+                  )
+                : t(`Подій: ${gefilterd.length}`, `Gebeurtenissen: ${gefilterd.length}`)}
             </span>
 
             {!isAanraakScherm && (

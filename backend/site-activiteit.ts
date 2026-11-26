@@ -8,8 +8,9 @@ import { doelVan } from '../shared/beheer-journaal';
 export type SiteEvent = { id: string; source: string; platform: string; kind: 'site'; type: string; subject: string; status: 'succeeded' | 'failed' | 'rejected'; createdAt: number; finishedAt: number;
   /** Alleen bij AI-acties (owner.mcp.tool): wat, waarop, en bij mislukking WAAROM — zodat de melding de kern noemt, niet alleen «помилка». */
   tool?: string; doel?: string; client?: string; geweigerd?: boolean; code?: string; reden?: string; /** UI-014: einde van een toegang (ISO), bv. extensie. */ eind?: string;
-  /** HERSTEL-001 (MELD-6): безпечний ідентифікатор запису пристрою (UUID) для підтвердження входу та зведення дублів. */
+  /** HERSTEL-001 (MELD-6): безпечний ідентифікатор запису пристрою (UUID) та код способу входу для локалізованого показу. */
   apparaatId?: string;
+  methode?: string;
   /** 22.10.2026: technische auditcontext (profiel/activatie, server/platform/audit.ts) → sfeer 'technisch' (shared/meldingen-soorten.ts). Nooit de id's zelf naar de browser. */
   context?: { profiel?: string; activatie?: string };
   /** 23.10.2026: de handeling gebeurde in de TECHNISCHE ruimte (details.ruimte/lade 'technisch', of een v2-hulpmiddel van de beheerkant
@@ -24,6 +25,7 @@ export type SiteEvent = { id: string; source: string; platform: string; kind: 's
 export const SITE_RUIS = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.(ecosysteem\.(actie|profiel|ontvangst|aflevering_overzicht)|bijlage\.telegram)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh|migrated\.to-ecosystem|restored\.remembered)|telegram\.venster\.geopend$|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
 const SKIP = SITE_RUIS;
 const RULES: Array<[RegExp, string]> = [
+  [/^owner\.mail\.microsoft|^mail\.microsoft/, 'mail:microsoft'],
   [/^owner\.mail\.|^mail\./, 'mail:google'], [/^owner\.cloud\.|^cloud\./, 'cloud:google'], [/^owner\.calendar\.|^agenda\./, 'calendar:google'], [/^owner\.github\./, 'github'],
   [/^owner\.ai\.|^owner\.chat\./, 'ai:anthropic'], [/^owner\.(agent|agents)\.|^owner\.(terminal|remote)\./, 'agent'],
   [/^owner\.(mcp|vaardigheden|connector)\.|^koppeling_gewijzigd$/, 'claude'], [/^owner\.(browser|extensie)\./, 'browser'],
@@ -99,12 +101,10 @@ export function siteEventsFromAudit(rows: Array<{ id: string; action: string; re
         ev.apparaatId = r.details.id.trim();
       }
       const appLabel = typeof r.details.apparaat === 'string' ? r.details.apparaat.trim().slice(0, 60) : '';
-      const appMethode = typeof r.details.methode === 'string' ? r.details.methode.trim().slice(0, 24) : '';
+      const appMethode = typeof r.details.methode === 'string' && /^[a-z0-9_-]{2,24}$/i.test(r.details.methode.trim()) ? r.details.methode.trim().toLowerCase() : '';
+      if (appMethode) ev.methode = appMethode;
       if (!ev.subject && appLabel) ev.subject = appLabel;
-      if (!ev.doel) {
-        const delen = [appMethode, appLabel].filter(Boolean);
-        if (delen.length) ev.doel = delen.join(' · ');
-      }
+      if (!ev.doel && appLabel) ev.doel = appLabel;
     }
     if (!ev.doel && afgeleidDoel?.naam) ev.doel = afgeleidDoel.naam.slice(0, 80);
     // Elke andere mislukte actie krijgt de foutcode uit het journaal (alleen een code), zodat de melding zegt waarom. Voor AI-acties staat dat hierboven.

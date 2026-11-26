@@ -105,7 +105,7 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
     id: 'MELD-4',
     schermafdrukken: ['Screenshot_20261125_132441_com.android.chrome.jpg'],
     titelUk:
-      'Неофіційний одноколірний дубль-логотип Gmail (просто червона буква M із merk-logos.ts замість офіційного багатоколірного знака з єдиного реєстру src/merk/officieel/) та хибний підпис «Gmail · Вхід і пристрій» через спрацювання /\\bgmail\\b/i на @gmail.com',
+      'Неофіційний одноколірний дубль-логотип Gmail (просто червона літера M із merk-logos.ts замість офіційного багатоколірного знака з єдиного реєстру src/merk/officieel/) та хибний підпис «Gmail · Вхід і пристрій» через спрацювання /\\bgmail\\b/i на @gmail.com',
     titelNl:
       'Onofficieel eenkleurig duplicaat-logo van Gmail (enkel rode letter M uit merk-logos.ts in plaats van het officiële meerkleurige teken uit src/merk/officieel/) en foutief opschrift «Gmail · Aanmelding en apparaat» door match op @gmail.com',
     doelBestanden: [
@@ -115,13 +115,13 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
       'src/merk/officieel-sleutels.ts',
     ],
     oorzaakUk:
-      'По-перше, за правилом REESTR-LOGO-001 усі логотипи мають походити з одного офіційного джерела (src/merk/officieel/), але gmail забули додати до KEUZE у scripts/merk-officieel-maken.mjs і залишили одноколірний червоний контур-букву M у src/merk/merk-logos.ts. По-друге, zoekMerkInTekst у src/MenuMeldingen.tsx спрацьовує на домен @gmail.com у поштовій адресі tarasevych.pavlo@gmail.com раніше за /\\bgoogle\\b/i.',
+      'По-перше, за правилом REESTR-LOGO-001 усі логотипи мають походити з одного офіційного джерела (src/merk/officieel/), але gmail забули додати до KEUZE у scripts/merk-officieel-maken.mjs і залишили одноколірний червоний контур-літеру M у src/merk/merk-logos.ts. По-друге, zoekMerkInTekst у src/MenuMeldingen.tsx спрацьовує на домен @gmail.com у поштовій адресі olesia.koval@gmail.com раніше за /\\bgoogle\\b/i.',
     oorzaakNl:
-      'Ten eerste moeten volgens REESTR-LOGO-001 alle logo’s uit één officiële bron (src/merk/officieel/) komen, maar gmail ontbreekt in KEUZE van scripts/merk-officieel-maken.mjs en staat nog als eenkleurige rode letter M in src/merk/merk-logos.ts. Ten tweede matcht zoekMerkInTekst in src/MenuMeldingen.tsx op het domein @gmail.com in tarasevych.pavlo@gmail.com vóór /\\bgoogle\\b/i.',
+      'Ten eerste moeten volgens REESTR-LOGO-001 alle logo’s uit één officiële bron (src/merk/officieel/) komen, maar gmail ontbreekt in KEUZE van scripts/merk-officieel-maken.mjs en staat nog als eenkleurige rode letter M in src/merk/merk-logos.ts. Ten tweede matcht zoekMerkInTekst in src/MenuMeldingen.tsx op het domein @gmail.com in olesia.koval@gmail.com vóór /\\bgoogle\\b/i.',
     herstelEisUk:
-      'Додати офіційний чотириколірний логотип gmail (google-gmail із @iconify-json/logos) до єдиного реєстру src/merk/officieel/ через scripts/merk-officieel-maken.mjs, прибрати одноколірний дубль із src/merk/merk-logos.ts та не зіставляти домен поштової адреси @gmail.com як службу Gmail у сповіщеннях безпеки входу.',
+      'Додати офіційний чотириколірний логотип gmail (google-gmail-2020 із @iconify-json/logos) до єдиного реєстру src/merk/officieel/ через scripts/merk-officieel-maken.mjs, прибрати одноколірний дубль із src/merk/merk-logos.ts та не зіставляти домен поштової адреси @gmail.com як службу Gmail у сповіщеннях безпеки входу.',
     herstelEisNl:
-      'Voeg het officiële vierkleurige gmail-logo (google-gmail uit @iconify-json/logos) toe aan src/merk/officieel/ via scripts/merk-officieel-maken.mjs, verwijder het eenkleurige duplicaat uit src/merk/merk-logos.ts en herken het e-maildomein @gmail.com niet als de dienst Gmail in aanmeldbeveiligingsmeldingen.',
+      'Voeg het officiële vierkleurige gmail-logo (google-gmail-2020 uit @iconify-json/logos) toe aan src/merk/officieel/ via scripts/merk-officieel-maken.mjs, verwijder het eenkleurige duplicaat uit src/merk/merk-logos.ts en herken het e-maildomein @gmail.com niet als de dienst Gmail in aanmeldbeveiligingsmeldingen.',
   },
   {
     id: 'MELD-5',
@@ -163,7 +163,7 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
     oorzaakNl:
       'In tolk.ts valt owner.apparaat.nieuw door het woord apparaat onder subdomein="mcp", kanaal="mcp", prioriteit="laag" en krijgt niveau="gewoon" zonder bevestigingsknoppen, terwijl in MeldingVeegKaart.tsx de knop «Dit was ik» alleen onStatus("opgelost") aanroept zonder POST /api/meldingen/apparaat-bekend.',
     herstelEisUk:
-      'Класифікувати owner.apparaat.nieuw як kanaal="beveiliging", subdomein="id", niveau="gevaar", дедуплікувати парні записи з site_notifications та при натисканні «Це я» в MeldingVeegKaart викликати POST /api/meldingen/apparaat-bekend.',
+      'Класифікувати owner.apparaat.nieuw як kanaal="beveiliging", subdomein="id", niveau="gevaar", об’єднувати парні записи з site_notifications та при натисканні «Це я» в MeldingVeegKaart викликати POST /api/meldingen/apparaat-bekend.',
     herstelEisNl:
       'Classificeer owner.apparaat.nieuw als kanaal="beveiliging", subdomein="id", niveau="gevaar", ontdubbel gekoppelde rijen met site_notifications en roep bij «Dit was ik» in MeldingVeegKaart POST /api/meldingen/apparaat-bekend aan.',
   },
@@ -207,7 +207,7 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
       'src/meldingen/ecosysteem/MeldingVeegKaart.tsx',
     ],
     oorzaakUk:
-      'siteActieTekst у src/melding-stijl.tsx повертає заглушку з відсиланням до неіснуючого в MeldingVeegKaart блоку «Технічні подробиці», а заголовки капсул у мобільному списку обрізаються в один рядок без показу ключового об’єкта дії.',
+      'siteActieTekst у src/melding-stijl.tsx повертає заглушку з відсиланням до відсутнього в MeldingVeegKaart блоку «Технічні подробиці», а заголовки капсул у мобільному списку обрізаються в один рядок без показу ключового об’єкта дії.',
     oorzaakNl:
       'siteActieTekst in src/melding-stijl.tsx geeft een terugvaltekst die verwijst naar een in MeldingVeegKaart onbestaand blok «Technische details», en capsuletitels worden op mobiel op één regel afgekapt zonder het doelobject te tonen.',
     herstelEisUk:
@@ -249,7 +249,7 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
       'Ontbreken van zichtbare naam van het actieve tabblad in de balk met 6 pictogramtabbladen en desktop-toetsaanwijzingen (toets /) op smartphone',
     doelBestanden: ['src/meldingen/ecosysteem/MeldingenPortaal.tsx'],
     oorzaakUk:
-      'У MeldingenPortaal.tsx смуга .puls-tabs рендерить 6 вкладок лише як іконки 34×34 px без текстової назви активної вкладки, а кнопка пошуку на сенсорному екрані показує підказку «(клавіша /)».',
+      'У MeldingenPortaal.tsx смуга .puls-tabs відмальовує 6 вкладок лише як іконки 34×34 px без текстової назви активної вкладки, а кнопка пошуку на сенсорному екрані показує підказку «(клавіша /)».',
     oorzaakNl:
       'In MeldingenPortaal.tsx tekent .puls-tabs 6 tabbladen enkel als pictogrammen van 34×34 px zonder tekstlabel van het actieve tabblad, en de zoekknop toont op aanraakschermen «(toets /)».',
     herstelEisUk:
@@ -450,12 +450,14 @@ export async function main(): Promise<number> {
   nepBrowser('https://hub.tarasevych.com', 'uk');
   const React = await import('react');
   const { renderToStaticMarkup } = await import('react-dom/server');
-  const { vanTellers } = await import('../../shared/menu-meldingen');
+  const { vanTellers, vanServer, badgesBouwen, standaardMeldingen } = await import('../../shared/menu-meldingen');
   const { MeldingBellen, verrijkMenuMelding } = await import('../../src/MenuMeldingen');
   const { nieuwApparaatTekst } = await import('../../backend/nieuw-apparaat');
+  const { siteEventsFromAudit } = await import('../../backend/site-activiteit');
   const { interpreteerGebeurtenis } = await import('../../shared/meldingen-ecosysteem/tolk');
   const { herkenMerkEnAnker, verrijkGebeurtenisVoorPuls } = await import('../../shared/meldingen-puls/kern');
   const { bouwUniformeStroom, leesLokaalProfiel } = await import('../../src/meldingen/ecosysteem/ecosysteem-opslag');
+  const { default: MeldingVeegKaart } = await import('../../src/meldingen/ecosysteem/MeldingVeegKaart');
   const { default: MeldingenPortaal } = await import('../../src/meldingen/ecosysteem/MeldingenPortaal');
   const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
   const { LOGOS } = await import('../../src/merk/merk-logos');
@@ -638,6 +640,125 @@ export async function main(): Promise<number> {
       vensterHtmlNl.includes('puls-actieve-tab-naam') &&
       !compactHtmlUk.includes('(клавіша /)') &&
       !vensterHtmlNl.includes('(toets /)'),
+  );
+
+  // Додаткова регресійна перевірка: поштові події *-oauth.completed (Gmail / Outlook), переклад passkey, .puls-kapsel-sub та kaartTotaal у змішаному списку пошти
+  const auditOauthEnPasskey = siteEventsFromAudit([
+    { id: '501', action: 'owner.mail.google-oauth.completed', result: 'success', createdAt: nu - 10_000, details: { email: 'olesia.koval@gmail.com' } },
+    { id: '502', action: 'owner.mail.microsoft-oauth.completed', result: 'success', createdAt: nu - 20_000, details: { email: 'olesia.koval@outlook.com' } },
+    { id: '503', action: 'owner.apparaat.nieuw', result: 'success', createdAt: nu - 30_000, details: { id: '44444444-5555-4666-8777-888888888888', apparaat: 'iPad Air · Safari', methode: 'passkey' } },
+  ]);
+  const stroomOauthUk = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'mail',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: auditOauthEnPasskey,
+    activityRead: new Set(),
+  });
+  const gmailOauthGeb = stroomOauthUk.find((g) => g.meta?.actieCode === 'owner.mail.google-oauth.completed')!;
+  const outlookOauthGeb = stroomOauthUk.find((g) => g.meta?.actieCode === 'owner.mail.microsoft-oauth.completed')!;
+  const passkeyAppGeb = stroomOauthUk.find((g) => g.meta?.actieCode === 'owner.apparaat.nieuw')!;
+  const gmailPuls = verrijkGebeurtenisVoorPuls(gmailOauthGeb, 'uk');
+  const outlookPuls = verrijkGebeurtenisVoorPuls(outlookOauthGeb, 'uk');
+  const passkeyPuls = verrijkGebeurtenisVoorPuls(passkeyAppGeb, 'uk');
+  controleer(
+    'регресія V-M3-1: поштові події *-oauth.completed мають kanaal=mail, niveau=gewoon і знаки gmail / microsoftoutlook, а passkey отримує знак passkey і переклад «Ключ доступу»',
+    Boolean(gmailOauthGeb && outlookOauthGeb && passkeyAppGeb) &&
+      gmailOauthGeb.kanaal === 'mail' &&
+      gmailPuls.niveau === 'gewoon' &&
+      gmailPuls.anker.merkSleutel === 'gmail' &&
+      outlookOauthGeb.kanaal === 'mail' &&
+      outlookPuls.niveau === 'gewoon' &&
+      outlookPuls.anker.merkSleutel === 'microsoftoutlook' &&
+      passkeyPuls.anker.merkSleutel === 'passkey' &&
+      passkeyAppGeb.contextLabel.includes('Ключ доступу') &&
+      !/\bpasskey\b/i.test(passkeyAppGeb.contextLabel),
+  );
+
+  // Регресія V-M3-2: непорожній .puls-kapsel-sub при службовому contextLabel = 'id · beveiliging'
+  const srvGebMetTechCtx = interpreteerGebeurtenis({
+    id: `s:${uuid}`,
+    externeSleutel: `site_notif:${uuid}`,
+    bron: 'security_warning',
+    soort: 'security_warning',
+    titel: 'Новий вхід на новому пристрої',
+    bericht: tekstApp.tekst,
+    link: `https://id.tarasevych.com/sessions?apparaat=${uuid}`,
+    aangemaaktOp: nu,
+  });
+  const veegKaartHtmlUk = renderToStaticMarkup(
+    React.createElement(MeldingVeegKaart, {
+      lang: 'uk',
+      gebeurtenis: srvGebMetTechCtx,
+      profiel,
+      bijlageVoorkeur: profiel.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => ({ samenvatting: '', acties: [], bron: 'intern' as const }) as never,
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+  controleer(
+    'регресія V-M3-2: MeldingVeegKaart виводить змістовний підрядок .puls-kapsel-sub навіть при службовому contextLabel = "id · beveiliging"',
+    srvGebMetTechCtx.contextLabel === 'id · beveiliging' &&
+      veegKaartHtmlUk.includes('class="puls-kapsel-sub"') &&
+      veegKaartHtmlUk.includes('Google · Chrome/Android · Gent, BE') &&
+      !veegKaartHtmlUk.includes('>id · beveiliging<'),
+  );
+
+  // Регресія V-M3-4 (U1-3): чесний підпис voetStatus для змішаного списку пошти (6 серверних карток + 1 teller:mail(14))
+  const zesServerMail = vanServer(
+    Array.from({ length: 6 }, (_, idx) => ({
+      id: `mail-srv-${idx + 1}`,
+      kind: 'mail_alert',
+      title: `Лист безпеки #${idx + 1}`,
+      message: 'Повідомлення поштової служби',
+      createdAt: nu - idx * 1_000,
+      link: 'https://mail.tarasevych.com/inbox',
+    })),
+  );
+  const oudereTellerMail = vanTellers({ mail: { ongelezen: 14, op: nu - 500_000 } }, {}, 'uk');
+  const gemengdeBadges = badgesBouwen([...zesServerMail, ...oudereTellerMail], standaardMeldingen());
+  const gemengdMailBadge = gemengdeBadges['svc:mail'];
+  const gemengdHtmlUk = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'uk',
+      label: 'Пошта',
+      badge: gemengdMailBadge,
+      anker: { left: 10, top: 80, right: 210, bottom: 120, width: 200, height: 40, x: 10, y: 80, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  const gemengdHtmlNl = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'nl',
+      label: 'E-mail',
+      badge: gemengdMailBadge,
+      anker: { left: 10, top: 80, right: 210, bottom: 120, width: 200, height: 40, x: 10, y: 80, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  controleer(
+    'регресія V-M3-4 (U1-3): змішаний список пошти (6 серверних + 1 teller:mail(14)) виводить «Показано 5 із 7» / «5 van 7 getoond» замість «5 із 20»',
+    gemengdMailBadge.kaartTotaal === 7 &&
+      gemengdHtmlUk.includes('Показано 5 із 7') &&
+      !gemengdHtmlUk.includes('Показано 5 із 20') &&
+      gemengdHtmlNl.includes('5 van 7 getoond') &&
+      !gemengdHtmlNl.includes('5 van 20 getoond'),
   );
 
   const ukDocPad = join(rootDir, 'docs/meldingen/ВИПРОБУВАННЯ-10-ВАД-СПОВІЩЕНЬ-HERSTEL-001.uk.md');

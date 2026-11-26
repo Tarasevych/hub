@@ -24,6 +24,11 @@
   user-select: text;
 }
 
+.mel-ecosysteem-portaal:focus,
+.mel-ecosysteem-portaal:focus-visible {
+  outline: none;
+}
+
 .mel-ecosysteem-portaal.is-modus-volledig {
   border-radius: 14px;
 }
@@ -1151,7 +1156,7 @@
   cursor: default;
 }
 
-/* Дозволяємо випадаючому меню умовного відкладення виходити за межі картки */
+/* Дозволяємо спадному меню умовного відкладення виходити за межі картки */
 .mel-veeg-houder:has(.puls-uitstel-menu),
 .puls-keten-houder {
   overflow: visible;
@@ -2265,10 +2270,14 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-scroll-schuif 
   z-index: 20;
 }
 
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-scroll-schuif:not(.is-zichtbaar) {
+  height: 0;
+}
+
 html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .puls-ongedaan-balk {
   position: sticky;
-  bottom: 40px;
-  z-index: 23;
+  bottom: 48px;
+  z-index: 24;
 }
 
 html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
@@ -3537,18 +3546,39 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   white-space: nowrap;
 }
 
+.puls-icoon-knop.heeft-zichtbare-tekst .puls-icoon-symbool {
+  flex: 0 0 auto;
+}
+
+.puls-icoon-knop.heeft-zichtbare-tekst.heeft-teller {
+  margin-right: 0;
+}
+
+.puls-icoon-knop.heeft-zichtbare-tekst .puls-icoon-teller {
+  position: static;
+  top: auto;
+  right: auto;
+  flex: 0 0 auto;
+  margin-left: 2px;
+  border-width: 1px;
+}
+
 .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
   width: auto;
+  min-width: 0;
   max-width: 148px;
+  flex: 0 1 auto;
   padding: 0 9px;
   border-radius: 999px;
 }
 
 .puls-actieve-tab-naam {
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
@@ -3579,6 +3609,35 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
     min-height: 30px;
     max-width: 126px;
     padding: 0 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mel-filters.puls-filters-slank {
+    padding: 6px 6px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij {
+    gap: 3px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 2px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.heeft-teller:not(.is-actief) {
+    margin-right: 1px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .mel-filters.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop.mel-ikoon-knop {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 28px;
+    min-height: 28px;
+    max-width: 102px;
+    padding: 0 6px;
+    gap: 3px;
   }
 }
 
@@ -3664,12 +3723,27 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   overflow-wrap: anywhere;
 }
 
+.puls-technische-details > summary > svg {
+  width: 13.5px;
+  height: 13.5px;
+  flex: none;
+}
+
+.mel-compact-sluier {
+  position: fixed;
+  inset: 0;
+  z-index: 104990;
+  background: rgba(15, 23, 42, 0.36);
+  backdrop-filter: blur(2px);
+}
+
 @media (max-width: 768px) {
   .mel-ecosysteem-portaal.is-compact-bij-bel {
     left: calc(8px + var(--veilig-links, 0px));
     right: calc(8px + var(--veilig-rechts, 0px));
     top: calc(56px + var(--veilig-boven, 0px));
     width: auto;
+    min-width: 0;
     max-width: 440px;
     height: min(520px, calc(100dvh - 88px - var(--veilig-boven, 0px) - var(--veilig-onder, 0px)));
     max-height: min(520px, calc(100dvh - 88px));

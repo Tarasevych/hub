@@ -46,6 +46,7 @@ import {
   type VoorwaardelijkUitstelSoort,
 } from '../../../shared/meldingen-puls/kern';
 import { voerPaginaSignaalActieUit } from '../../canoniek-meldingen';
+import { vertaalAanmeldMethode } from '../../../shared/meldingen-ecosysteem/tolk';
 import IcoonActieKnop from '../IcoonActieKnop';
 import {
   PulsAantalKapsel,
@@ -454,12 +455,45 @@ export default function MeldingVeegKaart({
   const kaartStaat = bepaalKaartStaat(gebeurtenis, verrijkt.niveau);
   const schemaNaam = MELDING_SCHEMAS[verrijkt.schemaId]?.naam[lang === 'nl' ? 1 : 0] || verrijkt.schemaNaam;
   const zichtbareTitel = schoonKaartTitel(gebeurtenis.titel);
+  const schoonContextVoorDetails = useMemo(() => {
+    const ruw = (gebeurtenis.contextLabel || '').trim();
+    if (!ruw || /^[a-z_]+\s*·\s*[a-z_]+$/i.test(ruw)) return '';
+    return ruw
+      .split(/\s*·\s*/)
+      .map((stuk) => vertaalAanmeldMethode(stuk, lang) || stuk.trim())
+      .filter(Boolean)
+      .join(' · ');
+  }, [gebeurtenis.contextLabel, lang]);
+
   const kapselSubTekst = useMemo(() => {
-    const kand = (gebeurtenis.contextLabel || gebeurtenis.bericht || '').trim();
+    const ruwCtx = (gebeurtenis.contextLabel || '').trim();
+    const schoonCtx = /^[a-z_]+\s*·\s*[a-z_]+$/i.test(ruwCtx) ? '' : ruwCtx;
+    const ruwKand = (schoonCtx || gebeurtenis.bericht || '').trim();
+    if (!ruwKand) return '';
+
+    const inlogMatch = /^(?:Вхід\s*—\s*спосіб|Aanmelding\s*—\s*methode):\s*([^·]+?)\s*·\s*([^·]+?)\s*·\s*(?:пристрій|apparaat)\s*«([^»]+)»(?:\s*·\s*(?:регіон за IP:\s*|regio volgens IP:\s*)?([^·.]+))?/i.exec(
+      ruwKand,
+    );
+    let kand: string;
+    if (inlogMatch) {
+      const mTekst = vertaalAanmeldMethode(inlogMatch[1].trim(), lang) || inlogMatch[1].trim();
+      const appTekst = inlogMatch[3].trim();
+      const regTekst = (inlogMatch[4] || '').trim();
+      const schoonReg = /^(?:регіон невідомий|regio onbekend|обліковий запис|account)/i.test(regTekst) ? '' : regTekst;
+      kand = [mTekst, appTekst, schoonReg].filter(Boolean).join(' · ');
+    } else {
+      const zonderInstructie = ruwKand.split(/\.\s*(?:Якщо це були ви|Was u dit)/i)[0].trim();
+      kand = zonderInstructie
+        .split(/\s*·\s*/)
+        .map((stuk) => vertaalAanmeldMethode(stuk, lang) || stuk.trim())
+        .filter(Boolean)
+        .join(' · ');
+    }
+
     if (!kand || /^[a-z_]+\s*·\s*[a-z_]+$/i.test(kand)) return '';
     if (kand.toLowerCase() === zichtbareTitel.toLowerCase()) return '';
     return kand.slice(0, 110);
-  }, [gebeurtenis.contextLabel, gebeurtenis.bericht, zichtbareTitel]);
+  }, [gebeurtenis.contextLabel, gebeurtenis.bericht, zichtbareTitel, lang]);
 
   const technischeActieCode =
     typeof gebeurtenis.meta?.actieCode === 'string' ? gebeurtenis.meta.actieCode.trim() : '';
@@ -627,10 +661,10 @@ export default function MeldingVeegKaart({
                 {prioriteitLabel(gebeurtenis.prioriteit, lang)}
               </span>
             )}
-            {gebeurtenis.contextLabel && !/^[a-z_]+\s*·\s*[a-z_]+$/i.test(gebeurtenis.contextLabel.trim()) && (
+            {schoonContextVoorDetails && (
               <>
                 <span className='puls-meta-punt' aria-hidden='true'>·</span>
-                <small className='mel-context'>{gebeurtenis.contextLabel}</small>
+                <small className='mel-context'>{schoonContextVoorDetails}</small>
               </>
             )}
           </div>

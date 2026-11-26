@@ -47,17 +47,17 @@
 
 ---
 
-## 4. `MELD-4` — Неофіційний одноколірний дубль-логотип `Gmail` (просто червона буква `M` із `merk-logos.ts` замість офіційного багатоколірного знака з єдиного реєстру `src/merk/officieel/`) та помилковий підпис `Gmail · Вхід і пристрій` у картках безпеки
+## 4. `MELD-4` — Неофіційний одноколірний дубль-логотип `Gmail` (просто червона літера `M` із `merk-logos.ts` замість офіційного багатоколірного знака з єдиного реєстру `src/merk/officieel/`) та помилковий підпис `Gmail · Вхід і пристрій` у картках безпеки
 
 - **Знімок екрана:** `13:24:41`
 - **Взаємодія, правило `REESTR-LOGO-001` та очікування користувача:**
   1. На знімку `13:24:41` зображено одноколірну червону літеру `M`, яка не відповідає справжньому чотириколірному логотипу Gmail. За правилом `REESTR-LOGO-001` усі логотипи мають походити з одного джерела (`src/merk/officieel/`), де вже є офіційні багатоколірні `google`, `googledrive`, `googlekeep`, `gemini`, але `gmail` забули додати до `KEUZE` у [`scripts/merk-officieel-maken.mjs`](../../scripts/merk-officieel-maken.mjs) і залишили одноколірний контур-дубль у [`src/merk/merk-logos.ts`](../../src/merk/merk-logos.ts) (рядок 41).
   2. Три картки тривоги безпеки про вхід до «Мого простору» мають підпис **`Gmail · Вхід і пристрій`**, хоча подія стосується входу в обліковий запис «Мого простору» (спосіб: `Google`), а не поштової скриньки Gmail.
 - **Першопричина в коді:**
-  - Відсутність офіційного багатоколірного `gmail.svg` (`google-gmail` із `@iconify-json/logos`) у `src/merk/officieel/` та наявність старого одноколірного запису `"gmail"` у `src/merk/merk-logos.ts`.
-  - У [`src/MenuMeldingen.tsx`](../../src/MenuMeldingen.tsx) (рядки 64, 70, 76–90) `zoekMerkInTekst` шукає бренд у повному тексті повідомлення разом із поштовою адресою `tarasevych.pavlo@gmail.com`; шаблон `/\bgmail\b/i` спрацьовує на домен `@gmail.com` раніше за `/\bgoogle\b/i`.
+  - Відсутність офіційного багатоколірного `gmail.svg` (`google-gmail-2020` із `@iconify-json/logos`) у `src/merk/officieel/` та наявність старого одноколірного запису `"gmail"` у `src/merk/merk-logos.ts`.
+  - У [`src/MenuMeldingen.tsx`](../../src/MenuMeldingen.tsx) (рядки 64, 70, 76–90) `zoekMerkInTekst` шукає бренд у повному тексті повідомлення разом із поштовою адресою `olesia.koval@gmail.com`; шаблон `/\bgmail\b/i` спрацьовує на домен `@gmail.com` раніше за `/\bgoogle\b/i`.
 - **Вимога до виправлення:**
-  - Додати офіційний чотириколірний знак `gmail` (`google-gmail`) до `src/merk/officieel/` через `scripts/merk-officieel-maken.mjs`, прибрати одноколірний дубль із `src/merk/merk-logos.ts`, виключати поштові адреси під час розпізнавання бренду в `zoekMerkInTekst` і для сповіщень безпеки входу показувати справжній спосіб входу (`Google`, `Telegram`, `Ключ входу`).
+  - Додати офіційний чотириколірний знак `gmail` (`google-gmail-2020`) до `src/merk/officieel/` через `scripts/merk-officieel-maken.mjs`, прибрати одноколірний дубль із `src/merk/merk-logos.ts`, виключати поштові адреси під час розпізнавання бренду в `zoekMerkInTekst` і для сповіщень безпеки входу показувати справжній спосіб входу (`Google`, `Telegram`, `Ключ доступу`).
 
 ---
 
@@ -83,7 +83,7 @@
   - У [`shared/meldingen-ecosysteem/tolk.ts`](../../shared/meldingen-ecosysteem/tolk.ts) (рядки 56, 67, 81) код `owner.apparaat.nieuw` через слово `apparaat` потрапляє в `subdomein: 'mcp'`, `kanaal: 'mcp'`, `prioriteit: 'laag'` і отримує `niveau: 'gewoon'`.
   - У [`src/meldingen/ecosysteem/MeldingVeegKaart.tsx`](../../src/meldingen/ecosysteem/MeldingVeegKaart.tsx) (рядки 657 та 941) обробник кнопки «Це я» не викликає `/api/meldingen/apparaat-bekend`.
 - **Вимога до виправлення:**
-  - Класифікувати `owner.apparaat.nieuw` як подію безпеки (`kanaal: 'beveiliging'`, `subdomein: 'id'`, `niveau: 'gevaar'`), дедуплікувати її з `site_notifications` та викликати `POST /api/meldingen/apparaat-bekend` при натисканні «Це я».
+  - Класифікувати `owner.apparaat.nieuw` як подію безпеки (`kanaal: 'beveiliging'`, `subdomein: 'id'`, `niveau: 'gevaar'`), об’єднувати парні записи з `site_notifications` та викликати `POST /api/meldingen/apparaat-bekend` при натисканні «Це я».
 
 ---
 
@@ -140,7 +140,7 @@
 Усі 10 пунктів (`MELD-1`..`MELD-10`) втілено в коді та підтверджено автоматизованими перевірками:
 
 1. **`MELD-1`:** у [`src/index.css`](../../src/index.css), [`src/meldingen/IcoonActieKnop.tsx`](../../src/meldingen/IcoonActieKnop.tsx) та [`src/meldingen/ecosysteem/meldingen-ecosysteem.css`](../../src/meldingen/ecosysteem/meldingen-ecosysteem.css) вилучено спадкування `min-height: 100svh` на `.puls-icoon-tip` (`min-height: 0; height: max-content; width: max-content`), а кнопки керування спрацьовують з першого дотику (довге утримування `420` мс показує підказку).
-2. **`MELD-2`:** дзвіночок збережено у мобільному меню (`lade-kop`), а в [`src/meldingen/ecosysteem/MeldingenPortaal.tsx`](../../src/meldingen/ecosysteem/MeldingenPortaal.tsx) виправлено перемикання `compactBijBel` на вузьких екранах із видимою кнопкою повернення **«Вікно»**.
+2. **`MELD-2`:** дзвіночок збережено у мобільному меню (`lade-kop`), а в [`src/meldingen/ecosysteem/MeldingenPortaal.tsx`](../../src/meldingen/ecosysteem/MeldingenPortaal.tsx) виправлено перемикання `compactBijBel` на вузьких екранах із м’якою завісою затемнення та видимою кнопкою повернення **«Вікно»**.
 3. **`MELD-3`:** у [`shared/menu-meldingen.ts`](../../shared/menu-meldingen.ts), [`src/MenuMeldingen.tsx`](../../src/MenuMeldingen.tsx), [`src/meldingen/ecosysteem/ecosysteem-opslag.ts`](../../src/meldingen/ecosysteem/ecosysteem-opslag.ts) та [`src/CanoniekMeldingencentrum.tsx`](../../src/CanoniekMeldingencentrum.tsx) усунено оманливий напис «Показано 1 із 14» для зведеного лічильника пошти та передано `teller:mail` у центр сповіщень.
 4. **`MELD-4`:** через [`scripts/merk-officieel-maken.mjs`](../../scripts/merk-officieel-maken.mjs) до `src/merk/officieel/gmail.svg` додано офіційний чотириколірний знак Gmail (`CC0-1.0`), прибрано одноколірний дубль із `src/merk/merk-logos.ts` та виключено поштові адреси під час розпізнавання марки у сповіщеннях безпеки.
 5. **`MELD-5`:** у [`backend/nieuw-apparaat.ts`](../../backend/nieuw-apparaat.ts) спосіб і час входу перенесено на початок опису, а у `.menu-bellen` додано прямі кнопки **«Це не я»** та **«Це був я»** (`POST /api/meldingen/apparaat-bekend`).

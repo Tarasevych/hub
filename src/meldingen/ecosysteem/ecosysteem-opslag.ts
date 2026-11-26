@@ -9,6 +9,7 @@ import { abonneerZijbalk, zetZijbalk, zijbalkVoorkeuren } from '../../zijbalk-vo
 import type { PaginaSignaal } from '../../canoniek-meldingen';
 import type { CanonicalServerNotification } from '../../canoniek-meldingen';
 import type { ActivityEvent } from '../../connector-activiteit';
+import { vertaalAanmeldMethode } from '../../../shared/meldingen-ecosysteem/tolk';
 import type { BewaardeRij } from '../lokale-rijen';
 import { vanTellers, type MenuMelding, type Tellers } from '../../../shared/menu-meldingen';
 import {
@@ -485,7 +486,7 @@ const STATUS_RANG: Record<MeldingGebeurtenisStatus, number> = {
   archief: 4,
 };
 
-/** Об’єднує всі джерела подій сайту, сторінок, доказів зв’язку, сервера та агентів в єдиний дедуплікований потік без дублів. */
+/** Об’єднує всі джерела подій сайту, сторінок, доказів зв’язку, сервера та агентів у єдиний узгоджений потік без подвоєння. */
 export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosysteemGebeurtenis[] {
   const nl = invoer.lang === 'nl';
   const result = new Map<string, MeldingEcosysteemGebeurtenis>();
@@ -689,9 +690,25 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     }
 
     const titel = invoer.titelVanActiviteit ? invoer.titelVanActiviteit(ev) : (ev.tool || ev.doel || ev.subject || ev.type || ev.kind);
-    const ctx = invoer.contextVanActiviteit ? invoer.contextVanActiviteit(ev) : (ev.subject || '');
+    const vertaalMethodeStukken = (bronTekst: string): string =>
+      bronTekst
+        .split(/\s*·\s*/)
+        .map((stuk) => vertaalAanmeldMethode(stuk, invoer.lang) || stuk.trim())
+        .filter(Boolean)
+        .join(' · ');
+    const methodeLabel = vertaalAanmeldMethode(ev.methode, invoer.lang);
+    const basisSubjOfDoel = vertaalMethodeStukken(ev.doel || ev.subject || '');
+    const fallbackCtx = [methodeLabel, vertaalMethodeStukken(ev.subject || '')]
+      .filter((x, idx, arr) => Boolean(x) && (idx === 0 || x.toLowerCase() !== arr[0].toLowerCase()))
+      .join(' · ');
+    const ctx = invoer.contextVanActiviteit ? vertaalMethodeStukken(invoer.contextVanActiviteit(ev)) : fallbackCtx;
     const sl = `act:${ev.id}`;
-    const details = [ev.reden, ev.eind, ev.code].filter(Boolean).join(' · ') || ev.doel || ev.subject || '';
+    const basisDetails =
+      [ev.reden, ev.eind, ev.code].filter(Boolean).join(' · ') ||
+      [methodeLabel, basisSubjOfDoel]
+        .filter((x, idx, arr) => Boolean(x) && (idx === 0 || !x.toLowerCase().startsWith(arr[0].toLowerCase())))
+        .join(' · ');
+    const details = basisDetails;
     const autoLink =
       ev.type === 'owner.apparaat.nieuw'
         ? ev.apparaatId
@@ -717,6 +734,7 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
           actieCode: ev.type,
           ...(ev.code ? { foutCode: ev.code } : {}),
           ...(ev.apparaatId ? { apparaatId: ev.apparaatId } : {}),
+          ...(ev.methode ? { aanmeldMethode: ev.methode } : {}),
           ...(ev.client ? { client: ev.client } : {}),
           ...(ev.platform ? { platform: ev.platform } : {}),
         },

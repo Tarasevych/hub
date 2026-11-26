@@ -68,7 +68,7 @@ export function vanTellers(t: Tellers, weg: Record<string, number>, lang: 'uk' |
     titel: lang === 'uk' ? `Непрочитані листи: ${n}` : `Ongelezen e-mails: ${n}`, tekst: lang === 'uk' ? 'У «Вхідних» є непрочитані листи.' : 'Er zijn ongelezen e-mails in Inbox.' });
   return uit;
 }
-export type Badge = { item: string; aantal: number; categorieen: MeldingCategorie[]; meldingen: MenuMelding[]; nieuwste: number };
+export type Badge = { item: string; aantal: number; categorieen: MeldingCategorie[]; meldingen: MenuMelding[]; nieuwste: number; kaartTotaal?: number };
 const ouderVan = (id: string) => { const m = /^pg:([a-z]{2,12})\//.exec(id); return m ? `svc:${m[1]}` : undefined; };
 /** Per menu-item: aantal, categorieën (sterkste eerst) en de nieuwste meldingen. Pagina-meldingen tellen ook mee bij het hoofditem. */
 export function badgesBouwen(meldingen: MenuMelding[], v: MeldingVoorkeuren): Record<string, Badge> {
@@ -88,7 +88,7 @@ export function badgesBouwen(meldingen: MenuMelding[], v: MeldingVoorkeuren): Re
     const o = ouderVan(m.item); if (o) voeg(o, m);
   }
   const rang = (c: MeldingCategorie) => (c === 'beveiliging' ? -1 : MELDING_CATEGORIEEN.indexOf(c)); // beveiliging altijd voorop
-  for (const b of Object.values(uit)) { b.meldingen.sort((a, z) => z.op - a.op); b.categorieen.sort((a, z) => rang(a) - rang(z)); b.meldingen = b.meldingen.slice(0, MAX_BELLEN); }
+  for (const b of Object.values(uit)) { b.meldingen.sort((a, z) => z.op - a.op); b.categorieen.sort((a, z) => rang(a) - rang(z)); b.kaartTotaal = b.meldingen.length; b.meldingen = b.meldingen.slice(0, MAX_BELLEN); }
   return uit;
 }
 /** Tekst op de badge: «99+» boven 99. */

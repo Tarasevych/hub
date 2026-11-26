@@ -571,13 +571,18 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
 .menu-bellen-anker-pijl[data-menu-bellen-anker='links']{right:-6px;margin-top:-5.5px;border-right:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
 .menu-bellen-anker-pijl[data-menu-bellen-anker='onder']{top:-6px;margin-left:-5.5px;border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
 .menu-bellen-anker-pijl[data-menu-bellen-anker='boven']{bottom:-6px;margin-left:-5.5px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
-.menu-bellen .menu-bel .menu-bel-bevestig{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin-top:5px}
+.menu-bellen .menu-bel .menu-bel-bevestig{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin-top:7px}
 .canonical-chrome .menu-bellen .menu-bel button.menu-bel-keuze,
 .canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze,
-.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1 1 0;min-width:0;height:30px;min-height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:12px;font-weight:650;line-height:1;white-space:nowrap;text-decoration:none;cursor:pointer;touch-action:manipulation;transition:background-color .14s ease,border-color .14s ease,color .14s ease}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1 1 auto;min-width:0;height:30px;min-height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:12px;font-weight:650;line-height:1;white-space:nowrap;text-decoration:none;cursor:pointer;touch-action:manipulation;transition:background-color .14s ease,border-color .14s ease,color .14s ease}
 .menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze svg{width:13.5px;height:13.5px;flex:none}
 .menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze::after{content:'';position:absolute;inset:-4px 0}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze::after{content:'';position:absolute;left:0;right:0;top:50%;height:var(--tik-hoogte,44px);transform:translateY(-50%)}
+@media (max-width:380px){
+  .menu-bellen .menu-bel .menu-bel-bevestig{gap:4px}
+  .canonical-chrome .menu-bellen .menu-bel :is(button,a).menu-bel-keuze,
+  .menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze{padding:0 8px;gap:4px}
+}
 .canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze.is-fout,
 .menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-fout{border-color:color-mix(in srgb,var(--staat-fout) 46%,var(--line));background:color-mix(in srgb,var(--staat-fout) 13%,var(--panel));color:var(--staat-fout)}
 .canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze.is-fout:hover,

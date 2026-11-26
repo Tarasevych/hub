@@ -71,8 +71,11 @@ export function herkenSubdomein(bron = '', link = '', fallback: MeldingSubdomein
 
 export function herkenKanaal(bron = '', soort = '', subdomein: MeldingSubdomein = 'hub'): MeldingKanaal {
   const b = `${bron} ${soort}`.toLowerCase();
+  const isExplicieteBeveiligingInMail =
+    /(security_warning|owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|account\.email\.conflict|niet-ik|fout-symbool)/.test(b);
   if (
-    /(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|auth|aanmeld|bevestigen|niet-ik|fout-symbool|stap-op|vergrendel|blokkeer|fout-auth|owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|apparaat\.(?:aangevraagd|bevestigd|niet-ik|fout-symbool|alarm|stap-op|ingetrokken|hersteld|gedeblokkeerd|telegram-sterk)|account\.email\.conflict)/.test(
+    (subdomein !== 'mail' || isExplicieteBeveiligingInMail) &&
+    /(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|(?<![a-z])auth(?![a-z])|aanmeld|bevestigen|niet-ik|fout-symbool|stap-op|vergrendel|blokkeer|fout-auth|owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|apparaat\.(?:aangevraagd|bevestigd|niet-ik|fout-symbool|alarm|stap-op|ingetrokken|hersteld|gedeblokkeerd|telegram-sterk)|account\.email\.conflict)/.test(
       b,
     )
   ) {
@@ -264,4 +267,25 @@ export function maakDemoBijlagenVoorTest(bijlage?: Partial<MeldingBijlage>): Mel
       ...(bijlage?.tekstVoorbeeld ? { tekstVoorbeeld: bijlage.tekstVoorbeeld } : {}),
     },
   ];
+}
+
+const AANMELD_METHODE_WOORDEN: Readonly<Record<string, readonly [uk: string, nl: string]>> = {
+  passkey: ['Ключ доступу', 'Toegangssleutel'],
+  webauthn: ['Ключ доступу', 'Toegangssleutel'],
+  password: ['Пароль', 'Wachtwoord'],
+  code: ['Одноразовий код', 'Eenmalige code'],
+  totp: ['Одноразовий код', 'Eenmalige code'],
+  otp: ['Одноразовий код', 'Eenmalige code'],
+  google: ['Google', 'Google'],
+  telegram: ['Telegram', 'Telegram'],
+  microsoft: ['Microsoft', 'Microsoft'],
+  apple: ['Apple', 'Apple'],
+  discord: ['Discord', 'Discord'],
+};
+
+export function vertaalAanmeldMethode(methode: string | undefined, lang: 'uk' | 'nl'): string {
+  const sleutel = String(methode || '').trim().toLowerCase();
+  if (!sleutel) return '';
+  const paar = AANMELD_METHODE_WOORDEN[sleutel];
+  return paar ? paar[lang === 'nl' ? 1 : 0] : '';
 }

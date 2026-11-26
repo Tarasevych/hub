@@ -731,7 +731,7 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'huis.lid.rol-gewijzigd': ['Змінено роль учасника розумної оселі', 'Rol van woninglid gewijzigd'],
   'huis.lid.vertrokken': ['Учасник самостійно залишив розумну оселю', 'Lid heeft de slimme woning verlaten'],
   'huis.lid.verwijderd': ['Учасника вилучено зі складу розумної оселі', 'Lid verwijderd uit de slimme woning'],
-  'huis.opdracht.afgesloten': ['Завершено виконання команди у розумної оселі', 'Opdracht in de slimme woning afgerond'],
+  'huis.opdracht.afgesloten': ['Завершено виконання команди у розумній оселі', 'Opdracht in de slimme woning afgerond'],
   'huis.tempo.geweigerd': ['Тимчасово обмежено занадто часті команди до розумної оселі', 'Te frequente opdrachten naar slimme woning begrensd'],
   'huis.uitnodiging.aanvaard': ['Прийнято запрошення до розумної оселі', 'Uitnodiging voor slimme woning aanvaard'],
   'huis.uitnodiging.afgewezen': ['Відхилено запрошення до розумної оселі', 'Uitnodiging voor slimme woning afgewezen'],

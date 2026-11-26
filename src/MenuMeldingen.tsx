@@ -348,7 +348,7 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
       const maxHeight=Math.max(120,Math.min(Math.round(vh*0.74),Math.round(ruimteBoven)));
       const gemetenH=el.offsetHeight||220;
       const effH=Math.min(gemetenH,maxHeight);
-      const top=Math.max(rand,Math.round(rect.top-effH-10));
+      const top=Math.max(rand,Math.min(vh-effH-rand,Math.round(rect.top-effH-10)));
       setPos(p=>p.left===left&&p.top===top&&p.maxHeight===maxHeight&&p.plaatsing==='boven'&&p.pijlX===pijlX?p:{left,top,maxHeight,plaatsing:'boven',pijlX,pijlY:18});
     };
     plaats();
@@ -465,12 +465,12 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
     const tellerKaarten=badge.meldingen.filter(m=>m.bron === 'teller').length;
     const losseGetoond=badge.meldingen.length-tellerKaarten;
     const losseTotaal=Math.max(losseGetoond,badge.aantal-tellerSom);
-    const totaalKaarten=losseTotaal+tellerKaarten;
+    const totaalKaarten=badge.kaartTotaal ?? (losseTotaal+tellerKaarten);
     if(totaalKaarten>badge.meldingen.length){
       return tr(lang,`Показано ${badge.meldingen.length} із ${totaalKaarten}`,`${badge.meldingen.length} van ${totaalKaarten} getoond`);
     }
     return badgeLabel(lang,badge.aantal);
-  },[badge.aantal,badge.meldingen,lang]);
+  },[badge.aantal,badge.kaartTotaal,badge.meldingen,lang]);
 
   return <div ref={ref} className='menu-bellen' role='region' aria-label={`${label}: ${badgeLabel(lang,badge.aantal)}`} aria-describedby={uitlegId} data-menu-bellen={badge.item} data-plaatsing={pos.plaatsing} data-kant={kant} data-vastgezet={vastgezet?'ja':undefined} style={{left:pos.left,top:pos.top,...(pos.maxHeight?{maxHeight:pos.maxHeight}:{})}} onPointerDownCapture={e=>{if(zweeftipRef.current?.modus==='touch'&&!(e.target as Element|null)?.closest?.('[data-tip-sleutel]'))sluitZweeftip()}} onTouchStart={e=>e.stopPropagation()} onTouchMove={e=>e.stopPropagation()} onPointerEnter={e=>{if(e.pointerType==='mouse')onBinnen(true)}} onPointerLeave={e=>{if(vastgezet||e.pointerType!=='mouse')return;if(e.relatedTarget instanceof Node&&e.currentTarget.contains(e.relatedTarget))return;onBinnen(false)}} onFocus={()=>onBinnen(true)} onBlur={e=>{if(vastgezet)return;if(e.relatedTarget&&!e.currentTarget.contains(e.relatedTarget as Node))onBinnen(false)}} onKeyDown={toets}>
     <span className='menu-bellen-anker-pijl' data-menu-bellen-anker={pos.plaatsing} style={pos.plaatsing==='boven'||pos.plaatsing==='onder'?{left:pos.pijlX}:{top:pos.pijlY}} aria-hidden='true'/>
