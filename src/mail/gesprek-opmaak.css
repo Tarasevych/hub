@@ -138,13 +138,13 @@ html body .google-mail-reader-backdrop[data-lees-breedte='smal'] .mail-reader-na
 }
 
 /* ---------------------------------------------------------------- telefoon: hoofdacties onderaan, de kop houdt het minimum */
-.mail-reader-onderbalk{order:10;grid-column:1/-1;z-index:3;display:grid;grid-auto-columns:minmax(0,1fr);grid-auto-flow:column;gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel)}
+.mail-reader-onderbalk{order:10;grid-column:1/-1;z-index:3;display:flex;align-items:stretch;gap:2px;padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel)}
 /* order: de balk komt in de DOM soms vóór het gesprek (portal, het gesprek wordt pas na het laden ingevoegd) — het raster plaatst in «order»-volgorde */
 /* blok 1 (25.10.2026): kleur per actie uit het register (data-toon → --actie-kleur, src/mail/mail-acties.css): «Архів» blauw, «Кошик» rood — zoals in de kop en de lijst */
-html body .google-mail-reader .mail-reader-onderbalk-knop{display:grid;justify-items:center;align-content:center;gap:2px;min-width:0;min-height:52px;padding:4px 2px;border:0;border-radius:12px;background:transparent;color:var(--actie-kleur,var(--muted));font:inherit;font-size:12px;line-height:1.25;font-weight:600;cursor:pointer}
+html body .google-mail-reader .mail-reader-onderbalk-knop{flex:1 1 0;display:grid;justify-items:center;align-content:center;gap:2px;min-width:0;min-height:50px;padding:4px 2px;border:0;border-radius:12px;background:transparent;color:var(--actie-kleur,var(--muted));font:inherit;font-size:11.5px;line-height:1.2;font-weight:600;cursor:pointer}
 .mail-reader-onderbalk-knop>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mail-reader-onderbalk-knop svg{width:20px;height:20px}
-.mail-reader-onderbalk-knop.primair{background:var(--accent);color:var(--accentText)}
+.mail-reader-onderbalk-knop svg{width:19px;height:19px}
+html body .google-mail-reader .mail-reader-onderbalk-knop.primair{flex:1.32 1 0;padding-inline:4px;background:var(--accent);color:var(--accentText)}
 .mail-reader-onderbalk-knop:disabled{opacity:.5;cursor:default}
 .mail-reader-onderbalk-knop:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-reader-toolbar .mail-reader-primair-antwoord,
@@ -159,6 +159,11 @@ html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-reader-
    палітрах — у проміжку більше не видно вмісту листа; останній рядок не обрізається. */
 html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader-more[open]>.mail-reader-overflow-panel{top:auto!important;bottom:calc(var(--lz-blad-onder,58px) + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;max-height:min(72dvh,calc(100dvh - 142px))!important;padding-bottom:10px;scroll-padding-block:10px 56px;border-bottom-width:0;border-radius:var(--straal-l,16px) var(--straal-l,16px) 0 0}
 html body .google-mail-reader[data-onder-blad='ja'] .mail-reader-overflow-panel{--lz-blad-onder:0px}
+html body .mail-reader-overflow-panel>.mail-reader-overflow-kop{grid-column:1/-1;align-self:stretch;justify-self:stretch;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;box-sizing:border-box;position:sticky;top:0;z-index:4;margin:-6px 0 4px;padding:8px 6px 8px 12px;border-bottom:1px solid var(--line);background:var(--panel-dicht,var(--panel))}
+html body .mail-reader-overflow-kop>strong{flex:1 1 auto;min-width:0;font-size:14px;font-weight:700;white-space:nowrap}
+html body .mail-reader-overflow-kop>button.mail-reader-overflow-sluit{position:static;inset:auto;transform:none;display:grid;place-items:center;flex:0 0 36px;margin-left:auto;width:36px;min-width:36px;height:36px;padding:0;border:0;border-radius:var(--straal-s,10px);background:transparent;color:var(--muted);cursor:pointer}
+html body .mail-reader-overflow-kop>button:hover{background:var(--surface);color:var(--text)}
+html body .mail-reader-overflow-kop>button svg{width:18px;height:18px}
 
 /* veiligheidsstrook boven de brieftekst: externe beelden verborgen tot «Показати один раз» of «Завжди від цього відправника» */
 .mail-beelden-strook{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface);color:var(--text);font-size:13px}
@@ -214,8 +219,12 @@ html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-thread-
 html body .google-mail-reader[data-reply-open='ja'] .mail-thread-message-antwoord{display:none}
 html body .google-mail-reader .mail-thread-reply>header{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 8px}
 html body .google-mail-reader .mail-thread-reply>header>div{flex:1 1 160px;min-width:0}
-html body .google-mail-reader .mail-thread-reply>footer{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:2px 0 0}
-html body .google-mail-reader .mail-thread-reply>footer>:is(label,button){display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:42px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:650;white-space:nowrap}
-html body .google-mail-reader .mail-thread-reply>footer>button.primary{margin-inline-start:auto;padding:0 16px;font-weight:700}
+html body .google-mail-reader .mail-thread-reply>footer{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:5px;min-height:42px;padding:2px 0 0}
+html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen{display:contents}
+html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen>.mail-input-tools{flex:1 0 100%;order:-1;margin-bottom:4px}
+html body .google-mail-reader .mail-thread-reply>footer>:is(label,button),
+html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen>button.mail-nm-hulpen{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;min-height:38px;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
+html body .google-mail-reader .mail-thread-reply>footer :is(label,button) svg{width:15px;height:15px;flex:0 0 auto}
+html body .google-mail-reader .mail-thread-reply>footer>button.primary{margin-inline-start:auto;padding:0 12px;border-color:transparent;background:var(--accent);color:var(--accentText);font-weight:700}
 .mail-reply-eenrichting-waarschuwing{margin:0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--warn) 42%,var(--line));border-radius:var(--straal-s,10px);background:var(--warn-zacht);color:var(--text);font-size:12.5px;line-height:1.4}
 

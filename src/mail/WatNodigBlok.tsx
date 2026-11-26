@@ -320,6 +320,10 @@ export default function WatNodigBlok(p: Props) {
   const inKop = Boolean(p.kopHost);
   const paneelOpen = inKop ? true : zichtbaarOpen;
 
+  const herkomstTekst = `${t('не частина листа', 'geen deel van het bericht')} · ${opbouw === 'model'
+    ? t(`склав ШІ «${agentNaam}» · ${herkomst(false)}`, `opgesteld door AI «${agentNaam}» · ${herkomst(true)}`)
+    : t('простий розбір у переглядачі, без моделі — нічого не надсилається', 'eenvoudige ontleding in de browser, zonder model — er gaat niets weg')}`;
+
   const blokSectie = (
     <section className='ai-blok' data-ai-blok data-opbouw={opbouw} data-open={paneelOpen ? 'ja' : 'nee'} aria-labelledby={`${id}-kop`}>
       <header className='ai-blok-kop'>
@@ -329,11 +333,8 @@ export default function WatNodigBlok(p: Props) {
           <small className='ai-blok-samenvatting'>{samenvatting}</small>
           <ChevronDown aria-hidden='true' className='ai-blok-pijl' />
         </button>
-        <small className='ai-blok-herkomst'>
-          {t('не частина листа', 'geen deel van het bericht')} · {opbouw === 'model'
-            ? t(`склав ШІ «${agentNaam}» · ${herkomst(false)}`, `opgesteld door AI «${agentNaam}» · ${herkomst(true)}`)
-            : t('простий розбір у браузері, без моделі — нічого не надсилається', 'eenvoudige ontleding in de browser, zonder model — er gaat niets weg')}
-        </small>
+        <span className='ai-blok-herkomst-info' role='note' aria-label={herkomstTekst} title={herkomstTekst}>ⓘ</span>
+        <small className='ai-blok-herkomst'>{herkomstTekst}</small>
       </header>
       {paneelOpen && (
         <div className='ai-blok-inhoud' id={`${id}-inhoud`}>

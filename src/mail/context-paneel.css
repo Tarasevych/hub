@@ -19,7 +19,7 @@ html body .google-mail-reader[data-context='blad']>.ctx-scherm{grid-area:2/1/-1/
 /* max-width: een blad heeft role=dialog, en de algemene regel voor vensters (ontwerp/primitieven.css: 100vw − 16 px) maakte het op de
    telefoon 16 px smaller dan het scherm */
 html body .google-mail-reader[data-context='blad']>.ctx-paneel{grid-area:2/1/-1/-1;z-index:31;justify-self:end;width:min(384px,calc(100% - 24px));max-width:100%;border-left:1px solid var(--line);box-shadow:var(--schaduw-3)}
-html body .google-mail-reader[data-context='blad'][data-lees-breedte='smal']>.ctx-scherm{grid-area:1 / 1 / -1 / -1;z-index:705;opacity:.62}
+html body .google-mail-reader[data-context='blad'][data-lees-breedte='smal']>.ctx-scherm{grid-area:1 / 1 / -1 / -1;z-index:705;background:var(--overlay,var(--bg));opacity:.92}
 html body .google-mail-reader[data-context='blad'][data-lees-breedte='smal']>.ctx-paneel{justify-self:stretch;align-self:end;width:auto;max-width:none;grid-area:1 / 1 / -1 / -1;z-index:706;max-height:min(86%,700px);border-left:0;border-top:1px solid var(--line);border-radius:var(--straal-l,16px) var(--straal-l,16px) 0 0}
 html[data-ctx-mobiel-langscroll='1'] body .google-mail-reader[data-context='blad'][data-lees-breedte='smal']>.ctx-paneel,
 html body .google-mail-reader[data-context='blad'][data-lees-breedte='smal']>.ctx-paneel[data-langscroll='ja']{position:static;align-self:stretch;max-height:none;height:auto;overflow:visible}
@@ -51,7 +51,8 @@ html body .ctx-paneel .ctx-tabs button{display:inline-flex;align-items:center;ju
 html body .google-mail-reader[data-lees-breedte='smal'] .ctx-paneel .ctx-tabs{padding:6px 6px;gap:2px}
 html body .google-mail-reader[data-lees-breedte='smal'] .ctx-paneel .ctx-tabs button{padding:0 6px;font-size:12px}
 .ctx-tabs button:hover{background:var(--surface);color:var(--text)}
-.ctx-tabs button[aria-selected='true']{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:var(--accent-soft);color:var(--text);font-weight:700}
+html body .ctx-paneel .ctx-tabs button[aria-selected='true'],
+html.palet-maquette body .ctx-paneel .ctx-tabs button[aria-selected='true']{border-color:var(--accent);background:var(--accent);color:var(--accentText);font-weight:700}
 .ctx-tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 
 .ctx-sectie{padding:14px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}

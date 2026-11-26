@@ -87,7 +87,7 @@ export async function main(): Promise<number> {
     const blok = kader(createElement(WatNodigBlok, blokProps(JAN)));
     check('A blok zonder model: data-opbouw="eenvoudig", open, merk «Авто» (geen «ШІ»), kop «Що від вас потрібно?»',
       /<section class="ai-blok" data-ai-blok="true" data-opbouw="eenvoudig" data-open="ja"/.test(blok) && blok.includes('>Авто<') && blok.includes('Що від вас потрібно?') && !/data-opbouw="model"/.test(blok));
-    check('A herkomst eerlijk: «не частина листа · простий розбір у браузері, без моделі»', blok.includes('не частина листа · простий розбір у браузері, без моделі'));
+    check('A herkomst eerlijk: «не частина листа · простий розбір у переглядачі, без моделі»', blok.includes('не частина листа · простий розбір у переглядачі, без моделі'));
     check('A het punt: vraag, letterlijk, bronchip «лист 1 · §2» (met «Звідки це?» voor de schermlezer), termijnchip «до …»',
       /data-soort="vraag" data-status="letterlijk"/.test(blok) && /class="ai-bron-chip" data-bron-chip="true" aria-label="Звідки це\? Джерело: лист 1 · §2" title="Звідки це\?">лист 1 · §2<\/button>/.test(blok)
       && termijn.startsWith('до ') && termijn.includes('26') && blok.includes(`class="ai-termijn-chip" title="vóór maandag 26 oktober"`) && blok.includes(termijn), termijn);

@@ -8,19 +8,22 @@
 /* ---------------------------------------------------------------- «Що від вас потрібно?» */
 .ai-blok{display:grid;min-width:0;margin:10px 0 6px;border:1px dashed color-mix(in srgb,var(--info) 55%,var(--line));border-radius:var(--straal-l,16px);background:color-mix(in srgb,var(--info-zacht) 40%,var(--panel));color:var(--text)}
 .ai-blok[data-opbouw='eenvoudig']{border-style:solid;border-color:color-mix(in srgb,var(--line) 92%,transparent);background:color-mix(in srgb,var(--surface2) 45%,var(--panel))}
-.ai-blok-kop{display:grid;gap:0;min-width:0;padding:4px 8px 6px 4px}
+.ai-blok-kop{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 4px;min-width:0;padding:4px 8px 6px 4px}
 html body .ai-blok-wissel{display:flex;align-items:center;gap:8px;width:100%;min-width:0;min-height:40px;padding:4px 6px;border:0;border-radius:var(--straal-m,12px);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .ai-blok-wissel:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
 .ai-blok-wissel:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
-.ai-blok-wissel strong{flex:0 1 auto;min-width:0;font-size:14px;font-weight:700}
-.ai-blok-samenvatting{flex:1 1 auto;min-width:0;overflow:hidden;color:var(--muted);font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.ai-blok-wissel strong{flex:1 1 auto;min-width:0;font-size:14px;font-weight:700}
+.ai-blok-samenvatting{flex:0 0 auto;flex-shrink:0;min-width:0;overflow:visible;color:var(--muted);font-size:12px;text-overflow:clip;white-space:nowrap}
 .ai-blok-pijl{flex:0 0 auto;width:18px;height:18px;color:var(--muted);transition:transform .15s}
 .ai-blok[data-open='ja'] .ai-blok-pijl{transform:rotate(180deg)}
 @media (prefers-reduced-motion:reduce){.ai-blok-pijl{transition:none}}
 .ai-blok-merk{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;padding:1px 8px;border:1px dashed color-mix(in srgb,var(--info) 65%,transparent);border-radius:999px;color:var(--info);font-size:12px;font-weight:800;line-height:1.6}
 .ai-blok-merk[data-opbouw='eenvoudig']{border-style:solid;border-color:var(--line);color:var(--muted)}
 .ai-blok-merk svg{width:13px;height:13px}
-.ai-blok-herkomst{padding:0 8px 0 10px;color:var(--muted);font-size:12px;line-height:1.35}
+.ai-blok-herkomst-info{display:none;place-items:center;width:28px;height:28px;border-radius:50%;color:var(--muted);font-size:13px;cursor:help}
+.ai-blok-herkomst{grid-column:1/-1;padding:0 8px 0 10px;color:var(--muted);font-size:12px;line-height:1.35}
+html body .google-mail-reader[data-lees-breedte='smal'] .ai-blok-herkomst{display:none}
+html body .google-mail-reader[data-lees-breedte='smal'] .ai-blok-herkomst-info{display:inline-grid}
 .ai-blok-inhoud{display:grid;gap:10px;min-width:0;padding:2px 14px 12px}
 .ai-blok-punten,.ai-blok-kort ul,.ai-blok-niet ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .ai-blok-punten>li,.ai-blok-kort li,.ai-blok-niet li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:0 8px;min-width:0}
