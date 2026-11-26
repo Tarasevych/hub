@@ -261,9 +261,9 @@ export const TWINTIG_MAILGEBREKEN_CONTRACTEN: readonly MailGebrekContract[] = [
       'Screenshot_20261125_134431_com.android.chrome.jpg',
     ],
     titelUk:
-      'Відсутність розумного приховування панелей інструментів при гортанні листа вниз і їх появи при гортанні назад угору (scroll-driven hide/reveal)',
+      'Відсутність розумного приховування панелей інструментів при гортанні листа вниз і їх появи при гортанні назад угору',
     titelNl:
-      'Ontbreken van slim verbergen van werkbalken bij omlaag scrollen en opnieuw tonen bij omhoog scrollen (scroll-driven hide/reveal)',
+      'Ontbreken van slim verbergen van werkbalken bij omlaag bladeren en opnieuw tonen bij omhoog bladeren',
     doelBestanden: ['src/mail/LeesVenster.tsx', 'src/MailLezerWerkbalk.tsx', 'src/MailGesprekInhoud.tsx'],
     oorzaakUk:
       'У LeesVenster.tsx, MailLezerWerkbalk.tsx та MailGesprekInhoud.tsx немає відстеження напрямку прокручування (deltaY / scrollTop), тому верхня й нижня панелі постійно займають ~40% висоти екрана смартфона.',
@@ -362,14 +362,14 @@ export const TWINTIG_MAILGEBREKEN_CONTRACTEN: readonly MailGebrekContract[] = [
     id: 'MAIL-19',
     schermafdrukken: ['Screenshot_20261125_134431_com.android.chrome.jpg'],
     titelUk:
-      'Суперечність і некоректність відображення повного походження відправника: показ офіційного логотипа бренду Too Good To Go (обрізаного зліва в аватарі відкритого листа) одночасно з тривожним щитом [🛡️?] («Не підтверджено») попри успішні SPF / DKIM / DMARC',
+      'Суперечність і некоректність відображення повного походження відправника: показ офіційного логотипа марки Too Good To Go (обрізаного зліва в аватарі відкритого листа) одночасно з тривожним щитом [🛡️?] («Не підтверджено») попри успішні SPF / DKIM / DMARC',
     titelNl:
       'Tegenstrijdige en onjuiste weergave van de volledige afzenderherkomst: gelijktijdige weergave van het officiële merklogo Too Good To Go (links afgekapt in de avatar) en het waarschuwingsschild [🛡️?] («Niet bevestigd») ondanks geldige SPF / DKIM / DMARC',
     doelBestanden: ['shared/mail-afzenders.ts', 'src/afzenders/AfzenderBadge.tsx', 'src/afzenders/afzenders.css'],
     oorzaakUk:
       'classificeer у shared/mail-afzenders.ts ніколи не виставляє статус підтвердженого домену за SPF+DKIM+DMARC поза статичним списком BEKENDE_DIENSTEN, а правило .mail-row-avatar[data-afzender-foto="merk"] .avatar-img { object-fit: contain; padding: 14% } у afzenders.css відсутнє для .mail-thread-avatar .afz-foto.',
     herstelEisUk:
-      'Коректно відображати криптографічно підтверджене походження домену (SPF/DKIM/DMARC) без оманливого тривожного знака питання поруч із офіційним логотипом бренду та вписувати логотипи організацій (object-fit: contain) в аватар відкритого листа й контексту.',
+      'Коректно відображати криптографічно підтверджене походження домену (SPF/DKIM/DMARC) без оманливого тривожного знака питання поруч із офіційним логотипом марки та вписувати логотипи організацій (object-fit: contain) в аватар відкритого листа й контексту.',
   },
   {
     id: 'MAIL-20',
@@ -470,10 +470,10 @@ export function evalueerTwintigMailGebrekenHerstel(rootDir: string): readonly Ma
     { id: 'MAIL-13', hersteld: mail13Hersteld, detail: mail13Hersteld ? 'Панелі ховаються при гортанні вниз і з’являються при гортанні вгору' : 'Очікує на виправлення: панелі не ховаються під час гортання листа' },
     { id: 'MAIL-14', hersteld: mail14Hersteld, detail: mail14Hersteld ? 'Неактивні панелі ховаються під час роботи зі спливними вікнами' : 'Очікує на виправлення: шапка й нижня панель затискають відкриті спливні вікна' },
     { id: 'MAIL-15', hersteld: mail15Hersteld, detail: mail15Hersteld ? 'Фон шторки Контексту непрозорий' : 'Очікує на виправлення: логотип TOO GOOD TO GO просвічується крізь .ctx-paneel' },
-    { id: 'MAIL-16', hersteld: mail16Hersteld, detail: mail16Hersteld ? 'Кнопки відповіді компактні, без подвійної рамки селекта' : 'Очікує на виправлення: 7-поверхова шапка відповіді (>360 px) та подвійна рамка селекта тону' },
+    { id: 'MAIL-16', hersteld: mail16Hersteld, detail: mail16Hersteld ? 'Кнопки відповіді компактні, без подвійної рамки спадного списку' : 'Очікує на виправлення: 7-поверхова шапка відповіді (>360 px) та подвійна рамка спадного списку тону' },
     { id: 'MAIL-17', hersteld: mail17Hersteld, detail: mail17Hersteld ? 'Вкладення .ics не дублюється двома великими картками' : 'Очікує на виправлення: дві великі картки поспіль для одного файла .ics' },
     { id: 'MAIL-18', hersteld: mail18Hersteld, detail: mail18Hersteld ? 'taalVan визначає мову листа за основним текстом, а не за ім’ям одержувача' : 'Очікує на виправлення: taalVan вважає англійський лист українським через ім’я «Павло Тарасевич»' },
-    { id: 'MAIL-19', hersteld: mail19Hersteld, detail: mail19Hersteld ? 'Логотип бренду вписаний (contain) в аватар відкритого листа і узгоджений зі статусом походження' : 'Очікує на виправлення: логотип бренду обрізаний в аватарі листа і суперечить щиту [🛡️?]' },
+    { id: 'MAIL-19', hersteld: mail19Hersteld, detail: mail19Hersteld ? 'Логотип марки вписаний (contain) в аватар відкритого листа і узгоджений зі статусом походження' : 'Очікує на виправлення: логотип марки обрізаний в аватарі листа і суперечить щиту [🛡️?]' },
     { id: 'MAIL-20', hersteld: mail20Hersteld, detail: mail20Hersteld ? 'flattenStyles зберігає @media-правила і не роздуває приховані логотипи' : 'Очікує на виправлення: flattenStyles знищує @media-правила й роздуває другий логотип у тілі листа' },
   ];
 }
@@ -513,14 +513,70 @@ export async function main(): Promise<number> {
       contract.titelUk.length > 10 &&
         contract.titelNl.length > 10 &&
         contract.schermafdrukken.length >= 1 &&
-        !/[ЁёЪъЫыЭэ]/.test(contract.titelUk + contract.oorzaakUk + contract.herstelEisUk),
+        !/[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/u.test(contract.titelUk + contract.oorzaakUk + contract.herstelEisUk),
     );
   }
 
   const statussen = evalueerTwintigMailGebrekenHerstel(rootDir);
   controleer(
-    'функція оцінювання стану виправлення evalueerTwintigMailGebrekenHerstel повертає звіти для всіх 20 пунктів',
-    statussen.length === 20 && statussen.every((s) => typeof s.hersteld === 'boolean' && s.detail.length > 0),
+    'функція оцінювання стану виправлення evalueerTwintigMailGebrekenHerstel підтверджує hersteld === true для всіх 20 пунктів',
+    statussen.length === 20 && statussen.every((s) => s.hersteld === true && s.detail.length > 0),
+    statussen.filter((s) => !s.hersteld).map((s) => `${s.id}: ${s.detail}`).join(' | '),
+  );
+  for (const st of statussen) {
+    controleer(`${st.id}: підтверджено втілення виправлення — ${st.detail}`, st.hersteld === true, st.detail);
+  }
+
+  // Прямі поведінкові перевірки втілених предметних функцій Пошти
+  const aiBronnenMod = await import('../../shared/ai-bronnen');
+  const mailAfzendersMod = await import('../../shared/mail-afzenders');
+  const gesprekContextMod = await import('../../src/mail/gesprek-context');
+  const bijlageVoorbeeldMod = await import('../../src/MailBijlageVoorbeeld');
+
+  const opgeschoond = aiBronnenMod.opschonenPuntTekst(
+    'Заберіть замовлення о 18:00 за посиланням <a href="https://maps.google.com/?q=Gent">Мапа</a> вчасно.',
+  );
+  controleer(
+    'поведінка MAIL-1: opschonenPuntTekst прибирає сирий тег <a href> і виділяє безпечну https-дію',
+    !opgeschoond.tekst.includes('<a ') &&
+      opgeschoond.koppelingen.length === 1 &&
+      opgeschoond.koppelingen[0].url === 'https://maps.google.com/?q=Gent',
+  );
+
+  controleer(
+    'поведінка MAIL-2: isEenrichtingsAfzender та antwoordNodig відсікають односторонню адресу no-reply@ і дозволяють живий Reply-To',
+    aiBronnenMod.isEenrichtingsAfzender('Too Good To Go <no-reply@toogoodtogo.com>') === true &&
+      aiBronnenMod.isEenrichtingsAfzender('Winkel <no-reply@winkel.be>', 'Klantendienst <support@winkel.be>') === false &&
+      aiBronnenMod.antwoordNodig(
+        [{ from: 'Too Good To Go <no-reply@toogoodtogo.com>' }],
+        ['pavlo@voorbeeld.test'],
+        [{ id: 'p1', tekst: 'Питання?', citaat: 'Питання?', brief: 1, alinea: 1, termijn: '', soort: 'vraag', status: 'letterlijk', bron: { brief: 1, nr: 1 }, verplaatst: false, termijnStaat: 'geen' }],
+      ) === null,
+  );
+
+  controleer(
+    'поведінка MAIL-6 + MAIL-7: herstelAanhefUittreksel відновлює "Hi Павло Тарасевич," без псування українського "Ні", а tijdlijn ставить вітальний лист першим',
+    gesprekContextMod.herstelAanhefUittreksel('Ні Павло Тарасевич, Your order is confirmed!').startsWith('Hi Павло Тарасевич,') &&
+      gesprekContextMod.herstelAanhefUittreksel('Ні Іване, сьогодні зустрічі не буде.') === 'Ні Іване, сьогодні зустрічі не буде.',
+  );
+
+  controleer(
+    'поведінка MAIL-11: formatMailAttachmentSize повертає кириличні КБ/МБ для uk та латинські KB/MB для nl',
+    bijlageVoorbeeldMod.formatMailAttachmentSize(2048, 'uk').includes('КБ') &&
+      bijlageVoorbeeldMod.formatMailAttachmentSize(2048, 'nl').includes('KB'),
+  );
+
+  controleer(
+    'поведінка MAIL-18 + MAIL-19: taalVan визначає "en" попри кириличне вітання, а domeinAuthVan підтверджує "pass" для DMARC pass',
+    aiBronnenMod.taalVan('Hi Павло Тарасевич,\nYour order for Carrefour Market is confirmed! Please pick up tomorrow.') === 'en' &&
+      mailAfzendersMod.domeinAuthVan('toogoodtogo.com', {
+        betrouwbaar: true,
+        authserv: 'mx.google.com',
+        spf: 'pass',
+        dkim: [{ uitslag: 'pass', domein: 'toogoodtogo.com' }],
+        dmarc: 'pass',
+        dmarcDomein: 'toogoodtogo.com',
+      }) === 'pass',
   );
 
   const ukDocPad = join(rootDir, 'docs/mail/ВИПРОБУВАННЯ-12-ВАД-ПОШТИ-HERSTEL-001.uk.md');
@@ -533,6 +589,6 @@ export async function main(): Promise<number> {
       readFileSync(nlDocPad, 'utf8').includes('ВИПРОБУВАННЯ-12-ВАД-ПОШТИ-HERSTEL-001.uk.md'),
   );
 
-  console.log(`\n${geslaagd}/${geslaagd + gefaald} geslaagd (herstel-001-mail-weergave-twintig-gebreken)`);
+  console.log(`\n${geslaagd}/${geslaagd + gefaald} geslaagd (herstel-001-mail-weergave-twaalf-gebreken)`);
   return gefaald === 0 ? 0 : 1;
 }

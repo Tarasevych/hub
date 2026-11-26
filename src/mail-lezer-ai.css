@@ -27,6 +27,8 @@
 .mra-veld{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;border:1px solid var(--line,#cbd5e1);border-radius:999px;min-width:0;max-width:100%}
 .mra-veld > svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted,#64748b)}
 .mra-veld select,.mra-veld input{min-width:0;max-width:100%;border:0;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:650}
+.canonical-chrome .mra .mra-veld select:not([multiple]):not([size]),html body .mra .mra-veld select{appearance:none;-webkit-appearance:none;min-height:0;height:auto;padding:0 6px 0 0;border:0;border-radius:0;background:transparent;box-shadow:none;cursor:pointer}
+.canonical-chrome .mra .mra-veld input,html body .mra .mra-veld input{min-height:0;height:auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 .mra-veld select:focus-visible,.mra-veld input:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:2px}
 .mra-veld:focus-within{border-color:color-mix(in srgb,var(--accent,#2f6f73) 48%,var(--line,#cbd5e1))}
 .mra-veld-breed{flex:1 1 220px;min-width:140px}
@@ -52,3 +54,6 @@
 
 /* Pakket 3 «Adaptive Mail Canvas» (24.10.2026): in de antwoordregel van het gesprek — geen eigen rand of marge, de regel doet dat. */
 .mra.mra-antwoord{padding:0;border-bottom:0}
+html body .mra.mra-antwoord[data-open='nee']{background:transparent;border:0;padding:0;gap:0;box-shadow:none}
+
+

@@ -23,9 +23,9 @@ import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
 import { jsonbTekst } from '../shared/tekst-veilig';
 import {
-  AFZENDER_STATUSSEN, adresVan, adressenVan, authGeslaagdVoor, bekendeDienstVoor, bewijsRegels, classificeer, geldigAdres, isGratisMailbox, naamSleutel, niveauVoor,
+  AFZENDER_STATUSSEN, adresVan, adressenVan, authGeslaagdVoor, bekendeDienstVoor, bewijsRegels, classificeer, domeinAuthVan, geldigAdres, isGratisMailbox, naamSleutel, niveauVoor,
   normaliseerAdres, organisatieDomein, parseAuthResults, vertrouwenVan,
-  type AfzenderBron, type AfzenderStatus, type AuthResultaten, type Classificatie, type ContactInvoer, type DnsBewijs,
+  type AfzenderBron, type AfzenderStatus, type AuthResultaten, type Classificatie, type ContactInvoer, type DnsBewijs, type DomeinAuthStand,
 } from '../shared/mail-afzenders';
 import { authUitslag, gmailOntvangstWeerlegd } from '../shared/mail-afzenders'; // звірка рядків доказу з AuthUitslag (стара помилка TS2322 у herbeoordeelUitBewijs, 31.10.2026)
 import { AFZENDER_REGELS_VERSIE, magAutomatischOverschrijven, magContactnaamOpheffen, NU_UITLEG } from '../shared/afzender-regels';
@@ -233,14 +233,50 @@ const magLazy = (userId: string) => {
   lijst.push(nu); lazyEmmer.set(userId, lijst); return true;
 };
 export type StatusItem = { from: unknown; messageId?: unknown; accountId?: unknown };
-export type StatusUit = { adres: string; naam: string; domein: string; status: AfzenderStatus; bron: AfzenderBron | null; reden: string; merk: string; opgeslagen: boolean; bericht?: 'auth-mislukt' | ''; notitie?: string };
+export type StatusUit = {
+  adres: string; naam: string; domein: string; status: AfzenderStatus; bron: AfzenderBron | null; reden: string; merk: string; opgeslagen: boolean;
+  bericht?: 'auth-mislukt' | ''; notitie?: string;
+  domeinAuth?: DomeinAuthStand; spf?: string; dkim?: string; dmarc?: string;
+};
+function authSamenvattingVoor(domein: string, auth?: AuthResultaten, laatste?: Bewijs['laatste']): { domeinAuth: DomeinAuthStand; spf?: string; dkim?: string; dmarc?: string } {
+  if (auth && auth.betrouwbaar) {
+    const dkimOk = auth.dkim.some((k) => k.uitslag === 'pass');
+    return {
+      domeinAuth: domeinAuthVan(domein, auth),
+      spf: auth.spf || undefined,
+      dkim: dkimOk ? 'pass' : auth.dkim[0]?.uitslag || undefined,
+      dmarc: auth.dmarc || undefined,
+    };
+  }
+  if (laatste) {
+    const hersteld: AuthResultaten = {
+      betrouwbaar: true,
+      authserv: laatste.authserv || '',
+      spf: authUitslag(laatste.spf || ''),
+      spfDomein: laatste.spfDomein || '',
+      dkim: laatste.dkimDomein ? [{ uitslag: 'pass', domein: laatste.dkimDomein }] : [],
+      dmarc: authUitslag(laatste.dmarc || ''),
+      dmarcDomein: laatste.dmarcDomein || '',
+      arc: authUitslag(laatste.arc || ''),
+    };
+    return {
+      domeinAuth: domeinAuthVan(domein, hersteld),
+      spf: laatste.spf || undefined,
+      dkim: laatste.dkimDomein ? 'pass' : undefined,
+      dmarc: laatste.dmarc || undefined,
+    };
+  }
+  return { domeinAuth: 'geen' };
+}
 export async function afzenderStatus(userId: string, items: StatusItem[]): Promise<StatusUit[]> {
   const invoer = items.slice(0, 100).map((i) => ({ ...adresVan(i.from), messageId: String(i.messageId || ''), accountId: String(i.accountId || '') }));
   const adressen = [...new Set(invoer.map((i) => i.adres).filter(Boolean))];
   const { rijen, contacten } = await inLade(userId, async (q, lade) => ({ rijen: await leesRijen(q, lade, adressen), contacten: await contactenVan(q, lade) }));
-  // Luie controle: alleen berichten van een bekend merkdomein zonder bevestiging, met bericht-id, beperkt per verzoek en per 5 min.
-  const teControleren = invoer.filter((i) => i.adres && i.messageId && /^[A-Za-z0-9_-]{1,200}$/.test(i.messageId) && bekendeDienstVoor(i.domein)
-    && (!rijen.get(i.adres) || rijen.get(i.adres)!.status === 'onbekend')).slice(0, LAZY_PER_VERZOEK);
+  // Luie controle: berichten van bekende diensten én geopende losse berichten van organisatiedomeinen zonder bewijs, beperkt per verzoek en per 5 min.
+  const enkelBericht = invoer.length <= 3;
+  const teControleren = invoer.filter((i) => i.adres && i.messageId && /^[A-Za-z0-9_-]{1,200}$/.test(i.messageId)
+    && (bekendeDienstVoor(i.domein) || (enkelBericht && !isGratisMailbox(i.domein)))
+    && (!rijen.get(i.adres) || (rijen.get(i.adres)!.status === 'onbekend' && !rijen.get(i.adres)!.bewijs?.laatste))).slice(0, LAZY_PER_VERZOEK);
   const authPerBericht = new Map<string, AuthResultaten>();
   for (const i of teControleren) {
     const c = lazyCache.get(i.messageId);
@@ -268,10 +304,18 @@ export async function afzenderStatus(userId: string, items: StatusItem[]): Promi
     if (rij) {
       const perBericht = auth ? classificeer({ naam: i.naam, adres: i.adres, domein: i.domein, auth, contacten }) : null;
       const misluktBericht = !!perBericht && perBericht.status === 'verdacht' && rij.status === 'geverifieerd';
-      return { adres: rij.adres, naam: i.naam || rij.naam, domein: rij.domein, status: misluktBericht ? 'verdacht' : rij.status, bron: rij.bron, reden: misluktBericht ? perBericht!.reden : rij.reden, merk: rij.merk, opgeslagen: true, bericht: misluktBericht ? 'auth-mislukt' : '', notitie: rij.notitie };
+      const samenvatting = authSamenvattingVoor(rij.domein, auth, rij.bewijs?.laatste);
+      return {
+        adres: rij.adres, naam: i.naam || rij.naam, domein: rij.domein,
+        status: misluktBericht ? 'verdacht' : rij.status, bron: rij.bron,
+        reden: misluktBericht ? perBericht!.reden : rij.reden, merk: rij.merk,
+        opgeslagen: true, bericht: misluktBericht ? 'auth-mislukt' : '', notitie: rij.notitie,
+        ...samenvatting,
+      };
     }
     const k = classificeer({ naam: i.naam, adres: i.adres, domein: i.domein, auth, contacten });
-    return { adres: i.adres, naam: i.naam, domein: i.domein, status: k.status, bron: k.bron, reden: k.reden, merk: k.merk, opgeslagen: false };
+    const samenvatting = authSamenvattingVoor(i.domein, auth);
+    return { adres: i.adres, naam: i.naam, domein: i.domein, status: k.status, bron: k.bron, reden: k.reden, merk: k.merk, opgeslagen: false, ...samenvatting };
   });
 }
 

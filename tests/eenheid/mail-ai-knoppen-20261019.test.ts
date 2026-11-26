@@ -90,8 +90,8 @@ export async function main(): Promise<number> {
   {
     check('14/4 de rij wikkelt en blijft binnen het scherm (ook ≥ 721 px: géén horizontale scroll die knoppen wegduwt)',
       /html body \.mra-bar\{flex-wrap:wrap;min-width:0;max-width:100%\}/.test(mobiel) && /html body \.google-mail-reader > section\.mra\{min-width:0;max-width:100%/.test(mobiel));
-    check('14/4 ≤ 430 px: alleen iconen, elk doel 44 × 44 px, «ШІ» houdt zijn tekst', /max-width:430px/.test(mobiel)
-      && /html body \.mra-bar > button:not\(\.mra-toggle\)\{width:44px/.test(mobiel) && /button:not\(\.mra-toggle\) > span\{position:absolute/.test(mobiel));
+    check('14/4 ≤ 430 px: alle ШІ-knoppen behouden hun zichtbare tekstlabel (MAIL-3), elk doel ≥ 44 px hoog', /max-width:430px/.test(mobiel)
+      && !/button:not\(\.mra-toggle\) > span\{position:absolute/.test(mobiel) && /html body \.mra-bar > button\{padding:0 11px\}/.test(mobiel));
     check('14/4 ≤ 720 px: het tekstveld krijgt een eigen regel in plaats van de knoppen weg te drukken', /html body \.mra-veld-breed\{flex:1 1 100%\}/.test(mobiel));
   }
 

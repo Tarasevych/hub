@@ -45,18 +45,21 @@ html body .mail-thread-message-head>.mail-thread-avatar+span>:is(small,.mail-thr
 
 /* afspraak uit een .ics-bijlage */
 .mail-thread-afspraken{display:grid;gap:8px;margin-top:12px}
-.mail-thread-afspraak{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:4px 10px;padding:12px;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:var(--straal-m,12px);background:var(--panel)}
-.mail-thread-afspraak>svg{width:20px;height:20px;margin-top:2px;color:var(--warn)}
+.mail-thread-afspraak{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:4px 10px;padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:var(--straal-m,12px);background:var(--panel)}
+.mail-thread-afspraak>svg{width:18px;height:18px;margin-top:2px;color:var(--warn)}
 .mail-thread-afspraak-tekst{display:grid;gap:2px;min-width:0}
-.mail-thread-afspraak-tekst strong{font-size:14px;font-weight:700;overflow-wrap:anywhere}
-.mail-thread-afspraak-tekst small{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.mail-thread-afspraak-tekst strong.mail-afspraak-titel{font-size:13.5px;line-height:1.3;font-weight:700;overflow-wrap:anywhere}
+.mail-thread-afspraak-tekst strong.mail-afspraak-titel:not([data-uitgeklapt='ja']){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.mail-afspraak-meer-knop{justify-self:start;padding:0;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:650;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.mail-thread-afspraak-tekst small{display:flex;align-items:center;gap:5px;min-width:0;color:var(--muted);font-size:12px;line-height:1.3}
+.mail-thread-afspraak-tekst small.mail-afspraak-plaats>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mail-thread-afspraak-tekst small svg{flex:0 0 auto;width:14px;height:14px}
-.mail-thread-afspraak-knoppen{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mail-thread-afspraak-knoppen{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .mail-thread-afspraak-knoppen button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .mail-thread-afspraak-knoppen button svg{width:16px;height:16px}
 .mail-thread-afspraak-knoppen button:first-child{border-color:var(--accent);background:var(--accent);color:var(--accentText)}
 .mail-thread-afspraak-knoppen button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-@media (pointer:coarse){.mail-thread-afspraak-knoppen button{min-height:44px}}
+@media (pointer:coarse){.mail-thread-afspraak-knoppen button{min-height:40px}}
 
 /* eigen labels onder het onderwerp (макет «Тема: … мітки»): naam + kleurstip uit de aanbieder; de tekst in themakleur (leesbaar in licht
    en donker, welke labelkleur ook gekozen is); hoogstens zes, de rest als «+N» met de namen in de titel */
@@ -100,7 +103,14 @@ html body .google-mail-reader>header .mail-reader-context-knop[aria-expanded='tr
 .mail-reader-weergave[open]>summary{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:var(--accent-soft)}
 /* MAILBEELD-002: is het paneel open, dan geen knopinfo «Вигляд» meer — die lag anders onder/naast het open paneel (donkere vlek rechtsboven) */
 .mail-reader-weergave[open]>summary[data-tooltip]::after,.mail-reader-weergave[open]>summary[data-tooltip]::before{display:none}
-.lz-weergave-paneel{position:absolute;z-index:690;top:calc(100% + 6px);right:0;width:max-content;max-width:min(340px,calc(100vw - 24px));padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-2);cursor:default}
+.lz-weergave-paneel{position:absolute;z-index:690;top:calc(100% + 6px);right:0;width:max-content;max-width:min(340px,calc(100vw - 24px));max-height:min(78dvh,560px);overflow-y:auto;padding:10px 14px 12px;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-2);cursor:default}
+.lz-paneel-kop,.mail-reader-overflow-kop{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-4px -4px 8px;padding:4px 4px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 80%,transparent);background:var(--panel)}
+.lz-paneel-kop strong,.mail-reader-overflow-kop strong{font-size:14px;font-weight:700;color:var(--text)}
+.lz-paneel-sluit,.mail-reader-overflow-sluit{display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.lz-paneel-sluit svg,.mail-reader-overflow-sluit svg{width:18px;height:18px}
+.lz-paneel-sluit:hover,.mail-reader-overflow-sluit:hover{background:var(--surface);color:var(--text)}
+.lz-paneel-sluit:focus-visible,.mail-reader-overflow-sluit:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+@media (pointer:coarse){.lz-paneel-sluit,.mail-reader-overflow-sluit{width:44px;height:44px}}
 .lz-weergave-keuzes{display:grid;gap:10px}
 .lz-weergave-keuzes fieldset{min-width:0;margin:0;padding:0;border:0}
 .lz-weergave-keuzes legend{margin:0 0 6px;padding:0;color:var(--muted);font-size:12px;font-weight:650}
@@ -148,6 +158,7 @@ html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-reader-
    midden schuift (toetsenbord, scrollIntoView) zijn voetnoot meeneemt. Uk: аркуш «Ще» стоїть упритул до нижньої панелі в усіх
    палітрах — у проміжку більше не видно вмісту листа; останній рядок не обрізається. */
 html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader-more[open]>.mail-reader-overflow-panel{top:auto!important;bottom:calc(var(--lz-blad-onder,58px) + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;max-height:min(72dvh,calc(100dvh - 142px))!important;padding-bottom:10px;scroll-padding-block:10px 56px;border-bottom-width:0;border-radius:var(--straal-l,16px) var(--straal-l,16px) 0 0}
+html body .google-mail-reader[data-onder-blad='ja'] .mail-reader-overflow-panel{--lz-blad-onder:0px}
 
 /* veiligheidsstrook boven de brieftekst: externe beelden verborgen tot «Показати один раз» of «Завжди від цього відправника» */
 .mail-beelden-strook{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface);color:var(--text);font-size:13px}
@@ -197,3 +208,14 @@ html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-
    erover — over «Ще»/⋮ en de onderste regels van de brief (stand: «mail-minimized-viewer intercepts pointer events»). Zolang deze brief
    open is, liggen ze eronder; bij sluiten of minimaliseren zijn ze er meteen weer. */
 html body:has(.google-mail-reader-backdrop[data-lees-modus='telefoon']:not(.reader-minimized)) .mail-minimized-viewer{z-index:229!important}
+
+/* MAIL-10 + MAIL-2: compacte eenregelige voet van het antwoord en rustige melding bij eenrichtingsafzender op alle schermbreedtes. */
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-thread-message-antwoord,
+html body .google-mail-reader[data-reply-open='ja'] .mail-thread-message-antwoord{display:none}
+html body .google-mail-reader .mail-thread-reply>header{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 8px}
+html body .google-mail-reader .mail-thread-reply>header>div{flex:1 1 160px;min-width:0}
+html body .google-mail-reader .mail-thread-reply>footer{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:2px 0 0}
+html body .google-mail-reader .mail-thread-reply>footer>:is(label,button){display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:42px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:650;white-space:nowrap}
+html body .google-mail-reader .mail-thread-reply>footer>button.primary{margin-inline-start:auto;padding:0 16px;font-weight:700}
+.mail-reply-eenrichting-waarschuwing{margin:0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--warn) 42%,var(--line));border-radius:var(--straal-s,10px);background:var(--warn-zacht);color:var(--text);font-size:12.5px;line-height:1.4}
+

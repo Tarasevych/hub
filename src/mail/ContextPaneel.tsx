@@ -40,9 +40,10 @@ type Props = {
   lang: 'uk' | 'nl';
   thread: MailThreadMessage[];
   /** De brief die nu open is («ви тут»). */
-  openId: string;
+  openId?: string;
   /** Account en cache van deze brief (bijlagen lezen). */
-  bron: IcsBron;
+  bron?: IcsBron;
+  accountId?: string;
   /** Adressen van de gekoppelde accounts: «ik» telt niet als afzender of deelnemer. */
   mijnAdressen: string[];
   /** Afzenderregels van de Post (kleur per adres) — dezelfde als in de lijst. */
@@ -56,7 +57,7 @@ type Props = {
   onOpenBijlage: (berichtId: string, bijlage: MailAttachment) => void;
   onDownloadBijlage: (berichtId: string, bijlage: MailAttachment) => void;
   onBewaarAlles: () => void;
-  /** «В Агенду» (met de gegevens uit de .ics) of «Створити подію» (null): het afspraakvenster van de brief. */
+  /** «У Календар» (met de gegevens uit de .ics) of «Створити подію» (null): het afspraakvenster van de brief. */
   onAfspraak: (voorstel: AfspraakVoorstel | null) => void;
   onTaak: () => void;
   /** «Що від вас потрібно?» van dit gesprek (alleen de punten die letterlijk in de brieven staan), of null. */
@@ -93,13 +94,35 @@ export default function ContextPaneel(p: Props) {
 }
 
 function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
+  const lv = useLeesVenster();
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
   const taal = p.lang === 'uk' ? 'uk-UA' : 'nl-BE';
   const id = useId(), ref = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<Tab>('tijdlijn');
+  const [langscroll, setLangscroll] = useState(false);
   const blad = p.vorm === 'blad';
+  const bron: IcsBron = useMemo(
+    () =>
+      p.bron || {
+        context: { service: 'mail', tabContext: 'inbox', sourceOrigin: typeof location !== 'undefined' ? location.origin : '' },
+        accountId: p.accountId || '',
+        cacheAccountId: p.accountId || '',
+      },
+    [p.bron, p.accountId],
+  );
   // het blad krijgt de focus bij het openen (de kolom niet: die staat er gewoon naast; F6 brengt je erheen)
   useEffect(() => { if (blad) ref.current?.focus({ preventScroll: true }); }, [blad]);
+  useEffect(() => { setLangscroll(false); }, [p.openId, blad]);
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    if (blad && langscroll) {
+      root.setAttribute('data-ctx-mobiel-langscroll', '1');
+      return () => { root.removeAttribute('data-ctx-mobiel-langscroll'); };
+    }
+    root.removeAttribute('data-ctx-mobiel-langscroll');
+    return undefined;
+  }, [blad, langscroll]);
   // «Показати абзац у листі» («Звідки це?», ook vanuit dit paneel): het blad gaat dicht, anders ligt het over die alinea. Ligt de stap
   // van «Звідки це?» nog bovenaan (telefoon), dan eerst die «Назад» afwachten — twee keer history.back() kort na elkaar is onbetrouwbaar.
   const sluitRef = useRef(p.sluit);
@@ -121,17 +144,19 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
   useEffect(() => { setVergelijkGroep(null); }, [p.openId]);
 
   const ik = useMemo(() => new Set(p.mijnAdressen.map((a) => normalizeMailAddress(a)).filter(Boolean)), [p.mijnAdressen]);
-  const open = p.thread.find((b) => b.id === p.openId) || p.thread[p.thread.length - 1];
+  const open = (p.openId ? p.thread.find((b) => b.id === p.openId) : undefined) || p.thread[p.thread.length - 1];
   // «Відправник»: de laatste brief van iemand anders dan ik (mijn eigen antwoord kleuren heeft geen zin)
   const afzenderBrief = useMemo(() => [...p.thread].reverse().find((b) => !ik.has(adresVan(b.from))) || open, [p.thread, ik, open]);
   const { groepen, los } = useMemo(() => bijlageVersies(p.thread), [p.thread]);
   const totaalBijlagen = useMemo(() => p.thread.reduce((n, b) => n + (b.attachments?.length || 0), 0), [p.thread]);
-  const ics = useIcsGebeurtenissen(p.bron, p.thread, true);
-  const verwant = useVerwant(p.thread, p.mijnAdressen, p.zoekBrieven, p.bron.accountId);
+  const ics = useIcsGebeurtenissen(bron, p.thread, true);
+  const verwant = useVerwant(p.thread, p.mijnAdressen, p.zoekBrieven, bron.accountId);
   const items = useMemo(() => tijdlijn({
     thread: p.thread, openId: open?.id || '', verwant: verwant.items, groepen, nu: Date.now(),
     gebeurtenissen: ics.items.map((g) => ({ titel: g.titel, start: g.start, einde: g.einde, plaats: g.plaats, berichtId: g.berichtId, providerAttachmentId: g.providerAttachmentId })),
   }), [p.thread, open?.id, verwant.items, groepen, ics.items]);
+  const hierIndex = useMemo(() => items.findIndex((it) => it.hier), [items]);
+  const eerdereAantal = hierIndex > 0 ? hierIndex : 0;
 
   const wanneer = (ms: number) => {
     if (!(ms > 0)) return '';
@@ -144,7 +169,15 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
   // ------------------------------------------------------------ secties
   const tijdlijnSectie = (
     <section className='ctx-sectie' aria-labelledby={`${id}-tl`} key='tijdlijn'>
-      <h3 id={`${id}-tl`}><History aria-hidden='true' />{t('Хронологія', 'Tijdlijn')}</h3>
+      <h3 id={`${id}-tl`}><History aria-hidden='true' />{t('Хронологія', 'Tijdlijn')}{items.length > 0 && <small>{items.length}</small>}</h3>
+      {eerdereAantal > 0 && (
+        <p className='ctx-tl-orientatie' data-eerdere-aantal={eerdereAantal}>
+          {t(
+            `↑ Попередніх записів вище: ${eerdereAantal} · поточний лист позначено «ви тут»`,
+            `↑ Eerdere items hierboven: ${eerdereAantal} · huidig bericht gemarkeerd met «u bent hier»`,
+          )}
+        </p>
+      )}
       <ol className='ctx-tijdlijn'>
         {items.map((it) => {
           const kleur = it.soort === 'bericht' ? contactKleur(p.regels, it.van) : '';
@@ -166,7 +199,7 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
                     {it.hier ? <b className='ctx-merk' data-merk='hier'>{t('ви тут', 'u bent hier')}</b> : null}
                     {reden ? <b className='ctx-merk' data-merk='verwant'>{reden === 'afzender' ? t('той самий відправник', 'zelfde afzender') : t('схожа тема', 'zelfde onderwerp')}</b> : null}
                   </small>
-                  {it.soort === 'bericht' ? <span className='ctx-tl-uittreksel'>{it.titel}</span> : <span className='ctx-tl-uittreksel'>{naam(it.van)}</span>}
+                  {it.soort === 'bericht' ? <span className='ctx-tl-uittreksel' translate='no'>{it.titel}</span> : <span className='ctx-tl-uittreksel' translate='no'>{naam(it.van)}</span>}
                   {it.versies.length > 0 && <span className='ctx-chips' aria-label={t('Версії вкладень у цьому листі', 'Versies van bijlagen in dit bericht')}>{it.versies.map((v) => <em key={v}>v{v}</em>)}</span>}
                 </button>
               )}
@@ -183,7 +216,7 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
       <span className='ctx-bestand'>
         {extra}
         <strong title={a.filename}>{a.filename}</strong>
-        <small>{wanneer(ms)} · {naam(van)} · {formatMailAttachmentSize(a.sizeBytes)}</small>
+        <small>{wanneer(ms)} · {naam(van)} · {formatMailAttachmentSize(a.sizeBytes, p.lang)}</small>
       </span>
       <span className='ctx-acties'>
         <button type='button' aria-label={`${t('Відкрити', 'Openen')}: ${a.filename}`} title={t('Відкрити', 'Openen')} onClick={() => p.onOpenBijlage(berichtId, a)}><ExternalLink aria-hidden='true' /></button>
@@ -296,7 +329,7 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
             {g.organisator && <small>{t('Організатор', 'Organisator')}: {g.organisator}</small>}
             <small className='ctx-bron'>{t('Джерело', 'Bron')}: {g.filename}</small>
             <span className='ctx-knoppen'>
-              <button type='button' className='ctx-knop' onClick={() => p.onAfspraak({ titel: g.titel, start: g.start, einde: g.einde, plaats: g.plaats, beschrijving: g.beschrijving })}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
+              <button type='button' className='ctx-knop' onClick={() => p.onAfspraak({ titel: g.titel, start: g.start, einde: g.einde, plaats: g.plaats, beschrijving: g.beschrijving })}><CalendarPlus aria-hidden='true' />{t('У Календар', 'Naar Agenda')}</button>
               {bijlage && <button type='button' className='ctx-knop' onClick={() => p.onOpenBijlage(g.berichtId, bijlage)}><ExternalLink aria-hidden='true' />{t('Відкрити .ics', '.ics openen')}</button>}
             </span>
           </article>
@@ -310,7 +343,7 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
       <MailDienstBruggen
         lang={p.lang}
         variant='taken'
-        bron={p.bron}
+        bron={bron}
         bericht={open}
         afzenderBrief={afzenderBrief}
         watNodig={wn}
@@ -340,13 +373,13 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
           <strong>{naam(afzenderBrief.from)}</strong>
           <small>{afzAdres}</small>
         </span>
-        <AfzenderBadge lang={p.lang} from={afzenderBrief.from} messageId={afzenderBrief.id} accountId={p.bron.accountId} plek='lezer' />
+        <AfzenderBadge lang={p.lang} from={afzenderBrief.from} messageId={afzenderBrief.id} accountId={bron.accountId} plek='lezer' berichtAuth={auth} />
       </div>
       <p className='ctx-controle' data-controle={controle}>
         <ControleIcoon aria-hidden='true' />
         <span>{controleTekst[controle][p.lang === 'uk' ? 0 : 1]}{auth ? <small> SPF {auth.spf || '—'} · DKIM {auth.dkim || '—'} · DMARC {auth.dmarc || '—'}</small> : null}</span>
       </p>
-      <MailDienstBruggen lang={p.lang} variant='afzender' bron={p.bron} bericht={open} afzenderBrief={afzenderBrief} />
+      <MailDienstBruggen lang={p.lang} variant='afzender' bron={bron} bericht={open} afzenderBrief={afzenderBrief} />
       <fieldset className='ctx-kleuren'>
         <legend>{t('Колір контакту', 'Kleur van het contact')}</legend>
         <label className='ctx-kleur' data-geen title={t('Без кольору', 'Geen kleur')}>
@@ -376,8 +409,8 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
   const tls = afzenderBrief?.details?.transport?.status === 'encrypted_observed';
   // externe beelden: «Вигляд → Зовнішні зображення» (standaard «Питати») of «altijd» voor deze afzender (op dit apparaat)
   // SEC-002 (interface-06/post-05): «altijd» per account + mailbox (bron.cacheAccountId), niet voor de hele browser; zonder kader «vragen».
-  const beeldenBereik = p.bron.cacheAccountId || '';
-  const beeldenInstelling = beeldenInstellingVan(useLeesVenster()?.weergave), afzenderAltijd = useBeeldenAltijd(afzenderBrief?.from || '', beeldenBereik);
+  const beeldenBereik = bron.cacheAccountId || '';
+  const beeldenInstelling = beeldenInstellingVan(lv?.weergave), afzenderAltijd = useBeeldenAltijd(afzenderBrief?.from || '', beeldenBereik);
   const beeldenGetoond = beeldenInstelling === 'altijd' || afzenderAltijd;
   const veiligSectie = (
     <section className='ctx-sectie' aria-labelledby={`${id}-vl`} key='veilig'>
@@ -429,6 +462,7 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
         className='ctx-paneel'
         data-context-paneel
         data-vorm={p.vorm}
+        data-langscroll={blad && langscroll ? 'ja' : undefined}
         role={blad ? 'dialog' : 'complementary'}
         aria-labelledby={`${id}-kop`}
         tabIndex={-1}
@@ -437,6 +471,18 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
           {blad && <span className='ctx-greep' aria-hidden='true' />}
           <h2 id={`${id}-kop`}>{t('Контекст', 'Context')}</h2>
           <small>{wn?.opbouw === 'model' ? t('з даних листів; пункти ШІ позначено «ШІ»', 'uit de berichten zelf; punten van AI dragen «AI»') : t('з даних листів, без ШІ', 'uit de berichten zelf, zonder AI')}</small>
+          {blad && lv?.breedte === 'smal' && (
+            <button
+              type='button'
+              className='ctx-knop ctx-knop-klein ctx-langscroll-knop'
+              data-ctx-langscroll-knop
+              aria-pressed={langscroll}
+              onClick={() => setLangscroll((v) => !v)}
+              title={t('Розгорнути весь вміст для довгого знімка екрана', 'Volledige inhoud uitvouwen voor een doorlopende schermafdruk')}
+            >
+              {langscroll ? t('Згорнути аркуш', 'Blad invouwen') : t('Повний список', 'Volledige lijst')}
+            </button>
+          )}
           <button type='button' className='ctx-sluit' aria-label={blad ? t('Закрити контекст', 'Context sluiten') : t('Сховати колонку контексту', 'Contextkolom verbergen')} title={t('Закрити', 'Sluiten')} onClick={p.sluit}><X aria-hidden='true' /></button>
         </header>
         {blad && (
@@ -455,7 +501,7 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
           {blad ? perTab[tab] : <>{tijdlijnSectie}{bijlagenSectie}{verwantSectie}{takenSectie}{afzenderSectie}{veiligSectie}</>}
         </div>
       </div>
-      {vergelijkGroep && <VersieVergelijk lang={p.lang} bron={p.bron} groep={vergelijkGroep} onSluit={() => setVergelijkGroep(null)} />}
+      {vergelijkGroep && <VersieVergelijk lang={p.lang} bron={bron} groep={vergelijkGroep} onSluit={() => setVergelijkGroep(null)} />}
     </>
   );
 }

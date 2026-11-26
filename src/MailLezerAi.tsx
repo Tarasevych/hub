@@ -62,7 +62,7 @@ export default function MailReaderAi({ lang, context, messages, onUseReply, vorm
   const empty = !messages.some((m) => m.plainText.trim());
   const uitleg = t('Помічник ШІ для цього листа: підсумок розмови і чернетка відповіді. Нічого не надсилається.', 'AI-hulp bij dit bericht: samenvatting van het gesprek en een antwoordconcept. Er wordt niets verzonden.');
 
-  return <section className={vorm === 'antwoord' ? 'mra mra-antwoord' : 'mra'} aria-label={t('ШІ-помічник для листа', 'AI-hulp bij het bericht')}>
+  return <section className={vorm === 'antwoord' ? 'mra mra-antwoord' : 'mra'} data-open={open ? 'ja' : 'nee'} aria-label={t('ШІ-помічник для листа', 'AI-hulp bij het bericht')}>
     <div className="mra-bar" role="toolbar" aria-label={t('Дії ШІ для листа', 'AI-acties voor het bericht')}>
       <button type="button" className="mail-reader-action-button mra-toggle" aria-expanded={open} aria-pressed={open} title={uitleg} data-tooltip={uitleg} onClick={() => setOpen((v) => !v)}>
         <Sparkles aria-hidden="true" /><span>{t('ШІ', 'AI')}</span>

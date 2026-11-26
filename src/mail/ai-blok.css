@@ -32,6 +32,10 @@ html body .ai-blok-wissel{display:flex;align-items:center;gap:8px;width:100%;min
 .ai-blok-tekst{margin-right:6px}
 .ai-blok-chips{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0;vertical-align:1px}
 html body .ai-bron-chip{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border:1px solid color-mix(in srgb,var(--info) 40%,var(--line));border-radius:999px;background:var(--panel);color:var(--info);font:inherit;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;cursor:pointer}
+html body a.ai-punt-koppeling{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 9px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:999px;background:var(--accent-soft);color:var(--accent);font:inherit;font-size:12px;font-weight:700;line-height:1.3;text-decoration:none;white-space:nowrap}
+html body a.ai-punt-koppeling svg{width:13px;height:13px;flex:0 0 auto}
+html body a.ai-punt-koppeling:hover{filter:brightness(1.05)}
+html body a.ai-punt-koppeling:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 button.ai-bron-chip:hover{background:var(--info-zacht)}
 button.ai-bron-chip:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .ai-bron-chip[data-niet-gevonden]{border-color:color-mix(in srgb,var(--fout) 45%,var(--line));color:var(--fout);cursor:default}
@@ -103,8 +107,9 @@ html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk tbody th,html
 html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk td+td{border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent)}
 
 /* ---------------------------------------------------------------- «Звідки це?»: blad in het leesvenster (zoals het contextblad) */
-html body .google-mail-reader>.bron-blad-scherm{grid-area:2/1/-1/-1;z-index:40;background:var(--overlay);opacity:.3}
-html body .google-mail-reader>.bron-blad{grid-area:2/1/-1/-1;z-index:41;justify-self:end;align-self:start;display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:min(460px,calc(100% - 24px));max-width:none;max-height:calc(100% - 24px);margin:12px;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3);overflow:hidden}
+html body .google-mail-reader>.bron-blad-scherm{grid-area:1 / 1 / -1 / -1;z-index:707;background:var(--overlay);opacity:.45}
+html body .google-mail-reader>.bron-blad{grid-area:1 / 1 / -1 / -1;z-index:708;justify-self:end;align-self:start;display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:min(460px,calc(100% - 24px));max-width:none;max-height:calc(100% - 24px);margin:12px;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel-dicht,var(--bg));color:var(--text);box-shadow:var(--schaduw-3);overflow:hidden}
+html.palet-maquette body .google-mail-reader>.bron-blad{background:var(--mq-oppervlak-dicht,var(--mq-bg,var(--panel-dicht,var(--bg))))}
 html body .google-mail-reader[data-lees-breedte='smal']>.bron-blad{justify-self:stretch;align-self:end;width:auto;max-height:88%;margin:0;border-radius:var(--straal-l,16px) var(--straal-l,16px) 0 0;border-bottom:0}
 .bron-blad>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 10px 6px 16px;border:0}
 html body .bron-blad h2{margin:0;font-family:inherit;font-size:16px;font-weight:700}
@@ -137,3 +142,11 @@ html body .mail-reply-extra>button{display:inline-flex;align-items:center;gap:6p
 .mail-reply-hint{max-width:100%;border-style:dashed!important;border-color:color-mix(in srgb,var(--info) 60%,var(--line))!important;color:var(--info)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mail-reply-hint[data-opbouw='eenvoudig']{border-style:solid!important;border-color:var(--line)!important;color:var(--text)!important}
 @media (pointer:coarse){html body .mail-reply-extra>button{min-height:44px}}
+
+/* hints van ШІ in het antwoord */
+.mail-reply-hints{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0;margin:2px 0 0}
+html body .mail-reply-hints>button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px dashed color-mix(in srgb,var(--info) 60%,var(--line));border-radius:999px;background:var(--panel);color:var(--info);font:inherit;font-size:13px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+html body .mail-reply-hints>button[data-opbouw='eenvoudig']{border-style:solid;border-color:var(--line);color:var(--text)}
+html body .mail-reply-hints>button svg{width:15px;height:15px;flex:0 0 auto}
+html body .mail-reply-hints>button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (pointer:coarse){html body .mail-reply-hints>button{min-height:40px}}

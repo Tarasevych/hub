@@ -3,11 +3,15 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { api } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
-import type { AfzenderBron, AfzenderStatus, BewijsRegel, DnsBewijs, VertrouwensNiveau } from '../../shared/mail-afzenders';
+import type { AfzenderBron, AfzenderStatus, BewijsRegel, DnsBewijs, DomeinAuthStand, VertrouwensNiveau } from '../../shared/mail-afzenders';
 import { normaliseerScanBeleid, type ScanBeleid } from '../../shared/mail-scan-beleid';
 import type { ScanVoorkeur } from '../../shared/contacten-scan-voorkeuren';
 
-export type AfzenderInfo = { adres: string; naam: string; domein: string; status: AfzenderStatus; bron: AfzenderBron | null; reden: string; merk: string; opgeslagen: boolean; bericht?: 'auth-mislukt' | ''; notitie?: string };
+export type AfzenderInfo = {
+  adres: string; naam: string; domein: string; status: AfzenderStatus; bron: AfzenderBron | null; reden: string; merk: string; opgeslagen: boolean;
+  bericht?: 'auth-mislukt' | ''; notitie?: string;
+  domeinAuth?: DomeinAuthStand | 'onbekend'; spf?: string; dkim?: string; dmarc?: string;
+};
 export const mailContext = () => ({ service: 'mail', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 
 const TTL = 5 * 60_000;

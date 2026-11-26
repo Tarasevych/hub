@@ -20,7 +20,7 @@ Dit document legt het volledige diagnoseprotocol en de verificatieproeven vast v
 10. **`MAIL-10` — Drievoudige verdubbeling van berichtacties en actief blijvende zwarte knop `↩ Beantwoorden` in de onderbalk terwijl het antwoordveld al openstaat (`13:43:33`, `13:43:39`, `13:43:53`).**
 11. **`MAIL-11` — Ontbrekende kop en sluitknop `[✕]` op het weergaveblad, misleidende knop `↙↗ Bericht minimaliseren` onderaan de weergave-instellingen en gemengde eenheden `МБ` tegenover `KB` (`13:43:33`, `13:47:22`).**
 12. **`MAIL-12` — Visuele afkapping van de HTML-berichtinhoud onder de drielaagse bovenbalk en lege beige strook boven het bericht (`13:43:33`, `13:44:21`, `13:44:31`).**
-13. **`MAIL-13` — Ontbreken van slim verbergen van werkbalken bij omlaag scrollen en opnieuw tonen bij omhoog scrollen (`scroll-driven hide/reveal`) (`13:43:33`..`13:44:31`):**
+13. **`MAIL-13` — Ontbreken van slim verbergen van werkbalken bij omlaag bladeren en opnieuw tonen bij omhoog bladeren (`13:43:33`..`13:44:31`):**
     - In `src/mail/LeesVenster.tsx`, `src/MailLezerWerkbalk.tsx` en `src/MailGesprekInhoud.tsx` blijven boven- en onderbalk altijd vaststaan en nemen ze ~40% van de schermhoogte in tijdens het lezen.
 14. **`MAIL-14` — Niet verbergen van inactieve werkbalken tijdens interactie met pop-upbladen («Wat wordt er van u verwacht?», «Context», «Weergave») of de geopende antwoordeditor (`13:43:39`, `13:44:59`..`13:47:22`):**
     - De drielaagse bovenbalk (`172 px`) en de onderste actiebalk (`60 px`) blijven zichtbaar en klemmen het actieve blad of het antwoordveld in een smalle strook.
@@ -39,6 +39,15 @@ Dit document legt het volledige diagnoseprotocol en de verificatieproeven vast v
 
 ---
 
-## 2. Geautomatiseerde eenheidstest
+## 2. Geïmplementeerde technische oplossingen in Mijlpaal M4 (`MAIL-1`..`MAIL-20`)
 
-De verificatie van alle 20 contracten wordt uitgevoerd door [`tests/eenheid/herstel-001-mail-weergave-twaalf-gebreken.test.ts`](../../tests/eenheid/herstel-001-mail-weergave-twaalf-gebreken.test.ts).
+- **Zuivere interpretatie van tekst, koppelingen en aanhef (`MAIL-1`, `MAIL-2`, `MAIL-5`, `MAIL-6`, `MAIL-18`):** in `shared/ai-bronnen.ts` zet `ontleedHtmlKoppelingen` ruwe ankers veilig om naar gekoppelde actieknoppen `.ai-punt-koppeling` (`WatNodigBlok.tsx`), sluit `isEenrichtingsAfzender` eenrichtingsadressen uit bij `antwoordNodig` met een rustige opmerking in het antwoordvak (`MailGesprekInhoud.tsx`), bepaalt `taalVan` de brontaal gewogen op basis van taaltekens en woorden zonder misleiding door een Cyrillische ontvangersnaam, herstelt `herstelAanhefUittreksel` met `translate="no"` de Engelse aanhef in de tijdlijn (`gesprek-context.ts`, `ContextPaneel.tsx`), en vervangt de actieknop overal de calque door zuiver Oekraïens `У Календар` (`Naar Agenda`) naast uitgebreide `<mr-beschermd id="N">`-ankerbescherming bij vertaling (`backend/ai-vertaling-routes.ts`).
+- **Volledige afzenderherkomst en duidelijke bijlagen (`MAIL-4`, `MAIL-11`, `MAIL-17`, `MAIL-19`):** in `shared/mail-afzenders.ts` en `backend/mail-afzenders.ts` is de soort `geverifieerd_domein` («Geverifieerd domein») toegevoegd bij geslaagde `DMARC`- of `SPF + DKIM`-controle, worden merklogo’s met `object-fit: contain` ongecropt in alle berichtavatars getoond (`afzenders.css`), tonen `64×64 px`-miniaturen korte formaatcodes `ICS / VCF / LDIF / CSV` (`mail-persoonsgegevens-mogelijkheden.ts`, `MailBijlageMiniatuur.tsx`), gebruikt `formatMailAttachmentSize` tweetalige eenheden (`Б / КБ / МБ / ГБ` en `B / KB / MB / GB`), hebben bijlageacties duidelijke labels (`MailBijlageKaart.tsx`) en blijft de `.ics`-afspraakkaart compact met uitklapbare titel.
+- **Dynamische leesruimte, kleefvrije knopinfo en opmaakbehoud (`MAIL-3`, `MAIL-7`..`MAIL-10`, `MAIL-12`..`MAIL-16`, `MAIL-20`):** in `ViewportKnopinfoLaag.tsx` opent knopinfo niet meer door aanraking en sluit ze zodra het anker buiten beeld schuift; in `LeesVenster.tsx`, `MailLezerWerkbalk.tsx`, `WeergaveKeuze.tsx` en `lees-venster.css` schuiven boven- en onderbalk tijdens bladeren vloeiend weg en terug via `transform` + `opacity` met hysterese, wijkt de onderbalk bij een geopend antwoordvak of uitschuifblad, blijft de antwoordvoet eenregelig, biedt «Context» een teller voor eerdere items en een `langscroll`-stand, en behoudt `MailBerichtTekst.tsx` veilige `@media`-regels via `adoptedStyleSheets` terwijl verborgen afbeeldingsvarianten (`.dark-img`) verborgen blijven.
+
+---
+
+## 3. Geautomatiseerde eenheids- en browserproeven
+
+De verificatie van alle 20 contracten wordt uitgevoerd door [`tests/eenheid/herstel-001-mail-weergave-twaalf-gebreken.test.ts`](../../tests/eenheid/herstel-001-mail-weergave-twaalf-gebreken.test.ts) en door browsercontroles via CDP in Google Chrome.
+
