@@ -399,7 +399,8 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
         <div className='bevestig-toegang-alt' data-geen-alternatieven='1'>
           <h3>{t('geenAltKop')}</h3>
           <p className='bevestig-toegang-uitleg'>{geenAlternatievenUitleg(lang, info, opties, toegestaan)}</p>
-          <p className='bevestig-toegang-uitleg'><a href='/aanmeldmethoden'>{t('naarMethoden')}</a></p>
+          {/* SITE-001 (пункт 16): діалог відкривається на будь-якій службі (mcp, api, …), тому адреса абсолютна — відносна вела на 404. nl: absoluut adres. */}
+          <p className='bevestig-toegang-uitleg'><a href='https://id.tarasevych.com/aanmeldmethoden'>{t('naarMethoden')}</a></p>
         </div>
       ))}
 

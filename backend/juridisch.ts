@@ -13,8 +13,25 @@ import type { RouterResponse, RouterRoutes } from '../server/platform/router';
 export const BIJGEWERKT = '2026-11-26';
 // Eigenaarsgegevens komen uit de serveromgeving (MR_CONTACT_EMAIL, MR_EIGENAAR_NAAM), nooit uit de code. Zie ENV-VARS.md.
 export const CONTACT = process.env.MR_CONTACT_EMAIL || '';
-export const EIGENAAR_NAAM = process.env.MR_EIGENAAR_NAAM || 'власник / eigenaar';
+export const EIGENAAR_NAAM = process.env.MR_EIGENAAR_NAAM || 'приватна особа / particulier';
+// SITE-001 (пункт 16): без MR_EIGENAAR_NAAM двомовна заглушка потрапляла в одномовне речення («власник — власник / eigenaar»).
+// Тепер кожна мова має власну заглушку. nl: zonder MR_EIGENAAR_NAAM kreeg elke taal een eigen vervanging.
+const EIGENAAR_UK = process.env.MR_EIGENAAR_NAAM || 'приватна особа';
+const EIGENAAR_NL = process.env.MR_EIGENAAR_NAAM || 'een particulier';
 export const CONTACT_HTML = CONTACT ? `<a href="mailto:${CONTACT}">${CONTACT}</a>` : 'на запит / op aanvraag';
+// SITE-001 (пункт 16): без MR_CONTACT_EMAIL двомовна заглушка давала «…активність на на запит / op aanvraag».
+// Тепер кожне речення має природний варіант своєю мовою. nl: elke zin heeft een natuurlijke vervanging in de eigen taal.
+const LINK = CONTACT_HTML;
+const C = {
+  ukAdres: CONTACT ? LINK : 'адресу надаємо на запит',
+  ukAdresZin: CONTACT ? LINK : 'Адресу надаємо на запит',
+  ukNapyshit: CONTACT ? `Напишіть на ${LINK}` : 'Напишіть власникові сервісу',
+  ukPovidomlyayete: CONTACT ? `на ${LINK}` : 'власникові сервісу',
+  nlAdres: CONTACT ? LINK : 'adres op aanvraag',
+  nlAdresZin: CONTACT ? LINK : 'Adres op aanvraag',
+  nlMail: CONTACT ? `Mail naar ${LINK}` : 'Neem contact op met de eigenaar',
+  nlVia: CONTACT ? `via ${LINK}` : 'bij de eigenaar',
+};
 const GOOGLE_BELEID = 'https://developers.google.com/terms/api-services-user-data-policy';
 const GBA = 'https://www.gegevensbeschermingsautoriteit.be';
 
@@ -60,7 +77,7 @@ ${nl}
 </section>
 </main>
 <footer class="voet">
-<p><a href="/">Головна / Start</a> · <a href="/privacy">Політика конфіденційності / Privacybeleid</a> · <a href="/terms">Умови користування / Gebruiksvoorwaarden</a></p>
+<p><a href="/">Головна / Start</a> · <a href="/privacy">Політика конфіденційності / Privacybeleid</a> · <a href="/terms">Умови використання / Gebruiksvoorwaarden</a></p>
 <p>${EIGENAAR_NAAM} · ${CONTACT_HTML} · ${BIJGEWERKT}</p>
 </footer>
 </body>
@@ -72,7 +89,7 @@ const PRIVACY_UK = `
 <p class="datum">Чинна з ${BIJGEWERKT}. Українська версія · <a href="#nl">Nederlandse versie</a></p>
 
 <h2>1. Хто відповідає за ваші дані</h2>
-<p>«Мій простір» (hub.tarasevych.com та піддомени tarasevych.com) — приватний особистий мережевий сервіс. Розпорядник даних: <strong>${EIGENAAR_NAAM}</strong>, Бельгія. Звертання з усіх питань щодо даних: ${CONTACT_HTML}.</p>
+<p>«Мій простір» (hub.tarasevych.com та піддомени tarasevych.com) — приватний особистий мережевий сервіс. Розпорядник даних: <strong>${EIGENAAR_UK}</strong>, Бельгія. Звертання з усіх питань щодо даних: ${C.ukAdres}.</p>
 <p>Сервіс не є публічним: обліковий запис можна створити лише через вхід Google, після чого власник вручну схвалює доступ (або ви приєднуєтеся за запрошенням до спільного робочого простору). Сервіс безкоштовний, без реклами, не призначений для дітей до 16 років.</p>
 
 <h2>2. Вхід через Google: які дані і навіщо</h2>
@@ -149,7 +166,7 @@ const PRIVACY_UK = `
 <p>Захищене з'єднання HTTPS із суворим транспортним захистом (HSTS), сувора політика безпеки вмісту (CSP), захист від підробки міжсайтових запитів (CSRF), обмеження кількості спроб, шифрування маркерів доступу й таємниць, окремі ролі бази даних із захистом на рівні рядків, незмінний журнал безпеки з ланцюжком відбитків, повторне підтвердження (Google або TOTP) для чутливих дій, необов'язкова двоетапна перевірка, зашифровані запасні копії.</p>
 
 <h2>12. Ваші права</h2>
-<p>Ви маєте право на доступ до даних і їх копію (у сервісі є вивантаження ваших даних у форматі JSON), виправлення (світлину профілю можна змінити в сервісі, ім'я та електронна адреса надходять від Google; інше — на запит), вилучення (вилучення облікового запису в сервісі або на запит), обмеження обробки, заперечення проти обробки, перенесення даних і відкликання згоди. Напишіть на ${CONTACT_HTML} — відповідь протягом одного місяця.</p>
+<p>Ви маєте право на доступ до даних і їх копію (у сервісі є вивантаження ваших даних у форматі JSON), виправлення (світлину профілю можна змінити в сервісі, ім'я та електронна адреса надходять від Google; інше — на запит), вилучення (вилучення облікового запису в сервісі або на запит), обмеження обробки, заперечення проти обробки, перенесення даних і відкликання згоди. ${C.ukNapyshit} — відповідь протягом одного місяця.</p>
 <p>Ви також можете подати скаргу до органу захисту даних. У Бельгії це <a href="${GBA}">Gegevensbeschermingsautoriteit / Autorité de protection des données (GBA/APD)</a>, або орган країни, де ви живете.</p>
 
 <h2>13. Зміни</h2>
@@ -161,7 +178,7 @@ const PRIVACY_NL = `
 <p class="datum">Geldig vanaf ${BIJGEWERKT}. Nederlandse versie · <a href="#uk">Українська версія</a></p>
 
 <h2>1. Wie is verantwoordelijk</h2>
-<p>‘Mijn Ruimte’ (hub.tarasevych.com en subdomeinen van tarasevych.com) is een privé, persoonlijke onlinedienst. Verwerkingsverantwoordelijke: <strong>${EIGENAAR_NAAM}</strong>, België. Contact voor alle vragen over gegevens: ${CONTACT_HTML}.</p>
+<p>‘Mijn Ruimte’ (hub.tarasevych.com en subdomeinen van tarasevych.com) is een privé, persoonlijke onlinedienst. Verwerkingsverantwoordelijke: <strong>${EIGENAAR_NL}</strong>, België. Contact voor alle vragen over gegevens: ${C.nlAdres}.</p>
 <p>De dienst is niet openbaar: een account ontstaat alleen via aanmelden met Google, waarna de eigenaar de toegang handmatig goedkeurt (of u sluit aan via een uitnodiging voor een gedeelde werkruimte). De dienst is gratis, zonder advertenties en niet bedoeld voor kinderen jonger dan 16 jaar.</p>
 
 <h2>2. Aanmelden met Google: welke gegevens en waarom</h2>
@@ -238,7 +255,7 @@ const PRIVACY_NL = `
 <p>HTTPS/HSTS, strikte Content Security Policy, CSRF-bescherming, limieten op pogingen, versleuteling van tokens en geheimen, aparte databaserollen met beveiliging op rijniveau, een onveranderlijk beveiligingslogboek met hashketen, herbevestiging (Google of TOTP) voor gevoelige acties, optionele tweestapsverificatie, versleutelde back-ups.</p>
 
 <h2>12. Uw rechten</h2>
-<p>U hebt recht op inzage en een kopie (in de dienst kunt u uw gegevens als JSON exporteren), rectificatie (de profielfoto kunt u in de dienst wijzigen, naam en e-mailadres komen van Google; de rest op verzoek), wissing (account verwijderen in de dienst of op verzoek), beperking, bezwaar, overdraagbaarheid en het intrekken van toestemming. Mail naar ${CONTACT_HTML} — u krijgt binnen een maand antwoord.</p>
+<p>U hebt recht op inzage en een kopie (in de dienst kunt u uw gegevens als JSON exporteren), rectificatie (de profielfoto kunt u in de dienst wijzigen, naam en e-mailadres komen van Google; de rest op verzoek), wissing (account verwijderen in de dienst of op verzoek), beperking, bezwaar, overdraagbaarheid en het intrekken van toestemming. ${C.nlMail} — u krijgt binnen een maand antwoord.</p>
 <p>U kunt ook een klacht indienen bij een toezichthouder. In België is dat de <a href="${GBA}">Gegevensbeschermingsautoriteit (GBA/APD)</a>, of de toezichthouder van het land waar u woont.</p>
 
 <h2>13. Wijzigingen</h2>
@@ -246,12 +263,12 @@ const PRIVACY_NL = `
 `;
 
 const TERMS_UK = `
-<h1>Умови користування</h1>
+<h1>Умови використання</h1>
 <p class="datum">Чинні з ${BIJGEWERKT}. Українська версія · <a href="#nl">Nederlandse versie</a></p>
 <ol>
-<li><strong>Сервіс.</strong> «Мій простір» — приватний особистий сервіс (власник — ${EIGENAAR_NAAM}, Бельгія), безкоштовний і без реклами. Як ми обробляємо дані — у <a href="/privacy">Політиці конфіденційності</a>.</li>
+<li><strong>Сервіс.</strong> «Мій простір» — приватний особистий сервіс (власник: ${EIGENAAR_UK}, Бельгія), безкоштовний і без реклами. Як ми обробляємо дані — у <a href="/privacy">Політиці конфіденційності</a>.</li>
 <li><strong>Доступ.</strong> Доступ надається лише після схвалення власником або за запрошенням. Права на доступ немає; власник може відмовити, обмежити або припинити доступ, зокрема при порушенні цих умов чи загрозі безпеці.</li>
-<li><strong>Ваш обліковий запис.</strong> Ви відповідаєте за безпеку свого облікового запису Google та додаткових способів входу і повідомляєте про підозрілу активність на ${CONTACT_HTML}.</li>
+<li><strong>Ваш обліковий запис.</strong> Ви відповідаєте за безпеку свого облікового запису Google та додаткових способів входу і повідомляєте про підозрілу активність ${C.ukPovidomlyayete}.</li>
 <li><strong>Допустиме використання.</strong> Заборонено: незаконний вміст чи дії; спроби обійти захист, отримати чужі дані або перевантажити сервіс; автоматизований масовий доступ без дозволу; використання сервісу для небажаних масових розсилок чи шкідливих програм. У спільних просторах поважайте дані інших учасників.</li>
 <li><strong>Ваш вміст.</strong> Вміст і дані залишаються вашими. Ви надаєте лише ті права, які потрібні, щоб зберігати й показувати їх вам і тим, з ким ви ними ділитеся.</li>
 <li><strong>Під'єднані сервіси.</strong> Для Gmail, Google Drive, Google Calendar, Google Photos чи Outlook діють також умови Google або Microsoft. Ви можете від'єднати їх будь-коли.</li>
@@ -260,7 +277,7 @@ const TERMS_UK = `
 <li><strong>Припинення.</strong> Ви можете будь-коли вилучити обліковий запис у сервісі (30 днів на відновлення). Сервіс або його частини можуть бути змінені чи припинені; про суттєві зміни ми повідомимо заздалегідь, якщо це можливо.</li>
 <li><strong>Зміни умов.</strong> Про суттєві зміни цих умов ми повідомимо в сервісі щонайменше за 14 днів до набрання ними чинності; подальше користування означає згоду з новою редакцією. Якщо ви не згодні, можете вилучити обліковий запис.</li>
 <li><strong>Право і спори.</strong> Діє право Бельгії; спори розглядає компетентний суд згідно із законом, без обмеження ваших прав як споживача.</li>
-<li><strong>Контакт.</strong> ${CONTACT_HTML}.</li>
+<li><strong>Контакт.</strong> ${C.ukAdresZin}.</li>
 </ol>
 `;
 
@@ -268,9 +285,9 @@ const TERMS_NL = `
 <h1>Gebruiksvoorwaarden</h1>
 <p class="datum">Geldig vanaf ${BIJGEWERKT}. Nederlandse versie · <a href="#uk">Українська версія</a></p>
 <ol>
-<li><strong>De dienst.</strong> ‘Mijn Ruimte’ is een privé, persoonlijke dienst van ${EIGENAAR_NAAM} (België), gratis en zonder advertenties. Hoe we met gegevens omgaan, staat in het <a href="/privacy#nl">Privacybeleid</a>.</li>
+<li><strong>De dienst.</strong> ‘Mijn Ruimte’ is een privé, persoonlijke dienst van ${EIGENAAR_NL} (België), gratis en zonder advertenties. Hoe we met gegevens omgaan, staat in het <a href="/privacy#nl">Privacybeleid</a>.</li>
 <li><strong>Toegang.</strong> Toegang alleen na goedkeuring door de eigenaar of via een uitnodiging. Er is geen recht op toegang; de eigenaar kan toegang weigeren, beperken of beëindigen, onder meer bij schending van deze voorwaarden of een beveiligingsrisico.</li>
-<li><strong>Uw account.</strong> U bent verantwoordelijk voor de beveiliging van uw Google-account en eventuele extra aanmeldmethoden en meldt verdachte activiteit via ${CONTACT_HTML}.</li>
+<li><strong>Uw account.</strong> U bent verantwoordelijk voor de beveiliging van uw Google-account en eventuele extra aanmeldmethoden en meldt verdachte activiteit ${C.nlVia}.</li>
 <li><strong>Aanvaardbaar gebruik.</strong> Niet toegestaan: onwettige inhoud of handelingen; pogingen om de beveiliging te omzeilen, gegevens van anderen te verkrijgen of de dienst te overbelasten; geautomatiseerde massale toegang zonder toestemming; de dienst gebruiken voor ongevraagde massaberichten of schadelijke software. Respecteer in gedeelde werkruimtes de gegevens van andere leden.</li>
 <li><strong>Uw inhoud.</strong> Inhoud en gegevens blijven van u. U geeft alleen de rechten die nodig zijn om ze op te slaan en te tonen aan uzelf en aan wie u ze deelt.</li>
 <li><strong>Gekoppelde diensten.</strong> Voor Gmail, Google Drive, Google Agenda, Google Foto's of Outlook gelden ook de voorwaarden van Google of Microsoft. U kunt ze altijd ontkoppelen.</li>
@@ -279,12 +296,12 @@ const TERMS_NL = `
 <li><strong>Beëindiging.</strong> U kunt uw account altijd in de dienst verwijderen (30 dagen herstelbaar). De dienst of onderdelen ervan kunnen wijzigen of stoppen; belangrijke wijzigingen melden we vooraf waar mogelijk.</li>
 <li><strong>Wijziging van de voorwaarden.</strong> Belangrijke wijzigingen van deze voorwaarden melden we in de dienst ten minste 14 dagen voordat ze ingaan; verder gebruik betekent instemming met de nieuwe versie. Gaat u niet akkoord, dan kunt u uw account verwijderen.</li>
 <li><strong>Recht en geschillen.</strong> Belgisch recht is van toepassing; geschillen gaan naar de volgens de wet bevoegde rechter, zonder beperking van uw rechten als consument.</li>
-<li><strong>Contact.</strong> ${CONTACT_HTML}.</li>
+<li><strong>Contact.</strong> ${C.nlAdresZin}.</li>
 </ol>
 `;
 
-export const PRIVACY_HTML = pagina('Політика конфіденційності · Privacybeleid — Мій простір / Mijn Ruimte', '/privacy', 'Які дані обробляє «Мій простір», навіщо, як довго та які у вас права. · Welke gegevens Mijn Ruimte verwerkt, waarom, hoe lang en welke rechten u hebt.', { pad: '/terms', uk: 'Умови користування', nl: 'Gebruiksvoorwaarden' }, PRIVACY_UK, PRIVACY_NL);
-export const TERMS_HTML = pagina('Умови користування · Gebruiksvoorwaarden — Мій простір / Mijn Ruimte', '/terms', 'Правила доступу до «Мого простору», допустиме використання, відповідальність і чинне право. · Regels voor toegang tot Mijn Ruimte, aanvaardbaar gebruik, aansprakelijkheid en toepasselijk recht.', { pad: '/privacy', uk: 'Політика конфіденційності', nl: 'Privacybeleid' }, TERMS_UK, TERMS_NL);
+export const PRIVACY_HTML = pagina('Політика конфіденційності · Privacybeleid — Мій простір / Mijn Ruimte', '/privacy', 'Які дані обробляє «Мій простір», навіщо, як довго та які у вас права. · Welke gegevens Mijn Ruimte verwerkt, waarom, hoe lang en welke rechten u hebt.', { pad: '/terms', uk: 'Умови використання', nl: 'Gebruiksvoorwaarden' }, PRIVACY_UK, PRIVACY_NL);
+export const TERMS_HTML = pagina('Умови використання · Gebruiksvoorwaarden — Мій простір / Mijn Ruimte', '/terms', 'Правила доступу до «Мого простору», допустиме використання, відповідальність і чинне право. · Regels voor toegang tot Mijn Ruimte, aanvaardbaar gebruik, aansprakelijkheid en toepasselijk recht.', { pad: '/privacy', uk: 'Політика конфіденційності', nl: 'Privacybeleid' }, TERMS_UK, TERMS_NL);
 
 const html = (body: string): RouterResponse => ({ statusCode: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', 'Content-Language': 'uk, nl' }, body });
 

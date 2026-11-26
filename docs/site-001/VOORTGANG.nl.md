@@ -33,7 +33,7 @@
 | 13 | Kleurcontrast | ✅ klaar | Bewaker groen (2190 paren); axe-core vond 22 knooppunten op `/privacy` en `/terms`; verholpen, nu 0 in lichte en donkere weergave |
 | 14 | Geschiktheid voor mobiel | ✅ klaar | 174 → 0 fouten op breedtes 320–768: zijwaarts schuiven van juridische pagina's, te kleine tekst, te kleine aanraakdoelen; Fastmail kreeg een plek op de e-mailbaan; test 18/18 |
 | 15 | Eigen 404-pagina | ✅ klaar | Echte statuscode 404 voor onbekende adressen (was 200); zonder aanmelding een losse pagina zonder menu; pad gedecodeerd; test 24/24; axe 0 |
-| 16 | Kapotte koppelingen | wacht | — |
+| 16 | Kapotte koppelingen | ✅ klaar | 305 interne en 3 externe adressen: één echt kapotte koppeling (bevestigingsvenster op mcp/api leidde naar 404) — verholpen; naam «Умови використання» gelijkgetrokken; bewakingstest 6/6 |
 | 17 | Validatie van alle formulieren | wacht | — |
 | 18 | Bescherming tegen spam | wacht | — |
 | 19 | Siteanalyse | ✅ klaar | Eigen anonieme analyse werkt nu echt en alleen met toestemming; tabblad «Bezoeken» voor de beheerder; 12/12 tests |
@@ -191,6 +191,25 @@ Bewakingstest `tests/eenheid/site-001-404.test.ts` — 24/24. axe-core — 0 sch
 | | ![na: Nederlands](schermafdrukken/p15-na-nl.webp) |
 | | ![na: aangemeld, zonder bedekking](schermafdrukken/p15-na-aangemeld.webp) |
 
+### 16. Kapotte koppelingen
+
+Een nieuw hulpmiddel doorloopt weergegeven pagina's zonder aanmelding (aanmelden, gasttoegang, `/privacy`, `/terms`, 404, e-mail), verzamelt alle `a`, `link`, `img`, `script`, leest `sitemap.xml` en voegt de vaste adressen uit de code toe (`src/`, `backend/`, `public/`, `index.html`). Gecontroleerd: 305 interne adressen op de proefopstelling en 3 externe (Google-beleidspagina, Belgische gegevensbeschermingsautoriteit) — alle externe werken.
+
+De eerste ronde toonde 181 «kapotte» adressen, maar dat was een fout in het hulpmiddel zelf: verzoeken van Playwright negeerden de naamomleiding en gingen naar de productiesite met de oude bouw (de productiesite werd alleen gelezen). Na de verbetering bleven 9 kandidaten over, elk met de hand nagegaan:
+- **echte fout:** het bevestigingsvenster (`src/platform/bevestig-toegang.tsx`) opent op elke dienst, ook mcp en api, maar de koppeling «naar aanmeldmethoden» was relatief (`/aanmeldmethoden`) — daar leidde ze naar 404. Nu is het adres absoluut `https://id.tarasevych.com/aanmeldmethoden`, zoals in `kluis-poort.tsx`;
+- `/methods`, `/sharing`, `/audit`, `/ai` — niet kapot: deze onderdelen verschijnen alleen op hun eigen diensten (id en admin), waar de paden openen (200);
+- `mcp.tarasevych.com/Grok`, `/claude`, `/mcp` — adressen van de aparte MCP-brug (poort 8091), die op de proefopstelling ontbreekt;
+- `/bestaat-niet` — bewuste controle van de 404-pagina.
+
+Daarnaast is de naam gelijkgetrokken: de pagina en de voetregel hadden «Умови користування», de app «Умови використання». Nu overal «Умови використання», zoals in de opdracht van de eigenaar. Zonder de variabele `MR_EIGENAAR_NAAM` belandde een tweetalige vervanging in een eentalige zin («власник — власник / eigenaar»). Nu heeft elke taal een eigen vervanging: «приватна особа» / «een particulier». Evenzo gaf het ontbreken van `MR_CONTACT_EMAIL` «…активність на на запит / op aanvraag». Nu heeft elke zin een natuurlijke vervanging in de eigen taal («meldt verdachte activiteit bij de eigenaar», «Adres op aanvraag»).
+
+Nieuwe bewakingstest `tests/eenheid/site-001-koppelingen.test.ts` — 6/6: gedeelde onderdelen `src/platform/**` hebben geen relatieve `href`; `sitemap.xml` en `robots.txt` wijzen naar iets bestaands; elk vast bestand uit `index.html` en de juridische pagina's staat in `public/`. `juridisch.test.ts` — 12/12.
+
+| Voor | Na |
+|---|---|
+| ![voor: kandidaten](schermafdrukken/p16-kaart-voor.webp) | ![na](schermafdrukken/p16-kaart-na.webp) |
+| ![voor: «Умови користування», «власник — власник / eigenaar»](schermafdrukken/p16-terms-voor.webp) | ![na](schermafdrukken/p16-terms-na.webp) |
+
 ### 19. Siteanalyse (samen met punt 5 uitgevoerd)
 
 De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
@@ -210,3 +229,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **26.11.2026 06:20** — punt 13 klaar: datumkleur en koppelingen in donkere weergave op de juridische pagina's verholpen; axe-core 0 schendingen.
 - **26.11.2026 06:40** — punt 15 klaar: echte 404 op de server, losse pagina zonder aanmelding, gedecodeerd pad.
 - **26.11.2026 07:10** — punt 14 klaar: meting op breedtes 320–768 gaf 174 fouten, na de verbetering 0; Fastmail kreeg een plek op de e-mailbaan.
+- **26.11.2026 07:30** — punt 16 klaar: één echt kapotte koppeling verholpen, naam van de voorwaarden gelijkgetrokken, nieuwe bewakingstest.
