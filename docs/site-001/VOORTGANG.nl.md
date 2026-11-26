@@ -35,7 +35,7 @@
 | 15 | Eigen 404-pagina | ✅ klaar | Echte statuscode 404 voor onbekende adressen (was 200); zonder aanmelding een losse pagina zonder menu; pad gedecodeerd; test 24/24; axe 0 |
 | 16 | Kapotte koppelingen | ✅ klaar | 305 interne en 3 externe adressen: één echt kapotte koppeling (bevestigingsvenster op mcp/api leidde naar 404) — verholpen; naam «Умови використання» gelijkgetrokken; bewakingstest 6/6 |
 | 17 | Validatie van alle formulieren | ✅ klaar | Server: 400 kapotte verzoeken op 50 openbare formulieren — 0 crashes. Browser: 7 fouten (Cyrillische dubbelgangers in de gastcode, fouten niet aan velden gekoppeld, focus ging verloren) — alle verholpen; bewakingstest 22/22 |
-| 18 | Bescherming tegen spam | wacht | — |
+| 18 | Bescherming tegen spam | ✅ klaar | 56 openbare POST-routes: 23 met een strikte limiet per IP, 33 met eigen bescherming (pogingenteller, handtekening, toegangstoken); live controle — 6 van 6 limieten werken exact; nieuwe bewakingstest 50/50 laat geen nieuwe route zonder bescherming door |
 | 19 | Siteanalyse | ✅ klaar | Eigen anonieme analyse werkt nu echt en alleen met toestemming; tabblad «Bezoeken» voor de beheerder; 12/12 tests |
 | 20 | Eén duidelijke oproep tot actie | wacht | — |
 | 21 | Knoppen en interactieve elementen | wacht | — |
@@ -232,6 +232,20 @@ Herhaalde controle in de browser — 0 fouten. Nieuwe bewakingstest `tests/eenhe
 | ![voor: ongeldige tekens niet zichtbaar](schermafdrukken/p17-gast-ongeldig-voor.webp) | ![na](schermafdrukken/p17-gast-ongeldig-na.webp) |
 | ![voor: wachtwoordfout zonder veldmarkering](schermafdrukken/p17-wachtwoord-fout-voor.webp) | ![na](schermafdrukken/p17-wachtwoord-fout-na.webp) |
 
+### 18. Bescherming tegen spam
+
+De site heeft geen open formulieren voor anonieme berichten (contactformulier, vrije registratie): alles wat zonder aanmelding gegevens aanneemt, is aanmelden, de gastcode, gedeelde koppelingen, terugroepadressen van diensten en de MCP-connector. Bescherming tegen spam betekent hier dus snelheidslimieten, tellers voor mislukte pogingen en controle van handtekeningen. Een lokveld is niet nodig: er is geen formulier dat een robot zonder geheim kan invullen.
+
+**Inventaris.** Van de 56 openbare POST-routes (zonder sessie) hebben er 23 een strikte limiet per IP in `server/start.ts` (`STRIKTE_LIMIETEN`; bij een databasestoring weigeren in plaats van doorlaten) en 33 alleen de algemene grens van 600/min. Voor elk van die 33 is uitgezocht waarom dat volstaat: een eigen teller (code in het Telegram-venster — pauze en uitschakeling; gedeelde koppelingen — code van 192 bits, 120/min per IP en 10 wachtwoordpogingen per 5 min), een verplichte handtekening (GitHub, Telegram, Google, Microsoft), een toegangstoken (extensie, agenten, MCP), alleen lezen of idempotent afmelden. Een toegangsverzoek van een nieuwe gebruiker heeft al een grens van 5/uur per account en 30/uur per IP, en de eigenaar krijgt maar één melding.
+
+**Live controle op de proefomgeving.** De eerste ronde toonde twee limieten die «niet werkten» — de oorzaak lag bij de proefomgeving: `E2E_LOKALE_LIMIETEN=1` vermenigvuldigt de strikte limieten met 20 voor lokale browsertests. Zonder die factor, zoals op de productiesite, werken alle 6 gecontroleerde limieten precies volgens de instellingen: gastcode en oude wachtwoordaanmelding — blokkade na 5 mislukte pogingen; aanmelden met wachtwoord — 429 vanaf de 11e poging; start van aanmelden zonder Google — vanaf de 31e; registratie van een MCP-client — vanaf de 21e; gedeelde koppeling — vanaf de 121e. De vensters zijn vast (60 s), daarom zijn de reeksen 2 × de limiet plus marge lang. De mens ziet de uitleg «Te veel pogingen. Probeer het over ~N min opnieuw» (uk + nl).
+
+**Nieuwe bewakingstest** `tests/eenheid/site-001-spam.test.ts` — 50/50. Hij leest `PUBLIEKE_ROUTES` en `STRIKTE_LIMIETEN` en eist voor elke openbare POST-route een strikte limiet of een vastgelegde eigen bescherming met een merkteken dat in de code te vinden is. Daarnaast controleert hij: raadbare geheimen (wachtwoorden, gastcode, koppelcode van een agent, Telegram-code, sessieoverdracht, MCP-registratie en -tokens) hebben juist een strikte limiet; alle strikte limieten weigeren bij een databasestoring; de factor ×20 werkt alleen bij de waarde `1` en ontbreekt in `deploy/`. Een nieuwe route zonder bescherming glipt er niet meer ongemerkt door.
+
+| Voor | Na |
+|---|---|
+| ![voor: limieten niet aangetoond, geen bewaking](schermafdrukken/p18-kaart-voor.webp) | ![na: 6 van 6 limieten, bewaking 50/50](schermafdrukken/p18-kaart-na.webp) |
+
 ### 19. Siteanalyse (samen met punt 5 uitgevoerd)
 
 De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
@@ -253,3 +267,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **26.11.2026 07:10** — punt 14 klaar: meting op breedtes 320–768 gaf 174 fouten, na de verbetering 0; Fastmail kreeg een plek op de e-mailbaan.
 - **26.11.2026 07:30** — punt 16 klaar: één echt kapotte koppeling verholpen, naam van de voorwaarden gelijkgetrokken, nieuwe bewakingstest.
 - **26.11.2026 07:55** — punt 17 klaar: de server doorstond 400 kapotte verzoeken zonder crash; 7 formulierfouten in de browser verholpen, nieuwe bewakingstest.
+- **26.11.2026 08:00** — punt 18 klaar: snelheidslimieten live gecontroleerd (6 van 6), 56 openbare routes uitgezocht, nieuwe bewakingstest.
