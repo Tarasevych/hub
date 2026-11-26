@@ -49,7 +49,7 @@ export async function main(): Promise<number> {
       [p, t].every((a) => /<meta name="description" content="[^"]{40,}">/.test(a.body) && a.body.includes('rel="canonical"') && a.body.includes('href="/favicon.svg"'))
         && tt.includes('Зміни умов') && tt.includes('Wijziging van de voorwaarden'));
     check('SITE-001: Oekraïense tekst zonder Engelse vaktermen (браузер, токен, кеш, хостинг, трафік, онлайн, e-mail) en zonder Russische letters',
-      [p, t].every((a) => { const uk = tekst(a.body.slice(a.body.indexOf('id="uk"'), a.body.indexOf('id="nl"'))); return uk.length > 1500 && !/браузер|[Тт]окен|кеш|хостинг|трафік|онлайн|e-mail|[ЁёЪъЫыЭэ]/.test(uk); }));
+      [p, t].every((a) => { const uk = tekst(a.body.slice(a.body.indexOf('id="uk"'), a.body.indexOf('id="nl"'))); return uk.length > 1500 && !/браузер|[Тт]окен|кеш|хостинг|трафік|онлайн|e-mail|[\u0401\u0451\u042A\u044A\u042B\u044B\u042D\u044D]/.test(uk); }));
     check('links naar elkaar en naar de start', p.body.includes('href="/terms"') && t.body.includes('href="/privacy"') && p.body.includes('href="/"') && t.body.includes('href="/"'));
     const head = await haal(poort, '/privacy', 'hub.tarasevych.com', 'HEAD'), post = await haal(poort, '/privacy', 'hub.tarasevych.com', 'POST');
     const prefix = await haal(poort, '/privacy/extra'), slash = await haal(poort, '/privacyx'), spa = await haal(poort, '/inbox');

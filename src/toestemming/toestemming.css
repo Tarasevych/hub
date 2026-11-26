@@ -1,0 +1,12 @@
+/* SITE-001 (пункт 5): смуга згоди. Рівноцінні кнопки (однаковий розмір і вага), контраст ≥ 4.5:1, не перекриває вміст на мобільному. */
+.mr-toestemming{position:fixed;z-index:2147483000;left:16px;right:16px;bottom:16px;margin:0 auto;max-width:760px;display:flex;gap:16px;align-items:center;justify-content:space-between;padding:16px 18px;border:1px solid var(--line,#d6d3cc);border-radius:14px;background:var(--panel,var(--bg,#ffffff));color:var(--text,#1d2328);box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:.92rem;line-height:1.45}
+.mr-toestemming h2{margin:0 0 4px;font-family:inherit;font-size:1rem;font-weight:700;letter-spacing:normal;color:inherit}
+.mr-toestemming p{margin:0}
+.mr-toestemming a{color:var(--accent,#1f5e62);text-decoration:underline;text-underline-offset:2px}
+.mr-toestemming-knoppen{display:flex;gap:10px;flex-shrink:0}
+.mr-toestemming-knoppen button{min-height:44px;min-width:150px;padding:10px 16px;border-radius:10px;border:1px solid var(--accent,#1f5e62);background:var(--accent,#1f5e62);color:var(--accentText,#ffffff);font:inherit;font-weight:600;cursor:pointer}
+.mr-toestemming-knoppen button:focus-visible{outline:3px solid var(--accent,#1f5e62);outline-offset:2px}
+.mr-toestemming-knoppen button:hover{filter:brightness(1.08)}
+@media (prefers-color-scheme:dark){.mr-toestemming{background:var(--panel,#1f2529);color:var(--text,#eef1f2);border-color:var(--line,#3a4348)}.mr-toestemming a{color:var(--accent,#8fd0d4)}}
+@media (max-width:640px){.mr-toestemming{flex-direction:column;align-items:stretch;gap:12px;left:8px;right:8px;bottom:8px;padding:14px;font-size:.86rem}.mr-toestemming-knoppen button{min-height:42px}.mr-toestemming-knoppen{flex-direction:column}.mr-toestemming-knoppen button{width:100%;min-width:0}}
+@media print{.mr-toestemming{display:none}}

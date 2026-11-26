@@ -130,10 +130,10 @@ const PRIVACY_UK = `
 </ul>
 
 <h2>9. Аналітика</h2>
-<p>Аналітика типово <strong>вимкнена</strong>. Лише якщо ви її самі ввімкнете, ми рахуємо знеособлені щоденні лічильники подій (без ідентифікатора облікового запису, IP-адреси чи пристрою). Сторонніх систем аналітики чи реклами немає.</p>
+<p>Аналітика типово <strong>вимкнена</strong>. Лише якщо ви її самі ввімкнете у смузі згоди, ми рахуємо знеособлені щоденні лічильники відвідувань розділів (лише назва розділу, без адреси сторінки, ідентифікатора облікового запису, IP-адреси чи пристрою). Сторонніх систем аналітики чи реклами немає.</p>
 
 <h2>10. Реп'яшки (cookie) та місцеве сховище</h2>
-<p>Ми використовуємо лише необхідні реп'яшки (cookie), без яких вхід не працює: реп'яшок сеансу (<code>HttpOnly</code>, <code>Secure</code>), прив'язку процедури входу (близько 15 хвилин), реп'яшок вкладки й сервісу та, якщо ви обираєте «запам'ятати», запам'ятований оглядач. Місцеве сховище оглядача містить налаштування інтерфейсу (мова, тема, меню) і проміжні копії для швидшого відображення. Сторонніх реп'яшків немає.</p>
+<p>Ми використовуємо лише необхідні реп'яшки (cookie), без яких вхід не працює: реп'яшок сеансу (<code>HttpOnly</code>, <code>Secure</code>), прив'язку процедури входу (близько 15 хвилин), реп'яшок вкладки й сервісу та, якщо ви обираєте «запам'ятати», запам'ятований оглядач. Місцеве сховище оглядача містить налаштування інтерфейсу (мова, тема, меню) і проміжні копії для швидшого відображення. Сторонніх реп'яшків немає. Під час першого відвідування смуга згоди пропонує дві рівноцінні кнопки — «Лише необхідні» та «Дозволити аналітику»; вибір зберігається в місцевому сховищі оглядача, і його можна змінити будь-коли за посиланням «Налаштування реп'яшків» на сторінці входу.</p>
 
 <h2>11. Безпека</h2>
 <p>Захищене з'єднання HTTPS із суворим транспортним захистом (HSTS), сувора політика безпеки вмісту (CSP), захист від підробки міжсайтових запитів (CSRF), обмеження кількості спроб, шифрування маркерів доступу й таємниць, окремі ролі бази даних із захистом на рівні рядків, незмінний журнал безпеки з ланцюжком відбитків, повторне підтвердження (Google або TOTP) для чутливих дій, необов'язкова двоетапна перевірка, зашифровані запасні копії.</p>
@@ -219,10 +219,10 @@ const PRIVACY_NL = `
 </ul>
 
 <h2>9. Analyse</h2>
-<p>Analyse staat standaard <strong>uit</strong>. Alleen als u het zelf aanzet, tellen we anonieme dagtellers per gebeurtenis (zonder account-id, IP-adres of apparaat). Er zijn geen externe analyse- of advertentiesystemen.</p>
+<p>Analyse staat standaard <strong>uit</strong>. Alleen als u het zelf aanzet in de toestemmingsbalk, tellen we anonieme dagtellers van bezoeken per onderdeel (alleen de naam van het onderdeel, zonder paginaadres, account-id, IP-adres of apparaat). Er zijn geen externe analyse- of advertentiesystemen.</p>
 
 <h2>10. Cookies en lokale opslag</h2>
-<p>We gebruiken alleen functionele cookies waarzonder aanmelden niet werkt: de sessiecookie (HttpOnly, Secure), de binding van een aanmeldtransactie (ongeveer 15 minuten), tabblad-/dienstcookies en, als u ‘onthouden’ kiest, de onthouden browser. De lokale opslag van de browser bevat interface-instellingen (taal, thema, menu) en een cache om sneller te tonen. Er zijn geen cookies van derden.</p>
+<p>We gebruiken alleen functionele cookies waarzonder aanmelden niet werkt: de sessiecookie (HttpOnly, Secure), de binding van een aanmeldtransactie (ongeveer 15 minuten), tabblad-/dienstcookies en, als u ‘onthouden’ kiest, de onthouden browser. De lokale opslag van de browser bevat interface-instellingen (taal, thema, menu) en een cache om sneller te tonen. Er zijn geen cookies van derden. Bij het eerste bezoek biedt de toestemmingsbalk twee gelijkwaardige knoppen — ‘Alleen noodzakelijke’ en ‘Analyse toestaan’; de keuze wordt in de lokale opslag van de browser bewaard en kan altijd worden gewijzigd via ‘Cookie-instellingen’ op de aanmeldpagina.</p>
 
 <h2>11. Beveiliging</h2>
 <p>HTTPS/HSTS, strikte Content Security Policy, CSRF-bescherming, limieten op pogingen, versleuteling van tokens en geheimen, aparte databaserollen met beveiliging op rijniveau, een onveranderlijk beveiligingslogboek met hashketen, herbevestiging (Google of TOTP) voor gevoelige acties, optionele tweestapsverificatie, versleutelde back-ups.</p>

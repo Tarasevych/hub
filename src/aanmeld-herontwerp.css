@@ -392,6 +392,9 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 }
 .mr-sign-in-legal a{color:inherit!important;text-decoration:none!important}
 .mr-sign-in-legal a:hover,.mr-sign-in-legal a:focus-visible{text-decoration:underline!important;color:var(--mr-login-ink)!important}
+/* SITE-001: кнопка «Налаштування реп'яшків» виглядає як сусідні посилання · knop oogt als de naastgelegen koppelingen */
+.mr-sign-in-legal .mr-sign-in-legal-knop{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;min-height:24px}
+.mr-sign-in-legal .mr-sign-in-legal-knop:hover,.mr-sign-in-legal .mr-sign-in-legal-knop:focus-visible{text-decoration:underline;color:var(--mr-login-ink)}
 
 .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in.checking{
  display:grid;grid-template-rows:1fr;place-content:center

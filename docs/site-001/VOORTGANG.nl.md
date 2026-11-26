@@ -21,8 +21,8 @@
 | 1 | Privacybeleid | ✅ klaar | Bestaande `/privacy` gecontroleerd (13 delen, uk + nl); taalzuivering, `meta description`, canonieke adres, pictogram, contactplaatshouder hersteld |
 | 2 | Gebruiksvoorwaarden | ✅ klaar | Bestaande `/terms` gecontroleerd; punt «Wijziging van de voorwaarden» toegevoegd (uk + nl), naam van de eigenaar in de Oekraïense versie, taalzuivering |
 | 3 | Openliggende sleutels en geheimen verwijderen | ✅ klaar | Geen echte geheimen in de boom of de geschiedenis (1063 vastleggingen); `.gitleaks.toml` + werkstroom «Geheimscan» |
-| 4 | HTTPS | wacht | `Strict-Transport-Security` in `server/start.ts`, Cloudflare-tunnel |
-| 5 | Toestemmingsbanner voor cookies | wacht | Geen banner; wel analysetoestemming in de instellingen (`backend/privacy.ts`) |
+| 4 | HTTPS | ✅ klaar | Alle 11 subdomeinen: http → 301 naar https, HSTS voor een jaar met subdomeinen, alleen TLS 1.3, certificaat tot 21.02.2027; geen codewijziging nodig |
+| 5 | Toestemmingsbalk voor cookies | ✅ klaar | Nieuwe toestemmingsbalk met twee gelijkwaardige knoppen op alle pagina's, uk + nl, opnieuw te openen vanaf de aanmeldpagina; 24/24 tests |
 | 6 | Paginatitels en `meta description` | wacht | Dynamische titels in `index.html` aanwezig |
 | 7 | Voorbeeldafbeelding voor sociale netwerken | wacht | Geen `og:image` |
 | 8 | Sitepictogram (favicon) | wacht | Bestaande `public/favicon*` — controleren |
@@ -36,7 +36,7 @@
 | 16 | Kapotte koppelingen | wacht | — |
 | 17 | Validatie van alle formulieren | wacht | — |
 | 18 | Bescherming tegen spam | wacht | — |
-| 19 | Siteanalyse | wacht | Eigen analyse met toestemming (`backend/privacy.ts`) — controleren |
+| 19 | Siteanalyse | ✅ klaar | Eigen anonieme analyse werkt nu echt en alleen met toestemming; tabblad «Bezoeken» voor de beheerder; 12/12 tests |
 | 20 | Eén duidelijke oproep tot actie | wacht | — |
 | 21 | Knoppen en interactieve elementen | wacht | — |
 | 22 | Foutregistratie en bewaking | wacht | — |
@@ -76,7 +76,37 @@ Toegevoegd: `.gitleaks.toml` met toegelichte uitzonderingen en de werkstroom `.g
 |---|---|
 | ![voor](schermafdrukken/p03-geheimen-voor.webp) | ![na](schermafdrukken/p03-geheimen-na.webp) |
 
+### 4. HTTPS
+
+De productiesite is uitsluitend lezend gecontroleerd (zonder wijzigingen): alle 11 subdomeinen sturen `http://` met code 301 door naar `https://` en geven `Strict-Transport-Security: max-age=31536000; includeSubDomains`. Het certificaat van Google Trust Services WE1 is geldig tot 21.02.2027. TLS 1.0 en 1.1 worden geweigerd; in de `openssl`-controle antwoordt alleen TLS 1.3. Er was geen codewijziging nodig, dus de schermafdruk «voor» is gelijk aan «na».
+Opmerking: het hoofddomein `tarasevych.com` (zonder subdomein) antwoordt niet — dat is een kwestie van de naaminstellingen van de eigenaar, niet van de toepassing.
+
+| Voor = na (geen wijziging nodig) |
+|---|
+| ![na](schermafdrukken/p04-https-na.webp) |
+
+### 5. Toestemmingsbalk voor cookies
+
+Er was geen toestemmingsbalk, terwijl het beleid analyse alleen met toestemming beloofde. Toegevoegd: [`src/toestemming/`](../../src/toestemming/) — een balk onderaan elke pagina (ook de aanmeldpagina zonder sessie) met twee **gelijkwaardige** knoppen «Alleen noodzakelijke» en «Analyse toestaan» (zelfde grootte en uitzicht, geen vooraf gekozen toestemming), een koppeling naar het beleid en teksten in uk + nl. De keuze wordt in de lokale opslag van de browser bewaard (`mr-toestemming-v1`), niet in een cookie; op pagina's met een sessie gaat ze ook naar de server (`POST /api/owner/privacy/toestemming`). De koppeling «Cookie-instellingen» op de aanmeldpagina opent de balk opnieuw. Delen 9 en 10 van het beleid zijn aangevuld.
+Test `tests/eenheid/site-001-toestemming.test.ts`: 24/24.
+
+| Voor | Na |
+|---|---|
+| ![voor](schermafdrukken/p05-toestemming-voor.webp) | ![na](schermafdrukken/p05-toestemming-na.webp) |
+| ![voor](schermafdrukken/p05-toestemming-mobiel-voor.webp) | ![na](schermafdrukken/p05-toestemming-mobiel-na.webp) |
+| — | ![na de keuze](schermafdrukken/p05-toestemming-gekozen-na.webp) |
+
+### 19. Siteanalyse (samen met punt 5 uitgevoerd)
+
+De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
+Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 18-database).
+
+| Voor | Na |
+|---|---|
+| ![voor](schermafdrukken/p19-analyse-voor.webp) | ![na](schermafdrukken/p19-analyse-na.webp) |
+
 ## Logboek
 
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
 - **25.11.2026 23:40** — punten 1–3 klaar; lokale testomgeving (PostgreSQL 18, Node 24, Chromium) buiten de opslagplaats opgezet.
+- **25.11.2026 23:58** — punt 4 gecontroleerd (geen wijziging nodig); punten 5 en 19 klaar, volledige bouw met bewakers en typecontrole van de server groen.

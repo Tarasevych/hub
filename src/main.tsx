@@ -34,9 +34,15 @@ const naActivering = (doe: () => void) => {
 
 // Gastpagina (toegangscode inwisselen, §13.11): eigen, losse weergave zonder de app-shell en zonder eigenaarssessie.
 const gastPagina = location.pathname === '/toegang' && (location.hostname === 'id.tarasevych.com' || location.hostname === 'localhost');
+// SITE-001 (пункти 5 і 19): смуга згоди на реп'яшки та знеособлену аналітику — власний корінь на кожній сторінці, також гостьовій.
+const toonToestemming = () => { void import('./toestemming/ToestemmingBand').then(({ default: ToestemmingBand }) => {
+  const el = document.createElement('div'); el.id = 'toestemming-band'; document.body.appendChild(el);
+  createRoot(el).render(<ToestemmingBand />);
+}); };
 naActivering(() => {
   // «Підключити автоматично»: terugkeer van OAuth in het popupvenster — geen app-shell, alleen de code doorgeven aan de opener.
   if (isOAuthTerug()) { verwerkOAuthTerug(); return; }
+  toonToestemming();
   if (gastPagina) {
     document.getElementById('boot-shell')?.remove();
     document.documentElement.classList.remove('boot-active');

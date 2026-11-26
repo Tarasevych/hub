@@ -421,6 +421,10 @@
   {
    "sleutel": "src/bijlage-weergave/weergave.css :: .weergave-dialoog-laag",
    "reden": "SPIL-WEERGAVE (22.11.2026): затемнений шар під модальним вікном дій спільного переглядача вкладень (переслати, зберегти, ШІ); вікно, не плаваюча кнопка; відкривається лише за прапорцем bijlage-weergave-gedeeld-v1 і зникає після закриття."
+  },
+  {
+   "sleutel": "src/toestemming/toestemming.css :: .mr-toestemming",
+   "reden": "SITE-001: toestemmingsband voor analyse onderaan het scherm, alleen tot de keuze is gemaakt. Geen zwevende knop maar een balk met twee gelijkwaardige keuzes en een koppeling naar /privacy; verdwijnt na de keuze."
   }
  ],
  "kopReserves": [

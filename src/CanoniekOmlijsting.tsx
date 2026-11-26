@@ -1,3 +1,4 @@
+import{heropenToestemming}from'./toestemming/toestemming';
 import{useHuidigeRuimte,ruimteFilterActief}from'./tech/ruimtes/ruimte-signaal';
 import{paginaVerborgen,useFotoVlaggen}from'./foto/foto-vlaggen';
 import{lazy,Suspense}from'react';import{useRuimtesV2}from'./tech/ruimtes/ruimtes-vlag';
@@ -208,6 +209,9 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
    <a href={lang==='uk'?'/privacy':'/privacy#nl'}>{lang==='uk'?'Конфіденційність':'Privacy'}</a>
    <span aria-hidden='true'> · </span>
    <a href={lang==='uk'?'/terms':'/terms#nl'}>{lang==='uk'?'Умови використання':'Gebruiksvoorwaarden'}</a>
+   <span aria-hidden='true'> · </span>
+   {/* SITE-001: вибір щодо реп'яшків можна змінити будь-коли · keuze over cookies altijd wijzigen */}
+   <button type='button' className='mr-sign-in-legal-knop' data-toestemming-heropen onClick={heropenToestemming}>{lang==='uk'?'Налаштування реп’яшків':'Cookie-instellingen'}</button>
   </nav>
  </section>
 }
