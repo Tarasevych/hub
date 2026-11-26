@@ -27,8 +27,8 @@
 | 7 | Voorbeeldafbeelding voor sociale netwerken | ✅ klaar | `public/og-afbeelding.png` 1200×630 (61 kB), `og:image` met alternatieve tekst en `twitter:card` in de toepassing en op de juridische pagina's |
 | 8 | Sitepictogram (favicon) | ✅ klaar | **Fout op de productiesite:** `favicon-192.png` en `favicon-512.png` beschadigd; alle pictogrammen opnieuw getekend uit `favicon.svg`, `favicon.ico` toegevoegd, manifest met «any» en «maskable» |
 | 9 | `sitemap.xml` en `robots.txt` | ✅ klaar | `sitemap.xml` met alleen `/privacy` en `/terms`; `robots.txt` met `Sitemap:`-regel en toegang tot pictogrammen en voorbeeldafbeelding, rest van de site gesloten |
-| 10 | Alternatieve teksten bij afbeeldingen | wacht | — |
-| 11 | Afbeeldingen comprimeren | wacht | — |
+| 10 | Alternatieve teksten bij afbeeldingen | ✅ klaar | Alle 51 afbeeldingen hebben `alt`; vlag en wapen van een plaats kregen een beschrijvende tekst; bewakingstest 4/4 |
+| 11 | Afbeeldingen comprimeren | ✅ klaar | PNG-pictogrammen en voorbeeldafbeelding: 69 319 → 47 395 B (−32 %); 1744 webp al gecomprimeerd; officiële logo's onveranderd (SHA-256) |
 | 12 | Laadsnelheid | wacht | — |
 | 13 | Kleurcontrast | wacht | Bewaker `scripts/kleur-contrast-controle.mjs` aanwezig |
 | 14 | Geschiktheid voor mobiel | wacht | — |
@@ -123,6 +123,23 @@ Terloops een fout uit punt 19 verholpen: het tabblad «Bezoeken» las het server
 | — | ![voorbeeld](schermafdrukken/p07-og-na.webp) |
 | ![voor](schermafdrukken/p08-iconen-voor.webp) | ![na](schermafdrukken/p08-iconen-na.webp) |
 
+### 10. Alternatieve teksten bij afbeeldingen
+
+Alle 51 JSX-afbeeldingen in `src/` en `index.html` gecontroleerd: geen afbeelding zonder `alt`-attribuut. Een lege `alt` (29 plaatsen) alleen bij decoratieve beelden (avatar naast de naam, miniatuur in een knop met `aria-label`), zoals WCAG 1.1.1 vraagt. Fout: vlag en wapen van een plaats (`src/merk/PlaatsKeten.tsx`) hadden een lege `alt`, hoewel ze inhoud dragen; nu «Vlag: <naam>» / «Wapen: <naam>».
+Nieuwe bewakingstest `tests/eenheid/site-001-alt.test.ts`: 4/4 — laat geen nieuwe afbeelding zonder `alt` door.
+
+| Voor | Na |
+|---|---|
+| ![voor](schermafdrukken/p10-voor.webp) | ![na](schermafdrukken/p10-na.webp) |
+
+### 11. Afbeeldingen comprimeren
+
+Overzicht: 1835 afbeeldingen, 8,38 MB; daarvan 1744 wapens en vlaggen in `webp` (gemiddeld 4,7 kB — al gecomprimeerd), 67 `svg`, 24 `png`. De officiële logo's `src/merk/officieel/*.png` zijn met SHA-256 in `HERKOMST.json` vastgelegd als originelen van de aanbieder — bewust niet gewijzigd. Pictogrammen en voorbeeldafbeelding gecomprimeerd met `pngquant` + `optipng` zonder zichtbaar verlies: 69 319 → 47 395 B (−32 %), voorbeeldafbeelding 61 → 43 kB.
+
+| Na (omvangtabel) | Voorbeeldafbeelding voor / na |
+|---|---|
+| ![na](schermafdrukken/p11-na.webp) | ![vergelijking](schermafdrukken/p11-og-na.webp) |
+
 ### 19. Siteanalyse (samen met punt 5 uitgevoerd)
 
 De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
@@ -138,3 +155,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **25.11.2026 23:40** — punten 1–3 klaar; lokale testomgeving (PostgreSQL 18, Node 24, Chromium) buiten de opslagplaats opgezet.
 - **25.11.2026 23:58** — punt 4 gecontroleerd (geen wijziging nodig); punten 5 en 19 klaar, volledige bouw met bewakers en typecontrole van de server groen.
 - **26.11.2026 00:25** — punten 6–9 klaar (titels, voorbeeldafbeelding, pictogrammen, `sitemap.xml`, `robots.txt`); zwarte pagina van het tabblad «Bezoeken» verholpen; volledige bouw groen.
+- **26.11.2026 06:00** — punten 10 en 11 klaar. De eigenaar gaf opdracht «акаунт» overal in de interface te vervangen door «обліковий запис».
