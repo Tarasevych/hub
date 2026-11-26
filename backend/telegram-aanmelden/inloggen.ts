@@ -80,7 +80,7 @@ type InlogRij = {
   dienst?: string; onthouden?: boolean; terug_adres?: string;
   telegram_id: string | null; user_id: string | null; koppeling_id: string | null;
   stand: 'wacht' | 'goedgekeurd' | 'geweigerd' | 'verlopen' | 'ingewisseld';
-  code_nodig: boolean; code_ok: boolean; verloopt_op: Date; sessie_id: string | null;
+  code_nodig: boolean; code_ok: boolean; aangemaakt_op?: Date | string; verloopt_op: Date; sessie_id: string | null;
   sessie_ingetrokken_op?: Date | null; methode: string; reden: string;
   /** SEC-002 (migratie 0271): hash van de apparaatcookie van de startende browser; null = geen cookie = nieuw apparaat. */
   apparaat_sleutel?: string | null;
@@ -257,11 +257,11 @@ async function apparaatBekend(userId: string, apparaatCookie: string | null | un
  * SEC-002 (slot s, eind-regressie midden-2): sinds de apparaatcookie is elke browser na het bijwerken één keer «nieuw». De bescherming
  * blijft (geen herkenning op het label), maar wie GEEN toegangssleutel heeft, krijgt een duidelijke weg in plaats van een doodlopende
  * «потрібен ключ доступу»: in deze browser één keer met een andere manier aanmelden (Google), daarna is hij bekend.
- * Людина без ключа доступу: увійдіть у цьому браузері іншим способом (Google) — далі вхід через Telegram тут працюватиме.
+ * Людина без ключа доступу: увійдіть у цьому оглядачі іншим способом (Google) — далі вхід через Telegram тут працюватиме.
  */
 export const ANDERE_WEG_CODE = 'NIEUW_APPARAAT_ANDERE_WEG';
 export const ANDERE_WEG_UITLEG = {
-  uk: 'Цей браузер ще не відомий вашому обліковому запису: після оновлення безпеки кожен браузер один раз підтверджується, а ключа доступу у вас немає. Увійдіть у цьому браузері іншим способом — через Google. Після цього вхід через Telegram тут працюватиме без додаткових кроків. Ключ доступу можна додати в «Способах входу».',
+  uk: 'Цей оглядач ще не відомий вашому обліковому запису: після оновлення безпеки кожен оглядач один раз підтверджується, а ключа доступу у вас немає. Увійдіть у цьому оглядачі іншим способом — через Google. Після цього вхід через Telegram тут працюватиме без додаткових кроків. Ключ доступу можна додати в «Способах входу».',
   nl: 'Deze browser is nog niet bekend bij uw account: na de beveiligingsupdate wordt elke browser één keer bevestigd, en u hebt geen toegangssleutel. Meld u in deze browser aan op een andere manier — met Google. Daarna werkt aanmelden met Telegram hier zonder extra stappen. Een toegangssleutel kunt u toevoegen bij «Aanmeldmethoden».',
 } as const;
 /** Bestond er vóór de update een rij op het grove label van deze browser (oude sleutel)? Alleen lezen, voor de tekst van de kaart. */
@@ -270,7 +270,7 @@ async function oudLabelBekend(userId: string, label: string): Promise<boolean> {
   return r.rows.length > 0;
 }
 const OVERGANG_REGEL = {
-  uk: 'ℹ️ Перший вхід із цього браузера після оновлення безпеки: раніше ви вже входили з такого пристрою, але тепер кожен браузер один раз підтверджується. Якщо вхід почали не ви — натисніть «⛔ Це не я».',
+  uk: 'ℹ️ Перший вхід із цього оглядача після оновлення безпеки: раніше ви вже входили з такого пристрою, але тепер кожен оглядач один раз підтверджується. Якщо вхід почали не ви — натисніть «⛔ Це не я».',
   nl: 'ℹ️ Eerste aanmelding vanuit deze browser na de beveiligingsupdate: u meldde zich eerder al aan vanaf zo’n apparaat, maar nu wordt elke browser één keer bevestigd. Bent u niet zelf begonnen met aanmelden, tik dan «⛔ Dit ben ik niet».',
 };
 const overgangRegel = (taal: BotTaal): string => (taal === 'nl' ? OVERGANG_REGEL.nl : taal === 'uk' ? OVERGANG_REGEL.uk : `${OVERGANG_REGEL.uk}\n${OVERGANG_REGEL.nl}`);
@@ -481,14 +481,15 @@ export async function vensterAccounts(id: string, tg: string): Promise<Array<{ k
   return uit;
 }
 /** Wat het venster toont (geen geheimen: de kandidaten zijn openbaar, welk pictogram juist is NIET). */
-export async function inlogVoorVenster(id: string, tg: string): Promise<{ stand: string; apparaat: string; toestel: string; plaats: string; land: string; dienst: string; terugUrl: string; ipPunt: Punt | null; geoPunt: Punt | null; geoStand: GeoStand; geoNauwkeurig: number | null; kandidaten: number[]; verlooptOp: string; codeNodig: boolean; symboolOk: boolean; codeOk: boolean } | null> {
+export async function inlogVoorVenster(id: string, tg: string): Promise<{ stand: string; apparaat: string; toestel: string; plaats: string; land: string; dienst: string; terugUrl: string; ipPunt: Punt | null; geoPunt: Punt | null; geoStand: GeoStand; geoNauwkeurig: number | null; kandidaten: number[]; aangemaaktOp: string; verlooptOp: string; codeNodig: boolean; symboolOk: boolean; codeOk: boolean } | null> {
   const r = await inlog(id);
   if (!r || r.telegram_id !== tg || !r.kandidaten) return null;
   const stand = (r.stand === 'wacht' || r.stand === 'goedgekeurd') && verlopen(r) ? 'verlopen' : r.stand;
   const terugUrl = await inlogTerugUrl(r.id, r).catch(() => '');
+  const aangemaaktOp = r.aangemaakt_op ? new Date(r.aangemaakt_op).toISOString() : new Date().toISOString();
   return { stand, apparaat: r.apparaat, toestel: r.toestel, plaats: r.plaats, land: r.land, dienst: paginaWeergave(r), terugUrl,
     ipPunt: geldigPunt(r.ip_lat, r.ip_lon), geoPunt: r.geo_stand === 'gegeven' ? geldigPunt(r.geo_lat, r.geo_lon) : null, geoStand: r.geo_stand || '', geoNauwkeurig: r.geo_nauwkeurig ?? null,
-    kandidaten: r.kandidaten.map(Number), verlooptOp: new Date(r.verloopt_op).toISOString(), codeNodig: r.code_nodig, symboolOk: r.symbool_ok, codeOk: r.code_ok };
+    kandidaten: r.kandidaten.map(Number), aangemaaktOp, verlooptOp: new Date(r.verloopt_op).toISOString(), codeNodig: r.code_nodig, symboolOk: r.symbool_ok, codeOk: r.code_ok };
 }
 
 export type VensterKeuze = 'ok' | 'code' | 'passkey-nodig' | 'verlopen' | 'geweigerd' | 'fout-symbool' | 'plaats-nodig';

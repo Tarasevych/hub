@@ -87,7 +87,7 @@ type Weergave = {
   ipPunt?: Punt | null; geoPunt?: Punt | null; geoStand?: GeoStand;
   /** TELEGRAM-002: de Telegram-account die dit venster opent (naam, @naam, foto) — visueel kenmerk naast het site-account. */
   telegram?: { naam: string; gebruikersnaam: string; foto: string; letter: string } | null;
-  kandidaten: number[]; verlooptOp: string; stap: 'kiezen' | 'code' | 'klaar' | 'verlopen' | 'geweigerd';
+  kandidaten: number[]; aangemaaktOp?: string; verlooptOp: string; stap: 'kiezen' | 'code' | 'klaar' | 'verlopen' | 'geweigerd';
 };
 
 async function tgBeeld(tg: string): Promise<Weergave['telegram']> {
@@ -103,7 +103,7 @@ async function weergave(tok: VensterToken, taal: Taal): Promise<Weergave | null>
     const accounts = await Promise.all(ruw.map(async (a) => { const beeld = await accountBeeld(a.userId); return { koppelingId: a.koppelingId, naam: a.naam, email: beeld.email, foto: beeld.foto, letter: beeld.letter }; }));
     const stap = r.stand === 'wacht' ? 'kiezen' : r.stand === 'goedgekeurd' && r.codeNodig && !r.codeOk ? 'code' : r.stand === 'goedgekeurd' || r.stand === 'ingewisseld' ? 'klaar' : r.stand === 'verlopen' ? 'verlopen' : 'geweigerd';
     return { soort: 'i', actieCode: 'inloggen', titel: tr(taal, 'Запит на вхід', 'Aanmeldverzoek'), wat: tr(taal, 'Вхід у «Мій простір»', 'Aanmelden bij «Mijn Ruimte»'), dienst: r.dienst, terugUrl: r.terugUrl, accounts,
-      toestel: r.toestel, apparaat: r.apparaat, plaats: r.plaats, land: r.land, ipPunt: r.ipPunt, geoPunt: r.geoPunt, geoStand: r.geoStand, kandidaten: r.kandidaten, verlooptOp: r.verlooptOp, stap, telegram: await tgBeeld(tok.tg) };
+      toestel: r.toestel, apparaat: r.apparaat, plaats: r.plaats, land: r.land, ipPunt: r.ipPunt, geoPunt: r.geoPunt, geoStand: r.geoStand, kandidaten: r.kandidaten, aangemaaktOp: r.aangemaaktOp, verlooptOp: r.verlooptOp, stap, telegram: await tgBeeld(tok.tg) };
   }
   const b = await bevestigingVoorVenster(tok.id, tok.tg);
   if (!b) return null;
@@ -120,9 +120,9 @@ const SCHILD = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stro
 const CSS = `:root{color-scheme:light dark;--bg:#f4f7fb;--kaart:#fff;--tekst:#17212b;--zacht:#4b5966;--rand:#d9e1ea;--accent:#1d77b5;--gevaar:#b3261e;--ok:#1b6b3a}
 @media (prefers-color-scheme:dark){:root{--bg:#0e1621;--kaart:#17212b;--tekst:#f2f5f8;--zacht:#a9b6c3;--rand:#2b3946;--accent:#5eb5f7;--gevaar:#ff8a80;--ok:#7fd99a}}
 *{box-sizing:border-box}html,body{margin:0}body{font:15px/1.38 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tekst);padding:10px 12px 16px}
-main{max-width:440px;margin:0 auto;display:grid;gap:9px}
-.kop{display:flex;align-items:center;justify-content:space-between;gap:8px}.kop-links{display:flex;align-items:center;gap:7px}.kop b{font-size:.95rem}.kop small{color:var(--zacht);font-size:.76rem}
-.kaart{background:var(--kaart);border:1px solid var(--rand);border-radius:15px;padding:11px 13px;display:grid;gap:7px}
+main{max-width:440px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:9px}
+.kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}.kop-links{display:flex;align-items:center;gap:7px}.kop b{font-size:.95rem}.kop small{color:var(--zacht);font-size:.76rem}
+.kaart{background:var(--kaart);border:1px solid var(--rand);border-radius:15px;padding:11px 13px;display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:7px}
 .actie-kop{display:flex;align-items:center;gap:10px}
 .actie-icoon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#fff;flex:none;box-shadow:0 3px 10px color-mix(in srgb,var(--cat-kleur,#1d77b5) 30%,transparent)}
 .actie-tekst{min-width:0;flex:1}
@@ -130,7 +130,7 @@ main{max-width:440px;margin:0 auto;display:grid;gap:9px}
 h1{font-size:1rem;line-height:1.25;margin:0;overflow-wrap:anywhere}h2{font-size:.98rem;margin:0;text-align:center}.zacht{color:var(--zacht);font-size:.82rem;margin:0}
 .meta-strook{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px;border-top:1px solid var(--rand)}
 .meta-chips{display:flex;align-items:center;flex-wrap:wrap;gap:5px 8px;font-size:.79rem;color:var(--zacht)}
-.meta-chip{display:inline-flex;align-items:center;gap:5px;min-width:0;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--rand) 42%,transparent)}
+.meta-chip{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--rand) 42%,transparent)}.meta-chip>span{min-width:0;overflow-wrap:anywhere}
 .meta-chips img{width:15px;height:15px;border-radius:3px;vertical-align:middle;flex:none}.meta-chips img.vlag{width:19px;height:13px;border-radius:2px;box-shadow:0 0 0 1px var(--rand)}
 .meer-details{border-top:1px solid var(--rand);padding-top:6px;font-size:.83rem}
 .meer-details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:.8rem;list-style:none;display:flex;align-items:center;justify-content:space-between}
@@ -148,7 +148,7 @@ h1{font-size:1rem;line-height:1.25;margin:0;overflow-wrap:anywhere}h2{font-size:
 .keuze.gekozen{outline:3px solid var(--accent);outline-offset:2px}
 .accounts{display:grid;gap:5px}.accounts label{display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid var(--rand);border-radius:11px;cursor:pointer}
 .waarschuwing{border-left:3px solid var(--gevaar);padding:6px 9px;background:color-mix(in srgb,var(--gevaar) 8%,transparent);border-radius:7px;font-size:.79rem;margin:0;line-height:1.32}
-.knop,a.knop{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;text-align:center;border:1px solid var(--rand);background:var(--kaart);color:var(--tekst);border-radius:999px;min-height:44px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;width:100%}
+.knop,a.knop{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;overflow-wrap:anywhere;text-decoration:none;text-align:center;border:1px solid var(--rand);background:var(--kaart);color:var(--tekst);border-radius:999px;min-height:44px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;width:100%}
 .knop.hoofd,a.knop.hoofd{background:var(--accent);border-color:var(--accent);color:#fff}.knop.nee{color:var(--gevaar);background:color-mix(in srgb,var(--gevaar) 6%,var(--kaart))}
 .plaats-acties{display:grid;gap:7px;margin-top:4px}
 input[type=password],input[type=text]{width:100%;min-height:44px;font:inherit;font-size:1.15rem;letter-spacing:.15em;padding:7px 10px;border-radius:11px;border:1px solid var(--rand);background:var(--bg);color:var(--tekst);text-align:center}
@@ -174,8 +174,10 @@ export function paginaHtml(w: Weergave | null, taal: Taal): string {
   const b = browserSleutel(w.toestel || (w.apparaat || '').split('/')[0] || ''), s = systeemSleutel((w.toestel || '').split('·')[1] || (w.apparaat || '').split('/')[1] || '');
   const logo = (uri: string, alt: string, klasse = '') => (uri ? `<img src="${uri}" alt="${esc(alt)}"${klasse ? ` class="${klasse}"` : ''}>` : '');
   const toestel = w.toestel || w.apparaat || tr(taal, 'невідомо', 'onbekend');
-  const plaats = plaatsTekst(w.plaats, w.land, taal) || tr(taal, 'місце невідоме', 'plaats onbekend');
-  const tijd = tijdTekst(taal);
+  const bekendePlaats = plaatsTekst(w.plaats, w.land, taal);
+  const plaats = bekendePlaats || tr(taal, 'місце невідоме', 'plaats onbekend');
+  const aangemaaktMs = w.aangemaaktOp ? Date.parse(w.aangemaaktOp) : NaN;
+  const tijd = Number.isFinite(aangemaaktMs) ? tijdTekst(taal, aangemaaktMs) : tijdTekst(taal);
   const dienst = w.dienst || SITE_BASIS().replace(/^https?:\/\//, '');
   // TELEGRAM-002 + UPD-011: компактний аватар облікового запису в основній картці; додаткові реквізити й Telegram у розгортуваному блоці без дублювання.
   const rond = (foto: string | undefined, letter: string | undefined, alt: string) => (foto
@@ -220,19 +222,19 @@ export function paginaHtml(w: Weergave | null, taal: Taal): string {
   </div>
 </div>
 <div class="meta-strook">${hoofdWie}</div>
-<div class="meta-chips"><span class="meta-chip">${logo(merkLogo(b), b)}${logo(merkLogo(s, true), s)}<span>${esc(toestel)}</span></span><span class="meta-chip">${logo(vlag(w.land), w.land, 'vlag')}<span>${esc(plaats)}</span></span><span class="meta-chip"><span>${esc(tijd)}</span></span></div>
+<div class="meta-chips"><span class="meta-chip">${logo(merkLogo(b), b)}${logo(merkLogo(s, true), s)}<span>${esc(toestel)}</span></span>${w.land ? `<span class="meta-chip">${logo(vlag(w.land), w.land, 'vlag')}<span>${t('за IP', 'via IP')}</span></span>` : ''}<span class="meta-chip"><span>${esc(tijd)}</span></span></div>
 ${w.soort === 'i' && vg.oordeel === 'afwijkend' ? geoWaarschuwing : ''}
 <details class="meer-details"><summary>${t('Деталі запиту й Telegram', 'Details van verzoek en Telegram')} <span>▾</span></summary><div class="meer-inhoud">
 ${wieDetail}
 <div class="rij"><span class="label">${t('Цільовий розділ', 'Doelpagina')}</span><span>${esc(dienst)}</span></div>
-<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span>${logo(vlag(w.land), w.land, 'vlag')}<span>${w.plaats || w.land ? `<b>${esc(plaats)}</b><small class="bron">${t('Визначено за IP-адресою — приблизно', 'Bepaald via het IP-adres — bij benadering')}</small>` : '—'}</span></div>
+<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span>${logo(vlag(w.land), w.land, 'vlag')}<span>${bekendePlaats ? `<b>${esc(bekendePlaats)}</b><small class="bron">${t('Визначено за IP-адресою — приблизно', 'Bepaald via het IP-adres — bij benadering')}</small>` : esc(plaats)}</span></div>
 ${geoRij}
 </div></details></section>`;
   const kiezen = `<section class="kaart" id="stap-kiezen"${w.stap === 'kiezen' ? '' : ' hidden'}><h2>${t('Яку піктограму показує сайт?', 'Welk pictogram toont de site?')}</h2>
 ${accounts}<div class="raster">${tegels}</div>
 <p class="zacht" style="text-align:center">${t('Одна спроба · якщо хтось підказує піктограму — це шахрайство.', 'Eén poging · zegt iemand welk pictogram u moet kiezen, dan is het oplichting.')}</p></section>`;
   const code = `<section class="kaart" id="stap-code"${w.stap === 'code' ? '' : ' hidden'}><h2>${t('Ваш таємний код', 'Uw geheime code')}</h2>
-<p class="zacht">${t('Введіть таємний код тут — ніколи не в чаті.', 'Vul uw geheime code hier in — nooit in de chat.')}</p>
+<p class="zacht">${t('Введіть таємний код тут — ніколи не в бесіді.', 'Vul uw geheime code hier in — nooit in de chat.')}</p>
 <form id="code-form" autocomplete="off"><input type="password" id="code" maxlength="64" minlength="4" required aria-label="${t('Таємний код', 'Geheime code')}" autocomplete="off"><p style="margin:6px 0 0"></p><button class="knop hoofd" type="submit">${t('Підтвердити', 'Bevestigen')}</button></form></section>`;
   const meldingen: Array<[string, string, string, boolean]> = [
     ['ok', 'Готово. Поверніться на сайт — він продовжить сам.', 'Klaar. Ga terug naar de site — die gaat vanzelf verder.', true],
@@ -267,22 +269,40 @@ function document(taal: Taal, inhoud: string): string {
 export const VENSTER_JS = `(()=>{'use strict';
 const q=new URLSearchParams(location.search),t=q.get('t')||'';
 let init='';try{init=new URLSearchParams(location.hash.slice(1)).get('tgWebAppData')||''}catch(e){}
+const opslagSleutel='mr_tg_venster_'+(t?t.slice(0,24):(location.hash?location.hash.slice(1,25):'standaard'));
+const bewaarKeuze=(pos,acc)=>{try{sessionStorage.setItem(opslagSleutel,JSON.stringify({pos:pos,acc:acc}))}catch(e){}};
+const leesKeuze=()=>{try{const v=JSON.parse(sessionStorage.getItem(opslagSleutel)||'null');return v&&typeof v==='object'?v:null}catch(e){return null}};
+const wisKeuze=()=>{try{sessionStorage.removeItem(opslagSleutel)}catch(e){}};
 const tgGebeurtenis=(ev,data)=>{try{const p=JSON.stringify(data||{});if(window.TelegramWebviewProxy&&window.TelegramWebviewProxy.postEvent)window.TelegramWebviewProxy.postEvent(ev,p);else if(window.external&&'notify'in window.external)window.external.notify(JSON.stringify({eventType:ev,eventData:data||{}}));else if(window.parent!==window)window.parent.postMessage(JSON.stringify({eventType:ev,eventData:data||{}}),'https://web.telegram.org')}catch(e){}};
 tgGebeurtenis('web_app_ready');tgGebeurtenis('web_app_expand');
 const $=(id)=>document.getElementById(id);
 const toon=(id)=>{document.querySelectorAll('.uitkomst').forEach(e=>{e.hidden=e.id!=='m-'+id});const pa=$('plaats-acties');if(pa)pa.hidden=id!=='plaats-nodig';};
 const api=async(pad,body)=>{try{const r=await fetch('/api/telegram/venster/'+pad,{method:'POST',credentials:'omit',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({t:t,initData:init},body))});return await r.json()}catch(e){return{uitkomst:'netwerk'}}};
-const einde=(id,sluiten)=>{toon(id);$('stap-kiezen').hidden=true;$('stap-code').hidden=true;$('nee').hidden=true;if(sluiten)setTimeout(()=>tgGebeurtenis('web_app_close'),2500);};
+const einde=(id,sluiten)=>{wisKeuze();toon(id);$('stap-kiezen').hidden=true;$('stap-code').hidden=true;$('nee').hidden=true;if(sluiten)setTimeout(()=>tgGebeurtenis('web_app_close'),2500);};
 let bezig=false,laatstePos=-1,laatsteAcc='';
 const kiesUitvoeren=async(pos,accVal,knopEl)=>{
   if(bezig)return;bezig=true;laatstePos=pos;laatsteAcc=accVal;
   document.querySelectorAll('.keuze').forEach(x=>{x.disabled=true});if(knopEl)knopEl.classList.add('gekozen');
   const r=await api('kies',{pos:pos,koppeling:accVal});bezig=false;
-  if(r.uitkomst==='code'){$('stap-kiezen').hidden=true;$('stap-code').hidden=false;toon('');$('code').focus();tgGebeurtenis('web_app_setup_closing_behavior',{need_confirmation:true});return}
+  if(r.uitkomst==='code'){wisKeuze();$('stap-kiezen').hidden=true;$('stap-code').hidden=false;toon('');$('code').focus();tgGebeurtenis('web_app_setup_closing_behavior',{need_confirmation:true});return}
   if(r.uitkomst==='ok'){einde('ok',true);return}
-  if(r.uitkomst==='netwerk'||r.uitkomst==='plaats-nodig'){document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});if(r.uitkomst==='netwerk'&&knopEl)knopEl.classList.remove('gekozen');toon(r.uitkomst);return}
+  if(r.uitkomst==='netwerk'||r.uitkomst==='plaats-nodig'){
+    if(r.uitkomst==='plaats-nodig'){bewaarKeuze(pos,accVal);document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false;x.classList.toggle('gekozen',x===knopEl)});toon('plaats-nodig');return}
+    document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});if(knopEl)knopEl.classList.remove('gekozen');toon(r.uitkomst);return;
+  }
   einde(r.uitkomst||'verlopen',false);
 };
+const sk=$('stap-kiezen');
+if(sk&&!sk.hidden){
+  const opgeslagen=leesKeuze();
+  if(opgeslagen&&Number.isInteger(opgeslagen.pos)&&opgeslagen.pos>=0&&typeof opgeslagen.acc==='string'&&opgeslagen.acc){
+    const kEl=document.querySelector('.keuze[data-pos="'+opgeslagen.pos+'"]');
+    const rEl=Array.from(document.querySelectorAll('input[type=radio][name=account]')).find(x=>x.value===opgeslagen.acc);
+    const hEl=document.querySelector('input[type=hidden][name=account]');
+    const accOk=rEl?(rEl.checked=true,true):Boolean(hEl&&hEl.value===opgeslagen.acc);
+    if(kEl&&accOk){laatstePos=opgeslagen.pos;laatsteAcc=opgeslagen.acc;kEl.classList.add('gekozen');toon('plaats-nodig');}
+  }
+}else{wisKeuze();}
 document.querySelectorAll('.keuze').forEach(k=>k.addEventListener('click',()=>{
   const acc=document.querySelector('input[name=account]:checked')||document.querySelector('input[type=hidden][name=account]');
   if(!acc||!acc.value){toon('account');return}

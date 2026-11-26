@@ -113,7 +113,7 @@ export const TIEN_TELEGRAM_AANMELD_GEBREKEN_CONTRACT: readonly TelegramAanmeldGe
     oorzaakNl:
       'Momenteel wordt een aanmeldverzoek alleen via de sitelink t.me/<bot>?start=i_<id> of het officiële aanmeldvenster aan Telegram gekoppeld. In de bot zelf ontbreekt een knop om een actief verzoek zonder linkoverstap op te roepen.',
     herstelEisUk:
-      'Додати можливість викликати й підтверджувати активний запит на вхід кнопкою безпосередньо в боті Telegram, але зробити цю опцію типово ВИМКНЕНОЮ з перемикачем і попередженням про шахраїв у розділі налаштувань Telegram на сайті, зберігши посилання на офіційне вікно входу Telegram як альтернативу.',
+      'Додати можливість викликати й підтверджувати активний запит на вхід кнопкою безпосередньо в боті Telegram, але зробити цю можливість типово ВИМКНЕНОЮ з перемикачем і попередженням про шахраїв у розділі налаштувань Telegram на сайті, зберігши посилання на офіційне вікно входу Telegram як альтернативу.',
     herstelEisNl:
       'Voeg een directe bevestigingsknop in de Telegram-bot toe voor actieve aanmeldverzoeken, standaard UITGESCHAKELD met een schakelaar en oplichtingswaarschuwing in TelegramSectie.tsx, en behoud de link naar het officiële aanmeldvenster op de site als alternatief.',
   },
@@ -190,20 +190,20 @@ export const TIEN_TELEGRAM_AANMELD_GEBREKEN_CONTRACT: readonly TelegramAanmeldGe
       'Screenshot_20261125_112412_com.android.chrome.jpg',
       'Screenshot_20261125_112451_com.android.chrome.jpg',
     ],
-    titelUk: 'Дублювання реквізитів у блоці «Деталі запиту й Telegram», тавтологія в рядку «Що», висяча крапка в .meta-chips та відсутність адреси піддомену',
+    titelUk: 'Дублювання реквізитів у блоці «Деталі запиту й Telegram», тавтологія в рядку «Що», відірвана крапка в .meta-chips та відсутність адреси піддомену',
     titelNl: 'Dubbele gegevens in «Details van verzoek en Telegram», tautologie in «Wat», zwevende punt in .meta-chips en ontbrekend doeldomein',
     doelBestanden: [
       'backend/telegram-aanmelden/venster.ts',
       'backend/telegram-aanmelden/inloggen.ts',
     ],
     oorzaakUk:
-      'У venster.ts розгорнутий блок «Деталі запиту й Telegram» дублює обліковий запис сайту, пристрій і час, які вже показані у шапці картки, містить тавтологію «Запит на вхід: вхід на сайт...», залишає висячу крапку «·» при переносі дати в .meta-chips і не показує цільовий піддомен входу.',
+      'У venster.ts розгорнутий блок «Деталі запиту й Telegram» дублює обліковий запис сайту, пристрій і час, які вже показані у шапці картки, містить тавтологію «Запит на вхід: вхід на сайт...», залишає відірвану крапку «·» при переносі дати в .meta-chips і не показує цільовий піддомен входу.',
     oorzaakNl:
       'In venster.ts herhaalt het uitgeklapte blok «Details van verzoek en Telegram» het site-account, het toestel en de tijd uit de kop, bevat het de tautologie «Aanmeldverzoek: aanmelden op...», laat het een losse punt «·» hangen in .meta-chips en mist het het doeldomein.',
     herstelEisUk:
-      'Усунути дублювання й тавтологію у блоці деталей venster.ts, додати показ цільового піддомену/сторінки входу та прибрати висячу крапку на переносі рядка в .meta-chips.',
+      'Усунути дублювання й тавтологію у блоці деталей venster.ts, додати показ цільового піддомену/сторінки входу, справжній час створення запиту aangemaaktOp та прибрати відірвану крапку на переносі рядка в .meta-chips.',
     herstelEisNl:
-      'Verwijder de dubbele velden en tautologie in het detailblok van venster.ts, toon het doeldomein van de aanmelding en voorkom een zwevende punt bij regelafbraak in .meta-chips.',
+      'Verwijder de dubbele velden en tautologie in het detailblok van venster.ts, toon het doeldomein en het aanmaaktijdstip aangemaaktOp van de aanmelding en voorkom een zwevende punt bij regelafbraak in .meta-chips.',
   },
   {
     id: 'TG-7',
@@ -282,14 +282,14 @@ export const TIEN_TELEGRAM_AANMELD_GEBREKEN_CONTRACT: readonly TelegramAanmeldGe
       'Screenshot_20261125_112253_com.android.chrome.jpg',
       'Screenshot_20261125_112317_com.android.chrome.jpg',
     ],
-    titelUk: 'Службовий перемикач «Вигляд: Компактний | Студійний» на публічній картці входу та накладання плаваючої кнопки прокрутки «↑»',
+    titelUk: 'Службовий перемикач «Вигляд: Компактний | Студійний» на публічній картці входу та накладання плавальної кнопки прокручування «↑»',
     titelNl: 'Overbodige stijlwisselaar «Вигляд: Компактний | Студійний» op de publieke aanmeldkaart en zwevende knop «↑»',
     doelBestanden: [
       'src/telegram-aanmelden/AanmeldTelegram.tsx',
       'src/aanmeld-herontwerp.css',
     ],
     oorzaakUk:
-      'Всередині публічної картки «Вхід через Telegram» під час очікування входу рендериться <TelegramStijlKiezer /> («Вигляд: Компактний | Студійний»), який дублює налаштування у «Способи входу → Telegram», а при прокручуванні вниз поверх картки з’являється плаваюча кнопка .canonical-scroll-top («↑»).',
+      'Всередині публічної картки «Вхід через Telegram» під час очікування входу відмальовується <TelegramStijlKiezer /> («Вигляд: Компактний | Студійний»), який дублює налаштування у «Способи входу → Telegram», а при прокручуванні вниз поверх картки з’являється плавальна кнопка .canonical-scroll-top («↑»).',
     oorzaakNl:
       'Binnen de publieke aanmeldkaart «Aanmelden met Telegram» wordt tijdens het wachten <TelegramStijlKiezer /> getoond (die al in «Aanmeldmethoden → Telegram» staat), en bij omlaag scrollen zweeft .canonical-scroll-top («↑») over de kaart.',
     herstelEisUk:
@@ -315,9 +315,12 @@ export function evalueerTienTelegramAanmeldGebrekenHerstel(): readonly TelegramH
   const inloggenTs = lees('backend/telegram-aanmelden/inloggen.ts');
   const webhookTs = lees('backend/telegram-aanmelden/webhook.ts');
 
-  // TG-1: відсутність фонового автозапуску plaatsDelen(lopend) без жесту користувача на прихованій вкладці
+  // TG-1: відсутність фонового автозапуску plaatsDelen(lopend) без жесту користувача + підключення plaatsVoorStart і plaatsToestemming
   const tg1Hersteld =
-    !aanmeldTgTsx.includes("useEffect(() => { if (lopend && stand === 'wacht' && geoVereist && geo === '') plaatsDelen(lopend); }, [geoVereist]);");
+    !aanmeldTgTsx.includes("useEffect(() => { if (lopend && stand === 'wacht' && geoVereist && geo === '') plaatsDelen(lopend); }, [geoVereist]);") &&
+    aanmeldTgTsx.includes('plaatsVoorStart') &&
+    aanmeldTgTsx.includes('plaatsToestemming') &&
+    aanmeldTgTsx.includes('plaatsVragen');
 
   // TG-2: підтримка підтвердження запиту безпосередньо в боті за увімкненим перемикачем у TelegramSectie + збереження widgetUrl
   const tg2Hersteld =
@@ -325,8 +328,10 @@ export function evalueerTienTelegramAanmeldGebrekenHerstel(): readonly TelegramH
     (webhookTs.includes('inlog') || inloggenTs.includes('rechtstreeks') || inloggenTs.includes('zonderLink') || inloggenTs.includes('botBevestig')) &&
     (tgSectieTsx.includes('шахра') || tgSectieTsx.includes('oplicht'));
 
-  // TG-3: кнопка «Надати місце пристрою» не стискається в першу колонку 34px
+  // TG-3: кнопка «Надати місце пристрою» має триколонкову верстку tga-plaats-knop без стискання в першу колонку 34px
   const tg3Hersteld =
+    aanmeldTgTsx.includes('tga-plaats-knop') &&
+    aanmeldTgTsx.includes('Надати місце пристрою') &&
     !aanmeldTgTsx.includes(
       `<button type='button' className='tga-aanmeld-knop' onClick={() => plaatsDelen(lopend)}>{tr(lang, '📍 Надати місце пристрою', '📍 Plaats van het apparaat delen')}</button>`,
     );
@@ -337,31 +342,39 @@ export function evalueerTienTelegramAanmeldGebrekenHerstel(): readonly TelegramH
       aanmeldCss,
     ) || aanmeldCss.includes('mr-sign-in-topbar');
 
-  // TG-5: рядок «Звідки» у venster.ts виводить назву місця esc(plaats) перед <small class="bron">
+  // TG-5: рядок «Звідки» у venster.ts виводить назву місця esc(bekendePlaats) один раз перед <small class="bron">, а у .meta-chips — «за IP» / «via IP»
   const tg5Hersteld =
+    vensterTs.includes('bekendePlaats') &&
+    vensterTs.includes("'за IP'") &&
+    vensterTs.includes("'via IP'") &&
     !vensterTs.includes(
       `<div class="rij"><span class="label">\${t('Звідки', 'Vanwaar')}</span><span>\${w.plaats || w.land ? \`<small class="bron">`,
     );
 
-  // TG-6: у venster.ts усунено тавтологію «Що: ${esc(w.titel)}: ${esc(w.wat)}» та висячу крапку в .meta-chips
-  const tg6Hersteld = !vensterTs.includes('${esc(w.titel)}: ${esc(w.wat)}');
+  // TG-6: у venster.ts усунено тавтологію «Що: ${esc(w.titel)}: ${esc(w.wat)}», додано aangemaaktOp та прибрано відірвану крапку в .meta-chips
+  const tg6Hersteld =
+    !vensterTs.includes('${esc(w.titel)}: ${esc(w.wat)}') &&
+    vensterTs.includes('aangemaaktOp') &&
+    inloggenTs.includes('aangemaaktOp');
 
-  // TG-7: у venster.ts або inloggen.ts збережено вибір правильної піктограми при plaats-nodig / додано дію продовження
+  // TG-7: у venster.ts та inloggen.ts збережено вибір правильної піктограми у sessionStorage при plaats-nodig та додано кнопки продовження
   const tg7Hersteld =
-    inloggenTs.indexOf('pos !== Number(r.juist)') < inloggenTs.indexOf("return 'plaats-nodig'");
+    inloggenTs.indexOf('pos !== Number(r.juist)') < inloggenTs.indexOf("return 'plaats-nodig'") &&
+    vensterTs.includes('sessionStorage') &&
+    vensterTs.includes('plaats-opnieuw');
 
-  // TG-8: кнопка «Відкрити Telegram» має .tga-aanmeld-logo і .tga-aanmeld-eind, а текст повідомлення бота узгоджено з knopVensterInlog
+  // TG-8: кнопка «Відкрити Telegram» має .tga-aanmeld-logo (maat={34}) і .tga-aanmeld-eind, а текст повідомлення бота узгоджено з knopVensterInlog
   const tg8Hersteld =
-    !aanmeldTgTsx.includes(
-      `<a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={20} /><span>`,
-    ) && !inloggenTs.includes('Натисніть «Перевірити й увійти»');
+    aanmeldTgTsx.includes('TelegramLogo maat={34}') &&
+    !/tga-aanmeld-logo[^>]*>\s*<TelegramLogo\s+maat=\{(?!34\b)\d+\}/.test(aanmeldTgTsx) &&
+    !inloggenTs.includes('Натисніть «Перевірити й увійти»');
 
-  // TG-9: у AanmeldAndereOpties.tsx немає слова «репозиторіїв»
-  const tg9Hersteld = !andereOptiesTsx.includes('репозиторіїв');
+  // TG-9: у AanmeldAndereOpties.tsx вжито «сховищ коду» без слова «репозиторіїв»
+  const tg9Hersteld = andereOptiesTsx.includes('сховищ коду') && !andereOptiesTsx.includes('репозиторіїв');
 
-  // TG-10: на публічній картці AanmeldTelegram.tsx прибрано <TelegramStijlKiezer і приховано .canonical-scroll-top на екрані входу
+  // TG-10: на публічній картці AanmeldTelegram.tsx прибрано TelegramStijlKiezer і приховано .canonical-scroll-top на екрані входу
   const tg10Hersteld =
-    !aanmeldTgTsx.includes('<TelegramStijlKiezer') && aanmeldCss.includes('.canonical-scroll-top');
+    !aanmeldTgTsx.includes('TelegramStijlKiezer') && aanmeldCss.includes('.canonical-scroll-top');
 
   return [
     {
@@ -382,7 +395,7 @@ export function evalueerTienTelegramAanmeldGebrekenHerstel(): readonly TelegramH
       id: 'TG-3',
       hersteld: tg3Hersteld,
       details: tg3Hersteld
-        ? 'Кнопка «📍 Надати місце пристрою» має повноширинну або триколонкову розмітку без стискання у 34 px'
+        ? 'Кнопка «📍 Надати місце пристрою» має повноширинну триколонкову розмітку без стискання у 34 px'
         : 'Очікує на виправлення сітки кнопки «📍 Надати місце пристрою» у AanmeldTelegram.tsx',
     },
     {
@@ -396,14 +409,14 @@ export function evalueerTienTelegramAanmeldGebrekenHerstel(): readonly TelegramH
       id: 'TG-5',
       hersteld: tg5Hersteld,
       details: tg5Hersteld
-        ? 'Рядок «Звідки» у Захищеному вікні показує прапор і назву місця разом із підписом про IP-адресу'
+        ? 'Рядок «Звідки» у Захищеному вікні показує прапор і назву місця один раз разом із підписом про IP-адресу'
         : 'Очікує на додавання виведення назви місця ${plaats} у рядку «Звідки» в backend/telegram-aanmelden/venster.ts',
     },
     {
       id: 'TG-6',
       hersteld: tg6Hersteld,
       details: tg6Hersteld
-        ? 'У блоці «Деталі запиту й Telegram» усунено дублювання реквізитів, тавтологію та висячу крапку'
+        ? 'У блоці «Деталі запиту й Telegram» усунено дублювання реквізитів, тавтологію та відірвану крапку, додано aangemaaktOp'
         : 'Очікує на очищення дубльованих реквізитів та додавання цільового піддомену у venster.ts',
     },
     {
@@ -503,18 +516,106 @@ export async function main(): Promise<number> {
     check(`${item.id}: ваду повністю виправлено (${item.details})`, item.hersteld === true);
   }
 
-  // 3. Перевірка парної двомовної документації випробувань у docs/telegram-aanmelden/
+  // 3. Перевірка чистого одноекранного режиму підтвердження Telegram (TG-CLEAN) та інженерних поправок K2-1..K2-3
+  const telegramCss = lees('src/telegram-aanmelden/telegram.css');
+  const vasteElementenJson = lees('scripts/plaatsing-vaste-elementen.json');
+  check(
+    'TG-CLEAN: чистий екран без довгих абзаців на головній картці, з круглою кнопкою (i) та вікном на 3 візуальні кроки',
+    aanmeldTgTsx.includes("data-tg-schone-kaart='1'") &&
+      aanmeldTgTsx.includes("className='tg2-info-knop is-icoon'") &&
+      aanmeldTgTsx.includes('MiniDriePictogrammen') &&
+      aanmeldTgTsx.includes("className='tg2-info-stappen'") &&
+      aanmeldTgTsx.includes("className='tg2-info-extra'") &&
+      !aanmeldTgTsx.includes("className='tg2-stappen'") &&
+      !aanmeldTgTsx.includes('Бот надішле кнопку') &&
+      !aanmeldTgTsx.includes('Чому піктограма, а не просто'),
+  );
+  check(
+    'K2-1..K2-3: реєстрація .tg2-info-sluier, геометрія 28×28 px (inset -8px) без !important, role="dialog" на .tg2-info-blad та замкнений фокус Tab/Escape',
+    vasteElementenJson.includes('"src/telegram-aanmelden/telegram.css :: .tg2-info-sluier"') &&
+      /\.tg2-info-knop[^{]*\{[^}]*width:\s*28px[^}]*height:\s*28px/.test(telegramCss) &&
+      /button\.tg2-info-knop\.is-icoon::after\{[^}]*inset:\s*-8px/.test(telegramCss) &&
+      /\.tg2-info-sluier\{[\s\S]{0,160}max-width:none;max-height:none/.test(telegramCss) &&
+      aanmeldTgTsx.includes("role='dialog'") &&
+      aanmeldTgTsx.includes("aria-modal='true'") &&
+      aanmeldTgTsx.includes('bladRef') &&
+      aanmeldTgTsx.includes("details:not([open])") &&
+      aanmeldTgTsx.includes("e.key === 'Escape'") &&
+      aanmeldTgTsx.includes("e.key !== 'Tab'"),
+  );
+
+  // 4. Живі поведінкові перевірки функцій plaatsVoorStart та paginaHtml / VENSTER_JS без бази даних
+  const plaatsMod = await import('../../src/aanmelden/plaats');
+  const origNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  let geoOproepen = 0;
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: {
+      geolocation: { getCurrentPosition: () => { geoOproepen += 1; } },
+      permissions: { query: async () => ({ state: 'prompt' }) },
+    },
+  });
+  try {
+    const rPrompt = await plaatsMod.plaatsVoorStart();
+    check(
+      'TG-1 (поведінково): plaatsVoorStart при дозволі у стані "prompt" не викликає getCurrentPosition',
+      rPrompt.plaats === undefined && geoOproepen === 0,
+    );
+  } finally {
+    if (origNav) Object.defineProperty(globalThis, 'navigator', origNav);
+  }
+
+  const venMod = await import('../../backend/telegram-aanmelden/venster');
+  const testWeergave = {
+    soort: 'i' as const,
+    titel: 'Запит на вхід',
+    wat: 'Вхід у «Мій простір»',
+    dienst: 'hub.tarasevych.com',
+    terugUrl: 'https://hub.tarasevych.com/?tg_inlog=abcdefghijkl',
+    accounts: [{ koppelingId: 'kp1', naam: 'Олена Коваль', email: 'olena@voorbeeld.test', foto: '', letter: 'О' }],
+    toestel: 'Chrome 131 · Android',
+    apparaat: '',
+    plaats: 'Brussels',
+    land: 'BE',
+    kandidaten: [2, 14, 29],
+    aangemaaktOp: '2026-11-25T08:17:00+01:00',
+    verlooptOp: '2026-11-25T08:20:00+01:00',
+    stap: 'kiezen' as const,
+  };
+  const htmlUk = venMod.paginaHtml(testWeergave as never, 'uk');
+  const htmlNl = venMod.paginaHtml(testWeergave as never, 'nl');
+  const htmlLeeg = venMod.paginaHtml({ ...testWeergave, plaats: '', land: '' } as never, 'uk');
+  check(
+    'TG-5..TG-7 (поведінково): paginaHtml виводить місто рівно 1 раз, «за IP»/«via IP», час aangemaaktOp 08:17, «місце невідоме» та кнопки plaats-acties',
+    (htmlUk.match(/Брюссель/g) || []).length === 1 &&
+      (htmlNl.match(/Brussel/g) || []).length === 1 &&
+      htmlUk.includes('за IP') &&
+      htmlNl.includes('via IP') &&
+      htmlUk.includes('08:17') &&
+      htmlNl.includes('08:17') &&
+      htmlLeeg.includes('місце невідоме') &&
+      !htmlLeeg.includes('Визначено за IP-адресою') &&
+      htmlUk.includes('id="plaats-acties"') &&
+      htmlUk.includes('id="plaats-opnieuw"') &&
+      venMod.VENSTER_JS.includes('sessionStorage'),
+  );
+
+  // 5. Перевірка парної двомовної документації випробувань у docs/telegram-aanmelden/ та Мовного закону
+  const { taalwetOvertreding } = await import('../../shared/vaardigheden-ecosysteem');
   const docUkPad = 'docs/telegram-aanmelden/ВИПРОБУВАННЯ-10-ВАД-ВХОДУ-ТЕЛЕГРАМ-HERSTEL-001.uk.md';
   const docMdPad = 'docs/telegram-aanmelden/ВИПРОБУВАННЯ-10-ВАД-ВХОДУ-ТЕЛЕГРАМ-HERSTEL-001.md';
   const docNlPad = 'docs/telegram-aanmelden/PROEVEN-10-TELEGRAM-AANMELDGEBREKEN-HERSTEL-001.nl.md';
   check(
-    'парні статті 10 випробувань (uk / nl) існують у docs/telegram-aanmelden/ і посилаються одна на одну',
+    'парні статті 10 випробувань (uk / nl) існують у docs/telegram-aanmelden/, тотожні (.uk.md === .md) і відповідають Мовному закону',
     existsSync(resolve(docUkPad)) &&
       existsSync(resolve(docMdPad)) &&
       existsSync(resolve(docNlPad)) &&
+      lees(docUkPad) === lees(docMdPad) &&
       lees(docUkPad).includes('PROEVEN-10-TELEGRAM-AANMELDGEBREKEN-HERSTEL-001.nl.md') &&
       lees(docNlPad).includes('ВИПРОБУВАННЯ-10-ВАД-ВХОДУ-ТЕЛЕГРАМ-HERSTEL-001.uk.md') &&
-      !VERBODEN_TEKENREEKS.test(lees(docUkPad) + lees(docNlPad)),
+      !VERBODEN_TEKENREEKS.test(lees(docUkPad) + lees(docNlPad)) &&
+      !taalwetOvertreding(lees(docUkPad)) &&
+      !taalwetOvertreding(lees(docNlPad)),
   );
 
   return einde();
