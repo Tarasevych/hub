@@ -251,24 +251,36 @@ export function kanaalVisueelAnker(kanaal: MeldingKanaal, lang: Taal): PulsVisue
  * Розпізнає точний візуальний якір (офіційний логотип з src/merk/ + семантичну піктограму + колірний тон).
  * Логотип бренду повертається лише тоді, коли бренд явно згадано у джерелі, метаданих або заголовку.
  */
+const EMAIL_ADRES_PATROON = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu;
+
+function zonderEmailAdressen(tekst: string): string {
+  return tekst.replace(EMAIL_ADRES_PATROON, ' ');
+}
+
 export function herkenMerkEnAnker(
-  geb: Pick<MeldingEcosysteemGebeurtenis, 'bron' | 'kanaal' | 'subdomein' | 'titel' | 'contextLabel' | 'prioriteit' | 'meta'>,
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'bron' | 'kanaal' | 'subdomein' | 'titel' | 'contextLabel' | 'prioriteit' | 'meta'> & {
+    bericht?: string;
+  },
   lang: Taal,
 ): PulsVisueelAnker {
   const metaProvider = typeof geb.meta?.provider === 'string' ? geb.meta.provider : '';
-  const zoekTekst = `${metaProvider} ${geb.bron} ${geb.titel} ${geb.contextLabel}`;
+  const inlogBericht =
+    geb.kanaal === 'beveiliging' && /(новий вхід|nieuwe aanmelding|незнайомого пристрою|onbekend apparaat)/i.test(geb.titel)
+      ? String(geb.bericht || '')
+      : '';
+  const zoekTekst = zonderEmailAdressen(`${metaProvider} ${geb.bron} ${geb.titel} ${geb.contextLabel} ${inlogBericht}`);
   const basis = KANAAL_ANKERS[geb.kanaal] || KANAAL_ANKERS.app;
 
   for (const kandidaat of BEKENDE_MERKEN) {
     if (kandidaat.re.test(zoekTekst)) {
       let merk = kandidaat.merk;
       if (merk === 'google' && geb.kanaal === 'mail') merk = 'gmail';
-      else if (merk === 'google' && geb.kanaal === 'cloud') merk = 'google-drive';
+      else if (merk === 'google' && geb.kanaal === 'cloud') merk = 'googledrive';
       else if (merk === 'gmail' && (geb.kanaal === 'beveiliging' || geb.subdomein === 'id')) merk = 'google';
       const toon: PulsKleurToon =
         geb.prioriteit === 'kritiek' ? 'gevaar' : geb.kanaal === 'beveiliging' ? 'beveiliging' : kandidaat.toon;
       const merkNaam =
-        merk === 'google-drive'
+        merk === 'googledrive'
           ? lang === 'nl'
             ? 'Google Drive'
             : 'Google Диск'
@@ -374,6 +386,15 @@ function kiesSchemaEnNiveau(geb: MeldingEcosysteemGebeurtenis): { schemaId: Meld
     const volTekst = `${geb.titel} ${geb.bericht}`;
     if (/(зв’язок відновлено|знову працює|verbinding hersteld|werkt weer)/i.test(volTekst) && !/(не працює|werkt niet)/i.test(volTekst)) {
       return { schemaId: 'S15', niveau: 'gewoon' };
+    }
+    const alAfgerondGoed =
+      geb.prioriteit !== 'kritiek' &&
+      /(?:\.|_)(?:bevestigd|goedgekeurd|hersteld|gedeblokkeerd|klaar|ingesteld|vertrouwd)(?:\s|$)/i.test(
+        `${geb.bron} ${String(geb.meta?.actieCode || '')}`,
+      ) &&
+      !/(очікує|просить|потрібн|виявлено|заблоковано|відхилено|тривога|помилка|verzoek|wacht|vereist|geweigerd|alarm|mislukt)/i.test(volTekst);
+    if (alAfgerondGoed) {
+      return { schemaId: 'S1', niveau: 'gewoon' };
     }
     const isBesluit = /(підтверд|запит|дозвол|bevestig|toestemm|verzoek)/i.test(bronSoort) && geb.prioriteit !== 'kritiek';
     return { schemaId: 'S1', niveau: isBesluit ? 'besluit' : 'gevaar' };
@@ -541,7 +562,9 @@ function bepaalOorzaakSleutel(geb: MeldingEcosysteemGebeurtenis, lang: Taal): { 
   if (/(зв’язок відновлено|знову працює|verbinding hersteld|werkt weer)/i.test(volBericht) && !/(не працює|werkt niet)/i.test(volBericht)) {
     return null;
   }
-  const tekst = `${geb.bron} ${geb.titel} ${geb.bericht} ${geb.contextLabel} ${String(geb.meta?.provider || '')}`.toLowerCase();
+  const tekst = zonderEmailAdressen(
+    `${geb.bron} ${geb.titel} ${geb.bericht} ${geb.contextLabel} ${String(geb.meta?.provider || '')}`,
+  ).toLowerCase();
   const isStoringOfWacht =
     geb.prioriteit === 'hoog' ||
     geb.prioriteit === 'kritiek' ||

@@ -43,6 +43,7 @@ import './toegankelijk.css';
 // Per type geluid/pop-up/tonen/blijft staan/duur (shared/melding-typen.ts) en de ene regel naar het technische paneel (shared/melding-soorten.ts).
 import { isKritiekType, typeInfo, voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../shared/melding-typen';
 import { itemVanLink } from '../shared/menu-meldingen';
+import { tellerWegklikken, useMenuTellers } from './menu-meldingen-opslag';
 import { soortInfo, typeVanBron } from '../shared/melding-soorten';
 const MeldingVoorkeurenPaneel = lazy(() => import('./meldingen/MeldingVoorkeurenPaneel'));
 import { openTechMeldingen } from './meldingen/tech-meldingen-opslag';
@@ -98,6 +99,8 @@ type Props = {
   sfeer?: MeldingSfeer;
   /** IDENTITEIT-015: stille uren (zijbalk.meldingen.stil): geen pop-up en geen geluid (beveiliging wel), daarna één samenvatting. */
   stil?: StilVoorkeur;
+  /** HERSTEL-001 (MELD-9): повідомляє оболонці про відкриття головного вікна сповіщень (щоб на телефоні прибрати шухляду позаду). */
+  onOpenPanel?: () => void;
 };
 
 /**
@@ -657,7 +660,10 @@ export default function CanonicalNotificationCenter(p: Props) {
     const handler = (event: Event) => receiveRef.current((event as CustomEvent<CanonicalNoticeInput>).detail, 'event');
     window.addEventListener(CANONICAL_NOTICE_EVENT, handler);
     // INTEG-001: «Усі сповіщення» in het venster bij een stip in het menu opent het paneel aan de bel.
-    const openen = () => setPanelOpen(true);
+    const openen = () => {
+      p.onOpenPanel?.();
+      setPanelOpen(true);
+    };
     window.addEventListener(MELDINGEN_OPENEN_EVENT, openen);
     return () => { window.removeEventListener(CANONICAL_NOTICE_EVENT, handler); window.removeEventListener(MELDINGEN_OPENEN_EVENT, openen); };
   }, [p.scope]);
@@ -888,7 +894,12 @@ export default function CanonicalNotificationCenter(p: Props) {
     };
   }, [active?.id]);
 
-  const toggleBell = () => setPanelOpen((value) => !value);
+  const toggleBell = () =>
+    setPanelOpen((value) => {
+      const volgende = !value;
+      if (volgende) p.onOpenPanel?.();
+      return volgende;
+    });
   const server = (p.serverItems || []).filter((item) => vk(soortInfo(item.kind).type).tonen && (!ruimteFilterActief() || (item.ruimte ?? 'prive') === ruimteNu));
   const zichtbaarLokaal = retained.filter((item) => vk(typeVanBron(item.source)).tonen);
   const belSfeer: MeldingSfeer = p.sfeer || 'prive';
@@ -913,6 +924,7 @@ export default function CanonicalNotificationCenter(p: Props) {
   /* eslint-enable react-hooks/exhaustive-deps */
   const subdomeinNu = naarMeldingSubdomein(typeof location !== 'undefined' ? dienstVanHostnaam(location.hostname) : 'hub');
   const ecoRuimte = (belSfeer === 'technisch' || (ruimteFilterActief() && ruimteNu === 'technisch')) ? 'technisch' : 'prive';
+  const menuTellerStaat = useMenuTellers();
   const eco = useMeldingEcosysteem({
     lang: p.lang,
     scope: p.scope,
@@ -926,6 +938,8 @@ export default function CanonicalNotificationCenter(p: Props) {
     localRows: ecoLokaal,
     activityEvents: events,
     activityRead: ecoActiviteitGelezen,
+    tellers: ecoRuimte === 'prive' && vk('post').tonen ? menuTellerStaat.tellers : undefined,
+    weg: ecoRuimte === 'prive' ? menuTellerStaat.weg : undefined,
     tekstVanServer: (s) => meldingInTaal(s, p.lang),
     titelVanActiviteit: (ev) => activityTitle(ev, p.lang),
     contextVanActiviteit: (ev) => activiteitContext(ev, p.lang) || '',
@@ -948,6 +962,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     activity.markAllRead();
     if (localUnread) saveRetained((rows) => rows.map((row) => ({ ...row, read: true })));
     if (serverUnread) await p.onReadAllServer?.();
+    if (menuTellerStaat.tellers.mail?.ongelezen) tellerWegklikken('mail');
     await eco.allesGelezenEcosysteem();
   };
   const resetPosition = () => {
@@ -1046,12 +1061,15 @@ export default function CanonicalNotificationCenter(p: Props) {
   };
 
   const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaalType>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
+    if ((geb.id === 'teller:mail' || geb.externeSleutel === 'teller:mail') && (status === 'archief' || status === 'opgelost')) {
+      tellerWegklikken('mail');
+    }
     await eco.wijzigGebeurtenisStatus(geb, status, uitstelMinuten);
     const { serverId, actId, lokId, v3Sleutel } = syncBronGelezen(geb);
     if (status !== 'nieuw') {
       if (serverId) void p.onReadServer?.(serverId);
-      else if (actId) activity.markRead(actId);
-      else if (lokId) markLocalRead(lokId);
+      if (actId) activity.markRead(actId);
+      if (lokId) markLocalRead(lokId);
     }
     if (v3Sleutel && (status === 'archief' || status === 'opgelost' || status === 'nieuw' || status === 'gelezen')) {
       void wijzigStatus({ ids: [v3Sleutel], status, hoe: 'kaart' });
@@ -1062,8 +1080,8 @@ export default function CanonicalNotificationCenter(p: Props) {
     eco.registreerGelezenBijZicht(geb);
     const { serverId, actId, lokId, v3Sleutel } = syncBronGelezen(geb);
     if (serverId) void p.onReadServer?.(serverId);
-    else if (actId) activity.markRead(actId);
-    else if (lokId) markLocalRead(lokId);
+    if (actId) activity.markRead(actId);
+    if (lokId) markLocalRead(lokId);
     if (v3Sleutel && geb.status === 'nieuw') {
       void wijzigStatus({ ids: [v3Sleutel], status: 'gelezen', hoe: 'kaart' });
     }

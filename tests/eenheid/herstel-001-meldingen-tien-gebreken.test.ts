@@ -71,7 +71,7 @@ export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] 
     id: 'MELD-2',
     schermafdrukken: ['Screenshot_20261125_132707_com.android.chrome.jpg'],
     titelUk:
-      'Непрацююче перемикання «Компактна панель / Вікно» на смартфоні (<= 768 px) при збереженому modus === "volledig" (за збереження канонічного розміщення дзвіночка в меню для простору екрана)',
+      'Заблоковане перемикання «Компактна панель / Вікно» на смартфоні (<= 768 px) при збереженому modus === "volledig" (за збереження канонічного розміщення дзвіночка в меню для простору екрана)',
     titelNl:
       'Niet-werkende omschakeling «Compact paneel / Venster» op smartphone (<= 768 px) bij opgeslagen modus === "volledig" (met behoud van de canonieke plaats van de bel in het menu voor schermruimte)',
     doelBestanden: ['src/meldingen/ecosysteem/MeldingenPortaal.tsx', 'src/CanoniekMeldingencentrum.tsx'],
@@ -299,7 +299,7 @@ export function evalueerTienMeldingsGebrekenHerstel(rootDir = process.cwd()): re
   const merkLogosTekst = existsSync(merkLogosPad) ? readFileSync(merkLogosPad, 'utf8') : '';
 
   const meld4Hersteld =
-    officieelSleutelsTekst.includes("'gmail'") &&
+    /['"]gmail['"]/.test(officieelSleutelsTekst) &&
     !merkLogosTekst.includes('"gmail":') &&
     (menuMeldingenTekst.includes('@gmail.com') || menuMeldingenTekst.includes('zonderEmail'));
 
@@ -412,6 +412,8 @@ export async function main(): Promise<number> {
     }
   };
 
+  const VERBODEN_RE = /[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/;
+
   controleer(
     'реєстр містить рівно 10 перевірочних контрактів системи сповіщень (MELD-1..MELD-10)',
     TIEN_MELDINGSGEBREKEN_CONTRACTEN.length === 10 &&
@@ -430,7 +432,7 @@ export async function main(): Promise<number> {
       contract.titelUk.length > 10 &&
         contract.titelNl.length > 10 &&
         contract.schermafdrukken.length >= 1 &&
-        !/[ЁёЪъЫыЭэ]/.test(contract.titelUk + contract.oorzaakUk + contract.herstelEisUk),
+        !VERBODEN_RE.test(contract.titelUk + contract.oorzaakUk + contract.herstelEisUk),
     );
   }
 
@@ -439,17 +441,217 @@ export async function main(): Promise<number> {
     'функція оцінювання стану виправлення evalueerTienMeldingsGebrekenHerstel повертає звіти для всіх 10 пунктів',
     statussen.length === 10 && statussen.every((s) => typeof s.hersteld === 'boolean' && s.detail.length > 0),
   );
+  for (const st of statussen) {
+    controleer(`${st.id}: підтверджено виправлення в коді (${st.detail})`, st.hersteld === true, st.detail);
+  }
+
+  // Живі функціональні перевірки поведінки всіх 10 пунктів (uk + nl)
+  const { nepBrowser } = await import('./hulp/nep-browser');
+  nepBrowser('https://hub.tarasevych.com', 'uk');
+  const React = await import('react');
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { vanTellers } = await import('../../shared/menu-meldingen');
+  const { MeldingBellen, verrijkMenuMelding } = await import('../../src/MenuMeldingen');
+  const { nieuwApparaatTekst } = await import('../../backend/nieuw-apparaat');
+  const { interpreteerGebeurtenis } = await import('../../shared/meldingen-ecosysteem/tolk');
+  const { herkenMerkEnAnker, verrijkGebeurtenisVoorPuls } = await import('../../shared/meldingen-puls/kern');
+  const { bouwUniformeStroom, leesLokaalProfiel } = await import('../../src/meldingen/ecosysteem/ecosysteem-opslag');
+  const { default: MeldingenPortaal } = await import('../../src/meldingen/ecosysteem/MeldingenPortaal');
+  const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
+  const { LOGOS } = await import('../../src/merk/merk-logos');
+
+  // Жива перевірка MELD-3: vanTellers + чесний підпис у MeldingBellen + передача teller:mail у bouwUniformeStroom
+  const nu = 1_764_070_000_000;
+  const mailTellersUk = vanTellers({ mail: { ongelezen: 14, op: nu } }, {}, 'uk');
+  const bellenTellerHtml = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'uk',
+      label: 'Пошта',
+      badge: { item: 'svc:mail', aantal: 14, categorieen: ['post'], meldingen: mailTellersUk, nieuwste: nu },
+      anker: { left: 10, top: 80, right: 210, bottom: 120, width: 200, height: 40, x: 10, y: 80, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  const stroomMetTeller = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: [],
+    activityRead: new Set(),
+    tellers: { mail: { ongelezen: 14, op: nu } },
+    weg: {},
+  });
+  controleer(
+    'жива перевірка MELD-3: відсутність оманливого «Показано 1 із 14» у MeldingBellen та наявність teller:mail у потоці сповіщень',
+    !bellenTellerHtml.includes('Показано 1 із 14') &&
+      bellenTellerHtml.includes('У «Вхідних»: 14 непрочитаних листів') &&
+      stroomMetTeller.some((g) => g.id === 'teller:mail' && g.herhalingen === 14),
+  );
+
+  // Жива перевірка MELD-4 + MELD-5: чотириколірний знак gmail, відсутність хибного gmail на @gmail.com, спосіб/час на початку та кнопки підтвердження
+  const tekstApp = nieuwApparaatTekst({
+    email: 'olesia.koval@gmail.com',
+    label: 'Chrome/Android',
+    methode: 'google',
+    locatie: { city: 'Gent', country: 'BE' },
+    tijd: nu,
+  });
+  const uuid = '12345678-1234-4123-8123-123456789abc';
+  const menuAppMelding = {
+    id: uuid,
+    bron: 'server' as const,
+    item: 'svc:identity',
+    categorie: 'beveiliging' as const,
+    titel: tekstApp.titel,
+    tekst: tekstApp.tekst,
+    op: nu,
+    link: `https://id.tarasevych.com/sessions?apparaat=${uuid}`,
+  };
+  const verrijktMenu = verrijkMenuMelding(menuAppMelding, 'svc:identity', 'Налаштування', 'uk');
+  const bellenAppHtml = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'uk',
+      label: 'Налаштування',
+      badge: { item: 'svc:identity', aantal: 1, categorieen: ['beveiliging'], meldingen: [menuAppMelding], nieuwste: nu },
+      anker: { left: 10, top: 680, right: 210, bottom: 724, width: 200, height: 44, x: 10, y: 680, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  controleer(
+    'жива перевірка MELD-4 і MELD-5: офіційний знак gmail без дубля, марка google для @gmail.com, спосіб на початку та кнопки «Це не я / Це був я»',
+    OFFICIEEL_SLEUTELS.has('gmail') &&
+      !('gmail' in LOGOS) &&
+      verrijktMenu.merk === 'google' &&
+      tekstApp.tekst.indexOf('спосіб: Google') < tekstApp.tekst.indexOf('olesia.koval@gmail.com') &&
+      bellenAppHtml.includes('Це був я') &&
+      bellenAppHtml.includes('Це не я') &&
+      bellenAppHtml.includes('menu-bellen-anker-pijl'),
+  );
+
+  // Жива перевірка MELD-6: класифікація owner.apparaat.nieuw як id/beveiliging/gevaar та усунення дублів із site_notifications
+  const gebAuditApp = interpreteerGebeurtenis({
+    id: 'audit:77',
+    bron: 'identity site owner.apparaat.nieuw',
+    soort: 'owner.apparaat.nieuw',
+    titel: 'Виявлено вхід із нового незнайомого пристрою',
+    bericht: 'Chrome/Android · Гент',
+    aangemaaktOp: nu,
+  });
+  const pulsAuditApp = verrijkGebeurtenisVoorPuls(gebAuditApp, 'uk');
+  const gededupStroom = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [{ id: uuid, kind: 'security_warning', title: tekstApp.titel, message: tekstApp.tekst, createdAt: nu, link: `https://id.tarasevych.com/sessions?apparaat=${uuid}` }],
+    techItems: [],
+    localRows: [],
+    activityEvents: [{ id: 'audit:77', source: 'identity', platform: '', kind: 'site', type: 'owner.apparaat.nieuw', subject: 'Chrome/Android', status: 'succeeded', createdAt: nu + 350, finishedAt: nu + 350 }],
+    activityRead: new Set(),
+  });
+  const cloudGeb = interpreteerGebeurtenis({
+    id: 'cl-1',
+    bron: 'cloud:google',
+    soort: 'owner.cloud.sync',
+    titel: 'Синхронізація файлів',
+    aangemaaktOp: nu,
+  });
+  controleer(
+    'жива перевірка MELD-6: owner.apparaat.nieuw отримує id/beveiliging/gevaar і не дублюється з site_notifications, а хмара Google дає googledrive',
+    gebAuditApp.subdomein === 'id' &&
+      gebAuditApp.kanaal === 'beveiliging' &&
+      pulsAuditApp.niveau === 'gevaar' &&
+      gededupStroom.length === 1 &&
+      herkenMerkEnAnker(cloudGeb, 'uk').merkSleutel === 'googledrive',
+  );
+
+  // Жива перевірка MELD-2, MELD-7, MELD-10: MeldingenPortaal на смартфоні 360 px (компактний режим + Вікно, фільтр Увага, назва вкладки)
+  const profiel = leesLokaalProfiel('meld-tien-test', 'prive');
+  profiel.geometrie.modus = 'volledig';
+  const win = globalThis.window as unknown as { innerWidth: number };
+  const doc = globalThis.document as unknown as { body: unknown };
+  const oudB = win.innerWidth;
+  const oudBody = doc.body;
+  win.innerWidth = 360;
+  doc.body = null;
+  let compactHtmlUk = '';
+  let vensterHtmlNl = '';
+  try {
+    const gelezenRuis = interpreteerGebeurtenis({
+      id: 'ruis-gelezen-1',
+      bron: 'mcp',
+      soort: 'info',
+      titel: 'Прочитане фонове сповіщення без потреби дії',
+      gelezen: true,
+      aangemaaktOp: nu - 50_000,
+    });
+    gelezenRuis.status = 'gelezen';
+    const basisPortaal = {
+      open: true,
+      ruimte: 'prive' as const,
+      subdomeinNu: 'hub' as const,
+      profiel,
+      stroom: [gebAuditApp, gelezenRuis],
+      laden: false,
+      sound: false,
+      onSluiten: () => undefined,
+      onOpenen: () => undefined,
+      onToggleSound: () => undefined,
+      onVervers: () => undefined,
+      onSlaGeometrieOp: () => undefined,
+      onStatusWijzigen: async () => undefined,
+      onOntleden: async () => ({ samenvatting: '', acties: [], bron: 'intern' as const }) as never,
+      onMarkAll: () => undefined,
+      onSwitchToClassic: () => undefined,
+      onOpenVensterModus: () => undefined,
+    };
+    compactHtmlUk = renderToStaticMarkup(React.createElement(MeldingenPortaal, { ...basisPortaal, lang: 'uk', compactBijBel: true }));
+    vensterHtmlNl = renderToStaticMarkup(React.createElement(MeldingenPortaal, { ...basisPortaal, lang: 'nl', compactBijBel: false }));
+  } finally {
+    win.innerWidth = oudB;
+    doc.body = oudBody;
+  }
+  controleer(
+    'жива перевірка MELD-2, MELD-7, MELD-10: компактний режим із видимою кнопкою «Вікно», очищена вкладка «Увага» та назва активної вкладки uk/nl',
+    compactHtmlUk.includes('data-puls-vorm="compact"') &&
+      !compactHtmlUk.includes('is-mobiel-langscroll') &&
+      compactHtmlUk.includes('puls-vorm-tekst') &&
+      compactHtmlUk.includes('Вікно') &&
+      !compactHtmlUk.includes('Прочитане фонове сповіщення без потреби дії') &&
+      compactHtmlUk.includes('puls-actieve-tab-naam') &&
+      vensterHtmlNl.includes('puls-actieve-tab-naam') &&
+      !compactHtmlUk.includes('(клавіша /)') &&
+      !vensterHtmlNl.includes('(toets /)'),
+  );
 
   const ukDocPad = join(rootDir, 'docs/meldingen/ВИПРОБУВАННЯ-10-ВАД-СПОВІЩЕНЬ-HERSTEL-001.uk.md');
   const nlDocPad = join(rootDir, 'docs/meldingen/PROEVEN-10-MELDINGSGEBREKEN-HERSTEL-001.nl.md');
   controleer(
-    'парні статті 10 випробувань системи сповіщень (uk / nl) існують у docs/meldingen/ і посилаються одна на одну',
+    'парні статті 10 випробувань системи сповіщень (uk / nl) існують у docs/meldingen/, посилаються одна на одну і не містять заборонених символів',
     existsSync(ukDocPad) &&
       existsSync(nlDocPad) &&
       readFileSync(ukDocPad, 'utf8').includes('PROEVEN-10-MELDINGSGEBREKEN-HERSTEL-001.nl.md') &&
-      readFileSync(nlDocPad, 'utf8').includes('ВИПРОБУВАННЯ-10-ВАД-СПОВІЩЕНЬ-HERSTEL-001.uk.md'),
+      readFileSync(nlDocPad, 'utf8').includes('ВИПРОБУВАННЯ-10-ВАД-СПОВІЩЕНЬ-HERSTEL-001.uk.md') &&
+      !VERBODEN_RE.test(readFileSync(ukDocPad, 'utf8') + readFileSync(nlDocPad, 'utf8')),
   );
 
   console.log(`\n${geslaagd}/${geslaagd + gefaald} geslaagd (herstel-001-meldingen-tien-gebreken)`);
   return gefaald === 0 ? 0 : 1;
 }
+

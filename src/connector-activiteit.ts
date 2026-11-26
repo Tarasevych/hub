@@ -16,6 +16,8 @@ export type ActivityEvent = {
   status: string; createdAt: number; finishedAt: number | null; platform?: string;
   /** AI-actie op de site (owner.mcp.tool): hulpmiddel, doel, client en bij mislukking de foutcode/reden. */
   tool?: string; doel?: string; client?: string; geweigerd?: boolean; code?: string; reden?: string; eind?: string;
+  /** HERSTEL-001 (MELD-6): безпечний ідентифікатор запису пристрою (UUID) для підтвердження входу та об’єднання дублів. */
+  apparaatId?: string;
   /** 22.10.2026: sfeer van de regel (shared/meldingen-soorten.ts) — de server zet hem en levert alleen de sfeer van dit tabblad. */
   sfeer?: 'prive' | 'technisch';
 };

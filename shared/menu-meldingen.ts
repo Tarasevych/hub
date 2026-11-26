@@ -64,7 +64,7 @@ export type Tellers = { mail?: { ongelezen: number; op: number } };
 export function vanTellers(t: Tellers, weg: Record<string, number>, lang: 'uk' | 'nl'): MenuMelding[] {
   const uit: MenuMelding[] = [];
   const n = Math.max(0, Math.min(99999, Math.floor(Number(t.mail?.ongelezen || 0))));
-  if (n > 0 && n > Number(weg.mail ?? -1)) uit.push({ id: 'teller:mail', bron: 'teller', item: 'pg:mail/inbox', categorie: 'post', aantal: n, op: Number(t.mail?.op || 0),
+  if (n > 0 && n > Number(weg.mail ?? -1)) uit.push({ id: 'teller:mail', bron: 'teller', item: 'pg:mail/inbox', categorie: 'post', aantal: n, op: Number(t.mail?.op || 0), link: 'https://mail.tarasevych.com/',
     titel: lang === 'uk' ? `Непрочитані листи: ${n}` : `Ongelezen e-mails: ${n}`, tekst: lang === 'uk' ? 'У «Вхідних» є непрочитані листи.' : 'Er zijn ongelezen e-mails in Inbox.' });
   return uit;
 }

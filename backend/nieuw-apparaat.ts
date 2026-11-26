@@ -38,8 +38,8 @@ export function nieuwApparaatTekst(o: { email: string; label: string; methode: A
   const regio = regioTekst(o.locatie);
   const [mUk, mNl] = METHODE[o.methode];
   const titel = 'Новий вхід на новому пристрої / Nieuwe aanmelding op een nieuw apparaat';
-  const uk = `Обліковий запис ${o.email || 'ваш'} · пристрій «${o.label}» · ${regio ? `регіон за IP: ${regio}` : 'регіон невідомий'} · ${brusselsTijd(o.tijd, 'uk')} (Брюссель) · спосіб: ${mUk}. Якщо це були ви — натисніть «Це був я». Якщо ні — завершіть сеанс і змініть доступ.`;
-  const nl = `Account ${o.email || 'uw account'} · apparaat «${o.label}» · ${regio ? `regio volgens IP: ${regio}` : 'regio onbekend'} · ${brusselsTijd(o.tijd, 'nl')} (Brussel) · methode: ${mNl}. Was u dit: «Dit was ik». Zo niet: beëindig de sessie en wijzig de toegang.`;
+  const uk = `Вхід — спосіб: ${mUk} · ${brusselsTijd(o.tijd, 'uk')} (Брюссель) · пристрій «${o.label}» · ${regio ? `регіон за IP: ${regio}` : 'регіон невідомий'} · обліковий запис ${o.email || 'ваш'}. Якщо це були ви — натисніть «Це був я». Якщо ні — завершіть сеанс («Це не я»).`;
+  const nl = `Aanmelding — methode: ${mNl} · ${brusselsTijd(o.tijd, 'nl')} (Brussel) · apparaat «${o.label}» · ${regio ? `regio volgens IP: ${regio}` : 'regio onbekend'} · account ${o.email || 'uw account'}. Was u dit: «Dit was ik». Zo niet: beëindig de sessie («Dit was ik niet»).`;
   return { titel, tekst: `${uk} / ${nl}` };
 }
 

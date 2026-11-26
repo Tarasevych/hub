@@ -10,6 +10,7 @@ import type { PaginaSignaal } from '../../canoniek-meldingen';
 import type { CanonicalServerNotification } from '../../canoniek-meldingen';
 import type { ActivityEvent } from '../../connector-activiteit';
 import type { BewaardeRij } from '../lokale-rijen';
+import { vanTellers, type MenuMelding, type Tellers } from '../../../shared/menu-meldingen';
 import {
   abonneerVerbindingIncidenten,
   incidentNaarEcosysteemGebeurtenis,
@@ -457,10 +458,17 @@ export type UniformeStroomInvoer = {
   overrides?: Record<string, { status: MeldingGebeurtenisStatus; op: number; uitgesteldTot?: number | null }>;
   ontvangstOverrides?: Record<string, OntvangstOverrideWaarde>;
   aiCache?: Record<string, MeldingAiSamenvatting>;
+  tellers?: Tellers;
+  weg?: Record<string, number>;
+  tellerStaat?: { tellers?: Tellers; weg?: Record<string, number>; scope?: string };
+  menuTellers?: MenuMelding[];
   tekstVanServer?: (s: CanonicalServerNotification) => { title: string; message: string };
   titelVanActiviteit?: (ev: ActivityEvent) => string;
   contextVanActiviteit?: (ev: ActivityEvent) => string;
 };
+
+const APPARAAT_LINK_UUID_RE = /[?&]apparaat=([0-9a-f-]{36})/i;
+const ZUIVER_UUID_RE = /^[0-9a-f-]{36}$/i;
 
 const PRIO_RANG: Record<MeldingEcosysteemGebeurtenis['prioriteit'], number> = {
   kritiek: 0,
@@ -598,9 +606,24 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     ? [...invoer.techItems, ...invoer.serverItems.filter((s) => s.ruimte === 'technisch')]
     : invoer.serverItems.filter((s) => (s.ruimte ?? 'prive') === 'prive');
 
+  const serverNieuwApparaatLijst: Array<{
+    sleutel: string;
+    apparaatId: string;
+    aangemaaktOp: number;
+    tekstLaag: string;
+  }> = [];
+
   for (const s of serverSamengesteld) {
     const sl = `site_notif:${s.id}`;
     const tekst = invoer.tekstVanServer ? invoer.tekstVanServer(s) : { title: s.title, message: s.message };
+    const uitLinkUuid = APPARAAT_LINK_UUID_RE.exec(String(s.link || ''))?.[1] || '';
+    const isNieuwApparaatMelding =
+      Boolean(uitLinkUuid) ||
+      (s.kind === 'security_warning' &&
+        ZUIVER_UUID_RE.test(s.id) &&
+        /(новий вхід|nieuwe aanmelding)/i.test(`${tekst.title} ${tekst.message}`));
+    const apparaatUuid = uitLinkUuid || (isNieuwApparaatMelding && ZUIVER_UUID_RE.test(s.id) ? s.id : '');
+
     const geb = interpreteerGebeurtenis(
       {
         id: `s:${s.id}`,
@@ -613,36 +636,87 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
         link: s.link,
         aangemaaktOp: s.createdAt,
         gelezen: Boolean(s.read),
-        meta: { serverId: s.id },
+        meta: {
+          serverId: s.id,
+          ...(apparaatUuid ? { apparaatId: apparaatUuid } : {}),
+        },
       },
       invoer.ruimte,
     );
     voegToe({ ...geb, afgeleverdOp: geb.afgeleverdOp ?? s.createdAt });
+
+    if (isNieuwApparaatMelding) {
+      serverNieuwApparaatLijst.push({
+        sleutel: sl,
+        apparaatId: apparaatUuid,
+        aangemaaktOp: Number(s.createdAt) || 0,
+        tekstLaag: `${tekst.title} ${tekst.message}`.toLowerCase(),
+      });
+    }
   }
 
   // 4. Активності підключень, агентів і ШІ (activity.events)
   for (const ev of invoer.activityEvents) {
     if (/^owner\.meldingen\.ecosysteem\.(actie|profiel|ontvangst|aflevering_overzicht)$/.test(String(ev.type || ''))) continue;
+    const ts = ev.finishedAt || ev.createdAt;
+
+    // MELD-6: якщо вхід із нового пристрою вже представлений розгорнутою карткою site_notifications, об’єднуємо їх без дублювання
+    if (ev.type === 'owner.apparaat.nieuw' && serverNieuwApparaatLijst.length > 0) {
+      const evSub = String(ev.subject || '').trim().toLowerCase();
+      const gekoppeldSrv = serverNieuwApparaatLijst.find((srv) => {
+        if (ev.apparaatId && srv.apparaatId && ev.apparaatId.toLowerCase() === srv.apparaatId.toLowerCase()) {
+          return true;
+        }
+        const binnenVenster = Math.abs(ts - srv.aangemaaktOp) <= 120_000;
+        const toestelPast = !evSub || srv.tekstLaag.includes(evSub);
+        return binnenVenster && toestelPast;
+      });
+      if (gekoppeldSrv) {
+        const bestaandSrv = result.get(gekoppeldSrv.sleutel);
+        if (bestaandSrv) {
+          result.set(gekoppeldSrv.sleutel, {
+            ...bestaandSrv,
+            meta: {
+              ...bestaandSrv.meta,
+              activiteitId: ev.id,
+              actieCode: ev.type,
+              ...(ev.apparaatId && !bestaandSrv.meta?.apparaatId ? { apparaatId: ev.apparaatId } : {}),
+            },
+          });
+          continue;
+        }
+      }
+    }
+
     const titel = invoer.titelVanActiviteit ? invoer.titelVanActiviteit(ev) : (ev.tool || ev.doel || ev.subject || ev.type || ev.kind);
     const ctx = invoer.contextVanActiviteit ? invoer.contextVanActiviteit(ev) : (ev.subject || '');
     const sl = `act:${ev.id}`;
     const details = [ev.reden, ev.eind, ev.code].filter(Boolean).join(' · ') || ev.doel || ev.subject || '';
-    const ts = ev.finishedAt || ev.createdAt;
+    const autoLink =
+      ev.type === 'owner.apparaat.nieuw'
+        ? ev.apparaatId
+          ? `https://id.tarasevych.com/sessions?apparaat=${ev.apparaatId}`
+          : 'https://id.tarasevych.com/sessions'
+        : undefined;
     const geb = interpreteerGebeurtenis(
       {
         id: `a:${ev.id}`,
         externeSleutel: sl,
         ruimte: invoer.ruimte,
         bron: `${ev.source || 'agent'} ${ev.kind} ${ev.type}`.trim(),
-        soort: ev.status === 'failed' ? 'error' : ev.status,
+        soort: ev.type === 'owner.apparaat.nieuw' ? ev.type : ev.status === 'failed' ? 'error' : ev.status,
         ernst: ev.status === 'failed' ? 'fout' : 'info',
         titel,
         bericht: details,
         contextLabel: ctx,
+        link: autoLink,
         aangemaaktOp: ts,
         gelezen: invoer.activityRead.has(ev.id),
         meta: {
           activiteitId: ev.id,
+          actieCode: ev.type,
+          ...(ev.code ? { foutCode: ev.code } : {}),
+          ...(ev.apparaatId ? { apparaatId: ev.apparaatId } : {}),
           ...(ev.client ? { client: ev.client } : {}),
           ...(ev.platform ? { platform: ev.platform } : {}),
         },
@@ -680,6 +754,49 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     voegToe({ ...geb, afgeleverdOp: geb.afgeleverdOp ?? row.createdAt });
   }
 
+  // 6. Зведений сигнал непрочитаної пошти (teller:mail) для особистого простору (MELD-3)
+  if (invoer.ruimte === 'prive') {
+    const tellerRijen: MenuMelding[] = invoer.menuTellers?.length
+      ? invoer.menuTellers
+      : invoer.tellers || invoer.tellerStaat?.tellers
+        ? vanTellers(
+            (invoer.tellers ?? invoer.tellerStaat?.tellers) || {},
+            (invoer.weg ?? invoer.tellerStaat?.weg) || {},
+            invoer.lang,
+          )
+        : [];
+    for (const tm of tellerRijen) {
+      if (tm.id !== 'teller:mail' || result.has('teller:mail')) continue;
+      const aantal = Math.max(1, Math.floor(Number(tm.aantal || 1)));
+      const opTs = Number(tm.op) || Date.now();
+      const gebTeller = interpreteerGebeurtenis(
+        {
+          id: 'teller:mail',
+          externeSleutel: 'teller:mail',
+          ruimte: 'prive',
+          bron: 'mail:teller',
+          kanaal: 'mail',
+          subdomein: 'mail',
+          soort: 'mail_ongelezen_teller',
+          ernst: 'info',
+          titel: tm.titel,
+          bericht: tm.tekst,
+          contextLabel: nl ? 'Postvak In' : 'Вхідні',
+          link: tm.link || 'https://mail.tarasevych.com/',
+          aangemaaktOp: opTs,
+          gelezen: false,
+          meta: { tellerId: 'mail', tellerAantal: aantal, bron: 'teller' },
+        },
+        'prive',
+      );
+      voegToe({
+        ...gebTeller,
+        herhalingen: aantal,
+        afgeleverdOp: gebTeller.afgeleverdOp ?? opTs,
+      });
+    }
+  }
+
   return Array.from(result.values()).sort((a, b) => {
     const sDiff = STATUS_RANG[a.status] - STATUS_RANG[b.status];
     if (sDiff !== 0) return sDiff;
@@ -705,6 +822,8 @@ export function useMeldingEcosysteem(opties: {
   localRows: BewaardeRij[];
   activityEvents: ActivityEvent[];
   activityRead: Set<string>;
+  tellers?: Tellers;
+  weg?: Record<string, number>;
   tekstVanServer?: (s: CanonicalServerNotification) => { title: string; message: string };
   titelVanActiviteit?: (ev: ActivityEvent) => string;
   contextVanActiviteit?: (ev: ActivityEvent) => string;
@@ -1028,6 +1147,8 @@ export function useMeldingEcosysteem(opties: {
         overrides,
         ontvangstOverrides,
         aiCache,
+        tellers: opties.tellers,
+        weg: opties.weg,
         tekstVanServer: opties.tekstVanServer,
         titelVanActiviteit: opties.titelVanActiviteit,
         contextVanActiviteit: opties.contextVanActiviteit,
@@ -1048,6 +1169,8 @@ export function useMeldingEcosysteem(opties: {
       overrides,
       ontvangstOverrides,
       aiCache,
+      opties.tellers,
+      opties.weg,
       opties.tekstVanServer,
       opties.titelVanActiviteit,
       opties.contextVanActiviteit,

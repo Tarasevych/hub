@@ -456,6 +456,25 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "gmail",
+      "bestand": "gmail.svg",
+      "soort": "pakket",
+      "pakket": "@iconify-json/logos",
+      "versie": "1.2.17",
+      "integriteit": "sha512-ruCr6y5h8FW+loXwRJkz+6cJj3njyX5Ccpi+ifMgaWZPbTSCbsCccNyGomZxIdhoyDKNOmNdZuURC3tyBvDr7A==",
+      "icoon": "google-gmail-2020",
+      "verzameling": "SVG Logos",
+      "auteur": "Gil Barbara",
+      "bronUrl": "https://github.com/gilbarbara/logos",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt",
+      "mime": "image/svg+xml",
+      "bytes": 671,
+      "sha256": "4834c1907e3a9d64df23ca0397a145bddec3957c55a26653ceda8d252371c926",
+      "ondergrond": "vrij",
+      "opmerking": "vlakke vierkleurige uitvoering (2020), zoals Google Drive en Google Keep"
+    },
+    {
       "sleutel": "google",
       "bestand": "google.svg",
       "soort": "pakket",

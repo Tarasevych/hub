@@ -4,7 +4,7 @@
 //     виключення .menu-bellen із перехоплення вказівника та жесту змахування шухляди в CanoniekOmlijsting);
 //  2. компактні піктограмні кнопки (is-icoon, 30–32 px на ПК, 34×34 px із сенсорним полем ::after var(--tik-hoogte) на смартфоні)
 //     зі збереженням усіх контрактних атрибутів і доступних підписів для зчитувачів екрана двома мовами;
-//  3. спливні підказки назв (.menu-bellen-zweeftip): при наведенні мишею на комп’ютері та двокроковий сенсорний натиск на смартфоні;
+//  3. спливні підказки назв (.menu-bellen-zweeftip): при наведенні мишею на комп’ютері та довгому утримуванні (420 мс) на смартфоні без блокування першого дотику;
 //  4. офіційні логотипи брендів із єдиного реєстру src/merk/ (MerkLogo), очищення сирих емодзі, семантичні стани (--staat-goed/-let/-fout)
 //     та адекватні людські типи сповіщень зі сформованої бази MELDING_SCHEMAS (shared/meldingen-catalogus.ts).
 import { readFileSync } from 'node:fs';
@@ -169,13 +169,15 @@ export async function main(): Promise<number> {
       && omlijstingBron.includes('onSluitVenster='),
   );
   check(
-    '2c піктограмні кнопки використовують єдиний реєстр MerkLogo без ручних <path> і реалізують спливну капсулу назви для миші та дотику',
+    '2c піктограмні кнопки використовують єдиний реєстр MerkLogo без ручних <path>, виконують дію з першого дотику і показують спливну капсулу назви за наведенням миші або довгим утримуванням',
     menuMeldingenBron.includes("import MerkLogo from './merk/MerkLogo'")
       && !menuMeldingenBron.includes('<path')
       && menuMeldingenBron.includes("className='menu-bellen-zweeftip'")
       && menuMeldingenBron.includes("if(e.pointerType==='mouse')toonZweeftip(")
-      && menuMeldingenBron.includes("if(zweeftipRef.current?.sleutel===sleutel&&zweeftipRef.current.modus==='touch')")
-      && menuMeldingenBron.includes('AANRAAK_TIP_MS=2800'),
+      && menuMeldingenBron.includes('AANRAAK_LANG_DRUK_MS=420')
+      && menuMeldingenBron.includes('AANRAAK_TIP_MS=2800')
+      && !menuMeldingenBron.includes('ще дотик')
+      && !menuMeldingenBron.includes('tik nogmaals'),
   );
 
   // ------------------------------------------------------------------ 3. Геометрія, прокручуваний список ul та компактні піктограмні кнопки

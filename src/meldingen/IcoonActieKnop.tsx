@@ -1,7 +1,6 @@
 // Універсальна компактна піктограмна кнопка або посилання зі спливною назвою (HERSTEL-001).
 // На комп’ютері показує матову спливну капсулу при наведенні миші або фокусі клавіатури (дія з першого натиску).
-// На смартфоні при першому дотику до кнопки дії підсвічує її та відкриває спливну назву на 2,8 с, а з другого дотику виконує дію;
-// для вкладок фільтрації одразу перемикає вкладку й показує її назву на 1,6 с.
+// На смартфоні виконує дію одразу з першого дотику без блокувальної затримки, а при довгому утримуванні (420 мс) відкриває спливну підказку.
 
 import {
   useCallback,
@@ -32,6 +31,8 @@ export type IcoonActieKnopProps = {
   icoon: ReactNode;
   label: string;
   srTekst?: string;
+  zichtbareTekst?: string;
+  zichtbareTekstKlas?: string;
   ariaLabel?: string;
   teller?: number;
   stip?: boolean;
@@ -60,6 +61,7 @@ type TipPositie = {
   maxWidth: number;
 };
 
+const AANRAAK_LANG_DRUK = 420;
 const AANRAAK_ACTIE_DUUR_MS = 2800;
 const AANRAAK_TAB_DUUR_MS = 1600;
 const useIsomorfLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -82,20 +84,12 @@ function wisActieveTipRegistratie(sleutel: string) {
   }
 }
 
-function leesActieveThemaKlassen(): string {
-  if (typeof document === 'undefined') return '';
-  const bron = document.querySelector('.canonical-chrome') || document.documentElement;
-  const klassen: string[] = [];
-  for (const k of ['theme-plum-dark', 'theme-plum-light', 'theme-dark', 'theme-light']) {
-    if (bron.classList.contains(k)) klassen.push(k);
-  }
-  return klassen.join(' ');
-}
-
 export default function IcoonActieKnop({
   icoon,
   label,
   srTekst,
+  zichtbareTekst,
+  zichtbareTekstKlas,
   ariaLabel,
   teller,
   stip = false,
@@ -115,7 +109,8 @@ export default function IcoonActieKnop({
   const knopRef = useRef<HTMLButtonElement | HTMLAnchorElement | null>(null);
   const tipRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<number | undefined>(undefined);
-  const wachtTweedeTikRef = useRef(false);
+  const langDrukTimerRef = useRef<number | undefined>(undefined);
+  const langDrukGeopendRef = useRef(false);
   const pointerSoortRef = useRef<'mouse' | 'touch' | null>(null);
   const laatsteAanrakingTsRef = useRef(0);
   const laatstePointerDownTsRef = useRef(0);
@@ -123,6 +118,13 @@ export default function IcoonActieKnop({
   const [tipOpen, setTipOpen] = useState(false);
   const [aanraakActief, setAanraakActief] = useState(false);
   const [positie, setPositie] = useState<TipPositie>({ left: 8, top: 8, maxWidth: 280 });
+
+  const wisLangDrukTimer = useCallback(() => {
+    if (langDrukTimerRef.current !== undefined && typeof window !== 'undefined') {
+      window.clearTimeout(langDrukTimerRef.current);
+      langDrukTimerRef.current = undefined;
+    }
+  }, []);
 
   const wisTimer = useCallback(() => {
     if (timerRef.current !== undefined && typeof window !== 'undefined') {
@@ -132,12 +134,12 @@ export default function IcoonActieKnop({
   }, []);
 
   const sluitTipVolledig = useCallback(() => {
+    wisLangDrukTimer();
     wisTimer();
-    wachtTweedeTikRef.current = false;
     setTipOpen(false);
     setAanraakActief(false);
     wisActieveTipRegistratie(uniekId);
-  }, [uniekId, wisTimer]);
+  }, [uniekId, wisLangDrukTimer, wisTimer]);
 
   useEffect(() => () => sluitTipVolledig(), [sluitTipVolledig]);
 
@@ -170,10 +172,9 @@ export default function IcoonActieKnop({
   }, [label]);
 
   const openTip = useCallback(
-    (duurMs?: number, metTweedeTik = false) => {
+    (duurMs?: number, alsAanraak = false) => {
       wisTimer();
-      wachtTweedeTikRef.current = metTweedeTik;
-      setAanraakActief(metTweedeTik);
+      setAanraakActief(alsAanraak);
       registreerActieveTip(uniekId, sluitTipVolledig);
       setTipOpen(true);
       werkPositieBij();
@@ -220,15 +221,33 @@ export default function IcoonActieKnop({
     };
   }, [tipOpen, label, werkPositieBij, sluitTipVolledig]);
 
+  const startLangDruk = useCallback(() => {
+    wisLangDrukTimer();
+    langDrukGeopendRef.current = false;
+    if (typeof window === 'undefined') return;
+    langDrukTimerRef.current = window.setTimeout(() => {
+      langDrukTimerRef.current = undefined;
+      langDrukGeopendRef.current = true;
+      openTip(AANRAAK_ACTIE_DUUR_MS, true);
+    }, AANRAAK_LANG_DRUK);
+  }, [openTip, wisLangDrukTimer]);
+
   const opPointerDown = (e: ReactPointerEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     if (disabled) return;
     laatstePointerDownTsRef.current = Date.now();
     if (e.pointerType === 'touch' || e.pointerType === 'pen') {
       pointerSoortRef.current = 'touch';
       laatsteAanrakingTsRef.current = Date.now();
+      startLangDruk();
     } else {
       pointerSoortRef.current = 'mouse';
+      wisLangDrukTimer();
+      langDrukGeopendRef.current = false;
     }
+  };
+
+  const opPointerUp = () => {
+    wisLangDrukTimer();
   };
 
   const opTouchStart = () => {
@@ -236,6 +255,13 @@ export default function IcoonActieKnop({
     laatstePointerDownTsRef.current = Date.now();
     pointerSoortRef.current = 'touch';
     laatsteAanrakingTsRef.current = Date.now();
+    if (langDrukTimerRef.current === undefined) {
+      startLangDruk();
+    }
+  };
+
+  const opTouchEnd = () => {
+    wisLangDrukTimer();
   };
 
   const opPointerEnter = (e: ReactPointerEvent<HTMLButtonElement | HTMLAnchorElement>) => {
@@ -244,7 +270,8 @@ export default function IcoonActieKnop({
   };
 
   const opPointerLeave = (e: ReactPointerEvent<HTMLButtonElement | HTMLAnchorElement>) => {
-    if (e.pointerType !== 'mouse' || wachtTweedeTikRef.current) return;
+    wisLangDrukTimer();
+    if (e.pointerType !== 'mouse' || aanraakActief) return;
     sluitTipVolledig();
   };
 
@@ -256,14 +283,22 @@ export default function IcoonActieKnop({
   };
 
   const opBlur = () => {
-    if (wachtTweedeTikRef.current) return;
+    if (aanraakActief) return;
     sluitTipVolledig();
   };
 
   const opKlik = (e: ReactMouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+    wisLangDrukTimer();
     if (disabled) {
       e.preventDefault();
       e.stopPropagation();
+      return;
+    }
+
+    if (langDrukGeopendRef.current) {
+      langDrukGeopendRef.current = false;
+      e.preventDefault();
+      if (stopPropagatie) e.stopPropagation();
       return;
     }
 
@@ -271,20 +306,7 @@ export default function IcoonActieKnop({
     const isAanraking = pointerSoortRef.current === 'touch' && nu - laatsteAanrakingTsRef.current < 1500;
     pointerSoortRef.current = null;
 
-    if (isAanraking && modus === 'actie') {
-      if (!wachtTweedeTikRef.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        openTip(AANRAAK_ACTIE_DUUR_MS, true);
-        return;
-      }
-      sluitTipVolledig();
-      if (stopPropagatie) e.stopPropagation();
-      onClick?.(e);
-      return;
-    }
-
-    if (isAanraking && modus === 'tab') {
+    if (isAanraking && modus === 'tab' && !zichtbareTekst) {
       if (stopPropagatie) e.stopPropagation();
       onClick?.(e);
       openTip(AANRAAK_TAB_DUUR_MS, false);
@@ -304,6 +326,7 @@ export default function IcoonActieKnop({
     toon === 'actief' ? 'is-actief' : '',
     aanraakActief ? 'is-tip-open' : '',
     toonTeller ? 'heeft-teller' : '',
+    zichtbareTekst ? 'heeft-zichtbare-tekst' : '',
     className,
   ]
     .filter(Boolean)
@@ -314,6 +337,11 @@ export default function IcoonActieKnop({
       <span className='puls-icoon-symbool' aria-hidden='true'>
         {icoon}
       </span>
+      {zichtbareTekst ? (
+        <span className={zichtbareTekstKlas || 'puls-icoon-tekst'} aria-hidden='true'>
+          {zichtbareTekst}
+        </span>
+      ) : null}
       {toonTeller ? (
         <b className='puls-icoon-teller' aria-hidden='true'>
           {teller > 999 ? '999+' : teller}
@@ -333,7 +361,11 @@ export default function IcoonActieKnop({
     'data-puls-icoon-knop': modus,
     'data-tip-open': tipOpen ? '1' : undefined,
     onPointerDown: opPointerDown,
+    onPointerUp: opPointerUp,
+    onPointerCancel: opPointerUp,
     onTouchStart: opTouchStart,
+    onTouchEnd: opTouchEnd,
+    onTouchCancel: opTouchEnd,
     onPointerEnter: opPointerEnter,
     onPointerLeave: opPointerLeave,
     onFocus: opFocus,
@@ -342,30 +374,35 @@ export default function IcoonActieKnop({
     ...ariaEnData,
   };
 
-  const themaKlassen = tipOpen ? leesActieveThemaKlassen() : '';
-  const portaalTip =
+  const portaalWortel =
     tipOpen && typeof document !== 'undefined' && document.body
-      ? createPortal(
-          <div
-            ref={tipRef}
-            id={tipDomId}
-            role='tooltip'
-            data-qa-id='puls-icoon-tip'
-            className={`puls-icoon-tip${themaKlassen ? ` ${themaKlassen}` : ''}`}
-            style={{
-              position: 'fixed',
-              left: `${positie.left}px`,
-              top: `${positie.top}px`,
-              maxWidth: `${positie.maxWidth}px`,
-              zIndex: 2147483610,
-              pointerEvents: 'none',
-            }}
-          >
-            {label}
-          </div>,
-          document.body,
-        )
+      ? knopRef.current?.closest<HTMLElement>('.mel-ecosysteem-portaal, .mel-ecosysteem-paneel, .menu-bellen') ||
+        document.querySelector<HTMLElement>('.canonical-chrome') ||
+        document.body
       : null;
+
+  const portaalTip = portaalWortel
+    ? createPortal(
+        <div
+          ref={tipRef}
+          id={tipDomId}
+          role='tooltip'
+          data-qa-id='puls-icoon-tip'
+          className='puls-icoon-tip'
+          style={{
+            position: 'fixed',
+            left: `${positie.left}px`,
+            top: `${positie.top}px`,
+            maxWidth: `${positie.maxWidth}px`,
+            zIndex: 2147483610,
+            pointerEvents: 'none',
+          }}
+        >
+          {label}
+        </div>,
+        portaalWortel,
+      )
+    : null;
 
   if (href && !disabled) {
     return (

@@ -68,15 +68,16 @@ const MERK_PATRONEN:ReadonlyArray<{re:RegExp;merk:string;naam:readonly[uk:string
   {re:/\bfastmail\b/i,merk:'fastmail',naam:['Fastmail','Fastmail']},
   {re:/\bgithub\b/i,merk:'github',naam:['GitHub','GitHub']},
   {re:/\bgoogle\b/i,merk:'google',naam:['Google','Google']},
-  {re:/\b(?:passkey|webauthn)\b|ключ(?:і|а|ем)?\s+входу/i,merk:'passkey',naam:['Ключ входу','Passkey']},
+  {re:/\b(?:passkey|webauthn|toegangssleutel)\b|ключ(?:і|а|ем)?\s+(?:входу|доступу)/i,merk:'passkey',naam:['Ключ входу','Passkey']},
   {re:/\boauth\b|єдин(?:ий|ого|ому)\s+вх(?:ід|оду|оді)|eenmalige\s+aanmelding/i,merk:'oauth',naam:['Єдиний вхід','Eenmalige aanmelding']},
   {re:/\bwebhook(?:s)?\b/i,merk:'webhook',naam:['Зовнішній виклик','Webhook']},
 ];
 
 function zoekMerkInTekst(bronTekst:string,m:MenuMelding,badgeItem:string,lang:Lang):{merk:string;naam:string}|null{
   const idx=lang==='uk'?0:1;
+  const zonderEmail=bronTekst.replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu,' ');
   for(const p of MERK_PATRONEN){
-    if(!p.re.test(bronTekst))continue;
+    if(!p.re.test(zonderEmail))continue;
     let ruw=p.merk;
     let naam=p.naam[idx];
     if(ruw==='google'){
@@ -219,7 +220,40 @@ const STAAT_LEGENDA:Readonly<Record<Exclude<BelStaat,'info'>,readonly[uk:string,
 };
 
 const AANRAAK_TIP_MS=2800;
+const AANRAAK_LANG_DRUK_MS=420;
 type ZweeftipStaat={sleutel:string;tekst:string;modus:'mouse'|'touch';anker:HTMLElement};
+type BellenPlaatsing='rechts'|'links'|'onder'|'boven';
+
+const APPARAAT_UUID_RE=/[?&]apparaat=([0-9a-f-]{36})/i;
+function haalApparaatUuidUitMelding(m:MenuMelding):string{
+  const uitLink=APPARAAT_UUID_RE.exec(m.link||'')?.[1];
+  if(uitLink)return uitLink;
+  if(/^[0-9a-f-]{36}$/i.test(m.id)&&/(новий вхід на новому пристрої|nieuwe aanmelding op een nieuw apparaat)/i.test(m.titel))return m.id;
+  return '';
+}
+
+function apparaatGroepSleutel(m:MenuMelding,info:BelKaartVerrijking):string{
+  const toestel=/(?:пристрій|apparaat)\s*«([^»]+)»/i.exec(m.tekst||'')?.[1]?.trim().toLowerCase()||'';
+  return `${info.schoonTitel.toLowerCase()}|${info.merk||''}|${toestel}`;
+}
+
+export async function bevestigApparaatBekend(ids:readonly string[]):Promise<void>{
+  const unieke=[...new Set(ids.filter(id=>/^[0-9a-f-]{36}$/i.test(id)))];
+  if(!unieke.length||typeof fetch!=='function')return;
+  await Promise.allSettled(unieke.map(id=>fetch('/api/meldingen/apparaat-bekend',{
+    method:'POST',
+    credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id}),
+  })));
+}
+
+const ukOngelezenVorm=(n:number)=>{
+  const r10=n%10,r100=n%100;
+  if(r10===1&&r100!==11)return 'непрочитаний лист';
+  if(r10>=2&&r10<=4&&!(r100>=12&&r100<=14))return 'непрочитані листи';
+  return 'непрочитаних листів';
+};
 
 type BellenProps={lang:Lang;label:string;badge:Badge;anker:DOMRect;onSluit:(m:MenuMelding)=>void;onOpen:(m:MenuMelding)=>void;onAllesWeg:()=>void;onBinnen:(binnen:boolean)=>void;onEsc:()=>void;paneelRef:(el:HTMLDivElement|null)=>void;
   /** Het menu-item waaraan het venster hangt: een tik daarop sluit het niet (dat doet het item zelf). */
@@ -233,7 +267,8 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
   const ref=useRef<HTMLDivElement|null>(null);
   const tipRef=useRef<HTMLDivElement|null>(null);
   const tipTimerRef=useRef<number|null>(null);
-  const laatstePointerRef=useRef<{sleutel:string;soort:string;tijd:number}|null>(null);
+  const langDrukTimerRef=useRef<number|null>(null);
+  const langDrukGeopendRef=useRef<string|null>(null);
   const uitlegId=useId();
   const[uitlegOpen,setUitlegOpen]=useState(false);
   const[zweeftip,setZweeftip]=useState<ZweeftipStaat|null>(null);
@@ -241,10 +276,15 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
   const zweeftipRef=useRef<ZweeftipStaat|null>(null);
   zweeftipRef.current=zweeftip;
 
+  const wisLangDrukTimer=useCallback(()=>{
+    if(langDrukTimerRef.current!==null){window.clearTimeout(langDrukTimerRef.current);langDrukTimerRef.current=null}
+  },[]);
+
   const sluitZweeftip=useCallback(()=>{
+    wisLangDrukTimer();
     if(tipTimerRef.current!==null){window.clearTimeout(tipTimerRef.current);tipTimerRef.current=null}
     setZweeftip(null);
-  },[]);
+  },[wisLangDrukTimer]);
 
   const toonZweeftip=useCallback((sleutel:string,tekst:string,knopEl:HTMLElement,modus:'mouse'|'touch')=>{
     if(tipTimerRef.current!==null){window.clearTimeout(tipTimerRef.current);tipTimerRef.current=null}
@@ -254,22 +294,62 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
     }
   },[]);
 
-  useEffect(()=>()=>{if(tipTimerRef.current!==null)window.clearTimeout(tipTimerRef.current)},[]);
+  useEffect(()=>()=>{wisLangDrukTimer();if(tipTimerRef.current!==null)window.clearTimeout(tipTimerRef.current)},[wisLangDrukTimer]);
 
-  const[pos,setPos]=useState({left:kant==='left'?Math.max(10,anker.left-390):anker.right+10,top:anker.top-6});
+  useEffect(()=>{
+    const doel=ankerEl;
+    if(!doel)return;
+    doel.setAttribute('data-menu-bellen-anker','actief');
+    return()=>{doel.removeAttribute('data-menu-bellen-anker')};
+  },[ankerEl]);
+
+  const[pos,setPos]=useState<{left:number;top:number;maxHeight?:number;plaatsing:BellenPlaatsing;pijlX:number;pijlY:number}>({
+    left:kant==='left'?Math.max(10,anker.left-390):anker.right+10,
+    top:anker.top-6,
+    plaatsing:kant==='left'?'links':'rechts',
+    pijlX:24,
+    pijlY:22,
+  });
   useLayoutEffect(()=>{
     const plaats=()=>{
       const el=ref.current;if(!el)return;
       const rect=ankerEl?.isConnected?ankerEl.getBoundingClientRect():anker;
-      const h=el.offsetHeight,w=el.offsetWidth;
-      const rand=window.innerWidth<=700?10:12;
-      const top=Math.max(rand,Math.min(rect.top-6,window.innerHeight-h-rand));
+      const vw=window.innerWidth||360,vh=window.innerHeight||800;
+      const w=el.offsetWidth||Math.min(380,vw-20);
+      const rand=vw<=700?10:12;
       const voorkeur=kant==='left'?rect.left-w-10:rect.right+10;
       const alternatief=kant==='left'?rect.right+10:rect.left-w-10;
-      const past=(x:number)=>x>=rand&&x+w<=window.innerWidth-rand;
-      const rawLeft=past(voorkeur)?voorkeur:past(alternatief)?alternatief:window.innerWidth<=700?Math.round((window.innerWidth-w)/2):voorkeur;
-      const left=Math.max(rand,Math.min(rawLeft,window.innerWidth-w-rand));
-      setPos(p=>p.left===left&&p.top===top?p:{left,top});
+      const past=(x:number)=>x>=rand&&x+w<=vw-rand;
+
+      if(past(voorkeur)||past(alternatief)){
+        const h=el.offsetHeight||220;
+        const gekozenLeft=past(voorkeur)?voorkeur:alternatief;
+        const left=Math.max(rand,Math.min(gekozenLeft,vw-w-rand));
+        const top=Math.max(rand,Math.min(rect.top-6,vh-h-rand));
+        const plaatsing:BellenPlaatsing=left>=rect.right-2?'rechts':'links';
+        const pijlY=Math.round(Math.max(16,Math.min(Math.max(24,h-16),(rect.top+rect.height/2)-top)));
+        setPos(p=>p.left===left&&p.top===top&&p.maxHeight===undefined&&p.plaatsing===plaatsing&&p.pijlY===pijlY?p:{left,top,maxHeight:undefined,plaatsing,pijlX:24,pijlY});
+        return;
+      }
+
+      const rawLeft=vw<=700?Math.round((vw-w)/2):voorkeur;
+      const left=Math.max(rand,Math.min(rawLeft,vw-w-rand));
+      const pijlX=Math.round(Math.max(18,Math.min(Math.max(24,w-18),(rect.left+rect.width/2)-left)));
+      const ruimteOnder=vh-rect.bottom-rand-10;
+      const ruimteBoven=rect.top-rand-10;
+
+      if(ruimteOnder>=180||ruimteOnder>=ruimteBoven){
+        const maxHeight=Math.max(120,Math.min(Math.round(vh*0.74),Math.round(ruimteOnder)));
+        const top=Math.max(rand,Math.round(rect.bottom+10));
+        setPos(p=>p.left===left&&p.top===top&&p.maxHeight===maxHeight&&p.plaatsing==='onder'&&p.pijlX===pijlX?p:{left,top,maxHeight,plaatsing:'onder',pijlX,pijlY:18});
+        return;
+      }
+
+      const maxHeight=Math.max(120,Math.min(Math.round(vh*0.74),Math.round(ruimteBoven)));
+      const gemetenH=el.offsetHeight||220;
+      const effH=Math.min(gemetenH,maxHeight);
+      const top=Math.max(rand,Math.round(rect.top-effH-10));
+      setPos(p=>p.left===left&&p.top===top&&p.maxHeight===maxHeight&&p.plaatsing==='boven'&&p.pijlX===pijlX?p:{left,top,maxHeight,plaatsing:'boven',pijlX,pijlY:18});
     };
     plaats();
     const raf=requestAnimationFrame(plaats);
@@ -303,18 +383,29 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
   useEffect(()=>{const esc=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!e.defaultPrevented){e.preventDefault();e.stopPropagation();onEsc()}};window.addEventListener('keydown',esc,true);return()=>window.removeEventListener('keydown',esc,true)},[onEsc]);
   const toets=(e:RKeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();onEsc()}};
 
-  // На комп’ютері (миша/клавіатура) — спливна назва при наведенні й миттєва дія за першим натиском;
-  // на смартфоні (дотик пальцем) — 1-й натиск показує спливну назву кнопки, 2-й натиск на ту саму кнопку виконує дію.
+  // На комп’ютері — спливна назва при наведенні миші або фокусі клавіатури; на смартфоні — миттєве виконання дії з першого дотику + підказка за довгим утримуванням (420 мс).
   const icoonKnopHandlers=(sleutel:string,tipTekst:string,actie:()=>void)=>({
     'data-tip-sleutel':sleutel,
     'data-tip-actief':zweeftip?.sleutel===sleutel&&zweeftip.modus==='touch'?'ja':undefined,
     onPointerDown:(e:RPointerEvent<HTMLButtonElement>)=>{
-      laatstePointerRef.current={sleutel,soort:e.pointerType,tijd:Date.now()};
+      wisLangDrukTimer();
+      langDrukGeopendRef.current=null;
+      if(e.pointerType==='touch'||e.pointerType==='pen'){
+        const knopEl=e.currentTarget;
+        langDrukTimerRef.current=window.setTimeout(()=>{
+          langDrukTimerRef.current=null;
+          langDrukGeopendRef.current=sleutel;
+          toonZweeftip(sleutel,tipTekst,knopEl,'touch');
+        },AANRAAK_LANG_DRUK_MS);
+      }
     },
+    onPointerUp:()=>{wisLangDrukTimer()},
+    onPointerCancel:()=>{wisLangDrukTimer()},
     onPointerEnter:(e:RPointerEvent<HTMLButtonElement>)=>{
       if(e.pointerType==='mouse')toonZweeftip(sleutel,tipTekst,e.currentTarget,'mouse');
     },
     onPointerLeave:(e:RPointerEvent<HTMLButtonElement>)=>{
+      wisLangDrukTimer();
       if(e.pointerType==='mouse'&&zweeftipRef.current?.modus==='mouse'&&zweeftipRef.current.sleutel===sleutel)sluitZweeftip();
     },
     onFocus:(e:RFocusEvent<HTMLButtonElement>)=>{
@@ -325,16 +416,10 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
       if(zweeftipRef.current?.modus==='mouse'&&zweeftipRef.current.sleutel===sleutel)sluitZweeftip();
     },
     onClick:(e:RMouseEvent<HTMLButtonElement>)=>{
-      const lp=laatstePointerRef.current;
-      laatstePointerRef.current=null;
-      const isAanraking=Boolean(lp&&lp.sleutel===sleutel&&(lp.soort==='touch'||lp.soort==='pen')&&Date.now()-lp.tijd<1200);
-      if(isAanraking){
-        if(zweeftipRef.current?.sleutel===sleutel&&zweeftipRef.current.modus==='touch'){
-          sluitZweeftip();
-          actie();
-        }else{
-          toonZweeftip(sleutel,tipTekst,e.currentTarget,'touch');
-        }
+      wisLangDrukTimer();
+      if(langDrukGeopendRef.current===sleutel){
+        langDrukGeopendRef.current=null;
+        e.preventDefault();
         return;
       }
       sluitZweeftip();
@@ -342,7 +427,27 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
     },
   });
 
-  const kaarten=useMemo(()=>badge.meldingen.map(m=>({m,info:verrijkMenuMelding(m,badge.item,label,lang)})),[badge.meldingen,badge.item,label,lang]);
+  const kaarten=useMemo(()=>{
+    const uit:Array<{m:MenuMelding;info:BelKaartVerrijking;groepLeden:MenuMelding[];apparaatIds:string[]}>=[];
+    for(const m of badge.meldingen){
+      const info=verrijkMenuMelding(m,badge.item,label,lang);
+      const uuid=haalApparaatUuidUitMelding(m);
+      if(uuid){
+        const grSleutel=apparaatGroepSleutel(m,info);
+        const bestaand=uit.find(x=>x.apparaatIds.length>0&&apparaatGroepSleutel(x.m,x.info)===grSleutel&&Math.abs((x.m.op||0)-(m.op||0))<=30*60_000);
+        if(bestaand){
+          bestaand.groepLeden.push(m);
+          if(!bestaand.apparaatIds.includes(uuid))bestaand.apparaatIds.push(uuid);
+          continue;
+        }
+        uit.push({m,info,groepLeden:[m],apparaatIds:[uuid]});
+        continue;
+      }
+      uit.push({m,info,groepLeden:[m],apparaatIds:[]});
+    }
+    return uit;
+  },[badge.meldingen,badge.item,label,lang]);
+
   const aanwezigeStaten=useMemo(()=>{
     const gezien=new Set<Exclude<BelStaat,'info'>>();
     for(const k of kaarten){if(k.info.staat!=='info')gezien.add(k.info.staat)}
@@ -351,11 +456,24 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
   const losseCategorieen=useMemo(()=>[...new Set(kaarten.filter(k=>k.info.staat==='info').map(k=>k.m.categorie))],[kaarten]);
 
   const allesTekst=badge.meldingen.length>1?tr(lang,'Очистити все тут','Alles hier opruimen'):tr(lang,'Очистити','Opruimen');
-  const voetStatus=badge.aantal>badge.meldingen.length
-    ?tr(lang,`Показано ${badge.meldingen.length} із ${badge.aantal}`,`${badge.meldingen.length} van ${badge.aantal} getoond`)
-    :badgeLabel(lang,badge.aantal);
+  const voetStatus=useMemo(()=>{
+    if(badge.meldingen.length>0&&badge.meldingen.every(m=>m.bron === 'teller')){
+      const n=Math.max(1,badge.aantal);
+      return tr(lang,`У «Вхідних»: ${n} ${ukOngelezenVorm(n)}`,`In «Inbox»: ${n} ongelezen`);
+    }
+    const tellerSom=badge.meldingen.reduce((som,m)=>som+(m.bron === 'teller'?(m.aantal??1):0),0);
+    const tellerKaarten=badge.meldingen.filter(m=>m.bron === 'teller').length;
+    const losseGetoond=badge.meldingen.length-tellerKaarten;
+    const losseTotaal=Math.max(losseGetoond,badge.aantal-tellerSom);
+    const totaalKaarten=losseTotaal+tellerKaarten;
+    if(totaalKaarten>badge.meldingen.length){
+      return tr(lang,`Показано ${badge.meldingen.length} із ${totaalKaarten}`,`${badge.meldingen.length} van ${totaalKaarten} getoond`);
+    }
+    return badgeLabel(lang,badge.aantal);
+  },[badge.aantal,badge.meldingen,lang]);
 
-  return <div ref={ref} className='menu-bellen' role='region' aria-label={`${label}: ${badgeLabel(lang,badge.aantal)}`} aria-describedby={uitlegId} data-menu-bellen={badge.item} data-kant={kant} data-vastgezet={vastgezet?'ja':undefined} style={{left:pos.left,top:pos.top}} onPointerDownCapture={e=>{if(zweeftipRef.current?.modus==='touch'&&!(e.target as Element|null)?.closest?.('[data-tip-sleutel]'))sluitZweeftip()}} onTouchStart={e=>e.stopPropagation()} onTouchMove={e=>e.stopPropagation()} onPointerEnter={e=>{if(e.pointerType==='mouse')onBinnen(true)}} onPointerLeave={e=>{if(vastgezet||e.pointerType!=='mouse')return;if(e.relatedTarget instanceof Node&&e.currentTarget.contains(e.relatedTarget))return;onBinnen(false)}} onFocus={()=>onBinnen(true)} onBlur={e=>{if(vastgezet)return;if(e.relatedTarget&&!e.currentTarget.contains(e.relatedTarget as Node))onBinnen(false)}} onKeyDown={toets}>
+  return <div ref={ref} className='menu-bellen' role='region' aria-label={`${label}: ${badgeLabel(lang,badge.aantal)}`} aria-describedby={uitlegId} data-menu-bellen={badge.item} data-plaatsing={pos.plaatsing} data-kant={kant} data-vastgezet={vastgezet?'ja':undefined} style={{left:pos.left,top:pos.top,...(pos.maxHeight?{maxHeight:pos.maxHeight}:{})}} onPointerDownCapture={e=>{if(zweeftipRef.current?.modus==='touch'&&!(e.target as Element|null)?.closest?.('[data-tip-sleutel]'))sluitZweeftip()}} onTouchStart={e=>e.stopPropagation()} onTouchMove={e=>e.stopPropagation()} onPointerEnter={e=>{if(e.pointerType==='mouse')onBinnen(true)}} onPointerLeave={e=>{if(vastgezet||e.pointerType!=='mouse')return;if(e.relatedTarget instanceof Node&&e.currentTarget.contains(e.relatedTarget))return;onBinnen(false)}} onFocus={()=>onBinnen(true)} onBlur={e=>{if(vastgezet)return;if(e.relatedTarget&&!e.currentTarget.contains(e.relatedTarget as Node))onBinnen(false)}} onKeyDown={toets}>
+    <span className='menu-bellen-anker-pijl' data-menu-bellen-anker={pos.plaatsing} style={pos.plaatsing==='boven'||pos.plaatsing==='onder'?{left:pos.pijlX}:{top:pos.pijlY}} aria-hidden='true'/>
     <div className='menu-bellen-kop'>
       <div className='menu-bellen-kop-titel'><strong>{label}</strong><span className='menu-bellen-aantal'>{badgeLabel(lang,badge.aantal)}</span></div>
       <div className='menu-bellen-kop-knoppen'>
@@ -368,34 +486,37 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
       {aanwezigeStaten.map(s=><span key={`s:${s}`} className='menu-bellen-legenda-item' data-staat={s}><i/>{STAAT_LEGENDA[s][lang==='uk'?0:1]}</span>)}
       {losseCategorieen.map(c=><span key={`c:${c}`} className='menu-bellen-legenda-item' data-categorie={c}><i/>{CATEGORIE_TEKST[c][lang==='uk'?0:1]}</span>)}
     </div>
-    <ul onScroll={()=>{if(zweeftipRef.current)sluitZweeftip()}}>{kaarten.map(({m,info},i)=><li key={m.id} className='menu-bel' data-categorie={m.categorie} data-staat={info.staat} data-schema={info.schemaId} data-merk={info.merk||undefined} data-melding-id={m.id} style={{animationDelay:`${i*45}ms`}}>
+    <ul onScroll={()=>{if(zweeftipRef.current)sluitZweeftip()}}>{kaarten.map(({m,info,groepLeden,apparaatIds},i)=><li key={m.id} className='menu-bel' data-categorie={m.categorie} data-staat={info.staat} data-schema={info.schemaId} data-merk={info.merk||undefined} data-melding-id={m.id} style={{animationDelay:`${i*45}ms`}}>
       <span className='menu-bel-anker' aria-hidden='true'>
         {info.merk?<MerkLogo id={info.merk} logo={info.merk} naam={info.merkNaam} maat={22}/>:<BelAnkerIcoon icoon={info.icoon}/>}
         <i className='menu-bel-staat-stip'/>
       </span>
       <div className='menu-bel-inhoud'>
         <div className='menu-bel-boven'>
-          <small className='menu-bel-soort'>{info.soortTekst}{m.op?` · ${tijd(lang,m.op)}`:''}</small>
+          <small className='menu-bel-soort'>{info.soortTekst}{groepLeden.length>1?` · ×${groepLeden.length}`:''}{m.op?` · ${tijd(lang,m.op)}`:''}</small>
           <div className='menu-bel-acties'>
             <button type='button' className='menu-bel-openen is-icoon' data-menu-bel-openen='1' aria-label={tr(lang,`Відкрити: ${info.schoonTitel}`,`Openen: ${info.schoonTitel}`)} {...icoonKnopHandlers(`open:${m.id}`,tr(lang,'Відкрити сповіщення','Melding openen'),()=>onOpen(m))}><span className='mr-sr'>{tr(lang,'Відкрити','Openen')}</span><ExternalLink aria-hidden='true'/></button>
-            <button type='button' className='menu-bel-weg is-icoon' data-menu-bel-weg='1' aria-label={tr(lang,`Очистити: ${info.schoonTitel}`,`Opruimen: ${info.schoonTitel}`)} {...icoonKnopHandlers(`weg:${m.id}`,tr(lang,'Очистити (позначити прочитаним)','Opruimen (als gelezen markeren)'),()=>onSluit(m))}>{tr(lang,'Очистити','Opruimen')}<Check aria-hidden='true'/></button>
+            <button type='button' className='menu-bel-weg is-icoon' data-menu-bel-weg='1' aria-label={tr(lang,`Очистити: ${info.schoonTitel}`,`Opruimen: ${info.schoonTitel}`)} {...icoonKnopHandlers(`weg:${m.id}`,tr(lang,'Очистити (позначити прочитаним)','Opruimen (als gelezen markeren)'),()=>{for(const lid of groepLeden)onSluit(lid)})}>{tr(lang,'Очистити','Opruimen')}<Check aria-hidden='true'/></button>
           </div>
         </div>
         <div className='menu-bel-tekst'>
           <button type='button' className='menu-bel-titel' onClick={()=>onOpen(m)}>{info.schoonTitel}</button>
           {m.tekst&&<p>{m.tekst}</p>}
         </div>
+        {apparaatIds.length>0&&<div className='menu-bel-bevestig'>
+          <a className='menu-bel-keuze is-fout' href={m.link||'https://id.tarasevych.com/sessions'} data-menu-bel-niet-ik='1' onClick={()=>(onSluitVenster||onEsc)()}><ShieldAlert aria-hidden='true'/><span>{tr(lang,'Це не я','Dit was ik niet')}</span></a>
+          <button type='button' className='menu-bel-keuze is-goed' data-menu-bel-was-ik='1' onClick={()=>{void bevestigApparaatBekend(apparaatIds);for(const lid of groepLeden)onSluit(lid)}}><ShieldCheck aria-hidden='true'/><span>{tr(lang,'Це був я','Dit was ik')}</span></button>
+        </div>}
       </div>
     </li>)}</ul>
     <div className='menu-bellen-voet'>
       <span className='menu-bellen-voet-status' aria-hidden='true'>{voetStatus}</span>
       <button type='button' className='menu-bellen-alles is-icoon' data-menu-bellen-alles='1' aria-label={allesTekst} {...icoonKnopHandlers('voet:alles',allesTekst,onAllesWeg)}><span className='mr-sr'>{allesTekst}</span><CheckCheck aria-hidden='true'/></button>
-      <button type='button' className='menu-bellen-paneel is-icoon' data-menu-bellen-paneel='1' aria-label={tr(lang,'Усі сповіщення (Пульт уваги)','Alle meldingen (Aandachtspaneel)')} {...icoonKnopHandlers('voet:paneel',tr(lang,'Усі сповіщення (Пульт уваги)','Alle meldingen (Aandachtspaneel)'),()=>{window.dispatchEvent(new CustomEvent(MELDINGEN_OPENEN_EVENT));onEsc()})}><Bell aria-hidden='true'/><span className='mr-sr'>{tr(lang,'Усі сповіщення','Alle meldingen')}</span></button>
+      <button type='button' className='menu-bellen-paneel is-icoon' data-menu-bellen-paneel='1' aria-label={tr(lang,'Усі сповіщення (Пульт уваги)','Alle meldingen (Aandachtspaneel)')} {...icoonKnopHandlers('voet:paneel',tr(lang,'Усі сповіщення (Пульт уваги)','Alle meldingen (Aandachtspaneel)'),()=>{window.dispatchEvent(new CustomEvent(MELDINGEN_OPENEN_EVENT));(onSluitVenster||onEsc)()})}><Bell aria-hidden='true'/><span className='mr-sr'>{tr(lang,'Усі сповіщення','Alle meldingen')}</span></button>
     </div>
     {zweeftip&&<div ref={tipRef} className='menu-bellen-zweeftip' role='status' aria-live='polite' data-menu-bellen-zweeftip={zweeftip.sleutel} data-modus={zweeftip.modus} data-richting={tipPos.richting} style={{left:tipPos.left,top:tipPos.top}}>
       {zweeftip.modus==='touch'&&<i aria-hidden='true'/>}
       <span>{zweeftip.tekst}</span>
-      {zweeftip.modus==='touch'&&<em aria-hidden='true'>{tr(lang,'ще дотик','tik nogmaals')}</em>}
     </div>}
   </div>;
 }

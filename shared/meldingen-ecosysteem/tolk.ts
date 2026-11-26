@@ -53,6 +53,13 @@ export function herkenSubdomein(bron = '', link = '', fallback: MeldingSubdomein
   if (/(^|[/:_.\s-])(cloud|drive|bestand|opslag|s3)/.test(g)) return 'cloud';
   if (/(^|[/:_.\s-])(github|git|pr|workflow|repo)/.test(g)) return 'github';
   if (/(^|[/:_.\s-])(huis|home|scene|lamp|thermostat|slim)/.test(g)) return 'huis';
+  if (
+    g.includes('owner.apparaat.nieuw') ||
+    g.includes('apparaat.nieuw') ||
+    /(?:^|[/:_\s-])(?:owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|apparaat\.(?:aangevraagd|bevestigd|niet-ik|fout-symbool|alarm|stap-op|ingetrokken|hersteld|gedeblokkeerd|telegram-sterk)|account\.email\.conflict)(?:$|[/:_.\s-])/.test(g)
+  ) {
+    return 'id';
+  }
   if (/(^|[/:_.\s-])(mcp|connector|agent|browser|pc|terminal|remote|apparaat|vaardigheden|koppeling_gewijzigd)/.test(g)) return 'mcp';
   if (/(^|[/:_.\s-])(ai|gemini|claude|openai|grok|chat|vertal|geheugen)/.test(g)) return 'ai';
   if (/(^|[/:_.\s-])(id|passkey|kluis|sleutelkluis|aanmeld|aanmelden|account|toegang|beveilig|bevestigen|telegram|plaats-eis|stap-op|niet-ik|fout-symbool|privacy)/.test(g)) return 'id';
@@ -64,7 +71,13 @@ export function herkenSubdomein(bron = '', link = '', fallback: MeldingSubdomein
 
 export function herkenKanaal(bron = '', soort = '', subdomein: MeldingSubdomein = 'hub'): MeldingKanaal {
   const b = `${bron} ${soort}`.toLowerCase();
-  if (/(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|auth|aanmeld|bevestigen|niet-ik|fout-symbool|stap-op|vergrendel|blokkeer|fout-auth)/.test(b)) return 'beveiliging';
+  if (
+    /(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|auth|aanmeld|bevestigen|niet-ik|fout-symbool|stap-op|vergrendel|blokkeer|fout-auth|owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|apparaat\.(?:aangevraagd|bevestigd|niet-ik|fout-symbool|alarm|stap-op|ingetrokken|hersteld|gedeblokkeerd|telegram-sterk)|account\.email\.conflict)/.test(
+      b,
+    )
+  ) {
+    return 'beveiliging';
+  }
   if (/(pc[_-]?agent|host|schijf|cpu|geheugen_pc|docker|terminal|remote|lokale[_-]?pc)/.test(b)) return 'pc_agent';
   if (/(extensie|extension|browser|tabblad|debugger)/.test(b)) return 'extensie';
   if (/(pagina|band|strook|banner|offline|versie|herlaad)/.test(b)) return 'pagina';
@@ -80,7 +93,13 @@ export function herkenKanaal(bron = '', soort = '', subdomein: MeldingSubdomein 
 
 export function berekenPrioriteit(soort = '', ernst = '', kanaal: MeldingKanaal = 'app'): MeldingPrioriteit {
   const s = `${soort} ${ernst}`.toLowerCase();
-  if (/(kritiek|critical|geblokkeerd|dreiging|nood|crash|sleutel_dicht|toegang_geweigerd)/.test(s)) return 'kritiek';
+  if (
+    /(kritiek|critical|geblokkeerd|dreiging|nood|crash|sleutel_dicht|toegang_geweigerd|owner\.apparaat\.nieuw|apparaat\.nieuw|(?:\.|^)niet-ik|fout-symbool|\.alarm\.|account\.email\.conflict|vervalsing)/.test(
+      s,
+    )
+  ) {
+    return 'kritiek';
+  }
   if (/(error|fout|warning|waarschuwing|hoog|high|mislukt|verouderd|verlopen|storing)/.test(s)) return 'hoog';
   if (kanaal === 'beveiliging' && !/geslaagd|succes|success|info/.test(s)) return 'hoog';
   if (/(laag|low|info|samenvatting|tip)/.test(s)) return 'laag';
@@ -146,11 +165,12 @@ export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallb
   const ruimte: RuimteType = invoer.ruimte === 'technisch' ? 'technisch' : ruimteFallback;
   // MELDLINK-001: het subdomein herkennen aan de link zoals de bron hem gaf; de link zelf wordt een absolute adres van een bestaande pagina.
   const ruweLink = veiligeMeldingUrl(invoer.link, 500);
-  const subdomein = invoer.subdomein ?? herkenSubdomein(invoer.bron || '', ruweLink || '', 'hub');
+  const bronEnSoort = `${invoer.bron || ''} ${invoer.soort || ''}`.trim();
+  const subdomein = invoer.subdomein ?? herkenSubdomein(bronEnSoort, ruweLink || '', 'hub');
   const linkHint = { soort: invoer.soort || invoer.bron || '', subdomein: invoer.subdomein };
   const veiligeLink = veiligePaginaLink(invoer.link, linkHint, 500);
   const kanaal = invoer.kanaal ?? herkenKanaal(invoer.bron || '', invoer.soort || '', subdomein);
-  const prioriteit = berekenPrioriteit(invoer.soort || '', invoer.ernst || '', kanaal);
+  const prioriteit = berekenPrioriteit(bronEnSoort, invoer.ernst || '', kanaal);
   const bijlagen = normaliseerBijlagen(invoer.bijlagen);
   const eigenActies = normaliseerActies(invoer.acties, linkHint);
   const acties = eigenActies.length ? eigenActies : bouwStandaardActies(subdomein, kanaal, veiligeLink, bijlagen.length);

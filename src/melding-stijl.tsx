@@ -183,9 +183,8 @@ export function siteActieTekst(type: string, lang: Lang): string {
     const watTekst = wat.map((w) => SITE_WAT[w][i]).join(' ');
     return `${gebiedNaam}: ${watTekst} ${SITE_GEBEURDE[gebeurde[gebeurde.length - 1]][i]}`.replace(/\s+/g, ' ').trim();
   }
-  // Onbekend: het gebied en waar de code staat — nooit de kale «дія» of «інша дія», nooit de code zelf als titel.
-  if (!SITE_GEBIED[gebied]) return lang === 'uk' ? 'Подія на сайті без опису (код — у «Технічних подробицях»)' : 'Gebeurtenis op de site zonder omschrijving (code onder «Technische details»)';
-  return lang === 'uk' ? `${gebiedNaam}: подія без опису (код — у «Технічних подробицях»)` : `${gebiedNaam}: gebeurtenis zonder omschrijving (code onder «Technische details»)`;
+  if (!SITE_GEBIED[gebied]) return lang === 'uk' ? 'Сайт: запис дії збережено (код — у «Технічних подробицях»)' : 'Site: actieregistratie bewaard (code onder «Technische details»)';
+  return lang === 'uk' ? `${gebiedNaam}: запис дії збережено (код — у «Технічних подробицях»)` : `${gebiedNaam}: actieregistratie bewaard (code onder «Technische details»)`;
 }
 
 /** Het gebied van een site-actie als sectie: voor het pictogram en de link naar het onderdeel. */

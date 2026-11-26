@@ -563,3 +563,27 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
 .menu-snel-voorbeeld[data-tech-yarlyk='ja']{box-shadow:0 0 0 2px var(--tech-profiel-kleur,#f2b705);border-radius:50%;background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 12%,transparent)}
 .canonical-chrome .menu-start-tegel[data-tech-yarlyk='ja']{border-color:var(--tech-profiel-kleur,#f2b705);box-shadow:inset 0 0 0 1px var(--tech-profiel-kleur,#f2b705)}
 .menu-snel-lijst>li[data-tech-yarlyk='ja']{border-color:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 55%,var(--line));background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 6%,var(--panel))}
+
+/* HERSTEL-001 (MELD-5, MELD-9): візуальний зв’язок .menu-bellen з обраним пунктом меню та компактні кнопки «Це не я / Це був я» (30 px). */
+.canonical-chrome [data-menu-bellen-anker='actief']{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 62%,var(--line));background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+.menu-bellen-anker-pijl{position:absolute;width:11px;height:11px;background:var(--panel);pointer-events:none;z-index:2}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='rechts']{left:-6px;margin-top:-5.5px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='links']{right:-6px;margin-top:-5.5px;border-right:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='onder']{top:-6px;margin-left:-5.5px;border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='boven']{bottom:-6px;margin-left:-5.5px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen .menu-bel .menu-bel-bevestig{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin-top:5px}
+.canonical-chrome .menu-bellen .menu-bel button.menu-bel-keuze,
+.canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1 1 0;min-width:0;height:30px;min-height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:12px;font-weight:650;line-height:1;white-space:nowrap;text-decoration:none;cursor:pointer;touch-action:manipulation;transition:background-color .14s ease,border-color .14s ease,color .14s ease}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze svg{width:13.5px;height:13.5px;flex:none}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze::after{content:'';position:absolute;inset:-4px 0}
+.canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze.is-fout,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-fout{border-color:color-mix(in srgb,var(--staat-fout) 46%,var(--line));background:color-mix(in srgb,var(--staat-fout) 13%,var(--panel));color:var(--staat-fout)}
+.canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze.is-fout:hover,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-fout:hover{border-color:var(--staat-fout);background:color-mix(in srgb,var(--staat-fout) 21%,var(--panel))}
+.canonical-chrome .menu-bellen .menu-bel button.menu-bel-keuze.is-goed,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-goed{border-color:color-mix(in srgb,var(--staat-goed) 48%,var(--line));background:color-mix(in srgb,var(--staat-goed) 14%,var(--panel));color:var(--staat-goed)}
+.canonical-chrome .menu-bellen .menu-bel button.menu-bel-keuze.is-goed:hover,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-goed:hover{border-color:var(--staat-goed);background:color-mix(in srgb,var(--staat-goed) 22%,var(--panel))}
+

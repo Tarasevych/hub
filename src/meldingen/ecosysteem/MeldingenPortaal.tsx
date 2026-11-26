@@ -133,6 +133,18 @@ function leesScherm() {
   };
 }
 
+function leesIsAanraakApparaat(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (typeof window.matchMedia === 'function') {
+    try {
+      if (window.matchMedia('(hover: none), (pointer: coarse)').matches) return true;
+    } catch {
+      /* без медіа-запиту */
+    }
+  }
+  return (window.innerWidth || 1280) <= 768;
+}
+
 function leesCompactMaat(): { breedte: number; hoogte: number } {
   if (typeof window === 'undefined') {
     return { breedte: STANDAARD_COMPACT_BREEDTE, hoogte: STANDAARD_COMPACT_HOOGTE };
@@ -320,10 +332,8 @@ export default function MeldingenPortaal({
   const schuifPointerIdRef = useRef<number | null>(null);
   const zoekInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isMobielLangscroll =
-    open &&
-    schermBreedte <= 768 &&
-    (!compactBijBel || geo.modus === 'volledig' || profiel.geometrie.modus === 'volledig');
+  const isMobielLangscroll = open && schermBreedte <= 768 && !compactBijBel;
+  const isAanraakScherm = leesIsAanraakApparaat() || schermBreedte <= 768;
   const isMobielLangscrollRef = useRef(isMobielLangscroll);
   isMobielLangscrollRef.current = isMobielLangscroll;
   const scrollStaatRef = useRef(scrollStaat);
@@ -906,11 +916,25 @@ export default function MeldingenPortaal({
     [stroom],
   );
 
+  const verrijkingPerId = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof verrijkGebeurtenisVoorPuls>>();
+    for (const g of stroom) {
+      m.set(g.id, verrijkGebeurtenisVoorPuls(g, lang));
+    }
+    return m;
+  }, [stroom, lang]);
+
   const gefilterd = useMemo(() => {
     const q = zoek.trim().toLowerCase();
     return stroom.filter((g) => {
-      if (statusFilter === 'actief' && (g.status === 'archief' || g.status === 'opgelost')) return false;
-      if (statusFilter !== 'actief' && statusFilter !== 'alle' && g.status !== statusFilter) return false;
+      if (statusFilter === 'actief') {
+        if (g.status === 'archief' || g.status === 'opgelost' || g.status === 'uitgesteld') return false;
+        const v = verrijkingPerId.get(g.id) ?? verrijkGebeurtenisVoorPuls(g, lang);
+        const vereistBevestiging = v.niveau === 'gevaar' || v.niveau === 'besluit';
+        if (g.status !== 'nieuw' && !vereistBevestiging) return false;
+      } else if (statusFilter !== 'alle' && g.status !== statusFilter) {
+        return false;
+      }
       if (kanaalFilter !== 'alle' && g.kanaal !== kanaalFilter) return false;
       if (alleenDitSubdomein && g.subdomein !== subdomeinNu) return false;
       if (q) {
@@ -919,7 +943,7 @@ export default function MeldingenPortaal({
       }
       return true;
     });
-  }, [stroom, statusFilter, kanaalFilter, alleenDitSubdomein, subdomeinNu, zoek]);
+  }, [stroom, verrijkingPerId, lang, statusFilter, kanaalFilter, alleenDitSubdomein, subdomeinNu, zoek]);
 
   const stroomEenheden = useMemo(() => {
     if (zoek.trim() || (statusFilter !== 'actief' && statusFilter !== 'nieuw')) {
@@ -1235,7 +1259,11 @@ export default function MeldingenPortaal({
                 toon={filterOpen || heeftActiefFilter ? 'actief' : 'standaard'}
                 stip={heeftActiefFilter}
                 icoon={<Search aria-hidden='true' />}
-                label={t('Пошук, канали та звук (клавіша /)', 'Zoeken, kanalen en geluid (toets /)')}
+                label={
+                  isAanraakScherm
+                    ? t('Пошук, канали та звук', 'Zoeken, kanalen en geluid')
+                    : t('Пошук, канали та звук (клавіша /)', 'Zoeken, kanalen en geluid (toets /)')
+                }
                 ariaLabel={t('Пошук і фільтри каналів', 'Zoeken en kanaalfilters')}
                 data-qa-id='puls-filter-knop'
                 aria-pressed={filterOpen || heeftActiefFilter}
@@ -1367,11 +1395,13 @@ export default function MeldingenPortaal({
 
               {compactBijBel && onOpenVensterModus ? (
                 <IcoonActieKnop
-                  className='mel-vorm-schakel-icoon'
+                  className='mel-vorm-schakel-icoon is-vorm-venster-knop'
                   toon='actief'
                   icoon={<AppWindow aria-hidden='true' />}
                   label={t('Розгорнути у широке вікно з інспектором', 'Uitklappen naar breed venster met inspectie')}
                   srTekst={t('Вікно', 'Venster')}
+                  zichtbareTekst={t('Вікно', 'Venster')}
+                  zichtbareTekstKlas='puls-vorm-tekst'
                   data-qa-id='melding-vorm-venster-puls'
                   onClick={openVensterVanuitCompact}
                 />
@@ -1417,12 +1447,13 @@ export default function MeldingenPortaal({
                 <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
                   {(
                     [
-                      ['actief', t('Увага · Потребують дії', 'Actief · Vragen aandacht'), undefined],
+                      ['actief', t('Увага · Потребують дії', 'Actief · Vragen aandacht'), t('Увага', 'Aandacht'), undefined],
                       [
                         'nieuw',
                         tellers.nieuw > 0
                           ? t(`Нові сповіщення (${tellers.nieuw})`, `Nieuwe meldingen (${tellers.nieuw})`)
                           : t('Нові сповіщення', 'Nieuwe meldingen'),
+                        t('Нові', 'Nieuw'),
                         tellers.nieuw > 0 ? tellers.nieuw : undefined,
                       ],
                       [
@@ -1430,13 +1461,14 @@ export default function MeldingenPortaal({
                         tellers.uitgesteld > 0
                           ? t(`Відкладені за умовою (${tellers.uitgesteld})`, `Voorwaardelijk uitgesteld (${tellers.uitgesteld})`)
                           : t('Відкладені за умовою', 'Voorwaardelijk uitgesteld'),
+                        t('Відкладені', 'Uitgesteld'),
                         tellers.uitgesteld > 0 ? tellers.uitgesteld : undefined,
                       ],
-                      ['opgelost', t('Вирішені', 'Opgelost'), undefined],
-                      ['archief', t('Спокійний журнал', 'Rustig archief'), undefined],
-                      ['alle', t('Усі сповіщення', 'Alle meldingen'), undefined],
+                      ['opgelost', t('Вирішені', 'Opgelost'), t('Вирішені', 'Opgelost'), undefined],
+                      ['archief', t('Спокійний журнал', 'Rustig archief'), t('Архів', 'Archief'), undefined],
+                      ['alle', t('Усі сповіщення', 'Alle meldingen'), t('Усі', 'Alle'), undefined],
                     ] as const
-                  ).map(([sleutel, tekst, tabTeller]) => (
+                  ).map(([sleutel, tekst, korteNaam, tabTeller]) => (
                     <IcoonActieKnop
                       key={sleutel}
                       modus='tab'
@@ -1447,6 +1479,8 @@ export default function MeldingenPortaal({
                       icoon={<TabIcoon sleutel={sleutel} />}
                       teller={tabTeller}
                       label={tekst}
+                      zichtbareTekst={statusFilter === sleutel ? korteNaam : undefined}
+                      zichtbareTekstKlas='puls-actieve-tab-naam'
                       data-qa-id={`puls-tab-${sleutel}`}
                       onClick={() => setStatusFilter(sleutel)}
                     />
@@ -1873,7 +1907,7 @@ export default function MeldingenPortaal({
               <span>{ongedaan.tekst}</span>
               <button type='button' className='puls-ongedaan-knop' onClick={() => void voerOngedaanUit()}>
                 <Undo2 aria-hidden='true' />
-                <span>{t(`Повернути · Ctrl+Z (${ongedaanSec} с)`, `Ongedaan maken · Ctrl+Z (${ongedaanSec} s)`)}</span>
+                <span>{isAanraakScherm ? t(`Повернути (${ongedaanSec} с)`, `Ongedaan maken (${ongedaanSec} s)`) : t(`Повернути · Ctrl+Z (${ongedaanSec} с)`, `Ongedaan maken · Ctrl+Z (${ongedaanSec} s)`)}</span>
               </button>
             </div>
           )}
@@ -1883,9 +1917,11 @@ export default function MeldingenPortaal({
               {t(`Подій: ${gefilterd.length}`, `Gebeurtenissen: ${gefilterd.length}`)}
             </span>
 
-            <span className='puls-toets-hints' aria-hidden='true'>
-              <kbd>↑↓</kbd> {t('вибір', 'keuze')} · <kbd>{t('Пробіл', 'Spatie')}</kbd> {t('докази', 'bewijs')} · <kbd>/</kbd> {t('пошук', 'zoeken')} · <kbd>E</kbd> {t('архів', 'archief')}
-            </span>
+            {!isAanraakScherm && (
+              <span className='puls-toets-hints' aria-hidden='true'>
+                <kbd>↑↓</kbd> {t('вибір', 'keuze')} · <kbd>{t('Пробіл', 'Spatie')}</kbd> {t('докази', 'bewijs')} · <kbd>/</kbd> {t('пошук', 'zoeken')} · <kbd>E</kbd> {t('архів', 'archief')}
+              </span>
+            )}
 
             <div className='puls-voet-rechts'>
               <IcoonActieKnop

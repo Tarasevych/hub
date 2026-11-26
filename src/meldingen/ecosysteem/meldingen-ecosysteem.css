@@ -1621,7 +1621,7 @@
   filter: brightness(1.06);
 }
 
-/* Випадаюче меню розумного умовного відкладення */
+/* Спадне меню розумного умовного відкладення */
 .puls-uitstel-anker {
   position: relative;
   display: inline-flex;
@@ -2424,6 +2424,10 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
 }
 
 .puls-icoon-tip {
+  min-height: 0;
+  height: max-content;
+  max-height: min(140px, 30dvh);
+  width: max-content;
   padding: 6px 11px;
   border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
   border-radius: 10px;
@@ -3505,5 +3509,171 @@ html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
   margin: 0;
   color: var(--muted);
   font-size: 11.5px;
+}
+
+/* ============================================================================
+   HERSTEL-001 (Етап 4 · MELD-2, MELD-8, MELD-10): видима кнопка «Вікно» у компактній
+   панелі, однорядкова смуга 6 вкладок із видимою назвою активної .puls-actieve-tab-naam,
+   2-й мікро-рядок капсули .puls-kapsel-sub та розкривний блок .puls-technische-details.
+   ============================================================================ */
+
+.puls-portaal .mel-kop-gereedschap .puls-icoon-knop.mel-ikoon-knop.is-vorm-venster-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  min-width: 68px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+}
+
+.puls-vorm-tekst {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  max-width: 148px;
+  padding: 0 9px;
+  border-radius: 999px;
+}
+
+.puls-actieve-tab-naam {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 440px) {
+  .mel-filters.puls-filters-slank {
+    padding: 6px 8px;
+  }
+  .puls-filters-slank .puls-tabs-rij {
+    gap: 4px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 3px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 30px;
+    min-height: 30px;
+    max-width: 126px;
+    padding: 0 8px;
+  }
+}
+
+.puls-kaart.is-kapsel.is-ingeklapt .puls-kapsel-titel-knop .puls-kapsel-sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-kaart.is-kapsel.is-ingeklapt:has(.puls-kapsel-sub) {
+  border-radius: 18px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.puls-technische-details {
+  margin-top: 2px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 84%, var(--surface));
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.puls-technische-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-weight: 650;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.puls-technische-details[open] > summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+  color: var(--text);
+}
+
+.puls-technische-dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 7px 10px;
+}
+
+.puls-technische-dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.puls-technische-dl dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.puls-technische-dl dd {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.puls-technische-dl code {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 88%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .mel-ecosysteem-portaal.is-compact-bij-bel {
+    left: calc(8px + var(--veilig-links, 0px));
+    right: calc(8px + var(--veilig-rechts, 0px));
+    top: calc(56px + var(--veilig-boven, 0px));
+    width: auto;
+    max-width: 440px;
+    height: min(520px, calc(100dvh - 88px - var(--veilig-boven, 0px) - var(--veilig-onder, 0px)));
+    max-height: min(520px, calc(100dvh - 88px));
+    border-radius: 20px;
+  }
 }
 

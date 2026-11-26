@@ -141,6 +141,35 @@ function veegLabel(actie: VeegActie, lang: 'uk' | 'nl'): string {
   return lang === 'nl' ? map[actie][1] : map[actie][0];
 }
 
+const APPARAAT_UUID_RE = /^[0-9a-f-]{36}$/i;
+const LINK_APPARAAT_RE = /[?&]apparaat=([0-9a-f-]{36})/i;
+
+function vindApparaatIdVoorBevestiging(geb: MeldingEcosysteemGebeurtenis): string {
+  const metaApp = typeof geb.meta?.apparaatId === 'string' ? geb.meta.apparaatId.trim() : '';
+  if (APPARAAT_UUID_RE.test(metaApp)) return metaApp;
+  const uitMetaLink = LINK_APPARAAT_RE.exec(String(geb.meta?.link || ''))?.[1] || '';
+  if (APPARAAT_UUID_RE.test(uitMetaLink)) return uitMetaLink;
+  for (const a of geb.acties) {
+    const uitActie = LINK_APPARAAT_RE.exec(String(a.href || ''))?.[1] || '';
+    if (APPARAAT_UUID_RE.test(uitActie)) return uitActie;
+  }
+  const srvId =
+    typeof geb.meta?.serverId === 'string'
+      ? geb.meta.serverId
+      : geb.id.startsWith('s:')
+        ? geb.id.slice(2)
+        : geb.externeSleutel.startsWith('site_notif:')
+          ? geb.externeSleutel.slice('site_notif:'.length)
+          : '';
+  if (
+    APPARAAT_UUID_RE.test(srvId) &&
+    /(новий вхід|nieuwe aanmelding|apparaat\.nieuw)/i.test(`${geb.bron} ${geb.titel}`)
+  ) {
+    return srvId;
+  }
+  return '';
+}
+
 type Props = {
   lang: 'uk' | 'nl';
   gebeurtenis: MeldingEcosysteemGebeurtenis;
@@ -425,6 +454,35 @@ export default function MeldingVeegKaart({
   const kaartStaat = bepaalKaartStaat(gebeurtenis, verrijkt.niveau);
   const schemaNaam = MELDING_SCHEMAS[verrijkt.schemaId]?.naam[lang === 'nl' ? 1 : 0] || verrijkt.schemaNaam;
   const zichtbareTitel = schoonKaartTitel(gebeurtenis.titel);
+  const kapselSubTekst = useMemo(() => {
+    const kand = (gebeurtenis.contextLabel || gebeurtenis.bericht || '').trim();
+    if (!kand || /^[a-z_]+\s*·\s*[a-z_]+$/i.test(kand)) return '';
+    if (kand.toLowerCase() === zichtbareTitel.toLowerCase()) return '';
+    return kand.slice(0, 110);
+  }, [gebeurtenis.contextLabel, gebeurtenis.bericht, zichtbareTitel]);
+
+  const technischeActieCode =
+    typeof gebeurtenis.meta?.actieCode === 'string' ? gebeurtenis.meta.actieCode.trim() : '';
+  const technischeFoutCode =
+    typeof gebeurtenis.meta?.foutCode === 'string' ? gebeurtenis.meta.foutCode.trim() : '';
+
+  const bevestigDitWasIk = async () => {
+    const apparaatId = vindApparaatIdVoorBevestiging(gebeurtenis);
+    if (apparaatId && typeof fetch === 'function') {
+      try {
+        await fetch('/api/meldingen/apparaat-bekend', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: apparaatId }),
+        });
+      } catch {
+        /* мережевий збій не блокує локальне вирішення картки */
+      }
+    }
+    await onStatus('opgelost');
+  };
+
   const kortOnderdeel = (() => {
     const Vol = subdomeinMenselijkLabel(gebeurtenis.subdomein, lang);
     const kaart: Partial<Record<string, [string, string]>> = {
@@ -501,6 +559,7 @@ export default function MeldingVeegKaart({
               }}
             >
               <strong>{zichtbareTitel}</strong>
+              {!open && kapselSubTekst ? <span className='puls-kapsel-sub'>{kapselSubTekst}</span> : null}
             </button>
 
             <span className='puls-kapsel-rechts'>
@@ -654,7 +713,7 @@ export default function MeldingVeegKaart({
                     icoon={<ShieldCheck aria-hidden='true' />}
                     label={verrijkt.knoppenPaar?.[1] || t('Це мій вхід', 'Dit was ik')}
                     stopPropagatie
-                    onClick={() => void onStatus('opgelost')}
+                    onClick={() => void bevestigDitWasIk()}
                   />
                 </>
               ) : verrijkt.niveau === 'besluit' && gebeurtenis.status !== 'opgelost' && gebeurtenis.status !== 'archief' ? (
@@ -872,6 +931,36 @@ export default function MeldingVeegKaart({
                 <pre className='mel-uitleg-blok'>{gebeurtenis.uitleg}</pre>
               )}
 
+              <details className='puls-technische-details' data-geen-veeg='1'>
+                <summary>{t('ⓘ Технічні подробиці', 'ⓘ Technische details')}</summary>
+                <dl className='puls-technische-dl'>
+                  {technischeActieCode && (
+                    <div>
+                      <dt>{t('Код дії', 'Actiecode')}</dt>
+                      <dd><code>{technischeActieCode}</code></dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt>{t('Розділ і канал', 'Onderdeel en kanaal')}</dt>
+                    <dd><code>{`${gebeurtenis.subdomein} · ${gebeurtenis.kanaal}`}</code></dd>
+                  </div>
+                  <div>
+                    <dt>{t('Джерело', 'Bron')}</dt>
+                    <dd><code>{gebeurtenis.bron}</code></dd>
+                  </div>
+                  {technischeFoutCode && (
+                    <div>
+                      <dt>{t('Код причини', 'Redencode')}</dt>
+                      <dd><code>{technischeFoutCode}</code></dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt>{t('Ключ запису', 'Sleutel')}</dt>
+                    <dd><code>{gebeurtenis.externeSleutel || gebeurtenis.id}</code></dd>
+                  </div>
+                </dl>
+              </details>
+
               {inlineBijlageIdx !== null && gebeurtenis.bijlagen[inlineBijlageIdx] && (
                 <MeldingBijlageSpeler
                   lang={lang}
@@ -938,7 +1027,7 @@ export default function MeldingVeegKaart({
                     <span>{verrijkt.knoppenPaar?.[0] || t('Це не я', 'Dit was ik niet')}</span>
                   </button>
                 )}
-                <button type='button' className='puls-bevestig-pil is-goed' onClick={() => void onStatus('opgelost')}>
+                <button type='button' className='puls-bevestig-pil is-goed' onClick={() => void bevestigDitWasIk()}>
                   <ShieldCheck aria-hidden='true' />
                   <span>{verrijkt.knoppenPaar?.[1] || t('Це я', 'Dit was ik')}</span>
                 </button>

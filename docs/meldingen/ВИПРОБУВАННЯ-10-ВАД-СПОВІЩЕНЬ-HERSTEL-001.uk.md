@@ -22,7 +22,7 @@
 
 ---
 
-## 2. `MELD-2` — Непрацююче перемикання «Компактна панель / Вікно» на смартфоні (`<= 768 px`)
+## 2. `MELD-2` — Заблоковане перемикання «Компактна панель / Вікно» на смартфоні (`<= 768 px`)
 
 - **Знімок екрана:** `13:27:07`
 - **Взаємодія, задум власника та очікування користувача:**
@@ -132,3 +132,21 @@
   - У [`src/meldingen/ecosysteem/MeldingenPortaal.tsx`](../../src/meldingen/ecosysteem/MeldingenPortaal.tsx) (рядки 1238 та 1417–1454) вкладки не виводять видимий заголовок активного фільтра, а підказка пошуку не враховує сенсорний пристрій.
 - **Вимога до виправлення:**
   - Показувати назву активної вкладки прямо у смузі фільтрів і не виводити клавіатурні скорочення на сенсорних екранах.
+
+---
+
+## 11. Підсумок втілення та перевірки (Етап 4 `HERSTEL-001`)
+
+Усі 10 пунктів (`MELD-1`..`MELD-10`) втілено в коді та підтверджено автоматизованими перевірками:
+
+1. **`MELD-1`:** у [`src/index.css`](../../src/index.css), [`src/meldingen/IcoonActieKnop.tsx`](../../src/meldingen/IcoonActieKnop.tsx) та [`src/meldingen/ecosysteem/meldingen-ecosysteem.css`](../../src/meldingen/ecosysteem/meldingen-ecosysteem.css) вилучено спадкування `min-height: 100svh` на `.puls-icoon-tip` (`min-height: 0; height: max-content; width: max-content`), а кнопки керування спрацьовують з першого дотику (довге утримування `420` мс показує підказку).
+2. **`MELD-2`:** дзвіночок збережено у мобільному меню (`lade-kop`), а в [`src/meldingen/ecosysteem/MeldingenPortaal.tsx`](../../src/meldingen/ecosysteem/MeldingenPortaal.tsx) виправлено перемикання `compactBijBel` на вузьких екранах із видимою кнопкою повернення **«Вікно»**.
+3. **`MELD-3`:** у [`shared/menu-meldingen.ts`](../../shared/menu-meldingen.ts), [`src/MenuMeldingen.tsx`](../../src/MenuMeldingen.tsx), [`src/meldingen/ecosysteem/ecosysteem-opslag.ts`](../../src/meldingen/ecosysteem/ecosysteem-opslag.ts) та [`src/CanoniekMeldingencentrum.tsx`](../../src/CanoniekMeldingencentrum.tsx) усунено оманливий напис «Показано 1 із 14» для зведеного лічильника пошти та передано `teller:mail` у центр сповіщень.
+4. **`MELD-4`:** через [`scripts/merk-officieel-maken.mjs`](../../scripts/merk-officieel-maken.mjs) до `src/merk/officieel/gmail.svg` додано офіційний чотириколірний знак Gmail (`CC0-1.0`), прибрано одноколірний дубль із `src/merk/merk-logos.ts` та виключено поштові адреси під час розпізнавання марки у сповіщеннях безпеки.
+5. **`MELD-5`:** у [`backend/nieuw-apparaat.ts`](../../backend/nieuw-apparaat.ts) спосіб і час входу перенесено на початок опису, а у `.menu-bellen` додано прямі кнопки **«Це не я»** та **«Це був я»** (`POST /api/meldingen/apparaat-bekend`).
+6. **`MELD-6`:** у [`shared/meldingen-ecosysteem/tolk.ts`](../../shared/meldingen-ecosysteem/tolk.ts), [`backend/site-activiteit.ts`](../../backend/site-activiteit.ts), [`src/meldingen/ecosysteem/ecosysteem-opslag.ts`](../../src/meldingen/ecosysteem/ecosysteem-opslag.ts) та [`src/meldingen/ecosysteem/MeldingVeegKaart.tsx`](../../src/meldingen/ecosysteem/MeldingVeegKaart.tsx) подію `owner.apparaat.nieuw` віднесено до `id / beveiliging / gevaar`, об’єднано парні записи без дублів і підключено виклик `POST /api/meldingen/apparaat-bekend`.
+7. **`MELD-7`:** вкладка **«Увага · Потребують дії»** показує лише нові події та події, що потребують рішення або підтвердження безпеки (`vereistBevestiging`), без засмічення вже прочитаними звичайними записами.
+8. **`MELD-8`:** у [`shared/beheer-journaal.ts`](../../shared/beheer-journaal.ts) та [`scripts/meldingen-register-controle.mjs`](../../scripts/meldingen-register-controle.mjs) забезпечено 100% покриття всіх серверних кодів дій у `ACTIE_LABELS` (`0` у `'overig'`), у [`src/melding-stijl.tsx`](../../src/melding-stijl.tsx) прибрано сліпу заглушку «подія без опису», а в [`src/meldingen/ecosysteem/MeldingVeegKaart.tsx`](../../src/meldingen/ecosysteem/MeldingVeegKaart.tsx) додано 2-й мікро-рядок капсули `.puls-kapsel-sub` і розкривний блок **«ⓘ Технічні подробиці»**.
+9. **`MELD-9`:** у [`src/MenuMeldingen.tsx`](../../src/MenuMeldingen.tsx), [`src/menu-v2.css`](../../src/menu-v2.css) та [`src/CanoniekOmlijsting.tsx`](../../src/CanoniekOmlijsting.tsx) віконце `.menu-bellen` позиціонується без перекриття обраного пункту меню зі стрілкою-вказівником, кнопки діють з першого дотику, а відкриття головного вікна сповіщень автоматично ховає мобільну шухляду.
+10. **`MELD-10`:** у смузі `.puls-tabs` відображається видима назва активної вкладки (`.puls-actieve-tab-naam`), а комп’ютерні підказки клавіш (`клавіша /`, `Ctrl+Z`) приховано на сенсорних пристроях.
+
