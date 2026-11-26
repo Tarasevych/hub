@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "SITE-001",
+  "agent": "antigravity",
+  "tak": "feature/site-001-20261125-232500",
+  "basisCommit": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.8.0",
+  "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
+  "staat": "in_progress",
+  "gestart": "2026-11-26T07:25:16.287Z",
+  "bijgewerkt": "2026-11-26T07:25:16.290Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

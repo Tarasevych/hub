@@ -1,0 +1,42 @@
+# SITE-001 (пункт 3): автоматичний пошук відкритих таємниць у кожному надсиланні та запиті на злиття.
+# Офіційний випуск gitleaks перевіряється за контрольною сумою SHA-256; хмарна обліківка не потрібна.
+# nl: automatische geheimscan bij elke verzending en elk samenvoegverzoek.
+
+name: Пошук таємниць
+
+on:
+  push:
+    branches: [ "voornaamst", "integratie", "feature/**", "fix/**", "audit/**" ]
+  pull_request:
+    branches: [ "voornaamst", "integratie" ]
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSIE: "8.30.1"
+      GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+    steps:
+      - name: Отримати код сховища
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Завантажити й перевірити gitleaks
+        run: |
+          curl -fsSL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSIE}/gitleaks_${GITLEAKS_VERSIE}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar xzf gitleaks.tar.gz gitleaks
+
+      - name: Сканувати робоче дерево
+        run: ./gitleaks dir . --no-banner --redact -c .gitleaks.toml --max-target-megabytes 5
+
+      - name: Сканувати зміни запиту на злиття
+        if: github.event_name == 'pull_request'
+        run: ./gitleaks git . --no-banner --redact -c .gitleaks.toml --log-opts="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
