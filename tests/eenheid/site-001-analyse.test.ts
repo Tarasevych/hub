@@ -14,6 +14,9 @@ export async function main(): Promise<number> {
   check('route bestaat en vraagt admin.read', route.includes("adminContext(ctx.event,ctx.body,'admin.read')") && route.includes('error(auth.errorCode as string,403)'));
   const tab = await readFile('src/diagnostiek/Diagnostiek.tsx', 'utf8');
   check('tabblad «Відвідування» in de diagnostiek', tab.includes("id: 'bezoek'") && tab.includes("<BezoekTab"));
+  // Вада, знайдена на стенді: api.post повертає {data,status,headers}; без r.data вкладка падала й сторінка ставала чорною.
+  const bezoek = await readFile('src/diagnostiek/BezoekTab.tsx', 'utf8');
+  check('tabblad leest het antwoord uit r.data en verdraagt een leeg antwoord', bezoek.includes('r?.data') && !bezoek.includes('api.post<') && bezoek.includes('Array.isArray(d.perNaam)'));
 
   if (!process.env.DATABASE_URL) { console.log('— geen DATABASE_URL: databasecontroles overgeslagen'); return einde(); }
   const merk = `site001-${randomUUID().slice(0, 8)}`;

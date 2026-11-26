@@ -24,13 +24,18 @@ export default function BezoekTab({ lang, ctx }: { lang: Lang; ctx: { service: s
   const [fout, setFout] = useState('');
   const laad = useCallback(async () => {
     setLaden(true); setFout('');
-    try { setData(await api.post<Overzicht>('/api/owner/admin/analyse-overzicht', { ...ctx, dagen })); }
+    try {
+      // api.post повертає {data, status, headers}; тіло відповіді — у r.data.
+      const r = await api.post('/api/owner/admin/analyse-overzicht', { ...ctx, dagen });
+      const d = (r?.data || {}) as Partial<Overzicht>;
+      setData({ vanaf: String(d.vanaf || ''), tot: String(d.tot || ''), dagen: Number(d.dagen) || dagen, rijen: Array.isArray(d.rijen) ? d.rijen : [], totaal: Number(d.totaal) || 0, perNaam: Array.isArray(d.perNaam) ? d.perNaam : [] });
+    }
     catch { setFout(tr(lang, 'Не вдалося прочитати лічильники. Спробуйте ще раз.', 'De tellers konden niet worden gelezen. Probeer het opnieuw.')); }
     finally { setLaden(false); }
   }, [ctx, dagen, lang]);
   useEffect(() => { void laad(); }, [laad]);
 
-  const max = Math.max(1, ...(data?.perNaam.map((x) => x.aantal) ?? [1]));
+  const max = Math.max(1, ...(data?.perNaam?.map((x) => x.aantal) ?? [1]));
   return (
     <section className='adg-bezoek' data-adg-bezoek aria-label={tr(lang, 'Відвідування', 'Bezoeken')}>
       <p className='adg-cat-waarom'>{tr(lang,

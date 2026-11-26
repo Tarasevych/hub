@@ -60,7 +60,7 @@ export default function GastToegang(){
   const[fotoStuk,setFotoStuk]=useState(false);
   const pauze=useAftelPauze();
   const pauzeTekst=pauze.actief||pauze.zojuistVrij?aanmeldPauzeBericht(Math.max(1,pauze.resterend),lang,'gast',pauze.limiet):null;
-  useEffect(()=>{document.documentElement.lang=lang==='uk'?'uk':'nl';document.title=tr(lang,'Гостьовий доступ — Mijn Ruimte','Gasttoegang — Mijn Ruimte');},[lang]);
+  useEffect(()=>{document.documentElement.lang=lang==='uk'?'uk':'nl';document.title=tr(lang,'Гостьовий доступ — Мій простір','Gasttoegang — Mijn Ruimte');},[lang]);
   useEffect(()=>{
     // На /toegang немає кореневої оболонки застосунку: синхронізуємо тему й палітру зі стартовим станом __TSV_PRESENTATION__ та спільними налаштуваннями.
     const pasToe=()=>{

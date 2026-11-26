@@ -1,4 +1,11 @@
+# Mijn Ruimte is een privédienst: alleen de juridische pagina's mogen worden geïndexeerd.
+# Сайт приватний: індексувати можна лише юридичні сторінки; значки й прев'ю — для пошуковиків і соцмереж.
 User-agent: *
 Allow: /privacy$
 Allow: /terms$
+Allow: /favicon
+Allow: /apple-touch-icon.png$
+Allow: /og-afbeelding.png$
 Disallow: /
+
+Sitemap: https://hub.tarasevych.com/sitemap.xml

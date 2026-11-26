@@ -23,10 +23,10 @@
 | 3 | Openliggende sleutels en geheimen verwijderen | ✅ klaar | Geen echte geheimen in de boom of de geschiedenis (1063 vastleggingen); `.gitleaks.toml` + werkstroom «Geheimscan» |
 | 4 | HTTPS | ✅ klaar | Alle 11 subdomeinen: http → 301 naar https, HSTS voor een jaar met subdomeinen, alleen TLS 1.3, certificaat tot 21.02.2027; geen codewijziging nodig |
 | 5 | Toestemmingsbalk voor cookies | ✅ klaar | Nieuwe toestemmingsbalk met twee gelijkwaardige knoppen op alle pagina's, uk + nl, opnieuw te openen vanaf de aanmeldpagina; 24/24 tests |
-| 6 | Paginatitels en `meta description` | wacht | Dynamische titels in `index.html` aanwezig |
-| 7 | Voorbeeldafbeelding voor sociale netwerken | wacht | Geen `og:image` |
-| 8 | Sitepictogram (favicon) | wacht | Bestaande `public/favicon*` — controleren |
-| 9 | `sitemap.xml` en `robots.txt` | wacht | `robots.txt` aanwezig, `sitemap.xml` ontbreekt |
+| 6 | Paginatitels en `meta description` | ✅ klaar | Alle tabbladtitels «<розділ> — Мій простір» / «<onderdeel> — Mijn Ruimte» (was «— Tarasevych», «Tarasevych-beheer», «Mijn ruimte», «— Mijn Ruimte» in het Oekraïens) |
+| 7 | Voorbeeldafbeelding voor sociale netwerken | ✅ klaar | `public/og-afbeelding.png` 1200×630 (61 kB), `og:image` met alternatieve tekst en `twitter:card` in de toepassing en op de juridische pagina's |
+| 8 | Sitepictogram (favicon) | ✅ klaar | **Fout op de productiesite:** `favicon-192.png` en `favicon-512.png` beschadigd; alle pictogrammen opnieuw getekend uit `favicon.svg`, `favicon.ico` toegevoegd, manifest met «any» en «maskable» |
+| 9 | `sitemap.xml` en `robots.txt` | ✅ klaar | `sitemap.xml` met alleen `/privacy` en `/terms`; `robots.txt` met `Sitemap:`-regel en toegang tot pictogrammen en voorbeeldafbeelding, rest van de site gesloten |
 | 10 | Alternatieve teksten bij afbeeldingen | wacht | — |
 | 11 | Afbeeldingen comprimeren | wacht | — |
 | 12 | Laadsnelheid | wacht | — |
@@ -43,6 +43,15 @@
 | 23 | Reservekopieën van de database | wacht | `deploy/backup-maken.sh`, `mijn-ruimte-backup.timer` — controleren |
 | 24 | Beveiligingskoppen en aanvraagbeperking | wacht | `server/start.ts`, `rateLimit` — controleren |
 | 25 | Registratie, aanmelding en wachtwoordherstel | wacht | — |
+
+## Gevonden fouten die nog op hun punt wachten
+
+| Fout | Waar | Punt |
+|---|---|---|
+| Onbekende paden geven HTTP 200 («zachte 404»); de 404-pagina toont zonder aanmelding het hele menu, wordt op 1366 breed door het zijmenu bedekt en toont het pad gecodeerd | `server/start.ts` (`serveStatic`), `src/NietGevonden.tsx` | 15 |
+| Pagina's zonder aanmelding sturen `POST /api/owner/meldingen/regels` en `/api/owner/uitrol/achtergrond` → 401; `meldingen/regels` geeft 401 ook met aanmelding | `UitrolAchtergrondBand`, meldingen | 21 |
+| De weergavecontrole van het installatieprogramma (`server/rook.ts`) stopt met code 2: `/api/owner/tech/activeren` → 409 `GEBRUIK_RUIMTES_V2` sinds ruimtes v2 aan staan | `server/rook.ts`, `backend/tech-profiel.ts:156` | 22 |
+| Het woord «акаунт» staat 264 keer in de interface (volgens de taalwet: «обліковий запис») | `src/**` | beslissing van de eigenaar |
 
 ## Verslagen per punt
 
@@ -96,6 +105,24 @@ Test `tests/eenheid/site-001-toestemming.test.ts`: 24/24.
 | ![voor](schermafdrukken/p05-toestemming-mobiel-voor.webp) | ![na](schermafdrukken/p05-toestemming-mobiel-na.webp) |
 | — | ![na de keuze](schermafdrukken/p05-toestemming-gekozen-na.webp) |
 
+### 6–9. Titels, voorbeeldafbeelding, pictogrammen, sitemap.xml en robots.txt
+
+- **6.** De tabbladtitels hadden drie vormen: beheer — «Адміністрування — Tarasevych» / «Tarasevych-beheer», Nederlands — «Mijn ruimte», gasttoegang — «Гостьовий доступ — Mijn Ruimte» (Nederlandse naam in een Oekraïense titel). Nu overal «<розділ> — Мій простір» / «<onderdeel> — Mijn Ruimte». Het aanmeldscherm op `id.tarasevych.com/` had voor iemand zonder sessie de titel «Налаштування — Мій простір»; nu «Вхід — Мій простір» / «Aanmelden — Mijn Ruimte» (instellingenpagina's na aanmelden houden «Instellingen»). De `meta description` van 20–160 tekens per onderdeel bestond al en blijft.
+- **7.** Voorbeeldafbeelding van 1200×630 met het sitemerk (dezelfde vorm als `favicon.svg`) en de naam in beide talen. Tags `og:image`, `og:image:alt`, `og:site_name`, `twitter:card` in `index.html` en op `/privacy`, `/terms` (daar ook eigen `og:title`, `og:description`, `og:url`).
+- **8.** Fout gevonden die ook op de productiesite staat: `favicon-192.png` en `favicon-512.png` zijn niet te ontcijferen (beschadigde gegevensstroom), dus het app-pictogram op telefoons en in het manifest werkte niet. Alle PNG-pictogrammen opnieuw getekend uit `favicon.svg`; `favicon.ico` (16/32/48) toegevoegd omdat browsers het zelf opvragen (was 404).
+- **9.** `public/sitemap.xml` met alleen de twee openbare pagina's; de site is privé, de rest blijft `Disallow`. `robots.txt` laat pictogrammen en de voorbeeldafbeelding toe, anders kunnen sociale netwerken de afbeelding niet tonen.
+
+Test `tests/eenheid/site-001-metadata.test.ts`: 21/21 (met volledige PNG-controle op controlegetallen).
+
+Terloops een fout uit punt 19 verholpen: het tabblad «Bezoeken» las het serverantwoord zonder het veld `data` en werd een zwarte pagina; het antwoord wordt nu juist gelezen, test `site-001-analyse` aangevuld (13/13).
+
+| Voor | Na |
+|---|---|
+| ![voor](schermafdrukken/p06-09-voor.webp) | ![na](schermafdrukken/p06-09-na.webp) |
+| — | ![aanmeldscherm met nieuwe titel](schermafdrukken/p06-vhid-na.webp) |
+| — | ![voorbeeld](schermafdrukken/p07-og-na.webp) |
+| ![voor](schermafdrukken/p08-iconen-voor.webp) | ![na](schermafdrukken/p08-iconen-na.webp) |
+
 ### 19. Siteanalyse (samen met punt 5 uitgevoerd)
 
 De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
@@ -110,3 +137,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
 - **25.11.2026 23:40** — punten 1–3 klaar; lokale testomgeving (PostgreSQL 18, Node 24, Chromium) buiten de opslagplaats opgezet.
 - **25.11.2026 23:58** — punt 4 gecontroleerd (geen wijziging nodig); punten 5 en 19 klaar, volledige bouw met bewakers en typecontrole van de server groen.
+- **26.11.2026 00:25** — punten 6–9 klaar (titels, voorbeeldafbeelding, pictogrammen, `sitemap.xml`, `robots.txt`); zwarte pagina van het tabblad «Bezoeken» verholpen; volledige bouw groen.

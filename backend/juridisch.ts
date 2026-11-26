@@ -30,6 +30,16 @@ const pagina = (titel: string, pad: string, beschrijving: string, ander: { pad: 
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#2f6f73">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Мій простір · Mijn Ruimte">
+<meta property="og:title" content="${titel}">
+<meta property="og:description" content="${beschrijving}">
+<meta property="og:url" content="https://hub.tarasevych.com${pad}">
+<meta property="og:image" content="https://hub.tarasevych.com/og-afbeelding.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Знак «Мій простір» — чотири білі квадрати на бірюзовому тлі, підпис Mijn Ruimte">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/juridisch.css">
 </head>
 <body>
