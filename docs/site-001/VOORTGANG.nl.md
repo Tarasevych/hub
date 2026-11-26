@@ -30,7 +30,7 @@
 | 10 | Alternatieve teksten bij afbeeldingen | ✅ klaar | Alle 51 afbeeldingen hebben `alt`; vlag en wapen van een plaats kregen een beschrijvende tekst; bewakingstest 4/4 |
 | 11 | Afbeeldingen comprimeren | ✅ klaar | PNG-pictogrammen en voorbeeldafbeelding: 69 319 → 47 395 B (−32 %); 1744 webp al gecomprimeerd; officiële logo's onveranderd (SHA-256) |
 | 12 | Laadsnelheid | wacht | — |
-| 13 | Kleurcontrast | wacht | Bewaker `scripts/kleur-contrast-controle.mjs` aanwezig |
+| 13 | Kleurcontrast | ✅ klaar | Bewaker groen (2190 paren); axe-core vond 22 knooppunten op `/privacy` en `/terms`; verholpen, nu 0 in lichte en donkere weergave |
 | 14 | Geschiktheid voor mobiel | wacht | — |
 | 15 | Eigen 404-pagina | wacht | Bestaande `src/NietGevonden.tsx` — controleren |
 | 16 | Kapotte koppelingen | wacht | — |
@@ -140,6 +140,19 @@ Overzicht: 1835 afbeeldingen, 8,38 MB; daarvan 1744 wapens en vlaggen in `webp` 
 |---|---|
 | ![na](schermafdrukken/p11-na.webp) | ![vergelijking](schermafdrukken/p11-og-na.webp) |
 
+### 13. Kleurcontrast
+
+De bewaker `scripts/kleur-contrast-controle.mjs` (2190 paren in 30 paletten, beide weergaven) is groen. Daarnaast zijn de weergegeven pagina's gecontroleerd met axe-core 4 (regel `color-contrast`, WCAG 2.1 AA): aanmelden met toestemmingsband, gasttoegang, pagina 404 en beheer — 0 schendingen. Op `/privacy` en `/terms` zijn twee fouten in `public/juridisch.css` gevonden:
+- datum van de versie `#6a7580` op `#f7f8fa` — 4,42:1 (vereist 4,5:1) → `#5f6a75`, 5,19:1; in donkere weergave `#a3adb7`, 7,82:1;
+- **in donkere weergave hadden alle koppelingen 2,64:1**: het blok `@media (prefers-color-scheme: dark)` stond boven de regel `a{color:#2f6f73}`, die het overschreef. Het blok staat nu aan het einde van het bestand — 7,15:1.
+
+Na de correctie: 0 schendingen in lichte en donkere weergave.
+
+| Voor | Na |
+|---|---|
+| ![voor](schermafdrukken/p13-voor.webp) | ![na](schermafdrukken/p13-na.webp) |
+| ![voor, donker](schermafdrukken/p13-voor-donker.webp) | ![na, donker](schermafdrukken/p13-na-donker.webp) |
+
 ### 19. Siteanalyse (samen met punt 5 uitgevoerd)
 
 De serverkant bestond al (`backend/privacy.ts`: toestemming standaard uit, anonieme dagtellers), maar de interface riep haar nooit aan en niemand las de tellers. Nu: na toestemming één gebeurtenis `bezoek.<dienst>` per tabbladsessie (zonder paginapad, id, IP of apparaat); een beheerdersroute `POST /api/owner/admin/analyse-overzicht` (`admin.read`, alleen lezen) en een tabblad «Bezoeken» in «Diagnostiek» met perioden van 7/30/90 dagen. Geen externe analysediensten — nul nieuwe kosten en geen doorgifte aan derden.
@@ -156,3 +169,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **25.11.2026 23:58** — punt 4 gecontroleerd (geen wijziging nodig); punten 5 en 19 klaar, volledige bouw met bewakers en typecontrole van de server groen.
 - **26.11.2026 00:25** — punten 6–9 klaar (titels, voorbeeldafbeelding, pictogrammen, `sitemap.xml`, `robots.txt`); zwarte pagina van het tabblad «Bezoeken» verholpen; volledige bouw groen.
 - **26.11.2026 06:00** — punten 10 en 11 klaar. De eigenaar gaf opdracht «акаунт» overal in de interface te vervangen door «обліковий запис».
+- **26.11.2026 06:20** — punt 13 klaar: datumkleur en koppelingen in donkere weergave op de juridische pagina's verholpen; axe-core 0 schendingen.
