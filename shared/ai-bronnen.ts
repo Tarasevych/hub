@@ -256,10 +256,10 @@ export function controleerPunten(punten: readonly AiPunt[], alineas: readonly Br
       termijnStaat = bron ? termijnInBron(termijn, alinea) : 'niet-in-bron';
       if (termijnStaat !== 'in-bron') termijn = '';
     }
-    const schoon = p.tekst.includes('<') ? opschonenPuntTekst(p.tekst) : null;
+    const schoon = opschonenPuntTekst(p.tekst);
     return {
       ...p,
-      tekst: schoon ? schoon.tekst : p.tekst,
+      tekst: schoon.tekst,
       termijn,
       status: bron ? 'letterlijk' : 'niet-gevonden',
       bron,
@@ -320,10 +320,22 @@ const RUWE_ANKER_HAAKJES_RE = /\(\s*<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'
 const RUWE_ANKER_LOS_RE = /<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi;
 const LOSSE_HTML_TAG_RE = /<\/?[a-z][a-z0-9:-]*(?:\s+[^<>]{0,400})?>/gi;
 
+function herstelAanhefPunt(tekst: string): string {
+  const kort = String(tekst || '').replace(/\s+/g, ' ').trim();
+  if (!kort.startsWith('Ні ')) return tekst;
+  const m = /^Ні\s+([\p{Lu}][\p{L}'’-]{0,40}(?:\s+[\p{Lu}][\p{L}'’-]{0,40}){0,2})([,!.:;—-]?\s+[\s\S]+)$/u.exec(kort);
+  if (!m) return tekst;
+  const rest = m[2];
+  const lat = (rest.match(/\p{Script=Latin}/gu) || []).length;
+  const cyr = (rest.match(/\p{Script=Cyrillic}/gu) || []).length;
+  if (lat >= 4 && lat > cyr * 2) return `Hi ${m[1]}${rest}`;
+  return tekst;
+}
+
 /** Очищує сирі HTML-посилання <a href="..."> у видимому тексті пункту, зберігаючи безпечні https/http адреси в окремому масиві. */
 export function opschonenPuntTekst(ruw: string): { tekst: string; koppelingen: PuntKoppeling[] } {
   const bron = String(ruw ?? '');
-  if (!bron.includes('<')) return { tekst: bron, koppelingen: [] };
+  if (!bron.includes('<')) return { tekst: herstelAanhefPunt(bron), koppelingen: [] };
   const koppelingen: PuntKoppeling[] = [];
   const ontcijferUrl = (u: string) => u.replace(/&amp;/gi, '&').trim();
   const verwerkAnker = (u1: string, u2: string, u3: string, inhoud: string, tussenHaakjes: boolean): string => {
@@ -343,7 +355,7 @@ export function opschonenPuntTekst(ruw: string): { tekst: string; koppelingen: P
     .replace(/\s{2,}/g, ' ')
     .replace(/\s+([.,;:!?])/g, '$1')
     .trim();
-  return { tekst: tekst || bron.replace(LOSSE_HTML_TAG_RE, '').trim(), koppelingen };
+  return { tekst: herstelAanhefPunt(tekst || bron.replace(LOSSE_HTML_TAG_RE, '').trim()), koppelingen };
 }
 
 /**
@@ -361,10 +373,10 @@ export function eenvoudigeOntleding(brieven: readonly EenvoudigeBrief[]): { punt
     const plek = zoekCitaat(zin, [a]);
     if (!plek) return null;
     gezien.add(n);
-    const schoon = zin.includes('<') ? opschonenPuntTekst(zin) : null;
+    const schoon = opschonenPuntTekst(zin);
     return {
       id: `e:${a.brief}.${a.nr}.${gezien.size}`,
-      tekst: schoon ? schoon.tekst : zin,
+      tekst: schoon.tekst,
       citaat: zin,
       brief: a.brief,
       alinea: a.nr,

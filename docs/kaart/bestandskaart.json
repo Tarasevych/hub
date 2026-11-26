@@ -3602,6 +3602,11 @@
    "pad": "src/meldingen/MeldingModusKiezer.tsx",
    "wat": "Tweetalige kiezer voor de meldingsweergave (standaard Aandachtspuls of compacte lijst) en uitgebreide uitleg in kaarten.",
    "sinds": "CONSOL-M5A"
+  },
+  {
+   "pad": "tests/eenheid/herstel-001-e2e-vijf-etappes.test.ts",
+   "wat": "Vierlaagse eenheids-, integratie- en Chrome-CDP-eind-tot-eindtest voor alle vijf etappes en 48 UX/UI-herstelpunten van HERSTEL-001.",
+   "sinds": "HERSTEL-001"
   }
  ]
 }

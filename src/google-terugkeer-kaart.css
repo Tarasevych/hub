@@ -225,14 +225,14 @@
 
 .mr-google-terug-knop-primair:hover,
 .mr-google-terug-knop-primair:focus-visible {
-  background: color-mix(in srgb, var(--accent, #2f6f73) 88%, #000000);
+  background: color-mix(in srgb, var(--accent, #2f6f73) 88%, var(--text, #000000));
   color: var(--accentText, #ffffff);
   outline-offset: 2px;
 }
 
 :is(html.theme-dark, html.theme-plum-dark) .mr-google-terug-knop-primair:hover,
 :is(html.theme-dark, html.theme-plum-dark) .mr-google-terug-knop-primair:focus-visible {
-  background: color-mix(in srgb, var(--accent, #8dbab7) 88%, #ffffff);
+  background: color-mix(in srgb, var(--accent, #8dbab7) 88%, var(--panel, #ffffff));
   color: var(--accentText, #102426);
 }
 

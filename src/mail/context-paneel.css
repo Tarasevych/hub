@@ -32,7 +32,7 @@ html.palet-maquette body .ctx-paneel{background:var(--mq-oppervlak-dicht,var(--m
 .ctx-kop{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;column-gap:6px;padding:10px 8px 8px 16px;border-bottom:1px solid var(--line)}
 html body .ctx-paneel .ctx-kop h2{grid-column:1;grid-row:2;margin:0;font-family:inherit;font-size:15px;font-weight:700;line-height:1.3;letter-spacing:0}
 .ctx-kop small{grid-column:1;grid-row:3;color:var(--muted);font-size:12px}
-.ctx-langscroll-knop{grid-column:2;grid-row:2/span 2;min-height:32px;padding:0 10px;font-size:12px}
+html body .ctx-paneel .ctx-kop button.ctx-langscroll-knop[type]:not(:disabled),.ctx-langscroll-knop{grid-column:2;grid-row:2/span 2;min-height:28px;height:28px;padding:0 9px;font-size:12px;line-height:1}
 .ctx-sluit{grid-column:3;grid-row:2/span 2;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
 .ctx-sluit svg{width:18px;height:18px}
 .ctx-sluit:hover{background:var(--surface);color:var(--text)}
@@ -47,9 +47,9 @@ html body .google-mail-reader[data-context='kolom']>.ctx-paneel .ctx-inhoud{padd
 /* alle 5 tabbladen op één rij (nowrap), ook op 360 px breedte */
 .ctx-tabs{flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;padding:6px 8px;border-bottom:1px solid var(--line)}
 .ctx-tabs::-webkit-scrollbar{display:none}
-html body .ctx-paneel .ctx-tabs button{display:inline-flex;align-items:center;justify-content:center;flex:1 1 auto;min-width:0;min-height:36px;padding:0 8px;border:1px solid transparent;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:650;white-space:nowrap;cursor:pointer}
+html body .ctx-paneel .ctx-tabs>button[type]:not(:disabled),html body .ctx-paneel .ctx-tabs button{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:1 1 auto;min-width:0;min-height:28px;height:28px;padding:0 7px;border:1px solid transparent;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:650;line-height:1;white-space:nowrap;cursor:pointer}
 html body .google-mail-reader[data-lees-breedte='smal'] .ctx-paneel .ctx-tabs{padding:6px 6px;gap:2px}
-html body .google-mail-reader[data-lees-breedte='smal'] .ctx-paneel .ctx-tabs button{padding:0 6px;font-size:12px}
+html body .google-mail-reader[data-lees-breedte='smal'] .ctx-paneel .ctx-tabs>button[type]:not(:disabled),html body .google-mail-reader[data-lees-breedte='smal'] .ctx-paneel .ctx-tabs button{padding:0 6px;font-size:12px}
 .ctx-tabs button:hover{background:var(--surface);color:var(--text)}
 html body .ctx-paneel .ctx-tabs button[aria-selected='true'],
 html.palet-maquette body .ctx-paneel .ctx-tabs button[aria-selected='true']{border-color:var(--accent);background:var(--accent);color:var(--accentText);font-weight:700}
@@ -160,7 +160,9 @@ button.ctx-tl-tekst:focus-visible{outline:2px solid var(--focus);outline-offset:
 /* aanraken: grotere doelen (макет: 44 px) */
 @media (pointer:coarse){
   .ctx-sluit,.ctx-acties button{width:44px;height:44px}
-  html body .ctx-knop,.ctx-tabs button{min-height:44px}
+  html body .ctx-knop{min-height:44px}
+  html body .ctx-paneel .ctx-tabs>button[type]:not(:disabled),html body .ctx-paneel .ctx-tabs button,.ctx-tabs button{min-height:28px;height:28px}
+  html body .ctx-paneel .ctx-kop button.ctx-langscroll-knop[type]:not(:disabled),.ctx-langscroll-knop{min-height:28px;height:28px}
   .ctx-kleur{width:44px;height:44px}
   .ctx-kleur>span[aria-hidden]{width:30px;height:30px}
   .ctx-tl-tekst{padding:9px 8px}

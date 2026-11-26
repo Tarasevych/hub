@@ -324,7 +324,7 @@ html body .google-mail-reader > section.mail-thread-content::after {
   }
 
   html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-keuze {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     max-width: 100%;
   }
 
@@ -346,7 +346,8 @@ html body .google-mail-reader > section.mail-thread-content::after {
   }
 
   html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .lz-segment input + span {
-    min-height: 36px;
+    min-height: 28px;
+    height: 28px;
   }
 }
 

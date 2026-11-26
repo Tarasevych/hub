@@ -117,14 +117,14 @@ html body .google-mail-reader>header .mail-reader-context-knop[aria-expanded='tr
 .lz-weergave-keuzes>small{color:var(--muted);font-size:12px}
 /* pakket 3: «Мова листа» — wat de keuze doet en waar de tekst dan heen gaat */
 .lz-weergave-noot{display:block;max-width:300px;margin-top:6px;color:var(--muted);font-size:12px;line-height:1.4}
-.lz-segment{display:flex;flex-wrap:wrap;gap:4px}
-.lz-segment>label{position:relative;display:inline-flex}
+.lz-segment{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:4px;min-width:0;max-width:100%}
+.lz-segment>label{position:relative;display:inline-flex;flex:0 1 auto;min-width:0}
 .lz-segment input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
-.lz-segment input+span{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none}
+.lz-segment input+span{display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:28px;height:28px;padding:0 clamp(8px,2.2vw,11px);border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:12px;font-weight:600;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
 .lz-segment input:checked+span{border-color:var(--accent);background:var(--accent);color:var(--accentText)}
 .lz-segment input:focus-visible+span{outline:2px solid var(--focus);outline-offset:2px}
 .lz-weergave-blok .lz-weergave-keuzes{padding:4px 8px 8px}
-@media (pointer:coarse){.lz-segment input+span{min-height:44px}}
+@media (pointer:coarse){.lz-segment input+span{min-height:28px;height:28px}.lz-segment>label::after{content:'';position:absolute;inset:-6px 0}}
 
 /* Smal venster (< 560 px — de telefoon, maar ook «праворуч» op 740–852 px of een smal zwevend venster): de kop houdt ← ∧ ∨ «Відповісти»
    zoeken Контекст ⋮ ✕ (макет: «smal — телефон»); Вигляд, «Згорнути» en «Зменшити вікно» staan dan in ⋮ (MailLezerWerkbalk), de plaats
@@ -217,14 +217,22 @@ html body:has(.google-mail-reader-backdrop[data-lees-modus='telefoon']:not(.read
 /* MAIL-10 + MAIL-2: compacte eenregelige voet van het antwoord en rustige melding bij eenrichtingsafzender op alle schermbreedtes. */
 html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-thread-message-antwoord,
 html body .google-mail-reader[data-reply-open='ja'] .mail-thread-message-antwoord{display:none}
-html body .google-mail-reader .mail-thread-reply>header{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 8px}
-html body .google-mail-reader .mail-thread-reply>header>div{flex:1 1 160px;min-width:0}
-html body .google-mail-reader .mail-thread-reply>footer{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:5px;min-height:42px;padding:2px 0 0}
+html body .google-mail-reader .mail-thread-reply>header{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px}
+html body .google-mail-reader .mail-thread-reply>header>div{flex:1 1 100%;min-width:0}
+html body .google-mail-reader .mail-thread-reply>header>button[type]:not(:disabled),
+html body .google-mail-reader .mail-thread-reply>header>button{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:0 1 auto;min-width:0;min-height:28px;height:28px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body .google-mail-reader .mail-thread-reply>header>button svg{width:14px;height:14px;flex:0 0 auto}
+html body .google-mail-reader .mail-thread-reply>footer{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:5px;min-width:0;min-height:36px;padding:2px 0 0}
 html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen{display:contents}
 html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen>.mail-input-tools{flex:1 0 100%;order:-1;margin-bottom:4px}
-html body .google-mail-reader .mail-thread-reply>footer>:is(label,button),
-html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen>button.mail-nm-hulpen{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;min-height:38px;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
-html body .google-mail-reader .mail-thread-reply>footer :is(label,button) svg{width:15px;height:15px;flex:0 0 auto}
-html body .google-mail-reader .mail-thread-reply>footer>button.primary{margin-inline-start:auto;padding:0 12px;border-color:transparent;background:var(--accent);color:var(--accentText);font-weight:700}
+html body .google-mail-reader .mail-thread-reply>footer>:is(label,button[type]:not(:disabled),button),
+html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen>button.mail-nm-hulpen[type]:not(:disabled),
+html body .google-mail-reader .mail-thread-reply>footer>.mail-invoer-hulpen>button.mail-nm-hulpen{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:0 1 auto;min-width:0;min-height:32px;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:650;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+html body .google-mail-reader .mail-thread-reply>footer :is(label,button) svg{width:14px;height:14px;flex:0 0 auto}
+html body .google-mail-reader .mail-thread-reply>footer>button.primary[type]:not(:disabled),
+html body .google-mail-reader .mail-thread-reply>footer>button.primary{margin-inline-start:auto;flex:0 0 auto;padding:0 11px;border-color:transparent;background:var(--accent);color:var(--accentText);font-weight:700}
+html body .google-mail-reader .mail-thread-reply .mra-bar{flex-wrap:wrap;gap:5px}
+html body .google-mail-reader .mail-thread-reply .mra-bar>button.mail-reader-action-button[type]:not(:disabled){flex:0 0 auto;min-height:28px;height:28px;padding:0 9px;font-size:12px;line-height:1;white-space:nowrap}
+html body .google-mail-reader .mail-thread-reply .mra-veld{min-height:30px;height:30px;font-size:12px}
 .mail-reply-eenrichting-waarschuwing{margin:0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--warn) 42%,var(--line));border-radius:var(--straal-s,10px);background:var(--warn-zacht);color:var(--text);font-size:12.5px;line-height:1.4}
 

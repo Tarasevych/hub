@@ -44,6 +44,7 @@ button.ai-bron-chip:focus-visible{outline:2px solid var(--focus);outline-offset:
 .ai-bron-chip[data-niet-gevonden]{border-color:color-mix(in srgb,var(--fout) 45%,var(--line));color:var(--fout);cursor:default}
 .ai-termijn-chip{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 9px;border-radius:999px;background:var(--warn-zacht);color:var(--warn);font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap}
 .ai-termijn-chip svg{width:13px;height:13px}
+html body .ai-blok .ai-blok-chips>button.ai-bron-chip[type]:not(:disabled),html body .ai-blok .ai-blok-chips>a.ai-punt-koppeling,html body .ai-blok .ai-blok-chips>.ai-termijn-chip{min-height:26px;height:26px;padding:0 9px;font-size:12px;line-height:1}
 .ai-blok-kort h4,.ai-blok-niet h4{margin:0 0 4px;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--muted);text-transform:uppercase}
 .ai-blok-niet{padding:8px 10px;border:1px dashed color-mix(in srgb,var(--fout) 45%,var(--line));border-radius:var(--straal-m,12px)}
 .ai-blok-niet .ai-blok-tekst{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--fout) 60%,transparent)}
@@ -65,7 +66,7 @@ html body .ai-blok-link{display:inline-flex;align-items:center;gap:4px;min-heigh
 .ai-blok-link svg{width:14px;height:14px}
 .ai-blok-link:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 /* aanraken: de bronchip is 32 px hoog in de regel, maar raakt op 44 px (onzichtbare rand erboven en eronder) */
-@media (pointer:coarse){html body .ai-blok-knop{min-height:44px}html body .ai-bron-chip,.ai-termijn-chip{min-height:32px}html body button.ai-bron-chip{position:relative}html body button.ai-bron-chip::after{content:'';position:absolute;inset:-6px -2px}html body .ai-blok-link{min-height:44px}html body .ai-blok-wissel{min-height:44px}}
+@media (pointer:coarse){html body .ai-blok-knop{min-height:44px}html body .ai-bron-chip,.ai-termijn-chip{min-height:32px}html body .ai-blok .ai-blok-chips>button.ai-bron-chip[type]:not(:disabled),html body .ai-blok .ai-blok-chips>.ai-termijn-chip{min-height:26px;height:26px}html body button.ai-bron-chip{position:relative}html body button.ai-bron-chip::after{content:'';position:absolute;inset:-6px -2px}html body .ai-blok-link{min-height:44px}html body .ai-blok-wissel{min-height:44px}}
 
 /* ---------------------------------------------------------------- onderwerp: «Оригінал: …» en «Потребує відповіді» */
 .mail-thread-onderwerp-origineel{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
@@ -77,9 +78,11 @@ html body .mail-thread-ai-chip{display:inline-flex;align-items:center;gap:5px;mi
 @media (pointer:coarse){html body .mail-thread-ai-chip{min-height:44px}}
 
 /* ---------------------------------------------------------------- vertaalstrook in de brief */
-.vertaal-strook{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:6px 10px;border:1px solid color-mix(in srgb,var(--line) 85%,transparent);border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--surface2) 40%,var(--panel))}
+.vertaal-strook{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px;padding:6px 10px;border:1px solid color-mix(in srgb,var(--line) 85%,transparent);border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--surface2) 40%,var(--panel))}
 .vertaal-strook-talen{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--muted);font-size:12.5px;font-weight:600}
 .vertaal-strook-talen svg{width:16px;height:16px;flex:0 0 auto}
+.vertaal-strook-keuze{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:4px;min-width:0;max-width:100%}
+.vertaal-strook-keuze label{flex:0 1 auto;min-width:0}
 .vertaal-strook-keuze label:has(input:disabled){opacity:.5;cursor:not-allowed}
 .vertaal-strook-bezig{width:16px;height:16px;color:var(--muted)}
 .vertaal-strook-zonder{flex:1 1 100%;color:var(--muted);font-size:12px}

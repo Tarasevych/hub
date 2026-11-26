@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "id": "HERSTEL-001/20261126-180500-antigravity",
+  "taakId": "HERSTEL-001",
+  "tijd": "2026-11-26T18:05:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Усунено всі 48 вад у 5 етапах (T-1..T-4 мобільного входу 38 px зі збереженням капсули мови, кружечка «+» та тріади завантаження; TG-1..TG-10 чистого екрана підтвердження Telegram за ⓘ на 3 візуальні кроки та Захищеного вікна; GOOG-1..GOOG-4 картки повернення Google STATE_EXPIRED за ⓘ; MELD-1..MELD-10 сповіщень з офіційним знаком gmail і дією «Це був я»; MAIL-1..MAIL-20 переглядача Пошти, композитного простору читання, мовної інтерпретації, походження відправника й шторки Контексту) та впроваджено загальносайтове декларативне CSS-правило компактних однорядкових кнопок режимів і перемикачів (26–32 px без JS-вимірювань).",
+    "nl": "Alle 48 UX/UI-punten in 5 etappes opgelost (T-1..T-4 mobiel aanmelden 38 px met behoud van taalkapsel, «+»-cirkel en laaddriehoek; TG-1..TG-10 schoon Telegram-bevestigingsscherm met ⓘ-hulpblad in 3 visuele stappen en Beveiligd venster; GOOG-1..GOOG-4 Google STATE_EXPIRED-terugkeerkaart met ⓘ; MELD-1..MELD-10 meldingen met officieel gmail-merk en «Dit was ik»-actie; MAIL-1..MAIL-20 e-maillezer, dynamische leesruimte bij scrollen, taalherkenning, afzenderherkomst en Context-paneel) en een sitebrede declaratieve CSS-regel voor compacte eenregelige modusknoppen en schakelaars (26–32 px zonder JS-metingen) ingevoerd."
+  },
+  "waarom": {
+    "uk": "Випустити єдине перевірене оновлення з виправленням усіх 48 знайдених сьогодні вад та компактними однорядковими кнопками режимів і перемикачів по всьому сайту без роз’їзду на два рядки і без втрати швидкодії.",
+    "nl": "Eén geverifieerde uitgave leveren waarin alle 48 vandaag gevonden punten zijn hersteld en alle modusschakelaars sitebreed compact op één rij staan zonder overloop naar twee regels en zonder prestatieverlies."
+  },
+  "bouwtVoortOp": [
+    "HERSTEL-001/20261124-201000-antigravity"
+  ],
+  "tak": "fix/herstel-001-consol-nazorg-20261123-172600",
+  "pr": null,
+  "commits": [
+    "96bd83f1",
+    "0fe035d5",
+    "b5d6c582",
+    "91a9317e",
+    "33605cac",
+    "9ae9bc2b",
+    "3e3537f7",
+    "a04252d6",
+    "84112fc7",
+    "a6e1cac6",
+    "09de2079",
+    "201b012d",
+    "ac1741ed",
+    "2a91ef40",
+    "6e187b61",
+    "038fb127",
+    "f85c801b",
+    "39462353",
+    "3d15ba7c",
+    "9d6d0131"
+  ],
+  "onderwerpen": [
+    "meldingen",
+    "prestatie-en-gebruikservaring",
+    "vertaling-en-integraties"
+  ]
+}

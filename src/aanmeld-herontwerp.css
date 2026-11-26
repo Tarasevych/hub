@@ -469,11 +469,11 @@ body:has([role='dialog'][aria-modal='true']:not(.canonical-account-panel)) .cano
 .mr-sign-in-taal-menu{
  position:absolute;top:calc(100% + 10px);right:0;z-index:390;width:214px;padding:6px;
  display:grid;gap:0;border:1px solid var(--mr-login-border);border-radius:16px;
- background:color-mix(in srgb,var(--mr-login-sheet) 88%,#ffffff);color:var(--mr-login-ink);
+ background:color-mix(in srgb,var(--mr-login-sheet) 88%,var(--panel,#ffffff));color:var(--mr-login-ink);
  box-shadow:0 14px 34px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.05);backdrop-filter:blur(20px)
 }
 .canonical-chrome:is(.theme-dark,.theme-plum-dark):has(.mr-sign-in) .mr-sign-in-taal-menu{
- background:color-mix(in srgb,var(--mr-login-sheet) 92%,#334155);
+ background:color-mix(in srgb,var(--mr-login-sheet) 92%,var(--surface2,#334155));
  box-shadow:0 16px 38px rgba(0,0,0,.44),0 2px 8px rgba(0,0,0,.24)
 }
 .mr-sign-in-taal-optie{

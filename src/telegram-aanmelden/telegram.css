@@ -333,8 +333,8 @@ html.palet-puur :is(.canonical-chrome.theme-dark,.theme-dark) .tg2-info-sluier .
 .tg2-info-visueel{display:flex;align-items:center;justify-content:center;min-height:42px;min-width:0}
 .tg2-info-medaillon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .tg2-info-medaillon.is-tg{background:rgba(42,171,238,.14)}
-.tg2-info-medaillon.is-tel{background:rgba(22,163,74,.12);color:#15803d}
-:is(.canonical-chrome:is(.theme-dark,.theme-plum-dark),html:is(.theme-dark,.theme-plum-dark)) .tg2-info-medaillon.is-tel{background:rgba(74,222,128,.16);color:#86efac}
+.tg2-info-medaillon.is-tel{background:rgba(22,163,74,.12);color:var(--ok,#15803d)}
+:is(.canonical-chrome:is(.theme-dark,.theme-plum-dark),html:is(.theme-dark,.theme-plum-dark)) .tg2-info-medaillon.is-tel{background:rgba(74,222,128,.16);color:var(--ok,#86efac)}
 html.palet-puur .tg2-info-medaillon{border:1px solid var(--mr-login-border,currentColor)}
 .tg2-info-tekst{min-width:0;font-size:14.5px;font-weight:560;line-height:1.35;color:var(--mr-login-ink,var(--text,#17212b));overflow-wrap:break-word}
 
