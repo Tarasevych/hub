@@ -462,6 +462,7 @@ jobs:
             --samenvatting-nl "Uitgave SITE-001 boven op live basis 20261126-181653: alle 25 gereedheidspunten, taalzuivering in 285 bestanden en 16 bewakers. Uitvoerders: voor limietuitputting — Claude Opus 5.5 (High) via Antigravity Google (p. 1–11, 13–19); voortgezet en afgerond — Gemini 4 Carbon High van Google Antigravity (taalzuivering, p. 12, 20–25, samenvoeging en verpakking)." \
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
       - name: Перевірити UITROL-MANIFEST.json, ONTWIKKELARCHIEF.json, UITROL-BASIS та пофайлову попередню перевірку pakketVoorcontrole
         shell: bash
         run: |
