@@ -62,24 +62,26 @@ html.palet-puur .canonical-chrome.theme-dark:has(.mr-sign-in){
 .canonical-chrome:has(.mr-sign-in) .canonical-sidebar,
 .canonical-chrome:has(.mr-sign-in) .canonical-sidebar-edge-zone,
 .canonical-chrome:has(.mr-sign-in) .canonical-sidebar-scrim,
-.canonical-chrome:has(.mr-sign-in) .canonical-floating-tooltip{display:none!important}
+.canonical-chrome:has(.mr-sign-in) .canonical-floating-tooltip,
+.canonical-chrome:has(.mr-sign-in) .canonical-scroll-top{display:none!important}
 
-/* Volledige vensterbreedte en -hoogte: wint ook van mobiel-ux.css (0,3,2) en menu-v2.css (data-dock). */
+/* Volledige vensterbreedte en -hoogte: main.canonical-chrome scrollt zelf zodat de bovenhoek niet over de tekst zweeft (TG-4). */
+html body main.canonical-chrome:has(.mr-sign-in){overflow-x:hidden;overflow-y:auto}
 html body main.canonical-chrome:has(.mr-sign-in) .canonical-workspace,
 html body main.canonical-chrome:has(.mr-sign-in):is(.sidebar-drawer-mode,.sidebar-pinned,.sidebar-hover,[data-dock]) .canonical-workspace{
- inset:0!important;padding:0!important;margin:0!important;background:var(--mr-login-sheet)!important;
- scrollbar-gutter:auto;overflow-x:hidden;overflow-y:auto
+ position:relative;inset:auto!important;padding:0!important;margin:0!important;background:var(--mr-login-sheet)!important;
+ scrollbar-gutter:auto;overflow:visible
 }
 .canonical-chrome:has(.mr-sign-in) .canonical-content{min-height:100vh;min-height:100dvh;width:100%;max-width:none;margin:0;padding:0;display:block}
 .canonical-chrome:has(.mr-sign-in) .canonical-workspace::after{content:none!important;height:0!important}
 
 html body main.canonical-chrome:has(.mr-sign-in) .canonical-account-anchor:not(.mr-guest-mobile-account){
- z-index:410;
+ position:absolute;z-index:410;
  top:max(16px,calc(12px + env(safe-area-inset-top,0px)));
  right:max(20px,calc(16px + env(safe-area-inset-right,0px)));
  left:auto;
 }
-.canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{z-index:410}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{position:absolute;z-index:410}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor>:not(.canonical-account-menu){display:none!important}
 .canonical-chrome:has(.mr-sign-in) .canonical-topbar{background:transparent;border:0;box-shadow:none}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.plaats-boven-telefoon{display:none!important}
@@ -132,6 +134,8 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 .mr-sign-in-content{grid-row:2;align-self:center;width:min(440px,100%);display:grid;justify-items:center;gap:0;transition:opacity .2s ease}
 /* Het menu van de bovenhoek staat open: de aanmeldtekst blijft op zijn plek (gecentreerd) maar wordt wat zachter. */
 .canonical-chrome:has(.mr-sign-in-content):is(:has(.canonical-account-panel),[data-account-menu-open='1']) .mr-sign-in-content{opacity:.38;pointer-events:none}
+.canonical-chrome:has(.mr-sign-in):is(:has(.canonical-account-panel),[data-account-menu-open='1']) .mr-sign-in-quick-controls{opacity:.32;pointer-events:none;transition:opacity .18s ease}
+body:has([role='dialog'][aria-modal='true']:not(.canonical-account-panel)) .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{opacity:.24;pointer-events:none;transition:opacity .18s ease}
 .mr-sign-in h1{margin:0!important;font-size:clamp(1.75rem,3vw,2.55rem)!important;line-height:1.14;letter-spacing:-.035em;font-weight:700!important;color:var(--mr-login-ink)!important;text-wrap:balance}
 .mr-sign-in-subtitle{margin:14px 0 28px!important;max-width:410px;color:var(--mr-login-muted);font-size:clamp(.92rem,1.15vw,1.03rem);line-height:1.55;text-wrap:balance}
 
@@ -318,7 +322,10 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 .canonical-chrome:has(.mr-sign-in) .canonical-signed-out.mr-sign-in .tga-aanmeld-knop{
  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .12s ease!important
 }
-.canonical-signed-out.mr-sign-in .tga-aanmeld-eind{color:var(--mr-login-muted);transition:transform .16s ease,color .16s ease}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-logo{display:grid;grid-template:minmax(0,1fr) / minmax(0,1fr);place-items:center;width:34px;height:34px;flex:0 0 34px;aspect-ratio:1 / 1;border-radius:50%;overflow:hidden;font-size:1.08rem}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-logo :is(.merk,.tga-logo,img,svg){width:100%;height:100%;min-width:0;min-height:0;max-width:100%;max-height:100%;border-radius:50%;display:block}
+.canonical-signed-out.mr-sign-in .tga-plaats-knop .tga-aanmeld-logo{background:color-mix(in srgb,var(--fout,#b42318) 12%,var(--papier,#fff))}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-eind{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;font-size:1.22rem;opacity:1;color:var(--mr-login-muted);transition:transform .16s ease,color .16s ease}
 .canonical-signed-out.mr-sign-in .tga-aanmeld-knop:hover:not(:disabled):not([aria-disabled='true']){
  border-color:var(--mr-login-sec-border-hover);background:var(--mr-login-sec-bg-hover);
  box-shadow:0 0 0 3px var(--mr-login-sec-ring)
@@ -422,28 +429,94 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 
 /* Hoekbediening rechtsboven + compatibiliteit met AccountMenuV3 (raakt am3-padding en -achtergrond niet aan). */
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']{
- display:flex;flex-direction:row;align-items:center;gap:8px;position:relative
+ display:flex;flex-direction:row;align-items:center;gap:10px;position:relative
 }
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']:not([data-account-menu-v3]){
  --canonical-text:var(--mr-login-ink);--canonical-muted:var(--mr-login-muted);--canonical-line:var(--mr-login-border);--canonical-panel:var(--mr-login-card)
 }
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger{
- position:relative;width:38px;height:38px;min-width:38px;min-height:38px;aspect-ratio:1 / 1;flex-shrink:0;
- border:1px solid var(--mr-login-border);border-radius:50%;box-shadow:none;background:var(--mr-login-card);overflow:visible
+ position:relative;width:38px;height:38px;min-width:38px;min-height:38px;aspect-ratio:1 / 1;padding:0;flex-shrink:0;
+ border:1px solid var(--mr-login-border);border-radius:50%;
+ box-shadow:0 2px 6px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.72);
+ background:var(--mr-login-card);color:var(--mr-login-muted);overflow:visible;
+ transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,color .16s ease
 }
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger :is(.canonical-account-avatar,.canonical-avatar-close){
- width:100%;height:100%;border-radius:50%;border:0
+ width:100%;height:100%;border-radius:50%;border:0;background:transparent;color:inherit
 }
-.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger svg{width:19px;height:19px}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger svg{width:18px;height:18px;stroke-width:1.85}
 
-.mr-sign-in-quick-controls{display:none;align-items:center;gap:12px}
+.mr-sign-in-quick-controls{display:none;align-items:center;gap:10px}
 .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls{display:flex}
-.mr-sign-in-quick-controls button{width:38px;height:38px;min-width:38px;min-height:38px;position:relative;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--mr-login-ink);cursor:pointer;font-size:.73rem;font-weight:600}
-.mr-sign-in-quick-controls button:hover,.mr-sign-in-quick-controls button:focus-visible{background:rgba(128,145,173,.14);outline-offset:2px}
-.mr-sign-in-quick-controls button svg{width:17px;height:17px;stroke-width:1.75}
-.mr-sign-in-quick-controls .mr-sign-in-taal{display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:0;height:32px;min-height:32px;gap:7px;padding:0 12px 0 10px;border:1px solid var(--mr-login-border);border-radius:999px;background:var(--mr-login-card);color:var(--mr-login-ink);font-size:.78rem;font-weight:650;letter-spacing:.01em;white-space:nowrap}
-.mr-sign-in-quick-controls .mr-sign-in-taal .taal-vlag{width:1.35em;height:.9em;font-size:14px}
-.mr-sign-in-quick-controls .mr-sign-in-taal:hover,.mr-sign-in-quick-controls .mr-sign-in-taal:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,var(--papier))}
+.mr-sign-in-taal-wrap{position:relative;display:inline-flex;align-items:center}
+.mr-sign-in-quick-controls button.mr-sign-in-taal{
+ position:relative;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ width:auto;min-width:0;height:38px;min-height:38px;max-height:38px;padding:0 13px 0 11px;
+ border:1px solid var(--mr-login-border);border-radius:999px;
+ background:var(--mr-login-card);color:var(--mr-login-ink);
+ box-shadow:0 2px 6px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.72);
+ font-size:.8125rem;font-weight:650;line-height:1;letter-spacing:.01em;white-space:nowrap;
+ cursor:pointer;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+.mr-sign-in-quick-controls button.mr-sign-in-taal b{font-weight:650;line-height:1}
+.mr-sign-in-quick-controls button.mr-sign-in-thema{
+ width:38px;height:38px;min-width:38px;min-height:38px;aspect-ratio:1 / 1;padding:0;position:relative;
+ display:grid;place-items:center;border:1px solid var(--mr-login-border);border-radius:50%;
+ background:var(--mr-login-card);color:var(--mr-login-ink);
+ box-shadow:0 2px 6px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.72);
+ cursor:pointer;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+.canonical-chrome:is(.theme-dark,.theme-plum-dark):has(.mr-sign-in) :is(.canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger,.mr-sign-in-quick-controls button:is(.mr-sign-in-taal,.mr-sign-in-thema)){
+ box-shadow:0 2px 8px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.06)
+}
+.mr-sign-in-quick-controls button.mr-sign-in-taal::after{content:'';position:absolute;inset:-3px;border-radius:999px}
+.mr-sign-in-quick-controls button.mr-sign-in-thema::after,
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger::after{
+ content:'';position:absolute;inset:-3px;border-radius:50%
+}
+.mr-sign-in-quick-controls button:is(.mr-sign-in-taal,.mr-sign-in-thema):hover,
+.mr-sign-in-quick-controls button:is(.mr-sign-in-taal,.mr-sign-in-thema):focus-visible,
+.mr-sign-in-quick-controls button.mr-sign-in-taal[aria-expanded='true'],
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger:hover,
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger:focus-visible{
+ background:color-mix(in srgb,var(--mr-login-card) 84%,var(--mr-login-ink) 5%);
+ border-color:color-mix(in srgb,var(--mr-login-ink) 18%,var(--mr-login-border));
+ color:var(--mr-login-ink);outline-offset:2px
+}
+.mr-sign-in-quick-controls .mr-sign-in-thema svg{width:18px;height:18px;stroke-width:1.85}
+.mr-sign-in-quick-controls .mr-sign-in-taal .taal-vlag.taal-vlag{
+ width:18px;height:12px;min-width:18px;max-width:18px;border-radius:2.5px;object-fit:cover;vertical-align:middle;
+ box-shadow:inset 0 0 0 1px rgba(15,23,42,.12)
+}
+.mr-sign-in-taal-menu{
+ position:absolute;top:calc(100% + 10px);right:0;z-index:390;width:214px;padding:6px;
+ display:grid;gap:0;border:1px solid var(--mr-login-border);border-radius:16px;
+ background:color-mix(in srgb,var(--mr-login-sheet) 88%,var(--panel,#ffffff));color:var(--mr-login-ink);
+ box-shadow:0 14px 34px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.05);backdrop-filter:blur(20px)
+}
+.canonical-chrome:is(.theme-dark,.theme-plum-dark):has(.mr-sign-in) .mr-sign-in-taal-menu{
+ background:color-mix(in srgb,var(--mr-login-sheet) 92%,var(--surface2,#334155));
+ box-shadow:0 16px 38px rgba(0,0,0,.44),0 2px 8px rgba(0,0,0,.24)
+}
+.mr-sign-in-taal-optie{
+ display:grid;grid-template-columns:22px minmax(0,1fr) 18px;align-items:center;gap:11px;
+ width:100%;min-height:42px;height:42px;padding:0 12px;border:0;border-radius:10px;
+ background:transparent;color:var(--mr-login-ink);font:inherit;font-size:.92rem;font-weight:500;
+ text-align:left;cursor:pointer;transition:background-color .14s ease
+}
+.mr-sign-in-taal-optie.is-active{
+ background:color-mix(in srgb,var(--mr-login-ink) 5.5%,var(--mr-login-card));font-weight:600
+}
+.mr-sign-in-taal-optie:hover,.mr-sign-in-taal-optie:focus-visible{
+ background:color-mix(in srgb,var(--mr-login-ink) 8.5%,var(--mr-login-card));outline-offset:-2px
+}
+.mr-sign-in-taal-optie .taal-vlag.taal-vlag{
+ width:22px;height:15px;min-width:22px;max-width:22px;border-radius:3px;object-fit:cover;vertical-align:middle
+}
+.mr-sign-in-taal-naam{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mr-sign-in-taal-check{width:16px;height:16px;stroke-width:2.1;color:var(--mr-login-ink);justify-self:end}
+.mr-sign-in-taal-check-leeg{width:16px;height:16px}
+.mr-sign-in-taal-scheiding{display:block;height:1px;margin:3px 6px;background:color-mix(in srgb,var(--mr-login-border) 65%,transparent)}
 
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']:not([data-account-menu-v3]) .canonical-account-panel{
  right:0;top:50px;width:min(370px,calc(100vw - 28px));max-height:min(650px,calc(100dvh - 90px));
@@ -519,13 +592,21 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
  .canonical-signed-out.mr-sign-in .mr-sign-in-main-button{min-height:54px}
  .canonical-signed-out.mr-sign-in .tga-aanmeld-knop{min-height:54px}
  .canonical-signed-out.mr-sign-in .mr-sign-in-opties .tga-aanmeld-knop{min-height:60px}
- /* Ronde avatar- en themaknop behouden 38×38 px zichtbaar met een 44×44 px tikvlak. */
+ /* Gelijke hoogte 38 px voor taalpil (vlag + korte naam) en ronde knoppen voor thema en profiel (38×38 px), tikvlak 44 px. */
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'],
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls{gap:8px}
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal{
+  height:38px;min-height:38px;max-height:38px
+ }
  .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] button.canonical-avatar-trigger,
- .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button:not(.mr-sign-in-taal){
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-thema{
   width:38px;height:38px;min-width:38px;min-height:38px
  }
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-taal::after{
+  content:'';position:absolute;inset:-3px;border-radius:999px
+ }
  .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] button.canonical-avatar-trigger::after,
- .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button:not(.mr-sign-in-taal)::after{
+ .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls button.mr-sign-in-thema::after{
   content:'';position:absolute;inset:-3px;border-radius:50%
  }
  .canonical-signed-out.mr-sign-in .mail-achtergrond-bediening{
@@ -543,7 +624,8 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
  .mr-sign-in-logo{width:30px;height:30px}
  .canonical-signed-out.mr-sign-in .mr-sign-in-main-button .mr-sign-in-arrow{width:24px;height:24px;flex-basis:24px}
  .canonical-signed-out.mr-sign-in .tga-aanmeld-knop{grid-template-columns:30px minmax(0,1fr) 24px;gap:8px;padding:10px;font-size:.92rem}
- .canonical-signed-out.mr-sign-in .tga-aanmeld-logo{width:30px;height:30px}
+ .canonical-signed-out.mr-sign-in .tga-aanmeld-logo{width:30px;height:30px;flex:0 0 30px}
+ .canonical-signed-out.mr-sign-in .tga-aanmeld-logo :is(.merk,.tga-logo){max-width:30px;max-height:30px}
  .canonical-signed-out.mr-sign-in .tga-aanmeld-eind{width:24px;height:24px;font-size:1.1rem}
  .mr-sign-in-pauze,.canonical-signed-out.mr-sign-in .tga-let{padding:10px 12px;font-size:.79rem}
 }

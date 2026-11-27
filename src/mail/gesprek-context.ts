@@ -178,19 +178,50 @@ export type TijdlijnItem = {
   soort: 'bericht' | 'verwant' | 'gebeurtenis'; id: string; threadId?: string; wanneer: number; titel: string; van: string;
   hier: boolean; toekomst: boolean; versies: number[];
 };
+
+const WELKOM_ONDERWERP_RE = /\b(?:welcome\s+to|welkom\s+bij|bienvenue|willkommen|ласкаво\s+просимо|вітаємо\s+у)\b/iu;
+
+/** Відновлює латинське привітання «Hi <Ім’я>» в іншомовних витягах, не зачіпаючи українські речення зі словом «Ні ». */
+export function herstelAanhefUittreksel(tekst: string): string {
+  const kort = String(tekst || '').replace(/\s+/g, ' ').trim();
+  if (!kort.startsWith('Ні ')) return kort;
+  const m = /^Ні\s+([\p{Lu}][\p{L}'’-]{0,40}(?:\s+[\p{Lu}][\p{L}'’-]{0,40}){0,2})([,!.:;—-]?\s+[\s\S]+)$/u.exec(kort);
+  if (!m) return kort;
+  const rest = m[2];
+  const lat = (rest.match(/\p{Script=Latin}/gu) || []).length;
+  const cyr = (rest.match(/\p{Script=Cyrillic}/gu) || []).length;
+  if (lat >= 4 && lat > cyr * 2) return `Hi ${m[1]}${rest}`;
+  return kort;
+}
+
 /** Tijdlijn van het gesprek: verwante brieven (stippellijn), de brieven zelf (in de kleur van de afzender, «ви тут» bij de open
  *  brief) en afspraken uit .ics-bijlagen (toekomst gemarkeerd). Oudste boven. */
 export function tijdlijn(o: { thread: CtxBericht[]; openId: string; verwant?: VerwantBericht[]; gebeurtenissen?: Gebeurtenis[]; groepen?: VersieGroep[]; nu: number }): TijdlijnItem[] {
   const versiesPer = new Map<string, number[]>();
   for (const g of o.groepen || []) for (const it of g.items) { const l = versiesPer.get(it.berichtId) || []; if (!l.includes(it.nummer)) l.push(it.nummer); versiesPer.set(it.berichtId, l.sort((a, b) => a - b)); }
-  const items: TijdlijnItem[] = [];
-  for (const v of o.verwant || []) items.push({ soort: 'verwant', id: v.id, threadId: v.threadId, wanneer: v.receivedAt, titel: v.subject.replace(ONDERWERP_WEG, '') || v.subject, van: v.from, hier: false, toekomst: v.receivedAt > o.nu, versies: [] });
-  for (const b of o.thread) {
-    const kort = String(b.snippet || '').replace(/\s+/g, ' ').trim();
-    items.push({ soort: 'bericht', id: b.id, threadId: b.threadId, wanneer: b.receivedAt, titel: kort ? (kort.length > 80 ? `${kort.slice(0, 79)}…` : kort) : b.subject, van: b.from, hier: b.id === o.openId, toekomst: false, versies: versiesPer.get(b.id) || [] });
+  type InternItem = TijdlijnItem & { onderwerp: string };
+  const items: InternItem[] = [];
+  for (const v of o.verwant || []) {
+    const schoonOnderwerp = herstelAanhefUittreksel(v.subject.replace(ONDERWERP_WEG, '') || v.subject);
+    items.push({ soort: 'verwant', id: v.id, threadId: v.threadId, wanneer: v.receivedAt, titel: schoonOnderwerp, van: v.from, hier: false, toekomst: v.receivedAt > o.nu, versies: [], onderwerp: v.subject || '' });
   }
-  for (const g of o.gebeurtenissen || []) if (g.start > 0) items.push({ soort: 'gebeurtenis', id: `${g.berichtId}:${g.providerAttachmentId}:${g.start}`, wanneer: g.start, titel: g.titel, van: '', hier: false, toekomst: g.start > o.nu, versies: [] });
-  return items.sort((a, b) => a.wanneer - b.wanneer || (a.soort === 'gebeurtenis' ? 1 : 0) - (b.soort === 'gebeurtenis' ? 1 : 0));
+  for (const b of o.thread) {
+    const kort = herstelAanhefUittreksel(b.snippet || '');
+    items.push({ soort: 'bericht', id: b.id, threadId: b.threadId, wanneer: b.receivedAt, titel: kort ? (kort.length > 80 ? `${kort.slice(0, 79)}…` : kort) : b.subject, van: b.from, hier: b.id === o.openId, toekomst: false, versies: versiesPer.get(b.id) || [], onderwerp: b.subject || '' });
+  }
+  for (const g of o.gebeurtenissen || []) if (g.start > 0) items.push({ soort: 'gebeurtenis', id: `${g.berichtId}:${g.providerAttachmentId}:${g.start}`, wanneer: g.start, titel: g.titel, van: '', hier: false, toekomst: g.start > o.nu, versies: [], onderwerp: '' });
+  items.sort((a, b) => {
+    if (a.soort !== 'gebeurtenis' && b.soort !== 'gebeurtenis' && a.wanneer > 0 && b.wanneer > 0 && Math.abs(a.wanneer - b.wanneer) <= 5 * 60_000) {
+      const afzA = adresVan(a.van), afzB = adresVan(b.van);
+      if (afzA && afzA === afzB) {
+        const aWelkom = WELKOM_ONDERWERP_RE.test(a.onderwerp);
+        const bWelkom = WELKOM_ONDERWERP_RE.test(b.onderwerp);
+        if (aWelkom !== bWelkom) return aWelkom ? -1 : 1;
+      }
+    }
+    return a.wanneer - b.wanneer || (a.soort === 'gebeurtenis' ? 1 : 0) - (b.soort === 'gebeurtenis' ? 1 : 0);
+  });
+  return items.map(({ onderwerp: _o, ...rest }) => rest);
 }
 
 /** Verschil (ms) tussen de kloktijd in zone `tz` en UTC op dat moment, of null als de zone onbekend is (bv. een Windows-naam). */

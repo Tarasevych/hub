@@ -20,7 +20,7 @@ export function BijlageV2Kop({ oud, grootteBytes, ...p }: BijlageV2KopProps) {
   const [modusKeuze] = useBijlageWeergaveModus();
   const aan = v2Vlag && modusKeuze !== 'klassiek';
   if (!aan) return <>{oud}</>;
-  return <BijlageWerkbalk {...p} grootte={formatMailAttachmentSize(Number(grootteBytes || 0))} />;
+  return <BijlageWerkbalk {...p} grootte={formatMailAttachmentSize(Number(grootteBytes || 0), p.lang)} />;
 }
 
 export function BijlageV2Omhulsel({ children }: { children: ReactNode }) {

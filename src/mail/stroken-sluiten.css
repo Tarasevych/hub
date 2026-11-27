@@ -237,6 +237,21 @@ html body .lz-strook-regels > li > span {
     transform: none;
   }
 
+  html body .vertaal-strook.vertaal-strook:has(> .mail-strook-sluit) {
+    padding-right: 10px;
+  }
+
+  html body .vertaal-strook.vertaal-strook:has(> .mail-strook-sluit) > .vertaal-strook-talen {
+    flex: 1 1 100%;
+    padding-right: 38px;
+  }
+
+  html body .vertaal-strook.vertaal-strook > .vertaal-strook-keuze {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+
   /* de keuzeregel na ✕: zijn eigen ✕ in de hoek, niet op een eigen regel */
   html body .mail-strook-nazorg {
     position: relative;

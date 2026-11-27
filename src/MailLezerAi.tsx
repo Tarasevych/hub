@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Copy, CornerUpLeft, Gauge, LoaderCircle, PenLine, Sparkles, TextQuote, WandSparkles, X } from 'lucide-react';
+import { ChevronDown, Copy, CornerUpLeft, Gauge, LoaderCircle, PenLine, Sparkles, TextQuote, WandSparkles, X } from 'lucide-react';
 import { aiReply, aiSummarize, composeErrorText, type Context, type Lang } from './mail-opstel-api';
 import './mail-lezer-ai.css';
 
@@ -62,7 +62,7 @@ export default function MailReaderAi({ lang, context, messages, onUseReply, vorm
   const empty = !messages.some((m) => m.plainText.trim());
   const uitleg = t('Помічник ШІ для цього листа: підсумок розмови і чернетка відповіді. Нічого не надсилається.', 'AI-hulp bij dit bericht: samenvatting van het gesprek en een antwoordconcept. Er wordt niets verzonden.');
 
-  return <section className={vorm === 'antwoord' ? 'mra mra-antwoord' : 'mra'} aria-label={t('ШІ-помічник для листа', 'AI-hulp bij het bericht')}>
+  return <section className={vorm === 'antwoord' ? 'mra mra-antwoord' : 'mra'} data-open={open ? 'ja' : 'nee'} aria-label={t('ШІ-помічник для листа', 'AI-hulp bij het bericht')}>
     <div className="mra-bar" role="toolbar" aria-label={t('Дії ШІ для листа', 'AI-acties voor het bericht')}>
       <button type="button" className="mail-reader-action-button mra-toggle" aria-expanded={open} aria-pressed={open} title={uitleg} data-tooltip={uitleg} onClick={() => setOpen((v) => !v)}>
         <Sparkles aria-hidden="true" /><span>{t('ШІ', 'AI')}</span>
@@ -71,11 +71,12 @@ export default function MailReaderAi({ lang, context, messages, onUseReply, vorm
         <button type="button" className="mail-reader-action-button" disabled={!!busy || empty} title={t('Короткий підсумок цієї розмови', 'Korte samenvatting van dit gesprek')} onClick={() => void run('summary')}>
           {busy === 'summary' ? <LoaderCircle className="mra-spin" aria-hidden="true" /> : <TextQuote aria-hidden="true" />}<span>{t('Підсумок', 'Samenvatting')}</span>
         </button>
-        <button type="button" className="mail-reader-action-button" disabled={!!busy || empty} title={t('Чернетка відповіді — її можна лише вставити в поле відповіді', 'Antwoordconcept — het kan alleen in het antwoordveld worden geplaatst')} onClick={() => void run('reply')}>
-          {busy === 'reply' ? <LoaderCircle className="mra-spin" aria-hidden="true" /> : <CornerUpLeft aria-hidden="true" />}<span>{t('Чернетка відповіді', 'Antwoordconcept')}</span>
+        <button type="button" className="mail-reader-action-button" disabled={!!busy || empty} aria-label={t('Чернетка відповіді', 'Antwoordconcept')} title={t('Чернетка відповіді — її можна лише вставити в поле відповіді', 'Antwoordconcept — het kan alleen in het antwoordveld worden geplaatst')} onClick={() => void run('reply')}>
+          {busy === 'reply' ? <LoaderCircle className="mra-spin" aria-hidden="true" /> : <CornerUpLeft aria-hidden="true" />}<span>{t('Чернетка', 'Concept')}</span>
         </button>
         <label className="mra-veld"><Gauge aria-hidden="true" /><span className="mra-sr">{t('Тон відповіді', 'Toon van het antwoord')}</span>
           <select value={tone} onChange={(e) => setTone(e.target.value)} aria-label={t('Тон відповіді', 'Toon van het antwoord')}>{TONES.map(([id, uk, nl]) => <option key={id} value={id}>{t(uk, nl)}</option>)}</select>
+          <ChevronDown className="mra-veld-pijl" aria-hidden="true" />
         </label>
         <label className="mra-veld mra-veld-breed"><PenLine aria-hidden="true" /><span className="mra-sr">{t('Побажання до відповіді', 'Wens voor het antwoord')}</span>
           <input value={instruction} onChange={(e) => setInstruction(e.target.value)} maxLength={500} placeholder={t('Що має бути у відповіді? (необов’язково)', 'Wat moet in het antwoord staan? (optioneel)')} aria-label={t('Побажання до відповіді', 'Wens voor het antwoord')} />

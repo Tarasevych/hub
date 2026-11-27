@@ -425,6 +425,18 @@
   {
    "sleutel": "src/toestemming/toestemming.css :: .mr-toestemming",
    "reden": "SITE-001: toestemmingsband voor analyse onderaan het scherm, alleen tot de keuze is gemaakt. Geen zwevende knop maar een balk met twee gelijkwaardige keuzes en een koppeling naar /privacy; verdwijnt na de keuze."
+  },
+  {
+   "sleutel": "src/google-terugkeer-kaart.css :: .mr-google-terug-sluier",
+   "reden": "HERSTEL-001 (GOOG-1..GOOG-4): затемнена завіса діалогового вікна під нижнім аркушем / вікном пояснення «Чому так сталося» за натисканням кнопки (i) на сторінці повернення входу Google (id.tarasevych.com); закривається натисканням на завісу, кнопкою закриття або клавішею Escape; вікно діалогу, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/telegram-aanmelden/telegram.css :: .tg2-info-sluier",
+   "reden": "HERSTEL-001 (Етап 2, K2-1): затемнена завіса діалогового вікна під нижнім аркушем / вікном «Як підтвердити вхід» за натисканням кнопки (i) на картці підтвердження входу через Telegram; закривається натисканням на завісу, кнопкою закриття або клавішею Escape; вікно діалогу, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-compact-sluier",
+   "reden": "HERSTEL-001 (Етап 4, MELD-2): м’яка напівпрозора завіса затемнення фону поза компактною мобільною панеллю сповіщень на екранах до 768 px; дотик по завісі або клавіша Escape закриває компактну панель; тло діалогового вікна, не плавальна кнопка."
   }
  ],
  "kopReserves": [

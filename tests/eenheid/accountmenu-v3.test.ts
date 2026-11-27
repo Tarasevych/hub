@@ -212,7 +212,10 @@ export async function main(): Promise<number> {
         htmlUk.includes('Повторний вхід через Google') &&
         htmlUk.includes('Прибрати запис: pavlo@tarasevych.com') &&
         htmlUk.includes('Увійти в інший обліковий запис') &&
+        htmlUk.includes('am3-achtergrond-btn') &&
         htmlUk.includes('am3-palette-btn') &&
+        htmlUk.indexOf('theme-switch') < htmlUk.indexOf('am3-achtergrond-btn') &&
+        htmlUk.indexOf('am3-achtergrond-btn') < htmlUk.indexOf('am3-palette-btn') &&
         htmlUk.includes('Політика конфіденційності') &&
         !htmlUk.includes('Вийти з поточного') &&
         !htmlUk.includes('data-ruimtes-menu="1"'),

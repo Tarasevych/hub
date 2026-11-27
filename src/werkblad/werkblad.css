@@ -5,7 +5,7 @@
    Achtergronden: neutrale verlopen uit de tokens (geen foto's van anderen); 'eigen' = afbeelding van de gebruiker (--wb-eigen). */
 
 .werkblad{--wb-rij:96px;--wb-kier:12px;--wb-glas:color-mix(in srgb,var(--panel) 86%,transparent);--wb-glas-rand:color-mix(in srgb,var(--line) 70%,transparent);
-  position:relative;display:grid;gap:var(--ruimte-3);margin:calc(-1 * var(--ruimte-3)) calc(-1 * var(--ruimte-3)) var(--ruimte-4);padding:var(--ruimte-4);border-radius:var(--straal-xl);min-height:60vh;isolation:isolate;overflow:hidden;
+  position:relative;display:grid;gap:var(--ruimte-3);margin:calc(-1 * var(--ruimte-3)) calc(-1 * var(--ruimte-3)) var(--ruimte-4);padding:var(--ruimte-4);border-radius:var(--straal-xl);min-height:0;isolation:isolate;overflow:hidden;
   /* zelfde lettertype als de schil (src/canoniek-omlijsting.css); de koppen van index.css (Georgia) gelden hier niet */
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--text)}
 .werkblad :is(h2,h3,h4){font-family:inherit;letter-spacing:-.01em}
@@ -375,6 +375,59 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 
 /* Werkblad v3 (vrij canvas, vlag werkblad-v3) — integratie. Geen position:fixed (plaatsing-controle). */
 .wb3-houder{position:relative;width:100%;min-height:12rem}
+.werkblad.wb3[data-wb3-leeg='1']{margin:0 0 var(--ruimte-3);padding:0;gap:var(--ruimte-2);overflow:visible}
+.werkblad.wb3[data-wb3-leeg='1'] .wb-balk{flex-wrap:nowrap;justify-content:space-between;min-height:36px}
+.werkblad.wb3[data-wb3-leeg='1'] .wb-balk-acties{width:auto;margin-left:auto}
+.werkblad.wb3[data-wb3-leeg='1'] .wb3-houder{min-height:0}
+.wb3-leeg-kop-label{font-size:0.78rem;font-weight:650;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted)}
+.wb3-leeg-kaart.wb3-leeg-eiland{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:center;gap:18px;padding:20px 22px;border:1px solid color-mix(in srgb,var(--text) 9%,var(--wb-glas-rand));border-radius:36px 50px 38px 30px / 28px 34px 28px 32px;background:radial-gradient(ellipse 65% 80% at 88% 24%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 70%),color-mix(in srgb,var(--accent) 11%,var(--panel));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--panel) 74%,transparent),0 12px 30px color-mix(in srgb,var(--text) 7%,transparent)}
+.wb3-leeg-hoofd{min-width:0;display:grid;justify-items:start;gap:8px}
+.wb3-leeg-koprij{display:flex;align-items:center;gap:10px;width:100%}
+.wb3-leeg-icoon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:46% 54% 48% 52% / 52% 46% 54% 48%;background:color-mix(in srgb,var(--panel) 78%,transparent);color:color-mix(in srgb,var(--accent) 48%,var(--text))}
+.wb3-leeg-icoon svg{width:17px;height:17px}
+.wb3-leeg-koprij strong{font-size:1.02rem;font-weight:700;letter-spacing:-0.018em;line-height:1.2;color:var(--text)}
+.wb3-leeg-streep{flex:0 0 28px;height:1px;background:color-mix(in srgb,var(--text) 24%,transparent)}
+.wb3-leeg-hoofd p{margin:0;max-width:34ch;color:var(--muted);font-size:0.82rem;line-height:1.42}
+.wb3-leeg-actierij{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:4px}
+/* Кнопка-пелюстка (два великі та два виразні протилежні радіуси) */
+.werkblad.wb3 .wb3-leeg-kaart .knop-primair.wb3-leeg-knop{position:relative;flex:none;padding:0 18px;border-radius:26px 2px 26px 2px / 24px 2px 24px 2px;white-space:nowrap;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 44%,var(--text)),color-mix(in srgb,var(--accent) 62%,var(--text)));border:1px solid color-mix(in srgb,var(--panel) 28%,transparent);color:var(--text-on-accent);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--panel) 32%,transparent),0 8px 18px color-mix(in srgb,var(--text) 16%,transparent);transition:transform .18s ease,filter .18s ease}
+.werkblad.wb3 .wb3-leeg-kaart .knop-primair.wb3-leeg-knop:hover{transform:translateY(-1px);filter:brightness(1.06)}
+/* Суцільна капсула швидких контекстних дій із тонкими роздільниками */
+.wb3-snel-kapsel{display:inline-flex;align-items:center;padding:3px;border-radius:999px;border:1px solid color-mix(in srgb,var(--panel) 72%,var(--line));background:color-mix(in srgb,var(--panel) 84%,var(--surface));box-shadow:inset 0 1px 0 color-mix(in srgb,var(--panel) 78%,transparent),0 6px 16px color-mix(in srgb,var(--text) 6%,transparent)}
+.wb3-snel-kapsel button{position:relative;display:inline-grid;place-items:center;width:34px;min-width:34px;height:32px;min-height:32px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--text);cursor:pointer;transition:background-color .16s ease,color .16s ease}
+.wb3-snel-kapsel button+button::before{content:'';position:absolute;left:0;top:7px;bottom:7px;width:1px;background:color-mix(in srgb,var(--text) 14%,transparent);pointer-events:none}
+.wb3-snel-kapsel button:hover,.wb3-snel-kapsel button:focus-visible{background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--accent)}
+.wb3-snel-kapsel button svg{width:15px;height:15px}
+.wb3-leeg-modules-vlak{position:relative;min-width:0;padding:4px 0}
+/* Спільна хвиля-перетікання позаду трьох модулів */
+.wb3-vloei-golf{position:absolute;inset:-8px -6px;width:calc(100% + 12px);height:calc(100% + 16px);pointer-events:none;z-index:0}
+.wb3-vloei-golf path{fill:color-mix(in srgb,var(--accent) 22%,transparent)}
+.wb3-leeg-modules{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:center}
+.wb3-mini-module{display:flex;align-items:center;gap:10px;min-width:0;padding:10px 12px;border:1px solid color-mix(in srgb,var(--panel) 76%,var(--line));background:color-mix(in srgb,var(--panel) 94%,var(--surface));color:var(--text);font:inherit;text-align:left;cursor:pointer;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--panel) 84%,transparent),0 8px 18px color-mix(in srgb,var(--text) 7%,transparent);transition:transform .2s ease,border-color .18s ease,box-shadow .18s ease}
+.wb3-mini-module.is-mod-1{border-radius:26px 14px 28px 18px;transform:rotate(-1.6deg)}
+.wb3-mini-module.is-mod-2{border-radius:16px 28px 18px 26px;transform:rotate(1.4deg) translateY(5px)}
+.wb3-mini-module.is-mod-3{grid-column:1 / -1;justify-self:center;width:min(100%,240px);border-radius:28px 16px 24px 18px;transform:rotate(-0.6deg)}
+.wb3-mini-module:hover:not(:disabled){transform:translateY(-2px) rotate(0deg);border-color:color-mix(in srgb,var(--accent) 44%,var(--line));box-shadow:0 12px 24px color-mix(in srgb,var(--text) 11%,transparent)}
+.wb3-mini-module:disabled{cursor:default;opacity:0.9}
+.wb3-mini-icoon{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:62% 18% 62% 18%;background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:color-mix(in srgb,var(--accent) 46%,var(--text))}
+.wb3-mini-icoon svg{width:15px;height:15px}
+.wb3-mini-tekst{min-width:0;display:grid;gap:1px}
+.wb3-mini-tekst b{font-size:0.8rem;font-weight:700;line-height:1.2;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wb3-mini-tekst small{font-size:0.7rem;line-height:1.25;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:760px){
+  .wb3-leeg-kaart.wb3-leeg-eiland{grid-template-columns:minmax(0,1fr);gap:14px;padding:16px 15px;border-radius:26px 32px 28px 22px / 22px 26px 24px 24px}
+  .wb3-leeg-modules{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .wb3-mini-module{padding:8px 10px}
+  .wb3-mini-module.is-mod-2{transform:rotate(1.1deg) translateY(3px)}
+  .wb3-mini-module.is-mod-3{width:100%}
+  .werkblad.wb3 .wb3-leeg-kaart .knop-primair.wb3-leeg-knop{min-height:38px;padding:0 15px;font-size:0.8rem}
+  .wb3-leeg-knop::after{content:'';position:absolute;inset:-4px}
+  .werkblad.wb3 .wb3-snel-kapsel button{width:36px;min-width:36px;height:34px;min-height:34px}
+  .werkblad.wb3 .wb3-snel-kapsel button::after{content:'';position:absolute;inset:-5px -2px}
+}
+@media (prefers-reduced-motion:reduce){
+  .wb3-mini-module,.wb3-mini-module.is-mod-1,.wb3-mini-module.is-mod-2,.wb3-mini-module.is-mod-3,.wb3-leeg-knop{transform:none;transition:none}
+}
 .wb3 .wb3-widget{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
 .wb3 .wb3-widget .wb-tegel-inhoud{flex:1;min-height:0;overflow:auto}
 .wb3-niet{margin:.5rem;font-size:.85rem;opacity:.8}

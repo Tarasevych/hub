@@ -6,13 +6,15 @@
 import { botAanroep, BotFout, type BotMij } from './bot-api';
 import { botSleutel } from './sleutels';
 import { instellingen, instellingenCacheWissen, sql, vlagHoofdschakelaar } from './opslag';
-import { beheerAlarm } from './meldingen';
+import { beheerAlarm, beheerHerstelMelding } from './meldingen';
 import { verlopenWijzigingenAfhandelen } from './wijzigingen';
 
 export type StatusStand = 'werkt' | 'traag' | 'storing' | 'onbekend' | 'niet-ingesteld';
 export type StoringSoort = '' | 'tijdelijk' | 'lang' | 'vast';
+export type StatusMeldingBesluit = 'geen' | 'alarm-lang' | 'alarm-vast' | 'hersteld';
 export const LANG_NA_MS = 10 * 60_000;
 export const TRAAG_MS = 3_000;
+const EXTRA_CONTROLE_TUSSENPOOS_MS = 15_000;
 
 /** Pure beslisregel (getest): nieuwe stand uit de vorige + de laatste controle. */
 export function volgendeStand(vorig: { stand: StatusStand; soort: StoringSoort; sinds: number }, c: { ok: boolean; duurMs: number; fout?: 'tijdelijk' | 'vast' | 'geen-sleutel' }, nu: number): { stand: StatusStand; soort: StoringSoort; sinds: number } {
@@ -24,6 +26,23 @@ export function volgendeStand(vorig: { stand: StatusStand; soort: StoringSoort; 
   if (c.fout === 'vast') return { stand: 'storing', soort: 'vast', sinds: vorig.stand === 'storing' && vorig.soort === 'vast' ? vorig.sinds : nu };
   const sinds = vorig.stand === 'storing' ? vorig.sinds : nu;
   return { stand: 'storing', soort: nu - sinds >= LANG_NA_MS ? 'lang' : 'tijdelijk', sinds };
+}
+
+/** Zuivere beslisregel voor beheermeldingen: nooit herstelmelding na een stille tijdelijke hik (< 10 min), alleen na lang of vast. */
+export function statusMeldingBesluit(
+  vorig: { stand: StatusStand; soort: StoringSoort; sinds: number },
+  volgend: { stand: StatusStand; soort: StoringSoort; sinds: number },
+): StatusMeldingBesluit {
+  const wasStoring = vorig.stand === 'storing';
+  const isStoring = volgend.stand === 'storing';
+  if (isStoring && (!wasStoring || vorig.soort !== volgend.soort) && (volgend.soort === 'lang' || volgend.soort === 'vast')) {
+    return volgend.soort === 'vast' ? 'alarm-vast' : 'alarm-lang';
+  }
+  const wasGemeldeStoring = wasStoring && (vorig.soort === 'lang' || vorig.soort === 'vast');
+  if (wasGemeldeStoring && !isStoring && volgend.stand !== 'niet-ingesteld') {
+    return 'hersteld';
+  }
+  return 'geen';
 }
 
 async function huidig(methode = 'telegram'): Promise<{ stand: StatusStand; soort: StoringSoort; sinds: number }> {
@@ -39,24 +58,31 @@ async function vastleggen(c: { ok: boolean; duurMs: number; fout?: 'tijdelijk' |
     ON CONFLICT (methode) DO UPDATE SET stand = EXCLUDED.stand, soort = EXCLUDED.soort, oorzaak = EXCLUDED.oorzaak, sinds = EXCLUDED.sinds, laatste_controle = now(),
       reeks = (SELECT COALESCE(jsonb_agg(x), '[]'::jsonb) FROM (SELECT x FROM jsonb_array_elements(app.tg_status.reeks) x ORDER BY (x->>'t')::bigint DESC LIMIT 1439) s) || EXCLUDED.reeks`,
     [v.stand, v.soort, oorzaak.slice(0, 120), new Date(v.sinds), JSON.stringify([{ t: nu, ok: c.ok, ms: Math.round(c.duurMs) }])]);
-  const wasStoring = vorig.stand === 'storing', isStoring = v.stand === 'storing';
-  if (isStoring && (!wasStoring || vorig.soort !== v.soort) && v.soort !== 'tijdelijk') {
+  const besluit = statusMeldingBesluit(vorig, v);
+  if (besluit === 'alarm-vast' || besluit === 'alarm-lang') {
     await beheerAlarm(`status-${v.soort}`, { oorzaak }, v.soort === 'vast'
       ? { uk: `Вхід через Telegram не працює: ${oorzaak}. Повторні спроби не допоможуть — перевірте ключ бота в «Способи входу» → Telegram.`, nl: `Aanmelden met Telegram werkt niet: ${oorzaak}. Opnieuw proberen helpt niet — controleer de botsleutel in «Aanmeldmethoden» → Telegram.` }
       : { uk: `Вхід через Telegram не працює вже понад 10 хвилин (${oorzaak}). Користувачам показано інші способи входу.`, nl: `Aanmelden met Telegram werkt al meer dan 10 minuten niet (${oorzaak}). Gebruikers zien andere aanmeldmethoden.` });
-  }
-  if (wasStoring && !isStoring && v.stand !== 'niet-ingesteld') {
-    await beheerAlarm('status-hersteld', {}, { uk: 'Вхід через Telegram знову працює.', nl: 'Aanmelden met Telegram werkt weer.' });
+  } else if (besluit === 'hersteld') {
+    await beheerHerstelMelding(
+      { vorigeSoort: vorig.soort, duurMs: Math.max(0, nu - vorig.sinds) },
+      { uk: 'Вхід через Telegram знову працює.', nl: 'Aanmelden met Telegram werkt weer.' },
+    );
   }
 }
 
 const foutSoort = (e: unknown): 'tijdelijk' | 'vast' => (e instanceof BotFout && e.soort === 'vast' ? 'vast' : 'tijdelijk');
 const oorzaakVan = (e: unknown): string => (e instanceof BotFout ? e.code : 'ONBEKEND');
 
-/** Elke echte uitkomst telt mee (webhook verwerkt, bericht verstuurd). Alleen fouten veranderen de stand meteen. */
-export async function statusMelden(_kanaal: string, ok: boolean, oorzaak = ''): Promise<void> {
-  if (ok) return; // succes laat de minuutcontrole bevestigen (geen schrijfactie per update)
-  await vastleggen({ ok: false, duurMs: 0, fout: 'tijdelijk' }, oorzaak || 'WEBHOOK_FOUT').catch(() => undefined);
+let laatsteExtraControleOp = 0;
+/** Fout in een afzonderlijk kanaal zet niet blindelings de globale dienst op storing, maar vraagt hoogstens een echte getMe-controle aan. */
+export async function statusMelden(_kanaal: string, ok: boolean, _oorzaak = ''): Promise<void> {
+  if (ok) return;
+  const nu = Date.now();
+  if (nu - laatsteExtraControleOp < EXTRA_CONTROLE_TUSSENPOOS_MS) return;
+  laatsteExtraControleOp = nu;
+  if (!(await vlagHoofdschakelaar().catch(() => false))) return;
+  await controleNu().catch(() => undefined);
 }
 
 /** De controle zelf (ook door de knop «Перевірити зараз» in het beheerpaneel). */

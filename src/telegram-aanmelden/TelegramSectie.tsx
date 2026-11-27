@@ -3,7 +3,7 @@
 //   · прив’язування у 3 кроки з поясненням кожного кроку (підтвердження власного номера та ключа доступу обов’язкове);
 //   · картка виявлених змін даних («Було → Стало», «Ні, це не я» діє одразу, «Так, це я» — після відліку та ключа доступу);
 //   · згрупована таблиця підтверджень за 3 категоріями, таємний і тривожний код та журнал останніх входів через Telegram.
-import { ChevronDown, Fingerprint, KeyRound, MapPin } from 'lucide-react';
+import { ChevronDown, Fingerprint, KeyRound, MapPin, ShieldAlert } from 'lucide-react';
 import MethodeMerk from '../merk/MethodeMerk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { leesBewaard } from '../lees-cache';
@@ -81,6 +81,8 @@ type Mijn = {
   /** 0299: aanmelden met Telegram alleen met de plaats van het toestel. */
   /** TELEGRAM-004 (0299): способи входу, для яких обліковий запис вимагає місце пристрою. */
   plaatsEis?: string[];
+  /** HERSTEL-001 (TG-2): дозвіл викликати активний запит на вхід безпосередньо в боті Telegram (типово false). */
+  rechtstreeksBevestigen?: boolean;
   geblokkeerd: Array<{ apparaat: string; op: string; reden?: string }>;
   aanmeldingen: AanmeldingRij[];
   status: { stand: string; soort: string };
@@ -220,7 +222,7 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
       </button>}
     </div>}
 
-    {wizard && <KoppelWizard ctx={ctx} lang={lang} bot={mijn.bot} site={site} aftel={mijn.aftel?.gewoon ?? 10} uitvoeren={uitvoeren} klaar={(ok) => { setWizard(false); if (ok) { setMelding(tr(lang, 'Telegram прив’язано. Ми надіслали підтвердження у чат.', 'Telegram gekoppeld. We stuurden een bevestiging in de chat.')); } void laden(); }} />}
+    {wizard && <KoppelWizard ctx={ctx} lang={lang} bot={mijn.bot} site={site} aftel={mijn.aftel?.gewoon ?? 10} uitvoeren={uitvoeren} klaar={(ok) => { setWizard(false); if (ok) { setMelding(tr(lang, 'Telegram прив’язано. Ми надіслали підтвердження у бесіду.', 'Telegram gekoppeld. We stuurden een bevestiging in de chat.')); } void laden(); }} />}
 
     <GeheimeCode lang={lang} code={mijn.code} telefoons={mijn.koppelingen.map((k) => k.vingerafdruk?.telefoon || k.telefoon || '').join(' ')}
       instellen={(code, alarmCode) => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/instellen', { code, alarmCode }), tr(lang, 'Таємний код збережено.', 'Geheime code opgeslagen.'))}
@@ -229,6 +231,20 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
 
     <PlaatsEis lang={lang} methoden={mijn.plaatsEis || []}
       zetten={(methoden) => doeMet(() => tgPost(ctx, '/api/owner/telegram/plaats-eis', { methoden }), methoden.length ? tr(lang, 'Вимогу місця пристрою збережено.', 'De eis van de plaats van het apparaat is opgeslagen.') : tr(lang, 'Вимогу місця пристрою вимкнено.', 'De eis van de plaats van het apparaat staat uit.'))} />
+
+    <RechtstreeksBevestigen
+      lang={lang}
+      bot={mijn.bot}
+      aan={mijn.rechtstreeksBevestigen === true}
+      zetten={(aan) =>
+        doeMet(
+          () => tgPost(ctx, '/api/owner/telegram/rechtstreeks-bevestigen', { aan }),
+          aan
+            ? tr(lang, 'Пряме підтвердження входу в боті Telegram увімкнено.', 'Rechtstreekse aanmeldbevestiging in de Telegram-bot staat aan.')
+            : tr(lang, 'Пряме підтвердження входу в боті Telegram вимкнено.', 'Rechtstreekse aanmeldbevestiging in de Telegram-bot staat uit.'),
+        )
+      }
+    />
 
     {maketVlagAan && (
       <div className='tga-blok' data-tg-maket-voorkeur=''>
@@ -485,7 +501,7 @@ function KoppelWizard({ ctx, lang, bot, site, aftel, uitvoeren, klaar }: { ctx: 
         <a className='tga-knop tga-knop-telegram' href={verzoek.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={18} /><span>{tr(lang, `Відкрити @${bot} у Telegram`, `@${bot} openen in Telegram`)}</span></a>
       </div>
       <ol className='tga-stappen'>
-        <li>{tr(lang, 'Натисніть «Почати» у чаті з ботом.', 'Tik in de chat met de bot op de knop onderaan om te beginnen.')}</li>
+        <li>{tr(lang, 'Натисніть «Почати» у бесіді з ботом.', 'Tik in de chat met de bot op de knop onderaan om te beginnen.')}</li>
         <li>{tr(lang, 'Натисніть кнопку «📱 Поділитися моїм номером». Ввести номер вручну не можна.', 'Tik op de knop «📱 Mijn nummer delen». Een nummer typen kan niet.')}</li>
         <li>{tr(lang, 'Поверніться сюди — ми покажемо всі отримані дані без приховування.', 'Kom hier terug — we tonen alle ontvangen gegevens zonder iets te verbergen.')}</li>
       </ol>
@@ -538,7 +554,7 @@ function WijzigingKaart({ ctx, lang, w, k, klaar }: { ctx: Ctx; lang: Lang; w: W
       const r = await tgPost<{ status: string; conflict: boolean; opnieuwKoppelen: boolean }>(ctx, '/api/owner/telegram/wijziging/antwoord', { id: w.id, antwoord: a, begrepen });
       setUitkomst(r.conflict ? tr(lang, 'Конфлікт відповідей: в одному місці підтвердили, в іншому — відхилили. Діє «Ні»: прив’язку вимкнено. Якщо це були ви — прив’яжіть знову.', 'Conflict: op de ene plek bevestigd, op de andere geweigerd. «Nee» wint: de koppeling is uitgeschakeld. Was u het wel — koppel opnieuw.')
         : r.opnieuwKoppelen ? tr(lang, 'Потрібне повторне прив’язування (новий номер + ключ доступу).', 'Opnieuw koppelen is nodig (nieuw nummer + toegangssleutel).')
-          : a === 'ja' ? tr(lang, 'Зміну підтверджено — Telegram знову працює.', 'Wijziging bevestigd — Telegram werkt weer.') : tr(lang, 'Прив’язку вимкнено, сесії через цей Telegram завершено.', 'Koppeling uitgeschakeld, sessies via deze Telegram beëindigd.'));
+          : a === 'ja' ? tr(lang, 'Зміну підтверджено — Telegram знову працює.', 'Wijziging bevestigd — Telegram werkt weer.') : tr(lang, 'Прив’язку вимкнено, сеанси через цей Telegram завершено.', 'Koppeling uitgeschakeld, sessies via deze Telegram beëindigd.'));
       window.setTimeout(klaar, 2500);
     } catch (e) { setFout(foutTekst(lang, e)); }
   });
@@ -646,7 +662,7 @@ function Matrix({ lang, rijen, beschikbaar, opslaan }: { ctx: Ctx; lang: Lang; r
   </div>;
 }
 
-// ------------------------------------------------------------------------------------------------ таємний код (згорнутий за замовчуванням)
+// ------------------------------------------------------------------------------------------------ таємний код (типово згорнутий)
 /** TELEGRAM-004 (0299): preventieve bescherming — de gebruiker kiest PER aanmeldmethode of aanmelden alleen lukt als de browser de
  *  plaats van het toestel deelt. Standaard overal UIT; «!» + korte regel op de kaart, de rest onder «Докладніше». Niets wordt
  *  verboden: ook «alle methoden» mag, met een duidelijke waarschuwing over het gevolg. */
@@ -661,30 +677,87 @@ export function PlaatsEis({ lang, methoden, zetten }: { lang: Lang; methoden: st
       <div className='tga-schakel-tekst'>
         <h3><span><span aria-hidden='true'>❗ </span>{tr(lang, 'Вимагати місце пристрою', 'Plaats van het apparaat eisen')}</span>
           <span className={`tga-pil ${aan.size ? 'tga-pil-actief' : ''}`} data-plaats-eis-aantal>{aan.size ? tr(lang, `Увімкнено: ${aan.size} із ${PLAATS_EIS_METHODEN.length}`, `Aan: ${aan.size} van ${PLAATS_EIS_METHODEN.length}`) : tr(lang, 'Вимкнено', 'Uit')}</span></h3>
-        <small>{tr(lang, 'Виберіть способи входу, які працюватимуть лише з дозволом браузера на місце.', 'Kies de aanmeldmethoden die alleen werken met toestemming voor de locatie.')}</small>
+        <small>{tr(lang, 'Виберіть способи входу, які працюватимуть лише з дозволом оглядача на місце.', 'Kies de aanmeldmethoden die alleen werken met toestemming voor de locatie.')}</small>
       </div>
     </div>
     <div className='tga-plaats-methoden' role='group' aria-label={tr(lang, 'Способи входу, що вимагають місце пристрою', 'Aanmeldmethoden die de plaats van het apparaat eisen')}>
       {PLAATS_EIS_METHODEN.map((m) => <label key={m} className='tga-schakel-rij tga-plaats-methode' data-plaats-eis-methode={m}
-        title={tr(lang, `Увімкнено: вхід способом «${PLAATS_EIS_NAAM[m].uk}» у цей обліковий запис відбудеться лише тоді, коли браузер надасть місце пристрою. Без дозволу на місце цей спосіб не спрацює; способи, де перемикач вимкнено, працюють як раніше. Вимкнути можна тут будь-коли.`, `Aan: aanmelden met «${PLAATS_EIS_NAAM[m].nl}» bij dit account lukt alleen als de browser de plaats van het apparaat deelt. Zonder toestemming voor de locatie werkt deze methode niet; methoden waarvan de schakelaar uit staat, werken zoals voorheen. Uitzetten kan hier altijd.`)}>
+        title={tr(lang, `Увімкнено: вхід способом «${PLAATS_EIS_NAAM[m].uk}» у цей обліковий запис відбудеться лише тоді, коли оглядач надасть місце пристрою. Без дозволу на місце цей спосіб не спрацює; способи, де перемикач вимкнено, працюють як раніше. Вимкнути можна тут будь-коли.`, `Aan: aanmelden met «${PLAATS_EIS_NAAM[m].nl}» bij dit account lukt alleen als de browser de plaats van het apparaat deelt. Zonder toestemming voor de locatie werkt deze methode niet; methoden waarvan de schakelaar uit staat, werken zoals voorheen. Uitzetten kan hier altijd.`)}>
         <span className={`tga-plaats-logo ${m === 'passkey' || m === 'password' ? 'is-teken' : 'is-merk'}`} aria-hidden='true'>{m === 'telegram' ? <TelegramLogo maat={24} /> : m === 'passkey' ? <Fingerprint /> : m === 'password' ? <KeyRound /> : <MethodeMerk merk={m} naam={PLAATS_EIS_NAAM[m].uk} />}</span>
         <span className='tga-schakel-tekst'><strong>{PLAATS_EIS_NAAM[m][lang === 'nl' ? 'nl' : 'uk']}</strong></span>
         <input type='checkbox' role='switch' className='tga-schakel-invoer' checked={aan.has(m)} disabled={bezig} onChange={(e) => wissel(m, e.target.checked)} />
       </label>)}
     </div>
-    {alles && <p className='waarschuwing tga-klein' role='alert' data-plaats-eis-alles>{tr(lang, '❗ Вимога діє для всіх способів: увійти можна буде лише з пристрою й браузера, які надають місце.', '❗ De eis geldt voor alle methoden: aanmelden kan alleen nog vanaf een apparaat en browser die de plaats delen.')}</p>}
+    {alles && <p className='waarschuwing tga-klein' role='alert' data-plaats-eis-alles>{tr(lang, '❗ Вимога діє для всіх способів: увійти можна буде лише з пристрою й оглядача, які надають місце.', '❗ De eis geldt voor alle methoden: aanmelden kan alleen nog vanaf een apparaat en browser die de plaats delen.')}</p>}
     <details className='tga-uitleg'>
       <summary>{tr(lang, 'Докладніше: як це працює і як вимкнути', 'Meer: hoe het werkt en hoe u het uitzet')}</summary>
       <ul className='tga-klein'>
-        <li>{tr(lang, 'Під час входу вибраним способом браузер запитає дозвіл на місце. Якщо дозвіл уже є, місце додається само.', 'Bij het aanmelden met een gekozen methode vraagt de browser toestemming voor de locatie. Is die er al, dan gaat de plaats vanzelf mee.')}</li>
+        <li>{tr(lang, 'Під час входу вибраним способом оглядач запитає дозвіл на місце. Якщо дозвіл уже є, місце додається само.', 'Bij het aanmelden met een gekozen methode vraagt de browser toestemming voor de locatie. Is die er al, dan gaat de plaats vanzelf mee.')}</li>
         <li>{tr(lang, 'Відмовили в дозволі або пристрій не може визначити місце — вхід цим способом не відбудеться, а ви отримаєте сповіщення про зупинену спробу. Способи без вимоги працюють як раніше.', 'Weigert u de toestemming of kan het apparaat de plaats niet bepalen, dan lukt aanmelden met die methode niet en krijgt u een melding over de gestopte poging. Methoden zonder eis werken zoals voorheen.')}</li>
         <li>{tr(lang, 'Місце пристрою порівнюється з місцем за IP-адресою. Якщо вони далеко одне від одного, ви побачите попередження: у вікні Telegram — до підтвердження, для інших способів — у центрі сповіщень.', 'De plaats van het apparaat wordt naast de plaats volgens het IP-adres gelegd. Liggen ze ver uit elkaar, dan ziet u een waarschuwing: in het Telegram-venster vóór het bevestigen, bij andere methoden in het meldingencentrum.')}</li>
         <li>{tr(lang, 'Увімкнули для всіх способів і пристрій не дає місце — увійти не вдасться, доки не знайдете пристрій, який його надає. Залишайте хоча б один спосіб без вимоги, якщо не певні.', 'Zette u de eis bij alle methoden aan en geeft het apparaat geen plaats, dan kunt u zich niet aanmelden tot u een apparaat vindt dat dat wel doet. Laat bij twijfel minstens één methode zonder eis.')}</li>
         <li>{tr(lang, 'Передумали — вимкніть перемикач тут. Зміна, як і інші налаштування захисту, потребує підтвердження.', 'Bedacht u zich, zet de schakelaar dan hier uit. Wijzigen vraagt, net als andere beveiligingsinstellingen, een bevestiging.')}</li>
-        <li>{tr(lang, 'Обмеження: місце повідомляє сам браузер, тож це додаткова перешкода для чужого входу, а не доказ особи. Зберігається лише приблизна точка (близько 1 км) у самій спробі входу.', 'Beperking: de browser meldt de plaats zelf, dus dit is een extra drempel voor een vreemde aanmelding en geen bewijs van identiteit. Alleen een punt bij benadering (ongeveer 1 km) wordt bij de aanmeldpoging bewaard.')}</li>
+        <li>{tr(lang, 'Обмеження: місце повідомляє сам оглядач, тож це додаткова перешкода для чужого входу, а не доказ особи. Зберігається лише приблизна точка (близько 1 км) у самій спробі входу.', 'Beperking: de browser meldt de plaats zelf, dus dit is een extra drempel voor een vreemde aanmelding en geen bewijs van identiteit. Alleen een punt bij benadering (ongeveer 1 km) wordt bij de aanmeldpoging bewaard.')}</li>
       </ul>
     </details>
   </div>;
+}
+
+export function RechtstreeksBevestigen({
+  lang,
+  bot,
+  aan,
+  zetten,
+}: {
+  lang: Lang;
+  bot: string;
+  aan: boolean;
+  zetten: (aan: boolean) => Promise<void>;
+}) {
+  const { bezig, doe } = useEenmalig();
+  return (
+    <div className='tga-blok' data-rechtstreeks-bevestigen={aan ? 'aan' : 'uit'}>
+      <div className='tga-plaats-kop'>
+        <span className='tga-plaats-kop-icoon' aria-hidden='true'><ShieldAlert /></span>
+        <div className='tga-schakel-tekst'>
+          <h3>
+            <span>{tr(lang, 'Підтвердження входу безпосередньо в боті Telegram', 'Aanmelding rechtstreeks in de Telegram-bot bevestigen')}</span>
+            <span className={`tga-pil ${aan ? 'tga-pil-actief' : ''}`}>
+              {aan ? tr(lang, 'Увімкнено', 'Aan') : tr(lang, 'Вимкнено (рекомендовано)', 'Uit (aanbevolen)')}
+            </span>
+          </h3>
+          <small>
+            {tr(
+              lang,
+              `Дозволяє викликати активний запит на вхід у бесіді з @${bot} командою /inloggen або кнопкою «Підтвердити вхід на сайті» без обов’язкового переходу за посиланням з оглядача.`,
+              `Maakt het mogelijk een actief aanmeldverzoek in de chat met @${bot} met /inloggen of de knop «Aanmelding op de site bevestigen» op te roepen zonder verplichte link vanuit de browser.`,
+            )}
+          </small>
+        </div>
+      </div>
+      <label className='tga-schakel-rij tga-plaats-methode'>
+        <span className='tga-plaats-logo is-merk' aria-hidden='true'><TelegramLogo maat={24} /></span>
+        <span className='tga-schakel-tekst'>
+          <strong>{tr(lang, 'Дозволити виклик запиту прямо в боті без посилання з сайту', 'Oproepen van verzoek rechtstreeks in de bot zonder sitelink toestaan')}</strong>
+        </span>
+        <input
+          type='checkbox'
+          role='switch'
+          className='tga-schakel-invoer'
+          checked={aan}
+          disabled={bezig}
+          onChange={(e) => void doe(() => zetten(e.target.checked))}
+        />
+      </label>
+      <p className='waarschuwing tga-klein' role='note'>
+        {tr(
+          lang,
+          '⚠️ Захист від шахраїв: типово цю можливість вимкнено. Якщо сторонній співрозмовник по телефону переконує відкрити Telegram і натиснути кнопку підтвердження входу — це спроба віддаленого зламу шахраями. Умикайте лише за власної потреби (наприклад, коли вхід відкрито на іншому комп’ютері); посилання з сайту та офіційне вікно входу залишаються доступними.',
+          '⚠️ Bescherming tegen oplichting: standaard staat deze optie uit. Vraagt iemand u telefonisch om Telegram te openen en op een bevestigingsknop te drukken, dan is dat telefonische oplichting. Zet alleen aan wanneer u dit bewust wilt (bijvoorbeeld bij aanmelden op een andere computer); de sitelink en het officiële aanmeldvenster blijven beschikbaar.',
+        )}
+      </p>
+    </div>
+  );
 }
 
 function GeheimeCode({ lang, code, telefoons, instellen, verwijderen, herstellen }: { lang: Lang; code: Mijn['code']; telefoons: string; instellen: (c: string, a: string) => Promise<void>; verwijderen: () => Promise<void>; herstellen: () => Promise<void> }) {
@@ -717,7 +790,7 @@ function GeheimeCode({ lang, code, telefoons, instellen, verwijderen, herstellen
         {code.ingesteld && <button type='button' className='tga-knop tga-knop-gevaar tga-knop-klein' disabled={bezig} onClick={() => void doe(verwijderen)}>{tr(lang, 'Видалити код', 'Code verwijderen')}</button>}
       </div>}
     </div>
-    <p className='tga-klein'>{tr(lang, 'Додатковий рубіж захисту: навіть маючи доступ до вашого Telegram, ніхто не увійде без коду, який знаєте лише ви. Код вводиться лише на сайті — ніколи в чаті.',
+    <p className='tga-klein'>{tr(lang, 'Додатковий рубіж захисту: навіть маючи доступ до вашого Telegram, ніхто не увійде без коду, який знаєте лише ви. Код вводиться лише на сайті — ніколи в бесіді.',
       'Extra bescherming: ook met toegang tot uw Telegram komt niemand binnen zonder de code die alleen u kent. U vult deze code alleen op de site in — nooit in de chat.')}</p>
     {open && <form className='tga-code-form' onSubmit={(e) => { e.preventDefault(); if (klaar) void doe(async () => { await instellen(c1, alarm); setOpen(false); setC1(''); setC2(''); setAlarm(''); }); }}>
       <label className='tga-veld'>{tr(lang, `Код (${code.minLengte}–${code.maxLengte} символів)`, `Code (${code.minLengte}–${code.maxLengte} tekens)`)}<input type='password' autoComplete='new-password' autoFocus value={c1} maxLength={code.maxLengte} onChange={(e) => setC1(e.target.value)} /></label>

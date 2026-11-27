@@ -16,7 +16,9 @@
 // juiste indeling toont zonder ooit de cache van een ander account te gebruiken (sessionStorage is per tabblad, niet per browser).
 import { useSyncExternalStore } from 'react';
 import { MAX_KOPIEEN, normaliseerRuimtes, normaliseerZijbalk, standaardRuimtes, standaardZijbalk, type Accent, type ItemKopie, type MenuPlaats, type MenuRuimte, type ZijbalkRuimtes, type ZijbalkVoorkeuren } from '../shared/menu-model';
-import { ontleed } from '../shared/menu-indeling';
+import { itemVanSleutel, ontleed } from '../shared/menu-indeling';
+import { serviceTabLabel } from './dienst-tab-labels';
+import { MENU_CATALOG, TECH_NAAM, herkenStandaardMenuNaam, type MenuItemId, type MenuOppervlak } from './menu-voorkeuren';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 
@@ -24,9 +26,68 @@ export const ZIJBALK_SLEUTEL = 'tsv-zijbalk-v2';
 const SLEUTEL = (scope: string) => `${ZIJBALK_SLEUTEL}:${scope || 'anon'}`;
 const SCOPE_HINT = 'tsv-zijbalk-scope';
 
+/** HERSTEL-001: очищує власну назву пункту меню; якщо записано стандартну назву з MENU_CATALOG / вкладок будь-якою з обох мов (uk/nl), повертає undefined, щоб при перемиканні мови завжди показувалася рідна назва. */
+export function schoonZijbalkEigenNaam(sleutelOfId: string, eigenNaam: unknown): string | undefined {
+  if (typeof eigenNaam !== 'string') return undefined;
+  const schoon = eigenNaam.trim().slice(0, 80);
+  if (!schoon) return undefined;
+  const { item } = itemVanSleutel(sleutelOfId);
+  const ontleedItem = ontleed(item);
+  if (ontleedItem?.soort === 'pagina' && ontleedItem.pagina) {
+    if (schoon === serviceTabLabel(ontleedItem.pagina, 'uk') || schoon === serviceTabLabel(ontleedItem.pagina, 'nl')) return undefined;
+    return schoon;
+  }
+  const dienstId = ontleedItem?.dienst || item;
+  if (herkenStandaardMenuNaam(dienstId, schoon)) return undefined;
+  return schoon;
+}
+
+function leesEigenNamenDeel(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const r = raw as Record<string, unknown>;
+  const uit: Record<string, string> = {};
+  if (r.items && typeof r.items === 'object' && !Array.isArray(r.items)) {
+    for (const [id, w] of Object.entries(r.items as Record<string, unknown>)) {
+      if (w && typeof w === 'object' && !Array.isArray(w)) {
+        const naam = schoonZijbalkEigenNaam(id, (w as Record<string, unknown>).eigenNaam);
+        if (naam) uit[id] = naam;
+      }
+    }
+  }
+  if (Array.isArray(r.kopieen)) {
+    for (const k of r.kopieen) {
+      if (k && typeof k === 'object' && !Array.isArray(k)) {
+        const ko = k as Record<string, unknown>;
+        if (typeof ko.id === 'string' && typeof ko.item === 'string') {
+          const sl = `${ko.id}:${ko.item}`;
+          const naam = schoonZijbalkEigenNaam(sl, ko.eigenNaam);
+          if (naam) uit[sl] = naam;
+        }
+      }
+    }
+  }
+  if (r.eigenNamen && typeof r.eigenNamen === 'object' && !Array.isArray(r.eigenNamen)) {
+    for (const [sl, w] of Object.entries(r.eigenNamen as Record<string, unknown>)) {
+      const naam = schoonZijbalkEigenNaam(sl, w);
+      if (naam) uit[sl] = naam;
+    }
+  }
+  return uit;
+}
+
+function leesEigenNamenRuimtes(raw: unknown): Record<MenuRuimte, Record<string, string>> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { gebruiker: {}, technisch: {} };
+  const r = raw as Record<string, unknown>;
+  if (r.gebruiker !== undefined || r.technisch !== undefined) {
+    return { gebruiker: leesEigenNamenDeel(r.gebruiker), technisch: leesEigenNamenDeel(r.technisch) };
+  }
+  return { gebruiker: leesEigenNamenDeel(raw), technisch: {} };
+}
+
 type Server = { service: string; scope?: string } | null;
 let scope = leesScopeHint();
 let ruimte: MenuRuimte = 'gebruiker';
+let eigenNamen: Record<MenuRuimte, Record<string, string>> = { gebruiker: {}, technisch: {} };
 let alles: ZijbalkRuimtes = lees(scope);
 let lokaalGezet = heeftLokaal(scope);
 let server: Server = null;
@@ -36,7 +97,7 @@ const luisteraars = new Set<() => void>();
 function leesScopeHint() { try { return typeof sessionStorage !== 'undefined' ? String(sessionStorage.getItem(SCOPE_HINT) || 'anon') : 'anon'; } catch { return 'anon'; } }
 function schrijfScopeHint(s: string) { try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(SCOPE_HINT, s); } catch { /* privémodus */ } }
 function heeftLokaal(s: string) { try { return typeof localStorage !== 'undefined' && localStorage.getItem(SLEUTEL(s)) !== null; } catch { return false; } }
-function lees(s: string): ZijbalkRuimtes { try { const r = typeof localStorage !== 'undefined' ? localStorage.getItem(SLEUTEL(s)) : null; return r ? normaliseerRuimtes(JSON.parse(r)) : standaardRuimtes(); } catch { return standaardRuimtes(); } }
+function lees(s: string): ZijbalkRuimtes { try { const r = typeof localStorage !== 'undefined' ? localStorage.getItem(SLEUTEL(s)) : null; if (!r) { eigenNamen = { gebruiker: {}, technisch: {} }; return standaardRuimtes(); } const parsed: unknown = JSON.parse(r); eigenNamen = leesEigenNamenRuimtes(parsed); return normaliseerRuimtes(parsed); } catch { eigenNamen = { gebruiker: {}, technisch: {} }; return standaardRuimtes(); } }
 function schrijfLokaal() { try { localStorage.setItem(SLEUTEL(scope), JSON.stringify(alles)); lokaalGezet = true; } catch { /* privémodus */ } }
 function melden() { for (const f of luisteraars) f(); }
 // De oude sleutel zonder account is van NIEMAND: weg, zodat hij nooit meer bij een ander account terechtkomt (de server heeft de echte stand).
@@ -90,10 +151,13 @@ export function zijbalkVanServer(raw: unknown, ctx: Server) {
   if (!ctx) return;
   if (ruimte === 'technisch') void technischOphalen();
   if (raw === undefined || raw === null) return;
+  const namen = leesEigenNamenRuimtes(raw).gebruiker, namenVeranderd = JSON.stringify(namen) !== JSON.stringify(eigenNamen.gebruiker);
+  if (namenVeranderd) eigenNamen = { ...eigenNamen, gebruiker: namen };
   const v = normaliseerRuimtes(raw).gebruiker, s = JSON.stringify(v);
-  if (s === laatsteServer.gebruiker) return;
+  if (s === laatsteServer.gebruiker) { if (namenVeranderd) melden(); return; }
   laatsteServer.gebruiker = s;
   if (s !== JSON.stringify(alles.gebruiker)) { alles = { ...alles, gebruiker: v }; schrijfLokaal(); melden(); }
+  else if (namenVeranderd) melden();
 }
 
 /** De technische indeling staat NIET in de bootstrap: die vraagt een lopend technisch profiel in dit tabblad. */
@@ -106,7 +170,9 @@ async function technischOphalen(): Promise<void> {
     const r = await api.post('/api/owner/ui/sidebar', { service: ctx.service, tabContext: ecosystemTabContext(), sourceOrigin: location.origin, ruimte: 'technisch' });
     if (scope !== s) return; // ander account tijdens het wachten: dit antwoord is niet van hem
     if (wachtenden.has(`${s}|technisch`)) return; // er wacht al een eigen wijziging: die mag niet door dit antwoord worden overschreven
-    const v = normaliseerZijbalk((r.data as { sidebar?: unknown }).sidebar), j = JSON.stringify(v);
+    const rawTech = (r.data as { sidebar?: unknown }).sidebar;
+    eigenNamen = { ...eigenNamen, technisch: leesEigenNamenDeel(rawTech) };
+    const v = normaliseerZijbalk(rawTech), j = JSON.stringify(v);
     laatsteServer.technisch = j;
     if (j !== JSON.stringify(alles.technisch)) { alles = { ...alles, technisch: v }; schrijfLokaal(); melden(); }
   } catch { /* geen technisch profiel of offline: de lokale stand blijft gelden */ }
@@ -166,6 +232,38 @@ export function zijbalkKopieInRuimte(
   return 'toegevoegd';
 }
 
+/** Отримати справжнє власне перейменування пункту (або undefined, якщо це стандартна назва MENU_CATALOG). */
+export function zijbalkEigenNaam(sleutelOfId: string, doel: MenuRuimte = ruimte): string | undefined {
+  const opgeslagen = eigenNamen[doel][sleutelOfId] ?? eigenNamen[doel][itemVanSleutel(sleutelOfId).item];
+  return schoonZijbalkEigenNaam(sleutelOfId, opgeslagen);
+}
+
+/** Задати або скинути власне перейменування пункту меню (стандартні назви MENU_CATALOG автоматично скидаються). */
+export function zetZijbalkEigenNaam(sleutelOfId: string, naam: string | null | undefined, doel: MenuRuimte = ruimte): boolean {
+  const schoon = schoonZijbalkEigenNaam(sleutelOfId, naam);
+  const huidig = eigenNamen[doel][sleutelOfId];
+  if (schoon === huidig) return false;
+  const volgende = { ...eigenNamen[doel] };
+  if (schoon) volgende[sleutelOfId] = schoon;
+  else delete volgende[sleutelOfId];
+  eigenNamen = { ...eigenNamen, [doel]: volgende };
+  if (doel === ruimte) melden();
+  return true;
+}
+
+/** Рідна назва пункту бічної панелі для поточної мови з повагою до справжніх власних перейменувань користувача. */
+export function zijbalkItemNaam(sleutelOfId: string, lang: 'uk' | 'nl', eigenNaam?: string | null, oppervlak: MenuOppervlak = 'account'): string {
+  const doel: MenuRuimte = oppervlak === 'technisch' ? 'technisch' : ruimte;
+  const gekozen = eigenNaam !== undefined ? schoonZijbalkEigenNaam(sleutelOfId, eigenNaam) : zijbalkEigenNaam(sleutelOfId, doel);
+  if (gekozen) return gekozen;
+  const { item } = itemVanSleutel(sleutelOfId);
+  const ontleedItem = ontleed(item);
+  if (ontleedItem?.soort === 'pagina' && ontleedItem.pagina) return serviceTabLabel(ontleedItem.pagina, lang);
+  const dienstId = (ontleedItem?.dienst || item) as MenuItemId;
+  if (oppervlak === 'technisch' && TECH_NAAM[lang][dienstId]) return TECH_NAAM[lang][dienstId]!;
+  return MENU_CATALOG.find((entry) => entry.id === dienstId)?.[lang] || dienstId;
+}
+
 /** Wijzigen van de HUIDIGE ruimte: meteen lokaal (en in alle componenten), daarna — gebundeld — naar de server. */
 export function zetZijbalk(patch: Partial<ZijbalkVoorkeuren> | ((v: ZijbalkVoorkeuren) => ZijbalkVoorkeuren)) {
   zetZijbalkInRuimte(ruimte, patch);
@@ -174,6 +272,7 @@ export function zetZijbalk(patch: Partial<ZijbalkVoorkeuren> | ((v: ZijbalkVoork
 /** Alleen voor tests. */
 export function __zijbalkReset(v: ZijbalkVoorkeuren = standaardZijbalk()) {
   wachtendenAf();
+  eigenNamen = { gebruiker: {}, technisch: {} };
   alles = { versie: 2, gebruiker: v, technisch: standaardZijbalk() };
   ruimte = 'gebruiker'; scope = 'anon'; server = null; laatsteServer = { gebruiker: '', technisch: '' }; lokaalGezet = false; techBezig = false;
   melden();

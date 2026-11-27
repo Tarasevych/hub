@@ -59,10 +59,11 @@ export async function main(): Promise<number> {
   );
 
   check(
-    'WerkbladV3: порожній робочий стіл показує .wb-leeg-stol (data-wb-leeg="1") із двома діями (бібліотека + стандартна розкладка)',
+    'WerkbladV3: порожній робочий стіл показує картку .wb-leeg-stol (data-wb-leeg="1") із діями додавання та стандартної розкладки',
     wb3.includes('data-wb-aantal={topAantal}') &&
-      wb3.includes("className='wb-leeg-stol' data-wb-leeg='1'") &&
-      wb3.includes("data-wb3='leeg-bibliotheek'") &&
+      wb3.includes('wb-leeg-stol') &&
+      wb3.includes("data-wb-leeg='1'") &&
+      wb3.includes("data-wb3='leeg-toevoegen'") &&
       wb3.includes("data-wb3='leeg-standaard'") &&
       wb3.includes('migreerV2NaarV3(standaardWerkblad({ ruimte })'),
   );

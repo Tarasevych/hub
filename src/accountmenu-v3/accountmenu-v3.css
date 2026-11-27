@@ -759,6 +759,50 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   forced-color-adjust: none;
 }
 
+/* Кругла кнопка «Живий фон» (32x32) — однакового розміру з кнопкою Палітри, між перемикачем тем і палітрою */
+[data-account-menu-v3] .am3-pref-row.is-theme-row .am3-seg-btn {
+  padding: 0 7px;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn:hover,
+[data-account-menu-v3] .am3-achtergrond-btn:focus-visible {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn > svg.am3-achtergrond-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--am3-accent);
+  transition: color 0.18s ease, transform 0.16s ease, opacity 0.16s ease;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn.is-uit > svg.am3-achtergrond-icon {
+  color: var(--am3-muted);
+  opacity: 0.72;
+}
+
+[data-account-menu-v3] .am3-achtergrond-btn:hover > svg.am3-achtergrond-icon {
+  transform: scale(1.08);
+}
+
 /* Кругла кнопка Палітри кольорів (32x32, Модель В: короткий натиск — по колу, правий натиск або утримання — список) */
 [data-account-menu-v3] .am3-palette-btn {
   position: relative;
@@ -2004,6 +2048,7 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
     aspect-ratio: 1 / 1;
   }
 
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-achtergrond-btn,
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-palette-btn,
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-access-btn {
     width: 34px;
@@ -2049,14 +2094,14 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 
   /* Прозора зона дотику >= 44x44 px без спотворення видимої круглої форми */
-  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-mobiel-sluit, .am3-camera-btn, .am3-orbit-node, .am3-palette-btn, .am3-access-btn, .am3-tray-close)::after {
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-mobiel-sluit, .am3-camera-btn, .am3-orbit-node, .am3-access-btn, .am3-tray-close)::after {
     content: '';
     position: absolute;
     inset: -6px;
   }
 
-  /* У рядах зі щільним кроком gap: 8px (палітра відтінків, крапки смуги, хрестик видалення запису) зона дотику не налізає на сусідню дію */
-  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-tint-swatch, .am3-band-dot, .am3-acc-btn.is-icon-only)::after {
+  /* У рядах зі щільним кроком (живий фон + палітра, відтінки, крапки смуги, хрестик видалення запису) зона дотику не налізає на сусідню дію */
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-achtergrond-btn, .am3-palette-btn, .am3-tint-swatch, .am3-band-dot, .am3-acc-btn.is-icon-only)::after {
     content: '';
     position: absolute;
     inset: -3px;
@@ -2067,6 +2112,10 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
     height: 32px;
     min-height: 32px;
     padding: 0 9px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn {
+    padding: 0 7px;
   }
 
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-manage-pill {
@@ -2102,8 +2151,8 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 }
 
-/* На смартфонах (<= 420 px) рядок «Тема» переходить на 2 рівні лінії, а 8 відтінків палітри стають у сітку 4x2 */
-@media (max-width: 420px) {
+/* На смартфонах (<= 700 px) рядок «Тема» переходить на 2 збалансовані лінії (охоплює і 360–390 px, і ширші екрани 432–460 px) */
+@media (max-width: 700px) {
   [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row {
     flex-wrap: wrap;
     gap: 7px;
@@ -2115,6 +2164,7 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 
   [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row > .am3-pref-controls {
     width: 100%;
+    gap: 6px;
     justify-content: space-between;
   }
 
@@ -2132,7 +2182,10 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn:last-child {
     flex: 2.1 1 0;
   }
+}
 
+/* На екранах <= 420 px 8 відтінків палітри стають у сітку 4x2 */
+@media (max-width: 420px) {
   [data-account-menu-v3] .am3-shell.am3-shell .am3-tints-row {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     row-gap: 10px;
@@ -2140,26 +2193,8 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 }
 
-/* Надвузькі екрани (<= 360 px): дворядковий вибір мови, охайна орбіта та одностовпцеві картки без обрізання написів */
+/* Вузькі екрани (<= 360 px): охайна орбіта та одностовпцеві картки без обрізання написів */
 @media (max-width: 360px) {
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row {
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-pref-label {
-    width: 100%;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-seg {
-    width: 100%;
-    display: flex;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row .am3-seg-btn {
-    flex: 1 1 0;
-  }
-
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-orbit-wing.is-left {
     padding-right: 8px;
   }
@@ -2186,6 +2221,44 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 }
 
+/* Надвузькі екрани (<= 340 px): дворядковий вибір мови та ущільнений рядок теми без виходу за межі картки */
+@media (max-width: 340px) {
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-pref-label {
+    width: 100%;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-seg {
+    width: 100%;
+    display: flex;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row .am3-seg-btn {
+    flex: 1 1 0;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg {
+    min-width: 0;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn {
+    min-width: 0;
+    padding: 0 4px;
+    gap: 3px;
+    font-size: 0.68rem;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-pref-row.is-theme-row :is(.am3-achtergrond-btn, .am3-palette-btn) {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+}
+
 /* На сенсорних пристроях без курсора миші підказка вказівника та кутові ручки масштабування не показуються */
 @media (hover: none) and (pointer: coarse) {
   [data-account-menu-v3] .am3-access-hover-tip,
@@ -2199,6 +2272,7 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   [data-account-menu-v3] .am3-orbit-node,
   [data-account-menu-v3] .am3-accounts-chevron,
   [data-account-menu-v3] .am3-seg-btn,
+  [data-account-menu-v3] .am3-achtergrond-btn > svg.am3-achtergrond-icon,
   [data-account-menu-v3] .am3-palette-btn > svg.am3-palette-icon,
   [data-account-menu-v3] .am3-hold-ring circle,
   [data-account-menu-v3] .am3-access-ring .ring-fill,

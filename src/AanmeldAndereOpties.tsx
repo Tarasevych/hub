@@ -39,26 +39,26 @@ const NIET_BESCHIKBAAR: T2 = ['Недоступно', 'Niet beschikbaar'];
 export const AANMELD_INGANGEN: readonly AanmeldIngang[] = Object.freeze([
   {
     id: 'github', merk: 'github', titel: ['Увійти через GitHub', 'Aanmelden met GitHub'], beschikbaar: false,
-    reden: ['Сервер не видає вхід через GitHub: GitHub підключається лише після входу — як служба для репозиторіїв.',
-      'De server kent geen aanmelding met GitHub: GitHub wordt pas na het aanmelden gekoppeld, als dienst voor repositories.'],
+    reden: ['Вхід через GitHub не підтримується: обліковий запис GitHub підключається після входу як робоча служба для сховищ коду.',
+      'Aanmelden met GitHub wordt niet ondersteund: uw GitHub-account koppelt u na het aanmelden als dienst voor code-opslagplaatsen.'],
   },
   {
     id: 'apple', merk: 'apple', titel: ['Увійти через Apple', 'Aanmelden met Apple'], beschikbaar: false,
-    reden: ['Зараз недоступно: вхід через Apple вмикає власник сайту — ключі Apple, пройдена самоперевірка й прапорець «Вхід через Microsoft, Discord або Apple». Потім прив’яжіть Apple у «Способах входу».',
-      'Nu niet beschikbaar: aanmelden met Apple zet de site-eigenaar aan — Apple-sleutels, geslaagde zelftest en de vlag «Aanmelden met Microsoft, Discord of Apple». Koppel daarna Apple bij «Aanmeldmethoden».'],
+    reden: ['Цей спосіб входу зараз не активований власником простору. Увійдіть через Google або Telegram; після активації Apple можна прив’язати у «Способах входу».',
+      'Deze aanmeldmethode is nu niet geactiveerd door de eigenaar van de ruimte. Meld u aan met Google of Telegram; na activatie koppelt u Apple bij «Aanmeldmethoden».'],
   },
   {
     id: 'microsoft', merk: 'microsoft', titel: ['Увійти через Microsoft', 'Aanmelden met Microsoft'], beschikbaar: false,
-    reden: ['Зараз недоступно: вхід через Microsoft вмикає власник сайту — ключі Microsoft, пройдена самоперевірка й прапорець «Вхід через Microsoft, Discord або Apple». Потім прив’яжіть Microsoft у «Способах входу».',
-      'Nu niet beschikbaar: aanmelden met Microsoft zet de site-eigenaar aan — Microsoft-sleutels, geslaagde zelftest en de vlag «Aanmelden met Microsoft, Discord of Apple». Koppel daarna Microsoft bij «Aanmeldmethoden».'],
+    reden: ['Цей спосіб входу зараз не активований власником простору. Увійдіть через Google або Telegram; після активації Microsoft можна прив’язати у «Способах входу».',
+      'Deze aanmeldmethode is nu niet geactiveerd door de eigenaar van de ruimte. Meld u aan met Google of Telegram; na activatie koppelt u Microsoft bij «Aanmeldmethoden».'],
   },
   {
     id: 'passkey', merk: '',
     // Dezelfde woorden als de bevestigingsstap (src/platform/bevestig-toegang.tsx) en als de eigenaar ze vroeg.
     titel: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de toegangssleutel staat'],
     beschikbaar: false,
-    reden: ['Зараз недоступно: вхід лише ключем доступу вмикає власник сайту (прапорець «Вхід лише ключем доступу»). До того ключ підтверджує важливі дії після входу через Google; додати його можна в «Безпеці».',
-      'Nu niet beschikbaar: aanmelden met alleen een toegangssleutel zet de site-eigenaar aan (vlag «Aanmelden met alleen een toegangssleutel»). Tot dan bevestigt de sleutel belangrijke acties na het aanmelden met Google; toevoegen kan bij «Beveiliging».'],
+    reden: ['Прямий вхід одним лише ключем доступу зараз вимкнено власником простору. Ключ доступу захищає важливі дії після входу; додати його можна в розділі «Безпека».',
+      'Rechtstreeks aanmelden met alleen een toegangssleutel staat nu uit. De toegangssleutel bevestigt belangrijke handelingen na het aanmelden; toevoegen kan bij «Beveiliging».'],
   },
 ]);
 

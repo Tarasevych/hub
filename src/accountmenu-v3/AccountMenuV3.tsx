@@ -28,9 +28,11 @@ import {
   Sun,
   UserRound,
   Users,
+  Waves,
   X,
 } from 'lucide-react';
 import { BAND_KLEUREN, isBandKleur, type BandKleur } from '../../shared/tech-rollen';
+import { openAchtergrondPaneel } from '../achtergrond/AchtergrondKnop';
 import { rememberedAccountStatus, type AccountMenuUser, type RememberedAccount } from '../canoniek-account-menu-model';
 import { serviceFromLocation } from '../canoniek-navigatie';
 import { openDiagnose } from '../diagnose/open';
@@ -212,7 +214,10 @@ export function AccountMenuV3({
   const dienst = typeof window !== 'undefined' ? serviceFromLocation() : 'hub';
   const violetToegestaan = dienst === 'ai';
   const paletSync = useAccountmenuV3PaletSync(violetToegestaan);
-  const themaStijl = useThemaStand().stijl;
+  const themaStand = useThemaStand();
+  const themaStijl = themaStand.stijl;
+  const achtergrondStand = themaStand.achtergrond?.stand ?? 'auto';
+  const achtergrondUit = achtergrondStand === 'uit';
   const autoStatus = useAutoStatus(theme);
   const tech = useTech();
   const ruimtes = useRuimtes();
@@ -1037,6 +1042,28 @@ export function AccountMenuV3({
                 </button>
               </div>
 
+              {/* Кругла кнопка «Живий фон» (32x32 px) між перемикачем тем і кнопкою кольорів */}
+              <button
+                type='button'
+                className={`am3-achtergrond-btn${achtergrondUit ? ' is-uit' : ' is-aan'}`}
+                data-achtergrond-knop=''
+                data-am3-achtergrond-knop={achtergrondStand}
+                aria-haspopup='dialog'
+                aria-label={uk ? 'Живий фон: налаштувати анімацію тла' : 'Levende achtergrond: animatie instellen'}
+                title={
+                  uk
+                    ? `Живий фон (${achtergrondUit ? 'вимкнено' : achtergrondStand === 'aan' ? 'повний' : 'авто'}): швидкість, інтенсивність, перелив і рух тла`
+                    : `Levende achtergrond (${achtergrondUit ? 'uit' : achtergrondStand === 'aan' ? 'volledig' : 'auto'}): snelheid, sterkte, kleurverloop en beweging`
+                }
+                onClick={() => {
+                  setPaletOpen(false);
+                  sluitVoorNavigatie();
+                  openAchtergrondPaneel();
+                }}
+              >
+                <Waves className='am3-achtergrond-icon' aria-hidden='true' />
+              </button>
+
               {/* Кругла кнопка Палітри кольорів (32x32 px) — Модель В */}
               <button
                 type='button'
@@ -1256,7 +1283,7 @@ export function AccountMenuV3({
               <span className='am3-flag' aria-hidden='true'>
                 <MoviPrapor taal='nl' />
               </span>
-              <span>{uk ? 'нід.' : 'Nederlands'}</span>
+              <span>{uk ? 'Нід.' : 'Nederlands'}</span>
             </button>
           </div>
         </div>

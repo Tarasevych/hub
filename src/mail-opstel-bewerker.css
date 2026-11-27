@@ -22,7 +22,8 @@ html body .mail-compose-editor .mail-compose-balk .mail-compose-ribbon::-webkit-
 .mail-compose-editor .mail-compose-balk .mail-compose-ribbon-group{display:inline-flex;align-items:center;gap:2px;min-height:var(--tik-hoogte);padding:0;border:0;border-radius:0;background:transparent;flex:0 0 auto}
 .mail-compose-editor .mail-compose-balk .mail-compose-ribbon-group+.mail-compose-ribbon-group{padding-left:var(--ruimte-1);border-left:1px solid var(--line)}
 html body .mail-compose-editor .mail-compose-balk .mail-compose-ribbon-group>button,html body .mail-compose-editor .mail-compose-balk .mail-compose-more>button{display:inline-grid;place-items:center;box-sizing:border-box;flex:0 0 var(--tik-hoogte);width:var(--tik-hoogte);min-width:var(--tik-hoogte);height:var(--tik-hoogte);min-height:var(--tik-hoogte);padding:0;border:0;border-radius:var(--straal-s);background:transparent;color:var(--text);aspect-ratio:1}
-html body .mail-compose-editor .mail-compose-balk .mail-compose-more>button{border:1px solid var(--line);background:var(--panel)}
+.mail-compose-editor .mail-compose-balk .mail-compose-more{padding-left:var(--ruimte-1);border-left:1px solid var(--line)}
+html body .mail-compose-editor .mail-compose-balk .mail-compose-more>button{border:0;background:transparent}
 html body .mail-compose-editor .mail-compose-balk button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent)}
 html body .mail-compose-editor .mail-compose-balk .mail-compose-dropdown-trigger{box-sizing:border-box;height:var(--tik-hoogte)!important;min-height:var(--tik-hoogte);border:1px solid var(--line);border-radius:var(--straal-s);background:var(--panel);color:var(--text);font-size:var(--tekst-klein)}
 .mail-compose-editor .mail-compose-balk svg{width:18px;height:18px;flex:none}

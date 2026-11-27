@@ -202,27 +202,49 @@
 /* ingeklapt: badge op de rand van de cirkel */
 .canonical-chrome:not(.sidebar-expanded) .menu-badge.getal{top:-9px;right:-11px}
 .canonical-chrome:not(.sidebar-expanded) .menu-badge.punt{top:-6px;right:-6px}
-.menu-bellen{position:fixed;z-index:780;display:flex;flex-direction:column;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 16px));overflow:visible;padding:8px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 12px 32px var(--shadow,rgba(0,0,0,.18));animation:menu-bellen-in .16s ease-out}
+.menu-bellen{position:fixed;z-index:780;display:flex;flex-direction:column;box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-height:min(560px,calc(100dvh - 32px));overflow:visible;padding:10px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 16px 42px var(--shadow,rgba(0,0,0,.22));animation:menu-bellen-in .16s ease-out}
 .menu-bellen::before{content:'';position:absolute;top:0;bottom:0;left:-14px;width:14px}
 .menu-bellen[data-kant='left']::before{left:auto;right:-14px}
-.menu-bellen-kop{display:flex;flex-shrink:0;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 6px 8px;font-size:.82rem}
-.menu-bellen-kop span{color:var(--muted);font-size:.75rem}
+.menu-bellen-kop{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:5px;padding:0 2px 6px;font-size:.84rem}
+.menu-bellen-kop-titel{display:flex;align-items:baseline;gap:5px;min-width:0;flex:1 1 auto}
+.menu-bellen-kop-titel strong{font-size:.84rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-bellen-kop span{flex:none;color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
+.menu-bellen-kop-knoppen{display:inline-flex;flex:none;align-items:center;gap:4px}
+.menu-bellen-info,.menu-bellen-sluit{position:relative;display:inline-grid;place-items:center;box-sizing:border-box;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer;transition:background-color .14s ease,color .14s ease,border-color .14s ease,box-shadow .14s ease}
+.menu-bellen-info svg,.menu-bellen-sluit svg{width:15px;height:15px;flex:none}
+.menu-bellen-info:hover,.menu-bellen-info:focus-visible,.menu-bellen-sluit:hover,.menu-bellen-sluit:focus-visible{border-color:var(--line);background:var(--zb-hover);color:var(--text)}
+.menu-bellen-info.is-actief{border-color:color-mix(in srgb,var(--accent) 42%,var(--line));background:color-mix(in srgb,var(--accent) 13%,var(--panel));color:var(--accent)}
 .menu-bellen-uitleg,.menu-bellen-legenda,.menu-bellen-voet{flex-shrink:0}
-.menu-bellen ul{display:grid;flex:1 1 auto;min-height:0;overflow-y:auto;gap:6px;margin:0;padding:0;list-style:none}
-.menu-bel{--mb:var(--mb-systeem);position:relative;display:grid;grid-template-columns:8px 1fr 26px;gap:8px;align-items:start;padding:8px 6px 8px 10px;border-radius:14px 14px 14px 4px;background:color-mix(in srgb,var(--mb) 11%,var(--panel));border:1px solid color-mix(in srgb,var(--mb) 28%,transparent);animation:menu-bel-in .2s ease-out both}
-.menu-bel-stip{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--mb)}
+.menu-bellen ul{display:grid;align-content:start;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 42%,transparent) transparent;gap:7px;margin:0;padding:2px 4px 2px 0;list-style:none}
+.menu-bellen ul::-webkit-scrollbar{width:5px}
+.menu-bellen ul::-webkit-scrollbar-thumb{border-radius:999px;background:color-mix(in srgb,var(--muted) 38%,transparent)}
+.menu-bel{--mb:var(--mb-systeem);--bel-kleur:var(--mb);--bel-vlak:var(--mb);position:relative;display:grid;grid-template-columns:34px minmax(0,1fr);gap:9px;align-items:start;padding:8px 10px;border-radius:13px;background:color-mix(in srgb,var(--bel-kleur) 7%,var(--surface,var(--panel)));border:1px solid color-mix(in srgb,var(--bel-kleur) 24%,var(--line));animation:menu-bel-in .2s ease-out both}
+.menu-bel[data-staat='goed']{--bel-kleur:var(--staat-goed);--bel-vlak:var(--staat-goed-vlak)}
+.menu-bel[data-staat='let']{--bel-kleur:var(--staat-let);--bel-vlak:var(--staat-let-vlak)}
+.menu-bel[data-staat='fout']{--bel-kleur:var(--staat-fout);--bel-vlak:var(--staat-fout-vlak)}
+.menu-bel-anker{position:relative;display:grid;place-items:center;box-sizing:border-box;width:34px;height:34px;flex:none;margin-top:1px;border-radius:10px;background:color-mix(in srgb,var(--bel-kleur) 13%,var(--panel));border:1px solid color-mix(in srgb,var(--bel-kleur) 28%,var(--line));color:var(--bel-kleur)}
+.menu-bel-anker>svg:not(.merk){width:17px;height:17px;flex:none}
+.menu-bel-staat-stip{position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:50%;background:var(--bel-vlak);box-shadow:0 0 0 2px var(--panel);pointer-events:none}
+.menu-bel-inhoud{display:grid;gap:2px;min-width:0}
+.menu-bel-boven{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.menu-bel-soort{min-width:0;flex:1 1 auto;color:var(--muted);font-size:12px;font-weight:560;line-height:1.25;overflow-wrap:anywhere}
 .menu-bel-tekst{min-width:0}
-.menu-bel-tekst small{display:block;color:var(--muted);font-size:.7rem}
-.menu-bel-tekst p{margin:2px 0 0;color:var(--muted);font-size:.78rem;line-height:1.35;overflow-wrap:anywhere}
-.menu-bel-titel{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:0;border:0;background:none;color:var(--text);font:600 .84rem/1.3 inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere}
-.menu-bel-titel svg{flex:none;width:12px;height:12px;opacity:.6}
+.menu-bel-tekst p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:2px 0 0;color:var(--muted);font-size:12.5px;line-height:1.35;overflow-wrap:anywhere;hyphens:auto}
+.menu-bel-titel{display:block;max-width:100%;margin-top:1px;padding:0;border:0;background:none;color:var(--text);font:650 13.5px/1.3 inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere;hyphens:auto}
 .menu-bel-titel:hover{text-decoration:underline}
-.menu-bel-weg{display:grid;place-items:center;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
-.menu-bel-weg svg{width:15px;height:15px}
-.menu-bel-weg:hover,.menu-bel-weg:focus-visible{background:color-mix(in srgb,var(--mb) 20%,transparent);color:var(--text)}
+.menu-bel-weg{position:relative;display:inline-grid;place-items:center;box-sizing:border-box;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;gap:0;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);font-size:0;line-height:0;cursor:pointer}
+.menu-bel-weg svg{width:15px;height:15px;flex:none}
+.menu-bel-weg:hover,.menu-bel-weg:focus-visible{background:color-mix(in srgb,var(--staat-goed) 15%,var(--panel));border-color:color-mix(in srgb,var(--staat-goed) 36%,var(--line));color:var(--text)}
 .menu-bellen button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.menu-bellen-alles{display:block;width:100%;margin-top:8px;padding:6px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:600 .76rem inherit;cursor:pointer}
-.menu-bellen-alles:hover{background:var(--zb-hover,rgba(0,0,0,.05));color:var(--text)}
+.menu-bellen-alles{position:relative;display:inline-grid;place-items:center;flex:none;box-sizing:border-box;width:32px;height:32px;min-width:32px;min-height:32px;margin:0;padding:0;gap:0;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-size:0;line-height:0;overflow:visible;cursor:pointer}
+.menu-bellen-alles svg{width:16px;height:16px;flex:none}
+.menu-bellen-alles:hover{background:var(--zb-hover);color:var(--text)}
+.menu-bellen button[data-tip-actief='ja']{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--panel));color:var(--text);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 38%,transparent)}
+.menu-bellen-zweeftip{position:absolute;z-index:24;display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 6px;box-sizing:border-box;width:max-content;max-width:calc(100% - 12px);padding:5px 10px;border:1px solid color-mix(in srgb,var(--accent) 44%,var(--line));border-radius:11px;background:color-mix(in srgb,var(--panel) 97%,var(--surface));color:var(--text);box-shadow:var(--schaduw-2);font-size:12px;font-weight:650;line-height:1.3;text-align:center;white-space:normal;pointer-events:none;animation:menu-zweeftip-in .14s cubic-bezier(.2,.8,.2,1)}
+.menu-bellen-zweeftip>i{width:7px;height:7px;flex:none;border-radius:50%;background:var(--accent)}
+.menu-bellen-zweeftip>span{min-width:0;overflow-wrap:anywhere}
+.menu-bellen-zweeftip>em{flex:none;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--surface));font-style:normal;font-weight:560;font-size:12px;color:var(--muted)}
+@keyframes menu-zweeftip-in{from{opacity:0;transform:translateY(3px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes menu-bellen-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
 @keyframes menu-bel-in{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
 /* ⚙ in de werkbalk */
@@ -258,7 +280,7 @@
 .zijbalk-cat:has(input:checked){border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
 .zijbalk-cat:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 .zijbalk-badge-stijl label{gap:10px}
-@media(prefers-reduced-motion:reduce){.menu-badge[data-knipper='ja'],.menu-badge[data-herinner='ja'],.menu-bellen,.menu-bel{animation:none}.zijbalk-schakel-spoor,.zijbalk-schakel-spoor i{transition:none}}
+@media(prefers-reduced-motion:reduce){.menu-badge[data-knipper='ja'],.menu-badge[data-herinner='ja'],.menu-bellen,.menu-bel,.menu-bellen-zweeftip{animation:none}.zijbalk-schakel-spoor,.zijbalk-schakel-spoor i{transition:none}}
 /* Instellingen-pagina: .settings-center zet label{display:grid} en input{width:100%;min-height:44px} — hier specifieker terugzetten. */
 .zijbalk-meldingen label.zijbalk-schakel{display:flex;align-items:flex-start;gap:12px;font-weight:400}
 .zijbalk-meldingen .zijbalk-keuze label{display:flex;align-items:center;gap:10px;font-weight:400}
@@ -507,16 +529,25 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .zijbalk-meldingen-tijden{flex-wrap:wrap;max-width:100%}
   .zijbalk-meldingen .zijbalk-meldingen-tijden input[type='time']{flex:1 1 6.5rem;min-width:0;min-height:var(--tik-hoogte)}
   .zijbalk-meldingen label.zijbalk-meldingen-rij select{width:100%;min-width:0;min-height:var(--tik-hoogte)}
+  .menu-bellen{width:min(380px,calc(100vw - 20px));max-height:min(74dvh,calc(100dvh - 24px))}
+  .menu-bel{grid-template-columns:32px minmax(0,1fr);gap:8px;padding:8px 9px}
+  .menu-bel-anker{width:32px;height:32px}
+  .menu-bellen-info,.menu-bellen-sluit{width:32px;height:32px;min-width:32px;min-height:32px;border-radius:9px}
+  .menu-bellen-info::after,.menu-bellen-sluit::after{content:'';position:absolute;left:50%;top:50%;width:var(--tik-hoogte);height:var(--tik-hoogte);transform:translate(-50%,-50%)}
+  .menu-bellen-kop-knoppen{gap:6px}
 }
 
 /* 29.10.2026 (hub op de telefoon, menu dicht): de lade-houder toont alleen ☰ — geen restjes eronder (lege scrollvak met pijlen,
    ruimtewissel, zones). De open lade (.sidebar-drawer) en de computer blijven ongemoeid. */
 .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar :is(.zijbalk-scrollvak,[data-zijbalk-pijl],.zr){display:none!important}
 
-/* Legenda in de bel van een menu-stip (UI notif-b): dezelfde kleur als de stip en de regels eronder. */
+/* Legenda in de bel van een menu-stip (UI notif-b): semantische staten uit staat-kleuren.css + categorieën. */
 .menu-bellen-legenda{display:flex;flex-wrap:wrap;gap:4px 10px;padding:0 0 6px;font-size:12px;color:var(--muted)}
 .menu-bellen-legenda-item{display:inline-flex;align-items:center;gap:5px}
 .menu-bellen-legenda-item>i{width:8px;height:8px;border-radius:50%;background:var(--mb-systeem);flex:none}
+.menu-bellen-legenda-item[data-staat='goed']>i{background:var(--staat-goed-vlak)}
+.menu-bellen-legenda-item[data-staat='let']>i{background:var(--staat-let-vlak)}
+.menu-bellen-legenda-item[data-staat='fout']>i{background:var(--staat-fout-vlak)}
 .menu-bellen-legenda-item[data-categorie='post']>i{background:var(--mb-post)}
 .menu-bellen-legenda-item[data-categorie='beveiliging']>i{background:var(--mb-beveiliging)}
 .menu-bellen-legenda-item[data-categorie='toegang']>i{background:var(--mb-toegang)}
@@ -532,3 +563,32 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
 .menu-snel-voorbeeld[data-tech-yarlyk='ja']{box-shadow:0 0 0 2px var(--tech-profiel-kleur,#f2b705);border-radius:50%;background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 12%,transparent)}
 .canonical-chrome .menu-start-tegel[data-tech-yarlyk='ja']{border-color:var(--tech-profiel-kleur,#f2b705);box-shadow:inset 0 0 0 1px var(--tech-profiel-kleur,#f2b705)}
 .menu-snel-lijst>li[data-tech-yarlyk='ja']{border-color:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 55%,var(--line));background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 6%,var(--panel))}
+
+/* HERSTEL-001 (MELD-5, MELD-9): візуальний зв’язок .menu-bellen з обраним пунктом меню та компактні кнопки «Це не я / Це був я» (30 px). */
+.canonical-chrome [data-menu-bellen-anker='actief']{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 62%,var(--line));background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+.menu-bellen-anker-pijl{position:absolute;width:11px;height:11px;background:var(--panel);pointer-events:none;z-index:2}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='rechts']{left:-6px;margin-top:-5.5px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='links']{right:-6px;margin-top:-5.5px;border-right:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='onder']{top:-6px;margin-left:-5.5px;border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen-anker-pijl[data-menu-bellen-anker='boven']{bottom:-6px;margin-left:-5.5px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.menu-bellen .menu-bel .menu-bel-bevestig{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin-top:7px}
+.canonical-chrome .menu-bellen .menu-bel button.menu-bel-keuze,
+.canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1 1 auto;min-width:0;height:30px;min-height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:12px;font-weight:650;line-height:1;white-space:nowrap;text-decoration:none;cursor:pointer;touch-action:manipulation;transition:background-color .14s ease,border-color .14s ease,color .14s ease}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze svg{width:13.5px;height:13.5px;flex:none}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze::after{content:'';position:absolute;left:0;right:0;top:50%;height:var(--tik-hoogte,44px);transform:translateY(-50%)}
+@media (max-width:380px){
+  .menu-bellen .menu-bel .menu-bel-bevestig{gap:4px}
+  .canonical-chrome .menu-bellen .menu-bel :is(button,a).menu-bel-keuze,
+  .menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze{padding:0 8px;gap:4px}
+}
+.canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze.is-fout,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-fout{border-color:color-mix(in srgb,var(--staat-fout) 46%,var(--line));background:color-mix(in srgb,var(--staat-fout) 13%,var(--panel));color:var(--staat-fout)}
+.canonical-chrome .menu-bellen .menu-bel a.menu-bel-keuze.is-fout:hover,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-fout:hover{border-color:var(--staat-fout);background:color-mix(in srgb,var(--staat-fout) 21%,var(--panel))}
+.canonical-chrome .menu-bellen .menu-bel button.menu-bel-keuze.is-goed,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-goed{border-color:color-mix(in srgb,var(--staat-goed) 48%,var(--line));background:color-mix(in srgb,var(--staat-goed) 14%,var(--panel));color:var(--staat-goed)}
+.canonical-chrome .menu-bellen .menu-bel button.menu-bel-keuze.is-goed:hover,
+.menu-bellen .menu-bel .menu-bel-bevestig .menu-bel-keuze.is-goed:hover{border-color:var(--staat-goed);background:color-mix(in srgb,var(--staat-goed) 22%,var(--panel))}
+

@@ -39,9 +39,11 @@ export async function main(): Promise<number> {
     inhoud.includes("type='checkbox'") && inhoud.includes('onRememberBrowser(event.target.checked)'));
   check('juridische links blijven in beide talen',
     inhoud.includes("'/privacy#nl'") && inhoud.includes("'/privacy'") && inhoud.includes("'/terms#nl'"));
-  check('taal en thema verschijnen als kleine knoppen, niet als een groot paneel',
-    menu.includes('mr-sign-in-quick-controls') && menu.includes("onLanguage(lang === 'uk' ? 'nl' : 'uk')")
-    && menu.includes('theme === \'plum-dark\'') && css.includes('.mr-sign-in-quick-controls button{width:38px;height:38px'));
+  check('taal verschijnt als compacte pil (vlag + korte naam, 38 px) met keuzemenu en thema als ronde knop (38×38 px)',
+    menu.includes('mr-sign-in-quick-controls') && menu.includes('<b>{MOVA_NAAM[lang]}</b>') && menu.includes('mr-sign-in-taal-menu')
+    && menu.includes("onLanguage('uk')") && menu.includes("onLanguage('nl')") && menu.includes('theme === \'plum-dark\'')
+    && css.includes('.mr-sign-in-quick-controls button.mr-sign-in-taal{') && css.includes('height:38px;min-height:38px;max-height:38px')
+    && css.includes('.mr-sign-in-quick-controls button.mr-sign-in-thema{') && css.includes('width:38px;height:38px'));
   check('quick controls bestaan uitsluitend in de afgemelde visuele weergave',
     css.includes('.mr-sign-in-quick-controls{display:none') && css.includes(':has(.mr-sign-in) .mr-sign-in-quick-controls{display:flex'));
   check('knoprand is exact 1px en beweegt alleen na interactie',

@@ -36,6 +36,7 @@ const opruimen = () => { const grens = Date.now() - 3600_000; for (const [k, s] 
 /** Afhankelijkheden (testbaar zonder database, root of netwerk). */
 export type VereistenOmgeving = {
   actief: () => { versie: string; commit: string };
+  laatsteRootBasis?: () => Promise<{ versie: string; commit: string } | null>;
   toegepast: () => Promise<Set<string> | null>;
   pg: () => Promise<{ tekst: string; melding: string | null } | null>;
   lopendeInstallatie: () => Promise<boolean>;
@@ -48,6 +49,28 @@ export type VereistenOmgeving = {
 
 export const standaardOmgeving = (opties: { passkeyKlaar: () => Promise<boolean>; archiefToken?: () => Promise<string | undefined> }): VereistenOmgeving => ({
   actief: () => { const r = releaseInfo(); return { versie: String(r.versie || ''), commit: HEX40.test(String(r.commit || '')) ? String(r.commit) : '' }; },
+  laatsteRootBasis: async () => {
+    try {
+      await import('./uitrol-runs').then((m) => m.runsSynchroniseren()).catch(() => undefined);
+      const { rows } = await sys().query(
+        `SELECT r.versie,
+                COALESCE(NULLIF(r.bron_commit, ''), (SELECT v.bron_commit FROM app.uitrol_voorstellen v WHERE v.versie = r.versie AND v.bron_commit ~ '^[0-9a-f]{40}$' ORDER BY v.bijgewerkt_op DESC LIMIT 1), '') AS commit
+           FROM app.uitrol_runs r
+          WHERE r.staat = 'klaar' AND r.code = 'OK' AND r.methode IN ('passkey', 'handtekening', 'gitops')
+            AND r.versie ~ '^\\d{8}-\\d{6}$'
+          ORDER BY r.versie DESC LIMIT 1`,
+      );
+      if (!rows[0]) return null;
+      const versie = String(rows[0].versie || '');
+      if (!VERSIE.test(versie)) return null;
+      let commit = String(rows[0].commit || '').trim().toLowerCase();
+      if (!HEX40.test(commit)) {
+        const uitMap = (await readFile(path.join(appRoot(), 'releases', versie, 'BRON-COMMIT'), 'utf8').catch(() => '')).trim().toLowerCase();
+        commit = HEX40.test(uitMap) ? uitMap : '';
+      }
+      return { versie, commit };
+    } catch { return null; }
+  },
   toegepast: async () => { try { return new Set((await sys().query('SELECT version FROM app.schema_migrations')).rows.map((r: { version: string }) => String(r.version))); } catch { return null; } },
   pg: async () => { try { const v = await pgVersie(sys()); return { tekst: v.tekst, melding: pgVersieMelding(v) }; } catch { return null; } },
   lopendeInstallatie: async () => { try { return Number((await sys().query(`SELECT count(*)::int AS n FROM app.uitrol_runs WHERE staat = 'bezig' AND bijgewerkt > now() - interval '45 minutes'`)).rows[0].n) > 0; } catch { return false; } },
@@ -71,6 +94,9 @@ export async function vereistenBeoordelen(invoer: ArchiefBeschrijving & { sha256
   const a = invoer;
   zeg('info', `vereisten: ${tekst(a.bestand, 120)} (${mbNl(a.bytes)}) lokaal gelezen in ${a.leesMs} ms`);
   const actief = omg.actief();
+  const laatsteRoot = (await omg.laatsteRootBasis?.().catch(() => null)) || null;
+  const naTerugdraai = Boolean(laatsteRoot && VERSIE.test(laatsteRoot.versie) && (!VERSIE.test(actief.versie) || laatsteRoot.versie > actief.versie));
+  const peilBasis = naTerugdraai && laatsteRoot ? laatsteRoot : actief;
   let t = Date.now();
 
   // ---- archief
@@ -82,9 +108,10 @@ export async function vereistenBeoordelen(invoer: ArchiefBeschrijving & { sha256
     waaromNl: 'Root pakt alleen gewone bestanden in één map uit. Links, apparaten of paden buiten de map kunnen systeembestanden overschrijven; zo’n archief wordt geweigerd.' }, t);
   t = Date.now();
   const versieOk = VERSIE.test(a.versie);
-  const nieuwer = versieOk && (!VERSIE.test(actief.versie) || a.versie > actief.versie);
+  const nieuwer = versieOk && (!VERSIE.test(peilBasis.versie) || a.versie > peilBasis.versie);
   voeg({ id: 'versie', groep: 'archief', niveau: !versieOk || !nieuwer ? 'fout' : 'ok', uk: 'Версія новіша за встановлену', nl: 'Versie nieuwer dan de geïnstalleerde',
-    waardeUk: versieOk ? `${a.versie} ${nieuwer ? '>' : '≤'} ${actief.versie || '—'}` : 'UITROL-VERSIE відсутня або хибна', waardeNl: versieOk ? `${a.versie} ${nieuwer ? '>' : '≤'} ${actief.versie || '—'}` : 'UITROL-VERSIE ontbreekt of is ongeldig',
+    waardeUk: versieOk ? `${a.versie} ${nieuwer ? '>' : '≤'} ${peilBasis.versie || '—'}${naTerugdraai && actief.versie ? ` (зараз активна ${actief.versie})` : ''}` : 'UITROL-VERSIE відсутня або хибна',
+    waardeNl: versieOk ? `${a.versie} ${nieuwer ? '>' : '≤'} ${peilBasis.versie || '—'}${naTerugdraai && actief.versie ? ` (nu actief ${actief.versie})` : ''}` : 'UITROL-VERSIE ontbreekt of is ongeldig',
     waaromUk: 'Root приймає лише новіші версії: так старий, навіть підписаний, пакет не може тихо повернути вразливий код. Відкат робиться окремою дією.',
     waaromNl: 'Root accepteert alleen nieuwere versies: zo kan een oud, ook ondertekend pakket niet stil kwetsbare code terugzetten. Terugdraaien is een aparte handeling.' }, t);
   t = Date.now();
@@ -131,12 +158,18 @@ export async function vereistenBeoordelen(invoer: ArchiefBeschrijving & { sha256
   // ---- compatibiliteit
   t = Date.now();
   if (a.basis && VERSIE.test(a.basis.versie)) {
-    const verouderd = VERSIE.test(actief.versie) && actief.versie > a.basis.versie;
-    const andereCommit = !!actief.commit && HEX40.test(a.basis.commit) && actief.commit !== a.basis.commit && !verouderd && actief.versie !== a.basis.versie;
+    const verouderd = VERSIE.test(peilBasis.versie) && peilBasis.versie > a.basis.versie;
+    const andereCommit = !!peilBasis.commit && HEX40.test(a.basis.commit) && peilBasis.commit !== a.basis.commit;
+    const basisLabelUk = naTerugdraai && actief.versie
+      ? `база root ${peilBasis.versie} (зараз активна ${actief.versie})`
+      : `встановлено ${peilBasis.versie || '—'}`;
+    const basisLabelNl = naTerugdraai && actief.versie
+      ? `root-basis ${peilBasis.versie} (nu actief ${actief.versie})`
+      : `geïnstalleerd ${peilBasis.versie || '—'}`;
     voeg({ id: 'basis', groep: 'compatibiliteit', niveau: verouderd || andereCommit ? 'fout' : 'ok', uk: 'База випуску = встановлена версія', nl: 'Basis van de release = geïnstalleerde versie',
-      waardeUk: `UITROL-BASIS ${a.basis.versie} · встановлено ${actief.versie || '—'}`, waardeNl: `UITROL-BASIS ${a.basis.versie} · geïnstalleerd ${actief.versie || '—'}`,
-      waaromUk: 'Якщо між збіркою й установленням на сервер поставили новішу версію, цей пакет перезаписав би чужі зміни. Root такий пакет відхиляє (BASIS_VEROUDERD).',
-      waaromNl: 'Als er tussen bouwen en installeren een nieuwere versie op de server kwam, zou dit pakket die wijzigingen overschrijven. Root weigert het (BASIS_VEROUDERD).' }, t);
+      waardeUk: `UITROL-BASIS ${a.basis.versie} · ${basisLabelUk}`, waardeNl: `UITROL-BASIS ${a.basis.versie} · ${basisLabelNl}`,
+      waaromUk: 'Якщо між збіркою й установленням на сервер поставили новішу версію (або після відкату база root вища за активну), пакет мусить базуватися на найвищій встановленій версії, інакше root відхилить його (BASIS_VEROUDERD / BASIS_COMMIT_VERSCHILT).',
+      waaromNl: 'Als er tussen bouwen en installeren een nieuwere versie op de server kwam (of na terugdraaien de root-basis hoger is dan de actieve versie), moet het pakket op die hoogste geïnstalleerde versie gebouwd zijn; anders weigert root het (BASIS_VEROUDERD / BASIS_COMMIT_VERSCHILT).' }, t);
   } else {
     voeg({ id: 'basis', groep: 'compatibiliteit', niveau: 'waarschuwing', uk: 'База випуску = встановлена версія', nl: 'Basis van de release = geïnstalleerde versie', waardeUk: 'UITROL-BASIS відсутній (старий формат)', waardeNl: 'UITROL-BASIS ontbreekt (oud formaat)',
       waaromUk: 'Без бази не видно, від якої встановленої версії зібрано пакет.', waaromNl: 'Zonder basis is niet te zien op welke geïnstalleerde versie het pakket is gebouwd.' }, t);

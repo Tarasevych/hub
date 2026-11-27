@@ -1,6 +1,6 @@
 // «Що від вас потрібно?» (pakket 3 «Adaptive Mail Canvas», 24.10.2026) — boven de brieven van het gesprek. Макет: «ШІ · не частина
 // листа · модель на вашому сервері; пункти з чипом джерела «лист 3 · §3» і терміном; «Коротко» — теж із джерелами; дії: Чернетка
-// відповіді · До завдань · В Агенду; підвал: «Кожен пункт знайдено дослівно в оригіналі (3 з 3)» і хто склав: модель або «простий
+// відповіді · До завдань · У Календар; підвал: «Кожен пункт знайдено дослівно в оригіналі (3 з 3)» і хто склав: модель або «простий
 // розбір» без моделі».
 //
 // Eerlijk over de herkomst:
@@ -29,7 +29,7 @@ import { useLeesVenster } from './LeesVenster';
 import { adresVan } from '../../shared/mail-afzenders';
 import './ai-blok.css';
 
-export type WatNodigBrief = { id: string; from: string; receivedAt: number; tekst: string };
+export type WatNodigBrief = { id: string; from: string; replyTo?: string; autoSubmitted?: string; receivedAt: number; tekst: string };
 export type AfspraakOfTaak = { titel: string; start: number; einde: number; plaats: string; beschrijving: string };
 export type WatNodigUitkomst = {
   punten: GecontroleerdPunt[];
@@ -141,6 +141,12 @@ function PuntRegel({ x, lang, ref0, onBron }: { x: GecontroleerdPunt; lang: 'uk'
       <span className='ai-blok-regel'>
       <span className='ai-blok-tekst'>{x.tekst}</span>
       <span className='ai-blok-chips'>
+        {x.koppelingen?.map((k, idx) => (
+          <a key={`${k.url}:${idx}`} className='ai-punt-koppeling' data-ai-koppeling href={k.url} target='_blank' rel='noopener noreferrer'>
+            <ExternalLink aria-hidden='true' />
+            <span>{k.label}</span>
+          </a>
+        ))}
         {x.bron
           ? <button type='button' className='ai-bron-chip' data-bron-chip onClick={onBron} aria-label={t(`Звідки це? Джерело: ${bronLabel('uk', x.bron)}`, `Waar komt dit vandaan? Bron: ${bronLabel('nl', x.bron)}`)} title={t('Звідки це?', 'Waar komt dit vandaan?')}>{bronLabel(lang, x.bron)}</button>
           : <span className='ai-bron-chip' data-niet-gevonden>{t('не знайдено в листі', 'niet in het bericht gevonden')}</span>}
@@ -314,6 +320,10 @@ export default function WatNodigBlok(p: Props) {
   const inKop = Boolean(p.kopHost);
   const paneelOpen = inKop ? true : zichtbaarOpen;
 
+  const herkomstTekst = `${t('не частина листа', 'geen deel van het bericht')} · ${opbouw === 'model'
+    ? t(`склав ШІ «${agentNaam}» · ${herkomst(false)}`, `opgesteld door AI «${agentNaam}» · ${herkomst(true)}`)
+    : t('простий розбір у переглядачі, без моделі — нічого не надсилається', 'eenvoudige ontleding in de browser, zonder model — er gaat niets weg')}`;
+
   const blokSectie = (
     <section className='ai-blok' data-ai-blok data-opbouw={opbouw} data-open={paneelOpen ? 'ja' : 'nee'} aria-labelledby={`${id}-kop`}>
       <header className='ai-blok-kop'>
@@ -323,11 +333,8 @@ export default function WatNodigBlok(p: Props) {
           <small className='ai-blok-samenvatting'>{samenvatting}</small>
           <ChevronDown aria-hidden='true' className='ai-blok-pijl' />
         </button>
-        <small className='ai-blok-herkomst'>
-          {t('не частина листа', 'geen deel van het bericht')} · {opbouw === 'model'
-            ? t(`склав ШІ «${agentNaam}» · ${herkomst(false)}`, `opgesteld door AI «${agentNaam}» · ${herkomst(true)}`)
-            : t('простий розбір у браузері, без моделі — нічого не надсилається', 'eenvoudige ontleding in de browser, zonder model — er gaat niets weg')}
-        </small>
+        <span className='ai-blok-herkomst-info' role='note' aria-label={herkomstTekst} title={herkomstTekst}>ⓘ</span>
+        <small className='ai-blok-herkomst'>{herkomstTekst}</small>
       </header>
       {paneelOpen && (
         <div className='ai-blok-inhoud' id={`${id}-inhoud`}>
@@ -353,7 +360,7 @@ export default function WatNodigBlok(p: Props) {
           <div className='ai-blok-acties'>
             <button type='button' className='ai-blok-knop' data-actie='concept' disabled={vanMij && !zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onConcept(uitkomst); }}><PenLine aria-hidden='true' />{t('Чернетка відповіді', 'Antwoordconcept')}</button>
             <button type='button' className='ai-blok-knop' data-actie='taak' disabled={!zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onTaak(voorstel('taak')); }}><ListTodo aria-hidden='true' />{t('До завдань', 'Naar taken')}</button>
-            <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => { if (inKop) setKopOpen(false); p.onAgenda(voorstel('agenda')); }}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
+            <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => { if (inKop) setKopOpen(false); p.onAgenda(voorstel('agenda')); }}><CalendarPlus aria-hidden='true' />{t('У Календар', 'Naar Agenda')}</button>
             <WatNodigNotitieKnop
               lang={p.lang}
               context={p.context}

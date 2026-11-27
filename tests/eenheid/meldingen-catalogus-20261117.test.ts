@@ -32,8 +32,8 @@ export async function main(): Promise<number> {
   // 1
   const mis = ontbrekend(vondsten, MELDINGEN);
   check(`усі ${vondsten.length} місць у коді є в реєстрі${mis.length ? ` — бракує: ${mis.slice(0, 8).map((v) => `${v.bestand}:${v.regel} ${v.kanaal}/${v.soort}`).join('; ')}` : ''}`, mis.length === 0);
-  check('ревізія знаходить усі канали (дзвіночок, сторінки, журнал, розширення, Telegram, лист)',
-    ['bel', 'toast', 'activiteit', 'extensie', 'telegram', 'email'].every((k) => vondsten.some((v) => v.kanaal === k)));
+  check('ревізія знаходить усі канали (дзвіночок, сторінки, сигнали смуг, журнал, розширення, Telegram, лист)',
+    ['bel', 'toast', 'pagina', 'activiteit', 'extensie', 'telegram', 'email'].every((k) => vondsten.some((v) => v.kanaal === k)));
   check('ревізія не губить виклики: не менше 250 місць', vondsten.length >= 250);
   check('жоден вид у коді не лишився нерозпізнаним («?»)', !vondsten.some((v) => v.soort === '?'));
 

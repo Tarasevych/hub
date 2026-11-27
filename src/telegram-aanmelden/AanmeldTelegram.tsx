@@ -6,9 +6,11 @@
 //   4. deze pagina leest elke 2 s de stand; vraagt het account een geheime code, dan hier invullen (nooit in de chat);
 //   5. voltooien → sessie zoals bij Google (zonder extra bevestiging: gevoelige acties vragen daarna nog een toegangssleutel).
 // Dubbel tikken doet niets, elke fout zegt eerlijk of opnieuw proberen zin heeft.
-import { useEffect, useRef, useState } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
+import { ArrowRight, ChevronDown, MapPin, Smartphone, X } from 'lucide-react';
 import TelegramWie, { geldigePersonen, type TelegramPersoon } from './TelegramWie';
 import { cleanRedirectReturnTo } from '../aanmeld-omleiding';
+import { plaatsToestemming, plaatsVoorStart, plaatsVragen } from '../aanmelden/plaats';
 import { broadcastCanonicalAuthChange } from '../canoniek-gebeurtenissen';
 import { sessieDienst } from '../canoniek-navigatie';
 import { rememberViewAccountEverywhere } from '../domein-weergave-cache';
@@ -20,15 +22,13 @@ import TelegramLogo from './TelegramLogo';
 import {
   TelegramBotVoorbeeld,
   TelegramSlotBevestigd,
-  TelegramStappenBalk,
-  TelegramStijlKiezer,
   TelegramTijdBalk,
 } from './TelegramInlogMaketHulp';
 import { useEenmalig } from './Bevestigen';
 import { useTelegramInlogStijl } from './vlag';
 import './telegram.css';
 import PictogramTegel from '../apparaat-bevestiging/PictogramTegel';
-import { pictogramTegel } from '../../shared/apparaat-bevestiging/symbolen';
+import { PICTOGRAMMEN, pictogramTegel } from '../../shared/apparaat-bevestiging/symbolen';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
@@ -71,6 +71,44 @@ const veiligTerugAdres = (waarde: unknown): string => {
   return '/';
 };
 
+/** Візуальна трійка міні-плиток для другого кроку вікна довідки (поточна піктограма посередині). */
+function MiniDriePictogrammen({ index, lang }: { index: number; lang: Lang }) {
+  const totaal = PICTOGRAMMEN.length;
+  const links = (index + 7) % totaal;
+  const rechts = (index + 19) % totaal;
+  const trio = [
+    { idx: links, actief: false },
+    { idx: index, actief: true },
+    { idx: rechts, actief: false },
+  ];
+  return (
+    <span className='tg2-mini-drie' aria-hidden='true'>
+      {trio.map(({ idx, actief }) => {
+        const t = pictogramTegel(idx, lang);
+        if (!t) return null;
+        return (
+          <span
+            key={`${idx}-${actief ? 'ja' : 'nee'}`}
+            className={`tg2-mini-tegel${actief ? ' is-actief' : ''}`}
+            style={{ background: t.kleur, color: t.inkt }}
+          >
+            <svg
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke={t.inkt}
+              strokeWidth={2.2}
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            >
+              {t.vorm.map(([tag, a], i) => createElement(tag, { key: i, ...a }))}
+            </svg>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export default function AanmeldTelegram({
   lang,
   remember = true,
@@ -104,8 +142,64 @@ export default function AanmeldTelegram({
   const [rest, setRest] = useState(0);
   const { bezig, doe } = useEenmalig();
   const pauze = useTelegramPauze();
-  const [inlogStijl, zetInlogStijl] = useTelegramInlogStijl();
+  const [inlogStijl] = useTelegramInlogStijl();
   const klaar = useRef(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const infoKnopRef = useRef<HTMLButtonElement | null>(null);
+  const sluitKnopRef = useRef<HTMLButtonElement | null>(null);
+  const bladRef = useRef<HTMLDivElement | null>(null);
+
+  const sluitInfo = () => {
+    setInfoOpen(false);
+    window.requestAnimationFrame(() => infoKnopRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!lopend || stand !== 'wacht' || symboolOk) setInfoOpen(false);
+  }, [lopend, stand, symboolOk]);
+
+  useEffect(() => {
+    if (!infoOpen) return undefined;
+    const focusRaam = window.requestAnimationFrame(() => sluitKnopRef.current?.focus());
+    const opToets = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        sluitInfo();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const blad = bladRef.current;
+      if (!blad) return;
+      const lijst = Array.from(
+        blad.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], summary, input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => {
+        if (el.hasAttribute('hidden')) return false;
+        const geslotenDetails = el.closest('details:not([open])');
+        if (geslotenDetails && !(el.tagName === 'SUMMARY' && el.parentElement === geslotenDetails)) return false;
+        return typeof el.getClientRects !== 'function' || el.getClientRects().length > 0;
+      });
+      if (lijst.length === 0) return;
+      const eerste = lijst[0];
+      const laatste = lijst[lijst.length - 1];
+      const actief = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (!actief || !blad.contains(actief) || actief === eerste) {
+          e.preventDefault();
+          laatste.focus();
+        }
+      } else if (!actief || !blad.contains(actief) || actief === laatste) {
+        e.preventDefault();
+        eerste.focus();
+      }
+    };
+    window.addEventListener('keydown', opToets);
+    return () => {
+      window.cancelAnimationFrame(focusRaam);
+      window.removeEventListener('keydown', opToets);
+    };
+  }, [infoOpen]);
 
   useEffect(() => {
     let actief = true;
@@ -210,33 +304,33 @@ export default function AanmeldTelegram({
     return () => { actief = false; window.clearTimeout(t); };
   }, [lopend]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // De browser vraagt zelf om toestemming; wij sturen alleen het punt (server rondt af op ≈ 1 km) of de weigering. Nooit blokkerend.
+  // HERSTEL-001 (TG-1): запит місця пристрою викликається виключно з прямого натискання кнопки на видимій вкладці.
+  const stuurPlaats = (l: Lopend, body: Record<string, unknown>, nieuwStand: 'gegeven' | 'geweigerd' | 'mislukt') =>
+    void openbaarPost('/api/aanmelden/telegram/plaats', { id: l.id, geheim: l.geheim, ...body, stand: nieuwStand })
+      .then(() => setGeo(nieuwStand))
+      .catch(() => setGeo('mislukt'));
+
   const plaatsDelen = (l: Lopend) => {
     if (!('geolocation' in navigator)) { setGeo('mislukt'); return; }
     setGeo('bezig');
-    const meld = (body: Record<string, unknown>, stand: 'gegeven' | 'geweigerd' | 'mislukt') =>
-      void openbaarPost('/api/aanmelden/telegram/plaats', { id: l.id, geheim: l.geheim, ...body, stand }).then(() => setGeo(stand)).catch(() => setGeo('mislukt'));
-    navigator.geolocation.getCurrentPosition(
-      (p) => meld({ lat: p.coords.latitude, lon: p.coords.longitude, nauwkeurig: p.coords.accuracy }, 'gegeven'),
-      (e) => meld({}, e.code === e.PERMISSION_DENIED ? 'geweigerd' : 'mislukt'),
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+    void plaatsVragen().then(async (uitkomst) => {
+      if (typeof uitkomst === 'object') {
+        stuurPlaats(l, { lat: uitkomst.lat, lon: uitkomst.lon, nauwkeurig: uitkomst.nauwkeurig }, 'gegeven');
+        return;
+      }
+      if (uitkomst === 'geweigerd') {
+        const perm = await plaatsToestemming();
+        stuurPlaats(l, {}, perm === 'prompt' ? 'mislukt' : 'geweigerd');
+        return;
+      }
+      stuurPlaats(l, {}, 'mislukt');
+    });
   };
-  // Gaf de gebruiker deze site al eerder toestemming, dan delen we de plaats meteen (geen extra klik, geen nieuwe vraag).
-  useEffect(() => {
-    if (!lopend || stand !== 'wacht' || geo !== '') return;
-    const p = (navigator as Navigator & { permissions?: { query: (d: { name: string }) => Promise<{ state: string }> } }).permissions;
-    if (!p?.query) return;
-    let actief = true;
-    void p.query({ name: 'geolocation' }).then((s) => { if (actief && s.state === 'granted') plaatsDelen(lopend); }).catch(() => undefined);
-    return () => { actief = false; };
-  }, [lopend, stand]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Eist het account de plaats en vroegen we er nog niet om, dan vragen we het nu meteen (de browser toont zijn eigen vraag).
-  useEffect(() => { if (lopend && stand === 'wacht' && geoVereist && geo === '') plaatsDelen(lopend); }, [geoVereist]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const start = () => {
     if (pauze.actief) return;
     void doe(async () => {
-      setFout(''); setStand(''); setReden(''); setGeo(''); setGeoVereist(false); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setSymboolOk(false); klaar.current = false;
+      setFout(''); setStand(''); setReden(''); setGeo(''); setGeoVereist(false); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setSymboolOk(false); setInfoOpen(false); klaar.current = false;
       try {
         const tab = ecosystemTabContext();
         const r = await openbaarPost<Lopend>('/api/aanmelden/telegram/start', {
@@ -251,6 +345,11 @@ export default function AanmeldTelegram({
         });
         pauze.wis();
         bewaar(r); setLopend(r); setStand('wacht'); setPictogram(typeof r.pictogram === 'number' ? r.pictogram : null);
+        void plaatsVoorStart().then((vooraf) => {
+          if (vooraf.plaats) {
+            stuurPlaats(r, { lat: vooraf.plaats.lat, lon: vooraf.plaats.lon, nauwkeurig: vooraf.plaats.nauwkeurig }, 'gegeven');
+          }
+        });
       } catch (e) {
         const p = pauze.vangPauze(e);
         if (p.isPauze) { setFout(''); return; }
@@ -281,7 +380,7 @@ export default function AanmeldTelegram({
       }
     });
   };
-  const stoppen = () => { klaar.current = false; bewaar(null); setLopend(null); setStand(''); setReden(''); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setFout(''); };
+  const stoppen = () => { klaar.current = false; bewaar(null); setInfoOpen(false); setLopend(null); setStand(''); setReden(''); setGeo(''); setGeoVereist(false); setSymboolOk(false); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setFout(''); };
   const tegelNaam = pictogram !== null ? pictogramTegel(pictogram, lang)?.naam ?? '' : '';
 
   if (!cfg?.zichtbaar) return null;
@@ -301,12 +400,12 @@ export default function AanmeldTelegram({
       disabled={uitgeschakeld}
       aria-disabled={uitgeschakeld}
     >
-      <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={22} /></span>
+      <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={34} /></span>
       <span className='tga-aanmeld-tekst'>
         {pauze.actief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Увійти через Telegram', 'Aanmelden met Telegram')}
       </span>
       <span className='tga-aanmeld-eind' aria-hidden='true'>
-        {bezig ? <span className='tga-draai' /> : pauze.actief ? '·' : '→'}
+        {bezig ? <span className='tga-draai' /> : pauze.actief ? '·' : <ArrowRight size={18} aria-hidden='true' />}
       </span>
     </button>
     {pauzeTekst && <p className={pauze.actief ? 'tga-let' : 'tga-ok'} role='status' aria-live='polite'>
@@ -316,7 +415,7 @@ export default function AanmeldTelegram({
       : tr(lang, 'Telegram тимчасово не відповідає. Спробуйте за хвилину або увійдіть через Google.', 'Telegram antwoordt tijdelijk niet. Probeer over een minuut of meld u aan met Google.')}</p>}
     {stand === 'geweigerd' && <p className='tga-fout' role='alert'>{
       reden === 'fout-symbool' ? tr(lang, 'У Telegram обрали іншу піктограму — вхід скасовано. Якщо це були ви, почніть знову й уважно оберіть ту саму піктограму, що на цьому екрані.', 'In Telegram werd een ander pictogram gekozen — de aanmelding is geannuleerd. Was u het, begin opnieuw en kies precies het pictogram van dit scherm.')
-        : reden === 'plaats-nodig' ? tr(lang, 'Цей обліковий запис вимагає місце пристрою, а браузер його не надав — вхід скасовано. Почніть знову й дозвольте доступ до місця, або увійдіть іншим способом.', 'Dit account eist de plaats van het apparaat en de browser gaf die niet — de aanmelding is geannuleerd. Begin opnieuw en sta de locatie toe, of meld u op een andere manier aan.')
+        : reden === 'plaats-nodig' ? tr(lang, 'Цей обліковий запис вимагає місце пристрою, а оглядач його не надав — вхід скасовано. Почніть знову й дозвольте доступ до місця, або увійдіть іншим способом.', 'Dit account eist de plaats van het apparaat en de browser gaf die niet — de aanmelding is geannuleerd. Begin opnieuw en sta de locatie toe, of meld u op een andere manier aan.')
         : reden === 'code-fout' ? tr(lang, 'Таємний код у вікні Telegram не підійшов забагато разів — вхід скасовано.', 'De geheime code in het Telegram-venster klopte te vaak niet — de aanmelding is geannuleerd.')
         : reden === 'niet-ik' ? tr(lang, 'Вхід відхилено в Telegram («Ні, це не я»), цей пристрій заблоковано для входу через Telegram. Якщо це були ви — увійдіть через Google.', 'Aanmelding geweigerd in Telegram («Nee, dit ben ik niet»); dit apparaat is geblokkeerd voor Telegram. Was u het wel — meld u aan met Google.')
         : reden === 'passkey-nodig' && andereWeg ? tr(lang, andereWeg.uk, andereWeg.nl)
@@ -329,55 +428,156 @@ export default function AanmeldTelegram({
     {fout && <p className='tga-fout' role='alert'>{fout}</p>}
   </div>;
 
-  const huidigeStap: 1 | 2 | 3 | 4 =
-    stand === 'ingelogd' ? 4 : codeNodig || codeInVenster ? 3 : symboolOk || stand === 'goedgekeurd' ? 3 : 2;
-
   return <div className='tga-aanmeld tga-aanmeld-open' data-tg-stijl={inlogStijl} aria-live='polite'>
     <div className='tga-open-boven'>
       <h2 className='tga-kop'>
-        <TelegramLogo maat={24} /> {tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}
+        <TelegramLogo maat={20} /> {tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}
         {(stand === 'ingelogd' || stand === 'goedgekeurd') && <TelegramSlotBevestigd lang={lang} />}
       </h2>
-      <TelegramStijlKiezer lang={lang} stijl={inlogStijl} onKies={zetInlogStijl} />
+      {stand !== 'ingelogd' && rest > 0 && (
+        <span className='tga-tijd-pil' aria-label={tr(lang, `Залишилося часу: ${mmss}`, `Resterende tijd: ${mmss}`)}>
+          <span className='tga-draai' aria-hidden='true' />
+          <span>{mmss}</span>
+        </span>
+      )}
     </div>
     {stand !== 'ingelogd' && rest > 0 ? <TelegramTijdBalk lang={lang} restSec={rest} /> : null}
-    {inlogStijl === 'maket' ? (
-      <TelegramStappenBalk lang={lang} stap={huidigeStap} heeftCode={codeNodig || codeInVenster} />
-    ) : null}
-    {stand === 'ingelogd' ? <p><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Готово — відкриваємо ваш простір…', 'Klaar — uw ruimte wordt geopend…')}</p> : pictogram !== null ? <div className='tg2-wacht'>
+    {stand === 'ingelogd' ? <p><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Готово — відкриваємо ваш простір…', 'Klaar — uw ruimte wordt geopend…')}</p> : pictogram !== null ? <div className='tg2-wacht' data-tg-schone-kaart='1'>
       <div className='tg2-held'><PictogramTegel index={pictogram} lang={lang} groot /></div>
-      <p className='tg2-vraag'>{tr(lang, `Оберіть у Telegram таку саму піктограму «${tegelNaam}»`, `Kies in Telegram hetzelfde pictogram «${tegelNaam}»`)}</p>
-      <p className='tga-klein'>{tr(lang, 'Бот надішле кнопку «Підтвердити вхід». Вона відкриє захищене вікно з трьома піктограмами — точно такими, як ця: той самий малюнок, колір і назва. Правильна лише одна, спроба одна.', 'De bot stuurt een knop «Aanmelding bevestigen». Die opent een beveiligd venster met drie pictogrammen — precies zoals dit: zelfde tekening, kleur en naam. Er is er maar één juist, u hebt één poging.')}</p>
       <TelegramWie lang={lang} personen={bevestiger} soort='bevestigd' />
-      <ol className='tg2-stappen'>
-        <li className={symboolOk || stand === 'goedgekeurd' ? 'is-klaar' : 'is-nu'}>{tr(lang, `Відкрийте Telegram і натисніть «Підтвердити вхід», потім піктограму «${tegelNaam}».`, `Open Telegram, tik «Aanmelding bevestigen» en daarna het pictogram «${tegelNaam}».`)}</li>
-        <li className={codeInVenster ? 'is-nu' : ''}>{tr(lang, 'Якщо ви ввімкнули таємний код — введіть його в тому ж вікні (ніколи не в чаті).', 'Hebt u een geheime code ingesteld, vul die dan in hetzelfde venster in (nooit in de chat).')}</li>
-        <li>{tr(lang, 'Сторінка відкриється сама.', 'De pagina opent vanzelf.')}</li>
-      </ol>
-      {!symboolOk && stand === 'wacht' && <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={20} /><span>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span></a>}
+      <div className='tg2-vraag-rij'>
+        <p className='tg2-vraag'>
+          {codeInVenster
+            ? tr(lang, 'Введіть таємний код у вікні Telegram', 'Vul uw geheime code in het Telegram-venster in')
+            : symboolOk
+              ? tr(lang, 'Підтверджено в Telegram — завершуємо вхід…', 'Bevestigd in Telegram — aanmelding afronden…')
+              : tr(lang, 'Оберіть таку саму піктограму в Telegram', 'Kies hetzelfde pictogram in Telegram')}
+        </p>
+        {!symboolOk && stand === 'wacht' && (
+          <button
+            ref={infoKnopRef}
+            type='button'
+            className='tg2-info-knop is-icoon'
+            data-tg-info-knop='1'
+            aria-label={tr(lang, 'Як підтвердити вхід', 'Zo bevestigt u de aanmelding')}
+            aria-haspopup='dialog'
+            aria-expanded={infoOpen}
+            onClick={() => setInfoOpen(true)}
+          >
+            i
+          </button>
+        )}
+      </div>
+
+      {!symboolOk && stand === 'wacht' && <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'>
+        <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={34} /></span>
+        <span className='tga-aanmeld-tekst'>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span>
+        <span className='tga-aanmeld-eind' aria-hidden='true'>↗</span>
+      </a>}
+
       {!symboolOk && stand === 'wacht' && geoVereist && geo !== 'gegeven' && <div className='tga-fout tg2-plaats-eis' role='alert' data-tg-plaats-eis>
         <b>{tr(lang, '❗ Цей обліковий запис вимагає місце пристрою', '❗ Dit account eist de plaats van het apparaat')}</b>
-        <p className='tga-klein'>{geo === 'geweigerd' || geo === 'mislukt'
-          ? tr(lang, 'Без місця вхід через Telegram не відбудеться. Дозвольте доступ до місця в налаштуваннях сайту в браузері й натисніть кнопку ще раз, або увійдіть іншим способом (ключ доступу, Google). Вимогу можна вимкнути після входу: «Способи входу» → Telegram.', 'Zonder plaats lukt aanmelden met Telegram niet. Sta de locatie toe in de site-instellingen van de browser en druk nogmaals op de knop, of meld u op een andere manier aan (toegangssleutel, Google). De eis zet u na het aanmelden uit: «Aanmeldmethoden» → Telegram.')
-          : tr(lang, 'Дозвольте браузеру доступ до місця, потім оберіть піктограму в Telegram ще раз. Спроба не втрачена.', 'Geef de browser toegang tot de locatie en kies daarna het pictogram in Telegram opnieuw. De poging is niet verbruikt.')}</p>
-        {geo !== 'bezig' && <button type='button' className='tga-aanmeld-knop' onClick={() => plaatsDelen(lopend)}>{tr(lang, '📍 Надати місце пристрою', '📍 Plaats van het apparaat delen')}</button>}
+        <p className='tga-klein'>{geo === 'geweigerd'
+          ? tr(lang, 'Дозвольте доступ до місця в налаштуваннях оглядача й натисніть кнопку знову, або увійдіть іншим способом.', 'Sta locatie toe in de browserinstellingen en probeer opnieuw, of kies een andere aanmeldmethode.')
+          : tr(lang, 'Натисніть кнопку нижче, щоб оглядач запитав дозвіл, і завершіть вхід у вікні Telegram.', 'Druk hieronder zodat de browser om toestemming vraagt en rond af in het Telegram-venster.')}</p>
+        {geo !== 'bezig' && <button type='button' className='tga-aanmeld-knop tga-plaats-knop' onClick={() => plaatsDelen(lopend)}>
+          <span className='tga-aanmeld-logo' aria-hidden='true'><MapPin size={18} aria-hidden='true' /></span>
+          <span className='tga-aanmeld-tekst'>{tr(lang, 'Надати місце пристрою', 'Plaats van het apparaat delen')}</span>
+          <span className='tga-aanmeld-eind' aria-hidden='true'><ArrowRight size={18} aria-hidden='true' /></span>
+        </button>}
       </div>}
-      {!symboolOk && stand === 'wacht' && !(geoVereist && geo !== 'gegeven') && <div className='tg2-plaats' data-tg-plaats={geo || 'open'}>
-        {geo === 'gegeven' ? <p className='tga-klein' role='status'>{tr(lang, '📍 Місце цього пристрою додано до запиту. У вікні Telegram ви побачите його поруч із місцем за IP-адресою.', '📍 De plaats van dit apparaat is aan het verzoek toegevoegd. In het Telegram-venster ziet u die naast de plaats volgens het IP-adres.')}</p>
-          : geo === 'geweigerd' ? <p className='tga-klein' role='status'>{tr(lang, 'Доступ до місця не надано. У вікні Telegram буде лише місце за IP-адресою — вхід від цього не залежить.', 'Geen toegang tot de locatie gegeven. In het Telegram-venster staat alleen de plaats volgens het IP-adres — aanmelden hangt hier niet van af.')}</p>
-          : geo === 'mislukt' ? <p className='tga-klein' role='status'>{tr(lang, 'Пристрій не зміг визначити місце. У вікні Telegram буде лише місце за IP-адресою.', 'Het apparaat kon de plaats niet bepalen. In het Telegram-venster staat alleen de plaats volgens het IP-adres.')}</p>
-          : <>
-            <button type='button' className='tga-link' disabled={geo === 'bezig'} onClick={() => plaatsDelen(lopend)}
-              title={tr(lang, 'Браузер запитає дозвіл на доступ до місця. Якщо дозволите, приблизне місце цього пристрою (з точністю близько 1 км) збережеться лише в цьому запиті на вхід і з’явиться у вікні Telegram поруч із місцем за IP-адресою. Якщо вони далеко одне від одного, вікно попередить: так видно чужий запит або VPN. Відмова на вхід не впливає.', 'De browser vraagt toestemming voor de locatie. Staat u die toe, dan wordt de plaats van dit apparaat bij benadering (ongeveer 1 km nauwkeurig) alleen bij dit aanmeldverzoek bewaard en verschijnt die in het Telegram-venster naast de plaats volgens het IP-adres. Liggen ze ver uit elkaar, dan waarschuwt het venster: zo valt een vreemd verzoek of een VPN op. Weigeren heeft geen invloed op het aanmelden.')}>
-              {geo === 'bezig' ? tr(lang, '📍 Визначаємо місце…', '📍 Plaats bepalen…') : tr(lang, '📍 Додати місце цього пристрою для звірки', '📍 Plaats van dit apparaat toevoegen ter controle')}</button>
-            <p className='tga-klein'>{tr(lang, 'Необов’язково. Браузер запитає дозвіл; у Telegram ви побачите місце пристрою поруч із місцем за IP-адресою й одразу помітите розбіжність.', 'Niet verplicht. De browser vraagt toestemming; in Telegram ziet u de plaats van het apparaat naast de plaats volgens het IP-adres en merkt u een afwijking meteen op.')}</p>
-          </>}
-      </div>}
-      {!symboolOk && stand === 'wacht' && <a className='tga-link' href={lopend.widgetUrl}>{tr(lang, 'Telegram на іншому пристрої? Увійти через офіційне вікно входу Telegram', 'Telegram op een ander apparaat? Aanmelden via het officiële aanmeldvenster van Telegram')}</a>}
-      <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {codeInVenster ? tr(lang, `Чекаємо на таємний код у вікні Telegram… залишилось ${mmss}`, `Wachten op de geheime code in het Telegram-venster… nog ${mmss}`) : tr(lang, `Чекаємо на підтвердження… залишилось ${mmss}`, `Wachten op bevestiging… nog ${mmss}`)}</p>
-      <p className='tg2-waarom'><b>{tr(lang, 'Чому піктограма, а не просто «Так»?', 'Waarom een pictogram en niet gewoon «Ja»?')}</b> {tr(lang, 'Якщо у ваш обліковий запис намагається увійти хтось інший, запит у Telegram ви отримаєте, але не знатимете, яка піктограма правильна, — випадкове натискання нічого не відкриє.', 'Probeert iemand anders zich aan te melden, dan krijgt u het verzoek in Telegram wel, maar weet u niet welk pictogram juist is — per ongeluk tikken opent niets.')}</p>
+
+      {infoOpen && (
+        <div
+          className='tg2-info-sluier'
+          data-tg-info-sluier='1'
+          onClick={(e) => { if (e.target === e.currentTarget) sluitInfo(); }}
+        >
+          <div
+            ref={bladRef}
+            className='tg2-info-blad'
+            data-tg-info-blad='1'
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby='tg2-info-blad-titel'
+            aria-label={tr(lang, 'Як підтвердити вхід', 'Zo bevestigt u de aanmelding')}
+          >
+            <div className='tg2-info-kop'>
+              <h3 id='tg2-info-blad-titel'>{tr(lang, 'Як підтвердити вхід', 'Zo bevestigt u de aanmelding')}</h3>
+              <button
+                ref={sluitKnopRef}
+                type='button'
+                className='tg2-info-sluit is-icoon'
+                aria-label={tr(lang, 'Закрити', 'Sluiten')}
+                onClick={sluitInfo}
+              >
+                <X size={18} aria-hidden='true' />
+              </button>
+            </div>
+
+            <ol className='tg2-info-stappen'>
+              <li className='tg2-info-stap'>
+                <span className='tg2-info-visueel'>
+                  <span className='tg2-info-medaillon is-tg' aria-hidden='true'><TelegramLogo maat={22} /></span>
+                </span>
+                <span className='tg2-info-tekst'>{tr(lang, 'Натисніть «Підтвердити вхід»', 'Tik op «Aanmelding bevestigen»')}</span>
+              </li>
+              <li className='tg2-info-stap'>
+                <span className='tg2-info-visueel'>
+                  <MiniDriePictogrammen index={pictogram} lang={lang} />
+                </span>
+                <span className='tg2-info-tekst'>
+                  {tr(lang, `Оберіть таку саму піктограму «${tegelNaam}»`, `Kies hetzelfde pictogram «${tegelNaam}»`)}
+                </span>
+              </li>
+              <li className='tg2-info-stap'>
+                <span className='tg2-info-visueel'>
+                  <span className='tg2-info-medaillon is-tel' aria-hidden='true'><Smartphone size={20} aria-hidden='true' /></span>
+                </span>
+                <span className='tg2-info-tekst'>{tr(lang, 'Сторінка відкриється сама', 'De pagina opent vanzelf')}</span>
+              </li>
+            </ol>
+
+            <details className='tg2-info-extra'>
+              <summary>
+                <ChevronDown size={15} className='tg2-info-extra-pijl' aria-hidden='true' />
+                <span>{tr(lang, 'Інший пристрій або звірка місця', 'Ander apparaat of locatiecontrole')}</span>
+              </summary>
+              <div className='tg2-info-extra-inhoud'>
+                <a className='tga-link' href={lopend.widgetUrl}>
+                  {tr(lang, 'Telegram на іншому пристрої — увійти через вікно Telegram', 'Telegram op een ander apparaat — via aanmeldvenster')}
+                </a>
+                {!(geoVereist && geo !== 'gegeven') && (
+                  <div className='tg2-plaats' data-tg-plaats={geo || 'open'}>
+                    {geo === 'gegeven' ? (
+                      <span className='tga-klein' role='status'>{tr(lang, '✓ Місце пристрою додано для звірки', '✓ Plaats van het apparaat toegevoegd')}</span>
+                    ) : geo === 'geweigerd' || geo === 'mislukt' ? (
+                      <span className='tga-klein' role='status'>{tr(lang, 'Місце не надано — у Telegram буде лише місце за IP-адресою', 'Geen locatie gedeeld — alleen IP-plaats zichtbaar in Telegram')}</span>
+                    ) : (
+                      <button type='button' className='tga-link' disabled={geo === 'bezig'} onClick={() => plaatsDelen(lopend)}>
+                        {geo === 'bezig'
+                          ? tr(lang, '📍 Визначаємо місце…', '📍 Plaats bepalen…')
+                          : tr(lang, '📍 Додати місце цього пристрою для звірки', '📍 Plaats van dit apparaat delen ter controle')}
+                      </button>
+                    )}
+                  </div>
+                )}
+                {inlogStijl === 'maket' && (
+                  <TelegramBotVoorbeeld
+                    lang={lang}
+                    bot={lopend.bot}
+                    pictogram={pictogram}
+                    tegelNaam={tegelNaam}
+                    symbool={null}
+                  />
+                )}
+              </div>
+            </details>
+          </div>
+        </div>
+      )}
     </div> : codeNodig ? <form onSubmit={(e) => { e.preventDefault(); codeSturen(); }} className='tga-blok'>
-      <p>{tr(lang, 'Telegram підтвердив. Ваш обліковий запис також вимагає таємний код — введіть його тут (ніколи не в чаті).', 'Telegram heeft bevestigd. Uw account vraagt ook uw geheime code — vul die hier in (nooit in de chat).')}</p>
+      <p>{tr(lang, 'Telegram підтвердив. Ваш обліковий запис також вимагає таємний код — введіть його тут (ніколи не в бесіді).', 'Telegram heeft bevestigd. Uw account vraagt ook uw geheime code — vul die hier in (nooit in de chat).')}</p>
       <input type='password' autoComplete='off' value={code} onChange={(e) => setCode(e.target.value)} maxLength={64} autoFocus aria-label={tr(lang, 'Таємний код', 'Geheime code')} />
       <button type='submit' className='tga-knop tga-knop-hoofd' disabled={bezig || pauze.actief || code.length < 4}>
         {pauze.actief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Увійти', 'Aanmelden')}
@@ -385,12 +585,12 @@ export default function AanmeldTelegram({
     </form> : <>
       <ol className='tga-stappen'>
         <li>{tr(lang, 'Відкрийте Telegram кнопкою нижче.', 'Open Telegram met de knop hieronder.')}</li>
-        <li>{tr(lang, `У чаті з @${lopend.bot} перевірте пристрій і час та натисніть «Це я, увійти».`, `Controleer in de chat met @${lopend.bot} het apparaat en de tijd en tik «Ik ben het, aanmelden».`)}</li>
+        <li>{tr(lang, `У бесіді з @${lopend.bot} перевірте пристрій і час та натисніть «Це я, увійти».`, `Controleer in de chat met @${lopend.bot} het apparaat en de tijd en tik «Ik ben het, aanmelden».`)}</li>
         {geldigSymbool(lopend.symbool) ? <li>{tr(lang, 'Переконайтеся, що бот показує той самий символ, що й тут (нижче).', 'Controleer dat de bot hetzelfde symbool toont als hier (hieronder).')}</li> : null}
         <li>{tr(lang, 'Поверніться сюди — сторінка відкриється сама.', 'Kom hier terug — de pagina opent vanzelf.')}</li>
       </ol>
       <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'>
-        <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={22} /></span>
+        <span className='tga-aanmeld-logo' aria-hidden='true'><TelegramLogo maat={34} /></span>
         <span className='tga-aanmeld-tekst'>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span>
         <span className='tga-aanmeld-eind' aria-hidden='true'>↗</span>
       </a>
@@ -404,19 +604,10 @@ export default function AanmeldTelegram({
       <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, `Чекаємо на підтвердження… залишилось ${mmss}`, `Wachten op bevestiging… nog ${mmss}`)}</p>
       <p className='tga-klein'>{tr(lang, 'Чому так: вхід підтверджується лише у вашому власному Telegram, тож пароль не потрібен, а чужий пристрій ви одразу побачите й заблокуєте.', 'Waarom zo: de aanmelding wordt alleen in uw eigen Telegram bevestigd, dus geen wachtwoord nodig, en een vreemd apparaat ziet en blokkeert u meteen.')}</p>
     </>}
-    {inlogStijl === 'maket' && stand !== 'ingelogd' ? (
-      <TelegramBotVoorbeeld
-        lang={lang}
-        bot={lopend.bot}
-        pictogram={pictogram}
-        tegelNaam={tegelNaam}
-        symbool={geldigSymbool(lopend.symbool) ? lopend.symbool : null}
-      />
-    ) : null}
     {pauzeTekst && <p className={pauze.actief ? 'tga-let' : 'tga-ok'} role='status' aria-live='polite'>
       {pauze.actief ? <><strong>{pauzeTekst.kop}.</strong> {pauzeTekst.uitleg}</> : pauzeTekst.vrij}
     </p>}
     {fout && <p className='tga-fout' role='alert'>{fout}</p>}
-    <button type='button' className='tga-knop' onClick={stoppen}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
+    <button type='button' className='tga-knop tg2-annuleer-knop' onClick={stoppen}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
   </div>;
 }

@@ -12,7 +12,8 @@
 //     файл, де воно виникає, група налаштувань (shared/melding-typen.ts), рівень (небезпека / рішення / звичайне), схема й заголовок
 //     українською та нідерландською.
 //   • Канали: bel (дзвіночок, сервер), telegram (картка в Telegram), email (лист власнику), extensie (розширення Chrome → центр),
-//     toast (миттєве повідомлення сторінки, emitCanonicalNotice), activiteit (журнал активності в центрі сповіщень).
+//     toast (миттєве повідомлення сторінки, emitCanonicalNotice), activiteit (журнал активності в центрі сповіщень),
+//     pagina (сигнали та смуги стану сторінки, publiceerPaginaSignaal — зокрема стан зв’язку з сервером і хронологія перерв).
 //
 // ПРАВИЛО / REGEL
 //   Нове сповіщення спершу з'являється ТУТ (рядок у MELDINGEN), потім у коді. Сторож tests/eenheid/meldingen-catalogus-20261117.test.ts
@@ -29,7 +30,7 @@
 // Puur (geen React/DOM/DB): hetzelfde register in de browser, op de server, in tests en in de stand.
 import type { MeldingType } from './melding-typen';
 
-export type MeldingKanaal = 'bel' | 'telegram' | 'email' | 'extensie' | 'toast' | 'activiteit';
+export type MeldingKanaal = 'bel' | 'telegram' | 'email' | 'extensie' | 'toast' | 'activiteit' | 'pagina';
 export type MeldingNiveau = 'gevaar' | 'besluit' | 'gewoon';
 export type MeldingSchemaId = `S${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20}`;
 type Tekst = readonly [uk: string, nl: string];
@@ -177,6 +178,8 @@ export const MELDINGEN: readonly MeldingItem[] = [
     titel: ['✅ Telegram прив’язано', '✅ Telegram gekoppeld'] },
   { id: 'bel.telegram-aanmelden-meldingen.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/meldingen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
     titel: ['Подія Telegram-входу', 'Gebeurtenis bij aanmelden met Telegram'] },
+  { id: 'bel.telegram-aanmelden-meldingen.security.hersteld', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/meldingen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S15',
+    titel: ['✅ Telegram: зв’язок відновлено', '✅ Telegram: verbinding hersteld'] },
   { id: 'bel.telegram-aanmelden-ontkoppelen.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/ontkoppelen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
     titel: ['Telegram відв’язано', 'Telegram ontkoppeld'] },
   { id: 'bel.telegram-aanmelden-routes.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/routes.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
@@ -683,6 +686,27 @@ export const MELDINGEN: readonly MeldingItem[] = [
     titel: ['Заплановано зустріч із клієнтом у календарі', 'Afspraak met klant ingepland in agenda'] },
   { id: 'activiteit.connector-activiteit.klantrelatie.hulp', kanaal: 'activiteit', soort: 'owner.klantrelatie.hulp', bestand: 'src/connector-activiteit.ts', type: 'systeem', niveau: 'gewoon', schema: 'S19',
     titel: ['Підготовлено чернетку за досьє клієнта', 'Tekstvoorstel voor klantdossier voorbereid'] },
+  // ── pagina: сигнали та інформаційні смуги сторінок (publiceerPaginaSignaal)
+  { id: 'pagina.verbinding.server-storing', kanaal: 'pagina', soort: 'server_storing', bestand: 'src/CanoniekVerbindingBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S15',
+    titel: ['Перерва зв’язку сторінки з сервером (зафіксовано доказ і хронологію)', 'Verbindingsonderbreking van de pagina met de server (bewijs en tijdlijn vastgelegd)'] },
+  { id: 'pagina.verbinding.netwerk-offline', kanaal: 'pagina', soort: 'netwerk_offline', bestand: 'src/CanoniekVerbindingBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S15',
+    titel: ['Втрата мережевого з’єднання пристрою (зафіксовано доказ і хронологію)', 'Geen netwerkverbinding op het apparaat (bewijs en tijdlijn vastgelegd)'] },
+  { id: 'pagina.verbinding.hersteld', kanaal: 'pagina', soort: 'verbinding_hersteld', bestand: 'src/CanoniekVerbindingBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S15',
+    titel: ['Сервер знову відповідає — зв’язок відновлено', 'De server antwoordt weer — verbinding hersteld'] },
+  { id: 'pagina.nieuwe-versie.info', kanaal: 'pagina', soort: 'info', bestand: 'src/platform/NieuweVersieBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S14',
+    titel: ['Сайт оновлено до нової версії', 'De site is bijgewerkt naar een nieuwe versie'] },
+  { id: 'pagina.sleutelkluis.sleutel-dicht', kanaal: 'pagina', soort: 'sleutel_dicht', bestand: 'src/platform/kluis-poort.tsx', type: 'beveiliging', niveau: 'besluit', schema: 'S3',
+    titel: ['Дані зараз зашифровані — потрібне розшифрування ключем на місці', 'Uw gegevens zijn nu versleuteld — ontsleutelen ter plaatse vereist'] },
+  { id: 'pagina.extensie-update.kritiek', kanaal: 'pagina', soort: 'kritiek', bestand: 'src/ExtensieUpdateBand.tsx', type: 'apparaten', niveau: 'besluit', schema: 'S12',
+    titel: ['Розширення оглядача застаріло — потрібне оновлення', 'De browserextensie is verouderd — bijwerken vereist'] },
+  { id: 'pagina.extensie-update.waarschuwing', kanaal: 'pagina', soort: 'waarschuwing', bestand: 'src/ExtensieUpdateBand.tsx', type: 'apparaten', niveau: 'gewoon', schema: 'S12',
+    titel: ['Доступне оновлення розширення оглядача', 'Update van de browserextensie beschikbaar'] },
+  { id: 'pagina.ruimte-strook.info', kanaal: 'pagina', soort: 'info', bestand: 'src/RuimteStrook.tsx', type: 'tech.server', niveau: 'gewoon', schema: 'S13',
+    titel: ['Активна смуга технічного простору даних', 'Actieve strook van de technische gegevensruimte'] },
+  { id: 'pagina.ruimte-strook.waarschuwing', kanaal: 'pagina', soort: 'waarschuwing', bestand: 'src/RuimteStrook.tsx', type: 'tech.server', niveau: 'besluit', schema: 'S13',
+    titel: ['Службу вимкнено або заморожено в технічному просторі', 'Dienst uitgeschakeld of bevroren in de technische ruimte'] },
+  { id: 'pagina.melding-ecosysteem.zandbak', kanaal: 'pagina', soort: '(variabel)', bestand: 'src/identiteit/melding/MeldingEcosysteemPagina.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S13',
+    titel: ['Перевірковий сигнал зі стенда сторінки сповіщень', 'Proefsignaal vanuit de zandbak op de meldingenpagina'] },
 ];
 
 /** Вид описано в shared/melding-soorten.ts, але жоден сервіс його ще не надсилає (запас на майбутнє). Soort bestaat, nog geen afzender. */

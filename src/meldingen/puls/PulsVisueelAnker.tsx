@@ -7,6 +7,8 @@ import {
   Ban,
   Bell,
   Calendar,
+  Check,
+  CheckCheck,
   CheckCircle2,
   Clock3,
   Cloud,
@@ -35,7 +37,13 @@ import {
   Sunrise,
   Zap,
 } from 'lucide-react';
-import { classificeerBijlage, formaatGrootte, type MeldingBijlage, type MeldingSubdomein } from '../../../shared/meldingen-ecosysteem';
+import {
+  classificeerBijlage,
+  formaatGrootte,
+  type MeldingBijlage,
+  type MeldingSubdomein,
+  type OntvangstStaat,
+} from '../../../shared/meldingen-ecosysteem';
 import {
   bestandVisueelAnker,
   uitstelKeuzeLabel,
@@ -90,20 +98,26 @@ export function PulsDienstChip({
   toon,
   label,
   sub,
+  toonIcoon = true,
+  titelHint,
 }: {
   merkSleutel: string | null;
   icoon: PulsIcoonSoort;
   toon: PulsKleurToon;
   label: string;
   sub?: string;
+  toonIcoon?: boolean;
+  titelHint?: string;
 }) {
   return (
-    <span className={`puls-dienst-chip is-toon-${toon}`}>
-      {merkSleutel ? (
-        <MerkLogo id={merkSleutel} logo={merkSleutel} naam={label} maat={16} />
-      ) : (
-        <PulsIcoon soort={icoon} />
-      )}
+    <span className={`puls-dienst-chip is-toon-${toon}`} title={titelHint}>
+      {toonIcoon ? (
+        merkSleutel ? (
+          <MerkLogo id={merkSleutel} logo={merkSleutel} naam={label} maat={14} />
+        ) : (
+          <PulsIcoon soort={icoon} />
+        )
+      ) : null}
       <strong className='puls-dienst-naam'>{label}</strong>
       {sub ? <small className='puls-dienst-sub'>{sub}</small> : null}
     </span>
@@ -154,19 +168,125 @@ export function PulsBestandChip({
   );
 }
 
-export function PulsKlimopZegel({ lang }: { lang: Taal }) {
+export function PulsKlimopZegel({ lang, compact = false }: { lang: Taal; compact?: boolean }) {
   return (
     <span
-      className='puls-klimop-zegel'
+      className={`puls-klimop-zegel${compact ? ' is-compact' : ''}`}
       data-puls-zegel='klimop'
       title={
         lang === 'nl'
-          ? 'Authentieke systeemgebeurtenis uit de beveiligde serverkern van Mijn Ruimte («Klimop»)'
-          : 'Достовірна внутрішня подія захищеного ядра системи («Плющ») — не може бути підроблена листом чи зовнішнім сайтом'
+          ? 'Klimop-kernzegel · authentieke systeemgebeurtenis uit de beveiligde serverkern van Mijn Ruimte'
+          : 'Підпис ядра «Плющ» · достовірна внутрішня подія захищеного ядра системи'
       }
     >
       <ShieldCheck aria-hidden='true' />
-      <span>{lang === 'nl' ? 'Klimop-kernzegel' : 'Підпис ядра «Плющ»'}</span>
+      <span className={compact ? 'mr-sr' : undefined}>{lang === 'nl' ? 'Klimop-kernzegel' : 'Підпис ядра «Плющ»'}</span>
+    </span>
+  );
+}
+
+function kortTijdstip(ts: number | null | undefined, lang: Taal): string {
+  if (!ts || ts <= 0) return '';
+  try {
+    return new Date(ts).toLocaleString(lang === 'nl' ? 'nl-BE' : 'uk-UA', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  } catch {
+    return '';
+  }
+}
+
+export function PulsOntvangstVinkjes({
+  staat,
+  afgeleverdOp,
+  gelezenOp,
+  autoGearchiveerd = false,
+  lang,
+}: {
+  staat: OntvangstStaat;
+  afgeleverdOp?: number | null;
+  gelezenOp?: number | null;
+  autoGearchiveerd?: boolean;
+  lang: Taal;
+}) {
+  const nl = lang === 'nl';
+  const afgTijd = kortTijdstip(afgeleverdOp, lang);
+  const gelTijd = kortTijdstip(gelezenOp, lang);
+  const filterDeel = autoGearchiveerd
+    ? nl
+      ? ' · automatisch gearchiveerd via filter'
+      : ' · автоматично в архів за фільтром'
+    : '';
+  const titelTekst =
+    staat === 'gelezen'
+      ? nl
+        ? `Afgeleverd en gelezen${gelTijd ? ` (${gelTijd})` : ''}${filterDeel}`
+        : `Доставлено й прочитано${gelTijd ? ` (${gelTijd})` : ''}${filterDeel}`
+      : staat === 'afgeleverd'
+        ? nl
+          ? `Afgeleverd in paneel${afgTijd ? ` (${afgTijd})` : ''}, nog niet bekeken${filterDeel}`
+          : `Доставлено в панель${afgTijd ? ` (${afgTijd})` : ''}, ще не прочитано${filterDeel}`
+        : nl
+          ? `Wacht op aflevering in paneel${filterDeel}`
+          : `Очікує доставки в панель користувача${filterDeel}`;
+
+  return (
+    <span
+      className={`puls-ontvangst-vinkjes is-ontvangst-${staat}${autoGearchiveerd ? ' is-auto-archief' : ''}`}
+      data-ontvangst={staat}
+      title={titelTekst}
+      aria-label={titelTekst}
+    >
+      {staat === 'gelezen' ? (
+        <CheckCheck aria-hidden='true' />
+      ) : staat === 'afgeleverd' ? (
+        <Check aria-hidden='true' />
+      ) : (
+        <Clock3 aria-hidden='true' />
+      )}
+    </span>
+  );
+}
+
+/**
+ * Пропорційна мініатюрна капсула кількості непрочитаних сповіщень (число без «×», висота 18 px, border-radius: 999px):
+ * - зі звуком (`metGeluid=true`): колір теми сповіщення або розділу;
+ * - без звуку (`metGeluid=false`): спокійна сіра капсула з сірим числом.
+ */
+export function PulsAantalKapsel({
+  aantal,
+  metGeluid,
+  lang,
+  titelHint,
+}: {
+  aantal: number;
+  metGeluid: boolean;
+  lang: Taal;
+  titelHint?: string;
+}) {
+  if (!Number.isFinite(aantal) || aantal < 1) return null;
+  const geheel = Math.trunc(aantal);
+  const weergave = geheel > 999 ? '999+' : String(geheel);
+  const nl = lang === 'nl';
+  const basisTekst = metGeluid
+    ? nl
+      ? `Ongelezen meldingen: ${geheel} (met geluid)`
+      : `Непрочитаних сповіщень: ${geheel} (зі звуком)`
+    : nl
+      ? `Ongelezen meldingen: ${geheel} (zonder geluid)`
+      : `Непрочитаних сповіщень: ${geheel} (без звуку)`;
+  const volledigeTitel = titelHint ? `${titelHint} · ${basisTekst}` : basisTekst;
+
+  return (
+    <span
+      className={`puls-aantal-kapsel ${metGeluid ? 'is-met-geluid' : 'is-stil'}`}
+      data-puls-aantal={geheel}
+      data-puls-geluid={metGeluid ? '1' : '0'}
+      title={volledigeTitel}
+      aria-label={volledigeTitel}
+    >
+      {weergave}
     </span>
   );
 }

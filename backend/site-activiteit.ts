@@ -8,6 +8,9 @@ import { doelVan } from '../shared/beheer-journaal';
 export type SiteEvent = { id: string; source: string; platform: string; kind: 'site'; type: string; subject: string; status: 'succeeded' | 'failed' | 'rejected'; createdAt: number; finishedAt: number;
   /** Alleen bij AI-acties (owner.mcp.tool): wat, waarop, en bij mislukking WAAROM — zodat de melding de kern noemt, niet alleen «помилка». */
   tool?: string; doel?: string; client?: string; geweigerd?: boolean; code?: string; reden?: string; /** UI-014: einde van een toegang (ISO), bv. extensie. */ eind?: string;
+  /** HERSTEL-001 (MELD-6): безпечний ідентифікатор запису пристрою (UUID) та код способу входу для локалізованого показу. */
+  apparaatId?: string;
+  methode?: string;
   /** 22.10.2026: technische auditcontext (profiel/activatie, server/platform/audit.ts) → sfeer 'technisch' (shared/meldingen-soorten.ts). Nooit de id's zelf naar de browser. */
   context?: { profiel?: string; activatie?: string };
   /** 23.10.2026: de handeling gebeurde in de TECHNISCHE ruimte (details.ruimte/lade 'technisch', of een v2-hulpmiddel van de beheerkant
@@ -19,15 +22,16 @@ export type SiteEvent = { id: string; source: string; platform: string; kind: 's
 // client.ts); in de bel/het paneel was het herhaalruis («Дія на сайті: ruimte geweigerd · виконано»). Het journaal houdt elke regel.
 // 23.10: owner.extensie.zijpaneel.chat = elk chatbericht in het zijpaneel van de extensie (zone E) — geen melding, wel in het journaal.
 // MELDINGEN-REGISTER-001: owner.meldingen.ecosysteem.(actie|profiel) = klik in het meldingenpaneel zelf — mag nooit een nieuwe melding over zichzelf maken.
-export const SITE_RUIS = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.(ecosysteem\.(actie|profiel)|bijlage\.telegram)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh)|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
+export const SITE_RUIS = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.(ecosysteem\.(actie|profiel|ontvangst|aflevering_overzicht)|bijlage\.telegram)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh|migrated\.to-ecosystem|restored\.remembered)|telegram\.venster\.geopend$|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
 const SKIP = SITE_RUIS;
 const RULES: Array<[RegExp, string]> = [
+  [/^owner\.mail\.microsoft|^mail\.microsoft/, 'mail:microsoft'],
   [/^owner\.mail\.|^mail\./, 'mail:google'], [/^owner\.cloud\.|^cloud\./, 'cloud:google'], [/^owner\.calendar\.|^agenda\./, 'calendar:google'], [/^owner\.github\./, 'github'],
-  [/^owner\.ai\.|^owner\.chat\./, 'ai:anthropic'], [/^owner\.(agent|agents)\.|^owner\.(terminal|remote|apparaat)\.|^apparaat\./, 'agent'],
+  [/^owner\.ai\.|^owner\.chat\./, 'ai:anthropic'], [/^owner\.(agent|agents)\.|^owner\.(terminal|remote)\./, 'agent'],
   [/^owner\.(mcp|vaardigheden|connector)\.|^koppeling_gewijzigd$/, 'claude'], [/^owner\.(browser|extensie)\./, 'browser'],
   [/^owner\.api\.|^owner\.vault\./, 'api'],
   [/^owner\.(admin|uitrol|tech|ruimte|flags|ondersteuning|impersonatie|diagnose|beleid)\.|^uitrol[._]|^klimop_|^orch_|^eigenaar_besluit_|^diag\.|^zoek\.index\./, 'admin'],
-  [/^owner\.(identity|privacy|profile|session|step_up|auth|access|rol)\.|^account\.|^privacy\./, 'identity'],
+  [/^owner\.(identity|privacy|profile|session|step_up|auth|access|rol|apparaat)\.|^apparaat\.|^account\.|^privacy\./, 'identity'],
   [/^owner\.klantrelatie\./, 'crm'], [/^huis\./, 'huis'], [/^notitie\./, 'hub'],
   // SEC-002 (privacy-logboek-03): veiligheidskritieke acties ZONDER «owner.»-voorvoegsel vielen hier stil weg (sourceOfAudit → null):
   // een wachtwoord erbij, TOTP uit, passkey weg, sleutelkluis, een AI-token of een namens-sessie — de eigenaar zag niets in de stroom.
@@ -91,6 +95,16 @@ export function siteEventsFromAudit(rows: Array<{ id: string; action: string; re
       if (/denied/i.test(r.result)) ev.geweigerd = true;
       if (code) ev.code = code;
       if (reden) ev.reden = reden;
+    }
+    if (/^(?:owner\.)?apparaat\./.test(r.action) && r.details) {
+      if (typeof r.details.id === 'string' && /^[0-9a-f-]{36}$/i.test(r.details.id.trim())) {
+        ev.apparaatId = r.details.id.trim();
+      }
+      const appLabel = typeof r.details.apparaat === 'string' ? r.details.apparaat.trim().slice(0, 60) : '';
+      const appMethode = typeof r.details.methode === 'string' && /^[a-z0-9_-]{2,24}$/i.test(r.details.methode.trim()) ? r.details.methode.trim().toLowerCase() : '';
+      if (appMethode) ev.methode = appMethode;
+      if (!ev.subject && appLabel) ev.subject = appLabel;
+      if (!ev.doel && appLabel) ev.doel = appLabel;
     }
     if (!ev.doel && afgeleidDoel?.naam) ev.doel = afgeleidDoel.naam.slice(0, 80);
     // Elke andere mislukte actie krijgt de foutcode uit het journaal (alleen een code), zodat de melding zegt waarom. Voor AI-acties staat dat hierboven.

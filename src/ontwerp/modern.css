@@ -221,3 +221,28 @@
 /* Кнопки порожньої хмари залишаються вирівняними разом із текстом. */
 .canonical-content .cvn .cvn-overzicht > section.cvn-leeg { border-style: solid; }
 .canonical-content .cvn .cvn-leeg .cvn-snel { justify-content: center; }
+
+/* Загальносайтова компактна однорядкова поведінка перемикачів режимів, сегментів і вкладок (без JS-вимірювань). */
+html body :is(.lz-segment, .vertaal-strook-keuze, .mail-donker-wissel, .canonical-segmented, .aj-seg, .ctx-tabs, [data-compact-rij]) {
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+html body :is(.lz-segment, .vertaal-strook-keuze, .mail-donker-wissel, .canonical-segmented, .aj-seg, .ctx-tabs, [data-compact-rij]) > :is(button[type]:not(:disabled), button, label) {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+html body :is(.lz-segment, .vertaal-strook-keuze, .mail-donker-wissel, .canonical-segmented, .aj-seg, .ctx-tabs, [data-compact-rij]) > button[type]:not(:disabled),
+html body :is(.lz-segment, .vertaal-strook-keuze, .canonical-segmented) > label > input + span {
+  min-height: 28px;
+  height: 28px;
+  padding-inline: clamp(7px, 2vw, 11px);
+  font-size: clamp(11.5px, 2.8vw, 12.5px);
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

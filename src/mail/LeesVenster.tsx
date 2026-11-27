@@ -48,6 +48,14 @@ export type LeesVensterApi = {
   zetWeergave: (w: Partial<LezerWeergave>) => void;
   /** Overzicht van de sneltoetsen («?»). */
   toonHulp: () => void;
+  /** MAIL-13: composiet verbergen/tonen van boven- en onderbalk tijdens bladeren door de brief op telefoon/smal scherm. */
+  scrollVerborgen: boolean;
+  zetScrollVerborgen: (v: boolean) => void;
+  /** MAIL-10 / MAIL-14: geopende antwoordeditor of actief uitschuifblad boven de brief. */
+  replyOpen: boolean;
+  zetReplyOpen: (v: boolean) => void;
+  onderBlad: boolean;
+  zetOnderBlad: (v: boolean) => void;
 };
 /** Wat elke sneltoets doet (GoogleMailWerkruimte); een ontbrekende actie = de toets doet niets. F6 en «?» regelt het kader zelf. */
 export type LezerSneltoetsen = Partial<Record<Exclude<Sneltoets, 'wissel' | 'hulp'>, () => void>>;
@@ -177,10 +185,18 @@ export default function LeesVenster(p: Props) {
   const [bladOpen, setBladOpen] = useState(false);
   const [weergave, setWeergave] = useState<LezerWeergave>(leesWeergave);
   const [hulp, setHulp] = useState(false);
+  const [scrollVerborgen, setScrollVerborgen] = useState(false);
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [onderBlad, setOnderBlad] = useState(false);
   const vorm = contextVorm(breedte, kolomAan, bladOpen);
   const knopRef = useRef<HTMLButtonElement | null>(null);
-  const nu = useRef({ modus, geminimaliseerd: p.geminimaliseerd, randen, berichtId: p.berichtId, onSluit: p.onSluit, vorm, breedte, sneltoetsen: p.sneltoetsen });
-  nu.current = { modus, geminimaliseerd: p.geminimaliseerd, randen, berichtId: p.berichtId, onSluit: p.onSluit, vorm, breedte, sneltoetsen: p.sneltoetsen };
+  const nu = useRef({ modus, geminimaliseerd: p.geminimaliseerd, randen, berichtId: p.berichtId, onSluit: p.onSluit, vorm, breedte, sneltoetsen: p.sneltoetsen, replyOpen, onderBlad });
+  nu.current = { modus, geminimaliseerd: p.geminimaliseerd, randen, berichtId: p.berichtId, onSluit: p.onSluit, vorm, breedte, sneltoetsen: p.sneltoetsen, replyOpen, onderBlad };
+
+  useEffect(() => { setScrollVerborgen(false); }, [p.berichtId, modus]);
+  useEffect(() => {
+    if (vorm === 'blad' || onderBlad || replyOpen) setScrollVerborgen(false);
+  }, [vorm, onderBlad, replyOpen]);
 
   // scherm en «zwevend» volgen
   useEffect(() => {
@@ -336,11 +352,45 @@ export default function LeesVenster(p: Props) {
     return () => cancelAnimationFrame(raam);
   }, [p.berichtId, modus, p.geminimaliseerd]);
 
-  // schuifpositie per brief: bijhouden tijdens het schuiven, terugzetten zodra de brief geladen is
+  // schuifpositie per brief + composiet verbergen/tonen van werkbalken met hysterese tijdens bladeren (MAIL-13)
   useEffect(() => {
     const a = artikelRef.current; if (!a) return;
+    let laatsteY = 0;
+    let scrollRichting: 'op' | 'neer' | '' = '';
+    let somDelta = 0;
     // de schuivende inhoud is de <section> van het gesprek (niet de ШІ-balk section.mra ervoor)
-    const opScroll = (e: Event) => { const t = e.target as HTMLElement | null; if (t && t.parentElement === a && t.tagName === 'SECTION' && !t.classList.contains('mra')) POSITIES.zet(nu.current.berichtId, t.scrollTop); };
+    const opScroll = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (!(t && t.parentElement === a && t.tagName === 'SECTION' && !t.classList.contains('mra'))) return;
+      const el = t, y = Math.max(0, el.scrollTop);
+      POSITIES.zet(nu.current.berichtId, y);
+      const n = nu.current;
+      if ((n.modus !== 'telefoon' && n.breedte !== 'smal') || n.vorm === 'blad' || n.onderBlad || n.replyOpen) {
+        laatsteY = y;
+        somDelta = 0;
+        setScrollVerborgen((oud) => (oud ? false : oud));
+        return;
+      }
+      const marge = el.scrollHeight - el.clientHeight;
+      if (marge < 120 || y <= 24) {
+        laatsteY = y;
+        scrollRichting = 'op';
+        somDelta = 0;
+        setScrollVerborgen((oud) => (oud ? false : oud));
+        return;
+      }
+      const dy = y - laatsteY;
+      laatsteY = y;
+      if (dy > 0) {
+        if (scrollRichting !== 'neer') { scrollRichting = 'neer'; somDelta = 0; }
+        somDelta += dy;
+        if (y > 56 && somDelta >= 20) setScrollVerborgen((oud) => (oud ? oud : true));
+      } else if (dy < 0) {
+        if (scrollRichting !== 'op') { scrollRichting = 'op'; somDelta = 0; }
+        somDelta += -dy;
+        if (somDelta >= 14) setScrollVerborgen((oud) => (oud ? false : oud));
+      }
+    };
     a.addEventListener('scroll', opScroll, { capture: true, passive: true });
     return () => a.removeEventListener('scroll', opScroll, { capture: true });
   }, []);
@@ -402,7 +452,16 @@ export default function LeesVenster(p: Props) {
     weergave,
     zetWeergave: zetWeergaveDeel,
     toonHulp: () => setHulp(true),
-  }), [modus, breedte, vorm, weergave]);
+    scrollVerborgen,
+    zetScrollVerborgen: setScrollVerborgen,
+    replyOpen,
+    zetReplyOpen: setReplyOpen,
+    onderBlad,
+    zetOnderBlad: setOnderBlad,
+  }), [modus, breedte, vorm, weergave, scrollVerborgen, replyOpen, onderBlad]);
+
+  const actieveOnderBlad = onderBlad || vorm === 'blad' || hulp;
+  const verbergDoorScroll = scrollVerborgen && !actieveOnderBlad && !replyOpen;
 
   return (
     <LeesVensterContext.Provider value={api}>
@@ -427,6 +486,9 @@ export default function LeesVenster(p: Props) {
           data-lees-breedte={breedte}
           data-context={vorm}
           data-lezer-dichtheid={weergave.dichtheid}
+          data-scroll-verborgen={verbergDoorScroll ? 'ja' : undefined}
+          data-reply-open={replyOpen ? 'ja' : undefined}
+          data-onder-blad={actieveOnderBlad ? 'ja' : undefined}
           style={{ '--lz-tekst': String(weergave.tekst) } as CSSProperties}
           onMouseDown={(event) => event.stopPropagation()}
         >

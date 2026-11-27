@@ -83,8 +83,78 @@ export async function main(): Promise<number> {
   const merk = await import('../../backend/telegram-aanmelden/venster-merk');
   check('officiële logo\'s uit het merkregister (Chrome, Windows-bestand) en vlag BE', merk.merkLogo('chrome').startsWith('data:image/svg+xml;base64,') && merk.merkLogo('windows').startsWith('data:image/svg+xml')
     && merk.vlag('BE').startsWith('data:image/svg+xml') && merk.vlag('xx') === '' && merk.merkLogo('verzonnen') === '');
-  const { VENSTER_CSP } = await import('../../backend/telegram-aanmelden/venster');
+  const venPuur = await import('../../backend/telegram-aanmelden/venster');
+  const VENSTER_CSP = venPuur.VENSTER_CSP;
   check('venster-CSP: alleen eigen script, alleen Telegram Web als frame, geen eval', VENSTER_CSP.includes("script-src 'self'") && VENSTER_CSP.includes('frame-ancestors https://web.telegram.org') && !VENSTER_CSP.includes('unsafe-eval') && VENSTER_CSP.includes("default-src 'none'"));
+  {
+    const { tijdTekst, tijdzoneTekst } = await import('../../backend/telegram-aanmelden/meldingen');
+    const pvPuur = await import('../../shared/telegram-aanmelden/plaats-vergelijking');
+    const winter = Date.UTC(2026, 10, 16, 10, 0), zomer = Date.UTC(2026, 6, 16, 10, 0);
+    check('puur tijd: geen stadsnaam achter de tijd, wel UTC-verschil (winter +1, zomer +2)',
+      !/Брюссель|Brussel/.test(tijdTekst('uk', winter) + tijdTekst('nl', winter)) && tijdTekst('uk', winter).endsWith('(UTC+1)') && tijdTekst('nl', zomer).endsWith('(UTC+2)') && tijdzoneTekst(winter) === 'UTC+1');
+    const proefAdres = 'tg2-proef001@voorbeeld.test';
+    const basisPuur = {
+      soort: 'i' as const,
+      titel: 'Запит на вхід',
+      wat: 'Вхід у «Мій простір»',
+      dienst: 'mail.tarasevych.com',
+      terugUrl: 'https://mail.tarasevych.com/?tg_inlog=abcdefghijkl',
+      accounts: [{ koppelingId: 'k1', naam: 'Pavlo', email: proefAdres, foto: '', letter: 'P' }],
+      toestel: 'Chrome 131 · Windows 11',
+      apparaat: '',
+      plaats: 'Brussels',
+      land: 'BE',
+      kandidaten: [1, 2, 3],
+      aangemaaktOp: '2026-11-25T08:17:00+01:00',
+      verlooptOp: '2026-11-25T08:20:00+01:00',
+      stap: 'kiezen' as const,
+    };
+    const ukPuur = venPuur.paginaHtml(basisPuur as never, 'uk');
+    const nlPuur = venPuur.paginaHtml(basisPuur as never, 'nl');
+    const zonderPuur = venPuur.paginaHtml({ ...basisPuur, plaats: '', land: '' } as never, 'uk');
+    check('puur venster (TG-5, TG-6): plaats één keer in «Звідки», vlag met «за IP»/«via IP» in .meta-chips, aangemaaktOp en doelpagina',
+      ukPuur.includes(proefAdres) && (ukPuur.match(/Брюссель/g) || []).length === 1 && (nlPuur.match(/Brussel/g) || []).length === 1
+      && ukPuur.includes('за IP') && nlPuur.includes('via IP') && ukPuur.includes('08:17') && nlPuur.includes('08:17')
+      && ukPuur.includes('Цільовий розділ') && ukPuur.includes('mail.tarasevych.com')
+      && ukPuur.includes('Визначено за IP-адресою') && nlPuur.includes('Bepaald via het IP-adres'));
+    const brusselPunt = { lat: 50.85, lon: 4.35 };
+    const metGeoPuur = venPuur.paginaHtml({ ...basisPuur, geoPunt: brusselPunt, geoStand: 'gegeven' } as never, 'uk');
+    check('puur venster: toestellocatie met «За дозволом оглядача» en «місце невідоме» bij lege plaats',
+      pvPuur.geoPlaatsTekst(brusselPunt, 'uk') === 'поблизу: Брюссель, Бельгія'
+      && metGeoPuur.includes('За дозволом оглядача') && metGeoPuur.includes('поблизу: Брюссель, Бельгія')
+      && zonderPuur.includes('місце невідоме') && !zonderPuur.includes('Визначено за IP-адресою')
+      && !venPuur.paginaHtml({ ...basisPuur, soort: 'b' } as never, 'uk').includes('Пристрій каже'));
+    check('puur venster (TG-7): plaats-acties, plaats-opnieuw en sessionStorage-herstel in VENSTER_JS',
+      ukPuur.includes('id="plaats-acties"') && ukPuur.includes('id="plaats-opnieuw"') && ukPuur.includes('id="m-plaats-nodig"')
+      && venPuur.VENSTER_JS.includes("r.uitkomst==='plaats-nodig'") && venPuur.VENSTER_JS.includes('sessionStorage')
+      && venPuur.VENSTER_JS.includes('mr_tg_venster_'));
+    const langAccountNaam = 'PavloZonderSpatiesAccountnaamVanHonderddertigTekensVoorControleOpGeenHorizontaleOverloopInFieldsetAccountsBinnenHetBeveiligdeVenster130';
+    const meerAccountsHtml = venPuur.paginaHtml({
+      ...basisPuur,
+      accounts: [
+        basisPuur.accounts[0],
+        { koppelingId: 'k2', naam: langAccountNaam, email: 'tweede@voorbeeld.test', foto: '', letter: 'T' },
+      ],
+    } as never, 'nl');
+    const vensterCss = meerAccountsHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] || '';
+    const hex6 = (h: string) => (h.length === 4 ? `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}` : h);
+    const ratio = (a: string, b: string) => { const la = lum(hex6(a)), lb = lum(hex6(b)); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
+    const lichtVars = vensterCss.match(/:root\{([^}]+)\}/)?.[1] || '';
+    const donkerVars = vensterCss.match(/@media\s*\(prefers-color-scheme:dark\)\{:root\{([^}]+)\}\}/)?.[1] || '';
+    const accL = lichtVars.match(/--accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    const opAccL = lichtVars.match(/--op-accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    const accD = donkerVars.match(/--accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    const opAccD = donkerVars.match(/--op-accent:(#[0-9a-fA-F]{3,6})/)?.[1] || '#000';
+    check('puur venster (V-M2-U2-1): meerdere accounts met 130-teken naam krijgen minmax(0,1fr), min-width:0 en overflow-wrap:anywhere',
+      meerAccountsHtml.includes('<fieldset class="accounts"') && meerAccountsHtml.includes(langAccountNaam)
+      && vensterCss.includes('.accounts{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:5px}')
+      && vensterCss.includes('.accounts label>span:last-child{min-width:0;overflow-wrap:anywhere}')
+      && !/juist|is-uitgelicht|aria-current/.test(meerAccountsHtml));
+    check('puur venster (V-M2-U2-2): contrast van .knop.hoofd en .rond.leeg (--op-accent op --accent) ≥ 4,5:1 in licht en ≥ 8,0:1 in donker',
+      vensterCss.includes('.knop.hoofd,a.knop.hoofd{background:var(--accent);border-color:var(--accent);color:var(--op-accent)}')
+      && vensterCss.includes('.rond.leeg{display:grid;place-items:center;background:var(--accent);color:var(--op-accent);')
+      && ratio(accL, opAccL) >= 4.5 && ratio(accD, opAccD) >= 8.0);
+  }
 
   if (!process.env.DATABASE_URL) { console.log('OK   databasedeel overgeslagen: geen DATABASE_URL'); return einde(); }
 
@@ -204,8 +274,8 @@ export async function main(): Promise<number> {
       const metGeo = ven.paginaHtml({ ...basisW, geoPunt: brussel, geoStand: 'gegeven' } as never, 'uk');
       const ver = ven.paginaHtml({ ...basisW, geoPunt: kyiv, geoStand: 'gegeven' } as never, 'uk'), verNl = ven.paginaHtml({ ...basisW, geoPunt: kyiv, geoStand: 'gegeven' } as never, 'nl');
       const geweigerd = ven.paginaHtml({ ...basisW, geoStand: 'geweigerd' } as never, 'nl');
-      check('venster: plaats van het toestel naast die volgens het IP — «За дозволом браузера», afstand, zonder waarschuwing als het klopt',
-        uk.includes('Пристрій каже') && uk.includes('не надано') && metGeo.includes('поблизу: Брюссель, Бельгія') && metGeo.includes('менше ніж 1 км від місця за IP') && metGeo.includes('За дозволом браузера') && metGeo.includes('Визначено за IP-адресою') && !metGeo.includes('geo-let') && metGeo.includes('geo-ok'));
+      check('venster: plaats van het toestel naast die volgens het IP — «За дозволом оглядача», afstand, zonder waarschuwing als het klopt',
+        uk.includes('Пристрій каже') && uk.includes('не надано') && metGeo.includes('поблизу: Брюссель, Бельгія') && metGeo.includes('менше ніж 1 км від місця за IP') && metGeo.includes('За дозволом оглядача') && metGeo.includes('Визначено за IP-адресою') && !metGeo.includes('geo-let') && metGeo.includes('geo-ok'));
       check('venster: ver uit elkaar → waarschuwing (role=alert) in uk en nl; weigering wordt eerlijk getoond; geen coördinaten in de pagina',
         ver.includes('geo-let') && ver.includes('role="alert"') && /не збігаються \(≈ 18\d\d км\)/.test(ver) && verNl.includes('komen niet overeen') && geweigerd.includes('geen toestemming gegeven') && !geweigerd.includes('geo-let')
         && !/30\.52|50\.45/.test(ver));

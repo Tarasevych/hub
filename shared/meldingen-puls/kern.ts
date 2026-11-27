@@ -104,6 +104,7 @@ export type OorzaakGevolgDienst = {
   icoon: PulsIcoonSoort;
   toon: PulsKleurToon;
   herstelTekst: string;
+  aantal?: number;
 };
 
 export type PulsOorzaakKeten = {
@@ -188,7 +189,9 @@ const BEKENDE_MERKEN: ReadonlyArray<{ re: RegExp; merk: string; naam: string; to
   { re: /\bdevin\b/i, merk: 'devin', naam: 'Devin', toon: 'ai', icoon: 'ai' },
   { re: /\bopencode\b/i, merk: 'opencode', naam: 'OpenCode', toon: 'ai', icoon: 'ai' },
   { re: /\btelegram\b/i, merk: 'telegram', naam: 'Telegram', toon: 'beveiliging', icoon: 'schild-ok' },
+  { re: /\b(?:passkey|webauthn|toegangssleutel)\b|ключ(?:і|а|ем)?\s+(?:доступу|входу)/i, merk: 'passkey', naam: 'Passkey', toon: 'beveiliging', icoon: 'sleutel' },
   { re: /\b(?:onedrive|microsoftonedrive)\b/i, merk: 'microsoftonedrive', naam: 'OneDrive', toon: 'wolk', icoon: 'wolk' },
+  { re: /\b(?:outlook|microsoft\s*outlook|microsoftoutlook)\b/i, merk: 'microsoftoutlook', naam: 'Outlook', toon: 'post', icoon: 'post' },
   { re: /\bhome\s*assistant\b/i, merk: 'homeassistant', naam: 'Home Assistant', toon: 'huis', icoon: 'huis' },
   { re: /\bgithub\b/i, merk: 'github', naam: 'GitHub', toon: 'code', icoon: 'code' },
   { re: /\bgmail\b/i, merk: 'gmail', naam: 'Gmail', toon: 'post', icoon: 'post' },
@@ -250,30 +253,52 @@ export function kanaalVisueelAnker(kanaal: MeldingKanaal, lang: Taal): PulsVisue
  * Розпізнає точний візуальний якір (офіційний логотип з src/merk/ + семантичну піктограму + колірний тон).
  * Логотип бренду повертається лише тоді, коли бренд явно згадано у джерелі, метаданих або заголовку.
  */
+const EMAIL_ADRES_PATROON = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu;
+
+function zonderEmailAdressen(tekst: string): string {
+  return tekst.replace(EMAIL_ADRES_PATROON, ' ');
+}
+
 export function herkenMerkEnAnker(
-  geb: Pick<MeldingEcosysteemGebeurtenis, 'bron' | 'kanaal' | 'subdomein' | 'titel' | 'contextLabel' | 'prioriteit' | 'meta'>,
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'bron' | 'kanaal' | 'subdomein' | 'titel' | 'contextLabel' | 'prioriteit' | 'meta'> & {
+    bericht?: string;
+  },
   lang: Taal,
 ): PulsVisueelAnker {
   const metaProvider = typeof geb.meta?.provider === 'string' ? geb.meta.provider : '';
-  const zoekTekst = `${metaProvider} ${geb.bron} ${geb.titel} ${geb.contextLabel}`;
+  const metaMethode = typeof geb.meta?.aanmeldMethode === 'string' ? geb.meta.aanmeldMethode : '';
+  const inlogBericht =
+    geb.kanaal === 'beveiliging' && /(новий вхід|nieuwe aanmelding|незнайомого пристрою|onbekend apparaat|вхід|aanmelding)/i.test(geb.titel)
+      ? String(geb.bericht || '')
+      : '';
+  const zoekTekst = zonderEmailAdressen(`${metaProvider} ${metaMethode} ${geb.bron} ${geb.titel} ${geb.contextLabel} ${inlogBericht}`);
   const basis = KANAAL_ANKERS[geb.kanaal] || KANAAL_ANKERS.app;
 
   for (const kandidaat of BEKENDE_MERKEN) {
     if (kandidaat.re.test(zoekTekst)) {
       let merk = kandidaat.merk;
-      if (merk === 'google' && geb.kanaal === 'mail') merk = 'gmail';
-      else if (merk === 'google' && geb.kanaal === 'cloud') merk = 'google-drive';
-      else if (merk === 'gmail' && (geb.kanaal === 'beveiliging' || geb.subdomein === 'id')) merk = 'google';
+      if (merk === 'google' && (geb.kanaal === 'mail' || geb.subdomein === 'mail')) merk = 'gmail';
+      else if (merk === 'google' && geb.kanaal === 'cloud') merk = 'googledrive';
+      else if (merk === 'microsoft' && (geb.kanaal === 'mail' || geb.subdomein === 'mail')) merk = 'microsoftoutlook';
+      else if (merk === 'gmail' && geb.subdomein !== 'mail' && (geb.kanaal === 'beveiliging' || geb.subdomein === 'id')) merk = 'google';
       const toon: PulsKleurToon =
         geb.prioriteit === 'kritiek' ? 'gevaar' : geb.kanaal === 'beveiliging' ? 'beveiliging' : kandidaat.toon;
       const merkNaam =
-        merk === 'google-drive'
+        merk === 'googledrive'
           ? lang === 'nl'
             ? 'Google Drive'
             : 'Google Диск'
-          : merk === 'google'
-            ? 'Google'
-            : kandidaat.naam;
+          : merk === 'gmail'
+            ? 'Gmail'
+            : merk === 'microsoftoutlook'
+              ? 'Outlook'
+              : merk === 'google'
+                ? 'Google'
+                : merk === 'passkey'
+                  ? lang === 'nl'
+                    ? 'Toegangssleutel'
+                    : 'Ключ доступу'
+                  : kandidaat.naam;
       return {
         merkSleutel: merk,
         icoon: kandidaat.icoon,
@@ -370,6 +395,20 @@ function kiesSchemaEnNiveau(geb: MeldingEcosysteemGebeurtenis): { schemaId: Meld
   }
 
   if (geb.kanaal === 'beveiliging') {
+    const volTekst = `${geb.titel} ${geb.bericht}`;
+    if (/(зв’язок відновлено|знову працює|verbinding hersteld|werkt weer)/i.test(volTekst) && !/(не працює|werkt niet)/i.test(volTekst)) {
+      return { schemaId: 'S15', niveau: 'gewoon' };
+    }
+    const alAfgerondGoed =
+      geb.prioriteit !== 'kritiek' &&
+      !/\b(?:error|failed|rejected)\b/i.test(bronSoort) &&
+      /(?:\.|_|-|\b)(?:bevestigd|goedgekeurd|hersteld|gedeblokkeerd|klaar|ingesteld|vertrouwd|completed|connected|linked|disconnected|recorded|modified|updated|enrolled|gekoppeld|verbonden|geslaagd)(?:\b|\s|$)/i.test(
+        `${geb.bron} ${geb.externeSleutel} ${String(geb.meta?.actieCode || '')}`,
+      ) &&
+      !/(очікує|просить|потрібн|виявлено|заблоковано|відхилено|тривога|помилка|скасовано|підозріл|verzoek|wacht|vereist|geweigerd|geblokkeerd|alarm|mislukt|geannuleerd|verdacht)/i.test(volTekst);
+    if (alAfgerondGoed) {
+      return { schemaId: geb.subdomein === 'mail' ? 'S8' : 'S1', niveau: 'gewoon' };
+    }
     const isBesluit = /(підтверд|запит|дозвол|bevestig|toestemm|verzoek)/i.test(bronSoort) && geb.prioriteit !== 'kritiek';
     return { schemaId: 'S1', niveau: isBesluit ? 'besluit' : 'gevaar' };
   }
@@ -459,10 +498,15 @@ export function verrijkGebeurtenisVoorPuls(geb: MeldingEcosysteemGebeurtenis, la
   const mandaat = berekenMandaatStraal(geb, lang);
   const idx = lang === 'nl' ? 1 : 0;
 
+  const ruwCtx = (geb.contextLabel || '').trim();
+  const schoonCtx = /^[a-z_]+\s*·\s*[a-z_]+$/i.test(ruwCtx) ? '' : ruwCtx;
+  const kanaalBasis = KANAAL_ANKERS[geb.kanaal] || KANAAL_ANKERS.app;
+  const menselijkOnderdeelKanaal = `${subdomeinMenselijkLabel(geb.subdomein, lang)} · ${lang === 'nl' ? kanaalBasis.nl : kanaalBasis.uk}`;
+
   const ruweWaarden: string[] = [
     anker.label.split(' · ')[0] || subdomeinMenselijkLabel(geb.subdomein, lang),
     subdomeinMenselijkLabel(geb.subdomein, lang),
-    geb.contextLabel || (geb.ruimte === 'technisch' ? (lang === 'nl' ? 'Technische ruimte' : 'Технічний простір') : (lang === 'nl' ? 'Persoonlijke ruimte' : 'Особистий простір')),
+    schoonCtx || menselijkOnderdeelKanaal,
     korteTijd(geb.bijgewerktOp, lang) || '—',
     geb.bijlagen.length > 0
       ? `${geb.bijlagen.length} (${bestandVisueelAnker(geb.bijlagen[0], lang).kortLabel})`
@@ -530,13 +574,47 @@ export function verrijkGebeurtenisVoorPuls(geb: MeldingEcosysteemGebeurtenis, la
   };
 }
 
-function bepaalOorzaakSleutel(geb: MeldingEcosysteemGebeurtenis, lang: Taal): { sleutel: string; aanbiederLabel: string } | null {
+export function bepaalOorzaakSleutel(
+  geb: MeldingEcosysteemGebeurtenis,
+  lang: Taal,
+): { sleutel: string; aanbiederLabel: string } | null {
   if (geb.status === 'archief' || geb.status === 'opgelost') return null;
-  const tekst = `${geb.bron} ${geb.titel} ${geb.bericht} ${geb.contextLabel} ${String(geb.meta?.provider || '')}`.toLowerCase();
+  const volBericht = `${geb.titel} ${geb.bericht}`;
+  if (/(зв’язок відновлено|знову працює|verbinding hersteld|werkt weer)/i.test(volBericht) && !/(не працює|werkt niet)/i.test(volBericht)) {
+    return null;
+  }
+  const bronSoort = `${geb.bron} ${geb.externeSleutel} ${String(geb.meta?.actieCode || '')}`;
+  const heeftFoutOfWachtSignaal =
+    /\b(?:error|failed|rejected|timeout|denied|expired|revoked)\b/i.test(bronSoort) ||
+    /(?:(?<![\p{L}])не(?![\p{L}])|помилк|не вда|відхилен|заблокован|прострочен|відкликан|відсутн|зупинен|зупинив|немає|тривог|очікує|просить|потребує|потрібн|виявлен|підозріл|перерван|втрачен|\bniet\b|\bgeen\b|fout|mislukt|verlopen|ingetrokken|geblokkeerd|geweigerd|storing|alarm|wacht|vereist|verzoek|verdacht|onderbroken|verloren)/iu.test(
+      volBericht,
+    );
+  const isAfgerondeSuccesActie =
+    geb.prioriteit !== 'kritiek' &&
+    !heeftFoutOfWachtSignaal &&
+    (/(?:^|[._\s-])(?:completed|connected|linked|disconnected|recorded|modified|updated|enrolled|gekoppeld|verbonden|geslaagd|bevestigd|goedgekeurd|hersteld|gedeblokkeerd|klaar|ingesteld|vertrouwd)(?:$|[._\s-])/i.test(
+      bronSoort,
+    ) ||
+      /(?:\b(?:gekoppeld|verbonden|geslaagd|voltooid)\b|(?<![\p{L}])(?:підключено|прив[’']язано|відновлено|завершено|збережено)(?![\p{L}]))/iu.test(
+        volBericht,
+      ));
+  if (isAfgerondeSuccesActie) return null;
+
+  const tekst = zonderEmailAdressen(
+    `${geb.bron} ${geb.titel} ${geb.bericht} ${geb.contextLabel} ${String(geb.meta?.provider || '')}`,
+  ).toLowerCase();
+  const heeftSleutelStoring =
+    /(?<![\p{L}])ключ(?:і|а|у|ем|еві|ів)?(?![\p{L}])/iu.test(tekst) &&
+    /(простроч|відклик|недійсн|втрач|закінч|минув|помилк|збій|не прац|очікує|потріб|потребує|оновіть|замініть|підтверд|заблоков|відсутн|перевір|verlopen|ingetrokken|ongeldig|fout|wacht|vereist|bevestig|geblokkeerd)/iu.test(
+      tekst,
+    );
   const isStoringOfWacht =
     geb.prioriteit === 'hoog' ||
     geb.prioriteit === 'kritiek' ||
-    /(не синхроніз|відкликав|увійдіть|помилка|не вдалася|зупинен|немає з’єднання|ключ|mislukt|verlopen|ingetrokken|geen verbinding|fout|storing|geblokkeerd)/i.test(tekst);
+    heeftSleutelStoring ||
+    /(не синхроніз|відкликав|відкликан|прострочен|недійсн|увійдіть|помилка|не вдалася|зупинен|немає з’єднання|mislukt|verlopen|ingetrokken|geen verbinding|fout|storing|geblokkeerd)/i.test(
+      tekst,
+    );
   if (!isStoringOfWacht) return null;
 
   if (/\b(google|gmail|googledrive|google-drive)\b/.test(tekst)) return { sleutel: 'aanbieder:google', aanbiederLabel: 'Google' };
@@ -547,6 +625,46 @@ function bepaalOorzaakSleutel(geb: MeldingEcosysteemGebeurtenis, lang: Taal): { 
     return { sleutel: 'systeem:netwerk', aanbiederLabel: lang === 'nl' ? 'Netwerk' : 'Мережа' };
   }
   return null;
+}
+
+/**
+ * Групує повторювані дочірні наслідки однієї й тієї самої служби (підрозділ + текст відновлення)
+ * в один компактний чип із лічильником «×N», щоб ніколи не виводити десятки однакових рядків поспіль.
+ */
+export function groepeerOorzaakGevolgen(gevolgen: readonly OorzaakGevolgDienst[]): OorzaakGevolgDienst[] {
+  const perDienst = new Map<string, { basisLabel: string; item: OorzaakGevolgDienst; aantal: number }>();
+  for (const g of gevolgen) {
+    const schoonLabel = g.label.replace(/\s*·\s*×\d+\s*$/, '').trim();
+    const sleutel = `${schoonLabel}|${g.herstelTekst}|${g.merkSleutel ?? ''}`;
+    const erbij = Math.max(1, Math.trunc(g.aantal ?? 1));
+    const bestaand = perDienst.get(sleutel);
+    if (bestaand) {
+      bestaand.aantal += erbij;
+      if (!bestaand.item.merkSleutel && g.merkSleutel) {
+        bestaand.item = { ...bestaand.item, merkSleutel: g.merkSleutel };
+      }
+    } else {
+      perDienst.set(sleutel, { basisLabel: schoonLabel, item: g, aantal: erbij });
+    }
+  }
+  const uit: OorzaakGevolgDienst[] = [];
+  for (const { basisLabel, item, aantal } of perDienst.values()) {
+    uit.push({
+      ...item,
+      label: aantal > 1 ? `${basisLabel} · ×${aantal}` : basisLabel,
+      aantal,
+    });
+  }
+  return uit;
+}
+
+function ukVerbondenDienstenVorm(n: number): string {
+  const m100 = n % 100;
+  const m10 = n % 10;
+  if (m100 >= 11 && m100 <= 14) return `${n} пов’язаних служб`;
+  if (m10 === 1) return `${n} пов’язану службу`;
+  if (m10 >= 2 && m10 <= 4) return `${n} пов’язані служби`;
+  return `${n} пов’язаних служб`;
 }
 
 /**
@@ -584,7 +702,7 @@ export function bundelOorzaakKetens(
     });
 
     const wortel = gesorteerd[0];
-    const gevolgen: OorzaakGevolgDienst[] = gesorteerd.map((item) => {
+    const ruweGevolgen: OorzaakGevolgDienst[] = gesorteerd.map((item) => {
       const anker = herkenMerkEnAnker(item, lang);
       const kortOnderdeel = subdomeinMenselijkLabel(item.subdomein, lang);
       const herstelTekst =
@@ -601,8 +719,10 @@ export function bundelOorzaakKetens(
         icoon: anker.icoon,
         toon: anker.toon,
         herstelTekst,
+        aantal: 1,
       };
     });
+    const gevolgen = groepeerOorzaakGevolgen(ruweGevolgen);
 
     for (const item of gesorteerd) ketenLeden.add(item.id);
     const nDiensten = gevolgen.length;
@@ -612,8 +732,10 @@ export function bundelOorzaakKetens(
       wortelTitel: wortel.titel,
       samenvatting:
         lang === 'nl'
-          ? `Oorzaak · 1 handeling herstelt ${nDiensten} verbonden onderdelen (${groep.label})`
-          : `Першопричина · 1 дія автоматично відновить ${nDiensten} пов’язані служби (${groep.label})`,
+          ? nDiensten === 1
+            ? `Oorzaak · 1 handeling herstelt 1 verbonden onderdeel (${groep.label})`
+            : `Oorzaak · 1 handeling herstelt ${nDiensten} verbonden onderdelen (${groep.label})`
+          : `Першопричина · 1 дія автоматично відновить ${ukVerbondenDienstenVorm(nDiensten)} (${groep.label})`,
       gevolgen,
       alleIds: gesorteerd.map((x) => x.id),
     });

@@ -67,6 +67,8 @@ const KEUZE = [
   { sleutel: 'dropbox', pakket: '@iconify-json/logos', icoon: 'dropbox' },
   // Павло (16.11): «перконайся, що в цю галерею входять всі логотипи, згадані на сайті» — Google Keep (джерело нотаток) був літерою.
   { sleutel: 'googlekeep', pakket: '@iconify-json/logos', icoon: 'google-keep-2020', opmerking: 'vlakke uitvoering (2020), zoals Google Drive' },
+  // HERSTEL-001 (MELD-4): офіційний чотириколірний знак Gmail з того самого пакета CC0 замість одноколірного контуру в merk-logos.ts.
+  { sleutel: 'gmail', pakket: '@iconify-json/logos', icoon: 'google-gmail-2020', opmerking: 'vlakke vierkleurige uitvoering (2020), zoals Google Drive en Google Keep' },
   // Copilot: НЕ з пакета — там старіший малюнок (суцільний шолом). Власник помітив різницю (16.11.2026); чинний знак GitHub узято з
   // github.githubassets.com/favicons/favicon-copilot.svg (soort 'officiele-site'). NL: het pakket heeft een oudere tekening.
   { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },

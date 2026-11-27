@@ -10,7 +10,7 @@ import { gelijk, knopHandtekeningKlopt, knopLezen, knopSleutel } from './cryptog
 import { instellingen, koppelingenVanTelegram, sql, vlagHoofdschakelaar, gebeurtenis } from './opslag';
 import { aftelRest, JA_LETTERS, bijwerken, knopAntwoord, knoppenMaken, stuur, succesTonen, taalVoor, strook, TAALKNOPPEN, type BotTaal, type Verzonden } from './berichten';
 import { contactVanBot, koppelAccountVan, koppelVanBot, type TgGebruiker } from './koppelen';
-import { ANDERE_WEG_UITLEG, inlogGoedkeuren, inlogVanBot, inlogWeigeren } from './inloggen';
+import { ANDERE_WEG_UITLEG, heeftRechtstreeksAan, inlogGoedkeuren, inlogRechtstreeksVanBot, inlogVanBot, inlogWeigeren } from './inloggen';
 import { bevestigingSymbool, bevestigingVanBot } from './bevestigen';
 import { wijziging, wijzigingBeantwoorden, vingerafdrukControleren } from './wijzigingen';
 import { ontkoppelen } from './ontkoppelen';
@@ -108,16 +108,36 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
       else if (r === 'gepauzeerd') await stuur(chatId, taal === 'nl' ? '⏸️ Aanmelden met deze Telegram staat op pauze: bevestig eerst de wijziging op de site met uw toegangssleutel.' : '⏸️ Вхід через цей Telegram призупинено: спершу підтвердьте зміну на сайті ключем доступу.', taal);
       return;
     }
-    // Gewone /start: welkom + taal.
+    // Gewone /start: welkom + taal (+ knop om actief aanmeldverzoek op te roepen als de eigenaar dat aanzette).
     const [chat] = await sql<{ taal: string | null }>('SELECT taal FROM app.tg_chats WHERE telegram_id = $1', [tg]);
-    if (herkend && !chat?.taal) await stuur(chatId, `${t(TEKST.welkom, taal)}\n\n${t(TEKST.taalHerkend, taal)}`, taal, { kaart: 'gewoon', knoppen: await TAALKNOPPEN(tg) });
-    else await stuur(chatId, chat?.taal ? t(TEKST.welkom, taal) : `${t(TEKST.kiesTaal, 'uk')}\n\n${t(TEKST.welkom, 'beide')}`, chat?.taal ? taal : 'beide', { kaart: 'gewoon', knoppen: await TAALKNOPPEN(tg) });
+    const tlStart: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
+    const magDirect = await heeftRechtstreeksAan(tg).catch(() => false);
+    const basisKnoppen = await TAALKNOPPEN(tg);
+    const extraDirect = magDirect ? await knoppenMaken(tg, `direct-${Date.now()}`, [[{ letter: 'i', doel: 'rechtstreeks', tekst: t(TEKST.knopBotInlogOproepen, tlStart) }]]) : [];
+    const startKnoppen = [...extraDirect, ...basisKnoppen];
+    if (herkend && !chat?.taal) await stuur(chatId, `${t(TEKST.welkom, taal)}\n\n${t(TEKST.taalHerkend, taal)}`, taal, { kaart: 'gewoon', knoppen: startKnoppen });
+    else await stuur(chatId, chat?.taal ? t(TEKST.welkom, taal) : `${t(TEKST.kiesTaal, 'uk')}\n\n${t(TEKST.welkom, 'beide')}`, chat?.taal ? taal : 'beide', { kaart: 'gewoon', knoppen: startKnoppen });
+    return;
+  }
+  if (opdracht === 'inloggen') {
+    const r = await inlogRechtstreeksVanBot(van, chatId);
+    if (r === 'uit') await stuur(chatId, t(TEKST.rechtstreeksUit, taal), taal);
+    else if (r === 'geen-verzoek') await stuur(chatId, t(TEKST.rechtstreeksGeenVerzoek, taal), taal);
+    else if (r === 'niet-gekoppeld') await stuur(chatId, t(TEKST.nietGekoppeld, taal), taal);
+    else if (r === 'apparaat-geblokkeerd') await stuur(chatId, taal === 'nl' ? '⛔ Dit apparaat is geblokkeerd voor aanmelden met Telegram.' : '⛔ Цей пристрій заблоковано для входу через Telegram.', taal);
+    else if (r === 'gepauzeerd') await stuur(chatId, taal === 'nl' ? '⏸️ Aanmelden met deze Telegram staat op pauze: bevestig eerst de wijziging op de site met uw toegangssleutel.' : '⏸️ Вхід через цей Telegram призупинено: спершу підтвердьте зміну на сайті ключем доступу.', taal);
     return;
   }
   if (opdracht === 'taal') { await stuur(chatId, t(TEKST.kiesTaal, 'uk'), 'beide', { knoppen: await TAALKNOPPEN(tg) }); return; }
   if (opdracht === 'hulp' || opdracht === 'help') { await stuur(chatId, t(TEKST.hulp, taal), taal); return; }
   if (opdracht === 'koppelen') { await stuur(chatId, t(TEKST.koppelUitleg, taal), taal); return; }
-  if (opdracht === 'status') { await stuur(chatId, await statusTekst(tg, taal), taal); return; }
+  if (opdracht === 'status') {
+    const tlSt: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
+    const magDirect = await heeftRechtstreeksAan(tg).catch(() => false);
+    const knoppen = magDirect ? await knoppenMaken(tg, `status-direct-${Date.now()}`, [[{ letter: 'i', doel: 'rechtstreeks', tekst: t(TEKST.knopBotInlogOproepen, tlSt) }]]) : undefined;
+    await stuur(chatId, await statusTekst(tg, taal), taal, knoppen ? { knoppen } : {});
+    return;
+  }
   if (opdracht === 'aanmeldingen' || opdracht === 'sessies') {
     const a = await aanmeldingenOverzicht(tg, taal);
     await stuur(chatId, a.tekst, taal, a.knoppen ? { knoppen: a.knoppen } : {});
@@ -268,6 +288,14 @@ async function knopUitvoeren(letter: string, rij: KnopRij, tg: string, taal: Bot
   const werk = async (tekst: string, knoppen?: Array<Array<Record<string, unknown>>>) => { if (v) await bijwerken(v, tekst, taal, knoppen); };
   switch (letter) {
     case 'i': {
+      if (rij.doel === 'rechtstreeks') {
+        const chatId = v?.chatId || tg;
+        const u = await inlogRechtstreeksVanBot({ id: Number(tg), is_bot: false, first_name: '' }, chatId);
+        if (u === 'uit') await werk(t(TEKST.rechtstreeksUit, taal));
+        else if (u === 'geen-verzoek') await werk(t(TEKST.rechtstreeksGeenVerzoek, taal));
+        else if (u === 'niet-gekoppeld') await werk(t(TEKST.nietGekoppeld, taal));
+        return u;
+      }
       const r = await inlogGoedkeuren(rij.doel, tg);
       const tl: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
       const terugKnop = (r.uitkomst === 'ok' || r.uitkomst === 'code') && r.terugUrl
