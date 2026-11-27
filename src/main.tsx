@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { isOAuthTerug, verwerkOAuthTerug } from './oauth-terug';
 import './ai-site-acties'; // acties voor AI-assistenten via de browserextensie (postMessage) en WebMCP
 import './browser-agent-hartslag'; // bevestigt vanuit een ingelogde pagina dat de aangezette browserextensie actief mag blijven
-import { listenCanonicalAuthChanges } from './canoniek-gebeurtenissen';
+import { CANONICAL_AUTH_CHANGE, listenCanonicalAuthChanges } from './canoniek-gebeurtenissen';
 import { ecosystemSessionLikely, wachtOpSessieHint } from './tab-context';
 import { installeerUitklapGeheugen } from './platform/uitklap'; // punt 4: uitklapblokken onthouden + #anker opent het juiste blok
 import { installeerEenMenu } from './platform/een-menu';
@@ -69,7 +69,8 @@ naActivering(() => {
     };
     if (ecosystemSessionLikely()) laadTech();
     else void wachtOpSessieHint().then((h) => { if (h === 'known') laadTech(); });
-    listenCanonicalAuthChanges(() => laadTech());
+    listenCanonicalAuthChanges();
+    window.addEventListener(CANONICAL_AUTH_CHANGE, laadTech);
     // Melding «Доступне оновлення розширення» (audit 18.10.2026, punt 9): eigen root, alleen als er iets bij te werken is.
     void import('./ExtensieUpdateBand').then(({ default: ExtensieUpdateBand }) => {
       const el = document.createElement('div'); el.id = 'ext-update-band'; document.body.appendChild(el);

@@ -321,7 +321,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
   },[state,user,sessionStartedAt,menuPreferences,lang,workspaces,activeWorkspaces,archivedWorkspaces,deelWerkruimtes,notifications,notificationItems,knownAccounts,service,tab]);
   useLayoutEffect(()=>{if(active)releaseBootShell()},[active]);
   useEffect(()=>{
-    if(!active||state==='checking'||routeOnbekend(service,location.pathname))return;
+    if(!active||state==='checking'||routeOnbekend())return;
     const dienstTitels:Record<ServiceId,[string,string]>={
       ai:['ШІ — Мій простір','AI — Mijn Ruimte'],
       mail:['Пошта — Мій простір','E-mail — Mijn Ruimte'],
