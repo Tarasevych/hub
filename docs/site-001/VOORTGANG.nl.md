@@ -29,7 +29,7 @@
 | 9 | `sitemap.xml` en `robots.txt` | ✅ klaar | `sitemap.xml` met alleen `/privacy` en `/terms`; `robots.txt` met `Sitemap:`-regel en toegang tot pictogrammen en voorbeeldafbeelding, rest van de site gesloten |
 | 10 | Alternatieve teksten bij afbeeldingen | ✅ klaar | Alle 51 afbeeldingen hebben `alt`; vlag en wapen van een plaats kregen een beschrijvende tekst; bewakingstest 4/4 |
 | 11 | Afbeeldingen comprimeren | ✅ klaar | PNG-pictogrammen en voorbeeldafbeelding: 69 319 → 47 395 B (−32 %); 1744 webp al gecomprimeerd; officiële logo's onveranderd (SHA-256) |
-| 12 | Laadsnelheid | wacht | — |
+| 12 | Laadsnelheid | ✅ klaar | Kern `App` losgekoppeld van `/toegang` (666 → 220 kB, −67 %), `TechLaag` en `MeldingenPortaal` uitgesteld zonder sessie (`id/`: 1013 → 873 kB, LCP 572 → 308 ms, netwerkstilte 15,5 → 1,48 s, 4xx: 2 → 0, CPU-blokkering op telefoon −72 %); bewakingstest 9/9 |
 | 13 | Kleurcontrast | ✅ klaar | Bewaker groen (2190 paren); axe-core vond 22 knooppunten op `/privacy` en `/terms`; verholpen, nu 0 in lichte en donkere weergave |
 | 14 | Geschiktheid voor mobiel | ✅ klaar | 174 → 0 fouten op breedtes 320–768: zijwaarts schuiven van juridische pagina's, te kleine tekst, te kleine aanraakdoelen; Fastmail kreeg een plek op de e-mailbaan; test 18/18 |
 | 15 | Eigen 404-pagina | ✅ klaar | Echte statuscode 404 voor onbekende adressen (was 200); zonder aanmelding een losse pagina zonder menu; pad gedecodeerd; test 24/24; axe 0 |
@@ -48,7 +48,6 @@
 
 | Fout | Waar | Punt |
 |---|---|---|
-| Pagina's zonder aanmelding sturen `POST /api/owner/meldingen/regels` en `/api/owner/uitrol/achtergrond` → 401; `meldingen/regels` geeft 401 ook met aanmelding | `UitrolAchtergrondBand`, meldingen | 21 |
 | De weergavecontrole van het installatieprogramma (`server/rook.ts`) stopt met code 2: `/api/owner/tech/activeren` → 409 `GEBRUIK_RUIMTES_V2` sinds ruimtes v2 aan staan | `server/rook.ts`, `backend/tech-profiel.ts:156` | 22 |
 
 ## Verslagen per punt
@@ -137,6 +136,36 @@ Overzicht: 1835 afbeeldingen, 8,38 MB; daarvan 1744 wapens en vlaggen in `webp` 
 | Na (omvangtabel) | Voorbeeldafbeelding voor / na |
 |---|---|
 | ![na](schermafdrukken/p11-na.webp) | ![vergelijking](schermafdrukken/p11-og-na.webp) |
+
+### 12. Laadsnelheid van de site
+
+**Meetopstelling en werkwijze (`prestatie-meten`).** De metingen zijn uitgevoerd op de gebouwde productiebundels (`vite build` + `dist-server` met `brotli`/`gzip` in het geheugen en `Cache-Control: public, max-age=31536000, immutable`) in twee scenario's van telkens **3 herhalingen na een opwarmronde** per adres:
+1) lokaal netwerk (`1366×900`);
+2) trage mobiele telefoon (`390×844`, `4×` CPU-vertraging, `150 ms` netwerkvertraging, `9 / 3 Mbit/s`).
+
+**Vastgestelde oorzaken van vertraging:**
+1. In `src/main.tsx` werd `App` statisch op het hoogste niveau geïmporteerd, waardoor de lichte gastpagina `/toegang` en het `OAuth`-terugkeervenster de volledige kern van 511 kB gecomprimeerde code (666 kB totaal) ophaalden en verwerkten.
+2. Op openbare aanmeldschermen zonder sessie werden `TechLaag` + `HulpVraag` (~131 kB gecomprimeerd) en ~30 modules van het luie `MeldingenPortaal` (dat bij een gesloten paneel meteen `null` teruggaf) voortijdig geladen.
+3. `regels-opslag.ts` en `uitrol-achtergrond-beheer.ts` riepen eigenaarsroutes aan zonder sessie (twee nutteloze `401`-antwoorden waardoor het netwerk 15,5 s niet stilviel) en stuurden geen `meldingLichaam()` / `tabContext` mee, wat zelfs na aanmelding `401` gaf.
+
+**Verbeteringen:** `App` wordt dynamisch geladen (`import('./App')`) alleen in de hoofdtak; `TechLaag` wacht op sessiebevestiging (`ecosystemSessionLikely` / `wachtOpSessieHint` / `listenCanonicalAuthChanges`); `MeldingenPortaal` wordt pas gemonteerd bij het openen van het paneel of een actieve minimale pil; `meldingen/regels` en `uitrol/achtergrond` controleren eerst de sessie en sturen de tabbladcontext mee. Nieuwe bewakingstest `tests/eenheid/site-001-snelheid.test.ts` — `9/9`, `maquette-mobiel-prestatie` — `19/19`, `perf-001` — `41/41`, `tech-bundels-controle` — `OK`.
+
+| Scenario (mediaan van 3 ronden, spreiding min–max) | Voor | Na | Verschil |
+|---|---|---|---|
+| `id/` · lokaal netwerk · omvang / `4xx`-fouten | `1013 kB` (`1013–1013`) / `2` | `873 kB` (`720–873`) / `0` | **−140 kB (−13,8 %)**, **`4xx`: 2 → 0** |
+| `id/` · lokaal netwerk · `LCP` / netwerkstilte | `572 ms` (`508–604`) / `15 510 ms` | `308 ms` (`0–344`) / `1 475 ms` | **−46,2 % `LCP`**, **×10,5 snellere stilte** |
+| `id/` · lokaal netwerk · lange taken (> 50 ms) | `2` (`262 ms`) | `2` (`148 ms`) | **−114 ms (−43,5 %)** |
+| `id/` · telefoon 4G `×4` CPU · omvang / lange taken | `938 kB` (`937–1013`) / `7` (`1679 ms`) | `763 kB` (`763–763`) / `4` (`467 ms`) | **−175 kB (−18,7 %)**, **−72,2 % CPU-blokkering** |
+| `id/toegang` · lokaal netwerk · omvang / `load` / `LCP` | `666 kB` / `329 ms` (`316–336`) / `352 ms` | `220 kB` / `210 ms` (`174–241`) / `236 ms` | **−446 kB (−67,0 %)**, **−36,2 % `load`** |
+| `id/toegang` · lokaal netwerk · lange taken | `1` (`96 ms`) | `0` (`0 ms`) | **−100 % (0 lange taken)** |
+| `id/toegang` · telefoon 4G `×4` CPU · zuivere ronde | `666 kB`, `load 2044 ms`, `LCP 2288 ms` (time-outs > 60 s) | `220 kB`, `load 1241 ms`, `LCP 1244 ms`, `FCP 664 ms` (0 time-outs) | **−39,3 % `load`**, **−45,6 % `LCP`** |
+| `hub/privacy` · statische HTML · lokaal / telefoon | `32 kB`, `load 45 ms` / `711 ms` | `32 kB`, `load 73 ms` / `565 ms` | onveranderd lichte serverpagina |
+
+*Grenzen van bewijskracht:* de metingen zijn verricht op de geïsoleerde lokale proefomgeving met een lege kunstmatige databank en `CDP`-vertraging boven een lokale `TLS`-verbinding (waarbij de planner van de headless browser in een VM zonder grafische versneller soms ~42 s timerpauze toevoegt, zichtbaar in de bovengrens van de `4G`-spreiding); deze cijfers bewijzen de kleinere netwerkomvang en lagere processorbelasting, maar vervangen geen meting over de echte tunnel van de productieserver.
+
+| Voor | Na |
+|---|---|
+| ![voor: 1013 kB op aanmelden, 666 kB op /toegang](schermafdrukken/p12-kaart-voor.webp) | ![na: 873 kB op aanmelden, 220 kB op /toegang, 0 4xx-fouten](schermafdrukken/p12-kaart-na.webp) |
 
 ### 13. Kleurcontrast
 
@@ -279,3 +308,4 @@ Een vergelijkende proef van alle 638 eenheidstestbestanden ten opzichte van de b
 - **26.11.2026 07:55** — punt 17 klaar: de server doorstond 400 kapotte verzoeken zonder crash; 7 formulierfouten in de browser verholpen, nieuwe bewakingstest.
 - **26.11.2026 08:00** — punt 18 klaar: snelheidslimieten live gecontroleerd (6 van 6), 56 openbare routes uitgezocht, nieuwe bewakingstest.
 - **26.11.2026 22:55** — sessie overgenomen door `Gemini 4 Carbon High` (`Google Antigravity`) na stop door limietuitputting van `Claude Opus 5.5 (High)` (`Antigravity Google`) op vastlegging `204f9ec8`; vervanging naar «обліковий запис» in 285 bestanden afgerond met bewakingstest 8/8 en auteurschapsregistratie van beide modellen.
+- **26.11.2026 23:35** — punt 12 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): `/toegang` 67 % lichter (666 → 220 kB), `id/` versneld (`LCP` −46 %, netwerkstilte 15,5 → 1,48 s, CPU-blokkering op telefoon −72 %, `4xx`-fouten 2 → 0), bewakingstest 9/9 toegevoegd.

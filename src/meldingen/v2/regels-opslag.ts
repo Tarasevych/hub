@@ -3,6 +3,7 @@
 // blijft de oude stand staan en zegt het paneel dat (geen stille lokale afwijking).
 import { useEffect, useState } from 'react';
 import { api } from '../../platform/client';
+import { meldingLichaam } from '../sessie-context';
 import { legeRegels, normaliseerRegels, type LeverRegels } from '../../../shared/meldingen-v2/beleid';
 import { zijbalkScopeNu } from '../../zijbalk-voorkeuren';
 
@@ -11,17 +12,25 @@ let stand: LeverRegels = (() => { try { return normaliseerRegels(JSON.parse(loca
 const luisteraars = new Set<(r: LeverRegels) => void>();
 const zet = (r: LeverRegels) => { stand = r; try { localStorage.setItem(sleutel(), JSON.stringify(r)); } catch { /* geen opslag */ } luisteraars.forEach((f) => f(r)); };
 let geladen: Promise<void> | null = null;
+let vlagUitOpServer = false;
 
 export const regelsNu = () => stand;
 export const nietStorenActief = (nu = Date.now()) => !!stand.nietStoren && stand.nietStoren.tot > nu;
 export function laadRegels(opnieuw = false): Promise<void> {
+  if (vlagUitOpServer) return Promise.resolve();
   if (geladen && !opnieuw) return geladen;
-  geladen = api.post('/api/owner/meldingen/regels', {}).then((r) => { if (r.data?.regels) zet(normaliseerRegels(r.data.regels)); }, () => { geladen = null; });
+  geladen = api.post('/api/owner/meldingen/regels', meldingLichaam()).then(
+    (r) => { if (r.data?.regels) zet(normaliseerRegels(r.data.regels)); },
+    (e: { status?: number; response?: { status?: number } }) => {
+      if ((e?.status ?? e?.response?.status) === 404) vlagUitOpServer = true;
+      geladen = null;
+    },
+  );
   return geladen;
 }
 export async function bewaarRegels(volgende: LeverRegels): Promise<boolean> {
   const vorige = stand; zet(volgende);
-  try { const r = await api.post('/api/owner/meldingen/regels/opslaan', { regels: volgende }); if (!r.data?.regels) throw new Error('geen antwoord'); zet(normaliseerRegels(r.data.regels)); return true; }
+  try { const r = await api.post('/api/owner/meldingen/regels/opslaan', meldingLichaam({ regels: volgende })); if (!r.data?.regels) throw new Error('geen antwoord'); zet(normaliseerRegels(r.data.regels)); return true; }
   catch { zet(vorige); return false; }
 }
 export function useLeverRegels(actief: boolean): LeverRegels {

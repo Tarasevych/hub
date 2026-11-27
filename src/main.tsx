@@ -4,7 +4,8 @@ import { createRoot } from 'react-dom/client';
 import { isOAuthTerug, verwerkOAuthTerug } from './oauth-terug';
 import './ai-site-acties'; // acties voor AI-assistenten via de browserextensie (postMessage) en WebMCP
 import './browser-agent-hartslag'; // bevestigt vanuit een ingelogde pagina dat de aangezette browserextensie actief mag blijven
-import App from './App';
+import { listenCanonicalAuthChanges } from './canoniek-gebeurtenissen';
+import { ecosystemSessionLikely, wachtOpSessieHint } from './tab-context';
 import { installeerUitklapGeheugen } from './platform/uitklap'; // punt 4: uitklapblokken onthouden + #anker opent het juiste blok
 import { installeerEenMenu } from './platform/een-menu';
 import { startImpersonatieModus } from './impersonatie/modus'; // «Подивитися як користувач»: vóór de app, anders gaan de eerste aanroepen als de beheerder zelf
@@ -50,12 +51,25 @@ naActivering(() => {
   } else {
     startImpersonatieModus();
     installeerMobielVeilig();
-    createRoot(document.getElementById('root')!).render(<App />); installeerUitklapGeheugen(); installeerEenMenu();
-    // Technisch profiel: eigen root naast de app (band + vensters), los van de dienst eronder; laadt pas na de app.
-    void import('./tech/TechLaag').then(({ default: TechLaag }) => {
-      const el = document.createElement('div'); el.id = 'tech-laag'; document.body.appendChild(el);
-      createRoot(el).render(<TechLaag />);
+    // SITE-001 (пункт 12): динамічне завантаження App відокремлює ядро застосунку від легкої гостьової сторінки /toegang і вікна повернення OAuth.
+    void import('./App').then(({ default: App }) => {
+      createRoot(document.getElementById('root')!).render(<App />);
+      installeerUitklapGeheugen();
+      installeerEenMenu();
     });
+    // Technisch profiel: eigen root naast de app (band + vensters), los van de dienst eronder; SITE-001 (пункт 12): без сеансу не тягне 131 кБ.
+    let techGeladen = false;
+    const laadTech = () => {
+      if (techGeladen || !ecosystemSessionLikely()) return;
+      techGeladen = true;
+      void import('./tech/TechLaag').then(({ default: TechLaag }) => {
+        const el = document.createElement('div'); el.id = 'tech-laag'; document.body.appendChild(el);
+        createRoot(el).render(<TechLaag />);
+      });
+    };
+    if (ecosystemSessionLikely()) laadTech();
+    else void wachtOpSessieHint().then((h) => { if (h === 'known') laadTech(); });
+    listenCanonicalAuthChanges(() => laadTech());
     // Melding «Доступне оновлення розширення» (audit 18.10.2026, punt 9): eigen root, alleen als er iets bij te werken is.
     void import('./ExtensieUpdateBand').then(({ default: ExtensieUpdateBand }) => {
       const el = document.createElement('div'); el.id = 'ext-update-band'; document.body.appendChild(el);

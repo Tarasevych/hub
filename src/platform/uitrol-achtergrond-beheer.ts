@@ -348,12 +348,14 @@ let pollVerboden = false;
 export async function verversServerAchtergrondStand(): Promise<AchtergrondServerStand | null> {
   if (typeof window === 'undefined' || pollVerboden) return null;
   try {
+    const { ecosystemSessionLikely, ecosystemTabContext } = await import('../tab-context');
+    if (!ecosystemSessionLikely()) return null;
     const service = huidigeDienstUitHost(window.location.hostname);
     const res = await fetch('/api/owner/uitrol/achtergrond', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ service, sourceOrigin: window.location.origin }),
+      body: JSON.stringify({ service, tabContext: ecosystemTabContext(), sourceOrigin: window.location.origin }),
     });
     if (res.status === 401 || res.status === 403 || res.status === 404) {
       pollVerboden = true;
@@ -396,14 +398,26 @@ export function startUitrolAchtergrondPolling(): () => void {
       void verversServerAchtergrondStand().finally(plan);
     }
   };
+  const opAuth = () => {
+    if (pollStop) return;
+    pollVerboden = false;
+    window.clearTimeout(pollTimer);
+    void verversServerAchtergrondStand().finally(plan);
+  };
   document.addEventListener('visibilitychange', opZicht);
-  void verversServerAchtergrondStand().finally(plan);
+  window.addEventListener('tsv:canonical-auth-change', opAuth);
+  void import('../tab-context').then(({ ecosystemSessionLikely, wachtOpSessieHint }) => {
+    if (pollStop) return;
+    if (ecosystemSessionLikely()) void verversServerAchtergrondStand().finally(plan);
+    else void wachtOpSessieHint().then((h) => { if (!pollStop && h === 'known') void verversServerAchtergrondStand().finally(plan); });
+  });
 
   return () => {
     pollStop = true;
     pollActief = false;
     window.clearTimeout(pollTimer);
     document.removeEventListener('visibilitychange', opZicht);
+    window.removeEventListener('tsv:canonical-auth-change', opAuth);
   };
 }
 

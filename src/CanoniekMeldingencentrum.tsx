@@ -123,10 +123,11 @@ export default function CanonicalNotificationCenter(p: Props) {
   const eenheidPuls = !oudeTestStand && weergaveKeuze.stijl !== 'v2';
   const v2 = useMeldingenV2() || (oudeTestStand ? vlagV2 : weergaveKeuze.stijl === 'v2' || vlagV2);
   const uitlegV3Actief = weergaveKeuze.eigenUitleg ? weergaveKeuze.uitlegV3 : vlagUitlegV3;
-  const v2Regels = useLeverRegels(v2 || eenheidPuls);
+  const aangemeld = !!p.scope && p.scope !== 'anon';
+  const v2Regels = useLeverRegels(aangemeld && (v2 || eenheidPuls));
   // INTEG-001: de blijvende status (archief, opgelost) geldt nu voor elk paneel, niet alleen met de vlag meldingen-uitleg-v3: «Очистити»
   // en «Архів» moeten overal werken. Alleen voor een aangemeld account (anders is er geen server-status).
-  const v3Status = useStatusStand(!!p.scope && p.scope !== 'anon');
+  const v3Status = useStatusStand(aangemeld);
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
   const formatTime = (value: number) => new Date(value).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE');
   const prefs = readSharedPreferences();
@@ -1329,7 +1330,7 @@ export default function CanonicalNotificationCenter(p: Props) {
           </Suspense>
         </section>
       )}
-      {ecosysteemActief && (
+      {ecosysteemActief && (panelOpen || (vensterModusActief && !!eco.profiel?.geometrie?.minimalePil)) && (
         <Suspense fallback={null}>
           <MeldingenPortaal
             lang={p.lang}
