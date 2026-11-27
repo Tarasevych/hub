@@ -469,8 +469,9 @@ jobs:
           tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/UITROL-MANIFEST.json" > "$RUNNER_TEMP/manifest-in-archief.json"
           tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/archief-in-archief.json"
           tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/UITROL-BASIS" > "$RUNNER_TEMP/basis-in-archief.txt"
-          grep -q "^${BASIS_VERSIE}" "$RUNNER_TEMP/basis-in-archief.txt"
-          mkdir -p "$RUNNER_TEMP/geinstalleerd-boom"
+          grep -q "^versie=${BASIS_VERSIE}$" "$RUNNER_TEMP/basis-in-archief.txt"
+          grep -q "^commit=${BASIS_COMMIT}$" "$RUNNER_TEMP/basis-in-archief.txt"
+          mkdir -p "$RUNNER_TEMP/geinstalleerd-boom" "$PWD/.tmp-controle"
           git archive "$BASIS_COMMIT" | tar -x -C "$RUNNER_TEMP/geinstalleerd-boom"
           node --input-type=module <<'JS'
           import { readFileSync } from 'node:fs';
@@ -491,10 +492,10 @@ jobs:
           }
           console.log('UITROL-MANIFEST.json і ONTWIKKELARCHIEF.json в архіві: 0 помилок, обидві моделі та bijdragen присутні');
           JS
-          npx esbuild backend/uitrol-vereisten.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/ver.mjs" --log-level=error
-          npx esbuild src/platform/tar-lezen.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/tar.mjs" --log-level=error
-          npx esbuild src/uitrol/vereisten-client.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/vc-client.mjs" --log-level=error
-          node --input-type=module - "$RUNNER_TEMP" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$BASIS_VERSIE" "$BASIS_COMMIT" <<'JS'
+          npx esbuild backend/uitrol-vereisten.ts --bundle --platform=node --format=esm --packages=external --outfile="$PWD/.tmp-controle/ver.mjs" --log-level=error
+          npx esbuild src/platform/tar-lezen.ts --bundle --platform=node --format=esm --packages=external --outfile="$PWD/.tmp-controle/tar.mjs" --log-level=error
+          npx esbuild src/uitrol/vereisten-client.ts --bundle --platform=node --format=esm --packages=external --outfile="$PWD/.tmp-controle/vc-client.mjs" --log-level=error
+          node --input-type=module - "$PWD/.tmp-controle" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$BASIS_VERSIE" "$BASIS_COMMIT" <<'JS'
           import { readFileSync } from 'node:fs';
           const [dir, pakketPad, basisVersie, basisCommit] = process.argv.slice(2);
           const { leesPakket } = await import(dir + '/tar.mjs');
@@ -520,8 +521,8 @@ jobs:
           console.log('Перевірка «Обрати файл» проти встановленої версії:', { ok: ant.ok, fouten: ant.vereisten.filter((x) => x.niveau === 'fout').map((x) => x.id) });
           if (!ant.ok) throw Error('Перевірка вимог заблокувала архів.');
           JS
-          npx esbuild backend/uitrol-voorcontrole.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/voorcontrole.mjs" --log-level=warning
-          cat > "$RUNNER_TEMP/voorcontrole-draai.mjs" <<'JS'
+          npx esbuild backend/uitrol-voorcontrole.ts --bundle --platform=node --format=esm --packages=external --outfile="$PWD/.tmp-controle/voorcontrole.mjs" --log-level=warning
+          cat > "$PWD/.tmp-controle/voorcontrole-draai.mjs" <<'JS'
           import { readFileSync } from 'node:fs';
           const [mod, pakket, versie, actief, geinstalleerdPad, dossierPad] = process.argv.slice(2);
           const { pakketVoorcontrole } = await import(mod);
@@ -541,7 +542,8 @@ jobs:
           console.log(`fouten=${resultaat.fouten} waarschuwingen=${resultaat.waarschuwingen} commit=${meta.commit} agent=${meta.agent}`);
           if (!resultaat.ok || resultaat.fouten) process.exit(1);
           JS
-          node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$PWD/uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$VERSIE" "$BASIS_VERSIE" "$RUNNER_TEMP/geinstalleerd-boom" "$PWD/orchestratie/ontwikkelarchieven/SITE-001.json"
+          node "$PWD/.tmp-controle/voorcontrole-draai.mjs" "$PWD/.tmp-controle/voorcontrole.mjs" "$PWD/uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$VERSIE" "$BASIS_VERSIE" "$RUNNER_TEMP/geinstalleerd-boom" "$PWD/orchestratie/ontwikkelarchieven/SITE-001.json"
+          rm -rf "$PWD/.tmp-controle"
       - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
         shell: bash
         run: |
