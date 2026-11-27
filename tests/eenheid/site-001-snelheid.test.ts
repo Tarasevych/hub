@@ -165,6 +165,24 @@ export async function main(): Promise<number> {
       && bv2Kop.includes('const aan = v2Vlag || gedeeldVlag;')
       && werk.includes('gedeeldeWeergave=gedeeldeVlagAan||bijlageV2VlagAan')
       && werk.includes('blob={attachmentPreview.blob} archiefNamen={(attachmentPreview.archiveEntries||[]).map(e=>e.name)} afzender={weergaveAfzender?'));
+
+    const mqLezerCss = await readFile(join(root, 'src/mail/mail-lezer-opstel-maquette.css'), 'utf8');
+    const klLijstCss = await readFile(join(root, 'src/mail/mail-lijst-klassiek.css'), 'utf8');
+    const gespCss = await readFile(join(root, 'src/mail-gesprek-bewerker.css'), 'utf8');
+    const rij2026Css = await readFile(join(root, 'src/mail-rij-2026-10-18.css'), 'utf8');
+    const minRijCss = await readFile(join(root, 'src/mail-minimum-rij.css'), 'utf8');
+    const mailRijTsx = await readFile(join(root, 'src/MailBerichtRij.tsx'), 'utf8');
+    const mailMinRijTsx = await readFile(join(root, 'src/MailMinimumBerichtRij.tsx'), 'utf8');
+    check('Список листів: білий колір та жирність 650 лише для непрочитаних листів (.unread), а прочитані листи (.read) мають сірий текст відправника (400), вмісту (400) та помірну напівжирність теми (500)',
+      mqLezerCss.includes('html.palet-maquette body .google-mail-workspace .google-mail-row.unread :is(')
+      && mqLezerCss.includes('html.palet-maquette body .google-mail-workspace .google-mail-row.read :is(')
+      && klLijstCss.includes('html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace .google-mail-row.read :is(')
+      && !gespCss.includes('font-weight:700!important')
+      && gespCss.includes('.google-mail-row.mail-row-semantic-order.read .mail-row-subject-block strong{color:var(--mail-row-secondary,var(--muted));font-weight:500}')
+      && rij2026Css.includes('.google-mail-workspace .google-mail-row.read :is(.mail-row-subject-block>strong,.mail-minimum-subject){font-weight:500}')
+      && minRijCss.includes('.mail-row-minimum.read .mail-minimum-subject{color:var(--mail-row-secondary,var(--muted));font-weight:500}')
+      && mailRijTsx.includes('nameWeight=message.unread?650:400,subjectWeight=message.unread?650:500,dateWeight=message.unread?600:400')
+      && mailMinRijTsx.includes('subjectWeight=p.message.unread?650:500,dateWeight=p.message.unread?600:400,nameWeight=p.message.unread?650:400'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

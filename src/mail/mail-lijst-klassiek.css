@@ -543,6 +543,22 @@ html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace 
   color: var(--mq-tekst);
 }
 
+html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace .google-mail-row.read :is(
+  .mail-row-sender-copy > strong,
+  .mail-minimum-sender > strong
+) {
+  font-weight: 400;
+  color: var(--mail-row-secondary, var(--mq-gedempt));
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace .google-mail-row.read :is(
+  .mail-row-subject-block > strong,
+  .mail-minimum-subject
+) {
+  font-weight: 500;
+  color: var(--mail-row-secondary, var(--mq-gedempt));
+}
+
 html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace:not([data-mail-read-custom="true"]) :is(.google-mail-row, .mail-message-row).read:hover:not(.selected) {
   background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
   background-image: none;

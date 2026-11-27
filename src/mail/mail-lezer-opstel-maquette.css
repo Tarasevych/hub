@@ -403,19 +403,39 @@ html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-mess
   box-shadow: inset 3px 0 0 var(--mq-tech-markering);
 }
 
-html.palet-maquette body .google-mail-workspace :is(
+html.palet-maquette body .google-mail-workspace .google-mail-row.unread :is(
   .mail-row-sender-copy > strong,
   .mail-minimum-sender > strong
 ) {
   color: var(--mq-tekst);
+  font-weight: 650;
   letter-spacing: -0.01em;
 }
 
-html.palet-maquette body .google-mail-workspace :is(
+html.palet-maquette body .google-mail-workspace .google-mail-row.unread :is(
   .mail-row-subject-block > strong,
   .mail-minimum-subject
 ) {
   color: var(--mq-tekst);
+  font-weight: 650;
+  letter-spacing: -0.008em;
+}
+
+html.palet-maquette body .google-mail-workspace .google-mail-row.read :is(
+  .mail-row-sender-copy > strong,
+  .mail-minimum-sender > strong
+) {
+  color: var(--mail-row-secondary, var(--mq-gedempt));
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette body .google-mail-workspace .google-mail-row.read :is(
+  .mail-row-subject-block > strong,
+  .mail-minimum-subject
+) {
+  color: var(--mail-row-secondary, var(--mq-gedempt));
+  font-weight: 500;
   letter-spacing: -0.008em;
 }
 

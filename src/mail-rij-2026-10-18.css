@@ -91,6 +91,10 @@ html body .google-mail-workspace .google-mail-row.mail-row-minimum{padding-right
 .google-mail-workspace .google-mail-row.read .mail-row-snippet-block>small,.google-mail-workspace .google-mail-row .mail-row-snippet-block>small,
 .google-mail-workspace .google-mail-row.read .mail-row-date-block time,.google-mail-workspace .google-mail-row.read .mail-row-sender-copy>small,
 .google-mail-workspace .mail-row-minimum .mail-minimum-snippet,.google-mail-workspace .mail-row-minimum.read .mail-minimum-date{color:var(--mail-row-secondary)}
+.google-mail-workspace .google-mail-row.read :is(.mail-row-sender-copy>strong,.mail-row-subject-block>strong,.mail-minimum-sender>strong,.mail-minimum-subject){color:var(--mail-row-secondary)}
+.google-mail-workspace .google-mail-row.read :is(.mail-row-sender-copy>strong,.mail-minimum-sender>strong){font-weight:400}
+.google-mail-workspace .google-mail-row.read :is(.mail-row-subject-block>strong,.mail-minimum-subject){font-weight:500}
+.google-mail-workspace .google-mail-row.unread :is(.mail-row-sender-copy>strong,.mail-row-subject-block>strong,.mail-minimum-sender>strong,.mail-minimum-subject){color:var(--mq-tekst,var(--text));font-weight:650}
 
 /* ---------------------------------------------------------------- 4. Видимий фокус з клавіатури — лише там, де його не було */
 /* 4а. Кнопки швидких дій у рядку листа та свайп-кнопки, кнопки мінімального рядка */
