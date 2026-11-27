@@ -2,7 +2,7 @@
 //
 // De zoekkaart van een knop toont het pad «dienst › pagina › sectie»; de sectie is een kop (h1-h3) uit de bron. Vroeger gold «de
 // laatste kop vóór de knop in het bestand», ook als die kop in een andere component stond of in een tak die nooit samen met de knop
-// zichtbaar is. Echte gevolgen: 21 knoppen van de inbox (GoogleMailWerkruimte.tsx) toonden «Підключені Google-акаунти» (kop in de
+// zichtbaar is. Echte gevolgen: 21 knoppen van de inbox (GoogleMailWerkruimte.tsx) toonden «Підключені облікові записи Google» (kop in de
 // tak mode==='accounts'), «Вийти з фокусу» (cloud, werkruimten) toonde «Зберегти без організації», de knoppen van de meldingen
 // toonden «Правила сповіщень». Nu geldt alleen een kop uit DEZELFDE JSX-boom (wat samen getoond wordt). Deze test houdt vast:
 //   1. kop in een kopblok, knoppen in een zustercontainer van dezelfde boom → die kop (ook binnen {open && …} en .map(…));
@@ -27,17 +27,17 @@ export async function main(): Promise<number> {
   const kop = (h: string, uk: string, nl: string) => `<${h}>{tr('${uk}','${nl}')}</${h}>`;
 
   // 1. dezelfde boom
-  const boom = `export function A({open, rijen}){return (<section><header>${kop('h2', 'Мої акаунти', 'Mijn accounts')}<p/></header>` +
-    `<div className='lijst'>${knop('Додати акаунт', 'Account toevoegen')}{open && <div>${knop('Зберегти акаунт', 'Account opslaan')}</div>}` +
+  const boom = `export function A({open, rijen}){return (<section><header>${kop('h2', 'Мої облікові записи', 'Mijn accounts')}<p/></header>` +
+    `<div className='lijst'>${knop('Додати обліковий запис', 'Account toevoegen')}{open && <div>${knop('Зберегти обліковий запис', 'Account opslaan')}</div>}` +
     `{rijen.map((r) => <div key={r}>${knop('Видалити рядок', 'Rij verwijderen')}</div>)}</div></section>);}`;
   check('1 kop in een kopblok; knoppen in een zustercontainer, in {open && …} en in .map(…) van dezelfde boom → die kop',
-    sectie(boom, 'Додати акаунт') === 'Мої акаунти' && sectie(boom, 'Зберегти акаунт') === 'Мої акаунти' && sectie(boom, 'Видалити рядок') === 'Мої акаунти',
-    `${sectie(boom, 'Додати акаунт')}|${sectie(boom, 'Зберегти акаунт')}|${sectie(boom, 'Видалити рядок')}`);
+    sectie(boom, 'Додати обліковий запис') === 'Мої облікові записи' && sectie(boom, 'Зберегти обліковий запис') === 'Мої облікові записи' && sectie(boom, 'Видалити рядок') === 'Мої облікові записи',
+    `${sectie(boom, 'Додати обліковий запис')}|${sectie(boom, 'Зберегти обліковий запис')}|${sectie(boom, 'Видалити рядок')}`);
 
   // 2a. kop in een tak die niet samen met de knop getoond wordt (zoals mode==='accounts' in GoogleMailWerkruimte)
-  const tak = `export function B({mode}){return (<div>{mode==='accounts' && (<section>${kop('h2', 'Підключені акаунти', 'Gekoppelde accounts')}` +
+  const tak = `export function B({mode}){return (<div>{mode==='accounts' && (<section>${kop('h2', 'Підключені облікові записи', 'Gekoppelde accounts')}` +
     `${knop('Від’єднати', 'Ontkoppelen')}</section>)}<main>${knop('Оновити пошту', 'Mail vernieuwen')}</main></div>);}`;
-  check('2a kop in `mode===… && (…)`: geldt binnen die tak, niet voor de knop erna', sectie(tak, 'Від’єднати') === 'Підключені акаунти' && sectie(tak, 'Оновити пошту') === '',
+  check('2a kop in `mode===… && (…)`: geldt binnen die tak, niet voor de knop erna', sectie(tak, 'Від’єднати') === 'Підключені облікові записи' && sectie(tak, 'Оновити пошту') === '',
     `${sectie(tak, 'Від’єднати')}|${sectie(tak, 'Оновити пошту')}`);
   // 2b. ternair
   const ternair = `export function C({p}){return p ? (<div>${kop('h3', 'Збережено', 'Opgeslagen')}</div>) : (<div>${knop('Вийти з режиму', 'Modus verlaten')}</div>);}`;
@@ -78,9 +78,9 @@ export async function main(): Promise<number> {
 
   // 4. de echte catalogus
   const GMW = UI_ELEMENTEN.filter((e) => e.bestand === 'src/GoogleMailWerkruimte.tsx' && e.soort === 'knop');
-  const metGa = GMW.filter((e) => e.sectieUk === 'Підключені Google-акаунти').map((e) => e.uk);
-  // (de kop zelf wisselt: «Підключені Google-акаунти» of «Gmail для цієї …» naar het aantal accounts → ook in de tak geen sectie)
-  check('4a inbox (GoogleMailWerkruimte): «Оновити пошту», «Друк», «Назад до списку» bestaan en geen enkele knop staat onder «Підключені Google-акаунти»',
+  const metGa = GMW.filter((e) => e.sectieUk === 'Підключені облікові записи Google').map((e) => e.uk);
+  // (de kop zelf wisselt: «Підключені облікові записи Google» of «Gmail для цієї …» naar het aantal accounts → ook in de tak geen sectie)
+  check('4a inbox (GoogleMailWerkruimte): «Оновити пошту», «Друк», «Назад до списку» bestaan en geen enkele knop staat onder «Підключені облікові записи Google»',
     ['Оновити пошту', 'Друк', 'Назад до списку'].every((uk) => GMW.some((e) => e.uk === uk)) && metGa.length === 0, `${GMW.length}; met die sectie: ${metGa.join(', ') || '—'}`);
   const focus = UI_ELEMENTEN.find((e) => e.bestand === 'src/CloudFunctioneelWeergave.tsx' && e.uk === 'Вийти з фокусу');
   check('4b cloud: «Вийти з фокусу» (werkruimten) niet onder «Зберегти без організації»', !!focus && focus.sectieUk !== 'Зберегти без організації', focus ? `${focus.tab}: ${focus.sectieUk || '—'}` : '(niet gevonden)');

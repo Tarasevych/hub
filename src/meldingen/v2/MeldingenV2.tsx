@@ -248,7 +248,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
               : merk === 'gelezen' ? <span className='mv2-merk is-gelezen' data-mv2-merk='gelezen' title={t('Ви вже бачили це сповіщення; у число біля дзвіночка воно не входить.', 'U hebt deze melding al gezien; ze telt niet mee bij de bel.')}>{t('Прочитане', 'Gelezen')}</span> : null}
             <span className='mv2-bron'>{b.label}</span>
             {b.aanbieder ? <span className='mv2-aanbieder'>{b.logo ? <Logo kind={b.logo} size={12} label={b.aanbieder} /> : null}{b.aanbieder}</span> : null}
-            {b.account ? <span className='mv2-account' title={volledigAdres ? undefined : t('Акаунт', 'Account')}>{b.account}</span> : null}
+            {b.account ? <span className='mv2-account' title={volledigAdres ? undefined : t('Обліковий запис', 'Account')}>{b.account}</span> : null}
             {m.wie ? <span className='mv2-wie' data-mv2-wie='1'>{m.wie}</span> : null}
             {toestandTekst ? <span className={`mv2-toestand t-${g.toestand}`}>{toestandTekst}</span> : null}
             {g.hoofd.terugOp ? <span className='mv2-toestand t-terug'>{t('Повернулось після відкладення', 'Terug na uitstel')}</span> : null}
@@ -328,7 +328,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
           ? <p className='mv2-menu-uitleg'><ShieldCheck aria-hidden='true' />{t('Важливе для безпеки — приглушити не можна.', 'Belangrijk voor de beveiliging — dempen kan niet.')}</p>
           : <>
             <button role='menuitem' type='button' onClick={() => { void regel({ dienst: m.dienst, categorie: m.categorie || m.soort }, 'stil', t('Такі події тепер тихі.', 'Zulke gebeurtenissen zijn nu stil.')); setMenu(null); }}><BellOff aria-hidden='true' />{t('Зробити тихими події цього типу', 'Dit soort gebeurtenissen stil maken')}</button>
-            {m.account ? <button role='menuitem' type='button' onClick={() => { void regel({ account: m.account }, 'uit', t('Сповіщення цього акаунта вимкнено.', 'Meldingen van dit account staan uit.')); setMenu(null); }}><VolumeX aria-hidden='true' />{t('Вимкнути повідомлення цього акаунта', 'Meldingen van dit account uitzetten')}</button> : null}
+            {m.account ? <button role='menuitem' type='button' onClick={() => { void regel({ account: m.account }, 'uit', t('Сповіщення цього облікового запису вимкнено.', 'Meldingen van dit account staan uit.')); setMenu(null); }}><VolumeX aria-hidden='true' />{t('Вимкнути повідомлення цього облікового запису', 'Meldingen van dit account uitzetten')}</button> : null}
           </>}
         <button role='menuitem' type='button' onClick={() => { setPaneel('regels'); setF({ ...f, dienst: [m.dienst] }); setMenu(null); }}><Settings2 aria-hidden='true' />{t('Налаштувати джерело', 'Bron instellen')}</button>
       </>
@@ -365,11 +365,11 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   if (paneel === 'regels') {
     const doelen: Array<{ doel: { dienst?: string; account?: string }; naam: string; sub?: string; Icon: typeof Info }> = [
       ...diensten.map((d) => ({ doel: { dienst: d }, naam: dienstNaam(d), Icon: styleOf(SECTIE_VAN_DIENST[d] || 'site', lang).Icon as typeof Info })),
-      ...accounts.map(([a, label]) => ({ doel: { account: a }, naam: label, sub: t('Акаунт', 'Account'), Icon: UserRound })),
+      ...accounts.map(([a, label]) => ({ doel: { account: a }, naam: label, sub: t('Обліковий запис', 'Account'), Icon: UserRound })),
     ];
     const nAfwijkend = doelen.filter(({ doel }) => !!p.regels.regels.find((r) => (doel.dienst ? r.dienst === doel.dienst && !r.account && !r.categorie : r.account === doel.account && !r.dienst && !r.categorie))).length;
     // MELDINGEN-UX-001: kaarten in plaats van een lange lijst — «Як приходять» (types) bovenaan, daaronder inklapbaar «Джерела й
-    // акаунти» en «Вигляд панелі». Elke keuze heeft een piktogram en een uitleg van het gevolg (title).
+    // облікові записи» en «Вигляд панелі». Elke keuze heeft een piktogram en een uitleg van het gevolg (title).
     return (
       <div ref={wortel} className='mv2' data-mv2='regels' data-mv2-esc='1' onKeyDown={opEsc}>
         {kop}
@@ -381,7 +381,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
             <details className='mvk-kaart mvk-groep' data-mv2-bronnen='1'>
               <summary>
                 <span className='mvk-tegel is-groot' data-kleur='teal' aria-hidden='true'><ListFilter /></span>
-                <span className='mvk-kaart-titel'><strong>{t('Джерела й акаунти', 'Bronnen en accounts')}</strong><small>{t('Виділити важливе джерело або приглушити шумне', 'Een belangrijke bron vooraan zetten of een luidruchtige dempen')}</small></span>
+                <span className='mvk-kaart-titel'><strong>{t('Джерела й облікові записи', 'Bronnen en accounts')}</strong><small>{t('Виділити важливе джерело або приглушити шумне', 'Een belangrijke bron vooraan zetten of een luidruchtige dempen')}</small></span>
                 <span className='mvk-tellers'>{nAfwijkend ? <span className='mvk-chip is-eigen'>{t(`змінено: ${nAfwijkend}`, `gewijzigd: ${nAfwijkend}`)}</span> : null}</span>
                 <ChevronDown className='mvk-pijl' aria-hidden='true' />
               </summary>
@@ -409,7 +409,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
           <details className='mvk-kaart mvk-groep' data-mv2-vorm='1'>
             <summary>
               <span className='mvk-tegel is-groot' data-kleur='paars' aria-hidden='true'><Settings2 /></span>
-              <span className='mvk-kaart-titel'><strong>{t('Вигляд панелі', 'Weergave van het paneel')}</strong><small>{t('Розмір тексту, адреси акаунтів, архів', 'Tekstgrootte, accountadressen, archief')}</small></span>
+              <span className='mvk-kaart-titel'><strong>{t('Вигляд панелі', 'Weergave van het paneel')}</strong><small>{t('Розмір тексту, адреси облікових записів, архів', 'Tekstgrootte, accountadressen, archief')}</small></span>
               <ChevronDown className='mvk-pijl' aria-hidden='true' />
             </summary>
             <div className='mv2-vorm-inhoud'>
@@ -426,8 +426,8 @@ export default function MeldingenV2(p: MeldingenV2Props) {
               </fieldset> : null}
               {v3 ? <BewaarTermijn lang={lang} dagen={statusStand.bewaarDagen} /> : null}
               <div className='mvk-rij-kop mv2-schakel-rij'>
-                <span className='mvk-naam'>{t('Показувати повні адреси акаунтів', 'Volledige accountadressen tonen')}</span>
-                <button type='button' role='switch' className='mvk-schakel' aria-checked={volledigAdres} title={t('Увімкнено — у списку видно всю адресу (напр. ім’я@пошта); вимкнено — лише коротке ім’я акаунта.', 'Aan — de lijst toont het hele adres (bv. naam@mail); uit — alleen een korte accountnaam.')} aria-label={t('Показувати повні адреси акаунтів', 'Volledige accountadressen tonen')} onClick={() => setVolledigAdres((v) => !v)}><span aria-hidden='true' /></button>
+                <span className='mvk-naam'>{t('Показувати повні адреси облікових записів', 'Volledige accountadressen tonen')}</span>
+                <button type='button' role='switch' className='mvk-schakel' aria-checked={volledigAdres} title={t('Увімкнено — у списку видно всю адресу (напр. ім’я@пошта); вимкнено — лише коротке ім’я облікового запису.', 'Aan — de lijst toont het hele adres (bv. naam@mail); uit — alleen een korte accountnaam.')} aria-label={t('Показувати повні адреси облікових записів', 'Volledige accountadressen tonen')} onClick={() => setVolledigAdres((v) => !v)}><span aria-hidden='true' /></button>
               </div>
             </div>
           </details>
@@ -468,7 +468,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
       {paneel === 'filters' ? (
         <div className='mv2-context' role='dialog' aria-label={t('Фільтри й порядок', 'Filters en volgorde')}>
           <span className='mv2-label'>{t('Джерело', 'Bron')}</span>{keuzeLijst('dienst', diensten.map((d) => [d, dienstNaam(d)]))}
-          {accounts.length ? <><span className='mv2-label'>{t('Акаунт', 'Account')}</span>{keuzeLijst('account', accounts)}</> : null}
+          {accounts.length ? <><span className='mv2-label'>{t('Обліковий запис', 'Account')}</span>{keuzeLijst('account', accounts)}</> : null}
           <span className='mv2-label'>{t('Стан', 'Status')}</span>
           <div className='mv2-chips'>{(['open', 'actie', 'opgelost', 'archief'] as Toestand[]).map((s) => { const aan = (f.toestand || []).includes(s); return <button key={s} type='button' aria-pressed={aan} onClick={() => setF((c) => ({ ...c, toestand: aan ? (c.toestand || []).filter((x) => x !== s) : [...(c.toestand || []), s] }))}>{{ open: t('Відкриті', 'Open'), actie: t('Потребують дії', 'Actie nodig'), opgelost: t('Вирішені', 'Opgelost'), archief: t('Очищені', 'Opgeruimd') }[s]}</button>; })}</div>
           <span className='mv2-label'>{t('Період', 'Periode')}</span>

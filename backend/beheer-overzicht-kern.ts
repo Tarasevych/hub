@@ -42,7 +42,7 @@ const LABELS: Regel[] = [
   [/^owner\.step_up\./, 'stap-op', 'Повторне підтвердження входу', 'Aanmelding opnieuw bevestigd'],
   [/^owner\.mail\.(send|compose\.send)/, 'mail-verzenden', 'Надіслав(ла) лист', 'Mail verzonden'],
   [/^owner\.mail\.compose\.(scheduled|cancelled)/, 'mail-plannen', 'Запланував(ла) лист', 'Mail gepland'],
-  [/^owner\.mail\.account\./, 'mail-account', 'Змінив(ла) поштовий акаунт', 'Mailaccount gewijzigd'],
+  [/^owner\.mail\.account\./, 'mail-account', 'Змінив(ла) поштовий обліковий запис', 'Mailaccount gewijzigd'],
   [/^owner\.mail\./, 'mail', 'Дія в пошті', 'Actie in mail'],
   [/^owner\.cloud\./, 'cloud', 'Дія в хмарі', 'Actie in de cloud'],
   [/^owner\.calendar\./, 'agenda', 'Дія в календарі', 'Actie in de agenda'],

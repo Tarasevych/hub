@@ -50,7 +50,6 @@
 |---|---|---|
 | Pagina's zonder aanmelding sturen `POST /api/owner/meldingen/regels` en `/api/owner/uitrol/achtergrond` → 401; `meldingen/regels` geeft 401 ook met aanmelding | `UitrolAchtergrondBand`, meldingen | 21 |
 | De weergavecontrole van het installatieprogramma (`server/rook.ts`) stopt met code 2: `/api/owner/tech/activeren` → 409 `GEBRUIK_RUIMTES_V2` sinds ruimtes v2 aan staan | `server/rook.ts`, `backend/tech-profiel.ts:156` | 22 |
-| Het woord «акаунт» staat 264 keer in de interface (volgens de taalwet: «обліковий запис») | `src/**` | beslissing van de eigenaar |
 
 ## Verslagen per punt
 
@@ -255,6 +254,17 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 |---|---|
 | ![voor](schermafdrukken/p19-analyse-voor.webp) | ![na](schermafdrukken/p19-analyse-na.webp) |
 
+### Taalzuivering op besluit van de eigenaar («акаунт» → «обліковий запис»)
+
+Op uitdrukkelijk besluit van de eigenaar is het anglicisme «акаунт» in alle naamvallen en vormen overal vervangen door het zuivere Oekraïense «обліковий запис» in de interfacecode, gedeelde modules, servermeldingen, zoekwoordenboeken en uitrolscripts (`src/`, `shared/`, `backend/`, `server/`, `public/`, `deploy/`, `index.html` — samen 852 voorkomens in 285 bestanden; het ontwerp van het accountcentrum is opnieuw opgebouwd via `scripts/identiteit-maquette/bouw.mjs` en de zoekindex `shared/zoek-ui-knoppen.generated.ts` is bijgewerkt voor 2439 elementen). Het ondertekende browserextensiepakket `extension/` versie `0.9.7` bleef bewust ongewijzigd om de geldige `CRX3`-handtekening van de eigenaar te behouden tot herondertekening.
+
+Een vergelijkende proef van alle 638 eenheidstestbestanden ten opzichte van de basis en gerichte nacontroles bevestigden 0 regressies (daarbij zijn de 404-verwachtingen in `maquette-001-kern.test.ts` en `ui-audit-g.test.ts` gelijkgetrokken). Bewakingstest `tests/eenheid/site-001-akaunt.test.ts` (8/8) toegevoegd. Dit onderdeel werd voorbereid door `Claude Opus 5.5 (High)` via `Antigravity Google` en na onderbreking door limietuitputting gecontroleerd en afgerond door `Gemini 4 Carbon High` van `Google Antigravity`.
+
+| Voor | Na |
+|---|---|
+| ![voor: 852 voorkomens in 285 bestanden](schermafdrukken/akaunt-kaart-voor.webp) | ![na: 0 voorkomens, bewaking 8/8](schermafdrukken/akaunt-kaart-na.webp) |
+| ![voor: oude Oekraïense formulering op gasttoegang](schermafdrukken/akaunt-toegang-voor.webp) | ![na: zuivere Oekraïense formulering op gasttoegang](schermafdrukken/akaunt-toegang-na.webp) |
+
 ## Logboek
 
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
@@ -268,3 +278,4 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 - **26.11.2026 07:30** — punt 16 klaar: één echt kapotte koppeling verholpen, naam van de voorwaarden gelijkgetrokken, nieuwe bewakingstest.
 - **26.11.2026 07:55** — punt 17 klaar: de server doorstond 400 kapotte verzoeken zonder crash; 7 formulierfouten in de browser verholpen, nieuwe bewakingstest.
 - **26.11.2026 08:00** — punt 18 klaar: snelheidslimieten live gecontroleerd (6 van 6), 56 openbare routes uitgezocht, nieuwe bewakingstest.
+- **26.11.2026 22:55** — sessie overgenomen door `Gemini 4 Carbon High` (`Google Antigravity`) na stop door limietuitputting van `Claude Opus 5.5 (High)` (`Antigravity Google`) op vastlegging `204f9ec8`; vervanging naar «обліковий запис» in 285 bestanden afgerond met bewakingstest 8/8 en auteurschapsregistratie van beide modellen.

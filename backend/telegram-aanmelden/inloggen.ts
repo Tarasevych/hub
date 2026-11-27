@@ -386,7 +386,7 @@ async function inlogVraagVenster(r: InlogRij, tg: string, chatId: string, lijst:
   const nieuw = await Promise.all(lijst.map((x) => apparaatBekend(x.k.user_id, r.apparaat_sleutel))).then((b) => b.some((v) => !v));
   const overgang = nieuw && (await Promise.all(lijst.map((x) => oudLabelBekend(x.k.user_id, r.apparaat)))).every(Boolean);
   const nieuwRegel = overgang ? `${overgangRegel(taal)}\n\n` : nieuw ? `${t(TEKST.inlogNieuwApparaat, taal)}\n\n` : '';
-  // TELEGRAM-002 + UPD-011: фірмова картка входу з піктограмою входу та круглим фото конкретного акаунта прямо на зображенні.
+  // TELEGRAM-002 + UPD-011: фірмова картка входу з піктограмою входу та круглим фото конкретного облікового запису прямо на зображенні.
   const beeld = lijst.length === 1 ? await accountBeeld(lijst[0].k.user_id).catch(() => null) : null;
   const compactInlog = tl === 'nl'
     ? `${nieuwRegel ? `${nieuwRegel.trim()}\n` : ''}${waar('nl')} · ${tijdTekst('nl')}\nTik «Controleren en aanmelden» om het pictogram te kiezen.`

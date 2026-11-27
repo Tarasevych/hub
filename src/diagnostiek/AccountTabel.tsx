@@ -1,5 +1,5 @@
-// Діагностика → «Для всіх / цей акаунт»: per dienst de serverkant («Сервер (для всіх)», geplande ronde elke 15 min) naast een
-// synthetische controle van één account («Цей акаунт», op verzoek). Standaard het eigen account; vanuit «Скарга користувача» het
+// Діагностика → «Для всіх / цей обліковий запис»: per dienst de serverkant («Сервер (для всіх)», geplande ronde elke 15 min) naast een
+// synthetische controle van één account («Цей обліковий запис», op verzoek). Standaard het eigen account; vanuit «Скарга користувача» het
 // gekozen account. Alleen standen en korte codes — nooit inhoud, tokens of IP's (backend/diagnostiek-account.ts).
 import { useCallback, useEffect, useState } from 'react';
 import { History, Loader2, Play } from 'lucide-react';
@@ -34,18 +34,18 @@ export default function AccountTabel({ lang, ctx, gebruikerId }: { lang: Lang; c
   return (
     <section className='mdt-sectie' data-adg-account={gebruikerId || 'zelf'} aria-busy={bezig !== ''}>
       <header>
-        <h3>{uk ? 'Сервер (для всіх) чи лише цей акаунт' : 'Server (voor iedereen) of alleen dit account'}{wie ? ` — ${wie.zelf ? (uk ? 'ваш акаунт' : 'uw account') : wie.naam}` : ''}</h3>
+        <h3>{uk ? 'Сервер (для всіх) чи лише цей обліковий запис' : 'Server (voor iedereen) of alleen dit account'}{wie ? ` — ${wie.zelf ? (uk ? 'ваш обліковий запис' : 'uw account') : wie.naam}` : ''}</h3>
         <button type='button' onClick={() => void haal(true)} disabled={bezig !== ''} data-adg-account-knop='1'>
-          {bezig === 'controle' ? <Loader2 className='mdt-draai' aria-hidden='true' /> : <Play aria-hidden='true' />}{uk ? 'Перевірити акаунт' : 'Account controleren'}
+          {bezig === 'controle' ? <Loader2 className='mdt-draai' aria-hidden='true' /> : <Play aria-hidden='true' />}{uk ? 'Перевірити обліковий запис' : 'Account controleren'}
         </button>
       </header>
       <p className='mdt-uitleg'>{uk
-        ? 'Ліва колонка — серверна перевірка (для всіх, за розкладом кожні 15 хв). Права — перевірка саме цього акаунта (підключення, дійсність доступу Google, пристрої), лише на запит. Вміст листів і файлів не читається.'
+        ? 'Ліва колонка — серверна перевірка (для всіх, за розкладом кожні 15 хв). Права — перевірка саме цього облікового запису (підключення, дійсність доступу Google, пристрої), лише на запит. Вміст листів і файлів не читається.'
         : 'Links de servercontrole (voor iedereen, gepland elke 15 min). Rechts de controle van dit account (koppelingen, geldige Google-toegang, apparaten), alleen op verzoek. De inhoud van mails en bestanden wordt niet gelezen.'}</p>
       {fout && <p className='mdt-fout' role='alert'>{fout}</p>}
       {bezig === 'laden' && !rijen.length ? <p className='mdt-uitleg'><Loader2 className='mdt-draai' aria-hidden='true' /> {uk ? 'Завантаження…' : 'Laden…'}</p> : <DienstenTabel lang={lang} rijen={rijen} metServer />}
       {slecht.length > 0 && <details className='mdt-hist'>
-        <summary><History aria-hidden='true' /> {uk ? `Історія проблем акаунта (${slecht.length})` : `Geschiedenis van accountproblemen (${slecht.length})`}</summary>
+        <summary><History aria-hidden='true' /> {uk ? `Історія проблем облікового запису (${slecht.length})` : `Geschiedenis van accountproblemen (${slecht.length})`}</summary>
         <ul>{slecht.slice(0, 20).map((h) => <li key={h.nr}><span>{tijdKort(lang, h.op)}</span> <b>{isAccountDienst(h.dienst) ? DIENST_NAAM[h.dienst][uk ? 0 : 1] : h.dienst}</b> · {h.stand}{h.code ? ` · ${h.code}` : ''} <small>({(DOOR[h.door] || DOOR.beheer)[uk ? 0 : 1]})</small></li>)}</ul>
       </details>}
     </section>

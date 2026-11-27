@@ -32,7 +32,7 @@ export async function main(): Promise<number> {
   const openbaar = ['src/tech/TechLaag.tsx', 'src/tech/tech-bundel.tsx', 'src/tech/TechPoort.tsx', 'src/MailFunctioneelWeergave.tsx', 'src/diagnose/Diagnose.tsx', 'src/ondersteuning/Ondersteuning.tsx',
     'src/agenten/X.tsx', 'src/AdministratieHulp.tsx', 'src/InstellingencentrumWeergave.tsx', 'src/instellingen/MijnDiensten.tsx', 'shared/tech-bundels.ts',
     // 20.10.2026: merkvormen zijn NIET technisch. Stonden in src/integraties/ en werden daardoor naar assets/tech/ geschreven;
-    // een gewone gebruiker kreeg 403 en zag geen merklogo op «Акаунти» (klacht «немає поштових логотипів»).
+    // een gewone gebruiker kreeg 403 en zag geen merklogo op «Облікові записи» (klacht «немає поштових логотипів»).
     'src/merk/MerkLogo.tsx', 'src/merk/merk-logos.ts', 'src/merk/merk-register.ts', 'src/merk/Merk.tsx',
     // 09.11.2026 (PERF-001): integratiestrook op openbare pagina's, sinds lui laden in een eigen chunk.
     'src/integraties/IntegratieStrook.tsx', 'src/integraties/catalogus-vlag.ts', 'src/integraties/integraties.css'];

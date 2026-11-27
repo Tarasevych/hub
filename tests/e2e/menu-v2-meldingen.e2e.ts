@@ -38,7 +38,7 @@ export async function main(): Promise<number> {
     const nu = Date.now();
     const zaai = async (kind: string, title: string, message: string, op: number, link?: string) => (await pool.query("insert into app.records(tbl,data) values('site_notifications',$1::jsonb) returning id", [JSON.stringify({ recipientUserId: uid, recipientEmail: eigenaar, kind, title, message, read: false, createdAt: op, ...(link ? { link } : {}) })])).rows[0].id as string;
     const idToegang = await zaai('access_request', 'Новий запит на доступ', 'olena@example.test просить доступ до «Пошта».', nu - 60000, 'https://admin.tarasevych.com/access');
-    const idConflict = await zaai('account_email_conflict', 'Перевірте адресу акаунта', 'Ця адреса вже використовується іншим входом.', nu - 30000);
+    const idConflict = await zaai('account_email_conflict', 'Перевірте адресу облікового запису', 'Ця адреса вже використовується іншим входом.', nu - 30000);
     await zaai('workspace_share', 'Вам надали доступ до простору', 'Простір «Сім’я» тепер доступний.', nu - 120000);
     const t = await eerst.verzoek('mail.tarasevych.com', '/api/owner/menu/tellers/zet', eerst.ctxBody('mail', { bron: 'mail', ongelezen: 7 }));
     check('teller zaaien vanaf mail: 200', t.status === 200 && t.data.tellers?.mail?.ongelezen === 7, `${t.status} ${t.body.slice(0, 120)}`);
@@ -69,7 +69,7 @@ export async function main(): Promise<number> {
     const bA = await badges(A.page);
     check('smal: badge op Налаштування (beveiliging, 1) en E-mail (post, 7)', bA['svc:identity']?.tekst === '1' && bA['svc:identity']?.cat === 'beveiliging' && bA['svc:mail']?.tekst === '7' && bA['svc:mail']?.cat === 'post', JSON.stringify(bA));
     check('smal: pagina-melding telt mee bij het hoofditem (Головна: delen)', bA['svc:hub']?.cat === 'delen', JSON.stringify(bA['svc:hub']));
-    check('smal: identity-submenu toont de badge ook op «Акаунт»', bA['pg:identity/account']?.tekst === '1', JSON.stringify(Object.keys(bA)));
+    check('smal: identity-submenu toont de badge ook op «Обліковий запис»', bA['pg:identity/account']?.tekst === '1', JSON.stringify(Object.keys(bA)));
     const ariaId = await knopVan(A.page, 'svc:identity').getAttribute('aria-label');
     check('aria-label noemt alleen het aantal (geen inhoud)', /1 сповіщення/.test(ariaId || '') && !/адрес/i.test(ariaId || ''), String(ariaId));
     await A.page.screenshot({ path: `${UIT}/menu-20-smal-licht-badges.png` });
@@ -78,7 +78,7 @@ export async function main(): Promise<number> {
     await knopVan(A.page, 'svc:identity').hover();
     const bel = A.page.locator('[data-menu-bellen="svc:identity"]');
     await bel.waitFor({ timeout: 5000 });
-    check('bellen: inhoud van de melding, als tekst', /Перевірте адресу акаунта/.test(await bel.innerText()));
+    check('bellen: inhoud van de melding, als tekst', /Перевірте адресу облікового запису/.test(await bel.innerText()));
     const tooltipZichtbaar = await A.page.locator('.canonical-viewport-tooltip').evaluateAll((els) => els.some((e) => (e as HTMLElement).offsetParent !== null && getComputedStyle(e).opacity !== '0' && (e.textContent || '').trim() !== ''));
     check('bellen vervangen de gewone tooltip (geen overlap)', !tooltipZichtbaar);
     await A.page.mouse.move(0, 0); await bel.hover(); // van knop naar bellen: blijft open

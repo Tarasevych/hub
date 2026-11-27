@@ -195,7 +195,7 @@ export async function main(): Promise<number> {
 
     // ---------------------------------------------------------------- statisch: UI
     const ui = ['src/ToegangssleutelsSectie.tsx', 'src/HerstelcodesSectie.tsx', 'src/ToegangWijziging.tsx', 'src/platform/bevestig-toegang.tsx', 'src/BeheerUitrolWeergave.tsx'].map((f) => (existsSync(f) ? readFileSync(f, 'utf8') : ''));
-    check('ui: «Це був не я — скасувати та захистити акаунт» + NL', /Це був не я — скасувати та захистити акаунт/.test(ui[2]) && /Dit was ik niet/.test(ui[2]));
+    check('ui: «Це був не я — скасувати та захистити обліковий запис» + NL', /Це був не я — скасувати та захистити обліковий запис/.test(ui[2]) && /Dit was ik niet/.test(ui[2]));
     check('ui: InvalidStateError → vriendelijke tekst (UA + NL)', /Цей пристрій уже має ваш ключ доступу\. Щоб додати телефон, у вікні Windows оберіть «Використовувати телефон або планшет»\./.test(ui[0]) && /Dit apparaat heeft al uw passkey/.test(ui[0]));
     check('ui: geen window.confirm meer bij intrekken voorbereider', !/window\.confirm\(/.test(ui[4]));
   } catch (e) {

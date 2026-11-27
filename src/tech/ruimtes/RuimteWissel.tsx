@@ -22,7 +22,7 @@ import Vraag from '../Vraag';
 import './ruimtes.css';
 
 const HELP = {
-  wat: ['Тумблер технічного простору цього акаунта. Технічний простір — це той самий звичайний простір (ті самі дані й розкладки) плюс технічні сторінки.', 'Schakelaar voor de technische ruimte van dit account. De technische ruimte is dezelfde gewone ruimte (zelfde gegevens en indeling) plus technische pagina’s.'],
+  wat: ['Тумблер технічного простору цього облікового запису. Технічний простір — це той самий звичайний простір (ті самі дані й розкладки) плюс технічні сторінки.', 'Schakelaar voor de technische ruimte van dit account. De technische ruimte is dezelfde gewone ruimte (zelfde gegevens en indeling) plus technische pagina’s.'],
   gevolg: ['Перемикач змінює лише те, що показує ця вкладка: технічний сеанс, підключення ШІ та інші вкладки працюють далі. Зупинити їх можна окремими кнопками «Пауза» (повернення — «Продовжити», без нового входу) і «Завершити» (далі потрібен новий вхід із ключем доступу). Швидкі клавіші: Ctrl+Alt+1 — звичайний, Ctrl+Alt+2 — технічний; набраний текст і відкриті вікна лишаються.', 'De schakelaar verandert alleen wat dit tabblad toont: de technische sessie, AI-verbindingen en andere tabbladen lopen door. Stoppen doet u met de eigen knoppen «Pauze» (terug met «Doorgaan», zonder opnieuw aan te melden) en «Beëindigen» (daarna opnieuw aanmelden met Passkey). Sneltoetsen: Ctrl+Alt+1 — gewone, Ctrl+Alt+2 — technische; getypte tekst en open vensters blijven.'],
 } as const;
 const GEEN_RECHT = { uk: 'Немає дозволу на технічний простір. Його дає власник сервера.', nl: 'Geen toestemming voor de technische ruimte. De servereigenaar geeft die.' } as const;

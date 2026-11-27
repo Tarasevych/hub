@@ -164,8 +164,8 @@ export async function main(): Promise<number> {
       check('(1) після 30 днів відновлення відмовляє з точною причиною (400 RECOVERY_WINDOW_EXPIRED), запис лишається deleted, аудит denied',
         te.status === 400 && te.data.error === 'RECOVERY_WINDOW_EXPIRED' && (await stand(C.id)).status === 'deleted' && (await audit(C.id, 'owner.identity.account.recovered')).some((r) => r.result === 'denied'), `${te.status} ${te.data.error}`);
       const gate = lees('src/VerenigdDienstApp.tsx');
-      check('(1) новий інтерфейс: на екрані «Акаунт потребує відновлення» є «Відновити старий простір» і «Створити новий простір» (без «через Мій простір»)',
-        gate.includes("data-account-herstel-knop='restore'") && gate.includes("data-account-herstel-knop='fresh'") && gate.includes("'/api/owner/identity/account/recover'") && !gate.includes('Відновлення акаунта виконується через Мій простір'));
+      check('(1) новий інтерфейс: на екрані «Обліковий запис потребує відновлення» є «Відновити старий простір» і «Створити новий простір» (без «через Мій простір»)',
+        gate.includes("data-account-herstel-knop='restore'") && gate.includes("data-account-herstel-knop='fresh'") && gate.includes("'/api/owner/identity/account/recover'") && !gate.includes('Відновлення облікового запису виконується через Мій простір'));
       const app = lees('src/App.tsx');
       check('(1) hub (src/App.tsx) не звертається до /api/account/*', !/['`]\/api\/account\/(delete|recover|workspaces)/.test(app) && app.includes("'/api/owner/identity/account/delete'") && app.includes("'/api/owner/identity/account/recover'") && app.includes('/api/owner/identity/account/workspaces/'));
     }

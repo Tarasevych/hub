@@ -1,5 +1,5 @@
 // «Немає опцій підключення пошти — лише всевдо-блоки без реальної можливості підключення» (eigenaar, 20.10.2026).
-// Deze test legt vast dat elke tegel van «Підключіть свої поштові акаунти» ÓF naar een echte handeling leidt, ÓF eerlijk
+// Deze test legt vast dat elke tegel van «Підключіть свої поштові облікові записи» ÓF naar een echte handeling leidt, ÓF eerlijk
 // als «nog niet gebouwd» staat — zonder knop en met de concrete lijst van wat ontbreekt. En: dat een app-wachtwoord
 // alleen versleuteld bestaat en nooit in een antwoord kan komen, en dat elke dienst een embleem uit het ENE register heeft.
 import { readFileSync } from 'node:fs';
@@ -51,7 +51,7 @@ export async function main(): Promise<number> {
     // MAILACC-002: de catalogus is de orbit (src/mail/MailOrbitIntro.tsx), ook bij gekoppelde accounts.
     hub.includes("from '../shared/mail-aanbieders'") && orbitBron.includes("from '../../shared/mail-aanbieders'") && orbitBron.includes('MAIL_AANBIEDERS.filter(mailAanbiederHeeftKnop)'));
   check('een tegel zonder handeling is geen knop', orbitBron.includes("data-mail-provider-knop='nee'") && orbitBron.includes("<details key={a.id} data-mail-orbit-onbeschikbaar") && hub.includes('mailAanbiederHeeftKnop'));
-  check('het lege vak legt uit wat een koppeling geeft (punt 5)', hub.includes("data-mail-leeg='uitleg'") && !/Ще немає підключених акаунтів<\//.test(hub));
+  check('het lege vak legt uit wat een koppeling geeft (punt 5)', hub.includes("data-mail-leeg='uitleg'") && !/Ще немає підключених облікових записів<\//.test(hub));
 
   const post = bron('src/MailFunctioneelWeergave.tsx');
   check('de melding «цей сервіс поки не підключається» is weg: elke tegel opent nu een venster',

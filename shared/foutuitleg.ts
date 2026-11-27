@@ -171,7 +171,7 @@ const BASIS_REGELS: Record<string, Regel> = {
     doenNl: 'Ontgrendel de extensie in «Агенти → Розширення» met een eigen passkey en probeer opnieuw.',
   },
   API_RECHT_VEREIST: {
-    uk: 'Сервер відповів, що для цього акаунта не ввімкнено право «API-платформа». Сесія справна.',
+    uk: 'Сервер відповів, що для цього облікового запису не ввімкнено право «API-платформа». Сесія справна.',
     nl: 'De server antwoordde dat het recht «API-platform» voor dit account niet is ingeschakeld. De sessie is in orde.',
     doenUk: 'Попросіть власника дозволити «API-платформу» (Адміністрування → Користувачі та запити доступу).',
     doenNl: 'Vraag de eigenaar om «API-platform» toe te staan (Beheer → Gebruikers en toegangsverzoeken).',

@@ -2,7 +2,7 @@
 //
 // Wat deze test vasthoudt:
 //   1. De catalogus van de interface wordt GEGENEREERD (scripts/zoek-ui-catalogus.mjs ↔ shared/zoek-ui-knoppen.generated.ts is
-//      actueel) en bevat echte elementen: «Шифрування моїх даних», «Повернути на типове місце», «Поштові акаунти», hulp-sleutels; technische
+//      actueel) en bevat echte elementen: «Шифрування моїх даних», «Повернути на типове місце», «Поштові облікові записи», hulp-sleutels; technische
 //      elementen alleen voor wie een technisch profiel heeft.
 //   2. Geheimen (tokens, wachtwoordregels) komen nooit als tekst in een zoekobject.
 //   3. Adapters geven ZoekObjecten met de JUISTE lade (rechten = lade van de aanroep), bron, soort en route.
@@ -50,7 +50,7 @@ export async function main(): Promise<number> {
   check('«Шифрування моїх даних» (SleutelkluisSectie) staat erin, op Налаштування › Способи входу', vind('Шифрування моїх даних').some((o) => o.route.host === 'identity' && o.route.pad === 'methods' && o.toegang === 'iedereen'));
   // 25.10.2026: de bel staat in een zone (shared/plaatsing.ts) — de knop heet nu «Повернути на типове місце» (vroeger «Повернути в кут»)
   check('«Повернути на типове місце» (knop in het meldingencentrum) staat erin met nl «Terug naar de standaardplek»', vind('Повернути на типове місце').some((o) => o.soort === 'knop' && o.titels.nl === 'Terug naar de standaardplek'));
-  check('«Поштові акаунти» staat erin, op de mailpagina', vind('Поштові акаунти').some((o) => o.route.host === 'mail'));
+  check('«Поштові облікові записи» staat erin, op de mailpagina', vind('Поштові облікові записи').some((o) => o.route.host === 'mail'));
   check('pagina «Мови» (identity/languages) en menu «Пошта» komen uit menu-model + labels', cat.some((o) => o.id === 'pagina:identity/languages' && o.titels.nl === 'Talen') && cat.some((o) => o.id === 'menu:mail' && o.soort === 'menu'));
   const hulp = cat.filter((o) => o.bron === 'hulp');
   check('elke sleutel van het hulp-register is een object met wat/gevolg/risico (uk ≠ nl) en een focus-route', hulp.length >= 100 && hulp.every((o) => o.omschrijving.uk && o.omschrijving.nl && o.omschrijving.uk !== o.omschrijving.nl && o.route.params?.focus), String(hulp.length));

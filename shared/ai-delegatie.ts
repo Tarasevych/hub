@@ -172,7 +172,7 @@ export const TERMIJN_NAAM: Record<AiTermijn, Tweetalig> = {
   tijd: t2('На час або до дати', 'Voor een tijd of tot een datum'),
   'tot-technisch-einde': t2('До завершення технічного сеансу', 'Tot einde technische sessie'),
   'tot-site-uitloggen': t2('До виходу з цього входу на сайт', 'Tot afmelden van deze aanmelding'),
-  'tot-account-uitloggen': t2('До виходу з акаунта (усі входи)', 'Tot afmelden van het account (overal)'),
+  'tot-account-uitloggen': t2('До виходу з облікового запису (усі входи)', 'Tot afmelden van het account (overal)'),
   onbepaald: t2('Безстроково', 'Onbepaald'),
 };
 export const TERMIJN_UITLEG: Record<AiTermijn, Tweetalig> = {
@@ -208,7 +208,7 @@ export const INTREK_REDEN: Record<IntrekReden | 'eigenaar', Tweetalig> = {
   inactief: t2('ШІ довго не користувався технічним простором', 'de AI gebruikte de technische ruimte lang niet'),
   'technisch-einde': t2('технічний сеанс, до якого був прив’язаний дозвіл, завершено', 'de technische sessie waaraan de toestemming hing is beëindigd'),
   'site-afgemeld': t2('ви вийшли з того входу на сайт', 'u meldde u af van die aanmelding'),
-  'account-afgemeld': t2('ви вийшли з акаунта на всіх пристроях', 'u meldde u overal af'),
+  'account-afgemeld': t2('ви вийшли з облікового запису на всіх пристроях', 'u meldde u overal af'),
   'profiel-gewisseld': t2('ви перемкнулися у звичайний профіль (так налаштовано правило)', 'u schakelde naar de gewone ruimte (zo staat de regel)'),
   eigenaar: t2('ви зняли дозвіл', 'u trok de toestemming in'),
 };

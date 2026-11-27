@@ -8,7 +8,7 @@
 //  - geopend terwijl de extensie offline was → '?' → de eerste verbinding bindt;
 //  - extensie < 0.7.0: «до закриття браузера» → TERMIJN_VEREIST_UPDATE; korte termijnen niet gebonden (oud gedrag);
 //  - aanval: de verbinding van account B (ook met A's sessie-id of rommel) raakt de rijen van A nooit; rommel = geen sessie;
-//  - «Вихід з акаунта завжди скидає»: naUitloggen trekt ELKE soort in (ook 1 тиждень), alleen van dat account.
+//  - «Вихід з облікового запису завжди скидає»: naUitloggen trekt ELKE soort in (ook 1 тиждень), alleen van dat account.
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { WebSocket } from 'ws';
@@ -181,7 +181,7 @@ export async function main(): Promise<number> {
     check('extensie 0.6.2 na herverbinding: rij loopt en komt terug (zoals vóór 0111)', oudTerug.ontgrendeling?.grant?.gid === oud.ontgrendeling.gid && !(await rij(oud.ontgrendeling.gid)).ingetrokken_op);
     await dicht(xo);
 
-    // ---------------------------------------------------------------- 6. «Вихід з акаунта завжди скидає»
+    // ---------------------------------------------------------------- 6. «Вихід з облікового запису завжди скидає»
     const week = await open(aA, AP.agent.id, '7d');
     const bLang = await open(aB, BP.agent.id, '30d');
     const n = await eo.naUitloggen(A);

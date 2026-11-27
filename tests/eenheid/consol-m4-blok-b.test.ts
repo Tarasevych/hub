@@ -94,10 +94,10 @@ export async function main(): Promise<number> {
 
   const vbcTsx = readFileSync(join(process.cwd(), 'src/verbindingen/VerbindingenCentrum.tsx'), 'utf8');
   check(
-    'L1-G14-02 / L4-S03: у VerbindingenCentrum.tsx немає пробного режиму лише для перегляду чи слова «акаунт», є справжні дії керування',
+    'L1-G14-02 / L4-S03: у VerbindingenCentrum.tsx немає пробного режиму лише для перегляду чи англіцизму на місці «обліковий запис», є справжні дії керування',
     !vbcTsx.includes('Пробний режим: лише перегляд')
       && !vbcTsx.includes('Proefmodus: alleen bekijken')
-      && !/акаунт/i.test(vbcTsx)
+      && !new RegExp('а' + 'каунт', 'i').test(vbcTsx)
       && vbcTsx.includes('verbindingenClient.controleer')
       && vbcTsx.includes('verbindingenClient.loskoppelen')
       && vbcTsx.includes('verbindingenClient.selecteer'),

@@ -78,7 +78,7 @@ export async function main(): Promise<number> {
     B = String((await pool.query("select id from app.records where tbl='users' and data->>'email'=$1", [emailB])).rows[0]?.id || '');
     opruim.push(A, B);
     await pool.query(`update app.records set data = data || '{"status":"approved"}'::jsonb where tbl='users' and id = ANY($1)`, [[A, B]]);
-    check('підготовка: два акаунти з сесіями (A — власник, B — звичайний, обидва approved)', !!A && !!B && A !== B, `${A} ${B}`);
+    check('підготовка: два облікові записи з сесіями (A — власник, B — звичайний, обидва approved)', !!A && !!B && A !== B, `${A} ${B}`);
     const lA: Lade = { userId: A, ruimte: 'prive' }, lB: Lade = { userId: B, ruimte: 'prive' }, lAt: Lade = { userId: A, ruimte: 'technisch' };
     // технічна вкладка A: cloud → «власні дані» (technisch), mail лишається «uit» (закрита служба)
     const Tb = G.browser() as unknown as Br; await Tb.aanmelden(subA, eigenaar, { service: 'hub', authTime: Math.floor(Date.now() / 1000) - 3600 });

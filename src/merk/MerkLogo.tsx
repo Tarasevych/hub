@@ -1,6 +1,6 @@
 // 20.10.2026: dit bestand stond in src/integraties/ en viel daarmee onder TECH_MAPPEN (shared/tech-bundels.ts). Gevolg: de chunk
 // met de grote merkentabel werd naar dist/assets/tech/ geschreven en die map serveert de server ALLEEN met een geldige technische
-// cookie. Een gewone gebruiker kreeg 403 en zag dus geen enkel merklogo op «Акаунти» (klacht van de eigenaar 20.10: «немає
+// cookie. Een gewone gebruiker kreeg 403 en zag dus geen enkel merklogo op «Облікові записи» (klacht van de eigenaar 20.10: «немає
 // поштових логотипів»). Merkvormen zijn niet technisch — ze horen bij src/merk/. Alleen de beheerpagina's blijven technisch.
 // Merklogo in een tegel op de koppelingenpagina; bij een onbekend merk een monogram. Decoratief (de naam staat ernaast).
 // Tekent niet meer zelf: dat doet het ene merkcomponent (src/merk/Merk.tsx). Hier blijft alleen het luie laden van de GROTE

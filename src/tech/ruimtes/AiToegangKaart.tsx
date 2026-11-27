@@ -85,7 +85,7 @@ const KEUZES: Array<{ id: TermijnKeuze; icoon: ReactNode; naam: { uk: string; nl
   { id: 'datum', icoon: <CalendarClock size={15} aria-hidden='true' />, naam: { uk: 'До дати й години', nl: 'Tot datum en uur' } },
   { id: 'tot-technisch-einde', icoon: <Wrench size={15} aria-hidden='true' />, naam: { uk: 'До кінця техн. сеансу', nl: 'Tot einde techn. sessie' } },
   { id: 'tot-site-uitloggen', icoon: <LogOut size={15} aria-hidden='true' />, naam: { uk: 'До виходу з цього входу', nl: 'Tot afmelden hier' } },
-  { id: 'tot-account-uitloggen', icoon: <Users size={15} aria-hidden='true' />, naam: { uk: 'До виходу з акаунта', nl: 'Tot afmelden account' } },
+  { id: 'tot-account-uitloggen', icoon: <Users size={15} aria-hidden='true' />, naam: { uk: 'До виходу з облікового запису', nl: 'Tot afmelden account' } },
   { id: 'onbepaald', icoon: <Oneindig size={15} aria-hidden='true' />, naam: { uk: 'Безстроково', nl: 'Onbepaald' }, gevaar: true },
 ];
 
@@ -168,7 +168,7 @@ export function AiEditor({ taal, groep, nu, bezig, onOpslaan, onAnnuleer }: { ta
         </div>
         {afmeldenTelt ? (
           <div className='ait-regel'>
-            <span className='ait-regel-naam' id={`${id}-afm`}>{t('Коли ви виходите з акаунта на всіх пристроях', 'Als u zich overal afmeldt', taal)}</span>
+            <span className='ait-regel-naam' id={`${id}-afm`}>{t('Коли ви виходите з облікового запису на всіх пристроях', 'Als u zich overal afmeldt', taal)}</span>
             <div className='ait-segment ait-segment-2' role='radiogroup' aria-labelledby={`${id}-afm`}>
               {(['intrekken', 'blijven'] as BijAfmelden[]).map((a) => (
                 <button key={a} type='button' role='radio' aria-checked={bijAfmelden === a} className={`ait-seg${a === 'blijven' ? ' is-gevaar' : ''}`} data-ait-afmelden={a} onClick={() => setBijAfmelden(a)}>
@@ -177,7 +177,7 @@ export function AiEditor({ taal, groep, nu, bezig, onOpslaan, onAnnuleer }: { ta
               ))}
             </div>
           </div>
-        ) : <p className='ait-uitleg'>{t('Вихід з акаунта на всіх пристроях завжди знімає цей доступ.', 'Overal afmelden trekt deze toegang altijd in.', taal)}</p>}
+        ) : <p className='ait-uitleg'>{t('Вихід з облікового запису на всіх пристроях завжди знімає цей доступ.', 'Overal afmelden trekt deze toegang altijd in.', taal)}</p>}
       </details>
 
       {risico.length ? (

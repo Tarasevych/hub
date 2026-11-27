@@ -7,7 +7,7 @@
   .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{border-color:transparent!important}
   .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar :is(header,.zijbalk-kop,.canonical-sidebar-head){border-bottom-color:transparent!important;background:transparent!important}
 }
-/* 2.2: на весь екран кнопки вікна не ховаються під аватаром акаунта */
+/* 2.2: на весь екран кнопки вікна не ховаються під аватаром облікового запису */
 .mail-new-message.groot{top:64px!important}
 @media (max-width:700px){.mail-new-message.groot{top:56px!important;inset-inline:4px!important;bottom:4px!important}}
 /* 2.3: згорнуті вікна стоять над рядком кнопок (лист «+», дзвіночок), не під ними й не за краєм екрана */

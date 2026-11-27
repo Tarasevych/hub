@@ -223,7 +223,7 @@ export async function main(): Promise<number> {
       check('privacy-logboek-01: після 30 днів стерто ВСЕ — нотатки, пошуковий індекс, історію пошуку, чернетки й записи',
         echt.accounts.some((a) => a.id === weg) && na.notities === 0 && na.zoek === 0 && na.geschiedenis === 0 && na.concepten === 0 && na.records === 0,
         JSON.stringify(na));
-      check('privacy-logboek-01: надгробок без персональних даних і з gewistAt; акаунт у межах 30 днів не зачеплено',
+      check('privacy-logboek-01: надгробок без персональних даних і з gewistAt; обліковий запис у межах 30 днів не зачеплено',
         graf.email === `gewist-${weg}@invalid` && !!graf.gewistAt && graf.name === ''
         && naBlijft.notities === 1 && naBlijft.zoek === 1 && naBlijft.geschiedenis === 1 && naBlijft.concepten === 1 && naBlijft.records === 1,
         JSON.stringify({ graf: graf.email, naBlijft }));
@@ -232,7 +232,7 @@ export async function main(): Promise<number> {
         /verlopenVerwijderingenAfronden[\s\S]*accountMeteenWissen\(/.test(privacyBron) && lees('backend/opruimen.ts').includes('verlopenVerwijderingenAfronden()'));
 
       // toets-g10b #4: таблиці із зовнішнім ключем без каскаду (cloud_overdracht_jobs ← cloud_move_proofs / cloud_m9_upload_checkpoints,
-      // ON DELETE RESTRICT) не валять стирання; акаунт, що падає щоразу, не блокує інших і лишає слід в аудиті.
+      // ON DELETE RESTRICT) не валять стирання; обліковий запис, що падає щоразу, не блокує інших і лишає слід в аудиті.
       const fk = `sec002-g10b-fk-${sfx}`, kapot = `sec002-g10b-kapot-${sfx}`;
       opruimIds.push(fk, kapot);
       const oudeVerwijdering = { status: 'deleted', deletedAt: nu - 31 * 864e5, recoverableUntil: nu - 864e5 };
@@ -253,12 +253,12 @@ export async function main(): Promise<number> {
       const rest = (await sys.query(`SELECT (SELECT count(*)::int FROM app.notities WHERE user_id = $1) AS notities, (SELECT count(*)::int FROM app.cloud_overdracht_jobs WHERE user_id = $1) AS jobs,
           (SELECT count(*)::int FROM app.cloud_move_proofs WHERE user_id = $1) AS bewijzen, (SELECT count(*)::int FROM app.cloud_m9_upload_checkpoints WHERE user_id = $1) AS checkpoints`, [fk])).rows[0];
       const grafFk = (await sys.query("SELECT data->>'gewistAt' AS g FROM app.records WHERE tbl = 'users' AND id = $1", [fk])).rows[0];
-      check('toets-g10b #4: акаунт із перенесенням хмари (FK ON DELETE RESTRICT) стирається повністю: 0 рядків і gewistAt',
+      check('toets-g10b #4: обліковий запис із перенесенням хмари (FK ON DELETE RESTRICT) стирається повністю: 0 рядків і gewistAt',
         !fkOpgezet && !r1.accounts.find((a) => a.id === fk)?.fout && rest.notities === 0 && rest.jobs === 0 && rest.bewijzen === 0 && rest.checkpoints === 0 && !!grafFk?.g,
         JSON.stringify({ fkOpgezet, verslag: r1.accounts.find((a) => a.id === fk), rest, gewist: grafFk?.g }));
       const kapotRij = (await sys.query("SELECT data FROM app.records WHERE tbl = 'users' AND id = $1", [kapot])).rows[0]?.data || {};
       const kapotAudit = (await sys.query("SELECT count(*)::int AS n FROM app.audit WHERE action = 'privacy.afronden_mislukt' AND details::text LIKE $1", [`%${kapot}%`]).catch(() => ({ rows: [{ n: -1 }] }))).rows[0].n;
-      check('toets-g10b #4: акаунт, що не стирається, позначено (лічильник спроб), записано в аудит, і він іде в кінець черги',
+      check('toets-g10b #4: обліковий запис, що не стирається, позначено (лічильник спроб), записано в аудит, і він іде в кінець черги',
         !!r1.accounts.find((a) => a.id === kapot)?.fout && Number(kapotRij.afrondenMislukt) >= 1 && kapotAudit >= 1 && /ORDER BY[^;]*afrondenMislukt[^;]*recoverableUntil/.test(lees('backend/privacy.ts')),
         JSON.stringify({ mislukt: kapotRij.afrondenMislukt, kapotAudit }));
       await sys.query('DELETE FROM app.audit WHERE action = $1 AND details::text LIKE $2', ['privacy.afronden_mislukt', `%${kapot}%`]).catch(() => undefined);
@@ -377,7 +377,7 @@ export async function main(): Promise<number> {
       check('autorisatie-04: у власному просторі людина й далі змінює та видаляє свої блоки', eigenWijzig.status === 200 && eigenWis.status === 200, `${eigenWijzig.status}/${eigenWis.status}`);
     }
 
-    // ------------------------------------------------------------ aanv-gat-a-02: видалений (заблокований) акаунт не скасовує видалення сам
+    // ------------------------------------------------------------ aanv-gat-a-02: видалений (заблокований) обліковий запис не скасовує видалення сам
     {
       const zet = (id: string, extra: Record<string, unknown>) => sys.query("UPDATE app.records SET data = data || $2::jsonb WHERE tbl = 'users' AND id = $1", [id, JSON.stringify(extra)]);
       const stand = async (id: string) => (await sys.query("SELECT data->>'status' AS s, data->>'deletionSource' AS d FROM app.records WHERE tbl = 'users' AND id = $1", [id])).rows[0] as { s: string; d: string };
@@ -403,14 +403,14 @@ export async function main(): Promise<number> {
       const naB = await stand(B.id);
       check('aanv-gat-a-02: заблокований-і-видалений не має сеансу (старий відхилено, новий вхід відхилено), status лишається deleted',
         [401, 403].includes(blijvend.status) && naInlog.status === 401 && naB.s === 'deleted', JSON.stringify({ blijvend: blijvend.status, naInlog: naInlog.status, na: naB }));
-      // C: поведінку не зламано — сам видалений (був схвалений) відновлюється; новий акаунт і далі просить доступ
+      // C: поведінку не зламано — сам видалений (був схвалений) відновлюється; новий обліковий запис і далі просить доступ
       const C = await maak('zelfweg');
       await zet(C.id, { ...weg, deletionSource: 'self', statusVoorVerwijdering: 'approved' });
       const terug = await hub(await opnieuw(C, 'zelfweg'), '/api/owner/identity/account/recover', { mode: 'restore' });
       const N = await maak('nieuwkomer');
       await zet(N.id, { status: 'new' });
       const vraagN = await hub(N, '/api/access/request');
-      check('aanv-gat-a-02: самостійне відновлення (200, approved) і запит доступу нового акаунта (200, pending) працюють як раніше',
+      check('aanv-gat-a-02: самостійне відновлення (200, approved) і запит доступу нового облікового запису (200, pending) працюють як раніше',
         terug.status === 200 && (await stand(C.id)).s === 'approved' && vraagN.status === 200 && (await stand(N.id)).s === 'pending',
         JSON.stringify({ terug: terug.status, n: vraagN.status }));
     }
@@ -611,7 +611,7 @@ export async function main(): Promise<number> {
         lekken.length === 0 && Array.isArray(exp.gegevens['app.sleutelkluis_omslag']), lekken.join(', '));
       const rij = zonderGeheimen({ id: 1, soort: 'herstelcode', envelop: 'x', payload_zegel: 'x', binding_hmac: 'x', uitdaging: 'x', binding: { a: 1 }, code_challenge: 'x', omslag: 'x',
         verbinding_id: 'blijft', gecontroleerd_op: 'blijft', status: 'blijft', vrij: 'omslag1.aaaa.bbbb.cccc' }) as Record<string, unknown>;
-      // За information_schema: кожна наявна колонка з ключовим матеріалом (за назвою) у таблицях акаунта відсіюється.
+      // За information_schema: кожна наявна колонка з ключовим матеріалом (за назвою) у таблицях облікового запису відсіюється.
       const kolommen = (await sys.query(
         `SELECT DISTINCT c.column_name::text AS k FROM information_schema.columns c
           WHERE c.table_schema = 'app' AND c.column_name ~ '(envelop|zegel|hmac|uitdaging|challenge|omslag)'`)).rows.map((r) => String(r.k));
@@ -641,7 +641,7 @@ export async function main(): Promise<number> {
       const ui = lees('src/diagnose/Diagnose.tsx');
       check('toets-g10b #7: відмова 429 у «Повідомити про проблему» — один запис аудиту на вікно; на сторінці пояснення uk/nl з часом очікування',
         auditD === 1 && /status === 429/.test(ui) && ui.includes('retryAfter') && ui.includes('Забагато звітів') && ui.includes('Te veel verslagen'), JSON.stringify({ auditD }));
-      // Один акаунт не витісняє інших зі списку підтримки: не більше N найновіших на людину.
+      // Один обліковий запис не витісняє інших зі списку підтримки: не більше N найновіших на людину.
       await sys.query("INSERT INTO app.diagnose_meldingen (user_id, dienst, oordeel, uitslagen, beschrijving) SELECT $1, 'hub', 'onzeker', '[]'::jsonb, 'спам ' || g FROM generate_series(1, 150) g", [D.id]);
       const lijst = typeof (diagnose as Record<string, unknown>).recenteMeldingen === 'function' ? await (diagnose as unknown as { recenteMeldingen: () => Promise<Array<{ user_id: string }>> }).recenteMeldingen() : [];
       const vanMelder = lijst.filter((r) => r.user_id === D.id).length;

@@ -52,7 +52,7 @@ export default function KoppelVenster({ lang, smal, data, google, onVerversen, o
               <button type='button' className='agv-knop is-hoofd' onClick={() => google.start('lezen')} data-agenda-kv-google-start='1'>{tr(lang, a.id === 'google-calendar' ? 'Підключити Google' : 'Підключити Google цього телефона', a.id === 'google-calendar' ? 'Google koppelen' : 'De Google van deze telefoon koppelen')}<ArrowRight aria-hidden='true' /></button>
               {google.stand === 'fout' && google.foutCode ? <p className='agv-balk is-fout' role='alert'><span>{foutCodeTekst(google.foutCode, lang)}</span></p> : null}
             </>}
-      {a.id !== 'google-calendar' ? <p className='agv-klein'>{tr(lang, 'Важливо: той самий Google-акаунт, з яким синхронізується календар телефона.', 'Belangrijk: hetzelfde Google-account waarmee de agenda van de telefoon synchroniseert.')}</p> : null}
+      {a.id !== 'google-calendar' ? <p className='agv-klein'>{tr(lang, 'Важливо: той самий обліковий запис Google, з яким синхронізується календар телефона.', 'Belangrijk: hetzelfde Google-account waarmee de agenda van de telefoon synchroniseert.')}</p> : null}
     </div>
   );
 

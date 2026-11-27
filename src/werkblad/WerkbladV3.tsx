@@ -132,7 +132,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   const mislukt = useRef<{ klasse: ApparaatKlasse; layout: CanvasLayout; extra: { achtergrond?: string } } | null>(null);
   const usrGemigreerd = useRef(false);
 
-  // BIB-002: технічний доступ = у акаунта є технічний профіль (його дає власник). Тоді ярлики технічних сторінок можна ставити й на
+  // BIB-002: технічний доступ = у облікового запису є технічний профіль (його дає власник). Тоді ярлики технічних сторінок можна ставити й на
   // приватний стіл — як двері; сама сторінка однаково відкривається лише через браму технічного профілю.
   const techToegang = techProfiel || !!tech.profiel;
   const rctx = useMemo<RegisterContext>(() => ({ ruimte, rechten: { apiPlatform: rechten.apiPlatform, eigenaar: rechten.eigenaar }, techToegang }), [ruimte, rechten.apiPlatform, rechten.eigenaar, techToegang]);

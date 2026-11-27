@@ -185,7 +185,7 @@ export const KOPPEL_PADEN: readonly KoppelPad[] = Object.freeze([
     actie: 'oauth',
     doel: GITHUB_OAUTH_DOEL,
     naam: ['Вхід через GitHub (OAuth)', 'Aanmelden met GitHub (OAuth)'],
-    uitleg: ['Кнопка «Увійти через GitHub»: сервер сам обмінює код на токен, сам оновлює його і сам відкликає при відключенні. Спершу зареєструйте власний OAuth-застосунок на своєму акаунті GitHub і покладіть client id + client secret у сховище (призначення «github-oauth») — точні значення для вашого домену показані нижче.',
+    uitleg: ['Кнопка «Увійти через GitHub»: сервер сам обмінює код на токен, сам оновлює його і сам відкликає при відключенні. Спершу зареєструйте власний OAuth-застосунок на своєму обліковому записі GitHub і покладіть client id + client secret у сховище (призначення «github-oauth») — точні значення для вашого домену показані нижче.',
       'Een knop «Aanmelden met GitHub»: de server wisselt de code zelf in voor een token, vernieuwt hem zelf en trekt hem bij ontkoppelen zelf in. Registreer eerst uw eigen OAuth-app op uw eigen GitHub-account en zet client id + client secret in de kluis (doel «github-oauth») — de exacte waarden voor uw domein staan hieronder.'],
   },
   {
@@ -382,7 +382,7 @@ export const GITHUB_OAUTH_FOUTEN: Record<string, Tekst> = {
   redirect_uri_mismatch: ['«Authorization callback URL» у застосунку GitHub не збігається з адресою цього сайту. Скопіюйте точне значення з картки.',
     'De «Authorization callback URL» in de GitHub-app komt niet overeen met het adres van deze site. Kopieer de exacte waarde van de kaart.'],
   bad_refresh_token: ['Токен оновлення більше не діє. Підключіться через GitHub ще раз.', 'De vernieuwingstoken werkt niet meer. Koppel opnieuw via GitHub.'],
-  unverified_user_email: ['Основна пошта акаунта GitHub не підтверджена.', 'Het hoofd-e-mailadres van het GitHub-account is niet bevestigd.'],
+  unverified_user_email: ['Основна пошта облікового запису GitHub не підтверджена.', 'Het hoofd-e-mailadres van het GitHub-account is niet bevestigd.'],
   GITHUB_APP_SLEUTEL_ONTBREEKT: ['У сховищі немає ключа GitHub App (призначення «github-app»): потрібні App ID і приватний ключ (PEM).',
     'In de kluis staat geen GitHub-App-sleutel (doel «github-app»): App ID en de persoonlijke sleutel (PEM) zijn nodig.'],
   // De PEM-kop is hier opgeknipt zodat de geheimenscan van de uitrol-voorcontrole (shared/geheim-patronen.ts) deze

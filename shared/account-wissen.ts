@@ -1,4 +1,4 @@
-// План стирання акаунта (блок 8). Лише текст SQL. Виконання — backend/account-wissen.ts.
+// План стирання облікового запису (блок 8). Лише текст SQL. Виконання — backend/account-wissen.ts.
 const NAAM = /^[a-z_][a-z0-9_]*$/;
 export const STANDAARD_KOLOM = ['owner_id', 'user_id', 'gebruiker_id', 'account_id'] as const;
 
@@ -7,7 +7,7 @@ export type WisTabel = { schema: string; tabel: string; kolommen: string[]; uuid
 export type WisOpdracht = { sql: string; params: string[]; tel?: string };
 
 /**
- * Таблиці app, де рядок явно належить акаунту, але колонка називається інакше
+ * Таблиці app, де рядок явно належить обліковому запису, але колонка називається інакше
  * (імена з міграцій, не вигадані).
  */
 export const EXTRA_WIS: WisTabel[] = [
@@ -19,12 +19,12 @@ export const EXTRA_WIS: WisTabel[] = [
   // приймати його вже не можна (huis-vnext.ts звіряє door_user_id з власником оселі), а рядок несе її id. Видаляємо.
   // De uitnodiging VAN een gewiste persoon is dood (aanvaarden eist dat door_user_id nog eigenaar is) en draagt haar id: weg.
   { schema: 'app', tabel: 'huis_uitnodigingen', kolommen: ['door_user_id'] },
-  // CONSOL-001 (0313): рядки міжслужбових мостів пошти належать користувачеві за gebruiker_id; стираємо повністю разом із акаунтом.
+  // CONSOL-001 (0313): рядки міжслужбових мостів пошти належать користувачеві за gebruiker_id; стираємо повністю разом із обліковим записом.
   { schema: 'app', tabel: 'mail_dienstbruggen', kolommen: ['gebruiker_id'] },
 ];
 
 /**
- * SEC-002 (slot-z): колонка з назвою, схожою на колонку акаунта, але в ЦІЙ таблиці вона про інше. Лише для названої таблиці:
+ * SEC-002 (slot-z): колонка з назвою, схожою на колонку облікового запису, але в ЦІЙ таблиці вона про інше. Лише для названої таблиці:
  * в інших таблицях та сама назва (doel_id) — справжній id людини й стирається.
  * Kolom met een accountachtige naam die in DEZE tabel iets anders betekent (alleen voor die tabel).
  */
@@ -40,7 +40,7 @@ export const GEEN_ACCOUNT_KOLOM: Record<string, Record<string, string>> = {
 
 /**
  * SEC-002 (slot-z): рядок належить ІНШІЙ людині, але несе дані того, кого стирають. Не видаляємо чужий рядок — відв’язуємо
- * (UPDATE … WHERE …, завжди з $1 = id того, кого стирають). `kolommen` — колонки акаунта, які це відв’язування покриває
+ * (UPDATE … WHERE …, завжди з $1 = id того, кого стирають). `kolommen` — колонки облікового запису, які це відв’язування покриває
  * замість DELETE. Rij van IEMAND ANDERS met gegevens van de gewiste persoon: niet weg, wel losgekoppeld.
  */
 /** `veld` — колонка, яку змінює UPDATE: за нею план знаходить таблицю й тоді, коли колонки облікового запису в ній немає
@@ -90,7 +90,7 @@ export const ONTKOPPELEN: Ontkoppeling[] = [
   },
 ];
 
-/** Не стираємо цілим DELETE: окремий шлях або це не рядок акаунта. */
+/** Не стираємо цілим DELETE: окремий шлях або це не рядок облікового запису. */
 export const WIS_UITZONDERING: Record<string, string> = {
   users: 'надгробок без персональних даних у wisRecordsVanAccount, не DELETE',
   records: 'JSON-рядки й файли стирає wisRecordsVanAccount; owner_id додано в 0003',
@@ -105,7 +105,7 @@ export const WIS_UITZONDERING: Record<string, string> = {
   integratie_controles: 'door — журнал перевірок сайту',
   diagnostiek_uitslagen: 'door — журнал діагностики сайту',
   uitrol_github_publicaties: 'door — «automatisch» або пошта в спільному журналі релізів',
-  uitrol_runs: 'спільний журнал викладів сайту; goedgekeurd_door — підпис, не рядок акаунта',
+  uitrol_runs: 'спільний журнал викладів сайту; goedgekeurd_door — підпис, не рядок облікового запису',
   ai_media_generator: 'bijgewerkt_door на спільному налаштуванні генератора',
   extensie_beleid: 'user_id стирається стандартно; gewijzigd_door і lokale_ai_door (0287) — хто змінив політику чи вимкнув локальний ШІ',
   // UPD-003 (0295, MAILAI-003): спільний рушій ШІ «для всіх» — рядок сайту, який створює лише власник сайту; eigenaar_user_id і
@@ -138,7 +138,7 @@ const expressie = (t: WisTabel, kolom: string) =>
     : kolom;
 
 /**
- * Один DELETE на таблицю, завжди з WHERE на id цього акаунта. users, records і audit — окремо.
+ * Один DELETE на таблицю, завжди з WHERE на id цього облікового запису. users, records і audit — окремо.
  * SEC-002 (slot-z): колонки з ONTKOPPELEN не йдуть у DELETE — для них окремий UPDATE відв’язування (чужий рядок лишається);
  * колонки з GEEN_ACCOUNT_KOLOM ігноруються.
  */
@@ -166,7 +166,7 @@ export function wisOpdrachten(tabellen: WisTabel[], userId: string): WisOpdracht
 
 /**
  * Чи кожна колонка-ідентифікатор у CREATE TABLE покрита реєстром.
- * `geen` — колонки акаунта немає. `wissen` — стандартна, EXTRA або ONTKOPPELEN (GEEN_ACCOUNT_KOLOM не рахується). `uitzondering` — записана причина. `open` — дірка.
+ * `geen` — колонки облікового запису немає. `wissen` — стандартна, EXTRA або ONTKOPPELEN (GEEN_ACCOUNT_KOLOM не рахується). `uitzondering` — записана причина. `open` — дірка.
  */
 export function dekking(tabel: string, kolommen: string[]): 'geen' | 'wissen' | 'uitzondering' | 'open' {
   const ids = [...new Set(kolommen.map((k) => k.toLowerCase()).filter((k) => ACCOUNT_KOLOM.test(k) && !geenAccount(tabel, k)))];

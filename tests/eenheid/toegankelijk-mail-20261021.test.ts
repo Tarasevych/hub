@@ -1,5 +1,5 @@
 // Eenheidstest 21.10.2026 — recensie toegankelijkheid (WCAG 2.2 AA) van de mail: meldingenpaneel op de telefoon, FAB en bel,
-// venster «Новий лист» (stapel, menu's, Cc/Bcc, concept-indicator), menu «⋮» van een rij, mailboxkiezer, «Поштові акаунти».
+// venster «Новий лист» (stapel, menu's, Cc/Bcc, concept-indicator), menu «⋮» van een rij, mailboxkiezer, «Поштові облікові записи».
 //
 // STAND ДО (tests/e2e/hulp/stand-toegankelijk.ts, REV3-DO, 390 en 1280 px):
 //   • paneel: focus bleef op de bel na het openen; «Згорнути панель» → focus op <body>; «⋯» (telefoon): Tab/↓ kwam niet in het
@@ -11,7 +11,7 @@
 //   • «⋮» van een rij: 25× «Інші дії» zonder onderwerp; axe aria-required-children/-parent (section-regio in het menu); na
 //     «Позначити прочитаним» → focus op <body>.
 //   • mailboxkiezer: Enter → focus bleef op de avatar, ↓ deed niets.
-//   • «Поштові акаунти»: «Відключити»/«Перепідключити» zonder adres; vraag = role=group, focus bleef op «Відключити», Esc deed niets.
+//   • «Поштові облікові записи»: «Відключити»/«Перепідключити» zonder adres; vraag = role=group, focus bleef op «Відключити», Esc deed niets.
 // Deze test legt de regels vast (zuivere functies, render, bron); de stand (REV3-PISLYA) bewijst ze in Chrome.
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
@@ -171,7 +171,7 @@ export async function main(): Promise<number> {
     badge.includes("role=\"menu\" aria-label={t('Поштові скриньки', 'Mailboxen')}") && badge.includes('<header role="none">') && badge.includes('<footer role="none">') && (badge.match(/mail-account-badge-photo is-klein" aria-hidden="true"/g) || []).length === 2 && sw.includes("<header role='none'>") && sw.includes("className='mail-provider-mark google' aria-hidden='true'"));
   check('F regels van agent C blijven (is-klein 2×, initialen in eigen span, foto alt="")', (badge.match(/mail-account-badge-photo is-klein/g) || []).length === 2 && badge.includes('fallback={<span className="mail-account-badge-initial">{initialsOf(a)}</span>}') && (badge.match(/alt=""/g) || []).length >= 2);
 
-  // ------------------------------------------------------------------ G. «Поштові акаунти» (render) + koppelvenster + logo's
+  // ------------------------------------------------------------------ G. «Поштові облікові записи» (render) + koppelvenster + logo's
   try {
     await (await import('../../src/merk/merk-register')).laadMerken();
     const MailAccountsHub = (await import('../../src/MailAccountsHub')).default;

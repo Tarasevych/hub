@@ -142,7 +142,7 @@ export async function main(): Promise<number> {
   const backendIdx = lees('backend/index.ts');
 
   check(
-    '3a telegramRoutes і alleenGoedgekeurd відхиляють несхвалені акаунти (403 ACCOUNT_NOT_APPROVED_FORBIDDEN)',
+    '3a telegramRoutes і alleenGoedgekeurd відхиляють несхвалені облікові записи (403 ACCOUNT_NOT_APPROVED_FORBIDDEN)',
     nieuwRes.r1?.statusCode === 403 &&
       JSON.parse(nieuwRes.r1.body).error === 'ACCOUNT_NOT_APPROVED_FORBIDDEN' &&
       nieuwRes.r2?.statusCode === 403 &&
@@ -171,7 +171,7 @@ export async function main(): Promise<number> {
   const ecoBron = lees('backend/meldingen-ecosysteem.ts');
 
   check(
-    '4a meldingEcosysteemRoutes повертає справжній HTTP 429 + Retry-After для ai-ontleden і gebeurtenis та блокує несхвалений акаунт',
+    '4a meldingEcosysteemRoutes повертає справжній HTTP 429 + Retry-After для ai-ontleden і gebeurtenis та блокує несхвалений обліковий запис',
     ai429?.statusCode === 429 &&
       ai429.headers['Retry-After'] === '19' &&
       JSON.parse(ai429.body).error === 'RATE_LIMITED' &&

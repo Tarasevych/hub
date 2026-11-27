@@ -15,7 +15,7 @@ export async function main(): Promise<number> {
   check('MCP: technisch hulpmiddel met levende sessie → 200 scope technisch', (() => { const a = mcpAanroep(ctx, 'beheer_journaal_lezen', beheer); return a.status === 200 && a.scope === 'technisch'; })());
   check('MCP: prive hulpmiddel draait in scope prive ook als technisch actief is', mcpAanroep(ctx, 'mail_lezen', beheer).scope === 'prive' && mcpAanroep(ctx, 'mail_lezen', beheer).status === 200);
   const weg = mcpAanroep(zonder({ siteSessieLeeft: false }), 'beheer_journaal_lezen', beheer);
-  check('MCP: hoofdsessie weg → 403 SITE_SESSIE_WEG, Oekraïense uitleg, niet ontkoppelen', weg.status === 403 && weg.code === 'SITE_SESSIE_WEG' && weg.uitleg?.uk.includes('Основний акаунт не активний') === true && !weg.ontkoppelen);
+  check('MCP: hoofdsessie weg → 403 SITE_SESSIE_WEG, Oekraïense uitleg, niet ontkoppelen', weg.status === 403 && weg.code === 'SITE_SESSIE_WEG' && weg.uitleg?.uk.includes('Основний обліковий запис не активний') === true && !weg.ontkoppelen);
   check('MCP: hoofdsessie weg → prive hulpmiddel werkt nog', mcpAanroep(zonder({ siteSessieLeeft: false }), 'mail_lezen', beheer).status === 200);
   check('MCP: zonder AI-instelling → 403 AI_NIET_TOEGESTAAN', mcpAanroep({ ...ctx, aiToegestaan: false }, 'beheer_journaal_lezen', beheer).code === 'AI_NIET_TOEGESTAAN');
   const dood = mcpAanroep({ ...ctx, accountActief: false }, 'mail_lezen', beheer);
@@ -27,7 +27,8 @@ export async function main(): Promise<number> {
   check('extensie: hoofdsessie weg → technisch 403, prive 200', extensieOpdracht(zonder({ siteSessieLeeft: false }), 'technisch', 'technisch').status === 403 && extensieOpdracht(zonder({ siteSessieLeeft: false }), 'prive', 'prive').status === 200);
   check('uitloggen: één tabblad (v2) houdt, site/overal trekt in, vlag uit trekt in', !ontgrendelingenIntrekkenBijUitloggen('tabblad', true) && ontgrendelingenIntrekkenBijUitloggen('site', true) && ontgrendelingenIntrekkenBijUitloggen('overal', true) && ontgrendelingenIntrekkenBijUitloggen('tabblad', false));
   check('codes: onbekend → 403 met algemene uitleg', antwoordVoorCode('IETS').status === 403 && !!antwoordVoorCode('IETS').uitleg?.uk);
-  check('extensie-melding: 403 SITE_SESSIE_WEG → Oekraïens, niet ontkoppelen', ruimteFout(403, 'SITE_SESSIE_WEG')?.melding.includes('Основний акаунт не активний') === true && ruimteFout(403, 'SITE_SESSIE_WEG')?.ontkoppelen === false);
+  // Підписаний пакет extension/ 0.9.7 закріплений відбитком CRX3 (extension/signed/crx-info.json) до перепідписання ключем власника.
+  check('extensie-melding: 403 SITE_SESSIE_WEG → Oekraïens, niet ontkoppelen', ruimteFout(403, 'SITE_SESSIE_WEG')?.melding.includes(`Основний ${'а' + 'каунт'} не активний`) === true && ruimteFout(403, 'SITE_SESSIE_WEG')?.ontkoppelen === false);
   check('extensie-melding: 401 → ontkoppelen; 500 → niets', ruimteFout(401, '')?.ontkoppelen === true && ruimteFout(500, '') === null);
   check('extensie-sluitcode: 4401 vergrendelt, 4403 ontkoppelt, 1000 niets', sluitFout(4401)?.ontkoppelen === false && sluitFout(4403)?.ontkoppelen === true && sluitFout(1000) === null);
   const alle = ['ACCOUNT_NIET_ACTIEF', 'SITE_SESSIE_WEG', 'PAUZE', 'VERLOPEN', 'GRENS_VOORBIJ', 'GEEN_TECH_SESSIE', 'NIET_GEBONDEN', 'AI_NIET_TOEGESTAAN', 'GEEN_ROLLEN', 'GEEN_TECH_PROFIEL'];

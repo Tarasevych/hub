@@ -21,7 +21,7 @@ export function composeErrorText(error: unknown, t: (uk: string, nl: string) => 
     MAIL_TOO_MANY_RECIPIENTS: ['Забагато одержувачів (максимум 50).', 'Te veel ontvangers (maximaal 50).'],
     MAIL_SCHEDULE_TIME_INVALID: ['Час має бути щонайменше за 10 секунд у майбутньому.', 'De tijd moet minstens 10 seconden in de toekomst liggen.'],
     MAIL_SCHEDULE_TOO_FAR: ['Заплановувати можна не далі ніж на рік уперед.', 'Plannen kan maximaal een jaar vooruit.'],
-    MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий акаунт Google не підключений або потребує нового входу.', 'Het Google-mailaccount is niet gekoppeld of moet opnieuw worden aangemeld.'],
+    MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий обліковий запис Google не підключений або потребує нового входу.', 'Het Google-mailaccount is niet gekoppeld of moet opnieuw worden aangemeld.'],
     RATE_LIMITED: ['Забагато запитів. Зачекайте кілька хвилин.', 'Te veel verzoeken. Wacht enkele minuten.'],
     AI_KEY_MISSING: ['Додайте власний ключ Anthropic: Кабінет → API-платформа → Сховище ключів (призначення «anthropic»).', 'Voeg uw eigen Anthropic-sleutel toe: Kabinet → API-platform → Sleutelkluis (doel "anthropic").'],
     AI_PROVIDER_ERROR: ['Постачальник ШІ не відповів або відхилив запит (перевірте ключ і ліміт).', 'De AI-aanbieder antwoordde niet of weigerde het verzoek (controleer sleutel en limiet).'],

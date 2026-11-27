@@ -240,7 +240,7 @@ const domeinUit = (waarde: string, adres: boolean): string =>
 /**
  * SEC-002 (post-08): is BEWEZEN dat Gmail dit bericht NIET zelf via SMTP aannam? Dan is de bovenste Authentication-Results
  * niet van Gmail maar van de afzender (of van een vreemde server) en mag ze nergens voor tellen.
- *   • de POP3-verzamelaar («Перевіряти пошту з інших акаунтів») zet zelf bovenaan «Received: by … with POP3» en
+ *   • de POP3-verzamelaar («Перевіряти пошту з інших облікових записів») zet zelf bovenaan «Received: by … with POP3» en
  *     «X-Gmail-Fetch-Info»; alles daaronder — ook een nagemaakte «mx.google.com»-regel — komt uit de andere postbus;
  *   • een geïmporteerd of via de API ingevoegd bericht heeft geen enkele «Received: … by mx.google.com with (E)SMTP(S)».
  * `koppen` = de kopregels van het bericht in volgorde (Gmail API, format=metadata), waarbij «Received» en

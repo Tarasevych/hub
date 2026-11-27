@@ -87,7 +87,7 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 /* Монограма підвалу: у макеті grid розкладав «M», «·», «R» у три рядки (вада макета, видно й на оригінальних знімках); тут — в один рядок. */
 .mr-mq.mr-mq.mr-mq.mr-mq .footer-monogram{display:flex;align-items:center;justify-content:center;gap:1px}
 
-/* Діалог світлини: дві кнопки в стовпчик (до розділу «Акаунт» і до меню облікового запису). */
+/* Діалог світлини: дві кнопки в стовпчик (до розділу «Обліковий запис» і до меню облікового запису). */
 .mr-mq.mr-mq.mr-mq.mr-mq .profile-photo-picker{display:block;width:100%;margin-top:10px}
 .mr-mq.mr-mq.mr-mq.mr-mq .profile-photo-account{background:rgba(var(--global-rgb),.14);color:var(--text);border:1px solid rgba(var(--global-rgb),.35)}
 

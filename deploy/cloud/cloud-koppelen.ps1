@@ -85,7 +85,7 @@ try {
     $b = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss)
     try { $geheim = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($b) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($b) }
     if (-not $geheim.Trim()) { throw 'leeg client secret' }
-    Zeg '5/6 Зараз відкриється браузер: увійдіть у свій Google-акаунт і натисніть «Дозволити/Allow».' 'De browser opent: log in bij Google en klik op Toestaan/Allow.'
+    Zeg '5/6 Зараз відкриється браузер: увійдіть у свій обліковий запис Google і натисніть «Дозволити/Allow».' 'De browser opent: log in bij Google en klik op Toestaan/Allow.'
     Zeg '    Якщо браузер не відкрився - відкрийте посилання http://127.0.0.1:53682/auth?... з цього вікна.' 'Opent er niets: open de link http://127.0.0.1:53682/auth?... uit dit venster.'
     Rc config create $Naam drive "client_id=$id" "client_secret=$($geheim.Trim())" 'scope=drive.file'
     $code = $LASTEXITCODE; $geheim = $null

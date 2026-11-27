@@ -224,7 +224,7 @@ export async function persoonsgegevensZip(data: Export): Promise<{ bytes: Buffer
   return { bytes: Buffer.from(zipSync(inhoud, { level: 6 })), tabellen };
 }
 
-/** Стерти записи й файли одного акаунта і лишити надгробок без персональних даних. Власника сервера не чіпає. */
+/** Стерти записи й файли одного облікового запису і лишити надгробок без персональних даних. Власника сервера не чіпає. */
 export async function wisRecordsVanAccount(userId: string, email: string, nu = Date.now()): Promise<{ rijen: number; bestanden: number }> {
   const pool = getPool();
   const rol = await pool.query("SELECT COALESCE(data->>'role', '') AS role FROM app.records WHERE tbl = 'users' AND id = $1", [userId]);

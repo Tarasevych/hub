@@ -61,7 +61,7 @@ const FOUTEN: Record<string, [string, string]> = {
   ROLLEN_BOVEN_EIGEN: ['Можна давати чи забирати лише ролі, які маєте самі.', 'U kunt alleen rollen geven of intrekken die u zelf hebt.'],
   EIGENAAR_ONAANTASTBAAR: ['Профіль власника сервера не змінюється через сайт.', 'Het profiel van de eigenaar wijzigt niet via de site.'],
   NIET_AAN_JEZELF: ['Собі змінювати профіль не можна.', 'Uw eigen profiel wijzigen kan niet.'],
-  EMAIL_NIET_UNIEK: ['З цією поштою є кілька активних облікових записів. Оберіть користувача інакше (за id) або розв’яжіть конфлікт акаунтів.', 'Er zijn meerdere actieve accounts met dit e-mailadres. Los eerst het accountconflict op.'],
+  EMAIL_NIET_UNIEK: ['З цією поштою є кілька активних облікових записів. Оберіть користувача інакше (за id) або розв’яжіть конфлікт облікових записів.', 'Er zijn meerdere actieve accounts met dit e-mailadres. Los eerst het accountconflict op.'],
   GEBRUIKER_NIET_GEVONDEN: ['Користувача з такою поштою не знайдено.', 'Geen gebruiker met dit e-mailadres.'],
   GEBRUIKER_NIET_GOEDGEKEURD: ['Цей обліковий запис ще не схвалено.', 'Dit account is nog niet goedgekeurd.'],
   EMAIL_ONGELDIG: ['Перевірте адресу пошти.', 'Controleer het e-mailadres.'],
@@ -374,7 +374,7 @@ export default function TechLaag() {
     }
     if (id === 'uit') {
       open = undefined;
-      if (v2) extra.push({ label: uk ? 'Вийти… (вибір: технічний профіль або акаунт)' : 'Afmelden… (keuze: technisch profiel of account)', onKies: () => setVenster('uitloggen') });
+      if (v2) extra.push({ label: uk ? 'Вийти… (вибір: технічний профіль або обліковий запис)' : 'Afmelden… (keuze: technisch profiel of account)', onKies: () => setVenster('uitloggen') });
       else extra.push({ label: uk ? 'Вийти з технічного профілю' : 'Technisch profiel verlaten', onKies: () => void techBeeindigen() });
       extra.push({ label: v2 ? WOORDEN.wijzigTermijn[taal] : (uk ? 'Подовжити…' : 'Verlengen…'), onKies: () => kies('activeren') });
     }
@@ -429,7 +429,7 @@ export default function TechLaag() {
           onClick={bandIngeklapt && !volledig ? klikStrook : undefined}>
           <span className='tech-band-merk'><ShieldCheck aria-hidden='true' />{uk ? 'ТЕХНІЧНИЙ' : 'TECHNISCH'}{remoteN > 0 ? <i className='tech-remote-actief' data-tech-remote={remoteN} role='status' title={uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}>●<span className='tech-remote-tekst'>{uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}</span></i> : null}</span>
           <span className='tech-band-id' title={t.activatie.profielId}>{t.activatie.rollen.map((r) => rolNaam(r, uk)).join(' · ')}</span>
-          <span className={`tech-band-tijd${rest < 5 * 60000 ? ' is-bijna' : ''}`} data-tech-rest={Math.round(rest / 60000)}><Timer aria-hidden='true' />{t.activatie.modus === 'tot-uitloggen' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotUitloggen[taal] : uk ? 'до виходу з акаунта' : 'tot uitloggen'}</span> : t.activatie.modus === 'tot-verlaten' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotVerlaten[taal] : uk ? 'до виходу з профілю' : 'tot verlaten profiel'}</span> : <><span className='tech-band-nog'>{uk ? 'ще' : 'nog'} </span>{mmss(rest, uk)}</>}</span>
+          <span className={`tech-band-tijd${rest < 5 * 60000 ? ' is-bijna' : ''}`} data-tech-rest={Math.round(rest / 60000)}><Timer aria-hidden='true' />{t.activatie.modus === 'tot-uitloggen' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotUitloggen[taal] : uk ? 'до виходу з облікового запису' : 'tot uitloggen'}</span> : t.activatie.modus === 'tot-verlaten' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotVerlaten[taal] : uk ? 'до виходу з профілю' : 'tot verlaten profiel'}</span> : <><span className='tech-band-nog'>{uk ? 'ще' : 'nog'} </span>{mmss(rest, uk)}</>}</span>
           {/* E-03 (audit fase 2): met label «Причина:», anders leest de activeringsreden («встановлення оновлень : Пакет …») als een (verouderde) status van een update. */}
           <span className='tech-band-reden' title={`${uk ? 'Причина' : 'Reden'}: ${t.activatie.reden}`}><span className='tech-band-reden-label'>{uk ? 'Причина:' : 'Reden:'}</span> <q className='tech-band-reden-tekst'>{t.activatie.reden}</q></span>
           <span className='tech-band-knoppen'>
@@ -543,9 +543,9 @@ function Activeren({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
           <select data-hulp='tech.duur' value={modus === 'tijd' ? String(minuten) : modus} onChange={(e) => { const v = e.target.value; if (v === 'account') { setModus('account'); } else if (v === 'tech') { setModus('tech'); } else { setModus('tijd'); setMinuten(Number(v)); } }} data-tech-duur='1'>
             {keuzes.map((d) => <option key={d} value={d}>{d >= 60 ? `${d / 60} ${uk ? 'год' : 'u'}` : `${d} ${uk ? 'хв' : 'min'}`}</option>)}
             {openMag ? <option value='tech'>{uk ? 'До виходу з технічного профілю' : 'Tot verlaten technisch profiel'}</option> : null}
-            {openMag ? <option value='account'>{uk ? 'До виходу з акаунта' : 'Tot uitloggen'}</option> : null}
+            {openMag ? <option value='account'>{uk ? 'До виходу з облікового запису' : 'Tot uitloggen'}</option> : null}
           </select>
-          <small>{modus === 'account' ? (uk ? 'Без обмеження за часом: профіль вимкнеться, коли ви вийдете з акаунта.' : 'Zonder tijdsgrens: het profiel gaat uit zodra u uitlogt.') : modus === 'tech' ? (uk ? 'Без обмеження за часом: профіль діє, доки ви самі не вийдете з нього (або з акаунта).' : 'Zonder tijdsgrens: het profiel blijft aan tot u het zelf verlaat (of uitlogt).') : (uk ? `Найдовше для ваших ролей: ${max >= 60 ? `${max / 60} год` : `${max} хв`}` : `Maximaal voor uw rollen: ${max >= 60 ? `${max / 60} u` : `${max} min`}`)}</small></label>
+          <small>{modus === 'account' ? (uk ? 'Без обмеження за часом: профіль вимкнеться, коли ви вийдете з облікового запису.' : 'Zonder tijdsgrens: het profiel gaat uit zodra u uitlogt.') : modus === 'tech' ? (uk ? 'Без обмеження за часом: профіль діє, доки ви самі не вийдете з нього (або з облікового запису).' : 'Zonder tijdsgrens: het profiel blijft aan tot u het zelf verlaat (of uitlogt).') : (uk ? `Найдовше для ваших ролей: ${max >= 60 ? `${max / 60} год` : `${max} хв`}` : `Maximaal voor uw rollen: ${max >= 60 ? `${max / 60} u` : `${max} min`}`)}</small></label>
         <label className='tech-veld'><span>{uk ? 'Причина' : 'Reden'} <Vraag help={HELP_TECH.reden} uk={uk} label={uk ? 'Причина' : 'Reden'} /></span>
           <input value={reden} onChange={(e) => setReden(e.target.value)} maxLength={300} required minLength={3} placeholder={uk ? 'напр. запит №42: пошта не синхронізується' : 'bijv. melding #42: mail synchroniseert niet'} data-tech-reden='1' /></label>
         {/* Migratie 0080: nieuwe tabbladen technisch of gebruiker. Hier (instellingen) en in de technische balk; standaard GEBRUIKER. */}
@@ -557,10 +557,10 @@ function Activeren({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
             ? (uk ? 'Увага: у технічній вкладці ШІ у вашому приватному просторі не працює — він ніколи не читає й не керує технічною вкладкою. Вимкніть це, якщо ваш ШІ має бачити звичайні сторінки.' : 'Let op: in een technisch tabblad werkt de AI in uw privéruimte niet — die leest of bedient een technisch tabblad nooit. Zet dit uit als uw AI gewone pagina\u2019s moet zien.')
             : (uk ? 'Нові вкладки — звичайні (користувацькі). Технічний профіль вмикаєте в кожній вкладці окремо; вкладка, відкрита з технічної, усе одно може отримати копію.' : 'Nieuwe tabbladen zijn gewone (gebruikers)tabbladen. Het technische profiel zet u per tabblad aan; een tabblad dat u vanuit een technisch tabblad opent kan nog wel een kopie krijgen.')}</small></label>
         {melding ? <p className='tech-melding' role='alert'>{melding}</p> : null}
-        <p className='tech-meta'>{modus === 'account' ? (uk ? 'Сайт попросить підтвердити вхід ще раз. Профіль вимкнеться при виході з акаунта.' : 'De site vraagt de aanmelding nog eens te bevestigen. Het profiel gaat uit bij uitloggen.') : modus === 'tech' ? (uk ? 'Сайт попросить підтвердити вхід ще раз. Профіль діє, доки ви його не залишите.' : 'De site vraagt de aanmelding nog eens te bevestigen. Het profiel blijft aan tot u het verlaat.') : (uk ? 'Сайт попросить підтвердити вхід ще раз.' : 'De site vraagt de aanmelding nog eens te bevestigen.')}</p>
+        <p className='tech-meta'>{modus === 'account' ? (uk ? 'Сайт попросить підтвердити вхід ще раз. Профіль вимкнеться при виході з облікового запису.' : 'De site vraagt de aanmelding nog eens te bevestigen. Het profiel gaat uit bij uitloggen.') : modus === 'tech' ? (uk ? 'Сайт попросить підтвердити вхід ще раз. Профіль діє, доки ви його не залишите.' : 'De site vraagt de aanmelding nog eens te bevestigen. Het profiel blijft aan tot u het verlaat.') : (uk ? 'Сайт попросить підтвердити вхід ще раз.' : 'De site vraagt de aanmelding nog eens te bevestigen.')}</p>
         <div className='tech-knoppen'>
           <button type='button' onClick={sluit}>{uk ? 'Скасувати' : 'Annuleren'}</button>
-          <button type='submit' className='is-hoofd' disabled={bezig || reden.trim().length < 3} aria-busy={bezig || undefined} data-tech-knop='activeren'>{bezig ? (uk ? 'Зачекайте…' : 'Even geduld…') : modus === 'account' ? (uk ? 'Увімкнути до виходу з акаунта' : 'Aanzetten tot uitloggen') : modus === 'tech' ? (uk ? 'Увімкнути до виходу з профілю' : 'Aanzetten tot verlaten profiel') : verlengen ? (uk ? `Подовжити на ${duurTekst(minuten, uk)}` : `Verlengen met ${duurTekst(minuten, uk)}`) : (uk ? `Увімкнути на ${duurTekst(minuten, uk)}` : `Aanzetten voor ${duurTekst(minuten, uk)}`)}</button>
+          <button type='submit' className='is-hoofd' disabled={bezig || reden.trim().length < 3} aria-busy={bezig || undefined} data-tech-knop='activeren'>{bezig ? (uk ? 'Зачекайте…' : 'Even geduld…') : modus === 'account' ? (uk ? 'Увімкнути до виходу з облікового запису' : 'Aanzetten tot uitloggen') : modus === 'tech' ? (uk ? 'Увімкнути до виходу з профілю' : 'Aanzetten tot verlaten profiel') : verlengen ? (uk ? `Подовжити на ${duurTekst(minuten, uk)}` : `Verlengen met ${duurTekst(minuten, uk)}`) : (uk ? `Увімкнути на ${duurTekst(minuten, uk)}` : `Aanzetten voor ${duurTekst(minuten, uk)}`)}</button>
         </div>
       </form>
     </Venster>

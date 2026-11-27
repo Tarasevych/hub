@@ -76,7 +76,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
 ]);
 export const agentRouteVerboden = (route: string): boolean => AGENT_VERBODEN.some((r) => r.test(route));
 export const AGENT_NIET_TOEGESTAAN_TEKST = Object.freeze({
-  uk: 'Агент не може виконувати цю дію від імені власника: зміни акаунта, прав, доступу та секретів — лише сам власник із passkey.',
+  uk: 'Агент не може виконувати цю дію від імені власника: зміни облікового запису, прав, доступу та секретів — лише сам власник із passkey.',
   nl: 'Een agent mag dit niet namens de eigenaar doen: wijzigingen aan account, rechten, toegang en geheimen doet alleen de eigenaar zelf met zijn passkey.',
 });
 

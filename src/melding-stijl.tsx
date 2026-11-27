@@ -146,7 +146,7 @@ const SITE_ZIN: Array<[RegExp, [string, string]]> = [
  * (vroeger «Дія на сайті: mail contacten scan gestart»), maar wel het gebied en waar de code staat (de technische details).
  */
 const SITE_WAT: Record<string, [string, string]> = {
-  file: ['файл', 'bestand'], bestand: ['файл', 'bestand'], folder: ['теку', 'map'], map: ['теку', 'map'], account: ['акаунт', 'account'], mailbox: ['поштову скриньку', 'mailbox'],
+  file: ['файл', 'bestand'], bestand: ['файл', 'bestand'], folder: ['теку', 'map'], map: ['теку', 'map'], account: ['обліковий запис', 'account'], mailbox: ['поштову скриньку', 'mailbox'],
   session: ['сеанс', 'sessie'], sessie: ['сеанс', 'sessie'], key: ['ключ', 'sleutel'], sleutel: ['ключ', 'sleutel'], token: ['токен', 'token'], passkey: ['ключ входу (passkey)', 'passkey'],
   device: ['пристрій', 'apparaat'], apparaat: ['пристрій', 'apparaat'], label: ['мітку', 'label'], labels: ['мітки', 'labels'], message: ['лист', 'bericht'], bericht: ['лист', 'bericht'],
   event: ['подію', 'afspraak'], afspraak: ['подію', 'afspraak'], rule: ['правило', 'regel'], regel: ['правило', 'regel'], policy: ['правила', 'beleid'], beleid: ['правила', 'beleid'],

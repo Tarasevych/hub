@@ -58,11 +58,11 @@ const naarBuiten = (r: MetId<TaakRecord>): CloudTaak => ({
 
 // ---------------------------------------------------------------- foutteksten (eerlijk, tweetalig; grenzen dragen hun bron mee)
 const UITLEG: Record<string, Tweetalig> = {
-  BRON_NIET_GEKOPPELD: ['Джерело не підключене: цей Google-акаунт не знайдено серед підключених.', 'De bron is niet gekoppeld: dit Google-account staat niet bij de verbonden accounts.'],
-  DOEL_NIET_GEKOPPELD: ['Ціль не підключена: цей Google-акаунт не знайдено серед підключених.', 'Het doel is niet gekoppeld: dit Google-account staat niet bij de verbonden accounts.'],
+  BRON_NIET_GEKOPPELD: ['Джерело не підключене: цей обліковий запис Google не знайдено серед підключених.', 'De bron is niet gekoppeld: dit Google-account staat niet bij de verbonden accounts.'],
+  DOEL_NIET_GEKOPPELD: ['Ціль не підключена: цей обліковий запис Google не знайдено серед підключених.', 'Het doel is niet gekoppeld: dit Google-account staat niet bij de verbonden accounts.'],
   BRON_ONBEKEND: ['Файл-джерело не знайдено (можливо, його видалили).', 'Het bronbestand is niet gevonden (misschien is het verwijderd).'],
   SCHIJF_VOL: ['На диску сервера замало вільного місця для цього файла.', 'De serverschijf heeft te weinig vrije ruimte voor dit bestand.'],
-  GOOGLE_WEIGERT: ['Google Drive відхилив запит (доступ міг збігти — перепідключіть акаунт у центрі інтеграцій).', 'Google Drive weigerde het verzoek (de toegang kan verlopen zijn — koppel het account opnieuw in het integratiecentrum).'],
+  GOOGLE_WEIGERT: ['Google Drive відхилив запит (доступ міг збігти — перепідключіть обліковий запис у центрі інтеграцій).', 'Google Drive weigerde het verzoek (de toegang kan verlopen zijn — koppel het account opnieuw in het integratiecentrum).'],
   OPSLAAN_MISLUKT: ['Не вдалося записати байти у ваше сховище.', 'De bytes konden niet in uw opslag worden geschreven.'],
   GEANNULEERD: ['Зупинено на ваше прохання.', 'Op uw verzoek gestopt.'],
   LADE_GESLOTEN: ['Технічний простір цього завдання закритий (профіль вимкнено або служба «Хмара» не на власних даних) — передачу не виконано.', 'De technische ruimte van deze taak is gesloten (profiel uit of dienst «Хмара» niet op eigen gegevens) — de overdracht is niet uitgevoerd.'],

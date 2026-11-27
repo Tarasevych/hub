@@ -271,7 +271,7 @@ export async function main(): Promise<number> {
       motor.includes('if(sectionId==="identities"&&i===0)return карткаПростору(control,i,sectionId);') && motor.includes('data-echt="ruimtewissel"') && component.includes("if (id === 'ruimtewissel') return createPortal(<ProfielRuimteKaart lang={lang} />, houder, id);"));
     const kaart = readFileSync('src/identiteit/ProfielRuimteKaart.tsx', 'utf8');
     check('identities.профіль: без перемикача просторів — точна передумова (технічний профіль → «Перемикачі функцій» → tech-ruimtes-v2); без права — пояснення RuimteWissel',
-      kaart.includes('«Перемикачі функцій» → «Два простори одного акаунта (нова версія)» (tech-ruimtes-v2)') && kaart.includes('<RuimteWissel taal={lang} />') && readFileSync('src/tech/ruimtes/RuimteWissel.tsx', 'utf8').includes('Немає дозволу на технічний простір. Його дає власник сервера.'));
+      kaart.includes('«Перемикачі функцій» → «Два простори одного облікового запису (нова версія)» (tech-ruimtes-v2)') && kaart.includes('<RuimteWissel taal={lang} />') && readFileSync('src/tech/ruimtes/RuimteWissel.tsx', 'utf8').includes('Немає дозволу на технічний простір. Його дає власник сервера.'));
     check('вікно навігації: чесно сказано, що положення й поведінка — лише навігація сторінки (окремо від меню сайту), і є перехід до справжніх налаштувань меню',
       sjabloon.includes('id=\\"mqPaginaNavNoot\\"') && sjabloon.includes('data-kaart-ga=\\"menu|#menu-modus\\"') && motor.includes('write("#mqPaginaNavNoot",'));
     check('справжні панелі: щільність і рух у «Персоналізації», акцент і ефекти в «Темах» (видно в «Макеті», «Студії» й класичному)',

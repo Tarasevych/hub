@@ -1,6 +1,6 @@
 // SEC-002 (interface-06, 12.11.2026): lokale sporen van een account in deze browser, en het wissen ervan bij afmelden.
 //
-// Wat hier fout was: na afmelden (ook zonder «Запам'ятати цей акаунт») bleven in localStorage staan
+// Wat hier fout was: na afmelden (ook zonder «Запам'ятати цей обліковий запис») bleven in localStorage staan
 //   - de laatste 50 meldingen van het account, met tekst, details en koppelingen (meldingencentrum);
 //   - de recente, de bewaarde en de laatste zoekopdracht in de post;
 //   - de lijst «altijd externe beelden van deze afzender».
@@ -85,7 +85,7 @@ function wis(kies: (rest: string) => boolean, opslag: Opslag | null): number {
 }
 
 /**
- * Wis de lokale sporen van ÉÉN account (afmelden zonder «Запам'ятати цей акаунт», account vergeten of verwijderd): zijn meldingen,
+ * Wis de lokale sporen van ÉÉN account (afmelden zonder «Запам'ятати цей обліковий запис», account vergeten of verwijderd): zijn meldingen,
  * zijn zoekopdrachten in de post en zijn lijst «altijd beelden van deze afzender». Andere accounts in deze browser blijven staan.
  * Geeft het aantal gewiste sleutels.
  */
@@ -97,7 +97,7 @@ export function wisLokaleSporen(ownerUserId: string, opslag: Opslag | null = ops
   return wis((rest) => sleutelRestVanAccount(rest, id) || (kort !== 'anon' && rest.startsWith(`${kort}:`)), opslag);
 }
 /**
- * Beleid «Запам'ятати цей акаунт» van dit account in deze browser — dezelfde sleutel als POLICY in src/mail-bijlage-cache.ts
+ * Beleid «Запам'ятати цей обліковий запис» van dit account in deze browser — dezelfde sleutel als POLICY in src/mail-bijlage-cache.ts
  * ('remembered' | 'session'; gezet door setMailPrivateCacheRemembered bij elke aanmelding in de diensten).
  */
 export const ONTHOUD_BELEID_VOORVOEGSEL = 'tsv-mail-cache-policy-v1:';

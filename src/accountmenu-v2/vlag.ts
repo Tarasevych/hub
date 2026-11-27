@@ -90,6 +90,6 @@ export function useAccountmenuV2(): boolean {
 /** Підказка маленького аватара: ім'я, адреса та (за наявності кількох) кількість інших збережених облікових записів. */
 export function avatarTip(lang: 'uk' | 'nl', naam: string, email: string, anderen: number): string {
   const regels = [naam && naam !== email ? naam : '', email].filter(Boolean);
-  if (anderen > 0) regels.push(lang === 'uk' ? `Ще акаунтів: ${anderen} — натисніть, щоб перемкнутися` : `Nog ${anderen} account(s) — klik om te wisselen`);
+  if (anderen > 0) regels.push(lang === 'uk' ? `Ще облікових записів: ${anderen} — натисніть, щоб перемкнутися` : `Nog ${anderen} account(s) — klik om te wisselen`);
   return regels.join('\n');
 }

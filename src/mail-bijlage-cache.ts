@@ -1,5 +1,5 @@
 // Beveiligingsreview 21.10.2026: de lokale concepten (src/mail-concept-lokaal.ts, platte tekst in localStorage) volgen dezelfde regel
-// als deze privé-cache — wie hier de post van een account van dit apparaat wist (afmelden zonder «Зберегти цей акаунт», einde van
+// als deze privé-cache — wie hier de post van een account van dit apparaat wist (afmelden zonder «Зберегти цей обліковий запис», einde van
 // zo'n browsersessie, account verwijderd, alle accounts afmelden), wist ook zijn concepten. Vóór de `available()`-controle: concepten
 // staan in localStorage, ook waar CacheStorage ontbreekt.
 // SEC-002 (interface-06, 12.11.2026): dezelfde regel geldt nu ook voor de overige lokale sporen van het account (src/lokale-sporen.ts):

@@ -100,7 +100,7 @@ try {
   check('eerste klik op «Технічний простір» opent het startvenster', eersteKlik);
   if (!eersteKlik) { await menu(A); await A.click('[data-ruimtes-menu] .rw [data-naar="technisch"]'); await A.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' }); }
   const namen = await A.locator('.rs .rs-naam').allTextContents();
-  check('startvenster: drie termijnen met exacte woorden', namen.includes('До завершення технічного сеансу') && namen.includes('До виходу з акаунта на сайті'), namen.join(' | '));
+  check('startvenster: drie termijnen met exacte woorden', namen.includes('До завершення технічного сеансу') && namen.includes('До виходу з облікового запису на сайті'), namen.join(' | '));
   check('eigenaar: alle termijnen beschikbaar', await A.locator('[data-termijn][data-beschikbaar="0"]').count() === 0, String(await A.locator('[data-termijn][data-beschikbaar="0"]').count()));
   await A.keyboard.press('Escape'); await A.waitForTimeout(300);
   const r1 = await startViaUI(A, { modus: 'tijd', minuten: 30 }, '03-start-tijd');
@@ -153,7 +153,7 @@ try {
   await A.click('[data-rt-tab="ai"]').catch(() => undefined); await A.waitForTimeout(800);
   const aiOpties = await A.locator('[data-rt-ai-termijn] option').allTextContents().catch(() => []);
   const aiFout = await A.textContent('[data-rt-paneel="ai"]').catch(() => '');
-  check('AI-tab: termijnenset = de drie termijnen', aiOpties.some((x) => x.includes('до завершення технічного сеансу')) && aiOpties.some((x) => x.includes('до виходу з акаунта на сайті')), `${aiOpties.join('|')} :: ${String(aiFout).slice(0, 160)}`);
+  check('AI-tab: termijnenset = de drie termijnen', aiOpties.some((x) => x.includes('до завершення технічного сеансу')) && aiOpties.some((x) => x.includes('до виходу з облікового запису на сайті')), `${aiOpties.join('|')} :: ${String(aiFout).slice(0, 160)}`);
   const aiSel = A.locator('[data-rt-ai-termijn]').first();
   if (await aiSel.count()) { await aiSel.selectOption('tot-technisch-einde').catch((e) => console.log('select', e.message)); await stapOpAlsGevraagd(A, 5000); await A.waitForTimeout(1500); }
   const aiDb = await inPagina(A, '/api/owner/hub/tech/ruimtes/toegang');
@@ -169,7 +169,7 @@ try {
   await A.click('[data-tech-knop="uitloggen"]').catch(async () => { await A.evaluate(() => window.dispatchEvent(new CustomEvent('mr-tech-venster', { detail: 'uitloggen' }))); });
   await A.waitForSelector('[data-tech-venster="uitloggen"]', { timeout: 6000 }).catch(() => undefined);
   const keuzes = await A.locator('[data-uitlog-knop]').allTextContents();
-  check('drie uitlogkeuzes', keuzes.join('|') === 'Вийти з технічного сеансу|Вийти з акаунта на сайті|Вийти всюди', keuzes.join('|'));
+  check('drie uitlogkeuzes', keuzes.join('|') === 'Вийти з технічного сеансу|Вийти з облікового запису на сайті|Вийти всюди', keuzes.join('|'));
   await shot(A, '10-uitloggen-keuzes');
   await A.click('[data-uitlog-knop="technisch"]'); await A.waitForSelector('[data-ru-melding]', { timeout: 6000 }).catch(() => undefined); await A.waitForTimeout(700);
   const t3 = await tvSessie(sA.id); const st3 = await inPagina(A, '/api/owner/hub/tech/ruimtes/status');
@@ -183,7 +183,7 @@ try {
   const sB = await sessieVoor(uid); const { ctx: cB, page: B } = await context(sB); await openHub(B);
   const r3 = await startViaUI(B, { modus: 'tot-site-uitloggen' }, '12-start-tot-site-uitloggen');
   const t4 = await tvSessie(sB.id);
-  check('termijn «до виходу з акаунта на сайті»: DB-modus, stap-op via UI', t4?.modus === 'tot-site-uitloggen' && !t4?.beeindigd_op, `${JSON.stringify(t4)} stapop=${r3.gevraagd} ${r3.melding}`);
+  check('termijn «до виходу з облікового запису на сайті»: DB-modus, stap-op via UI', t4?.modus === 'tot-site-uitloggen' && !t4?.beeindigd_op, `${JSON.stringify(t4)} stapop=${r3.gevraagd} ${r3.melding}`);
   await shot(B, '13-technisch-tot-site-uitloggen');
   const B2 = await cB.newPage(); B2.on('pageerror', (e) => paginaFouten.push(e.message.slice(0, 200))); await openHub(B2);
   const st4b = await inPagina(B2, '/api/owner/hub/tech/ruimtes/status');
@@ -193,8 +193,8 @@ try {
   await new Promise((r) => setTimeout(r, 600));
   const t4b = await tvSessie(sB.id);
   check('één tabblad uitloggen (logout-current, zoals de client): lange ontgrendelingen («1 рік», «без обмеження») blijven', lo.status === 200 && await levend(jaarB) && await levend(onbB), `${lo.status} ${JSON.stringify(lo.data).slice(0, 100)}`);
-  check('… technische sessie «до виходу з акаунта на сайті» loopt door', !t4b?.beeindigd_op, JSON.stringify(t4b));
-  // ── 5. «Вийти з акаунта на сайті» sluit technisch en trekt ontgrendelingen in ──
+  check('… technische sessie «до виходу з облікового запису на сайті» loopt door', !t4b?.beeindigd_op, JSON.stringify(t4b));
+  // ── 5. «Вийти з облікового запису на сайті» sluit technisch en trekt ontgrendelingen in ──
   await B.bringToFront(); await B.reload({ waitUntil: 'domcontentloaded' }); await B.waitForSelector('.tech-band', { timeout: 15000 }).catch(() => undefined);
   await B.click('[data-tech-knop="uitloggen"]').catch(async () => { await B.evaluate(() => window.dispatchEvent(new CustomEvent('mr-tech-venster', { detail: 'uitloggen' }))); });
   await B.waitForSelector('[data-tech-venster="uitloggen"]', { timeout: 6000 }).catch(() => undefined);
@@ -204,7 +204,7 @@ try {
   await B.click('[data-uitlog-knop="site"]').catch(() => undefined);
   await B.waitForTimeout(2500);
   const t5 = await tvSessie(sB.id);
-  check('«Вийти з акаунта на сайті»: eerst bevestigen («Так, …»), daarna site-sessie weg + technische sessie beëindigd', /^Так/.test(bevestigTekst || '') && !(await siteSessieLeeft(sB.id)) && !!t5?.beeindigd_op, `bev=${bevestigTekst} t5=${JSON.stringify(t5)}`);
+  check('«Вийти з облікового запису на сайті»: eerst bevestigen («Так, …»), daarna site-sessie weg + technische sessie beëindigd', /^Так/.test(bevestigTekst || '') && !(await siteSessieLeeft(sB.id)) && !!t5?.beeindigd_op, `bev=${bevestigTekst} t5=${JSON.stringify(t5)}`);
   check('… lange extensie-ontgrendelingen ingetrokken', !(await levend(jaarB)) && !(await levend(onbB)));
   await shot(B, '15-na-site-uitloggen'); await cB.close();
   // «Вийти всюди» leidt naar Безпека → Сесії (bestaande bevestigde knop)

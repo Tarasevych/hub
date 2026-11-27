@@ -70,7 +70,7 @@ export default function AfzenderBeeldInstellingen({ lang }: { lang: Lang }) {
     </label>
     {v?.googleContacten && stand && !stand.google.lezen && (stand.google.gekoppeld
       ? <button type='button' className='afz-knop afz-knop-hoofd' style={{ justifySelf: 'start' }} disabled={bezig} onClick={() => void toestemming()}>{t(lang, 'Дозволити Google показувати фото з контактів', 'Google toestaan foto\'s uit de contacten te tonen')}</button>
-      : <p className='afz-stil'>{t(lang, 'Спершу підключіть Gmail (Пошта → Акаунти).', 'Koppel eerst Gmail (Post → Accounts).')}</p>)}
+      : <p className='afz-stil'>{t(lang, 'Спершу підключіть Gmail (Пошта → Облікові записи).', 'Koppel eerst Gmail (Post → Accounts).')}</p>)}
     {googleTekst && <p className='afz-stil' role='status'>{googleTekst}</p>}
 
     <label className='afz-beelden-keuze'>

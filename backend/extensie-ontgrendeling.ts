@@ -256,7 +256,7 @@ async function opdrachtSleutel(agentId: string): Promise<string | null> {
 }
 /**
  * Ondertekend bericht voor de extensie, of null zonder sleutel. `einde` (0.7.0) staat NAAST de grant en is niet ondertekend: alleen
- * weergave in de pop-up/het zijpaneel («до виходу з акаунта», «до відкликання», «до закриття браузера» i.p.v. «ще 365 дн.»). Het
+ * weergave in de pop-up/het zijpaneel («до виходу з облікового запису», «до відкликання», «до закриття браузера» i.p.v. «ще 365 дн.»). Het
  * einde zelf blijft exp in de ondertekende grant; de server trekt in. Een oudere extensie negeert het veld.
  */
 export async function ondertekend(r: Rij): Promise<{ t: 'ontgrendeling'; grant: Ontgrendeling; sig: string; einde: EindeSoort } | null> {
@@ -309,7 +309,7 @@ export async function naTechEinde(userId: string): Promise<number> {
 tp.bijTechEinde((userId) => { void naTechEinde(userId); });
 
 /**
- * Opdracht E2: «Вихід з акаунта завжди скидає». Uitloggen van dit account (elke vorm: tabblad, browser, overal, en een accountwissel
+ * Opdracht E2: «Вихід з облікового запису завжди скидає». Uitloggen van dit account (elke vorm: tabblad, browser, overal, en een accountwissel
  * in een tabblad — tech-profiel.bijUitloggen) beëindigt ELKE lopende ontgrendeling van dat account, in beide ruimtes en ongeacht de
  * gekozen termijn (ook 1 тиждень … 1 рік, «до відкликання» en «до закриття браузера»). Andere accounts blijven ongemoeid.
  */

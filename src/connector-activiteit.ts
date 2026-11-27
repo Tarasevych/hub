@@ -39,7 +39,7 @@ export const statusInfo = (status: string, lang: Lang) => {
 
 /** Namen van sitegebeurtenissen (auditacties) in de taal van de site. Onbekende acties krijgen een nette algemene naam. */
 const SITE_LABELS: Record<string, [string, string]> = {
-  'owner.mail.send.committed': ['Лист надіслано', 'Bericht verzonden'], 'owner.mail.account.disconnected': ['Поштовий акаунт відключено', 'Mailaccount ontkoppeld'], 'owner.mail.labels.modified': ['Мітки листа змінено', 'Labels van bericht gewijzigd'],
+  'owner.mail.send.committed': ['Лист надіслано', 'Bericht verzonden'], 'owner.mail.account.disconnected': ['Поштовий обліковий запис відключено', 'Mailaccount ontkoppeld'], 'owner.mail.labels.modified': ['Мітки листа змінено', 'Labels van bericht gewijzigd'],
   'owner.github.issue_create': ['Створено issue на GitHub', 'Issue aangemaakt op GitHub'], 'owner.github.issue_comment': ['Коментар додано на GitHub', 'Reactie geplaatst op GitHub'],
   // SEC-002 interface-02: geen vaste «Claude» — WELKE klant staat in de context van de regel (e.client, zie activiteitContext).
   'owner.mcp.grant.approved': ['ШІ-клієнт отримав доступ', 'AI-klant kreeg toegang'], 'owner.mcp.grant.denied': ['Доступ для ШІ-клієнта відхилено', 'Toegang voor AI-klant geweigerd'], 'owner.mcp.grant.revoked': ['Доступ ШІ-клієнта відкликано', 'Toegang van AI-klant ingetrokken'],

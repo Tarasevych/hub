@@ -62,15 +62,15 @@ export async function main(): Promise<number> {
     JSON.stringify(einde_));
   check('activeer-tech «На 1 год»: строк у назві обома мовами', /на 1 год$/.test(uur.uk) && /voor 1 uur$/.test(uur.nl), `${uur.uk} / ${uur.nl}`);
   // AGENTSCHEIDING-001 (16.11.2026): без підключення сервер бере правило САМЕ цього агента ('agent:<slug>'), не «*».
-  check('activeer-tech без конкретного підключення: діє лише для цього ШІ (і після «Підключити знову»), інші ШІ не отримують; строк — до виходу з акаунта (як на сервері)',
+  check('activeer-tech без конкретного підключення: діє лише для цього ШІ (і після «Підключити знову»), інші ШІ не отримують; строк — до виходу з облікового запису (як на сервері)',
     /ChatGPT/.test(zonderKoppeling.uk) && /Діє лише для ChatGPT, також після «Підключити знову»; інші ШІ цього доступу не отримують/.test(zonderKoppeling.gevolgUk)
     && /Geldt alleen voor ChatGPT/.test(zonderKoppeling.gevolgNl) && !/всіх ваших підключень/.test(zonderKoppeling.gevolgUk)
     && /до кінця технічного сеансу$/.test(zonderKoppeling.uk), zonderKoppeling.gevolgUk);
   const zonderTermijn = at({ actie: 'alles-aan', agent: 'grok' });
   const alle = at({ actie: 'alles-aan', agent: 'claude', alleVerbindingen: true });
   const ster = at({ actie: 'alles-aan', agent: 'claude', verbindingId: '*' });
-  check('activeer-tech: без строку — «до виходу з акаунта» (типовий строк сервера), «безстроково» і «до виходу з цього входу» названо',
-    /до виходу з акаунта$/.test(zonderTermijn.uk) && /tot u zich afmeldt van het account$/.test(zonderTermijn.nl)
+  check('activeer-tech: без строку — «до виходу з облікового запису» (типовий строк сервера), «безстроково» і «до виходу з цього входу» названо',
+    /до виходу з облікового запису$/.test(zonderTermijn.uk) && /tot u zich afmeldt van het account$/.test(zonderTermijn.nl)
     && /безстроково/.test(at({ actie: 'alles-aan', agent: 'grok', termijn: 'onbepaald' }).uk) && /до виходу з цього входу на сайт$/.test(at({ agent: 'grok', termijn: 'tot-site-uitloggen' }).uk)
     && /до вибраної дати$/.test(at({ agent: 'grok', termijn: 'tijd', eindOp: '2026-12-01' }).uk), zonderTermijn.uk);
   check('activeer-tech: «усі ШІ» лише за явним alleVerbindingen — тоді попередження великими літерами; «*» у verbindingId НЕ означає «усі ШІ»',

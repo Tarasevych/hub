@@ -309,7 +309,7 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     gevolg: ['Усі дії ті самі (завантажити, зберегти, друк, редагувати, переклад); змінюється лише вигляд. Вимкнено — старий перегляд без змін.', 'Alle acties blijven (downloaden, opslaan, afdrukken, bewerken, vertalen); alleen het uiterlijk verandert. Uit = de oude viewer, ongewijzigd.'],
   },
   'accountmenu-v2': {
-    naam: ['Охайніше меню акаунта', 'Verfijnd accountmenu'],
+    naam: ['Охайніше меню облікового запису', 'Verfijnd accountmenu'],
     wat: ['Велике фото й імʼя лишаються, кнопки компактні й згруповані, пояснення сховані під ⓘ, справжні прапорці мов, перемикач «Звичайний / Технічний» унизу меню.', 'Grote foto en naam blijven, knoppen compact en gegroepeerd, uitleg achter ⓘ, echte taalvlaggen, wissel «Gewone / Technische» onderaan het menu.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий вигляд.', 'Zet eerst alleen voor uzelf aan om de nieuwe weergave te proberen.'],
     gevolg: ['Усі дії ті самі; змінюється лише вигляд. Вимкнено — старе меню без змін.', 'Alle acties blijven; alleen het uiterlijk verandert. Uit = het oude menu, ongewijzigd.'],
@@ -327,10 +327,10 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     gevolg: ['Усі 160 карток лишаються, нічого не підключається й не відключається само. Вимкнено — старий каталог без змін.', 'Alle 160 kaarten blijven; niets wordt vanzelf gekoppeld of losgekoppeld. Uit = de oude catalogus, ongewijzigd.'],
   },
   'verbindingen-centrum-v2': {
-    naam: ['Новий центр підключень («Акаунти»)', 'Nieuw verbindingencentrum («Accounts»)'],
-    wat: ['Сторінка «Акаунти» у Хмарному сховищі: короткий стан, мої підключення, каталог сервісів, синхронізація та історія, по одному «?» на блок.', 'De pagina «Accounts» in de cloud: korte status, mijn verbindingen, catalogus, synchronisatie en geschiedenis, één «?» per blok.'],
+    naam: ['Новий центр підключень («Облікові записи»)', 'Nieuw verbindingencentrum («Accounts»)'],
+    wat: ['Сторінка «Облікові записи» у Хмарному сховищі: короткий стан, мої підключення, каталог сервісів, синхронізація та історія, по одному «?» на блок.', 'De pagina «Accounts» in de cloud: korte status, mijn verbindingen, catalogus, synchronisatie en geschiedenis, één «?» per blok.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати нову сторінку.', 'Zet eerst alleen voor uzelf aan om de nieuwe pagina te proberen.'],
-    gevolg: ['Підключення ті самі, нічого не видаляється й не відключається. Вимкнено — стара сторінка «Акаунти».', 'Dezelfde verbindingen; niets wordt gewist of losgekoppeld. Uit = de oude pagina «Accounts».'],
+    gevolg: ['Підключення ті самі, нічого не видаляється й не відключається. Вимкнено — стара сторінка «Облікові записи».', 'Dezelfde verbindingen; niets wordt gewist of losgekoppeld. Uit = de oude pagina «Accounts».'],
   },
   'uitrol-weergave-v2': {
     naam: ['Новий вигляд «Оновлення»', 'Nieuwe weergave «Updates»'],
@@ -364,7 +364,7 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
   },
   'meldingen-v2': {
     naam: ['Новий центр сповіщень', 'Nieuw meldingencentrum'],
-    wat: ['Компактний список: повтори зливаються в один рядок, окремий лічильник «потребує уваги», правила для кожного сервісу й акаунта, «Не турбувати».', 'Compacte lijst: herhalingen worden één regel, aparte teller «vraagt aandacht», regels per dienst en account, «Niet storen».'],
+    wat: ['Компактний список: повтори зливаються в один рядок, окремий лічильник «потребує уваги», правила для кожного сервісу й облікового запису, «Не турбувати».', 'Compacte lijst: herhalingen worden één regel, aparte teller «vraagt aandacht», regels per dienst en account, «Niet storen».'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий центр сповіщень.', 'Zet eerst alleen voor uzelf aan om het nieuwe meldingencentrum te proberen.'],
     gevolg: ['Сповіщення ті самі, нічого не видаляється. Важливі сповіщення безпеки не можна приглушити. Вимкнено — старий центр.', 'Dezelfde meldingen, niets wordt gewist. Belangrijke beveiligingsmeldingen kunnen niet gedempt worden. Uit = het oude centrum.'],
   },
@@ -387,7 +387,7 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     gevolg: ['З’явиться лише кнопка; підписати сертифікат можна тільки з окремим дозволом. Прав не додає.', 'Alleen de knop verschijnt; ondertekenen kan alleen met een aparte toestemming. Geeft geen rechten.'],
   },
   'tech-ruimtes-v2': {
-    naam: ['Два простори одного акаунта (нова версія)', 'Twee ruimtes van één account (nieuwe versie)'],
+    naam: ['Два простори одного облікового запису (нова версія)', 'Twee ruimtes van één account (nieuwe versie)'],
     wat: ['Звичайний і технічний простір поруч: три терміни, пауза, перемикач угорі.', 'Gewone en technische ruimte naast elkaar: drie termijnen, pauze, schakelaar bovenaan.'],
     wanneer: ['Увімкніть, щоб працювати з новим перемикачем просторів.', 'Zet aan om met de nieuwe ruimteschakelaar te werken.'],
     gevolg: ['Змінюється лише вигляд і порядок входу в технічний простір. Прав не додає й не забирає.', 'Alleen het uiterlijk en de manier van binnengaan veranderen. Geeft of neemt geen rechten.'],

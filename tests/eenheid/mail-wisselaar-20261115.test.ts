@@ -1,5 +1,5 @@
 // Snelle mailbox-wisselaar in de lijst (klacht van de eigenaar, 15.11.2026, telefoon, mail.…/postvak-in):
-//   «хоч ми підключили ще один акаунт іншого сервісу, в цьому списку чомусь лише відображається перший … і список не поновлюється».
+//   «хоч ми підключили ще один обліковий запис іншого сервісу, в цьому списку чомусь лише відображається перший … і список не поновлюється».
 // Deel «ДО»: de oude regel (alleen Google-snapshot + /accounts/list) laat een IMAP-koppeling (Ukr.net) per constructie weg.
 // Deel «ПІСЛЯ»: src/mail/mail-wisselaar-model.ts geeft Google + Microsoft + IMAP, zonder dubbele adressen, met eerlijke uitleg;
 // de werkruimte vraagt /imap/aanbieders en ververst bij openen, bfcache-terugkeer, zichtbaarheid en de melding van het koppelvenster.
@@ -46,7 +46,7 @@ export async function main(): Promise<number> {
   check('ПІСЛЯ: werkruimte toont ImapPostvak voor de gekozen IMAP-mailbox en beide wisselaars krijgen onSelectImap',
     werkBron.includes('<ImapPostvak key={imapActiefId}') && (werkBron.match(/onSelectImap=\{setImapActiefId\}/g) || []).length === 2 && (werkBron.match(/setImapActiefId\(''\);void selectAccount\(id\)/g) || []).length === 2);
   const fout = rijen.find((r) => r.email === 'derde@i.ua')!;
-  check('ПІСЛЯ: een IMAP-fout vraagt aandacht en de uitleg zegt wat er gebeurt (uk + nl)', fout.aandacht && wisselUitleg(fout, 'uk').includes('сторінку акаунтів') && wisselUitleg(fout, 'nl').includes('accountpagina'));
+  check('ПІСЛЯ: een IMAP-fout vraagt aandacht en de uitleg zegt wat er gebeurt (uk + nl)', fout.aandacht && wisselUitleg(fout, 'uk').includes('сторінку облікових записів') && wisselUitleg(fout, 'nl').includes('accountpagina'));
   const nl = wisselRijen({ taal: 'nl', google, connectors, imap });
   check('ПІСЛЯ: Nederlandse standen', nl.some((r) => r.stand === 'primair') && nl.some((r) => r.stand.includes('gekoppeld')));
   check('ПІСЛЯ: geen geheimen of tellers in de rijen', !JSON.stringify(rijen).match(/wachtwoord|geheim|password/i));

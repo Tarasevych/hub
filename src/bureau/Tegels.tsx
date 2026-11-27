@@ -19,7 +19,7 @@ const Leeg = ({ tekst }: { tekst: string }) => <p className='bureau-tegel-leeg'>
 const Fout = ({ lang, code }: { lang: Lang; code: string }) => (
   <p className='bureau-tegel-fout' role='alert'><AlertCircle aria-hidden='true' />
     {/^(OWNER_|MCP_|ACCOUNT_)/.test(code) || /401|403/.test(code)
-      ? tr(lang, 'Ці дані доступні лише після входу у ваш акаунт.', 'Deze gegevens zijn alleen beschikbaar na aanmelden in uw account.')
+      ? tr(lang, 'Ці дані доступні лише після входу у ваш обліковий запис.', 'Deze gegevens zijn alleen beschikbaar na aanmelden in uw account.')
       : tr(lang, `Не вдалося завантажити дані (${code}).`, `Gegevens laden mislukt (${code}).`)}
   </p>
 );
@@ -50,8 +50,8 @@ function BlokBron({ lang, soort, widget, ownerUserId }: { lang: Lang; soort: 'ma
     const waar = soort === 'calendar'
       ? tr(lang, 'Календар не підключено. Відкрийте вкладку «Календар» — там є магазин календарів.', 'De agenda is niet gekoppeld. Open het tabblad «Agenda» — daar staat de agendawinkel.')
       : soort === 'mail'
-        ? tr(lang, 'Пошту не підключено. Відкрийте «Пошта» → «Акаунти».', 'E-mail is niet gekoppeld. Open «E-mail» → «Accounts».')
-        : tr(lang, 'Диск не підключено. Відкрийте «Хмара» → «Акаунти».', 'Drive is niet gekoppeld. Open «Cloud» → «Accounts».');
+        ? tr(lang, 'Пошту не підключено. Відкрийте «Пошта» → «Облікові записи».', 'E-mail is niet gekoppeld. Open «E-mail» → «Accounts».')
+        : tr(lang, 'Диск не підключено. Відкрийте «Хмара» → «Облікові записи».', 'Drive is niet gekoppeld. Open «Cloud» → «Accounts».');
     return <p className='bureau-tegel-leeg' data-bureau-niet-gekoppeld={soort}>{waar}</p>;
   }
   if (widget === 'post-tellers') {
@@ -135,7 +135,7 @@ function DienstenTegel({ lang }: { lang: Lang }) {
   const { waarde, fout, bezig } = useBron<TabelRij[]>(() => haalDiensten());
   if (fout) return <Fout lang={lang} code={fout} />;
   if (!waarde) return <Leeg tekst={bezig ? tr(lang, 'Завантаження…', 'Laden…') : '—'} />;
-  if (!waarde.length) return <Leeg tekst={tr(lang, 'Перевірок ще не було. Запустіть перевірку в «Налаштування» → «Акаунт».', 'Er zijn nog geen controles geweest. Start een controle bij «Instellingen» → «Account».')} />;
+  if (!waarde.length) return <Leeg tekst={tr(lang, 'Перевірок ще не було. Запустіть перевірку в «Налаштування» → «Обліковий запис».', 'Er zijn nog geen controles geweest. Start een controle bij «Instellingen» → «Account».')} />;
   return (
     <ul className='bureau-diensten'>
       {waarde.map((r) => (

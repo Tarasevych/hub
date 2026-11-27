@@ -1,19 +1,19 @@
-// De pagina «Підключіть свої поштові акаунти».
+// De pagina «Підключіть свої поштові облікові записи».
 //
 // WAT HIER FOUT WAS (opdracht van de eigenaar, 20.10.2026). Acht tegels met een LETTER in een gekleurd vierkant in plaats
 // van een logo, en achter elke tegel dezelfde knop — ook achter de zes diensten waar niets gebeurde («Цей поштовий сервіс
-// поки не підключається тут»). Daarbij stond onderaan alleen «Підключені акаунти 0», zonder één woord over wat een
+// поки не підключається тут»). Daarbij stond onderaan alleen «Підключені облікові записи 0», zonder één woord over wat een
 // koppeling oplevert.
 //
-// EN OP 21.10.2026 (telefoon van de eigenaar, mail → Акаунти):
-//   • «Підключені акаунти» toonde eigenaar@example.test zonder één handeling — geen «Відключити», geen stand, geen
+// EN OP 21.10.2026 (telefoon van de eigenaar, mail → Облікові записи):
+//   • «Підключені облікові записи» toonde eigenaar@example.test zonder één handeling — geen «Відключити», geen stand, geen
 //     «Перепідключити». Nu heeft ELKE koppeling (Gmail, Outlook/Microsoft 365, IMAP) haar stand (працює / потрібен повторний
 //     вхід / помилка / доступ ще не надано), «Перепідключити» en «Відключити» met een bevestiging waarin de mens kiest of de
 //     lokale gegevens blijven of weg gaan, en per dienst «Додати ще один <dienst>». Het hoofdaccount staat gemarkeerd, en de
 //     bevestiging zegt eerlijk wat loskoppelen wel en niet raakt (de aanmelding op de site NIET — die staat los van de mail).
-//   • de aparte sectie «Microsoft — Додаткові акаунти Microsoft» (select + e-mailveld + «Додати акаунт») onder de tegels was
+//   • de aparte sectie «Microsoft — Додаткові облікові записи Microsoft» (select + e-mailveld + «Додати обліковий запис») onder de tegels was
 //     een dubbel van de tegel Outlook. Weg: de tegel Outlook (en «Додати ще один Outlook») opent het venster waarin het adres
-//     wordt ingevuld en daarna OAuth volgt. De Microsoft-accounts zelf staan nu gewoon in «Підключені акаунти».
+//     wordt ingevuld en daarna OAuth volgt. De Microsoft-accounts zelf staan nu gewoon in «Підключені облікові записи».
 //   • op de telefoon stonden de tegels in twee smalle kolommen en rekten de lange uitleggen van Online.ua en Proton het raster
 //     op. Nu: ≤ 480 px één kolom met compacte tegels, en de uitleg zit ingeklapt onder «Чому недоступно?».
 //
@@ -67,7 +67,7 @@ type Props = {
   sourceOrigin?: string;
 };
 
-/** Eén regel in «Підключені акаунти», ongeacht de dienst. */
+/** Eén regel in «Підключені облікові записи», ongeacht de dienst. */
 type Koppeling = {
   sleutel: string; id: string; soort: 'google' | 'microsoft' | 'imap'; aanbieder: string; email: string; merk: string; naam: string;
   stand: KoppelStand; hoofd: boolean; extra: string;
@@ -381,7 +381,7 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
 
         <div id='mail-sectie-gekoppeld' tabIndex={-1} className='mail-accounts-kaart mail-accounts-gekoppeld-kaart' style={isMaquette ? undefined : kaart} data-mail-gekoppeld ref={hubRef}>
           <div className='mail-accounts-kaart-kop' style={isMaquette ? undefined : { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div className='mail-accounts-kaart-titel' style={isMaquette ? undefined : { fontWeight: 600 }}>{t('Підключені акаунти', 'Gekoppelde accounts')} <span className='mail-accounts-teller' style={isMaquette ? undefined : { background: 'var(--surface,#f1f5f9)', borderRadius: 999, padding: '2px 8px', fontSize: 12 }}>{alleKoppelingen.length}</span></div>
+            <div className='mail-accounts-kaart-titel' style={isMaquette ? undefined : { fontWeight: 600 }}>{t('Підключені облікові записи', 'Gekoppelde accounts')} <span className='mail-accounts-teller' style={isMaquette ? undefined : { background: 'var(--surface,#f1f5f9)', borderRadius: 999, padding: '2px 8px', fontSize: 12 }}>{alleKoppelingen.length}</span></div>
           </div>
           {/* Altijd aanwezige live-regio's (een regio die pas mét tekst verschijnt, wordt vaak niet voorgelezen — WCAG 4.1.3). */}
           <div role='status' tabIndex={-1} data-mail-melding-focus>{melding && !melding.fout ? <p className='mail-koppeling-melding'>{melding.tekst}</p> : null}</div>
@@ -423,7 +423,7 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
         <div className='mail-accounts-kaart mail-accounts-kant-uitleg' style={isMaquette ? undefined : kaart}>
           <div className='mail-accounts-kaart-titel' style={isMaquette ? undefined : { fontWeight: 600, marginBottom: 12 }}>{t('Як саме це працює', 'Hoe het precies werkt')}</div>
           <ul style={isMaquette ? undefined : { margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--muted,#475569)', lineHeight: 1.6 }}>
-            <li>{t('Gmail — OAuth Google. Другий і наступні акаунти Google: Google покаже вибір акаунта.', 'Gmail — OAuth van Google. Een tweede en volgend Google-account: Google toont een accountkeuze.')}</li>
+            <li>{t('Gmail — OAuth Google. Другий і наступні облікові записи Google: Google покаже вибір облікового запису.', 'Gmail — OAuth van Google. Een tweede en volgend Google-account: Google toont een accountkeuze.')}</li>
             <li>{t('Outlook — OAuth Microsoft; адресу вводите у вікні. Якщо адміністратор ще не завершив налаштування, вікно покаже, чого бракує.', 'Outlook — OAuth van Microsoft; het adres vult u in het venster in. Heeft de beheerder de configuratie nog niet af, dan toont het venster wat ontbreekt.')}</li>
             <li>{t('iCloud, Ukr.net, Yahoo, I.ua — сервер справді входить у скриньку по IMAP і перевіряє SMTP, перш ніж щось зберегти.', 'iCloud, Ukr.net, Yahoo, I.ua — de server meldt zich echt via IMAP aan en controleert SMTP voordat er iets bewaard wordt.')}</li>
             <li>{t('Online.ua і Proton — кнопки немає: під «Чому недоступно?» перелічено, чого саме бракує.', 'Online.ua en Proton — geen knop: onder «Waarom niet beschikbaar?» staat wat er precies ontbreekt.')}</li>

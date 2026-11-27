@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261126-155700-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-26T15:57:00.000Z",
+  "vastgelegd": "2026-11-27T06:45:41.298Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Antigravity Google",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Claude Opus 5.5 (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Зареєстровано завдання SITE-001, розгорнуто місцевий випробувальний стенд (PostgreSQL, TLS, засоби перевірки в оглядачі) та виконано 18 із 25 пунктів готовності сайту зі знімками до/після й окремими фіксаціями змін (c2f5186f..204f9ec8): 1) політика приватності, 2) умови використання з розділом «Зміни умов» і мовним очищенням, 3) перевірка відсутності відкритих таємниць у 1063 фіксаціях змін і конфігурація шукача таємниць, 4) звірка HTTPS і HSTS на 11 піддоменах, 5) двомовна смуга згоди на реп'яшки з двома рівноцінними кнопками, 6) уніфікація заголовків сторінок і метаописів, 7) зображення попереднього перегляду для соцмереж 1200×630, 8) перемальовування пошкоджених значків сайту й додавання favicon.ico, 9) sitemap.xml і robots.txt, 10) змістовні альтернативні тексти прапорів і гербів зі сторожем, 11) стиснення PNG на 32 % без зміни відбитків SHA-256 офіційних логотипів, 13) виправлення контрасту кольорів у світлій і темній темах (0 порушень axe-core), 14) адаптивність на ширинах 320–768 пікселів і розведення значків на орбіті пошти (174 → 0 вад), 15) справжній код 404 і окрема сторінка 404 без входу, 16) усунення битого відносного посилання в діалозі підтвердження та сторож посилань, 17) стійкість 50 публічних маршрутів на 400 зламаних запитах і усунення 7 вад форм гостьового коду та пароля зі сторожем 22/22, 18) жива перевірка обмежень частоти й сторож захисту від спаму 50/50, 19) знеособлена аналітика відвідувань лише за згодою з оглядом для адміністратора. Крім того, у робочому дереві підготовлено заміну слова «акаунт» на «обліковий запис» із повним порівнянням 638 випробувань і проведено первинний замір швидкості пункту 12 до обриву сеансу через вичерпання ліміту.",
+    "nl": "Taak SITE-001 geregistreerd, lokale proefomgeving opgezet (PostgreSQL, TLS, browserhulpmiddelen) en 18 van de 25 gereedheidspunten uitgevoerd met schermafdrukken voor/na en afzonderlijke vastleggingen (c2f5186f..204f9ec8): 1) privacybeleid, 2) gebruiksvoorwaarden met wijzigingsbepaling en taalzuivering, 3) controle op afwezigheid van geheimen over 1063 vastleggingen en geheimzoeker, 4) HTTPS- en HSTS-controle op 11 subdomeinen, 5) tweetalige toestemmingsbalk voor cookies met twee gelijkwaardige knoppen, 6) eenduidige paginatitels en metabeschrijvingen, 7) voorbeeldafbeelding 1200×630 voor sociale netwerken, 8) herstelde websitepictogrammen en favicon.ico, 9) sitemap.xml en robots.txt, 10) beschrijvende alt-teksten met bewakingstest, 11) 32 procent PNG-verkleining met behoud van SHA-256 van officiele merktekens, 13) kleurcontrast in lichte en donkere weergave verholpen (0 schendingen), 14) mobiele weergave 320 tot 768 px en e-mailbaan zonder overlapping (174 naar 0 fouten), 15) echte 404-status en aparte 404-pagina zonder aanmelding, 16) verholpen relatieve koppeling in bevestigingsvenster met bewakingstest, 17) 400 kapotte verzoeken op 50 openbare formulieren zonder uitval en 7 formulierfouten verholpen (22/22), 18) live controle van snelheidslimieten en spambewaking (50/50), 19) anonieme bezoekanalyse na toestemming met beheerdersoverzicht. Daarnaast in de werkboom de Oekraiense taalzuivering voor accounttermen met vergelijking van 638 tests en de eerste snelheidsmeting van punt 12 voorbereid voor onderbreking door limietuitputting."
+  },
+  "tak": "feature/site-001-20261125-232500",
+  "pr": null,
+  "commits": [
+    "204f9ec8d53390f1dda782525eaf39c6a65cf78e",
+    "87cb0bd9b208ca506d730dd2d599aa297ac41125",
+    "a3ddfe729fac5b6488dbd094cdc8cbd4d5dc4ea1",
+    "df6036e03d7af41c0c82d1ddd88fe7b690c39ffe",
+    "fca8693be774c27a6f541151bca876c352e1303c",
+    "18edd872f1125aa53367769db6aa1f5c976512d4",
+    "526e29345b51d5ab374f7fcf1b2694512af9e1fb",
+    "76383e50e3155b0dbd0069b13e3ca21c6498256a",
+    "bd3d49089ca1db561ae33a0ee1ecffc7c3286742",
+    "9702b42427df9c9ef75c7796ca2f18182ee083b6",
+    "c2f5186f6cac755553f876b43dbf66d12972f875"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring",
+    "meldingen"
+  ]
+}

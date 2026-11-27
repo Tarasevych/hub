@@ -1062,7 +1062,7 @@ test('L4-S06: Ідентичність і способи входу (Макет 
     // Крок 1: Живі стани в maquette-motor.ts (без зашитих заглушок «заплановано» для наявних способів) + перемикач UI-015A поруч із Макет / Студія / Класичний
     const maquetteBron = lees('src/identiteit/maquette/maquette-motor.ts');
     assert.ok(
-      !maquetteBron.includes('Лише демонстраційне поле — дані акаунта не змінюються') || maquetteBron.includes('weergave'),
+      !maquetteBron.includes('Лише демонстраційне поле — дані облікового запису не змінюються') || maquetteBron.includes('weergave'),
       'Макет облікового запису прив’язаний до живих налаштувань облікового запису',
     );
     assert.ok(

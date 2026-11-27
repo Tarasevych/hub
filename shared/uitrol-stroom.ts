@@ -710,7 +710,7 @@ export function bouwContextControlelijst(invoer: StroomAnalyseInvoer): Controlel
       titelUk: 'Підтвердження походження, автора та складу змін',
       titelNl: 'Bevestiging van herkomst, auteur en samenstelling van wijzigingen',
       toelichtingUk: eigenVoorbereider
-        ? 'Підготовлено вашим акаунтом; перегляньте зміни та агента перед схваленням.'
+        ? 'Підготовлено вашим обліковим записом; перегляньте зміни та агента перед схваленням.'
         : 'Пакет підготував інший підготовник або агент — перевірте зміни й ONTWIKKELARCHIEF вручну.',
       toelichtingNl: eigenVoorbereider
         ? 'Voorbereid door uw eigen account; bekijk wijzigingen en agent vóór goedkeuring.'

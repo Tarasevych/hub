@@ -85,7 +85,7 @@ export async function main() {
   const css = lees('src/mail-opstel-bewerker.css');
   check('редактор лишає рідне меню і має Ctrl+B', editor.includes("data-native-context='1'") && editor.includes("'Mod-b':toggleMark(schema.marks.strong)") && !editor.includes('onContextMenu={event=>event.preventDefault()}') && css.includes('height:auto;min-height:38px') && !css.includes('!important;height:38px'));
   const wissen = lees('backend/index.ts');
-  check('видалення акаунта одразу і не чіпає власника', wissen.includes('accountMeteenWissen') && wissen.includes('OWNER_NIET_WISSEN') && wissen.includes('codewoordEis'));
+  check('видалення облікового запису одразу і не чіпає власника', wissen.includes('accountMeteenWissen') && wissen.includes('OWNER_NIET_WISSEN') && wissen.includes('codewoordEis'));
   const afz = lees('backend/mail-afzenders.ts');
   check('черга і перегляд вердикту підключені', afz.includes('contactenTaakLopen') && afz.includes('herbeoordeelUitBewijs') && afz.includes('magAutomatischOverschrijven') && lees('src/afzenders/ScanPaneel.tsx').includes('Продовжити неперевірені'));
   check('ручне збереження ставить контакт', /if \(!basis\.inContacten\) historie = metHistorie\(historie, \{ op: 'in-contacten'/.test(afz) && afz.includes('inContacten: true, geverifieerdOp'));

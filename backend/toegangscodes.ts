@@ -55,7 +55,7 @@ export const NOOIT = Object.freeze([
   ['Адміністрування, root і оновлення сервера', 'Beheer, root en serverupdates'],
   ['Токени, ключі та підключення ШІ', 'Tokens, sleutels en AI-koppelingen'],
   ['Сесії, коди доступу, нотатки', 'Sessies, toegangscodes, notities'],
-  ['Пошта, файли, експорт і видалення акаунта', 'E-mail, bestanden, export en account verwijderen'],
+  ['Пошта, файли, експорт і видалення облікового запису', 'E-mail, bestanden, export en account verwijderen'],
 ] as const);
 /** Woorden die nooit in een scope mogen voorkomen (eenheidstest + controle bij het opstarten van deze module). */
 export const VERBODEN_SCOPE = /(method|passkey|herstel|goedkeur|voorbereid|admin|beheer|token|root|uitrol|update|verwijder|export|sessie|code|notitie|mail|bestand|schrijf|write|exec)/i;

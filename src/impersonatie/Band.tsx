@@ -68,7 +68,7 @@ export function ImpersonatieBand({ staat, lang }: { staat: ImpStaat; lang?: 'uk'
             <h2 id='imp-einde-titel'>{uk ? 'Перегляд завершено' : 'Bekijken beëindigd'}</h2>
             <p>{(EIND_TEKST[einde] || EIND_TEKST.IMPERSONATIE_BEEINDIGD)[uk ? 0 : 1]}</p>
             <p className='imp-meta'>{uk ? 'Журнал ваших дій користувач бачить у «Хто має доступ».' : 'De gebruiker ziet het journaal van uw acties in «Wie heeft toegang».'}</p>
-            <button type='button' className='is-hoofd' autoFocus onClick={() => stopImpersonatieModus()} data-imp-knop='terug'>{uk ? 'Повернутися до свого акаунта' : 'Terug naar mijn account'}</button>
+            <button type='button' className='is-hoofd' autoFocus onClick={() => stopImpersonatieModus()} data-imp-knop='terug'>{uk ? 'Повернутися до свого облікового запису' : 'Terug naar mijn account'}</button>
           </div>
         </div>
       ) : null}

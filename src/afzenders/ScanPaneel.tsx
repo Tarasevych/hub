@@ -22,7 +22,7 @@ export const getal = (lang: Lang, n: number) => n.toLocaleString(lang === 'uk' ?
 export const datumTijd = (lang: Lang, v: string | number | null | undefined) => (v ? new Date(v).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
 const FOUT: Record<string, [string, string]> = {
   SLEUTELKLUIS_GESLOTEN: ['Ваші дані зараз зашифровані. Натисніть «Розшифрувати» в картці вгорі сторінки, потім перевірте скриньку знову.', 'Uw gegevens zijn nu versleuteld. Klik op «Ontsleutelen» in de kaart bovenaan de pagina en controleer de mailbox daarna opnieuw.'],
-  GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий акаунт Google не підключено.', 'Geen Google-mailaccount gekoppeld.'],
+  GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий обліковий запис Google не підключено.', 'Geen Google-mailaccount gekoppeld.'],
   GOOGLE_MAIL_RATE_LIMITED: ['Gmail тимчасово обмежив запити. Продовжіть пізніше — перевірка почнеться з місця зупинки.', 'Gmail beperkt tijdelijk de verzoeken. Ga later verder — de controle hervat waar hij stopte.'],
   GOOGLE_MAIL_REAUTH_REQUIRED: ['Потрібно знову підключити Gmail.', 'Gmail moet opnieuw gekoppeld worden.'],
   GOOGLE_MAIL_SCOPE_REQUIRED: ['Бракує дозволу Gmail на читання заголовків.', 'Gmail-toestemming om koppen te lezen ontbreekt.'],
@@ -196,7 +196,7 @@ export function BronnenUitleg({ lang }: { lang: Lang }) {
       <li><strong>{t(lang, 'Перевірка на підробку', 'Controle op imitatie')}</strong> — {t(lang, 'схожі домени (paypa1.com), змішані алфавіти (кирилиця в латинському домені), назва бренду в імені при чужому домені, ім’я вашого контакту з іншою адресою.', 'lijkende domeinen (paypa1.com), gemengde alfabetten (Cyrillisch in een Latijns domein), een merknaam in de naam bij een vreemd domein, de naam van een contact met een ander adres.')}</li>
       <li><strong>{t(lang, 'Ваша пошта', 'Uw mail')}</strong> — {t(lang, 'усі скриньки й теки (також архів і надіслані): кому ви писали самі.', 'alle mailboxen en mappen (ook archief en verzonden): naar wie u zelf schreef.')}</li>
     </ul>
-    <p>{t(lang, 'Читаються лише заголовки From, To, Cc, Bcc, дата й результати перевірок — ніколи вміст листів. Усе зберігається лише у вашому акаунті.', 'Alleen de koppen From, To, Cc, Bcc, de datum en de controle-uitslagen worden gelezen — nooit de inhoud. Alles blijft alleen in uw account.')}</p>
+    <p>{t(lang, 'Читаються лише заголовки From, To, Cc, Bcc, дата й результати перевірок — ніколи вміст листів. Усе зберігається лише у вашому обліковому записі.', 'Alleen de koppen From, To, Cc, Bcc, de datum en de controle-uitslagen worden gelezen — nooit de inhoud. Alles blijft alleen in uw account.')}</p>
   </details>;
 }
 

@@ -1,10 +1,10 @@
-// «Поштові акаунти» (klachten van de eigenaar, 21.10.2026, telefoon):
-//   1. «Спроба підключення додаткового Google-акаунта пошти видала помилку» — het venster Gmail → «Перейти до Google» →
+// «Поштові облікові записи» (klachten van de eigenaar, 21.10.2026, telefoon):
+//   1. «Спроба підключення додаткового облікового запису Google пошти видала помилку» — het venster Gmail → «Перейти до Google» →
 //      «Не вдалося розпочати підключення Gmail.». Deze test BEWIJST de oorzaak met de echte servercode (deel 2 «ДО») en dat
 //      de nieuwe weg een TWEEDE Google-account met de accountkiezer koppelt (deel 2 «ПІСЛЯ», volledige callback met nep-Google).
 //   2. geen «Відключити»: deel 3 doorloopt het loskoppelen van Google (extra, hoofd, «потрібен повторний вхід»), IMAP en
 //      Microsoft — met de keuze lokale gegevens bewaren/wissen, de 428 zonder bevestiging, en dat de aanmelding blijft werken.
-//   3. de dubbele sectie «Додаткові акаунти Microsoft» (deel 4, bron + weergave).
+//   3. de dubbele sectie «Додаткові облікові записи Microsoft» (deel 4, bron + weergave).
 //   4. logo's: geen nagetekende merken meer; neutrale plaat; eigen logo's van de beheerder met ontsmetting (deel 5).
 // Alles lokaal: Google is nagebootst (tests/eenheid/hulp/nep-google.ts + de onderschepte fetch hieronder); er gaat niets naar buiten.
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -67,7 +67,7 @@ export async function main(): Promise<number> {
     && standTekst('opnieuw-aanmelden', 'uk') === 'Потрібен повторний вхід' && standTekst('werkt', 'nl') === 'Werkt');
   check('bevestiging bij het HOOFDaccount zegt eerlijk dat de aanmelding op de site NIET geraakt wordt',
     ontkoppelUitleg('google', { hoofd: true, taal: 'uk' }).some((r) => r.includes('Вхід на сайт через Google НЕ зачіпається')) && !ontkoppelUitleg('google', { hoofd: false, taal: 'uk' }).some((r) => r.includes('ОСНОВНИЙ')));
-  check('link naar «Поштові акаунти» volgt de eigen domeinnaam (BYOS)', mailAccountsAdres('https://hub.voorbeeld.org') === 'https://mail.voorbeeld.org/?tab=accounts');
+  check('link naar «Поштові облікові записи» volgt de eigen domeinnaam (BYOS)', mailAccountsAdres('https://hub.voorbeeld.org') === 'https://mail.voorbeeld.org/?tab=accounts');
 
   // ================================================================ 1. nep-Google voor de Suite (token, userinfo, revoke, endpoint)
   const eigenaar = `mab-eig-${T}@example.test`, sub = `sub-mab-${T}`;
@@ -113,7 +113,7 @@ export async function main(): Promise<number> {
     check('aanmelden als eigenaar op mail (nep-Google)', login.cb.data.ok === true, JSON.stringify(login.cb.data).slice(0, 160));
     const uid = String((await pool.query("select id from app.records where tbl='users' and data->>'email'=$1", [eigenaar])).rows[0]?.id || '');
 
-    // ================================================================ 2. de klacht: «додатковий Google-акаунт → помилка»
+    // ================================================================ 2. de klacht: «додатковий обліковий запис Google → помилка»
     // ---- ДО, oorzaak 2: het oude lichaam zonder sourceOrigin, rechtstreeks aan startConsent (zoals vóór de serverfix) ----
     const { googleSuiteStartMailConsent } = await import('../../backend/google-suite-inrichting');
     const OUD = { service: 'mail', locale: 'uk', returnTo: `https://${MAIL}/accounts`, accountRole: 'primary' }; // letterlijk MailKoppelVenster.tsx:75 vóór 21.10
@@ -221,7 +221,7 @@ export async function main(): Promise<number> {
     const imapNogEens = await post('/api/owner/mail/imap/ontkoppelen', { id: imapId });
     check('IMAP: ontkoppelen wist de rij (en het versleutelde wachtwoord); tweede keer 404', imapWeg.status === 200 && imapRij === 0 && imapNogEens.status === 404);
 
-    // ---- Microsoft (bestaande route, nu ook vanaf «Підключені акаунти») ----
+    // ---- Microsoft (bestaande route, nu ook vanaf «Підключені облікові записи») ----
     const [msWis, msBewaar] = await db.add('mail_accounts_v1', [
       { ownerUserId: uid, ruimte: 'prive', provider: 'microsoft', email: `ms-wis-${T}@outlook.test`, primary: false, identityLinked: false, status: 'connected', createdAt: nu, updatedAt: nu },
       { ownerUserId: uid, ruimte: 'prive', provider: 'microsoft', email: `ms-bewaar-${T}@outlook.test`, primary: false, identityLinked: false, status: 'connected', createdAt: nu, updatedAt: nu },
@@ -270,15 +270,15 @@ export async function main(): Promise<number> {
   // ================================================================ 4. de pagina en het venster (bron + weergave)
   nepBrowser();
   const mfv = bron('src/MailFunctioneelWeergave.tsx'), hubBron = bron('src/MailAccountsHub.tsx'), venster = bron('src/mail/MailKoppelVenster.tsx');
-  check('de dubbele sectie «Додаткові акаунти Microsoft» (select + e-mailveld) is weg uit MailFunctionalView',
-    !mfv.includes("data-mail-provider-manager='microsoft'") && !mfv.includes('Додаткові акаунти Microsoft') && !mfv.includes('mail-account-form') && !mfv.includes('linkMailAccount'));
-  check('de Microsoft-stromen bestaan nog (zelfde routes) in «Підключені акаунти»',
+  check('de dubbele sectie «Додаткові облікові записи Microsoft» (select + e-mailveld) is weg uit MailFunctionalView',
+    !mfv.includes("data-mail-provider-manager='microsoft'") && !mfv.includes('Додаткові облікові записи Microsoft') && !mfv.includes('mail-account-form') && !mfv.includes('linkMailAccount'));
+  check('de Microsoft-stromen bestaan nog (zelfde routes) in «Підключені облікові записи»',
     hubBron.includes('const startMicrosoftConnection') && hubBron.includes('/connect/start') && hubBron.includes('const disconnectMicrosoftAccount') && hubBron.includes('/disconnect'));
   check('het venster stuurt niet meer hard «accountRole: \'primary\'» en gebruikt het model (rol, tabContext, sourceOrigin, foutteksten)',
     !venster.includes("accountRole: 'primary'") && venster.includes('googleStartLichaam') && venster.includes('googleRolVoor') && venster.includes('googleStartFoutTekst') && venster.includes('huidigTabblad'));
   const MailAccountsHub = (await import('../../src/MailAccountsHub')).default;
   const html = renderToString(createElement(MailAccountsHub, { lang: 'uk', userName: 'Власник', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));
-  check('«Підключені акаунти»: eigenaar@example.test met stand «Працює», «Основний», «Перепідключити», «Відключити», «Додати ще один Gmail»',
+  check('«Підключені облікові записи»: eigenaar@example.test met stand «Працює», «Основний», «Перепідключити», «Відключити», «Додати ще один Gmail»',
     html.includes('eigenaar@example.test') && html.includes('Працює') && html.includes('Основний') && html.includes('Перепідключити') && html.includes('data-mail-ontkoppel') && html.includes('Додати ще один<!-- --> <!-- -->Gmail'), html.slice(html.indexOf('data-mail-gekoppeld'), html.indexOf('data-mail-gekoppeld') + 400));
   // Met een account (zoals hierboven): sinds MAILORBIT-001/MAILACC-002 toont de orbit de nog niet beschikbare diensten onder data-mail-orbit-onbeschikbaar.
   const htmlNl = renderToString(createElement(MailAccountsHub, { lang: 'nl', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));

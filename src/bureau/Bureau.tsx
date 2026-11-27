@@ -153,7 +153,7 @@ export default function Bureau({ lang, ownerUserId, magBewerken }: { lang: Lang;
       ) : null}
       {vol ? <p className='bureau-grens'>{tr(lang, `Більше ніж ${MAX_TEGELS} блоків на стіл не кладемо — приберіть щось, щоб додати нове.`, `Meer dan ${MAX_TEGELS} blokken leggen we niet neer — haal er iets af om iets nieuws toe te voegen.`)}</p> : null}
       {fout ? <p className='bureau-fout' role='alert'>{/^OWNER_HUB_BUREAU_/.test(fout) || /401|403/.test(fout)
-        ? tr(lang, 'Розкладку столу можна зберегти лише після входу у ваш акаунт.', 'De indeling kan alleen worden bewaard als u in uw account bent aangemeld.')
+        ? tr(lang, 'Розкладку столу можна зберегти лише після входу у ваш обліковий запис.', 'De indeling kan alleen worden bewaard als u in uw account bent aangemeld.')
         : tr(lang, `Розкладку не збережено (${fout}).`, `De indeling is niet bewaard (${fout}).`)}</p> : null}
     </div>
   );

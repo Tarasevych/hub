@@ -14,7 +14,7 @@ export const uurMinuut = (ms: number, taal: Taal) => new Date(ms).toLocaleTimeSt
 export function termijnNaam(modus: TermijnModus, taal: Taal, eindTijd?: number | null): string {
   if (modus === 'tijd') return eindTijd ? (taal === 'uk' ? `На час (до ${uurMinuut(eindTijd, taal)})` : `Voor een tijd (tot ${uurMinuut(eindTijd, taal)})`) : (taal === 'uk' ? 'На час' : 'Voor een tijd');
   if (modus === 'tot-technisch-einde') return taal === 'uk' ? 'До завершення технічного сеансу' : 'Tot het einde van de technische sessie';
-  return taal === 'uk' ? 'До виходу з акаунта на сайті' : 'Tot afmelden van het account op de site';
+  return taal === 'uk' ? 'До виходу з облікового запису на сайті' : 'Tot afmelden van het account op de site';
 }
 /** Eén regel uitleg per termijn (onder de keuze). */
 export function termijnUitleg(modus: TermijnModus, taal: Taal, eindTijd?: number | null): string {
@@ -22,10 +22,10 @@ export function termijnUitleg(modus: TermijnModus, taal: Taal, eindTijd?: number
     ? `Технічний сеанс завершиться сам${eindTijd ? ` о ${uurMinuut(eindTijd, taal)}` : ''}. Ваш вхід на сайт лишається.`
     : `De technische sessie stopt vanzelf${eindTijd ? ` om ${uurMinuut(eindTijd, taal)}` : ''}. U blijft aangemeld op de site.`;
   if (modus === 'tot-technisch-einde') return taal === 'uk'
-    ? 'Діє, доки ви не натиснете «Завершити технічний сеанс». Вихід з акаунта на сайті теж його завершує.'
+    ? 'Діє, доки ви не натиснете «Завершити технічний сеанс». Вихід з облікового запису на сайті теж його завершує.'
     : 'Geldt tot u op «Technische sessie beëindigen» klikt. Afmelden op de site beëindigt hem ook.';
   return taal === 'uk'
-    ? 'Перемикання у звичайний простір його не зупиняє, а «Пауза» лише ставить на паузу. Завершується, коли ви вийдете з акаунта на сайті або натиснете «Завершити».'
+    ? 'Перемикання у звичайний простір його не зупиняє, а «Пауза» лише ставить на паузу. Завершується, коли ви вийдете з облікового запису на сайті або натиснете «Завершити».'
     : 'Overschakelen naar de gewone ruimte stopt hem niet, «Pauze» pauzeert hem alleen. Hij stopt wanneer u zich afmeldt op de site of op «Beëindigen» klikt.';
 }
 export const duurKort = (min: number, taal: Taal) => (min >= 60 ? `${+(min / 60).toFixed(1)} ${taal === 'uk' ? 'год' : 'u'}` : `${min} ${taal === 'uk' ? 'хв' : 'min'}`);
@@ -62,7 +62,7 @@ export type UitlogKeuze = { id: 'technisch' | 'site' | 'overal'; naam: Tweetalig
 export const UITLOG_KEUZES: UitlogKeuze[] = [
   { id: 'technisch', naam: t2('Вийти з технічного сеансу', 'Technische sessie verlaten'),
     gevolg: t2('Ви лишаєтеся на сайті у звичайному просторі. Довгі дозволи розширення не змінюються.', 'U blijft aangemeld in de gewone ruimte. Lange ontgrendelingen van de extensie blijven.') },
-  { id: 'site', naam: t2('Вийти з акаунта на сайті', 'Afmelden van het account op de site'),
+  { id: 'site', naam: t2('Вийти з облікового запису на сайті', 'Afmelden van het account op de site'),
     gevolg: t2('Завершує і технічний сеанс. Довгі дозволи розширення в цьому браузері знімаються.', 'Beëindigt ook de technische sessie. Lange ontgrendelingen van de extensie in deze browser vervallen.') },
   { id: 'overal', naam: t2('Вийти всюди', 'Overal afmelden'), gevaar: true,
     gevolg: t2('Вихід на всіх пристроях і в усіх браузерах; знімає всі технічні сеанси й усі дозволи розширення.', 'Afmelden op alle apparaten en browsers; alle technische sessies en extensie-ontgrendelingen vervallen.') },
@@ -72,10 +72,10 @@ export const VKLADKA_REGEL = t2('Закриття однієї вкладки н
 
 /** Hernoemingen uit de audit (oud → nieuw), gebruikt in TechLaag, Sessies en het bevestigvenster zodra de vlag aan staat. */
 export const WOORDEN = {
-  bandTotUitloggen: t2('до виходу з акаунта на сайті', 'tot afmelden op de site'),
+  bandTotUitloggen: t2('до виходу з облікового запису на сайті', 'tot afmelden op de site'),
   bandTotVerlaten: t2('до завершення технічного сеансу', 'tot einde technische sessie'),
   sessieTijd: t2('на час', 'voor een tijd'),
-  onthoud: t2('Не питати знову, доки я не вийду з акаунта на сайті (не довше {u} год)', 'Niet opnieuw vragen tot ik me afmeld op de site (hoogstens {u} u)'),
+  onthoud: t2('Не питати знову, доки я не вийду з облікового запису на сайті (не довше {u} год)', 'Niet opnieuw vragen tot ik me afmeld op de site (hoogstens {u} u)'),
   wijzigTermijn: t2('Змінити термін', 'Termijn wijzigen'),
   wijzigUitleg: t2('Новий термін рахується від зараз.', 'De nieuwe termijn telt vanaf nu.'),
   bijtellen: t2('Додати час', 'Tijd bijtellen'),
@@ -102,7 +102,7 @@ export const AI_TERMIJNEN = [
   { id: 'tijd-60', termijn: 'tijd', minuten: 60, ruimtes: ['prive', 'technisch'], label: t2('+ технічний: на 1 год', '+ technisch: 1 uur') },
   { id: 'tijd-240', termijn: 'tijd', minuten: 240, ruimtes: ['prive', 'technisch'], label: t2('+ технічний: на 4 год', '+ technisch: 4 uur') },
   { id: 'tot-technisch-einde', termijn: 'tot-technisch-einde', ruimtes: ['prive', 'technisch'], label: t2('+ технічний: до завершення технічного сеансу', '+ technisch: tot einde technische sessie') },
-  { id: 'tot-site-uitloggen', termijn: 'tot-site-uitloggen', ruimtes: ['prive', 'technisch'], label: t2('+ технічний: до виходу з акаунта на сайті', '+ technisch: tot afmelden op de site') },
+  { id: 'tot-site-uitloggen', termijn: 'tot-site-uitloggen', ruimtes: ['prive', 'technisch'], label: t2('+ технічний: до виходу з облікового запису на сайті', '+ technisch: tot afmelden op de site') },
 ] as const;
 
 /** Volgende ruimte bij de toets ←/→ in de tweedelige knop. */

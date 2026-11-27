@@ -199,7 +199,7 @@ export default function Diagnostiek({ lang, sourceOrigin, tabContext, techniek }
     { id: 'alle', naam: tr(lang, 'Усе', 'Alles'), icoon: Layers, stand: som.stand, teller: `${totaalN - som.nooit}/${totaalN}` },
     ...CATEGORIEEN.map((c) => { const t = totaal(toestanden, controlesVan(c.id).map((d) => d.id)); return { id: c.id as TabId, naam: tekstUit(lang, c.naam), icoon: ICONEN[c.icoon] || Activity, stand: t.stand, teller: `${t.totaal - t.nooit}/${t.totaal}` }; }),
     { id: 'historie', naam: tr(lang, 'Історія збоїв', 'Storingsgeschiedenis'), icoon: History },
-    { id: 'account', naam: tr(lang, 'Для всіх / цей акаунт', 'Iedereen / dit account'), icoon: Users },
+    { id: 'account', naam: tr(lang, 'Для всіх / цей обліковий запис', 'Iedereen / dit account'), icoon: Users },
     { id: 'gebruiker', naam: tr(lang, 'Скарга користувача', 'Klacht van gebruiker'), icoon: UserRound },
     { id: 'zekering', naam: tr(lang, 'Захист', 'Bescherming'), icoon: Lock },
     { id: 'bezoek', naam: tr(lang, 'Відвідування', 'Bezoeken'), icoon: Users },

@@ -43,8 +43,8 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
         <p>{variant === 'inbox'
           ? t('Підключіть скриньку та керуйте всією поштою в одному просторі.', 'Koppel uw mailbox en beheer al uw e-mail op één plek.')
           : variant === 'extra'
-          ? t('Додайте ще одну скриньку будь-якого сервісу — листи й перемикання між акаунтами лишаються в одному місці.', 'Voeg nog een mailbox van eender welke dienst toe — berichten en wisselen tussen accounts blijven op één plek.')
-          : t('Підключіть першу скриньку. Листи різних сервісів і керування акаунтами будуть в одному місці.', 'Koppel uw eerste mailbox. E-mail van meerdere diensten en accountbeheer komen samen op één plek.')}</p>
+          ? t('Додайте ще одну скриньку будь-якого сервісу — листи й перемикання між обліковими записами лишаються в одному місці.', 'Voeg nog een mailbox van eender welke dienst toe — berichten en wisselen tussen accounts blijven op één plek.')
+          : t('Підключіть першу скриньку. Листи різних сервісів і керування обліковими записами будуть в одному місці.', 'Koppel uw eerste mailbox. E-mail van meerdere diensten en accountbeheer komen samen op één plek.')}</p>
         {variant === 'extra' && onManage ? (
           <button type='button' className='mail-orbit-gekoppeld-chip' data-mail-orbit-naar-beheer onClick={onManage}
             title={t('Перейти до списку підключених скриньок: там вибір основної, сповіщення й відключення.', 'Naar de lijst met gekoppelde mailboxen: daar kiest u de hoofdmailbox, meldingen en loskoppelen.')}>
@@ -131,7 +131,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
           <button type='button' className='mail-orbit-catalogus-knop' aria-expanded={catalogus} aria-controls={catalogusId} onClick={() => setCatalogus((v) => !v)}>
             {catalogus ? t('Згорнути каталог', 'Catalogus sluiten') : t('Увесь каталог', 'Volledige catalogus')} <ChevronRight size={17} aria-hidden='true' />
           </button>
-          {onManage && variant !== 'extra' ? <button type='button' className='mail-orbit-beheer-knop' onClick={onManage}>{t('Керування акаунтами', 'Accounts beheren')} <ArrowRight size={15} aria-hidden='true' /></button> : null}
+          {onManage && variant !== 'extra' ? <button type='button' className='mail-orbit-beheer-knop' onClick={onManage}>{t('Керування обліковими записами', 'Accounts beheren')} <ArrowRight size={15} aria-hidden='true' /></button> : null}
         </div>
       </div>
 

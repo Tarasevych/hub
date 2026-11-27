@@ -135,7 +135,7 @@ export const WEIGER_UITLEG: Readonly<Record<ToegangWeigerCode, Tweetalig>> = Obj
     nl: 'Technische hulpmiddelen (_beheer) zijn alleen beschikbaar voor de eigenaar van de server.',
   },
   GEEN_TECH_PROFIEL: {
-    uk: 'Для цього акаунта немає чинного технічного профілю.',
+    uk: 'Для цього облікового запису немає чинного технічного профілю.',
     nl: 'Voor dit account is er geen geldig technisch profiel.',
   },
   GEEN_TECH_SESSIE: {
@@ -155,7 +155,7 @@ export const WEIGER_UITLEG: Readonly<Record<ToegangWeigerCode, Tweetalig>> = Obj
     nl: 'De uiterste grens van de technische sessie is voorbij — start een nieuwe technische sessie.',
   },
   SITE_SESSIE_WEG: {
-    uk: 'Сеанс входу на сайт завершився або ви вийшли з акаунта — увійдіть на сайт і запустіть технічний простір.',
+    uk: 'Сеанс входу на сайт завершився або ви вийшли з облікового запису — увійдіть на сайт і запустіть технічний простір.',
     nl: 'De aanmeldsessie op de site is beëindigd of u bent uitgelogd — meld opnieuw aan en start de technische ruimte.',
   },
   BINDING_ONGELDIG: {

@@ -1,4 +1,4 @@
-// Diagnose per ACCOUNT («Цей акаунт») naast de serverdiagnose («Сервер (для всіх)»), zie shared/diagnostiek-account.ts.
+// Diagnose per ACCOUNT («Цей обліковий запис») naast de serverdiagnose («Сервер (для всіх)»), zie shared/diagnostiek-account.ts.
 //
 // Wat een controle leest (alleen metadata): de Google-koppeling (status per dienst, of de toestemming gebonden is, en bij een
 // handmatige controle of Google een toegangstoken uitgeeft — het token zelf wordt nooit bewaard, gelogd of teruggegeven), het

@@ -207,7 +207,7 @@ export async function main(): Promise<number> {
       check('privacy-logboek-02: вимкнення захисту з причиною «299 символів + емодзі» записується (journaalSchrijf не повертає null), причина без половини емодзі',
         j1 !== null && j2 !== null && typeof rJ?.details?.reden === 'string' && !eenzaam(rJ.details.reden) && !rJ.details.reden.includes('\uFFFD') && rJ.details.reden.length <= 300, `j1=${j1 ? 'ok' : 'null'} j2=${j2 ? 'ok' : 'null'}`);
       const keten = await auditControle(U);
-      check('privacy-logboek-02: геш-ланцюг акаунта після всіх цих рядків цілий', keten.geldig && keten.totaal >= 11, JSON.stringify(keten));
+      check('privacy-logboek-02: геш-ланцюг облікового запису після всіх цих рядків цілий', keten.geldig && keten.totaal >= 11, JSON.stringify(keten));
 
       const consoleBron = lees('backend/mcp-console.ts');
       const stuk = consoleBron.slice(consoleBron.indexOf('"POST /api/mcp/tokens": ['), consoleBron.indexOf('"POST /api/mcp/tokens/revoke"'));
@@ -308,7 +308,7 @@ export async function main(): Promise<number> {
       const tekstSupport = JSON.stringify(alsSupport.items);
       const eigenB = alsSupport.items.find((i) => i.ownerId === B && i.action === 'owner.mcp.tool');
       const priveA = alsSupport.items.find((i) => i.ownerId === U && i.action === 'owner.mcp.tool' && i.details?.ruimte !== 'technisch');
-      check('privacy-logboek-05: support_viewer НЕ бачить doel (шлях файлу) приватної дії ШІ іншого користувача; рядок, дія, результат і акаунт лишаються',
+      check('privacy-logboek-05: support_viewer НЕ бачить doel (шлях файлу) приватної дії ШІ іншого користувача; рядок, дія, результат і обліковий запис лишаються',
         alsSupport.items.length >= 4 && !tekstSupport.includes(GEHEIM_PAD) && !!priveA && priveA.result === 'success' && priveA.details?._priveVerborgen === true && priveA.details?.tool === 'machine_read_file',
         tekstSupport.includes(GEHEIM_PAD) ? 'шлях видно' : `рядків ${alsSupport.items.length}`);
       check('privacy-logboek-05: власні приватні рядки, технічна сфера й адміністративні дії показуються повністю, як раніше',

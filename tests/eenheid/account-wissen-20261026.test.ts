@@ -175,7 +175,7 @@ export async function main() {
     // (vroeger alleen bij stand 'geen': door_user_id van app.huis_uitnodigingen bleef zo onopgemerkt staan na het wissen).
     for (const c of lijst) if (verdacht.test(c) && !nietInRegister.has(c) && (stand === 'geen' || !ACCOUNT_KOLOM.test(c))) onbekend.push(`${sleutel}.${c}`);
   }
-  check(`реєстр покриває CREATE TABLE з колонкою акаунта (${tabellen.size} таблиць)`, open.length === 0 && onbekend.length === 0 && tabellen.has('app.invites') && tabellen.has('app.records') && dekking('invites', ['created_by']) === 'wissen' && dekking('records', ['owner_id']) === 'uitzondering' && dekking('uitrol_runs', ['goedgekeurd_door']) === 'uitzondering' && dekking('audit', ['owner_id', 'actor_id']) === 'uitzondering');
+  check(`реєстр покриває CREATE TABLE з колонкою облікового запису (${tabellen.size} таблиць)`, open.length === 0 && onbekend.length === 0 && tabellen.has('app.invites') && tabellen.has('app.records') && dekking('invites', ['created_by']) === 'wissen' && dekking('records', ['owner_id']) === 'uitzondering' && dekking('uitrol_runs', ['goedgekeurd_door']) === 'uitzondering' && dekking('audit', ['owner_id', 'actor_id']) === 'uitzondering');
   if (open.length) console.log('OPEN ' + open.join(' | '));
   if (onbekend.length) console.log('ONBEKEND ' + onbekend.join(' | '));
 
@@ -183,7 +183,7 @@ export async function main() {
   // 1) app.cloud_deel_koppelingen (0210): doel_id тут — id файла/теки, НЕ людини; рядки власника посилання стираються за user_id,
   //    а в чужих посиланнях із ним як одержувачем із JSON ontvangers прибирається його id та ім’я (адреса лишається власнику посилання).
   // 2) app.huis_uitnodigingen (0212, нова таблиця SEC-002): запрошення ВІД нього — DELETE за door_user_id; запрошення ДО нього в
-  //    чужу оселю — не DELETE (власник оселі побачив би, що за адресою був обліковий запис), а user_id = NULL, як «адреса без акаунта».
+  //    чужу оселю — не DELETE (власник оселі побачив би, що за адресою був обліковий запис), а user_id = NULL, як «адреса без облікового запису».
   check('cloud_deel_koppelingen і huis_uitnodigingen — у міграціях і покриті реєстром; doel_id ondersteuning/impersonatie лишився',
     tabellen.get('app.cloud_deel_koppelingen')?.has('doel_id') === true && tabellen.get('app.huis_uitnodigingen')?.has('door_user_id') === true
     && dekking('cloud_deel_koppelingen', [...(tabellen.get('app.cloud_deel_koppelingen') || [])]) === 'wissen'

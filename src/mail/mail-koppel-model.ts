@@ -1,7 +1,7 @@
-// Zuivere regels van het koppelvenster en van «Поштові акаунти» (geen React, geen DOM — de tests lezen dit bestand).
+// Zuivere regels van het koppelvenster en van «Поштові облікові записи» (geen React, geen DOM — de tests lezen dit bestand).
 //
-// WAAROM DIT BESTAAT (klacht van de eigenaar, 21.10.2026, telefoon, mail → Акаунти):
-//   «Спроба підключення додаткового Google-акаунта пошти видала помилку» — het venster «Підключення: Gmail» →
+// WAAROM DIT BESTAAT (klacht van de eigenaar, 21.10.2026, telefoon, mail → Облікові записи):
+//   «Спроба підключення додаткового облікового запису Google пошти видала помилку» — het venster «Підключення: Gmail» →
 //   «Перейти до Google» gaf een rode, algemene regel «Не вдалося розпочати підключення Gmail.».
 // BEWEZEN OORZAAK (tests/eenheid/mail-accounts-beheer-20261021.test.ts, deel 1 «ДО»):
 //   src/mail/MailKoppelVenster.tsx stuurde ALTIJD `accountRole:'primary'`, zonder `sourceOrigin` en zonder `tabContext`.
@@ -54,7 +54,7 @@ export function googleStartFoutTekst(code: string, taal: Taal): string {
     case 'GOOGLE_SUITE_RETURN_TO_INVALID': return t(taal, 'Сервер не прийняв адресу повернення після входу в Google. Відкрийте цю сторінку на піддомені пошти й спробуйте ще раз.', 'De server accepteerde het terugkeeradres na Google niet. Open deze pagina op het mail-subdomein en probeer opnieuw.');
     case 'GOOGLE_SUITE_SEQUENCE_REQUIRED': return t(taal, 'Спершу потрібно надати попередній доступ Google у плані підключення.', 'Eerst moet de vorige Google-toestemming uit het koppelplan worden gegeven.');
     case 'GOOGLE_SUITE_STATE_CREATE_FAILED': return t(taal, 'Сервер не зміг записати одноразовий ключ входу. Спробуйте ще раз за хвилину.', 'De server kon de eenmalige aanmeldsleutel niet opslaan. Probeer het over een minuut opnieuw.');
-    case 'OWNER_MAIL_SESSION_REQUIRED': return t(taal, 'Підключати пошту можна лише на сторінці пошти. Відкрийте «Поштові акаунти» на піддомені mail і натисніть ще раз.', 'Een mailbox koppelen kan alleen op de mailpagina. Open «E-mailaccounts» op het mail-subdomein en probeer opnieuw.');
+    case 'OWNER_MAIL_SESSION_REQUIRED': return t(taal, 'Підключати пошту можна лише на сторінці пошти. Відкрийте «Поштові облікові записи» на піддомені mail і натисніть ще раз.', 'Een mailbox koppelen kan alleen op de mailpagina. Open «E-mailaccounts» op het mail-subdomein en probeer opnieuw.');
     case 'STEP_UP_REQUIRED': case 'STEP_UP_STRONG_REQUIRED': return t(taal, 'Потрібне додаткове підтвердження входу — підтвердьте й натисніть ще раз.', 'Er is een extra bevestiging nodig — bevestig en probeer opnieuw.');
     case 'RUIMTE_KEUZE_ONTBREEKT': case 'KEUZE_ONTBREEKT': return t(taal, 'Для технічного простору ще не вибрано, як працює пошта (спільна чи окрема). Зробіть вибір у «Простори».', 'Voor de technische ruimte is nog niet gekozen hoe post werkt (gedeeld of eigen). Kies dat eerst bij «Ruimtes».');
     case 'RUIMTE_DIENST_UIT': case 'DIENST_UIT': return t(taal, 'Пошта вимкнена для цього простору.', 'Post staat uit voor deze ruimte.');
@@ -67,7 +67,7 @@ export function googleStartFoutTekst(code: string, taal: Taal): string {
 }
 
 // ------------------------------------------------------------------------------------------------ stand per gekoppeld account
-/** Eén regel in «Підключені акаунти», ongeacht de dienst. */
+/** Eén regel in «Підключені облікові записи», ongeacht de dienst. */
 export type KoppelStand = 'werkt' | 'opnieuw-aanmelden' | 'fout' | 'nog-geen-toegang' | 'losgekoppeld';
 
 /** Microsoft-rij (app mail_accounts_v1) → stand. */
@@ -103,7 +103,7 @@ export function ontkoppelUitleg(dienst: 'google' | 'microsoft' | 'imap', o: { ho
   const { taal } = o;
   if (dienst === 'google') return [
     t(taal, 'Доступ сайту до цієї скриньки Gmail буде відкликано (і в Google, якщо цей дозвіл не потрібен Диску чи Календарю).', 'De toegang van de site tot deze Gmail-mailbox wordt ingetrokken (ook bij Google, tenzij Drive of Agenda dezelfde toestemming nog gebruikt).'),
-    ...(o.hoofd ? [t(taal, 'Це ОСНОВНИЙ акаунт. Вхід на сайт через Google НЕ зачіпається — він працює окремо від доступу до пошти. Диск, Календар і Фото, якщо підключені, залишаться.', 'Dit is het HOOFDaccount. Aanmelden op de site via Google wordt NIET geraakt — dat staat los van de mailtoegang. Drive, Agenda en Foto\'s blijven, als ze gekoppeld zijn.')] : []),
+    ...(o.hoofd ? [t(taal, 'Це ОСНОВНИЙ обліковий запис. Вхід на сайт через Google НЕ зачіпається — він працює окремо від доступу до пошти. Диск, Календар і Фото, якщо підключені, залишаться.', 'Dit is het HOOFDaccount. Aanmelden op de site via Google wordt NIET geraakt — dat staat los van de mailtoegang. Drive, Agenda en Foto\'s blijven, als ze gekoppeld zijn.')] : []),
   ];
   if (dienst === 'microsoft') return [
     t(taal, 'Токен доступу Microsoft буде видалено, а підписку на нові листи скасовано.', 'Het Microsoft-toegangstoken wordt gewist en het abonnement op nieuwe berichten opgezegd.'),
@@ -118,7 +118,7 @@ export function ontkoppelUitleg(dienst: 'google' | 'microsoft' | 'imap', o: { ho
 /** Bevestigingscode die de server eist om LOKALE gegevens te wissen (zelfde als de bestaande Microsoft-route). */
 export const WIS_BEVESTIGING = 'DELETE_MAIL_ACCOUNT_DATA';
 
-/** Adres van «Поштові акаунти» op het mail-subdomein van DEZE installatie (BYOS: geen vaste domeinnaam). */
+/** Adres van «Поштові облікові записи» op het mail-subdomein van DEZE installatie (BYOS: geen vaste domeinnaam). */
 export function mailAccountsAdres(origin: string): string {
   try {
     const u = new URL(origin);

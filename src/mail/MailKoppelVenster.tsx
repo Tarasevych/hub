@@ -4,7 +4,7 @@
 //
 // WAT ER PER DIENST GEBEURT (shared/mail-aanbieders.ts bepaalt het, niet dit bestand):
 //   • Gmail/Google Workspace → de BESTAANDE Google-OAuth van de site (POST /api/owner/mail/google-suite/onboarding/start,
-//     daarna de omleiding naar Google). Geen tweede, zachtere weg. 21.10.2026 (klacht «додатковий Google-акаунт → помилка»):
+//     daarna de omleiding naar Google). Geen tweede, zachtere weg. 21.10.2026 (klacht «додатковий обліковий запис Google → помилка»):
 //     het venster vraagt EERST de echte stand op (/api/owner/mail/google-suite/accounts). Is de hoofdmailbox al gekoppeld, dan
 //     start het een EXTRA account (accountRole 'additional' → Google toont zijn accountkiezer); anders biedt het beide keuzes.
 //     tabContext en sourceOrigin gaan altijd mee, en elke servercode krijgt een eigen zin (src/mail/mail-koppel-model.ts).
@@ -123,8 +123,8 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
       const c = context();
       const r = await api.post('/api/owner/mail/google-suite/onboarding/start', googleStartLichaam({ taal: lang, returnTo: location.href, sourceOrigin: c.sourceOrigin, tabContext: c.tabContext, rol }));
       const d = r.data as { authUrl?: string; alreadyGranted?: boolean };
-      // De hoofdmailbox was al gekoppeld (bv. in een ander tabblad): dat is GEEN fout. Zeg het, en bied «інший акаунт» aan.
-      if (d.alreadyGranted && !d.authUrl) { setGoogleKlaar(tr(lang, 'Основна скринька Gmail уже підключена. Щоб додати ще один акаунт Google, натисніть «Вибрати інший акаунт Google».', 'De hoofd-Gmail is al gekoppeld. Om nog een Google-account toe te voegen, kies «Ander Google-account kiezen».')); const hoofd: GoogleRol = 'primary'; setGoogleStand((v) => ({ accounts: [...(v?.accounts || []), { email: v?.sessionEmail || '', accountRole: hoofd }], sessionEmail: v?.sessionEmail || '', connectEnabled: true })); setBezig(false); return; }
+      // De hoofdmailbox was al gekoppeld (bv. in een ander tabblad): dat is GEEN fout. Zeg het, en bied «інший обліковий запис» aan.
+      if (d.alreadyGranted && !d.authUrl) { setGoogleKlaar(tr(lang, 'Основна скринька Gmail уже підключена. Щоб додати ще один обліковий запис Google, натисніть «Вибрати інший обліковий запис Google».', 'De hoofd-Gmail is al gekoppeld. Om nog een Google-account toe te voegen, kies «Ander Google-account kiezen».')); const hoofd: GoogleRol = 'primary'; setGoogleStand((v) => ({ accounts: [...(v?.accounts || []), { email: v?.sessionEmail || '', accountRole: hoofd }], sessionEmail: v?.sessionEmail || '', connectEnabled: true })); setBezig(false); return; }
       const url = String(d.authUrl || '');
       if (!url) throw new Error('GEEN_URL');
       location.assign(url);
@@ -161,8 +161,8 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
       const ontbreekt = ((gevangen as { response?: { data?: { provider?: { missing?: string[] } } } })?.response?.data?.provider?.missing || []).join(', ');
       setFout(code === 'MAIL_PROVIDER_GATES_INCOMPLETE'
         ? `${tr(lang, 'Microsoft 365 ще не ввімкнено на цьому сервері. Бракує:', 'Microsoft 365 is op deze server nog niet aangezet. Ontbreekt:')} ${ontbreekt || '—'}`
-        : code === 'MAIL_ADDITIONAL_ACCOUNTS_DISABLED' ? tr(lang, 'Адміністратор вимкнув додаткові поштові акаунти.', 'De beheerder heeft extra mailaccounts uitgezet.')
-        : code === 'MAIL_ACCOUNT_LIMIT_REACHED' ? tr(lang, 'Досягнуто межі в 12 поштових акаунтів.', 'De grens van 12 mailaccounts is bereikt.')
+        : code === 'MAIL_ADDITIONAL_ACCOUNTS_DISABLED' ? tr(lang, 'Адміністратор вимкнув додаткові поштові облікові записи.', 'De beheerder heeft extra mailaccounts uitgezet.')
+        : code === 'MAIL_ACCOUNT_LIMIT_REACHED' ? tr(lang, 'Досягнуто межі в 12 поштових облікових записів.', 'De grens van 12 mailaccounts is bereikt.')
         : code === 'OWNER_MAIL_SESSION_REQUIRED' ? googleStartFoutTekst(code, lang)
         : `${tr(lang, 'Підключення Microsoft 365 не розпочато. Код сервера:', 'De Microsoft 365-koppeling is niet gestart. Servercode:')} ${code || 'HTTP'}`);
     } finally { setBezig(false); }
@@ -222,7 +222,7 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
         return (
           <div className='mail-koppel-elders' style={isMaquette ? undefined : { display: 'grid', gap: 12 }}>
             <p style={{ margin: 0 }}>{googleStartFoutTekst('OWNER_MAIL_SESSION_REQUIRED', lang)}</p>
-            <a className='mail-koppel-actie-knop is-hoofd' href={mailAccountsAdres(location.origin)} onClick={(e) => { e.preventDefault(); void import('../canoniek-dienst').then((m) => location.assign(m.canonicalServiceUrl('mail', 'accounts', lang))).catch(() => location.assign(mailAccountsAdres(location.origin))); }} style={isMaquette ? undefined : { ...knop(true), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{tr(lang, 'Відкрити «Поштові акаунти»', '«E-mailaccounts» openen')}</a>
+            <a className='mail-koppel-actie-knop is-hoofd' href={mailAccountsAdres(location.origin)} onClick={(e) => { e.preventDefault(); void import('../canoniek-dienst').then((m) => location.assign(m.canonicalServiceUrl('mail', 'accounts', lang))).catch(() => location.assign(mailAccountsAdres(location.origin))); }} style={isMaquette ? undefined : { ...knop(true), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{tr(lang, 'Відкрити «Поштові облікові записи»', '«E-mailaccounts» openen')}</a>
           </div>
         );
       }
@@ -245,14 +245,14 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
             </div>
           </div>
           {gekoppeld.length ? <p className='mail-koppel-verbonden'>{tr(lang, 'Уже підключено:', 'Al gekoppeld:')} <strong>{gekoppeld.join(', ')}</strong>. {tr(lang,
-            'Для нової скриньки виберіть інший Google-акаунт.', 'Kies een ander Google-account voor een nieuwe mailbox.')}</p> : null}
+            'Для нової скриньки виберіть інший обліковий запис Google.', 'Kies een ander Google-account voor een nieuwe mailbox.')}</p> : null}
           {googleStandFout ? <div className='mail-koppel-status' role='alert'><p>{googleStandFout}</p><button type='button' className='mail-koppel-andere-account' onClick={() => setGoogleStandHerlaad((v) => v + 1)}>{tr(lang, 'Перевірити ще раз', 'Opnieuw controleren')}</button></div>
             : !googleStand ? <p className='mail-koppel-status' role='status'><Loader2 className='mail-koppel-draait' aria-hidden='true' /> {tr(lang, 'Перевіряємо ваші підключення…', 'Uw verbindingen worden gecontroleerd…')}</p>
             : !googleStand.connectEnabled ? <p className='mail-koppel-status' role='alert'>{tr(lang, 'Сервер поки не дозволяє підключення Google. Зверніться до адміністратора; ця кнопка не запускатиме безрезультатний вхід.', 'De server staat Google-koppeling nog niet toe. Neem contact op met de beheerder; de knop start geen mislukte aanmelding.')}</p>
             : hoofdWerkt ? (
               <button type='button' className='mail-koppel-hoofdactie' disabled={bezig} onClick={() => void googleStarten('additional')} data-mail-koppel-start data-mail-google-start='additional'>
                 <span className='mail-koppel-google-embleem' aria-hidden='true'><Logo id='google' naam='Google' logo='google' maat={24} /></span>
-                <span>{tr(lang, 'Додати інший Google-акаунт', 'Ander Google-account toevoegen')}</span>
+                <span>{tr(lang, 'Додати інший обліковий запис Google', 'Ander Google-account toevoegen')}</span>
                 {bezig ? <Loader2 className='mail-koppel-draait' size={21} aria-hidden='true' /> : <ArrowRight size={22} aria-hidden='true' />}
               </button>
             ) : (
@@ -264,7 +264,7 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
                 </button>
                 {googleStand.sessionEmail ? <p className='mail-koppel-email'>{tr(lang, 'Основна скринька:', 'Hoofdmailbox:')} <strong>{googleStand.sessionEmail}</strong></p> : null}
                 <button type='button' className='mail-koppel-andere-account' disabled={bezig} onClick={() => void googleStarten('additional')} data-mail-google-start='additional'>
-                  {tr(lang, 'Підключити інший Google-акаунт', 'Een ander Google-account koppelen')}
+                  {tr(lang, 'Підключити інший обліковий запис Google', 'Een ander Google-account koppelen')}
                 </button>
               </div>
             )}

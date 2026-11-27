@@ -13,7 +13,7 @@ const meta = arg('--meta') ? JSON.parse(readFileSync(arg('--meta'), 'utf8')) : {
 const d = JSON.parse(readFileSync('docs/ontwerp/identiteit-account/ВІДОМІСТЬ-ДІЙ.json', 'utf8'));
 const STATEN = ['працює в цьому оформленні', 'працює в іншому місці', 'частково працює', 'є лише в макеті', 'потребує налаштування власника', 'недоступно за задумом'];
 const KLASSE = { 'працює в цьому оформленні': 'ok', 'працює в іншому місці': 'elders', 'частково працює': 'deels', 'є лише в макеті': 'maquette', 'потребує налаштування власника': 'eigenaar', 'недоступно за задумом': 'nvt' };
-const SECTIE_NAAM = { personalization: 'Персоналізація', menu: 'Меню', themes: 'Вигляд і кольори', languages: 'Мови', widgets: 'Віджети', sharing: 'Спільний доступ', identities: 'Ідентичності', account: 'Акаунт і дані', sessions: 'Сесії та пристрої', methods: 'Способи входу', security: 'Безпека', recovery: 'Відновлення доступу' };
+const SECTIE_NAAM = { personalization: 'Персоналізація', menu: 'Меню', themes: 'Вигляд і кольори', languages: 'Мови', widgets: 'Віджети', sharing: 'Спільний доступ', identities: 'Ідентичності', account: 'Обліковий запис і дані', sessions: 'Сесії та пристрої', methods: 'Способи входу', security: 'Безпека', recovery: 'Відновлення доступу' };
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const na = (r) => r.staatNa || r.staatVoor;
 const tel = (rs, f) => Object.fromEntries(STATEN.map((s) => [s, rs.filter((r) => f(r) === s).length]));

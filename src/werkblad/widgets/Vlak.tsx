@@ -13,7 +13,7 @@ export const Leeg = ({ children, icoon }: { children: ReactNode; icoon?: ReactNo
 export const Fout = ({ lang, code, opnieuw }: { lang: Lang; code: string; opnieuw?: () => void }) => (
   <p className='wb-fout' role='alert'><AlertCircle aria-hidden='true' />
     <span>{/^(OWNER_|MCP_|ACCOUNT_|WERKBLAD_|ZOEK_)/.test(code) || /401|403/.test(code)
-      ? tr(lang, 'Ці дані доступні лише після входу у ваш акаунт.', 'Deze gegevens zijn alleen beschikbaar na aanmelden in uw account.')
+      ? tr(lang, 'Ці дані доступні лише після входу у ваш обліковий запис.', 'Deze gegevens zijn alleen beschikbaar na aanmelden in uw account.')
       : tr(lang, `Не вдалося завантажити дані (${code}).`, `Gegevens laden mislukt (${code}).`)}</span>
     {opnieuw ? <button type='button' className='knop-stil is-klein' onClick={opnieuw}><RefreshCw aria-hidden='true' />{tr(lang, 'Ще раз', 'Opnieuw')}</button> : null}
   </p>

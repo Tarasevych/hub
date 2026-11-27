@@ -61,7 +61,7 @@ export async function main(): Promise<number> {
     const op = geheugen();
     bewaarRecent('factuur', 'mail', NU - 5 * 60_000, A, op);
     bewaarRecent('Налаштування пошти', 'instellingen', NU - 3_600_000, A, op, { soort: 'functie', route: routeInst });
-    bewaarRecent('Поштові акаунти', 'paginas', NU - 60_000, A, op, { soort: 'pagina', route: { host: 'mail', pad: '/accounts' } });
+    bewaarRecent('Поштові облікові записи', 'paginas', NU - 60_000, A, op, { soort: 'pagina', route: { host: 'mail', pad: '/accounts' } });
     const l = leesRecent(A, op);
     check('A type bewaard: zoekopdracht, functie en pagina (nieuwste eerst)', l.map(r => r.soort).join() === 'pagina,functie,zoek');
     check('A functie en pagina bewaren hun route (om opnieuw rechtstreeks te openen); een zoekopdracht niet', l[1].route?.pad === '/instellingen' && l[1].route?.params?.focus === 'mail.koppelen' && l[0].route?.host === 'mail' && l[2].route === undefined);

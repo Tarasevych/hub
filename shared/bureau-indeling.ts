@@ -106,7 +106,7 @@ export const BUREAU_WIDGETS: readonly BureauWidgetDef[] = Object.freeze([
   },
   {
     id: 'diensten-stand', cat: 'diensten', titel: ['Стан моїх служб', 'Status van mijn diensten'],
-    uitleg: ['Пошта, календар, Drive, пристрої — стан саме вашого акаунта.', 'E-mail, agenda, Drive, apparaten — de stand van uw eigen account.'],
+    uitleg: ['Пошта, календар, Drive, пристрої — стан саме вашого облікового запису.', 'E-mail, agenda, Drive, apparaten — de stand van uw eigen account.'],
     k: 6, r: 3, minK: 4, minR: 2, stand: 'klaar', bron: 'POST /api/owner/diagnostiek/mijn-diensten',
   },
   {

@@ -119,10 +119,10 @@ export async function main(): Promise<number> {
     await A.page.waitForTimeout(200);
     check('Esc sluit het actiemenu (bewerkmodus blijft aan), focus terug op het item', (await A.page.locator('.menu-acties').count()) === 0 && (await A.page.locator('main').getAttribute('data-menu-bewerken')) === 'ja' && await A.page.evaluate((sl) => !!document.activeElement?.closest(`[data-menu-sleutel="${sl}"]`), tweede));
 
-    // ---- Ctrl+slepen = kopie: pagina «Акаунт» (Налаштування) naar Швидкий доступ, houdt de identity-kleur
+    // ---- Ctrl+slepen = kopie: pagina «Обліковий запис» (Налаштування) naar Швидкий доступ, houdt de identity-kleur
     const acc = 'pg:identity/account';
     const heeftAcc = await A.page.locator(knop(acc)).count();
-    check('sectie Налаштування toont «Акаунт» als sleepbaar item', heeftAcc > 0 && await A.page.locator(knop(acc)).first().isVisible(), String(heeftAcc));
+    check('sectie Налаштування toont «Обліковий запис» als sleepbaar item', heeftAcc > 0 && await A.page.locator(knop(acc)).first().isVisible(), String(heeftAcc));
     const t2 = await sleepMuis(A.page, knop(acc), '.menu-snelbalk', { kopie: true, deel: 0.6 });
     check('Ctrl tijdens slepen: geest toont «+» (kopie)', t2.kopie === 'ja', JSON.stringify(t2));
     const snel = await lijst(A.page, 'snelbalk|');
@@ -181,7 +181,7 @@ export async function main(): Promise<number> {
     await M.page.locator('[data-menu-indeling-instellingen]').waitFor({ timeout: 10000 });
     await M.page.locator('[data-menu-indeling-instellingen]').scrollIntoViewIfNeeded();
     const aangepast = await M.page.locator('[data-menu-item-terug]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.menuItemTerug));
-    check('instellingen: lijst met aangepaste items (incl. «Акаунт» met kopie)', aangepast.includes(acc) && aangepast.includes(tweede), aangepast.join(','));
+    check('instellingen: lijst met aangepaste items (incl. «Обліковий запис» met kopie)', aangepast.includes(acc) && aangepast.includes(tweede), aangepast.join(','));
     await M.page.screenshot({ path: `${UIT}/menu-47-instellingen-menu.png`, fullPage: false });
     await M.page.locator(`[data-menu-item-terug="${acc}"]`).click();
     const s4 = await wachtServer((s) => s.kopieen.length === 0);

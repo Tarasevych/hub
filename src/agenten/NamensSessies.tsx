@@ -73,7 +73,7 @@ export default function NamensSessies({ lang, context, alleenLezen = false }: { 
     <section className='ns' data-namens-sessies='' aria-labelledby='ns-titel'>
       <header className='ns-kop'>
         <div><h2 id='ns-titel'><UserCheck aria-hidden='true' />{tr(lang, 'Агенти від імені власника', 'Agents namens de eigenaar')}</h2>
-          <p>{tr(lang, 'Тимчасовий дозвіл агенту читати адмін-розділи від вашого імені. Лише з ключем доступу, до 8 годин. Агент не отримує вашої сесії чи cookie, усі його дії видно в журналі як дії агента. Змінювати ваш акаунт, ролі, доступи, політику ШІ чи секрети агент не може ніколи.', 'Tijdelijke toestemming voor een agent om beheerweergaven namens u te lezen. Alleen met passkey, maximaal 8 uur. De agent krijgt uw sessie of cookie niet; al zijn acties staan in het logboek als acties van de agent. Uw account, rollen, toegang, AI-beleid of geheimen kan een agent nooit wijzigen.')}</p></div>
+          <p>{tr(lang, 'Тимчасовий дозвіл агенту читати адмін-розділи від вашого імені. Лише з ключем доступу, до 8 годин. Агент не отримує вашої сесії чи cookie, усі його дії видно в журналі як дії агента. Змінювати ваш обліковий запис, ролі, доступи, політику ШІ чи секрети агент не може ніколи.', 'Tijdelijke toestemming voor een agent om beheerweergaven namens u te lezen. Alleen met passkey, maximaal 8 uur. De agent krijgt uw sessie of cookie niet; al zijn acties staan in het logboek als acties van de agent. Uw account, rollen, toegang, AI-beleid of geheimen kan een agent nooit wijzigen.')}</p></div>
         <div className='ns-knoppen'>
           <button type='button' onClick={() => void laden()} aria-label={tr(lang, 'Оновити', 'Vernieuwen')}><RefreshCw aria-hidden='true' /></button>
           {!alleenLezen ? <button type='button' className='ns-hoofd' onClick={() => setNieuw(true)}><Plus aria-hidden='true' />{tr(lang, 'Надати дозвіл', 'Toestemming geven')}</button> : null}
@@ -138,7 +138,7 @@ export default function NamensSessies({ lang, context, alleenLezen = false }: { 
             <fieldset><legend>{tr(lang, 'Що агент може читати', 'Wat de agent mag lezen')}</legend>
               {data.omvang.map((o) => <label key={o.id}><input type='checkbox' checked={omvang.includes(o.id)} onChange={(e) => setOmvang((v) => (e.target.checked ? [...v, o.id] : v.filter((x) => x !== o.id)))} /> {tr(lang, o.uk, o.nl)}</label>)}
             </fieldset>
-            <p className='ns-klein'>{tr(lang, 'Ніколи, навіть із дозволом: зміни акаунта власника, ролей, доступів, passkey, політики ШІ, секретів, видача дозволів іншим.', 'Nooit, ook niet met toestemming: wijzigingen aan het eigenaarsaccount, rollen, toegang, passkeys, AI-beleid, geheimen, rechten aan anderen geven.')}</p>
+            <p className='ns-klein'>{tr(lang, 'Ніколи, навіть із дозволом: зміни облікового запису власника, ролей, доступів, passkey, політики ШІ, секретів, видача дозволів іншим.', 'Nooit, ook niet met toestemming: wijzigingen aan het eigenaarsaccount, rollen, toegang, passkeys, AI-beleid, geheimen, rechten aan anderen geven.')}</p>
             <div className='ns-knoppen'>
               <button type='button' onClick={() => setNieuw(false)}><X aria-hidden='true' />{tr(lang, 'Скасувати', 'Annuleren')}</button>
               <button type='button' className='ns-hoofd' disabled={bezig === 'maak' || !omvang.length} onClick={() => void aanmaken()}><Fingerprint aria-hidden='true' />{tr(lang, `Підтвердити ключем доступу і дозволити на ${duurTekst(lang, minuten)}`, `Met passkey bevestigen en ${duurTekst(lang, minuten)} toestaan`)}</button>

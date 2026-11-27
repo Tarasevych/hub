@@ -1,7 +1,7 @@
 // MAIL-IMAP-LEZEN-001 (15.11.2026): de lijst en het lezen van berichten uit een IMAP-mailbox (Ukr.net, I.ua, iCloud, Yahoo …).
 //
-// WAAROM (klacht van de eigenaar, 15.11.2026, telefoon): «коли я переключаюся між підключеним акаунтом мені просто відкривається
-// оця сторінка поштових підключень замість того щоб переключитися на акаунт». IMAP-koppelingen werden wel bewaard en gecontroleerd
+// WAAROM (klacht van de eigenaar, 15.11.2026, telefoon): «коли я переключаюся між підключеним обліковим записом мені просто відкривається
+// оця сторінка поштових підключень замість того щоб переключитися на обліковий запис». IMAP-koppelingen werden wel bewaard en gecontroleerd
 // (backend/mail-imap.ts), maar er was geen enkele weg om de berichten te LEZEN.
 //
 // ONTWERP — privacy eerst (projectregel: ruimtes geïsoleerd en versleuteld, ook de servereigenaar mag niets kunnen lezen):

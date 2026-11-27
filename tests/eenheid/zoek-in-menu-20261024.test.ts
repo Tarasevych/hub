@@ -1,5 +1,5 @@
 // De globale zoekknop IN HET MENU op de post (24.10.2026, één update). Draaien: node scripts/eenheidstests.mjs zoek-in-menu-20261024
-// Wens van de eigenaar: «кнопка пошуку по всьому сайту з відділу пошти замість того щоб бути поверх меню акаунтів пошти, буде
+// Wens van de eigenaar: «кнопка пошуку по всьому сайту з відділу пошти замість того щоб бути поверх меню облікових записів пошти, буде
 // відображено натомість в меню між фото профілю та кнопкою редагування меню».
 //  A. bron (src/CanoniekOmlijsting.tsx): op de post (current==='mail') geen veld-knop in .canonical-account-anchor en geen ronde knop
 //     (.zk-trigger-mobiel) in de bovenbalk, wél één ZoekGlobaal zonderKnop (palet + ⌘K, ook met de lade dicht); lade-kop in de volgorde

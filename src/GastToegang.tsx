@@ -143,7 +143,7 @@ export default function GastToegang(){
     <section className='gast-kaart' data-gast-inwisselen>
       {isMaquette&&<div className='mq-gast-bovenregel'><span className='mq-gast-lijn' aria-hidden='true'/><span>{tr(lang,'МІЙ ПРОСТІР · ГОСТЬОВИЙ ДОСТУП','MIJN RUIMTE · GASTTOEGANG')}</span></div>}
       <header><KeyRound aria-hidden='true'/><h1>{tr(lang,'Гостьовий доступ','Gasttoegang')}</h1>{taalKnop}</header>
-      <p>{tr(lang,'Введіть код доступу, який вам дав власник. Ви отримаєте окрему гостьову сесію лише для перегляду — це не вхід у чужий акаунт.','Voer de toegangscode in die u van de eigenaar kreeg. U krijgt een aparte gastsessie, alleen om te bekijken — u logt niet in op iemands account.')}</p>
+      <p>{tr(lang,'Введіть код доступу, який вам дав власник. Ви отримаєте окрему гостьову сесію лише для перегляду — це не вхід у чужий обліковий запис.','Voer de toegangscode in die u van de eigenaar kreeg. U krijgt een aparte gastsessie, alleen om te bekijken — u logt niet in op iemands account.')}</p>
       {weg&&<p className='gast-melding' role='status'>{tr(lang,'Гостьову сесію завершено: код відкликано або строк дії минув.','De gastsessie is beëindigd: de code is ingetrokken of verlopen.')}</p>}
       <form onSubmit={e=>{e.preventDefault();if(codeStatus.volledig)void inwisselen();}} noValidate>
         <label htmlFor='gast-code'>{tr(lang,'Код доступу','Toegangscode')}</label>

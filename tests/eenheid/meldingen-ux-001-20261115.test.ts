@@ -1,7 +1,7 @@
 // MELDINGEN-UX-001 (15.11.2026): twee panelen bij de bel — compacte panel en zwevend venster — met één wissel op dezelfde plek
 // (vlak voor ✕) in beide richtingen; de keuze in de accountvoorkeuren (alle subdomeinen), niet meer alleen localStorage per
 // subdomein; kaarten in het venster krimpen niet meer tot smalle stroken; venster opent onder de bel.
-// MELDINGEN-UX-001: дві панелі біля дзвіночка з однаковим перемикачем; вибір вигляду в налаштуваннях акаунта; картки не стискаються.
+// MELDINGEN-UX-001: дві панелі біля дзвіночка з однаковим перемикачем; вибір вигляду в налаштуваннях облікового запису; картки не стискаються.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checker } from './hulp/nep-google';

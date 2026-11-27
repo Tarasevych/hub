@@ -408,7 +408,7 @@ function WerkbladV2({ lang, ownerUserId, naam, magBewerken, rechten, oudeBlokken
       ) : null}
       {fout ? <p className='wb-fout-balk melding melding-warn' role='alert'>{fout === 'VEROUDERD'
         ? tr(lang, 'Розкладку змінили в іншій вкладці або на іншому пристрої — показано новішу версію.', 'De indeling is in een ander tabblad of op een ander apparaat gewijzigd — de nieuwere versie wordt getoond.')
-        : /^OWNER_HUB_WERKBLAD_|401|403/.test(fout) ? tr(lang, 'Розкладку столу можна зберегти лише після входу у ваш акаунт.', 'De indeling kan alleen worden bewaard als u in uw account bent aangemeld.')
+        : /^OWNER_HUB_WERKBLAD_|401|403/.test(fout) ? tr(lang, 'Розкладку столу можна зберегти лише після входу у ваш обліковий запис.', 'De indeling kan alleen worden bewaard als u in uw account bent aangemeld.')
           : tr(lang, `Розкладку не збережено (${fout}).`, `De indeling is niet bewaard (${fout}).`)}</p> : null}
       <p className='sr-only' aria-live='polite' data-wb-melding=''>{melding}</p>
       {instellen ? <p className='wb-uitleg'>{tr(lang, 'Перетягніть заголовок, щоб переставити; куток — щоб змінити розмір. З клавіатури: стрілки, Shift+стрілки, Delete.', 'Sleep de kop om te verplaatsen; de hoek om het formaat te wijzigen. Toetsenbord: pijltjes, Shift+pijltjes, Delete.')}</p> : null}

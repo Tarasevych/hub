@@ -184,7 +184,7 @@ export default function SleutelsDrieFactoren({ lang, context, data }: Props) {
           <p className='ut-sub'>
             {tr(
               lang,
-              'Кожен адміністратор чи делегована особа має власний відкличний ключ. Для повного права «Завантаження + встановлення» потрібна взаємна синхронізація всіх 3 чинників: компрометація одного акаунта не дає встановити підроблене оновлення.',
+              'Кожен адміністратор чи делегована особа має власний відкличний ключ. Для повного права «Завантаження + встановлення» потрібна взаємна синхронізація всіх 3 чинників: компрометація одного облікового запису не дає встановити підроблене оновлення.',
               'Elke beheerder of gedelegeerde heeft een eigen intrekbare sleutel. Voor «Uploaden + installeren» is wederzijdse synchronisatie van alle 3 factoren vereist: inbraak op één account laat geen vervalste update toe.',
             )}
           </p>
@@ -238,7 +238,7 @@ export default function SleutelsDrieFactoren({ lang, context, data }: Props) {
               placeholder={tr(lang, 'Наприклад: Павло · Основний GitHub+MCP', 'Bijv.: Pavlo · Hoofd GitHub+MCP')} />
           </label>
           <label>
-            <span>{tr(lang, 'Адміністратор / акаунт', 'Beheerder / account')}</span>
+            <span>{tr(lang, 'Адміністратор / обліковий запис', 'Beheerder / account')}</span>
             <select data-hulp-vrij='keuze' value={userId} onChange={(e) => setUserId(e.target.value)}>
               {data.ik?.id && <option value={data.ik.id}>{data.ik.naam || data.ik.email || data.ik.id}</option>}
               {accounts.filter((a) => a.id !== data.ik?.id).map((a) => (

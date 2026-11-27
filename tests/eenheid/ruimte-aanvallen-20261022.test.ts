@@ -1,6 +1,6 @@
 // AANVALLEN OP DE RUIMTE VAN EEN ANDER (22.10.2026, zone C). Vraag van de eigenaar: «чи неможливо через код чи спроби взлому потрапити в
 // чужий простір, витягнути дані чи попасти на сервер іншого користувача» + de drie overtredingen op de pagina «Звірка» (app.rls_audit):
-//   • POST /api/owner/session/bootstrap · owner_browser_grants_v1 · lezen · 74×   — tabblad-account ≠ anker-account (B-005 «один акаунт
+//   • POST /api/owner/session/bootstrap · owner_browser_grants_v1 · lezen · 74×   — tabblad-account ≠ anker-account (B-005 «один обліковий запис
 //     на вкладку»): de bootstrap las de «onthouden browser»-toestemming van het ANKER in de context van het TABBLAD-account.
 //     Fix: bewuste systeemstap met expliciete voorwaarde (grant.userId === anker.userId), backend/index.ts bootstrap.
 //   • POST /api/access/request · notification_jobs · toevoegen · 2×            — taken voor de eigenaar zonder ontvanger (owner_id NULL),

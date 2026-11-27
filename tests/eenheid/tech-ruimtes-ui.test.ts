@@ -10,7 +10,7 @@ export async function main(): Promise<number> {
   check('termijn tijd UA exact «На час (до 18:40)»', termijnNaam('tijd', 'uk', eind) === 'На час (до 18:40)', termijnNaam('tijd', 'uk', eind));
   check('termijn tijd NL «Voor een tijd (tot 18:40)»', termijnNaam('tijd', 'nl', eind) === 'Voor een tijd (tot 18:40)');
   check('termijn tot-technisch-einde UA exact', termijnNaam('tot-technisch-einde', 'uk') === 'До завершення технічного сеансу');
-  check('termijn tot-site-uitloggen UA exact', termijnNaam('tot-site-uitloggen', 'uk') === 'До виходу з акаунта на сайті');
+  check('termijn tot-site-uitloggen UA exact', termijnNaam('tot-site-uitloggen', 'uk') === 'До виходу з облікового запису на сайті');
   check('NL-namen aanwezig', termijnNaam('tot-technisch-einde', 'nl').startsWith('Tot het einde') && termijnNaam('tot-site-uitloggen', 'nl').includes('site'));
   check('uitleg tijd noemt eindtijd en «вхід на сайт лишається»', termijnUitleg('tijd', 'uk', eind).includes('18:40') && termijnUitleg('tijd', 'uk', eind).includes('вхід на сайт лишається'));
   check('uitleg tot-site-uitloggen: pauze ≠ einde', termijnUitleg('tot-site-uitloggen', 'uk').includes('на паузу'));

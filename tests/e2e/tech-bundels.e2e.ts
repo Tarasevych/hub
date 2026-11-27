@@ -2,7 +2,7 @@
 //  1) aangemeld, ZONDER technisch profiel: mail en hub vragen geen enkel bestand onder /assets/tech/; zelf ophalen → 404;
 //  2) technisch profiel aan → admin laadt de beheerbundel uit /assets/tech/ (200, Cache-Control: private, no-store, Vary: Cookie);
 //  3) uitzetten → de cookie is weg en /assets/tech/ is weer 404;
-//  4) Налаштування → Акаунт: «Стан моїх служб» zichtbaar, op 390 px zonder horizontaal scrollen.
+//  4) Налаштування → Обліковий запис: «Стан моїх служб» zichtbaar, op 390 px zonder horizontaal scrollen.
 import { createRequire } from 'node:module';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -75,13 +75,13 @@ export async function main(): Promise<number> {
     await p2.goto(`${ID}/account`, { waitUntil: 'networkidle' });
     const sectie = p2.locator('[data-mijn-diensten="1"]');
     const zichtbaar = await sectie.waitFor({ timeout: 15000 }).then(() => true, () => false);
-    check('Налаштування → Акаунт: «Стан моїх служб» zichtbaar', zichtbaar, (await p2.locator('body').innerText().catch(() => '')).slice(0, 160));
+    check('Налаштування → Обліковий запис: «Стан моїх служб» zichtbaar', zichtbaar, (await p2.locator('body').innerText().catch(() => '')).slice(0, 160));
     if (zichtbaar) {
       await p2.locator('[data-mijn-diensten-knop="1"]').click();
       await p2.waitForResponse((q) => q.url().endsWith('/api/owner/diagnostiek/mijn-diensten') && q.request().postData()?.includes('"uitvoeren":true') === true, { timeout: 20000 }).catch(() => null);
       await p2.waitForTimeout(500);
       const rijen = await p2.locator('[data-mdt-dienst]').count();
-      check('«Перевірити зараз»: 7 diensten, kolom «Мій акаунт», geen serverkolom', rijen === 7 && ((await sectie.textContent()) || '').includes('Мій акаунт') && !((await sectie.textContent()) || '').includes('Сервер (для всіх)'), String(rijen));
+      check('«Перевірити зараз»: 7 diensten, kolom «Мій обліковий запис», geen serverkolom', rijen === 7 && ((await sectie.textContent()) || '').includes('Мій обліковий запис') && !((await sectie.textContent()) || '').includes('Сервер (для всіх)'), String(rijen));
       const breed = await p2.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       check('390 px: geen horizontaal scrollen', breed <= 1, String(breed));
       await sectie.screenshot({ path: `${UIT}/mijn-diensten-390.png` }).catch(() => undefined);

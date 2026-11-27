@@ -6,7 +6,7 @@
 // 3. Notities: potloodje bij de passkey, de set en code 4; opslaan; blijft na herladen; > 500 tekens kan niet.
 // 4. Recht intrekken: reden verplicht (knop pas actief bij ≥ 10 tekens); de server weigert de (nog geldige) Google-step-up
 //    (STEP_UP_STRONG_REQUIRED) → venster zonder Google-knop → passkey → intrekverzoek; status «Відкликається сервером…».
-// 5. Melding «Це були ви?» in de bel (andere sessie) → link → paneel → «Це був не я — скасувати та захистити акаунт» → passkey →
+// 5. Melding «Це були ви?» in de bel (andere sessie) → link → paneel → «Це був не я — скасувати та захистити обліковий запис» → passkey →
 //    recht behouden (root had nog niet verwerkt), de sessie die de wijziging deed is uitgelogd.
 // 6. «Історія» bij de passkey en het journaal op /agents (soort «Права й ключі»).
 import { createRequire } from 'node:module';

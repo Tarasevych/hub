@@ -538,7 +538,7 @@ async function appTests(basis: string, check: Check) {
     writeFileSync(join(o.statusDir, 'status.json'), JSON.stringify({ staat: 'klaar', code: 'SSH_OK', versie: '20261008-150003', methode: 'ssh', uk: 'з SSH', nl: 'via SSH', tijd: new Date().toISOString() }));
     const ovSsh = await call('POST /api/owner/uitrol/overzicht', OWNER);
     check('app: status.json met methode ssh installeert geen wachtend voorstel', ovSsh.data.voorstellen.find((v: any) => v.id === u2.id)?.status === 'wacht-op-goedkeuring' && ovSsh.data.voorstellen.find((v: any) => v.id === u1.id)?.status === 'geinstalleerd');
-    // SEC-PAKKET-001 (власник 16.11.2026): причина відхилення обов'язкова (хоч одним словом), зберігається з акаунтом і йде в сповіщення.
+    // SEC-PAKKET-001 (власник 16.11.2026): причина відхилення обов'язкова (хоч одним словом), зберігається з обліковим записом і йде в сповіщення.
     { const leeg = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: '' });
       const spaties = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: '  ... !! ' });
       const zonder = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id });

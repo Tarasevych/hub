@@ -22,8 +22,8 @@ export async function main(): Promise<number> {
   check('ruimteVanStatus: vlag uit → prive', ruimteVanStatus({ aan: false, actief: 'technisch' }) === 'prive');
   check('ruimteVanStatus: null → prive', ruimteVanStatus(null) === 'prive');
   check('ruimteVanStatus: aan+technisch → technisch', ruimteVanStatus({ aan: true, actief: 'technisch' }) === 'technisch');
-  const f403 = Object.assign(new Error('SITE_SESSIE_WEG'), { response: { data: { error: 'SITE_SESSIE_WEG', uitleg: { uk: 'Ви вийшли з акаунта на сайті.', nl: 'U bent afgemeld op de site.' } } } });
-  check('403-uitleg van de server getoond (UA)', wisselFoutTekst(f403, 'uk') === 'Ви вийшли з акаунта на сайті. Ви лишилися там, де були.');
+  const f403 = Object.assign(new Error('SITE_SESSIE_WEG'), { response: { data: { error: 'SITE_SESSIE_WEG', uitleg: { uk: 'Ви вийшли з облікового запису на сайті.', nl: 'U bent afgemeld op de site.' } } } });
+  check('403-uitleg van de server getoond (UA)', wisselFoutTekst(f403, 'uk') === 'Ви вийшли з облікового запису на сайті. Ви лишилися там, де були.');
   check('403-uitleg van de server getoond (NL)', wisselFoutTekst(f403, 'nl').startsWith('U bent afgemeld op de site.'));
   check('zonder uitleg: code + «лишилися»', wisselFoutTekst(new Error('NETWERK'), 'uk').includes('(NETWERK)') && wisselFoutTekst(new Error('X'), 'uk').endsWith('там, де були.'));
   // Seintje: nep-window/document

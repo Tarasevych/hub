@@ -1,4 +1,4 @@
-/* «Стан моїх служб» en de tabel «Сервер (для всіх) / Цей акаунт». Kleuren uit het thema (--panel, --line, --text, --muted). */
+/* «Стан моїх служб» en de tabel «Сервер (для всіх) / Цей обліковий запис». Kleuren uit het thema (--panel, --line, --text, --muted). */
 .mdt-sectie{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);min-width:0}
 .mdt-sectie>header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .mdt-sectie h3{display:flex;align-items:center;gap:8px;margin:0;font-size:1rem}

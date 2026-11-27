@@ -1,7 +1,7 @@
 // DE OVERZICHTSPROJECTIES EN DE GESCHEIDEN GEGEVENSRUIMTES (kern: shared/ruimte-scheiding.ts, backend/ruimte-scheiding.ts).
 //
 // WAAROM DIT BESTAND BESTAAT — EEN GAT DAT ECHT OPEN STOND (klacht 1 van de eigenaar, 20.10.2026):
-//   «У технічному профілі поштові акаунти не підключені, але при цьому я бачу пошту в обох акаунтах.»
+//   «У технічному профілі поштові облікові записи не підключені, але при цьому я бачу пошту в обох облікових записах.»
 //
 //   De poort van post (backend/mail-ruimte.ts) hangt vóór ELKE route onder /api/owner/mail/ en /api/owner/contacten/, en de
 //   poort van de hmara en de agenda (backend/ruimte-cloud-agenda.ts) vóór elke route onder /api/owner/cloud/ en
@@ -14,7 +14,7 @@
 //       (backend/site-hulpmiddelen.ts), dus het gat stond ook open voor elke connector.
 //   Beide lazen `db.list(tabel, { filter: { ownerUserId } })`: één mens = één lade, in BEIDE richtingen fout. In de
 //   technische ruimte gaf dat de persoonlijke post te zien (waarover de klacht gaat) en in de persoonlijke ruimte de
-//   technische rijen — ook dat is «пошту в обох акаунтах».
+//   technische rijen — ook dat is «пошту в обох облікових записах».
 //
 // WAT HIER STAAT, EN NIETS MEER
 //   Eén manier om vanuit zo'n projectieroute dezelfde vraag te stellen die de poorten stellen, en één manier om rijen op hun

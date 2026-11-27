@@ -1,4 +1,4 @@
-// «Якщо акаунти Google або інші видають фото відправника — вони також мають відображатися в нас на сервісі» (eigenaar, 21.10.2026).
+// «Якщо облікові записи Google або інші видають фото відправника — вони також мають відображатися в нас на сервісі» (eigenaar, 21.10.2026).
 //
 // De HELE weg, door de echte router van de site (backend/index.ts → metMailRuimte → backend/merk-bron.ts) met een nagebootste
 // Google (hulp/nep-google.ts + onderschepte fetch) en een nagebootste beeldserver (hulp/nep-merk-web.ts). Er gaat niets naar buiten.

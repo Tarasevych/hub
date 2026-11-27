@@ -112,7 +112,7 @@ type Props = {
   onTheme: (theme: AccountTheme) => void;
   onLoadAccounts?: () => Promise<AccountMenuSnapshot | RememberedAccount[]>;
   /**
-   * KLACHT 2 VAN DE EIGENAAR (20.10.2026): «Треба додати можливість перепідключатися між акаунтами швидко, без натискання
+   * KLACHT 2 VAN DE EIGENAAR (20.10.2026): «Треба додати можливість перепідключатися між обліковими записами швидко, без натискання
    * "вийти з технічного".» Het wisselen zelf kon al (POST /api/owner/session/replace-tab-remembered beëindigt de technische
    * activering van het VORIGE account — R-05 van de audit van 19.10), maar de mens zag daar niets van in het menu: zij werd
    * stil in een ander profiel gezet en moest zelf raden waar zij uitkwam.
@@ -173,8 +173,8 @@ function leesPortaalContext(fallbackThema: AccountTheme): PortaalContext {
 const copy = {
   uk: {
     accounts: 'Облікові записи',
-    close: 'Закрити меню акаунтів',
-    choose: 'Оберіть відомий акаунт або додайте інший',
+    close: 'Закрити меню облікових записів',
+    choose: 'Оберіть відомий обліковий запис або додайте інший',
     firstLoginHint: 'Увійдіть, щоб відкрити свій простір',
     none: 'Відомих облікових записів немає.',
     add: 'Додати інший обліковий запис',
@@ -182,10 +182,10 @@ const copy = {
     manage: 'Керування обліковим записом',
     show: 'Показати інші облікові записи',
     hide: 'Сховати інші облікові записи',
-    chooseExpanded: 'Оберіть інший відомий акаунт або додайте новий',
+    chooseExpanded: 'Оберіть інший відомий обліковий запис або додайте новий',
     settings: 'Налаштування',
-    logout: 'Вийти з цього акаунту',
-    logoutAll: 'Вийти з усіх акаунтів',
+    logout: 'Вийти з цього облікового запису',
+    logoutAll: 'Вийти з усіх облікових записів',
     language: 'Мова',
     theme: 'Тема',
     light: 'Світла',
@@ -209,7 +209,7 @@ const copy = {
     terms: 'Умови',
     loading: 'Оновлюємо список…',
     loadFailed: 'Не вдалося оновити список. Поточні дані збережено.',
-    forget: 'Забути цей акаунт',
+    forget: 'Забути цей обліковий запис',
     active: 'Активний',
     signedIn: 'Увійдено',
     reauth: 'Потрібен вхід',
@@ -217,12 +217,12 @@ const copy = {
     changePhoto: 'Змінити фото профілю',
     photoFailed: 'Не вдалося змінити фото. Спробуйте інше зображення.',
     // Klacht 2 (20.10.2026): snel wisselen zonder eerst «вийти з технічного», en altijd zichtbaar waar je uitkwam.
-    wisselKop: 'Ви перемкнулися на інший акаунт',
+    wisselKop: 'Ви перемкнулися на інший обліковий запис',
     wisselProfielGebruiker: 'Профіль: користувацький',
     wisselProfielTech: 'Профіль: технічний',
-    wisselTechNietMee: 'Технічний профіль не переноситься між акаунтами: активація прив’язана до людини й до цієї вкладки.',
-    wisselTechBeeindigd: 'Технічний профіль попереднього акаунта завершено під час перемикання.',
-    wisselTechAan: 'Увімкнути технічний профіль для цього акаунта',
+    wisselTechNietMee: 'Технічний профіль не переноситься між обліковими записами: активація прив’язана до людини й до цієї вкладки.',
+    wisselTechBeeindigd: 'Технічний профіль попереднього облікового запису завершено під час перемикання.',
+    wisselTechAan: 'Увімкнути технічний профіль для цього облікового запису',
     wisselTechGeenRecht: 'Цей обліковий запис не має технічного профілю, тому вмикати нічого.',
   },
   nl: {
@@ -283,7 +283,7 @@ const copy = {
 /**
  * KLACHT 2 VAN DE EIGENAAR (20.10.2026) — WAT HET MENU ZEGT NA EEN SNELLE WISSEL, als pure functie.
  *
- * «Треба додати можливість перепідключатися між акаунтами швидко, без натискання "вийти з технічного".» Wisselen kon al,
+ * «Треба додати можливість перепідключатися між обліковими записами швидко, без натискання "вийти з технічного".» Wisselen kon al,
  * maar het gebeurde STIL: het menu ging dicht en de mens stond ergens anders zonder te weten in welk profiel. Daarom is dit
  * de enige plek waar bepaald wordt wat er na een wissel te lezen staat — pure invoer, pure uitvoer, dus de eenheidstest
  * meet de echte regels en niet een stuk tekst uit de bron:
@@ -297,7 +297,7 @@ const copy = {
 /** UI-008: één ⓘ per blok in het v2-menu; vervangt de vaste uitlegregels (zelfde inhoud, alleen op verzoek). */
 const V2_HULP = {
   sessie: {
-    wat: ['Вихід, додавання іншого акаунта й вихід з усіх акаунтів у цьому браузері.', 'Afmelden, een ander account toevoegen en afmelden bij alle accounts in deze browser.'],
+    wat: ['Вихід, додавання іншого облікового запису й вихід з усіх облікових записів у цьому браузері.', 'Afmelden, een ander account toevoegen en afmelden bij alle accounts in deze browser.'],
     gevolg: [UITLOG_KEUZES[1].gevolg.uk, UITLOG_KEUZES[1].gevolg.nl],
   },
   weergave: {
@@ -439,7 +439,7 @@ export default function CanonicalAccountMenu({
   const am2 = !am3 && ((am3Vlag && gekozenMenuStijl === 'v2') || (!am3Vlag && am2Vlag && gekozenMenuStijl !== 'klassiek'));
   const mobielVenster = useMobielAccountVenster();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
-  // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
+  // «Вийти з облікового запису на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
   useEffect(() => {
     if (!v2) return;
     const op = (e: Event) => { const k = (e as CustomEvent<string>).detail; if (k === 'site') onLogout?.(); };
@@ -1342,7 +1342,7 @@ export default function CanonicalAccountMenu({
                   <div className={`am2-blok am2-sessie canonical-session-actions ${expanded ? 'expanded' : 'collapsed'}`} data-am2-blok='sessie' data-account-add-placement={expanded ? 'expanded-list' : 'session-row'}>
                     <div className='am2-sessie-rij'>
                       {!expanded && (
-                        <IconAction icon={<Plus />} label={lang === 'uk' ? 'Додати акаунт' : 'Account toevoegen'} onClick={add} className='canonical-menu-action add-account session-add-account' disabled={busy} />
+                        <IconAction icon={<Plus />} label={lang === 'uk' ? 'Додати обліковий запис' : 'Account toevoegen'} onClick={add} className='canonical-menu-action add-account session-add-account' disabled={busy} />
                       )}
                       {onLogout && (
                         <IconAction icon={<LogOut />} label={lang === 'uk' ? 'Вийти' : 'Afmelden'} onClick={() => { close(); onLogout(); }} className='canonical-menu-action logout-current' disabled={busy} />

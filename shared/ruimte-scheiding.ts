@@ -288,8 +288,8 @@ export const oorzaakOf = (v: unknown): Oorzaak => ((OORZAKEN as readonly string[
 export const OORZAAK_NAAM: Readonly<Record<Oorzaak, { uk: string; nl: string }>> = Object.freeze({
   'rol-weg': { uk: 'Змінено роль', nl: 'Rol gewijzigd' },
   'profiel-ingetrokken': { uk: 'Відкликано технічний профіль', nl: 'Technisch profiel ingetrokken' },
-  'account-geblokkeerd': { uk: 'Акаунт заблоковано', nl: 'Account geblokkeerd' },
-  'account-verwijderd': { uk: 'Акаунт видалено', nl: 'Account verwijderd' },
+  'account-geblokkeerd': { uk: 'Обліковий запис заблоковано', nl: 'Account geblokkeerd' },
+  'account-verwijderd': { uk: 'Обліковий запис видалено', nl: 'Account verwijderd' },
 });
 
 // ------------------------------------------------------------------------------------------------ logboekcodes

@@ -261,7 +261,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
         <div className='cvi-werkbalk'>
           {verbonden.length > 1 ? (
             <label className='cvi-accountkeuze'>
-              <span className='cvn-hint'>{tr(lang, 'Акаунт', 'Account')}</span>
+              <span className='cvn-hint'>{tr(lang, 'Обліковий запис', 'Account')}</span>
               <select value={accountId} onChange={(e) => { setAccountId(e.target.value); setKruimels([]); setBestanden([]); setZoekVeld(''); }}>
                 {verbonden.map((a) => <option key={a.id} value={a.id}>{a.email}</option>)}
               </select>
@@ -269,7 +269,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
           ) : <span className='cvn-hint'>{verbonden[0]?.email}</span>}
           <div className='cvi-zoek' role='search'>
             <Search aria-hidden='true' />
-            <input value={zoekVeld} onChange={(e) => setZoekVeld(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void blader(huidigeMap, kruimels, zoekVeld.trim()); }} placeholder={tr(lang, 'Пошук у цьому акаунті', 'Zoeken in dit account')} aria-label={tr(lang, 'Пошук у Google Drive', 'Zoeken in Google Drive')} />
+            <input value={zoekVeld} onChange={(e) => setZoekVeld(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void blader(huidigeMap, kruimels, zoekVeld.trim()); }} placeholder={tr(lang, 'Пошук у цьому обліковому записі', 'Zoeken in dit account')} aria-label={tr(lang, 'Пошук у Google Drive', 'Zoeken in Google Drive')} />
             <button type='button' className='cvn-knop is-klein' disabled={lijstLaden} onClick={() => void blader(huidigeMap, kruimels, zoekVeld.trim())}>{tr(lang, 'Знайти', 'Zoeken')}</button>
           </div>
           <div className='cvi-werkbalk-rechts'>

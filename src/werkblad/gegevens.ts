@@ -151,7 +151,7 @@ export const haalAiToegangSamenvatting = (force = false) => viaBak(aiToegangBak,
   };
 });
 
-/** «Перевірити зараз» bij de stand van de diensten: dezelfde controle als «Налаштування» → «Акаунт» (alleen het eigen account; server begrenst 10 / 10 min). */
+/** «Перевірити зараз» bij de stand van de diensten: dezelfde controle als «Налаштування» → «Обліковий запис» (alleen het eigen account; server begrenst 10 / 10 min). */
 export const dienstenControleren = async () => { await api.post('/api/owner/diagnostiek/mijn-diensten', hubAuthBody({ uitvoeren: true })); };
 
 /** Alles vergeten (na «Оновити» op het werkblad). */

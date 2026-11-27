@@ -16,7 +16,7 @@ export function ProfielRuimteKaart({ lang }: { lang: 'uk' | 'nl' }) {
   const uk = lang === 'uk';
   if (!v2 || (r.status && !r.status.aan)) {
     return <p className='mq-echt-noot' data-profiel-ruimte='uit'>{uk
-      ? 'Перемикання «Звичайний / Технічний простір» на сайті вимкнене. Його вмикає власник сайту: технічний профіль → «Перемикачі функцій» → «Два простори одного акаунта (нова версія)» (tech-ruimtes-v2). До того ви завжди у звичайному просторі.'
+      ? 'Перемикання «Звичайний / Технічний простір» на сайті вимкнене. Його вмикає власник сайту: технічний профіль → «Перемикачі функцій» → «Два простори одного облікового запису (нова версія)» (tech-ruimtes-v2). До того ви завжди у звичайному просторі.'
       : 'Wisselen tussen gewone en technische ruimte staat uit op de site. De eigenaar zet het aan: technisch profiel → «Functieschakelaars» → «Twee ruimtes van één account (nieuwe versie)» (tech-ruimtes-v2). Tot dan bent u altijd in de gewone ruimte.'}</p>;
   }
   if (!r.geladen) return <p className='mq-echt-noot' role='status' data-profiel-ruimte='laden'>{uk ? 'Перевіряю стан простору…' : 'Stand van de ruimte controleren…'}</p>;

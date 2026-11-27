@@ -166,8 +166,8 @@ export async function main(): Promise<number> {
   const ad = await import('../../backend/beheer-diagnostiek');
   check('serverRonde + cron-handler bestaan; knop «Перевірити» gebruikt dezelfde ronde', typeof ad.serverRonde === 'function' && typeof ad.diagnostiekServerCron === 'function' && lees('backend/beheer-diagnostiek.ts').includes('await serverRonde(ids, { id: auth.user.id'));
   const inst = lees('src/InstellingencentrumWeergave.tsx'), md = lees('src/instellingen/MijnDiensten.tsx');
-  check('Налаштування → Акаунт: «Стан моїх служб» (alleen eigen account, geen serverkolom)', inst.includes('<MijnDiensten lang={p.lang}/>') && md.includes("'/api/owner/diagnostiek/mijn-diensten'") && md.includes('metServer={false}') && !/mijn-diensten', \{[^}]*gebruikerId/.test(md));
-  check('Діагностика: tab «Для всіх / цей акаунт» + tabel bij «Скарга користувача»', lees('src/diagnostiek/Diagnostiek.tsx').includes("tab === 'account' && <AccountTabel") && lees('src/diagnostiek/GebruikerTab.tsx').includes('<AccountTabel lang={lang} ctx={ctx} gebruikerId={detail.gebruiker.id} />'));
+  check('Налаштування → Обліковий запис: «Стан моїх служб» (alleen eigen account, geen serverkolom)', inst.includes('<MijnDiensten lang={p.lang}/>') && md.includes("'/api/owner/diagnostiek/mijn-diensten'") && md.includes('metServer={false}') && !/mijn-diensten', \{[^}]*gebruikerId/.test(md));
+  check('Діагностика: tab «Для всіх / цей обліковий запис» + tabel bij «Скарга користувача»', lees('src/diagnostiek/Diagnostiek.tsx').includes("tab === 'account' && <AccountTabel") && lees('src/diagnostiek/GebruikerTab.tsx').includes('<AccountTabel lang={lang} ctx={ctx} gebruikerId={detail.gebruiker.id} />'));
   const css = lees('src/instellingen/mijn-diensten.css');
   check('390px: tabel wordt kaarten (geen horizontaal scrollen), kleuren uit het thema', /@media \(max-width:560px\)/.test(css) && css.includes('var(--panel)') && !/#fff\b|#000\b/.test(css));
   return einde();

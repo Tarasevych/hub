@@ -32,7 +32,7 @@ export default function UitloggenKeuze({ taal, sluit }: { taal: Taal; sluit: () 
       location.assign(canonicalNavigationUrl('identity', 'sessions', taal));
       return;
     }
-    setMelding({ ok: true, tekst: uk ? 'Виходжу з акаунта на сайті…' : 'Afmelden op de site…' });
+    setMelding({ ok: true, tekst: uk ? 'Виходжу з облікового запису на сайті…' : 'Afmelden op de site…' });
     window.dispatchEvent(new CustomEvent(UITLOG_GEBEURTENIS, { detail: k.id }));
   };
   return (

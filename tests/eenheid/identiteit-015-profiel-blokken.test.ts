@@ -134,7 +134,7 @@ export async function main(): Promise<number> {
       /useEffect\(\(\) => \(\) => \{\s*actief\.current = false;\s*if \(wachtend\.current && idRef\.current\) void intrekken\(ctxRef\.current, idRef\.current\)/.test(kanaal)
       && kanaal.includes("if (s !== 'wacht') wachtend.current = false;") && /wachtend\.current = true;/.test(kanaal) && /intrekken\(ctx, idRef\.current\)[^;]*;\s*wachtend\.current = false; onAnnuleer/.test(kanaal));
     // Приймання blokken-profiel (e2e): delenPost створюється наново при кожному рендері застосунку, а laden залежав від нього —
-    // сторінка «Акаунт» запитувала кандидатів передачі 13–64 рази за хвилину (разом із рештою — 429 на спільному IP).
+    // сторінка «Обліковий запис» запитувала кандидатів передачі 13–64 рази за хвилину (разом із рештою — 429 на спільному IP).
     const wo = lees('src/identiteit/WerkruimteOverdragen.tsx');
     check('«Передати простір»: кандидати завантажуються при відкритті й після передачі, а не при кожному новому `post`',
       wo.includes('const postRef = useRef(post);') && wo.includes("await postRef.current('/api/owner/identity/workspaces/overdracht/kandidaten'")

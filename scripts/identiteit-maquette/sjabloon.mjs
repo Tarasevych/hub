@@ -19,11 +19,11 @@ html = html.replace('<a href="#intro" class="brand-mark"', '<button type="button
 html = html.replace(/(<button type="button" class="brand-mark"[\s\S]*?<\/svg>\s*)<\/a>/, '$1</button>');
 if (!html.includes('class="brand-mark" data-jump="intro"') || html.includes('</a>\n      <div class="app-rail-divider">')) throw new Error('знак «Мій простір» не перетворено на кнопку');
 
-// Вибір файла світлини існував лише для макета (без облікового запису); на сайті світлина — з облікового запису, її змінюють у розділі «Акаунт».
-// Замість вибору файла — дві кнопки в тому самому стилі: до розділу «Акаунт» і до меню облікового запису сайту (інші акаунти, вихід).
+// Вибір файла світлини існував лише для макета (без облікового запису); на сайті світлина — з облікового запису, її змінюють у розділі «Обліковий запис».
+// Замість вибору файла — дві кнопки в тому самому стилі: до розділу «Обліковий запис» і до меню облікового запису сайту (інші облікові записи, вихід).
 html = html.replace(/\s*<label class="profile-photo-picker"[^>]*>[^<]*<\/label>\s*<input type="file" id="profilePhotoFile"[^>]*>/,
-  '\n      <button type="button" class="profile-photo-picker" id="profilePhotoPickLabel" data-echt-actie="account-foto">Змінити світлину — розділ «Акаунт»</button>' +
-  '\n      <button type="button" class="profile-photo-picker profile-photo-account" id="profilePhotoAccount" data-echt-actie="account-menu">Обліковий запис, інші акаунти, вихід</button>');
+  '\n      <button type="button" class="profile-photo-picker" id="profilePhotoPickLabel" data-echt-actie="account-foto">Змінити світлину — розділ «Обліковий запис»</button>' +
+  '\n      <button type="button" class="profile-photo-picker profile-photo-account" id="profilePhotoAccount" data-echt-actie="account-menu">Обліковий запис, інші облікові записи, вихід</button>');
 html = html.replace(/\s*<p class="profile-photo-warning"[^>]*><\/p>/, '');
 if (html.includes('profilePhotoFile') || !html.includes('data-echt-actie="account-menu"')) throw new Error('кнопки діалогу світлини не вставлено');
 

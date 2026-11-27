@@ -21,7 +21,7 @@ export const RECHT_CODE = 'API_RECHT_VEREIST';
 export const isRechtFout = (e: unknown): boolean => !!e && foutCode(e).code === RECHT_CODE;
 /** Eén muur voor de hele hub en #extensie: wat er aan de hand is en wie het oplost. */
 export const RECHT_UITLEG: [string, string] = [
-  'Доступ ШІ для вашого акаунта ще не увімкнено. Попросіть власника дозволити «API-платформу» для вашого облікового запису (Адміністрування → Користувачі та запити доступу). Після цього тут з’являться конектори, розширення браузера, пристрої й токени.',
+  'Доступ ШІ для вашого облікового запису ще не увімкнено. Попросіть власника дозволити «API-платформу» для вашого облікового запису (Адміністрування → Користувачі та запити доступу). Після цього тут з’являться конектори, розширення браузера, пристрої й токени.',
   'AI-toegang is voor uw account nog niet ingeschakeld. Vraag de eigenaar om «API-platform» voor uw account toe te staan (Beheer → Gebruikers en toegangsverzoeken). Daarna verschijnen hier connectors, de browserextensie, apparaten en tokens.',
 ];
 

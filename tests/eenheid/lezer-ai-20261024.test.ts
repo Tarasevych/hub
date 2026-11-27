@@ -270,7 +270,7 @@ export async function main(): Promise<number> {
     const nepOpslag = (keys: string[]) => { const m = new Map(keys.map((k) => [k, 'x'])); return { m, o: { get length() { return m.size; }, key: (i: number) => [...m.keys()][i] ?? null, removeItem: (k: string) => { m.delete(k); }, getItem: (k: string) => m.get(k) ?? null } }; };
     const eenAccount = nepOpslag([sporen.WEERGAVE_ZONE_SLEUTEL, 'mail-lezer-weergave-v1']), alles = nepOpslag([sporen.WEERGAVE_ZONE_SLEUTEL, 'mail-lezer-weergave-v1']);
     sporen.wisLokaleSporen('user-a', eenAccount.o); sporen.wisAlleLokaleSporen(alles.o);
-    check('D зони: ключ один, з src/lokale-sporen.ts (назва зони, без облікового запису) — вихід одного акаунта його лишає, «вийти всюди» стирає',
+    check('D зони: ключ один, з src/lokale-sporen.ts (назва зони, без облікового запису) — вихід одного облікового запису його лишає, «вийти всюди» стирає',
       sporen.WEERGAVE_ZONE_SLEUTEL === 'mail-lezer-weergave-zone-v1' && lees('src/mail/WeergaveKeuze.tsx').includes("import { WEERGAVE_ZONE_SLEUTEL } from '../lokale-sporen';") && !lees('src/mail/WeergaveKeuze.tsx').includes("'mail-lezer-weergave-zone")
       && eenAccount.m.has(sporen.WEERGAVE_ZONE_SLEUTEL) && !alles.m.has(sporen.WEERGAVE_ZONE_SLEUTEL) && alles.m.has('mail-lezer-weergave-v1'));
     const bv = lees('src/mail/beelden-voorraad.css'), bvMedia = bv.indexOf('\n@media');

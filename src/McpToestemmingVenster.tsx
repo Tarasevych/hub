@@ -278,7 +278,7 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
 
         {phase === 'forbidden' ? (
           <>
-            <p className='mcp-consent-msg' role='alert'>{isDeur ? tr('Двері сервера може відкрити лише власник сервера. Увійдіть акаунтом власника.', 'Alleen de eigenaar van de server kan de serverdeur openen. Meld u aan met het eigenaarsaccount.') : tr('Цей акаунт не має права керувати конекторами (потрібне право «api-platform»). Увійдіть акаунтом власника.', 'Dit account mag geen connectors beheren (recht "api-platform" nodig). Meld u aan met het eigenaarsaccount.')}</p>
+            <p className='mcp-consent-msg' role='alert'>{isDeur ? tr('Двері сервера може відкрити лише власник сервера. Увійдіть обліковим записом власника.', 'Alleen de eigenaar van de server kan de serverdeur openen. Meld u aan met het eigenaarsaccount.') : tr('Цей обліковий запис не має права керувати конекторами (потрібне право «api-platform»). Увійдіть обліковим записом власника.', 'Dit account mag geen connectors beheren (recht "api-platform" nodig). Meld u aan met het eigenaarsaccount.')}</p>
             <div className='mcp-consent-actions'><button type='button' className='mcp-consent-secondary' onClick={close}>{tr('Закрити', 'Sluiten')}</button></div>
           </>
         ) : null}

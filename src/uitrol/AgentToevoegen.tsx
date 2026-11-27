@@ -150,7 +150,7 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
               </div>
             </li>; })}
         </ul>
-        <button type='button' className='ut-link' onClick={() => { setW({ v: 'ander' }); setKeuze(''); setAnder('mcp-koppeling'); }}>{tr(lang, 'Інший спосіб: конкретне підключення, токен або акаунт', 'Andere manier: specifieke koppeling, token of account')}</button>
+        <button type='button' className='ut-link' onClick={() => { setW({ v: 'ander' }); setKeuze(''); setAnder('mcp-koppeling'); }}>{tr(lang, 'Інший спосіб: конкретне підключення, токен або обліковий запис', 'Andere manier: specifieke koppeling, token of account')}</button>
       </>}
 
       {w.v === 'duur' && <>
@@ -197,7 +197,7 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
           {anderLijst.map((k) => <li key={k.id}><button data-hulp-vrij='keuze' type='button' role='radio' aria-checked={keuze === k.id} disabled={bezet(k.id)} data-gekozen={keuze === k.id || undefined} className='ut-keuzekaart' onClick={() => setKeuze(k.id)}>
             <AgentLogo agent={k.label} naam={k.label} size={32} /><span><b>{k.label}</b>{bezet(k.id) && <small><Check aria-hidden='true' />{tr(lang, 'вже дозволено', 'al toegestaan')}</small>}</span></button></li>)}
           {anderLijst.length === 0 && <li className='ut-keuze-leeg'><Info aria-hidden='true' /><div>
-            <b>{ander === 'account' ? tr(lang, 'Немає схвалених акаунтів', 'Geen goedgekeurde accounts') : ander === 'agenttoken' ? tr(lang, 'Немає активних токенів агента з технічного простору', 'Geen actieve agenttokens uit de technische ruimte') : tr(lang, 'Немає активних MCP-підключень з технічного простору', 'Geen actieve MCP-koppelingen uit de technische ruimte')}</b>
+            <b>{ander === 'account' ? tr(lang, 'Немає схвалених облікових записів', 'Geen goedgekeurde accounts') : ander === 'agenttoken' ? tr(lang, 'Немає активних токенів агента з технічного простору', 'Geen actieve agenttokens uit de technische ruimte') : tr(lang, 'Немає активних MCP-підключень з технічного простору', 'Geen actieve MCP-koppelingen uit de technische ruimte')}</b>
             <p>{prive > 0 ? tr(lang, `Є ${prive} приватних підключень, але вони не можуть торкатися сервера — це навмисно. Підключіть ШІ в технічному просторі (технічний профіль → «Підключення») або виберіть «Агент» у першому кроці: він працює для всіх підключень агента.`, `Er zijn ${prive} privéverbindingen, maar die kunnen de server nooit raken — dat is bewust. Verbind de AI in de technische ruimte (technisch profiel → «Koppelingen») of kies «Agent» in de eerste stap: die geldt voor al zijn koppelingen.`)
               : tr(lang, 'Підключіть ШІ в технічному просторі, або поверніться й виберіть агента — тоді дозвіл не залежить від окремого токена.', 'Verbind de AI in de technische ruimte, of ga terug en kies een agent — dan hangt de toestemming niet aan één token.')}</p></div></li>}
         </ul>

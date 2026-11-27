@@ -164,14 +164,14 @@ export function AccessPlanePanels(p:Props){
       <header className='access-plane-section-head'><h2>{tr(lang,'Вхід','Aanmelden')}</h2>
         <InfoTip label={tr(lang,'Про способи входу','Over aanmeldmethoden')}><p>{tr(lang,'Способи, якими ви входите в Mijn Ruimte, і ключі для підтвердження важливих дій.','Manieren waarop je je aanmeldt bij Mijn Ruimte, en sleutels om belangrijke acties te bevestigen.')}</p>
           {data.lockout.protected&&<p data-google-enige>{tr(lang,'Google — зараз ваш єдиний робочий спосіб входу, тому його не можна вимкнути.','Google is nu je enige werkende aanmeldmethode en kan daarom niet worden uitgeschakeld.')} {data.aanmeldWegen?.passkey?tr(lang,'Додайте ключ доступу — ним можна буде входити й без Google.','Voeg een toegangssleutel toe — daarmee kun je ook zonder Google aanmelden.'):tr(lang,'Ключ доступу зараз лише підтверджує важливі дії: вхід ним вмикає власник сайту.','Een toegangssleutel bevestigt nu alleen belangrijke acties: aanmelden ermee zet de site-eigenaar aan.')}</p>}
-          <p><b>{tr(lang,'Електронна пошта та Google.','E-mail en Google.')}</b> {tr(lang,'Вхід через Google-акаунт. Адресу можна змінити лише в Google.','Aanmelden met je Google-account. Het adres wijzigen kan alleen bij Google.')}</p></InfoTip></header>
+          <p><b>{tr(lang,'Електронна пошта та Google.','E-mail en Google.')}</b> {tr(lang,'Вхід через обліковий запис Google. Адресу можна змінити лише в Google.','Aanmelden met je Google-account. Het adres wijzigen kan alleen bij Google.')}</p></InfoTip></header>
       <div className='access-plane-box'>
         {googleMethod&&<div className='access-plane-row' data-access-method='google'>
           <Mail className='access-plane-row-icon'/>
           <div className='access-plane-row-main'>
             <span className='access-plane-row-title'><strong>{tr(lang,'Електронна пошта та Google','E-mail en Google')}</strong>
               <span className={`access-plane-badge tone-${statusTone(googleMethod.status)}`}>{statusLabel(lang,googleMethod.status)}</span></span>
-            <small>{googleBinding?.email||tr(lang,'Google-акаунт','Google-account')}{data.lockout.protected?` · ${tr(lang,'єдиний спосіб входу','enige aanmeldmethode')}`:''}</small>
+            <small>{googleBinding?.email||tr(lang,'Обліковий запис Google','Google-account')}{data.lockout.protected?` · ${tr(lang,'єдиний спосіб входу','enige aanmeldmethode')}`:''}</small>
           </div>
           <div className='access-plane-row-actions'>
             <a className='access-plane-button secondary' href='https://myaccount.google.com/security' target='_blank' rel='noopener noreferrer'><ExternalLink/>{tr(lang,'Керувати','Beheren')}</a>

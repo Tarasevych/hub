@@ -1,4 +1,4 @@
-// Остаточне стирання акаунта: усі таблиці з колонкою акаунта + записи + файли.
+// Остаточне стирання облікового запису: усі таблиці з колонкою облікового запису + записи + файли.
 // INTEG-001 (03.11): маршрути видалення дають 30 днів на відновлення (deleteRecoverably); після цього строку
 // це стирання викликає завдання прибирання (backend/privacy.ts → verlopenVerwijderingenAfronden; SEC-002 privacy-logboek-01).
 import { isOwnerEmail, storage } from '../server/platform';
@@ -15,7 +15,7 @@ const extraSql = [
 ].filter((x) => [x.schema, x.tabel, x.kolom].every((n) => VEILIG_SQL_NAAM.test(n)))
   .map((x) => `(table_schema = '${x.schema}' AND table_name = '${x.tabel}' AND column_name = '${x.kolom}')`).join(' OR ');
 
-/** План стирання реляційних таблиць одного акаунта (ті самі DELETE, що виконує accountMeteenWissen). */
+/** План стирання реляційних таблиць одного облікового запису (ті самі DELETE, що виконує accountMeteenWissen). */
 async function wisPlanVoor(userId: string) {
   const pool = getPool();
   const kolommen = await pool.query(

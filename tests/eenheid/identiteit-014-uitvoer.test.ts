@@ -1,6 +1,6 @@
 // IDENTITEIT-014 (фаза 3, крок «uitvoer», 14.11.2026): «Ваші дані» і «Типи сповіщень».
 // (а) Gegevensuitvoer: тіло запиту (identity-сеанс вкладки), збереження JSON-файлу, тексти помилок, попередження про журнал
-// безпеки; змонтовано в «Акаунті» (id gegevensuitvoer) і кнопкою в блоці видалення; (б) сервер: ліміт рахується ПІСЛЯ step-up,
+// безпеки; змонтовано в «Обліковому записі» (id gegevensuitvoer) і кнопкою в блоці видалення; (б) сервер: ліміт рахується ПІСЛЯ step-up,
 // 429 віддає retryAfter, кожне вивантаження — аудит і сповіщення безпеки; uitvoerWeigering; (в) окремий блок menu-meldingtypen
 // з MeldingVoorkeurenPaneel, легенда міток меню перейменована. Справжні маршрути backend/index.ts проти одноразової бази.
 // Export van gegevens (client + route) en «Soorten meldingen» in het menu. Alleen verzonnen gegevens; niets gaat naar buiten.
@@ -103,7 +103,7 @@ export async function main(): Promise<number> {
   {
     const c = lees('src/InstellingencentrumWeergave.tsx');
     const account = c.slice(c.indexOf("else if(p.tab==='account')"), c.indexOf("else if(p.tab==='sessions')"));
-    check('«Акаунт»: секція «Ваші дані» одразу після «Стану моїх служб», лише для схваленого облікового запису (рядок MijnDiensten незмінний)',
+    check('«Обліковий запис»: секція «Ваші дані» одразу після «Стану моїх служб», лише для схваленого облікового запису (рядок MijnDiensten незмінний)',
       account.includes("<MijnDiensten lang={p.lang}/>{p.user.status==='approved'&&<Gegevensuitvoer lang={p.lang}/>}") && c.includes("import Gegevensuitvoer from './instellingen/Gegevensuitvoer';"));
     const wis = account.slice(account.indexOf("<section className='settings-danger'>"));
     const uitleg = wis.indexOf('<p data-wissen-uitleg>'), knop = wis.indexOf('<Gegevensuitvoer lang={p.lang} compact/>'), eigenaar = wis.indexOf('data-wissen-eigenaar'), invoer = wis.indexOf('<input value={confirm}');

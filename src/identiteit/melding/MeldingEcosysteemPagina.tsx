@@ -901,7 +901,7 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
                   <strong>{kanaalLabel(k, lang)}</strong>
                   <small>
                     {isBeveiliging
-                      ? t('Завжди увімкнений для захисту акаунта', 'Altijd actief voor accountbescherming')
+                      ? t('Завжди увімкнений для захисту облікового запису', 'Altijd actief voor accountbescherming')
                       : k}
                   </small>
                 </div>

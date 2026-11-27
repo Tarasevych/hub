@@ -63,7 +63,7 @@ export async function main(): Promise<number> {
 
   // 2. Швидкодія: об'єднання одночасних запитів читання й усунення потрійного дублювання на одній сторінці.
   check(
-    'lees-cache об’єднує паралельні запити swrPost за одним ключем і очищує чергу при зміні акаунта чи скиданні',
+    'lees-cache об’єднує паралельні запити swrPost за одним ключем і очищує чергу при зміні облікового запису чи скиданні',
     leesCache.includes('const lopend = new Map<string, Promise<{ data: unknown }>>()') &&
       leesCache.includes('lopend.clear()') &&
       leesCache.includes('lopend.delete(k)'),

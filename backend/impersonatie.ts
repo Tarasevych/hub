@@ -109,7 +109,7 @@ export async function aanvragen(u: Gebruiker, tab: string, input: { email: unkno
   await journaal(doel.id, u.id, 'owner.impersonatie.gevraagd', String(r.id), { door: wie, minuten, reden, viaActivatie: a.id });
   await eigenJournaal(u.id, 'owner.impersonatie.gevraagd', String(r.id), { aan: doel.email, minuten, reden });
   const z = IMPERSONATIE_ZICHTBAAR.uk;
-  await meld(doel.id, doel.email, 'impersonatie', 'Адміністратор просить подивитися ваш акаунт вашими очима',
+  await meld(doel.id, doel.email, 'impersonatie', 'Адміністратор просить подивитися ваш обліковий запис вашими очима',
     `${wie} просить ${minuten} хв, щоб побачити сайт так, як бачите його ви. Причина: ${reden}. Буде видно: ${z.ziet}. Ніколи: ${z.nooit}. `
     + `Типово лише перегляд. «Дозволити» або «Відхилити» — у вікні на сайті (діє ${IMPERSONATIE_ANTWOORD_MIN} хв, дозвіл — з passkey або кодом).`).catch(() => undefined);
   return { ...uit(r), doel: doel.email, doelNaam: doel.naam };

@@ -39,8 +39,8 @@ export async function main(): Promise<number> {
   check('1d alleen doorsturende tabbladen → null (niet in de catalogus); doorsturend tabblad eraf → de rest', k(['overview', 'connect'], 'dashboard', ['overview', 'connect']) === null && k(['overview', 'services'], 'dashboard', ['overview']) === 'services' && k(undefined, 'dashboard', ['connect'], 'connect') === 'dashboard');
   check('1e geen enkel tabblad mogelijk (alleen onbekende genoemd) → voorzichtig de bestandsregel', k([]) === 'overview');
   const TABS = ['overview', 'accounts', 'google', 'search'];
-  const els = gen.elementenUit(`export function P({tab}){return <div>{(tab==='google'||tab==='accounts') && <button>{tr('Кнопка акаунтів','Accountknop')}</button>}<button>{tr('Скрізь','Overal')}</button></div>;}`, 'src/Proef.tsx', TABS) as El[];
-  const a = els.find((e) => e.uk === 'Кнопка акаунтів'), b = els.find((e) => e.uk === 'Скрізь');
+  const els = gen.elementenUit(`export function P({tab}){return <div>{(tab==='google'||tab==='accounts') && <button>{tr('Кнопка облікових записів','Accountknop')}</button>}<button>{tr('Скрізь','Overal')}</button></div>;}`, 'src/Proef.tsx', TABS) as El[];
+  const a = els.find((e) => e.uk === 'Кнопка облікових записів'), b = els.find((e) => e.uk === 'Скрізь');
   check('1f elementenUit geeft de mogelijke tabbladen in menuvolgorde (alleen als de bron ze vernauwt)', JSON.stringify(a?.mogelijkeTabs) === '["accounts","google"]' && a?.tabHint === '' && !b?.mogelijkeTabs, `${JSON.stringify(a)}|${JSON.stringify(b)}`);
 
   // 2. DOORSTUREND tegen mcpIngang zelf
@@ -83,8 +83,8 @@ export async function main(): Promise<number> {
   check('5b «Перевірити хости» → mcp/dashboard en mcp/services (de kopie in de tak overview is nooit te zien)', JSON.stringify(MCP.filter((e) => e.uk === 'Перевірити хости').map((e) => e.tab).sort()) === '["dashboard","services"]');
   const CL = van('src/CloudFunctioneelWeergave.tsx');
   const op = (uk: string) => CL.filter((e) => e.uk === uk).map((e) => e.tab).sort().join(',');
-  check('5c cloud: «Відкрити» niet op overview (wel inbox, accounts, workspaces); Google-accounts («Додати акаунт», «Відключити») → accounts',
-    !op('Відкрити').split(',').includes('overview') && op('Відкрити') === 'accounts,inbox,workspaces' && op('Додати акаунт') === 'accounts' && op('Відключити') === 'accounts', `${op('Відкрити')}|${op('Додати акаунт')}|${op('Відключити')}`);
+  check('5c cloud: «Відкрити» niet op overview (wel inbox, accounts, workspaces); Google-accounts («Додати обліковий запис», «Відключити») → accounts',
+    !op('Відкрити').split(',').includes('overview') && op('Відкрити') === 'accounts,inbox,workspaces' && op('Додати обліковий запис') === 'accounts' && op('Відключити') === 'accounts', `${op('Відкрити')}|${op('Додати обліковий запис')}|${op('Відключити')}`);
   const hulp = uiCatalogus().filter((o) => o.id.startsWith('hulp:'));
   const levend = Object.entries(HULP_REGISTER).filter(([, h]) => !UI_ONBEREIKBAAR.includes(h.bron));
   const uitDood = hulp.filter((o) => UI_ONBEREIKBAAR.includes(String(o.extra?.bron ?? '')));

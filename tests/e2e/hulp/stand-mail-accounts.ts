@@ -1,8 +1,8 @@
-// Stand (21.10.2026, агент D): «Поштові акаунти» з ПІДКЛЮЧЕНИМИ акаунтами — справжні рядки в базі (як у
+// Stand (21.10.2026, агент D): «Поштові облікові записи» з ПІДКЛЮЧЕНИМИ обліковими записами — справжні рядки в базі (як у
 // tests/eenheid/mail-accounts-beheer-20261021.test.ts): основна Gmail власника + додаткова Gmail, Outlook зі станом «потрібен
 // повторний вхід», Ukr.net по IMAP. Кроки:
-//   mail-accounts-gekoppeld    — у «Підключені акаунти» є «Відключити» для кожного; окремої секції Microsoft немає;
-//   mail-gmail-additional      — плитка Gmail → вікно → «Вибрати інший акаунт Google» → перехід на nep-Google з prompt=…select_account;
+//   mail-accounts-gekoppeld    — у «Підключені облікові записи» є «Відключити» для кожного; окремої секції Microsoft немає;
+//   mail-gmail-additional      — плитка Gmail → вікно → «Вибрати інший обліковий запис Google» → перехід на nep-Google з prompt=…select_account;
 //   mail-outlook-venster       — плитка Outlook → вікно з полем адреси.
 // Нічого не йде назовні: accounts.google.com перехоплює page.route і показує параметри запиту (nep-Google).
 import { createHash, randomBytes } from 'node:crypto';
