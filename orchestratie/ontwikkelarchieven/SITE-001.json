@@ -32,7 +32,7 @@
         "tool": "Google Antigravity",
         "model": "Gemini 4 Argon High",
         "bereik": "16d28123998f355a35d72c4c485bc9309c1eb965..HEAD",
-        "werk": "Повернув утрачене та усунув чотири живі проблеми за зауваженнями власника поверх встановлених основ 20261127-103137 (5404c83b4c31), 20261127-145130 (4a67264fb55b) і 20261127-172549 (c375e5292024): 1) єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) зі сторожем 32/32; 2) виправлення перемикача між звичайним і технічним простором у бічному меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx та зі збереженням tabContext і обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang; 4) надійне надсилання відповідей і нових листів (фільтрація чернеток DRAFT у гілці, вибір останнього вхідного листа lastIncoming, base64 MIME-кодування з рядками <= 76 символів та RFC 2047 Subject у buildReplyRaw, резервний вибір активної скриньки), міждоменна фонова служба src/mail/uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1, keepalive: true) і миттєвий спливний бокс сповіщення (.canonical-notification-toast) із кнопкою «Повторити надсилання» на всіх піддоменах (сторож site-001-snelheid 22/22), а також пакування випуску поверх 20261127-172549."
+        "werk": "Повернув утрачене та усунув п’ять живих зауважень власника поверх встановлених основ 20261127-103137 (5404c83b4c31), 20261127-145130 (4a67264fb55b) і 20261127-172549 (c375e5292024): 1) єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) зі сторожем 32/32; 2) виправлення перемикача між звичайним і технічним простором у бічному меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx та зі збереженням tabContext і обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang; 4) надійне надсилання відповідей і нових листів (фільтрація чернеток DRAFT у гілці, вибір останнього вхідного листа lastIncoming, base64 MIME-кодування з рядками <= 76 символів та RFC 2047 Subject у buildReplyRaw, резервний вибір активної скриньки), міждоменна фонова служба src/mail/uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1, keepalive: true) і миттєвий спливний бокс сповіщення (.canonical-notification-toast) із кнопкою «Повторити надсилання» на всіх піддоменах; 5) перероблення довгої мобільної панелі розділів пошти (.mq-anker-onderbalk) на компактну кнопку-капсулку (.mq-onderbalk-trekker) безпосередньо у верхньому рядку (.mail-top-command-bar) між кнопкою головного меню («☰») та полем пошуку (MailSearchField) і адаптивне звуження поля пошуку до знака пошуку («🔍», data-zoek-compact=\"icoon\") при залишковій ширині < 168 px або чітке розмежування слова «Пошук» і кнопки налаштувань за достатньої ширини (сторож site-001-snelheid 25/25), а також пакування випуску поверх 20261127-172549."
       }
     ],
     "repo": "Tarasevych/hub",
@@ -82,7 +82,8 @@
     "4a67264fb55bd8c82e1d8efe907e8ae22edc0a53",
     "f8227fcea4699d886be3204110dab7f007aa35a9",
     "c375e52920248d538dbda1f15f643cfeb8229695",
-    "c994765ef69e663f574b4bb1d9777b3abcc08bf0"
+    "c994765ef69e663f574b4bb1d9777b3abcc08bf0",
+    "bfb7df9bb8c9f3315bac5d4d03ca50ce4a0f77cc"
   ],
   "tijdlijn": [
     {
@@ -110,8 +111,12 @@
       "resultaat": "Збереження згоди на реп’яшки поширено на всі 11 піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com (site-001-toestemming 32/32); виправлено перемикач просторів (.zr) у меню без setPointerCapture на <main> і без самовільного повернення технічного профілю в TechPoort.tsx; забезпечено синхронне відновлення знімку пошти та міток із sessionStorage/localStorage, 5-хвилинне вікно свіжості списку листів і міток, збереження attachmentsByMessage у MailListViewSnapshot та tsv:mail-ui-context-v3, миттєве відкриття листів і вкладень із CacheStorage без скидання у стан завантаження та відсутність смуги #tsv-voortgang для фонових маршрутів ACHTERGROND_PAD."
     },
     {
-      "stap": "7) Gemini 4 Argon High від Google Antigravity (c994765e..HEAD): усунення збою надсилання відповідей і нових листів («Відповідь зараз не вдалося надіслати. Текст залишився у редакторі.»), міждоменне фонове відправлення та миттєвий спливний бокс сповіщення з кнопкою «Повторити надсилання» на всіх піддоменах поверх встановленої основи 20261127-172549.",
+      "stap": "7) Gemini 4 Argon High від Google Antigravity (c994765e..bfb7df9b): усунення збою надсилання відповідей і нових листів («Відповідь зараз не вдалося надіслати. Текст залишився у редакторі.»), міждоменне фонове відправлення та миттєвий спливний бокс сповіщення з кнопкою «Повторити надсилання» на всіх піддоменах поверх встановленої основи 20261127-172549.",
       "resultaat": "У маршрутах thread і reply відфільтровано чернетки DRAFT, обрано останній вхідний лист lastIncoming та зібрано всіх учасників гілки (усунено хибний 400 GOOGLE_MAIL_REPLY_RECIPIENT_INVALID при to === mine); частини text/plain та text/html у buildReplyRaw переведено з 8bit на Content-Transfer-Encoding: base64 (рядки <= 76 символів) з RFC 2047 encodeWord для Subject; додано резервний вибір активної скриньки snapshot.account || snapshot.accounts[0], повтор без threadId та очищення чернеток deleteDraftsForThread; дозволено виклик поштових маршрутів з будь-якого піддомену (!auth.service); створено службу src/mail/uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1 на Domain=.tarasevych.com, keepalive: true) і підключено наглядач controleerUitgaandePostOpSubdomein та кнопку дії «Повторити надсилання» у спливному боксі CanoniekMeldingencentrum.tsx (сторож site-001-snelheid 22/22)."
+    },
+    {
+      "stap": "8) Gemini 4 Argon High від Google Antigravity (bfb7df9b..HEAD): компактна кнопка-капсулка розділів пошти між кнопкою меню та полем пошуку і адаптивне звуження поля пошуку.",
+      "resultaat": "Довгу зайву панель .mq-anker-onderbalk під верхнім рядком пошти перероблено на компактну кнопку-капсулку .mq-onderbalk-trekker («☰ Вхідні ▾»), вбудовану безпосередньо у .mail-top-command-bar між кнопкою головного меню («☰») та полем пошуку (MailSearchField), що заощаджує 60+ px висоти екрана; у src/MailZoekVeld.tsx додано вимірювання залишкової ширини (MAIL_ZOEK_WOORD_MIN_BREEDTE=168, MAIL_ZOEK_VOLLEDIG_MIN_BREEDTE=248), чіткий відступ між словом «Пошук» і кнопкою налаштувань за достатньої ширини та компактне звуження до знака пошуку («🔍», data-zoek-compact=\"icoon\") із розгортанням при натисканні за вузької залишкової ширини (сторож site-001-snelheid 25/25)."
     }
   ],
   "keuzes": [
@@ -136,6 +141,10 @@
       "reden": "Автозбережена чернетка відповіді в кінці гілки мала From = власна адреса власника, що спричиняло 400 GOOGLE_MAIL_REPLY_RECIPIENT_INVALID; 8bit без переносів для довгого HTML порушував ліміт RFC 5322 у 998 байтів; а перевірка auth.service !== 'mail' та відсутність keepalive і emitCanonicalNotice обривали фонове відправлення при переході між піддоменами й не показували спливного боксу сповіщення."
     },
     {
+      "besluit": "Вбудувати MaquetteAnkerRail у пошті безпосередньо в .mail-top-command-bar перед MailSearchField як компактну кнопку-капсулку .mq-onderbalk-trekker і вимірювати залишкову ширину .mail-top-search-area через ResizeObserver для адаптивного перемикання між повним полем пошуку (з чітким відступом слова «Пошук» від кнопки налаштувань) та компактним знаком пошуку (data-zoek-compact=\"icoon\").",
+      "reden": "Окрема довга панель .mq-anker-onderbalk під верхнім рядком займала 60+ px висоти екрана лише заради однієї кнопки розгортання меню розділів, а за вузької залишкової ширини слово «Пошук» у полі пошуку зливалося з піктограмою налаштувань пошуку."
+    },
+    {
       "besluit": "Зібрати випуск поверх актуальної встановленої на живому сервері версії 20261127-172549 @ c375e52920248d538dbda1f15f643cfeb8229695 із повним обліком усіх трьох моделей ШІ (Claude Opus 5.5 (High), Gemini 4 Carbon High та Gemini 4 Argon High).",
       "reden": "На живому сервері вже встановлено випуск 20261127-172549 @ c375e5292024, який є безпосереднім предком поточної гілки; встановлення UITROL-BASIS на 20261127-172549 усуває відхилення BASIS_VEROUDERD і точно фіксує авторство кожного з трьох етапів."
     }
@@ -153,8 +162,8 @@
     },
     {
       "soort": "gewijzigd",
-      "pad": "src/toestemming/toestemming.ts, src/toestemming/ToestemmingBand.tsx, src/CanoniekOmlijsting.tsx, src/tab-context.ts, src/tech/TechPoort.tsx, src/tech/tech-opslag.ts, src/tech/ruimtes/RuimteWissel.tsx, src/tech/ruimtes/ruimte-signaal.ts, src/tech/ruimtes/ruimtes-opslag.ts, backend/tech-ruimtes-kern.ts, backend/tech-ruimtes.ts, src/MailFunctioneelWeergave.tsx, src/mail-aanbieder-toestand.ts, src/mail-bijlage-cache.ts, src/mail/mail-wisselaar-model.ts, src/GoogleMailWerkruimte.tsx, src/VerenigdDienstApp.tsx, src/App.tsx, src/platform/client.ts, src/navigatie-snel.ts, backend/google-suite-inrichting.ts, backend/google-suite-mail-browser.ts, backend/mail-opstel.ts, backend/ai-mail-assistent.ts, backend/mail-afzenders.ts, src/mail-opstel-api.ts, src/mail/uitgaande-post-achtergrond.ts, src/MailGesprekInhoud.tsx, src/MailNieuwBerichtDialoog.tsx, src/CanoniekMeldingencentrum.tsx",
-      "omschrijving": "Виконано Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення чотирьох живих проблем за зауваженнями власника): 1) єдина згода на реп’яшки на всі піддомени *.tarasevych.com через mr_toestemming_v1 (Domain=.tarasevych.com, 32/32); 2) стабільний перемикач між звичайним і технічним простором у меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx і зі збереженням tabContext та обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang; 4) надійне надсилання відповідей і нових листів (фільтрація чернеток DRAFT, вибір lastIncoming, base64 MIME-кодування з рядками <= 76 символів та RFC 2047 Subject, резервний вибір активної скриньки), міждоменна фонова служба uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1, keepalive: true) і спливний бокс сповіщення з кнопкою «Повторити надсилання» на всіх піддоменах (site-001-snelheid 22/22)."
+      "pad": "src/toestemming/toestemming.ts, src/toestemming/ToestemmingBand.tsx, src/CanoniekOmlijsting.tsx, src/tab-context.ts, src/tech/TechPoort.tsx, src/tech/tech-opslag.ts, src/tech/ruimtes/RuimteWissel.tsx, src/tech/ruimtes/ruimte-signaal.ts, src/tech/ruimtes/ruimtes-opslag.ts, backend/tech-ruimtes-kern.ts, backend/tech-ruimtes.ts, src/MailFunctioneelWeergave.tsx, src/mail-aanbieder-toestand.ts, src/mail-bijlage-cache.ts, src/mail/mail-wisselaar-model.ts, src/GoogleMailWerkruimte.tsx, src/MailZoekVeld.tsx, src/mail/mail-werkruimte-maquette.css, src/mail-mobiel.css, src/maquette-kern/maquette-oppervlakken.css, src/VerenigdDienstApp.tsx, src/App.tsx, src/platform/client.ts, src/navigatie-snel.ts, backend/google-suite-inrichting.ts, backend/google-suite-mail-browser.ts, backend/mail-opstel.ts, backend/ai-mail-assistent.ts, backend/mail-afzenders.ts, src/mail-opstel-api.ts, src/mail/uitgaande-post-achtergrond.ts, src/MailGesprekInhoud.tsx, src/MailNieuwBerichtDialoog.tsx, src/CanoniekMeldingencentrum.tsx",
+      "omschrijving": "Виконано Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення п’яти живих зауважень власника): 1) єдина згода на реп’яшки на всі піддомени *.tarasevych.com через mr_toestemming_v1 (Domain=.tarasevych.com, 32/32); 2) стабільний перемикач між звичайним і технічним простором у меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx і зі збереженням tabContext та обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang; 4) надійне надсилання відповідей і нових листів (фільтрація чернеток DRAFT, вибір lastIncoming, base64 MIME-кодування з рядками <= 76 символів та RFC 2047 Subject, резервний вибір активної скриньки), міждоменна фонова служба uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1, keepalive: true) і спливний бокс сповіщення з кнопкою «Повторити надсилання» на всіх піддоменах; 5) компактна кнопка-капсулка розділів пошти (.mq-onderbalk-trekker) безпосередньо у .mail-top-command-bar між кнопкою меню та полем пошуку замість довгої панелі під шапкою і адаптивне поле пошуку зі звуженням до знака пошуку за вузької ширини (site-001-snelheid 25/25)."
     },
     {
       "soort": "gewijzigd",
@@ -163,8 +172,8 @@
     },
     {
       "soort": "toegevoegd",
-      "pad": "tests/eenheid/site-001-*.test.ts (16 нових наборів випробувань-сторожів), docs/site-001/* (перебіг робіт uk/nl та знімки до/після p01..p25, p12-mail-behoud і p12-mail-verzenden)",
-      "omschrijving": "Створено 16 постійних автоматичних сторожів (сумарно 249 перевірок поверх наявних наборів) для всіх критичних вимог 25 пунктів готовності та повний двомовний реєстр знімків до/після."
+      "pad": "tests/eenheid/site-001-*.test.ts (16 нових наборів випробувань-сторожів), docs/site-001/* (перебіг робіт uk/nl та знімки до/після p01..p25, p12-mail-behoud, p12-mail-verzenden і p14-mail-kapsuul)",
+      "omschrijving": "Створено 16 постійних автоматичних сторожів (сумарно 252 перевірки поверх наявних наборів) для всіх критичних вимог 25 пунктів готовності та повний двомовний реєстр знімків до/після."
     },
     {
       "soort": "gewijzigd",
@@ -211,7 +220,7 @@
     },
     {
       "opdracht": "Прогін усіх 16 нових тестів-сторожів tests/eenheid/site-001-*.test.ts + тестів пошти й сповіщень meldingen-integ-20261103 / mededeling-ontdubbelen / mail-opstellen-mobiel / herstel-001-mail-weergave-twaalf-gebreken + тестів перемикання просторів",
-      "resultaat": "Усі 16 сторожів SITE-001 пройшли на 100 % (зокрема site-001-snelheid 22/22 для надійного надсилання листів і відповідей, фільтрації чернеток DRAFT, base64 MIME, міждоменної фонової черги mr_uitgaande_post_v1, спливного боксу сповіщення з кнопкою «Повторити надсилання» та збереження стану пошти й вкладень між піддоменами, а також site-001-toestemming 32/32 для mr_toestemming_v1), усі набори сповіщень і пошти (meldingen-integ-20261103 93/93, mail-opstellen-mobiel 70/70, herstel-001-mail-weergave 68/68) пройшли з 0 помилок."
+      "resultaat": "Усі 16 сторожів SITE-001 пройшли на 100 % (зокрема site-001-snelheid 25/25 для компактної кнопки-капсулки розділів пошти у верхньому рядку, адаптивного поля пошуку, надійного надсилання листів і відповідей, фільтрації чернеток DRAFT, base64 MIME, міждоменної фонової черги mr_uitgaande_post_v1, спливного боксу сповіщення з кнопкою «Повторити надсилання» та збереження стану пошти й вкладень між піддоменами, а також site-001-toestemming 32/32 для mr_toestemming_v1), усі набори сповіщень і пошти (meldingen-integ-20261103 93/93, mail-opstellen-mobiel 70/70, herstel-001-mail-weergave 68/68, mobiel-cascade-20261105 22/22) пройшли з 0 помилок."
     },
     {
       "opdracht": "node scripts/orch.mjs pakket + pakket-controleer + backend/uitrol-voorcontrole.ts (pakketVoorcontrole проти дерева c375e52920248d538dbda1f15f643cfeb8229695) + перевірка root TRACE-001 після публікації GitHub Release",
@@ -229,6 +238,7 @@
     "orchestratie/bijdragen/SITE-001/20261127-132334-antigravity.json",
     "orchestratie/bijdragen/SITE-001/20261127-171500-antigravity.json",
     "orchestratie/bijdragen/SITE-001/20261127-192200-antigravity.json",
+    "orchestratie/bijdragen/SITE-001/20261127-200800-antigravity.json",
     "docs/site-001/ПЕРЕБІГ-РОБІТ.uk.md",
     "docs/site-001/VOORTGANG.nl.md",
     "https://hub.tarasevych.com/api/version"

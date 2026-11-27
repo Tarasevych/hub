@@ -118,6 +118,29 @@ export async function main(): Promise<number> {
       cnc.includes('controleerUitgaandePostOpSubdomein')
       && cnc.includes("data-qa-id='melding-actie-knop'")
       && cnc.includes("kind === 'error' || Boolean(notice.retain)"));
+
+    // SITE-001 (компактна кнопка-капсулка розділів пошти між кнопкою меню та полем пошуку і адаптивне звуження поля пошуку):
+    const zoekVeld = await readFile(join(root, 'src/MailZoekVeld.tsx'), 'utf8');
+    check('MailZoekVeld: вимірювання залишкової ширини поля пошуку (MAIL_ZOEK_WOORD_MIN_BREEDTE=168, MAIL_ZOEK_VOLLEDIG_MIN_BREEDTE=248) та режим компактного знака пошуку data-zoek-compact',
+      zoekVeld.includes('MAIL_ZOEK_WOORD_MIN_BREEDTE=168')
+      && zoekVeld.includes('MAIL_ZOEK_VOLLEDIG_MIN_BREEDTE=248')
+      && zoekVeld.includes("data-zoek-compact={icoonModus?'icoon':'veld'}")
+      && zoekVeld.includes("data-zoek-smal={teSmalVoorWoord?'ja':'nee'}")
+      && zoekVeld.includes("data-zoek-actief={zoekActief?'ja':'nee'}"));
+
+    const cmdIdx = werk.indexOf("<div className='mail-top-command-bar'>");
+    const railInCmdIdx = werk.indexOf('<MaquetteAnkerRail', cmdIdx);
+    const zoekInCmdIdx = werk.indexOf('<MailSearchField', cmdIdx);
+    check('GoogleMailWerkruimte: компактна кнопка-капсулка MaquetteAnkerRail вбудована безпосередньо у .mail-top-command-bar між кнопкою меню та полем пошуку MailSearchField',
+      cmdIdx > 0 && railInCmdIdx > cmdIdx && zoekInCmdIdx > railInCmdIdx);
+
+    const mqWerkCss = await readFile(join(root, 'src/mail/mail-werkruimte-maquette.css'), 'utf8');
+    const mailMobCss = await readFile(join(root, 'src/mail-mobiel.css'), 'utf8');
+    check('mail-werkruimte-maquette.css та mail-mobiel.css: компактна капсулка в .mail-top-command-bar, чіткий відступ слова Пошук від кнопки налаштувань та звуження до знака пошуку',
+      mqWerkCss.includes('.mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker')
+      && mqWerkCss.includes('[data-zoek-compact="veld"] .mail-top-search-shell input')
+      && mqWerkCss.includes('[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell')
+      && mailMobCss.includes('html body .mail-top-command-bar>.mail-top-search-area{flex:1 1 0!important;min-width:0!important}'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

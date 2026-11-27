@@ -109,6 +109,88 @@ html.palet-maquette .mail-top-command-bar .mail-top-search-shell input::placehol
   color: var(--mq-stil);
 }
 
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="veld"] .mail-top-search-shell input {
+  padding-right: 16px;
+  text-overflow: ellipsis;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="veld"] .mail-top-search-tune {
+  margin-left: 4px;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell {
+  display: inline-grid;
+  grid-template-columns: 1fr;
+  place-items: center;
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  cursor: pointer;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell > :is(.mail-search-clear, .mail-top-search-tune) {
+  display: none;
+}
+
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker {
+  min-height: 42px;
+  height: 42px;
+  max-width: clamp(92px, 28vw, 172px);
+  padding: 0 12px;
+  gap: 6px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--mq-bovenbalk-glas));
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+  -webkit-backdrop-filter: blur(22px) saturate(1.28);
+  backdrop-filter: blur(22px) saturate(1.28);
+  color: var(--mq-tekst);
+  font-size: 13px;
+  font-weight: 640;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker:hover,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker[aria-expanded="true"] {
+  border-color: rgba(var(--mq-accent-rgb), 0.54);
+  background: color-mix(in srgb, var(--mq-oppervlak) 92%, rgba(var(--mq-accent-rgb), 0.14));
+}
+
+html.palet-maquette .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker > svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker > span:last-of-type {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--mq-gedempt);
+}
+
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-interface-actions {
   padding: 3px 5px;
   border: 1px solid var(--mq-rand);
@@ -924,6 +1006,10 @@ html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace
   html.palet-maquette .google-mail-workspace.mq-schil {
     gap: 10px;
   }
+
+  html.palet-maquette .mail-top-command-bar:has(> .mail-top-search-area[data-zoek-smal="ja"][data-zoek-actief="ja"]) > .mq-anker-onderbalk {
+    display: none;
+  }
 }
 
 @media (max-width: 720px) {
@@ -933,6 +1019,24 @@ html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace
 
   html.palet-maquette .mail-top-interface-actions {
     padding: 2px 3px;
+  }
+
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker {
+    min-height: 46px;
+    height: 46px;
+    max-width: clamp(86px, 31vw, 138px);
+    padding: 0 10px;
+    gap: 5px;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell {
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 46px;
+    min-height: 46px;
   }
 
   /* MAILDOK-001: на телефоні пігулки йдуть рядками, гортання праворуч,

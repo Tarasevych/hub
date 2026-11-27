@@ -151,7 +151,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
 
  const notify=(message:string,kind:'info'|'success'|'warning'|'error'='info')=>emitCanonicalNotice({text:message,kind,source:'mail'});
  const initialBootstrapCache=useMemo(()=>leesMailBootstrapCache(userId),[userId]);
- const [data,setData]=useState<Bootstrap>(()=>initialBootstrapCache||INITIAL_BOOTSTRAP);
+ const [data,setData]=useState<Bootstrap>(initialBootstrapCache||INITIAL_BOOTSTRAP);/*useState<Bootstrap>(INITIAL_BOOTSTRAP)*/
  const [loading,setLoading]=useState(()=>!initialBootstrapCache);
  const [busy,setBusy]=useState(false);
  const [showNoise,setShowNoise]=useState(false);
