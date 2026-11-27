@@ -53,6 +53,12 @@
     "src/uitrol/Upload.tsx",
     "src/platform/uitrol-achtergrond-beheer.ts",
     "src/GoogleMailWerkruimte.tsx",
+    "src/MailFunctioneelWeergave.tsx",
+    "src/mail-aanbieder-toestand.ts",
+    "src/mail-bijlage-cache.ts",
+    "src/mail/mail-wisselaar-model.ts",
+    "src/VerenigdDienstApp.tsx",
+    "src/App.tsx",
     "src/mail/MailWerkruimteExtra.ts",
     "src/google-mail-werkruimte.css",
     "src/mail-mobiel.css",
@@ -107,7 +113,7 @@
       "agent": "antigravity",
       "model": "Gemini 4 Argon High (Google Antigravity)",
       "datum": "2026-11-27",
-      "uk": "Усунено дві живі проблеми за зауваженням власника поверх встановленої основи 20261127-103137 @ 5404c83b (фіксації 16d28123..HEAD, «повернув утрачене»): 1) згода на реп’яшки зберігається один раз для всіх піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) і синхронізується з localStorage без повторних запитів (site-001-toestemming 32/32); 2) виправлено перемикач між звичайним і технічним простором у бічному меню (.zr) на смартфоні й комп’ютері (прибрано setPointerCapture на <main> у CanoniekOmlijsting.tsx, вимкнено самовільне повернення технічного профілю в TechPoort.tsx при зміні URL та забезпечено збереження tabContext і обраного простору відображення між усіма піддоменами у tab-context.ts, ruimte-signaal.ts, tech-opslag.ts, ruimtes-opslag.ts, RuimteWissel.tsx, backend/tech-ruimtes-kern.ts і backend/tech-ruimtes.ts)."
+      "uk": "Усунено три живі проблеми за зауваженням власника поверх встановлених основ 20261127-103137 @ 5404c83b та 20261127-145130 @ 4a67264fb55b (фіксації 16d28123..HEAD, «повернув утрачене»): 1) згода на реп’яшки зберігається один раз для всіх піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) і синхронізується з localStorage без повторних запитів (site-001-toestemming 32/32); 2) виправлено перемикач між звичайним і технічним простором у бічному меню (.zr) на смартфоні й комп’ютері (прибрано setPointerCapture на <main> у CanoniekOmlijsting.tsx, вимкнено самовільне повернення технічного профілю в TechPoort.tsx при зміні URL та забезпечено збереження tabContext і обраного простору відображення між усіма піддоменами); 3) усунено повторні перезавантаження пошти, вкладень і сторінок при поверненні до вкладки та переходах між піддоменами (синхронний кеш пошти й міток у sessionStorage/localStorage, 5-хвилинне вікно свіжості списку та міток, збереження attachmentsByMessage у MailListViewSnapshot, миттєве відкриття листів і вкладень із CacheStorage без скидання у стан завантаження та відсутність смуги #tsv-voortgang для фонових маршрутів ACHTERGROND_PAD; site-001-snelheid 16/16)."
     }
   ],
   "mogelijkheden": [
@@ -182,6 +188,12 @@
       "uk": "Повний набір 25 пунктів готовності сайту та 16 автоматичних тестів-сторожів (юридичні сторінки, смуга згоди й знеособлена аналітика, прев’ю та значки, 404 без входу, захист 56 маршрутів і 50 форм, один головний заклик до дії, заголовки безпеки COOP/CORP та миттєве скидання wisVlagGeheugen при стиранні запису)",
       "sinds": "SITE-001",
       "staat": "actief"
+    },
+    {
+      "id": "mail-en-bijlagen-behoud-tussen-subdomeinen",
+      "uk": "Збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень (синхронний кеш пошти й міток у sessionStorage/localStorage, 5-хвилинне вікно свіжості списку та міток, збереження attachmentsByMessage у MailListViewSnapshot, миттєве відкриття листів і вкладень із CacheStorage без скидання у стан завантаження та відсутність смуги #tsv-voortgang для фонових маршрутів ACHTERGROND_PAD)",
+      "sinds": "SITE-001",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -193,6 +205,16 @@
         "Симетричне центрування сторінок (UPD-009)",
         "Ізоляція технічних збірок (shared/tech-bundels.ts)",
         "Компактна верхня смуга перекладу листа (UPD-010)"
+      ]
+    },
+    {
+      "datum": "2026-11-27",
+      "betreft": "Відсутність повторних перезавантажень пошти, вкладень і сторінок при поверненні до вкладки та переходах між піддоменами",
+      "uk": "При поверненні до сайту та переходах між піддоменами вже завантажені сторінки, список пошти, відкритий лист і вкладення не повинні скидатися й завантажуватися заново за відсутності змін.",
+      "behouden": [
+        "Єдина згода на реп’яшки між піддоменами (mr_toestemming_v1)",
+        "Стабільний перемикач між звичайним і технічним простором у меню (.zr)",
+        "Повний набір 25 пунктів готовності сайту та 16 тестів-сторожів"
       ]
     }
   ],
