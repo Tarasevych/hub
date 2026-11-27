@@ -65,7 +65,11 @@
     "0d8a230f51356dac0a6ff338650742d18f38d938",
     "a68297b8aedbdc13a8bc3baefaaf37b72fcc1f19",
     "232dd2a6c1c1e67817c030774dc417a4b3d02459",
-    "8a8c475a56ba9b27931617ce451b361d27e08479"
+    "8a8c475a56ba9b27931617ce451b361d27e08479",
+    "0d4d949dc869713cbeb225ec0e9c74264f903e52",
+    "6bacb11a5195e43ff57e393ba534cbffbb13c7d6",
+    "5404c83b4c3143fe3383df2fc56d4eca62ab6c68",
+    "16d28123998f355a35d72c4c485bc9309c1eb965"
   ],
   "tijdlijn": [
     {
@@ -85,8 +89,12 @@
       "resultaat": "Перевірено кнопки й елементи в 11 живих сценаріях без входу і за входом (4 → 0 вад, site-001-knoppen 7/7); оновлено server/rook.ts під tech-ruimtes-v2 (код 2 → 0, rook-controle 40/40, site-001-monitoring 7/7); перевірено наживо цикл backup-maken.sh + age + SHA256SUMS + pg_restore у PostgreSQL 18.7 (224 таблиці, 3322 записи — 100 % збіг) та оновлено archief-herstellen.sh під postgresql-18 (site-001-backups 6/6); додано COOP, CORP і X-Permitted-Cross-Domain-Policies (9/9 заголовків, site-001-beveiliging 7/7); прогнано 11 наборів реєстрації/входу/відновлення на PostgreSQL 18.7 із примусовим RLS (432/432) і виправлено миттєве скидання wisVlagGeheugen у backend/account-wissen.ts (site-001-aanmelden-herstel 12/12)."
     },
     {
-      "stap": "5) Gemini 4 Carbon High від Google Antigravity (232dd2a6..HEAD): узгодження з живою встановленою основою HERSTEL-001 (20261126-181653 @ c7561d0a) та підготовка випуску.",
-      "resultaat": "Виконано злиття (--no-ff) встановленої на живому сервері версії 20261126-181653 @ c7561d0a без жодної втраченої можливості (ORCH behoud OK), узгоджено сигнатури routeOnbekend() та CANONICAL_AUTH_CHANGE (0 помилок tsc клієнта й сервера), оновлено каталог пошуку (2447 елементів), досьє функцій, три записи обліку BIJDRAGE-001 та конвеєр оприлюднення site-001-uitgave.yml."
+      "stap": "5) Gemini 4 Carbon High від Google Antigravity (232dd2a6..5404c83b): узгодження з живою встановленою основою HERSTEL-001 (20261126-181653 @ c7561d0a) та перший випуск 20261127-103137.",
+      "resultaat": "Виконано злиття (--no-ff) встановленої на живому сервері версії 20261126-181653 @ c7561d0a без жодної втраченої можливості (ORCH behoud OK), узгоджено сигнатури routeOnbekend() та CANONICAL_AUTH_CHANGE (0 помилок tsc клієнта й сервера), оновлено каталог пошуку (2447 елементів) та оприлюднено випуск 20261127-103137."
+    },
+    {
+      "stap": "6) Gemini 4 Carbon High від Google Antigravity (16d28123..HEAD): виправлення двох живих проблем за зауваженням власника (єдина згода на реп’яшки для всіх піддоменів та стабільний перемикач між звичайним і технічним простором у меню).",
+      "resultaat": "Збереження згоди на реп’яшки поширено на всі 11 піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com (site-001-toestemming 32/32); усунено перехоплення кліку setPointerCapture на <main> у відкритій мобільній шторці меню CanoniekOmlijsting.tsx для кнопок .zr, вимкнено самовільне повернення технічного профілю в TechPoort.tsx при зміні URL та забезпечено збереження єдиного tabContext і обраного простору відображення між усіма піддоменами у tab-context.ts, ruimte-signaal.ts, tech-opslag.ts, ruimtes-opslag.ts, RuimteWissel.tsx, backend/tech-ruimtes-kern.ts і backend/tech-ruimtes.ts."
     }
   ],
   "keuzes": [
@@ -188,6 +196,7 @@
     "orchestratie/bijdragen/SITE-001/20261126-155700-antigravity.json",
     "orchestratie/bijdragen/SITE-001/20261127-064541-antigravity.json",
     "orchestratie/bijdragen/SITE-001/20261127-100415-antigravity.json",
+    "orchestratie/bijdragen/SITE-001/20261127-132334-antigravity.json",
     "docs/site-001-gereedheid/ПЕРЕБІГ-РОБІТ.uk.md",
     "docs/site-001-gereedheid/VOORTGANG.nl.md",
     "https://hub.tarasevych.com/api/version"
