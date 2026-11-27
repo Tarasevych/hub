@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261127-192200-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-27T19:22:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herstel",
+  "wat": {
+    "uk": "Усунено збій надсилання відповідей і нових листів («Відповідь зараз не вдалося надіслати. Текст залишився у редакторі.»), забезпечено безперервне фонове надсилання пошти під час переходів між розділами й піддоменами *.tarasevych.com та помітний спливний бокс сповіщення (.canonical-notification-toast) поверх живої встановленої основи 20261127-172549 @ c375e5292024: 1) у backend/google-suite-mail-browser.ts відфільтровано чернетки DRAFT у гілці, обрано останній вхідний лист lastIncoming і всіх учасників гілки (усунено хибний 400 GOOGLE_MAIL_REPLY_RECIPIENT_INVALID при to === mine), частини text/plain та text/html у buildReplyRaw переведено з 8bit на Content-Transfer-Encoding: base64 (рядки <= 76 символів) з RFC 2047 encodeWord для Subject, додано резервний вибір активної скриньки snapshot.account || snapshot.accounts[0], повтор без threadId та очищення чернеток deleteDraftsForThread; 2) у backend/mail-opstel.ts, google-suite-mail-browser.ts, ai-mail-assistent.ts та mail-afzenders.ts дозволено фонові виклики з будь-якого піддомену (!auth.service); 3) створено міждоменну службу src/mail/uitgaande-post-achtergrond.ts (реп’яшок mr_uitgaande_post_v1 на Domain=.tarasevych.com, fetch keepalive: true, серверна чернетка та автоматичне досилання на іншому піддомені) і підключено наглядач controleerUitgaandePostOpSubdomein та кнопку дії «Повторити надсилання» у спливному боксі CanoniekMeldingencentrum.tsx (site-001-snelheid 22/22).",
+    "nl": "Verzending van antwoorden en nieuwe berichten hersteld («Het antwoord kon nu niet worden verzonden. De tekst blijft in de editor staan.»), ononderbroken achtergrondverzending tussen onderdelen en subdomeinen *.tarasevych.com en een directe meldingsbox (.canonical-notification-toast) met knop «Opnieuw verzenden» toegevoegd bovenop geïnstalleerde basis 20261127-172549 @ c375e5292024: filtering van DRAFT-concepten en selectie van lastIncoming in google-suite-mail-browser.ts, base64 MIME-codering in buildReplyRaw met RFC 2047 Subject, terugval op actieve postbus snapshot.account || snapshot.accounts[0], achtergrondverzoeken vanuit elk subdomein (!auth.service), dienst src/mail/uitgaande-post-achtergrond.ts (cookie mr_uitgaande_post_v1 op Domain=.tarasevych.com, keepalive: true) en subdomeinbewaker controleerUitgaandePostOpSubdomein in CanoniekMeldingencentrum.tsx (site-001-snelheid 22/22)."
+  },
+  "waarom": {
+    "uk": "Власник повідомив, що будь-яка спроба надіслати лист чи відповідь завершувалася помилкою «Відповідь зараз не вдалося надіслати. Текст залишився у редакторі.», був відсутній спливний бокс сповіщення про невідправлений лист, а при переході в інший розділ чи на інший піддомен сайту фонове відправлення обривалося.",
+    "nl": "De eigenaar meldde dat elke poging om een bericht of antwoord te verzenden mislukte met «Het antwoord kon nu niet worden verzonden. De tekst blijft in de editor staan.», dat een meldingsbox ontbrak en dat achtergrondverzending bij het wisselen tussen onderdelen en subdomeinen werd afgebroken."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "c994765ef69e663f574b4bb1d9777b3abcc08bf0",
+    "c375e52920248d538dbda1f15f643cfeb8229695",
+    "f8227fcea4699d886be3204110dab7f007aa35a9",
+    "4a67264fb55bd8c82e1d8efe907e8ae22edc0a53"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring",
+    "meldingen"
+  ]
+}

@@ -3,8 +3,8 @@
   "taakId": "SITE-001",
   "datum": "2026-11-27",
   "taal": "uk",
-  "titel": "SITE-001 · Повна готовність «Мій простір» за всіма 25 пунктами, збереження стану пошти, вкладень і сторінок між піддоменами, єдина згода на реп’яшки, стабільне перемикання просторів та 16 сторожів поверх основи 20261127-145130",
-  "opdracht": "За дорученням власника послідовно перевірити й довести до належного рівня всі 25 пунктів готовності сайту Mijn Ruimte зі знімками до/після на місцевому випробувальному стенді, проміжними фіксаціями на GitHub і мовним очищенням («акаунт» → «обліковий запис» у всьому інтерфейсі), усунути три живі проблеми за зауваженням власника (єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com, перемикач між звичайним і технічним простором у меню сайту без самовільного повернення технічного профілю та збереження завантаженої пошти, міток, відкритого листа і вкладень між піддоменами й при поверненні до вкладки без повторних перезавантажень), а в пакеті випуску поверх актуальної встановленої основи сервера 20261127-145130 (4a67264fb55b) та всіх відповідних полях чітко зазначити розподіл роботи між усіма трьома моделями ШІ: Claude Opus 5.5 (High) через Antigravity Google (до зупинки через ліміт, п. 1–11 і 13–19), Gemini 4 Carbon High від Google Antigravity (продовження з місця зупинки, мовне очищення 285 файлів, п. 12, п. 20–25 та випуск 20261127-103137) і Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення трьох живих проблем за зауваженням власника та пакування випуску поверх 20261127-145130).",
+  "titel": "SITE-001 · Повна готовність «Мій простір» за всіма 25 пунктами, надійне надсилання листів і відповідей, міждоменна фонова черга та спливний бокс сповіщення поверх основи 20261127-172549",
+  "opdracht": "За дорученням власника послідовно перевірити й довести до належного рівня всі 25 пунктів готовності сайту Mijn Ruimte зі знімками до/після на місцевому випробувальному стенді, проміжними фіксаціями на GitHub і мовним очищенням («акаунт» → «обліковий запис» у всьому інтерфейсі), усунути чотири живі проблеми за зауваженнями власника (єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com, перемикач між звичайним і технічним простором у меню сайту без самовільного повернення технічного профілю, збереження завантаженої пошти, міток, відкритого листа і вкладень між піддоменами й при поверненні до вкладки без повторних перезавантажень, а також надійне надсилання листів і відповідей без помилки «Відповідь зараз не вдалося надіслати. Текст залишився у редакторі.», фонове відправлення під час переходів між піддоменами та спливний бокс сповіщення з кнопкою «Повторити надсилання» на всіх піддоменах), а в пакеті випуску поверх актуальної встановленої основи сервера 20261127-172549 (c375e5292024) та всіх відповідних полях чітко зазначити розподіл роботи між усіма трьома моделями ШІ: Claude Opus 5.5 (High) через Antigravity Google (до зупинки через ліміт, п. 1–11 і 13–19), Gemini 4 Carbon High від Google Antigravity (продовження з місця зупинки, мовне очищення 285 файлів, п. 12, п. 20–25 та випуск 20261127-103137) і Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення чотирьох живих проблем за зауваженнями власника та пакування випуску поверх 20261127-172549).",
   "herkomst": {
     "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
     "agent": "antigravity",
@@ -32,23 +32,23 @@
         "tool": "Google Antigravity",
         "model": "Gemini 4 Argon High",
         "bereik": "16d28123998f355a35d72c4c485bc9309c1eb965..HEAD",
-        "werk": "Повернув утрачене та усунув три живі проблеми за зауваженням власника поверх встановлених основ 20261127-103137 (5404c83b4c31) і 20261127-145130 (4a67264fb55b): 1) єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) зі сторожем 32/32; 2) виправлення перемикача між звичайним і технічним простором у бічному меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx та зі збереженням tabContext і обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang (сторож site-001-snelheid 16/16), а також пакування випуску поверх 20261127-145130."
+        "werk": "Повернув утрачене та усунув чотири живі проблеми за зауваженнями власника поверх встановлених основ 20261127-103137 (5404c83b4c31), 20261127-145130 (4a67264fb55b) і 20261127-172549 (c375e5292024): 1) єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) зі сторожем 32/32; 2) виправлення перемикача між звичайним і технічним простором у бічному меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx та зі збереженням tabContext і обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang; 4) надійне надсилання відповідей і нових листів (фільтрація чернеток DRAFT у гілці, вибір останнього вхідного листа lastIncoming, base64 MIME-кодування з рядками <= 76 символів та RFC 2047 Subject у buildReplyRaw, резервний вибір активної скриньки), міждоменна фонова служба src/mail/uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1, keepalive: true) і миттєвий спливний бокс сповіщення (.canonical-notification-toast) із кнопкою «Повторити надсилання» на всіх піддоменах (сторож site-001-snelheid 22/22), а також пакування випуску поверх 20261127-172549."
       }
     ],
     "repo": "Tarasevych/hub",
     "tak": "feature/site-001-20261125-232500",
     "basisCommit": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
     "basisVersie": "20261105-061659",
-    "geinstalleerdeBasis": "4a67264fb55bd8c82e1d8efe907e8ae22edc0a53",
-    "geinstalleerdeVersie": "20261127-145130",
+    "geinstalleerdeBasis": "c375e52920248d538dbda1f15f643cfeb8229695",
+    "geinstalleerdeVersie": "20261127-172549",
     "integratieBasis": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
     "regelsVersie": "1.8.0",
     "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
     "samengevoegd": [
       {
-        "taak": "HERSTEL-001 (20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34) та встановлені на сервері випуски SITE-001 (20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68 і 20261127-145130 @ 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53)",
-        "commit": "4a67264fb55bd8c82e1d8efe907e8ae22edc0a53",
-        "reden": "Пакет зібрано безпосередньо поверх актуальної встановленої на живому сервері версії 20261127-145130 @ 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53 для 100 % сумісності UITROL-BASIS без помилки BASIS_VEROUDERD."
+        "taak": "HERSTEL-001 (20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34) та встановлені на сервері випуски SITE-001 (20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68, 20261127-145130 @ 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53 і 20261127-172549 @ c375e52920248d538dbda1f15f643cfeb8229695)",
+        "commit": "c375e52920248d538dbda1f15f643cfeb8229695",
+        "reden": "Пакет зібрано безпосередньо поверх актуальної встановленої на живому сервері версії 20261127-172549 @ c375e52920248d538dbda1f15f643cfeb8229695 для 100 % сумісності UITROL-BASIS без помилки BASIS_VEROUDERD."
       }
     ]
   },
@@ -80,7 +80,9 @@
     "16d28123998f355a35d72c4c485bc9309c1eb965",
     "a26d9c9105c2ef91b6fb1b7200d978a6aa61a8b6",
     "4a67264fb55bd8c82e1d8efe907e8ae22edc0a53",
-    "f8227fcea4699d886be3204110dab7f007aa35a9"
+    "f8227fcea4699d886be3204110dab7f007aa35a9",
+    "c375e52920248d538dbda1f15f643cfeb8229695",
+    "c994765ef69e663f574b4bb1d9777b3abcc08bf0"
   ],
   "tijdlijn": [
     {
@@ -104,8 +106,12 @@
       "resultaat": "Виконано злиття (--no-ff) встановленої на живому сервері версії 20261126-181653 @ c7561d0a без жодної втраченої можливості (ORCH behoud OK), узгоджено сигнатури routeOnbekend() та CANONICAL_AUTH_CHANGE (0 помилок tsc клієнта й сервера), оновлено каталог пошуку (2447 елементів) та оприлюднено випуск 20261127-103137."
     },
     {
-      "stap": "6) Gemini 4 Argon High від Google Antigravity (16d28123..HEAD): виправлення трьох живих проблем за зауваженням власника («повернув утрачене»: єдина згода на реп’яшки для всіх піддоменів, стабільний перемикач просторів у меню та збереження стану пошти, вкладень і сторінок між піддоменами й при поверненні до вкладки) і пакування випуску поверх встановленої основи 20261127-145130.",
-      "resultaat": "Збереження згоди на реп’яшки поширено на всі 11 піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com (site-001-toestemming 32/32); виправлено перемикач просторів (.zr) у меню без setPointerCapture на <main> і без самовільного повернення технічного профілю в TechPoort.tsx; забезпечено синхронне відновлення знімку пошти та міток із sessionStorage/localStorage, 5-хвилинне вікно свіжості списку листів і міток, збереження attachmentsByMessage у MailListViewSnapshot та tsv:mail-ui-context-v3, миттєве відкриття листів і вкладень із CacheStorage без скидання у стан завантаження та відсутність смуги #tsv-voortgang для фонових маршрутів ACHTERGROND_PAD (site-001-snelheid 16/16); узгоджено UITROL-BASIS із встановленою на сервері версією 20261127-145130 @ 4a67264fb55b."
+      "stap": "6) Gemini 4 Argon High від Google Antigravity (16d28123..c375e529): виправлення трьох живих проблем за зауваженнями власника («повернув утрачене»: єдина згода на реп’яшки для всіх піддоменів, стабільний перемикач просторів у меню та збереження стану пошти, вкладень і сторінок між піддоменами й при поверненні до вкладки) та випуск 20261127-172549.",
+      "resultaat": "Збереження згоди на реп’яшки поширено на всі 11 піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com (site-001-toestemming 32/32); виправлено перемикач просторів (.zr) у меню без setPointerCapture на <main> і без самовільного повернення технічного профілю в TechPoort.tsx; забезпечено синхронне відновлення знімку пошти та міток із sessionStorage/localStorage, 5-хвилинне вікно свіжості списку листів і міток, збереження attachmentsByMessage у MailListViewSnapshot та tsv:mail-ui-context-v3, миттєве відкриття листів і вкладень із CacheStorage без скидання у стан завантаження та відсутність смуги #tsv-voortgang для фонових маршрутів ACHTERGROND_PAD."
+    },
+    {
+      "stap": "7) Gemini 4 Argon High від Google Antigravity (c994765e..HEAD): усунення збою надсилання відповідей і нових листів («Відповідь зараз не вдалося надіслати. Текст залишився у редакторі.»), міждоменне фонове відправлення та миттєвий спливний бокс сповіщення з кнопкою «Повторити надсилання» на всіх піддоменах поверх встановленої основи 20261127-172549.",
+      "resultaat": "У маршрутах thread і reply відфільтровано чернетки DRAFT, обрано останній вхідний лист lastIncoming та зібрано всіх учасників гілки (усунено хибний 400 GOOGLE_MAIL_REPLY_RECIPIENT_INVALID при to === mine); частини text/plain та text/html у buildReplyRaw переведено з 8bit на Content-Transfer-Encoding: base64 (рядки <= 76 символів) з RFC 2047 encodeWord для Subject; додано резервний вибір активної скриньки snapshot.account || snapshot.accounts[0], повтор без threadId та очищення чернеток deleteDraftsForThread; дозволено виклик поштових маршрутів з будь-якого піддомену (!auth.service); створено службу src/mail/uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1 на Domain=.tarasevych.com, keepalive: true) і підключено наглядач controleerUitgaandePostOpSubdomein та кнопку дії «Повторити надсилання» у спливному боксі CanoniekMeldingencentrum.tsx (сторож site-001-snelheid 22/22)."
     }
   ],
   "keuzes": [
@@ -126,8 +132,12 @@
       "reden": "Раніше кожен перехід між піддоменами скидав MailFunctioneelWeergave у loading=true, вікно свіжості списку листів становило лише 20 с, метадані вкладень у рядках не зберігалися у MailListViewSnapshot, а повернення до вкладки кожні 4–10 с запускало повторні запити й вмикало смугу завантаження."
     },
     {
-      "besluit": "Зібрати випуск поверх актуальної встановленої на живому сервері версії 20261127-145130 @ 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53 із повним обліком усіх трьох моделей ШІ (Claude Opus 5.5 (High), Gemini 4 Carbon High та Gemini 4 Argon High).",
-      "reden": "На живому сервері вже встановлено випуск 20261127-145130 @ 4a67264fb55b, який є безпосереднім предком поточної гілки; встановлення UITROL-BASIS на 20261127-145130 усуває відхилення BASIS_VEROUDERD і точно фіксує авторство кожного з трьох етапів."
+      "besluit": "Фільтрувати чернетки DRAFT у гілці листування перед вибором одержувача відповіді, кодувати частини text/plain та text/html у buildReplyRaw у base64 (<= 76 символів у рядку), дозволити фонові поштові запити з будь-якого піддомену (!auth.service) та синхронізувати фонову вихідну пошту через міждоменний реп’яшок mr_uitgaande_post_v1 із показом спливного боксу сповіщення (.canonical-notification-toast) та кнопкою «Повторити надсилання».",
+      "reden": "Автозбережена чернетка відповіді в кінці гілки мала From = власна адреса власника, що спричиняло 400 GOOGLE_MAIL_REPLY_RECIPIENT_INVALID; 8bit без переносів для довгого HTML порушував ліміт RFC 5322 у 998 байтів; а перевірка auth.service !== 'mail' та відсутність keepalive і emitCanonicalNotice обривали фонове відправлення при переході між піддоменами й не показували спливного боксу сповіщення."
+    },
+    {
+      "besluit": "Зібрати випуск поверх актуальної встановленої на живому сервері версії 20261127-172549 @ c375e52920248d538dbda1f15f643cfeb8229695 із повним обліком усіх трьох моделей ШІ (Claude Opus 5.5 (High), Gemini 4 Carbon High та Gemini 4 Argon High).",
+      "reden": "На живому сервері вже встановлено випуск 20261127-172549 @ c375e5292024, який є безпосереднім предком поточної гілки; встановлення UITROL-BASIS на 20261127-172549 усуває відхилення BASIS_VEROUDERD і точно фіксує авторство кожного з трьох етапів."
     }
   ],
   "wijzigingen": [
@@ -143,8 +153,8 @@
     },
     {
       "soort": "gewijzigd",
-      "pad": "src/toestemming/toestemming.ts, src/toestemming/ToestemmingBand.tsx, src/CanoniekOmlijsting.tsx, src/tab-context.ts, src/tech/TechPoort.tsx, src/tech/tech-opslag.ts, src/tech/ruimtes/RuimteWissel.tsx, src/tech/ruimtes/ruimte-signaal.ts, src/tech/ruimtes/ruimtes-opslag.ts, backend/tech-ruimtes-kern.ts, backend/tech-ruimtes.ts, src/MailFunctioneelWeergave.tsx, src/mail-aanbieder-toestand.ts, src/mail-bijlage-cache.ts, src/mail/mail-wisselaar-model.ts, src/GoogleMailWerkruimte.tsx, src/VerenigdDienstApp.tsx, src/App.tsx, src/platform/client.ts, src/navigatie-snel.ts",
-      "omschrijving": "Виконано Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення трьох живих проблем за зауваженням власника): 1) єдина згода на реп’яшки на всі піддомени *.tarasevych.com через mr_toestemming_v1 (Domain=.tarasevych.com, 32/32); 2) стабільний перемикач між звичайним і технічним простором у меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx і зі збереженням tabContext та обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang (site-001-snelheid 16/16)."
+      "pad": "src/toestemming/toestemming.ts, src/toestemming/ToestemmingBand.tsx, src/CanoniekOmlijsting.tsx, src/tab-context.ts, src/tech/TechPoort.tsx, src/tech/tech-opslag.ts, src/tech/ruimtes/RuimteWissel.tsx, src/tech/ruimtes/ruimte-signaal.ts, src/tech/ruimtes/ruimtes-opslag.ts, backend/tech-ruimtes-kern.ts, backend/tech-ruimtes.ts, src/MailFunctioneelWeergave.tsx, src/mail-aanbieder-toestand.ts, src/mail-bijlage-cache.ts, src/mail/mail-wisselaar-model.ts, src/GoogleMailWerkruimte.tsx, src/VerenigdDienstApp.tsx, src/App.tsx, src/platform/client.ts, src/navigatie-snel.ts, backend/google-suite-inrichting.ts, backend/google-suite-mail-browser.ts, backend/mail-opstel.ts, backend/ai-mail-assistent.ts, backend/mail-afzenders.ts, src/mail-opstel-api.ts, src/mail/uitgaande-post-achtergrond.ts, src/MailGesprekInhoud.tsx, src/MailNieuwBerichtDialoog.tsx, src/CanoniekMeldingencentrum.tsx",
+      "omschrijving": "Виконано Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення чотирьох живих проблем за зауваженнями власника): 1) єдина згода на реп’яшки на всі піддомени *.tarasevych.com через mr_toestemming_v1 (Domain=.tarasevych.com, 32/32); 2) стабільний перемикач між звичайним і технічним простором у меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx і зі збереженням tabContext та обраного простору відображення між усіма піддоменами; 3) збереження стану пошти, міток, відкритого листа і вкладень між піддоменами та при поверненні до вкладки без повторних перезавантажень і без зайвої смуги #tsv-voortgang; 4) надійне надсилання відповідей і нових листів (фільтрація чернеток DRAFT, вибір lastIncoming, base64 MIME-кодування з рядками <= 76 символів та RFC 2047 Subject, резервний вибір активної скриньки), міждоменна фонова служба uitgaande-post-achtergrond.ts (mr_uitgaande_post_v1, keepalive: true) і спливний бокс сповіщення з кнопкою «Повторити надсилання» на всіх піддоменах (site-001-snelheid 22/22)."
     },
     {
       "soort": "gewijzigd",
@@ -153,13 +163,13 @@
     },
     {
       "soort": "toegevoegd",
-      "pad": "tests/eenheid/site-001-*.test.ts (16 нових наборів випробувань-сторожів), docs/site-001/* (перебіг робіт uk/nl та знімки до/після p01..p25 і p12-mail-behoud)",
-      "omschrijving": "Створено 16 постійних автоматичних сторожів (сумарно 243 перевірки поверх наявних наборів) для всіх критичних вимог 25 пунктів готовності та повний двомовний реєстр знімків до/після."
+      "pad": "tests/eenheid/site-001-*.test.ts (16 нових наборів випробувань-сторожів), docs/site-001/* (перебіг робіт uk/nl та знімки до/після p01..p25, p12-mail-behoud і p12-mail-verzenden)",
+      "omschrijving": "Створено 16 постійних автоматичних сторожів (сумарно 249 перевірок поверх наявних наборів) для всіх критичних вимог 25 пунктів готовності та повний двомовний реєстр знімків до/після."
     },
     {
       "soort": "gewijzigd",
       "pad": "deploy/archief-herstellen.sh, deploy/archief-maken.sh, deploy/ВІДНОВЛЕННЯ.uk.md, deploy/HERSTEL.nl.md, .github/workflows/site-001-uitgave.yml, orchestratie/bijdragen/SITE-001/*.json, orchestratie/onderwerpen/*.json",
-      "omschrijving": "Узгоджено сценарії та посібники аварійного відновлення з PostgreSQL 18, зафіксовано повний облік внесків усіх трьох моделей ШІ за правилом BIJDRAGE-001 і налаштовано конвеєр перевірки й оприлюднення випуску SITE-001 поверх встановленої основи 20261127-145130."
+      "omschrijving": "Узгоджено сценарії та посібники аварійного відновлення з PostgreSQL 18, зафіксовано повний облік внесків усіх трьох моделей ШІ за правилом BIJDRAGE-001 і налаштовано конвеєр перевірки й оприлюднення випуску SITE-001 поверх встановленої основи 20261127-172549."
     }
   ],
   "risicoUitleg": [
@@ -190,22 +200,22 @@
     },
     {
       "pad": ".github/workflows/site-001-uitgave.yml",
-      "uk": "Ізольований конвеєр перевірки й оприлюднення випуску SITE-001 поверх живої встановленої основи сервера 20261127-145130 @ 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53: верхній рівень permissions: contents: read, усі дії закріплені 40-символьними відбитками SHA, persist-credentials: false, npm ci --ignore-scripts, без pull_request_target і без secrets.*, перевіряє всі 16 сторожів SITE-001, подвійні міграції 0001..0342, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на живий сервер автоматично.",
-      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor uitgave SITE-001 boven op de live serverbasis 20261127-145130 @ 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53: permissions: contents: read op topniveau, alle acties vastgepind op 40-tekens-SHA’s, persist-credentials: false, npm ci --ignore-scripts, zonder pull_request_target of secrets.*, toetst alle 16 SITE-001-bewakers, dubbele migraties 0001..0342, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
+      "uk": "Ізольований конвеєр перевірки й оприлюднення випуску SITE-001 поверх живої встановленої основи сервера 20261127-172549 @ c375e52920248d538dbda1f15f643cfeb8229695: верхній рівень permissions: contents: read, усі дії закріплені 40-символьними відбитками SHA, persist-credentials: false, npm ci --ignore-scripts, без pull_request_target і без secrets.*, перевіряє всі 16 сторожів SITE-001, подвійні міграції 0001..0342, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на живий сервер автоматично.",
+      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor uitgave SITE-001 boven op de live serverbasis 20261127-172549 @ c375e52920248d538dbda1f15f643cfeb8229695: permissions: contents: read op topniveau, alle acties vastgepind op 40-tekens-SHA’s, persist-credentials: false, npm ci --ignore-scripts, zonder pull_request_target of secrets.*, toetst alle 16 SITE-001-bewakers, dubbele migraties 0001..0342, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
     }
   ],
   "controles": [
     {
-      "opdracht": "node scripts/orch.mjs controleer && node scripts/orch.mjs behoud --tegen 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53 && node scripts/vaardigheden/valideer.mjs && node scripts/meldingen-register-controle.mjs && node scripts/zoek-ui-catalogus.mjs --controle && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=6144 npx tsc -p tsconfig.json --noEmit",
-      "resultaat": "Замок правил 1.8.0 (VLAG-001), перевірка збереження всіх можливостей та внесків відносно живої встановленої основи 20261127-145130 (4a67264fb55b), сторож бази сповіщень MELDINGEN-REGISTER-001 (596 серверних кодів, 703 записи ACTIE_LABELS, 0 у 'overig'), пошуковий каталог (2447 елементів) та обидві перевірки типів TypeScript (клієнт і сервер) пройшли з 0 помилок."
+      "opdracht": "node scripts/orch.mjs controleer && node scripts/orch.mjs behoud --tegen c375e52920248d538dbda1f15f643cfeb8229695 && node scripts/vaardigheden/valideer.mjs && node scripts/meldingen-register-controle.mjs && node scripts/zoek-ui-catalogus.mjs --controle && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=6144 npx tsc -p tsconfig.json --noEmit",
+      "resultaat": "Замок правил 1.8.0 (VLAG-001), перевірка збереження всіх можливостей та внесків відносно живої встановленої основи 20261127-172549 (c375e5292024), сторож бази сповіщень MELDINGEN-REGISTER-001 (596 серверних кодів, 703 записи ACTIE_LABELS, 0 у 'overig'), пошуковий каталог (2447 елементів) та обидві перевірки типів TypeScript (клієнт і сервер) пройшли з 0 помилок."
     },
     {
-      "opdracht": "Прогін усіх 16 нових тестів-сторожів tests/eenheid/site-001-*.test.ts + тестів пошти й завантаження mail-wisselaar-20261115 / herstel-001-laad-kapsel / herstel-001-mail-weergave-twaalf-gebreken / upd-012 + тестів перемикання просторів upd-007/upd-008/tech-ruimtes-ui/toestemming-ruimte-cyclus",
-      "resultaat": "Усі 16 сторожів SITE-001 пройшли на 100 % (зокрема site-001-snelheid 16/16 для збереження стану пошти, вкладень і відсутності повторних перезавантажень та site-001-toestemming 32/32 для міждоменного реп’яшка mr_toestemming_v1), усі набори пошти (mail-wisselaar 17/17, herstel-001-laad-kapsel 6/6, herstel-001-mail-weergave 68/68, upd-012 6/6) та просторів (upd-007 8/8, upd-008 8/8, tech-ruimtes-ui 37/37) пройшли з 0 помилок."
+      "opdracht": "Прогін усіх 16 нових тестів-сторожів tests/eenheid/site-001-*.test.ts + тестів пошти й сповіщень meldingen-integ-20261103 / mededeling-ontdubbelen / mail-opstellen-mobiel / herstel-001-mail-weergave-twaalf-gebreken + тестів перемикання просторів",
+      "resultaat": "Усі 16 сторожів SITE-001 пройшли на 100 % (зокрема site-001-snelheid 22/22 для надійного надсилання листів і відповідей, фільтрації чернеток DRAFT, base64 MIME, міждоменної фонової черги mr_uitgaande_post_v1, спливного боксу сповіщення з кнопкою «Повторити надсилання» та збереження стану пошти й вкладень між піддоменами, а також site-001-toestemming 32/32 для mr_toestemming_v1), усі набори сповіщень і пошти (meldingen-integ-20261103 93/93, mail-opstellen-mobiel 70/70, herstel-001-mail-weergave 68/68) пройшли з 0 помилок."
     },
     {
-      "opdracht": "node scripts/orch.mjs pakket + pakket-controleer + backend/uitrol-voorcontrole.ts (pakketVoorcontrole проти дерева 4a67264fb55b) + перевірка root TRACE-001 після публікації GitHub Release",
-      "resultaat": "Узгоджено UITROL-BASIS із фактично встановленою на сервері версією 20261127-145130 @ 4a67264fb55bd8c82e1d8efe907e8ae22edc0a53, зазначено всі три моделі ШІ (Claude Opus 5.5 (High), Gemini 4 Carbon High, Gemini 4 Argon High), перевірено прапорці VLAG-001 і всі пояснення risicoUitleg, пройдено pakketVoorcontrole (0 помилок) та перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
+      "opdracht": "node scripts/orch.mjs pakket + pakket-controleer + backend/uitrol-voorcontrole.ts (pakketVoorcontrole проти дерева c375e52920248d538dbda1f15f643cfeb8229695) + перевірка root TRACE-001 після публікації GitHub Release",
+      "resultaat": "Узгоджено UITROL-BASIS із фактично встановленою на сервері версією 20261127-172549 @ c375e52920248d538dbda1f15f643cfeb8229695, зазначено всі три моделі ШІ (Claude Opus 5.5 (High), Gemini 4 Carbon High, Gemini 4 Argon High), перевірено прапорці VLAG-001 і всі пояснення risicoUitleg, пройдено pakketVoorcontrole (0 помилок) та перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
     }
   ],
   "bronnen": [
@@ -217,8 +227,10 @@
     "orchestratie/bijdragen/SITE-001/20261127-064541-antigravity.json",
     "orchestratie/bijdragen/SITE-001/20261127-100415-antigravity.json",
     "orchestratie/bijdragen/SITE-001/20261127-132334-antigravity.json",
-    "docs/site-001-gereedheid/ПЕРЕБІГ-РОБІТ.uk.md",
-    "docs/site-001-gereedheid/VOORTGANG.nl.md",
+    "orchestratie/bijdragen/SITE-001/20261127-171500-antigravity.json",
+    "orchestratie/bijdragen/SITE-001/20261127-192200-antigravity.json",
+    "docs/site-001/ПЕРЕБІГ-РОБІТ.uk.md",
+    "docs/site-001/VOORTGANG.nl.md",
     "https://hub.tarasevych.com/api/version"
   ],
   "beperkingen": [
