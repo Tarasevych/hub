@@ -10,8 +10,8 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSPr
 import { Check, Image, LayoutGrid, Library, RotateCcw, Settings2, Undo2, X } from 'lucide-react';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { profielVan, useTech } from '../tech/tech-opslag';
-import { ACHTERGRONDEN, werkbladTekst, werkbladWidget, type WerkbladContext, type WerkbladWidgetId } from '../../shared/werkblad-indeling';
-import { normaliseerLaag, leegLaag } from '../../shared/werkblad-v3';
+import { ACHTERGRONDEN, standaardWerkblad, werkbladTekst, werkbladWidget, type WerkbladContext, type WerkbladWidgetId } from '../../shared/werkblad-indeling';
+import { migreerV2NaarV3, normaliseerLaag, leegLaag } from '../../shared/werkblad-v3';
 import type { ApparaatKlasse, CanvasLayout, DesktopEntry } from '../../shared/werkblad-v3-types';
 import {
   MAP_ITEM, REGISTER_V3_HAKEN, USR_ID, persoonlijkItem, registerItem, registerItemVoorEntry, toegestaanVoor,
@@ -390,11 +390,18 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
     } catch (e) { zetMelding(weigeringZinUitFout(lang, e) ?? tr(lang, `Не вдалося (${String((e as Error)?.message || e)}).`, `Mislukt (${String((e as Error)?.message || e)}).`)); }
   };
   const kiesAchtergrond = (nieuw: string) => { const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout; if (a && l) bewaar(a, l, { achtergrond: nieuw }); zetAchtergrond(nieuw); };
+  const standaardPlaatsen = () => {
+    const a = klasseRef.current; if (!a || !magBewerken) return;
+    const { v3 } = migreerV2NaarV3(standaardWerkblad({ ruimte }), { ruimte, eigenaar: rechten.eigenaar, ...REGISTER_V3_HAKEN });
+    const l = v3.layouts[a];
+    if (l) bewaar(a, l);
+  };
+  const topAantal = laag ? laag.layout.items.filter((x) => !x.parent).length : 0;
 
   const stijl = achtergrond === 'eigen' && achtergrondEigen ? ({ '--wb-eigen': `url("${achtergrondEigen}")` } as CSSProperties) : undefined;
   return (
     <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad='klaar' data-werkblad-versie='3'
-      data-wb-ruimte={ruimte} data-wb3-klasse={klasse || ''} data-wb3-status={status} aria-labelledby='werkblad-kop'>
+      data-wb-ruimte={ruimte} data-wb-aantal={topAantal} data-wb3-klasse={klasse || ''} data-wb3-status={status} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
         <span id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</span>
         {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span> : null}
@@ -455,9 +462,23 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       {melding ? <p className='wb3-melding melding melding-info' data-wb3-zichtbaar-melding=''>{melding}<button type='button' className='wb-tip-sluit' aria-label={tr(lang, 'Закрити', 'Sluiten')} onClick={() => zetMelding('')}><X aria-hidden='true' /></button></p> : null}
       <div className='wb3-houder' ref={houder} data-wb3-houder='' onDragOver={(e) => { if (bewerken && [...e.dataTransfer.types].includes(BIBLIOTHEEK_MIME)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }} onDrop={opDrop}>
         {klasse && laag ? (
-          <Canvas key={klasse} layout={laag.layout} editMode={bewerken && magBewerken} limieten={limietenV3} lang={lang} status={status}
-            onCommit={opCommit} onRetry={opnieuw} onReload={() => void herladen()} onRequestAdd={() => zetBib(true)} onRename={magBewerken ? vraagMapHernoem : undefined} titel={titel} render={render}
-            interactief={blk.aan ? heeftBlok : undefined} />
+          !bewerken && topAantal === 0 ? (
+            <div className='wb-leeg-stol' data-wb-leeg='1'>
+              <LayoutGrid aria-hidden='true' />
+              <h3>{tr(lang, 'Ваш стіл порожній', 'Uw werkblad is leeg')}</h3>
+              <p>{tr(lang, 'Додайте віджети чи ярлики з бібліотеки або встановіть стандартну розкладку.', 'Voeg widgets of snelkoppelingen toe uit de bibliotheek of plaats de standaardindeling.')}</p>
+              {magBewerken ? (
+                <div className='knoppen'>
+                  <button type='button' className='knop-primair' data-wb3='leeg-bibliotheek' onClick={() => { zetBewerken(true); zetBib(true); }}><Library aria-hidden='true' />{tr(lang, 'Додати з бібліотеки', 'Uit bibliotheek toevoegen')}</button>
+                  <button type='button' className='knop-secundair' data-wb3='leeg-standaard' onClick={standaardPlaatsen}><RotateCcw aria-hidden='true' />{tr(lang, 'Стандартна розкладка', 'Standaardindeling')}</button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <Canvas key={klasse} layout={laag.layout} editMode={bewerken && magBewerken} limieten={limietenV3} lang={lang} status={status}
+              onCommit={opCommit} onRetry={opnieuw} onReload={() => void herladen()} onRequestAdd={() => zetBib(true)} onRename={magBewerken ? vraagMapHernoem : undefined} titel={titel} render={render}
+              interactief={blk.aan ? heeftBlok : undefined} />
+          )
         ) : <Skelet rijen={4} />}
       </div>
       {blk.paneel}

@@ -318,7 +318,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
       api.post('/api/owner/aanmeld/vnext/aanbieders', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
       api.post('/api/owner/sleutelkluis/stand', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
       api.post('/api/owner/access/gast-sessies/lijst', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
-      api.post('/api/owner/workspaces/list', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
+      api.post('/api/owner/session/bootstrap', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
     ]).then(([snap, aanb, kluis, gasten, ruimtes]) => {
       if (!actiefEffect) return;
       if (!snap && !aanb && !kluis && !gasten && !ruimtes) return;

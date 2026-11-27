@@ -38,7 +38,7 @@
 | 18 | Bescherming tegen spam | ✅ klaar | 56 openbare POST-routes: 23 met een strikte limiet per IP, 33 met eigen bescherming (pogingenteller, handtekening, toegangstoken); live controle — 6 van 6 limieten werken exact; nieuwe bewakingstest 50/50 laat geen nieuwe route zonder bescherming door |
 | 19 | Siteanalyse | ✅ klaar | Eigen anonieme analyse werkt nu echt en alleen met toestemming; tabblad «Bezoeken» voor de beheerder; 12/12 tests |
 | 20 | Één duidelijke oproep tot actie | ✅ klaar | Op 6 kernschermen precies 1 hoofdactie: bij een bewaard account op het toestel is de gebruikerskaart de hoofdactie en wordt de Google-knop rustig secundair; op `/privacy` en `/terms` een duidelijke terugkeerknop naar de ruimte toegevoegd; bewakingstest 8/8 |
-| 21 | Knoppen en interactieve elementen | wacht | — |
+| 21 | Knoppen en interactieve elementen | ✅ klaar | 4 → 0 fouten in live controle zonder en met aanmelding (`knoppen.mjs`): `aria-label` van taalwisselaar op `/toegang`, 404 op `/api/owner/workspaces/list` verholpen, `document.title` werkt bij na aanmelden, kaart en knoppen voor leeg werkblad in `WerkbladV3`; bewakingstest 7/7 |
 | 22 | Foutregistratie en bewaking | wacht | — |
 | 23 | Reservekopieën van de database | wacht | `deploy/backup-maken.sh`, `mijn-ruimte-backup.timer` — controleren |
 | 24 | Beveiligingskoppen en aanvraagbeperking | wacht | `server/start.ts`, `rateLimit` — controleren |
@@ -312,6 +312,28 @@ Een vergelijkende proef van alle 638 eenheidstestbestanden ten opzichte van de b
 | ![voor: 852 voorkomens in 285 bestanden](schermafdrukken/akaunt-kaart-voor.webp) | ![na: 0 voorkomens, bewaking 8/8](schermafdrukken/akaunt-kaart-na.webp) |
 | ![voor: oude Oekraïense formulering op gasttoegang](schermafdrukken/akaunt-toegang-voor.webp) | ![na: zuivere Oekraïense formulering op gasttoegang](schermafdrukken/akaunt-toegang-na.webp) |
 
+### 21. Knoppen en interactieve elementen
+
+**Controle «voor».** Het eind-tot-eindhulpmiddel `knoppen.mjs` controleerde op de lokale proefomgeving de interactieve elementen zowel zonder aanmelding (`id/`, `/toegang`, `/privacy`, 404-pagina) als met aanmelding als eigenaar op een eenmalige `rook`-server (`id/` instellingencentrum en het mobiele werkblad `hub/` op 390×844). Vier fouten gevonden:
+1. Op de gasttoegangspagina `/toegang` (`src/GastToegang.tsx`) toonde de taalwisselaar `.gast-taal` de zichtbare tekst `NL` / `UA`, maar miste die zichtbare tekst in `aria-label` — een ernstige schending van WCAG 2.5.3 (`label-content-name-mismatch` in `axe-core`, breekt spraakbediening).
+2. Aangemeld in het instellingencentrum `id/` stuurde het ontwerp `src/identiteit/maquette/IdentiteitMaquette.tsx` bij elke achtergrondlezing een verzoek `POST /api/owner/workspaces/list` naar een niet-bestaande route, wat telkens een `404`-netwerkfout veroorzaakte.
+3. Na bevestiging van de sessie op `id/` bleef de tabbladtitel `document.title` staan op het aanvankelijke «Вхід — Мій простір» / «Aanmelden — Mijn Ruimte» in plaats van «Налаштування — Мій простір» / «Instellingen — Mijn Ruimte» (en bij taalwisseling in andere diensten werd de titel evenmin zonder herladen bijgewerkt).
+4. Op een nieuw leeg werkblad `WerkbladV3` (`src/werkblad/WerkbladV3.tsx`) werd buiten de bewerkmodus enkel een leeg canvas getekend zonder verklarende kaart of knop om widgets toe te voegen of de standaardindeling te plaatsen.
+
+**Verbeteringen:**
+- `src/GastToegang.tsx`: de toegankelijke naam `aria-label` van `.gast-taal` begint nu met het zichtbare opschrift `MOVA_NAAM` (`NL — перемкнути мову на нідерландську` / `UA — taal wisselen naar Oekraïens`).
+- `src/identiteit/maquette/IdentiteitMaquette.tsx`: de aanroep `/api/owner/workspaces/list` is vervangen door het canonieke `/api/owner/session/bootstrap`, dat de lijst `workspaces` zonder enige `404`-fout teruggeeft.
+- `src/VerenigdDienstApp.tsx` en `src/App.tsx`: reactieve synchronisatie van `document.title` met de sessiestatus en de gekozen taal toegevoegd (met behoud van de `[ТЕХ]` / `[TECH]`-aanduiding van de technische strook en de eigen titel van de 404-pagina).
+- `src/werkblad/WerkbladV3.tsx`: op een leeg werkblad verschijnt nu de uitnodigende kaart `.wb-leeg-stol` (`data-wb-leeg="1"`, `data-wb-aantal`) met twee acties — de hoofdknop «Uit bibliotheek toevoegen» en de nevenknop «Standaardindeling» (zet de standaardset voor de huidige toestelklasse klaar en bewaart haar). De zoekindex van de interface is bijgewerkt (2440 elementen).
+
+Herhaalde proef met `knoppen.mjs` — **0 fouten** (11 van 11 live scenario's geslaagd). Nieuwe bewakingstest `tests/eenheid/site-001-knoppen.test.ts` — `7/7`, aangrenzende tests `werkblad-hoek-20261115` (`9/9`) en `identiteit-maquette` (`56/56`) groen.
+
+| Voor | Na |
+|---|---|
+| ![voor: 4 fouten bij interactieve elementen](schermafdrukken/p21-kaart-voor.webp) | ![na: 0 fouten in 11 live scenario's](schermafdrukken/p21-kaart-na.webp) |
+| ![voor: leeg mobiel canvas zonder uitleg](schermafdrukken/p21-werkblad-voor.webp) | ![na: kaart voor leeg werkblad met acties](schermafdrukken/p21-werkblad-na.webp) |
+| — | ![na klik op «Standaardindeling»](schermafdrukken/p21-werkblad-standaard-na.webp) |
+
 ## Logboek
 
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
@@ -328,3 +350,4 @@ Een vergelijkende proef van alle 638 eenheidstestbestanden ten opzichte van de b
 - **26.11.2026 22:55** — sessie overgenomen door `Gemini 4 Carbon High` (`Google Antigravity`) na stop door limietuitputting van `Claude Opus 5.5 (High)` (`Antigravity Google`) op vastlegging `204f9ec8`; vervanging naar «обліковий запис» in 285 bestanden afgerond met bewakingstest 8/8 en auteurschapsregistratie van beide modellen.
 - **26.11.2026 23:35** — punt 12 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): `/toegang` 67 % lichter (666 → 220 kB), `id/` versneld (`LCP` −46 %, netwerkstilte 15,5 → 1,48 s, CPU-blokkering op telefoon −72 %, `4xx`-fouten 2 → 0), bewakingstest 9/9 toegevoegd.
 - **26.11.2026 23:52** — punt 20 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): op alle 6 kernschermen precies één hoofdactie gewaarborgd (2 → 0 fouten), bewakingstest 8/8.
+- **27.11.2026 00:21** — punt 21 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): live controle van alle knoppen en interactieve acties zonder en met aanmelding (4 → 0 fouten: `aria-label` op `/toegang`, 404 `/api/owner/workspaces/list` verholpen, tabbladtitel na aanmelden, kaart voor leeg werkblad in `WerkbladV3`), bewakingstest 7/7.

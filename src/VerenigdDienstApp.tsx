@@ -320,6 +320,27 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     stableView.remember(viewAddress(user?.id||'anon'),{state,user,sessionStartedAt,menu:menuPreferences,language:lang,workspaces,activeWorkspaces,archivedWorkspaces,deelWerkruimtes,notifications,notificationItems,knownAccounts,viewKind:viewKindFor(service,state),rememberedBrowser:sessionRemembered});
   },[state,user,sessionStartedAt,menuPreferences,lang,workspaces,activeWorkspaces,archivedWorkspaces,deelWerkruimtes,notifications,notificationItems,knownAccounts,service,tab]);
   useLayoutEffect(()=>{if(active)releaseBootShell()},[active]);
+  useEffect(()=>{
+    if(!active||state==='checking'||routeOnbekend(service,location.pathname))return;
+    const dienstTitels:Record<ServiceId,[string,string]>={
+      ai:['ШІ — Мій простір','AI — Mijn Ruimte'],
+      mail:['Пошта — Мій простір','E-mail — Mijn Ruimte'],
+      cloud:['Хмарне сховище — Мій простір','Cloudopslag — Mijn Ruimte'],
+      github:['GitHub — Мій простір','GitHub — Mijn Ruimte'],
+      crm:['Клієнтські взаємини — Мій простір','Klantrelatiebeheer — Mijn Ruimte'],
+      huis:['Розумний будинок — Мій простір','Slim huis — Mijn Ruimte'],
+      mcp:['Міст ШІ — Мій простір','Brug AI — Mijn Ruimte'],
+      identity:['Налаштування — Мій простір','Instellingen — Mijn Ruimte'],
+      api:['API та інтеграції — Мій простір','API en integraties — Mijn Ruimte'],
+      admin:['Адміністрування — Мій простір','Beheer — Mijn Ruimte'],
+    };
+    const aanmeld=service==='identity'&&state==='signed_out'&&(location.pathname||'/')==='/';
+    const paar=aanmeld?['Вхід — Мій простір','Aanmelden — Mijn Ruimte']:dienstTitels[service];
+    const basis=lang==='nl'?paar[1]:paar[0];
+    const techAan=document.documentElement.dataset.tech==='aan';
+    const wens=(techAan?(lang==='nl'?'[TECH] ':'[ТЕХ] '):'')+basis;
+    if(document.title!==wens)document.title=wens;
+  },[active,service,state,lang]);
 
   const names:Record<ServiceId,string>={
     ai:tr('ШІ для вас','AI voor u'),

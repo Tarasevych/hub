@@ -130,7 +130,8 @@ export default function GastToegang(){
   };
   const codeStatus=gastCodeStatus(code);
   const uitloggen=async()=>{await post('/api/gast/uitloggen').catch(()=>undefined);setSessie(null);setInhoud({});setActief('');};
-  const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(lang==='uk'?'nl':'uk')} aria-label={tr(lang,'Мова: українська. Перемкнути на нідерландську','Taal: Nederlands. Wissel naar Oekraïens')}><MoviPrapor taal={lang==='uk'?'nl':'uk'}/><span>{MOVA_NAAM[lang==='uk'?'nl':'uk']}</span></button>;
+  const volgendeTaal=lang==='uk'?'nl':'uk';
+  const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(volgendeTaal)} aria-label={`${MOVA_NAAM[volgendeTaal]} — ${tr(lang,'перемкнути мову на нідерландську','taal wisselen naar Oekraïens')}`}><MoviPrapor taal={volgendeTaal}/><span>{MOVA_NAAM[volgendeTaal]}</span></button>;
   const gastSfeer=isMaquette?<div className='mq-gast-sfeer' aria-hidden='true'>
     <span className='mq-gast-halo'/>
     <span className='mq-gast-orb'/>
