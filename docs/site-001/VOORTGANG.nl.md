@@ -41,7 +41,7 @@
 | 21 | Knoppen en interactieve elementen | ✅ klaar | 4 → 0 fouten in live controle zonder en met aanmelding (`knoppen.mjs`): `aria-label` van taalwisselaar op `/toegang`, 404 op `/api/owner/workspaces/list` verholpen, `document.title` werkt bij na aanmelden, kaart en knoppen voor leeg werkblad in `WerkbladV3`; bewakingstest 7/7 |
 | 22 | Foutregistratie en bewaking | ✅ klaar | `proces-vangnet`, `/__gezondheid?diep=1` (`ALLEEN_LOKAAL`), 401/403/404-tellers, register van 333 acties en `nazorg` gecontroleerd; `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0, alle 3 cookies) en `rook-controle`-test hersteld (40/40); bewakingstest 7/7 |
 | 23 | Reservekopieën van de database | ✅ klaar | Live keten `backup-maken.sh` → `age` → `SHA256SUMS` → `age -d \| pg_restore` op PostgreSQL 18.7 getest (208/208 migraties, 224/224 tabellen, 3322/3322 rijen, 193/193 RLS-tabellen); onverenigbaar `postgresql-17` → `postgresql-18` hersteld in `archief-herstellen.sh` (dumpindeling `1.16-0`); bewakingstest 6/6 |
-| 24 | Beveiligingskoppen en aanvraagbeperking | wacht | `server/start.ts`, `rateLimit` — controleren |
+| 24 | Beveiligingskoppen en aanvraagbeperking | ✅ klaar | `BASE_HEADERS` in `server/start.ts` aangevuld tot 9 beveiligingskoppen (`COOP: same-origin-allow-popups`, `CORP: same-site` met `cross-origin` voor pictogrammen/voorbeeldafbeelding en Telegram-venster, `X-Permitted-Cross-Domain-Policies: none`); IPv6 `/64`-maskering, `rateLimit` (`failClosed`), `pogingReserveren` en `Origin`/`Host`-weigering geverifieerd; bewakingstest 7/7 |
 | 25 | Registratie, aanmelding en wachtwoordherstel | wacht | — |
 
 ## Gevonden fouten die nog op hun punt wachten
@@ -368,6 +368,25 @@ Nieuwe bewakingstest `tests/eenheid/site-001-monitoring.test.ts` — `7/7`, aang
 |---|---|
 | ![voor: onverenigbaar postgresql-17 in vidnovyty.sh voor PG 18-dumps 1.16-0](schermafdrukken/p23-kaart-voor.webp) | ![na: PostgreSQL 18 gelijkgetrokken, live keten backup-maken.sh + age + pg_restore 100 % sluitend](schermafdrukken/p23-kaart-na.webp) |
 
+### 24. Beveiligingskoppen en aanvraagbeperking
+
+**Controle van de bestaande beveiligingslagen (`server/start.ts`, `server/platform/beveiliging.ts`, `shared/ip-limiet.ts`):**
+- Alle antwoorden hadden al 6 kernkoppen: `Strict-Transport-Security: max-age=31536000; includeSubDomains`, een strikte `Content-Security-Policy` zonder `'unsafe-eval'` en zonder ingebedde scripts (`default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests`), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` en `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()`.
+- Een onbekende `Host`-kop wordt geweigerd met code `421`, een vreemde `Origin` op `/api/*` met code `403`, en `Server-Timing` wordt weggelaten op gevoelige aanmeldpaden en `4xx/5xx`-antwoorden.
+- De tweelaagse aanvraagbeperking groepeert IPv6-adressen per `/64`-subnet, begrenst het geheugen op `600/min` (`100 000` sleutels), bewaart strikte emmers in PostgreSQL (`app.rate_limits`, `failClosed: true`, `Retry-After`) en blokkeert herhaald raden oplopend via `app.login_lockouts` (`15 min → … → 24 uur` vanaf 5 mislukte pogingen).
+
+**Aanvulling met isolatiekoppen tussen domeinen:**
+- Aan `BASE_HEADERS` in `server/start.ts` zijn drie ontbrekende moderne beveiligingskoppen toegevoegd:
+  1. `Cross-Origin-Opener-Policy: same-origin-allow-popups` — isoleert het tabblad tegen vreemde sites en houdt zelf geopende aanmeldvensters van Google OAuth en Telegram intact;
+  2. `Cross-Origin-Resource-Policy: same-site` — verbiedt het insluiten van interne antwoorden en modules door derden terwijl uitwisseling tussen alle eigen `*.tarasevych.com`-subdomeinen behouden blijft (voor `/og-afbeelding.png`, `favicon*` en het ingebedde Telegram-venster geldt `cross-origin`);
+  3. `X-Permitted-Cross-Domain-Policies: none`.
+
+Live controle op de proefomgeving bevestigde alle **9 beveiligingskoppen**. Nieuwe bewakingstest `tests/eenheid/site-001-beveiliging.test.ts` — `7/7`, aangrenzende tests `site-001-spam` (`50/50`) en `telegram-venster-20261114` (`99/99`) groen.
+
+| Voor | Na |
+|---|---|
+| ![voor: 6 van 9 beveiligingskoppen, zonder COOP/CORP/X-Permitted-Cross-Domain-Policies](schermafdrukken/p24-kaart-voor.webp) | ![na: volledige set van 9 beveiligingskoppen en geverifieerde limieten, bewaking 7/7](schermafdrukken/p24-kaart-na.webp) |
+
 ## Logboek
 
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
@@ -387,3 +406,4 @@ Nieuwe bewakingstest `tests/eenheid/site-001-monitoring.test.ts` — `7/7`, aang
 - **27.11.2026 00:21** — punt 21 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): live controle van alle knoppen en interactieve acties zonder en met aanmelding (4 → 0 fouten: `aria-label` op `/toegang`, 404 `/api/owner/workspaces/list` verholpen, tabbladtitel na aanmelden, kaart voor leeg werkblad in `WerkbladV3`), bewakingstest 7/7.
 - **27.11.2026 00:33** — punt 22 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): alle lagen van foutregistratie en gezondheidsbewaking gecontroleerd (`/__gezondheid?diep=1`, `proces-vangnet`, `nazorg`, register van 333 acties); `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0) en `rook-controle`-test hersteld (40/40), bewakingstest 7/7 toegevoegd.
 - **27.11.2026 00:44** — punt 23 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): live cyclus van versleutelde reservekopie `backup-maken.sh` + `age` en terugzetten `pg_restore` op PostgreSQL 18.7 uitgevoerd (100 % overeenkomst van 208 migraties, 224 tabellen en 3322 rijen); onverenigbaar `postgresql-17` → `postgresql-18` hersteld in `archief-herstellen.sh` en herstelgidsen, bewakingstest 6/6 toegevoegd.
+- **27.11.2026 00:54** — punt 24 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` en `X-Permitted-Cross-Domain-Policies` toegevoegd (volledige 9/9 beveiligingskoppen met behoud van voorbeeldafbeelding en Telegram-venster), snelheidslimieten en blokkering geverifieerd, bewakingstest 7/7.

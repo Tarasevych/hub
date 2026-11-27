@@ -93,6 +93,9 @@ const BASE_HEADERS: Record<string, string> = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'Cross-Origin-Resource-Policy': 'same-site',
+  'X-Permitted-Cross-Domain-Policies': 'none',
 };
 
 // PERF-001: welk achtergrondwerk loopt (voor de bewaking van de hoofdthread hieronder).
@@ -143,8 +146,11 @@ function send(res: http.ServerResponse, status: number, headers: Record<string, 
   if (res.headersSent) return;
   const alle: Record<string, string | string[]> = { ...BASE_HEADERS, ...headers };
   // TELEGRAM-002: een route mag X-Frame-Options weglaten (lege waarde) als haar eigen CSP frame-ancestors zet (Telegram-venster).
-  if (alle['X-Frame-Options'] === '' && /frame-ancestors https:\/\//.test(String(alle['Content-Security-Policy'] || ''))) delete alle['X-Frame-Options'];
-  else if (alle['X-Frame-Options'] === '') alle['X-Frame-Options'] = 'DENY';
+  if (alle['X-Frame-Options'] === '' && /frame-ancestors https:\/\//.test(String(alle['Content-Security-Policy'] || ''))) {
+    delete alle['X-Frame-Options'];
+    alle['Cross-Origin-Resource-Policy'] = 'cross-origin';
+    alle['Cross-Origin-Opener-Policy'] = 'unsafe-none';
+  } else if (alle['X-Frame-Options'] === '') alle['X-Frame-Options'] = 'DENY';
   res.writeHead(status, alle);
   res.end(body);
 }
@@ -252,6 +258,10 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     ETag: etag,
     ...(extra || {}),
   };
+  const basisNaam = path.basename(file);
+  if (basisNaam === 'og-afbeelding.png' || basisNaam === 'apple-touch-icon.png' || basisNaam.startsWith('favicon')) {
+    headers['Cross-Origin-Resource-Policy'] = 'cross-origin';
+  }
   if (ext === '.html') {
     headers['Content-Security-Policy'] = csp;
     // Menu v2 fase B1: vooruitladen tussen de eigen onderdelen. De regels staan in een apart bestand (geen inline script, de CSP
@@ -265,8 +275,8 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     // Overal elders blijft geolocation=() — geen enkele andere pagina kan de locatie opvragen.
     if (String(req.headers.host || '').split(':')[0].toLowerCase() === SERVICE_HOSTS.identity) headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()';
   }
-  if (path.basename(file) === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
-  if (path.basename(file) === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';
+  if (basisNaam === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
+  if (basisNaam === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';
   // PERF-001: tekstbestanden gecomprimeerd (brotli/gzip, één keer per bestand in het geheugen; zie server/platform/statisch-comprimeren.ts).
   if (COMPRIMEERBAAR.has(ext) && s.size >= MIN_BYTES) {
     headers.Vary = headers.Vary ? `${headers.Vary}, Accept-Encoding` : 'Accept-Encoding';
