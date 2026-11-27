@@ -7,6 +7,7 @@
 // nl: bewaking van de laadsnelheid zonder netwerk.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { bekendeDienstVoor, classificeer, isAlgemeneAfzenderNaam, parseAuthResults } from '../../shared/mail-afzenders';
 import { checker } from './hulp/nep-google';
 
 export async function main(): Promise<number> {
@@ -183,6 +184,30 @@ export async function main(): Promise<number> {
       && minRijCss.includes('.mail-row-minimum.read .mail-minimum-subject{color:var(--mail-row-secondary,var(--muted));font-weight:500}')
       && mailRijTsx.includes('nameWeight=message.unread?650:400,subjectWeight=message.unread?650:500,dateWeight=message.unread?600:400')
       && mailMinRijTsx.includes('subjectWeight=p.message.unread?650:500,dateWeight=p.message.unread?600:400,nameWeight=p.message.unread?650:400'));
+
+    const afzCss = await readFile(join(root, 'src/afzenders/afzenders.css'), 'utf8');
+    const afzBadgeTsx = await readFile(join(root, 'src/afzenders/AfzenderBadge.tsx'), 'utf8');
+    const authRozetka = parseAuthResults(['mx.google.com; dkim=pass header.i=@rozetka.ua; spf=pass smtp.mailfrom=info@rozetka.ua; dmarc=pass header.from=rozetka.ua']);
+    const authPostnl = parseAuthResults(['mx.google.com; dkim=pass header.i=@postnl.be; spf=pass smtp.mailfrom=noreply@postnl.be; dmarc=pass header.from=postnl.be']);
+    const authOpenai = parseAuthResults(['mx.google.com; dkim=pass header.i=@openai.com; spf=pass smtp.mailfrom=noreply@chatgpt.com; dmarc=pass header.from=chatgpt.com']);
+    const contactenSupport = new Map([['support', ['support@andere-winkel.be']], ['paypal', ['service@paypal.com']]]);
+    check('Маркування відправника: .afz-groep/.afz-badge не обрізаються, офіційні регіональні та поштові домени (rozetka.ua, postnl.be, chatgpt.com, paypal.be, monobank.com.ua, privat24.ua) та загальні службові імена (Support, Info, Підтримка) не маркуються хибно як підозрілі',
+      afzCss.includes('.afz-groep { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; overflow: visible;')
+      && afzCss.includes('.afz-adres { margin-inline-start: 0; padding-inline-start: 4px; box-sizing: border-box;')
+      && afzBadgeTsx.includes("if (a.status === 'onbekend' && a.reden === 'BEKENDE_DIENST_ZONDER_AUTH' && plek === 'rij' && !domeinBevestigd) return null;")
+      && afzBadgeTsx.includes("if (a.status === 'onbekend' && !markeringen && !domeinBevestigd) return null;")
+      && !!bekendeDienstVoor('rozetka.ua')
+      && !!bekendeDienstVoor('postnl.be')
+      && !!bekendeDienstVoor('chatgpt.com')
+      && !!bekendeDienstVoor('monobank.com.ua')
+      && !!bekendeDienstVoor('privat24.ua')
+      && classificeer({ naam: 'Rozetka', adres: 'info@rozetka.ua', domein: 'rozetka.ua', auth: authRozetka }).status === 'geverifieerd'
+      && classificeer({ naam: 'PostNL', adres: 'noreply@postnl.be', domein: 'postnl.be', auth: authPostnl }).status === 'geverifieerd'
+      && classificeer({ naam: 'ChatGPT', adres: 'noreply@chatgpt.com', domein: 'chatgpt.com', auth: authOpenai }).status === 'geverifieerd'
+      && classificeer({ naam: 'PayPal', adres: 'service@paypal.be', domein: 'paypal.be', contacten: contactenSupport }).status !== 'verdacht'
+      && isAlgemeneAfzenderNaam('Support')
+      && isAlgemeneAfzenderNaam('Підтримка')
+      && classificeer({ naam: 'Support', adres: 'support@nieuwe-dienst.be', domein: 'nieuwe-dienst.be', contacten: contactenSupport }).status !== 'verdacht');
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

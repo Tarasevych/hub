@@ -8,17 +8,23 @@
 :root.theme-dark, :root.theme-plum-dark { --afz-ok:var(--ok); --afz-onbekend: #f5a524; --afz-verdacht: #ff8a7a; }
 html.theme-dark:not(.theme-light):not(.theme-plum-light):not(.theme-dark):not(.theme-plum-dark):not(.theme-plum),html.theme-plum-dark:not(.theme-light):not(.theme-plum-light):not(.theme-dark):not(.theme-plum-dark):not(.theme-plum){ --afz-ok:var(--ok); --afz-onbekend: #f5a524; --afz-verdacht: #ff8a7a; }
 
-.afz-groep { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; overflow: hidden; vertical-align: middle; }
+.afz-groep { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; overflow: visible; vertical-align: middle; }
 /* Rij in grid-indeling (naam boven e-mail): pastille op dezelfde regel als de naam, de rest eronder over de hele breedte. */
 /* 21.10 (агент C): ім'я важливіше за адресу — колонка імені росте до свого тексту першою (не-fr трек), група «адреса + щит» бере залишок
    (fr), але не менше за щит (22 px). Було minmax(0,auto) для обох: ім'я й адреса обрізалися порівну («anastasia-ar… notificati…»). */
+.mail-row-sender-copy:not([data-layout='inline']) { display: grid; min-width: 0; align-items: center; }
 .mail-row-sender-copy:not([data-layout='inline']):has(> .afz-groep) { grid-template-columns: minmax(0, max-content) minmax(22px, 1fr); align-items: center; column-gap: 0; }
 .mail-row-sender-copy:not([data-layout='inline']):has(> .afz-groep) > :not(strong):not(.afz-groep) { grid-column: 1 / -1; }
+.mail-row-sender-copy > strong, .mail-row-sender-copy > small, .mail-minimum-sender > strong, .mail-thread-message-head > span > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row-sender-copy[data-layout='inline'], .mail-minimum-sender { align-items: center; }
 .mail-row-sender-copy[data-layout='inline'] > .afz-groep, .mail-minimum-sender > .afz-groep { align-self: center; flex: 0 1000 auto; min-width: 22px; }
+.mail-thread-message-head > span:has(> .afz-groep) { grid-template-columns: minmax(0, max-content) auto; align-items: center; column-gap: 4px; }
+.mail-thread-message-head > span:has(> .afz-groep) > :not(strong):not(.afz-groep) { grid-column: 1 / -1; }
+.mail-thread-message-head > span > .afz-groep { pointer-events: auto; overflow: visible; }
 .afz-groep > .afz-badge { flex: none; }
 .afz-sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.afz-badge { display: inline-flex; align-items: center; justify-content: center; gap: 3px; flex: 0 0 auto; vertical-align: middle; margin-inline-start: 4px;
-  min-width: 18px; height: 18px; padding: 0 2px; border-radius: 999px; line-height: 0; border: 0; background: transparent; cursor: default; }
+.afz-badge { display: inline-flex; align-items: center; justify-content: center; gap: 3px; flex: 0 0 auto; vertical-align: middle; margin-inline-start: 3px;
+  min-width: 18px; height: 18px; padding: 0 2px; border-radius: 999px; line-height: 0; border: 0; background: transparent; cursor: default; overflow: visible; }
 .afz-badge svg { width: 14px; height: 14px; flex: 0 0 auto; }
 button.afz-badge { cursor: pointer; font: inherit; }
 button.afz-badge:focus-visible { outline: 2px solid var(--accent, #0e7c6b); outline-offset: 1px; }
@@ -28,7 +34,7 @@ button.afz-badge:focus-visible { outline: 2px solid var(--accent, #0e7c6b); outl
 .afz-verdacht { color: var(--afz-verdacht); background: color-mix(in srgb, var(--afz-verdacht) 16%, transparent); }
 .afz-badge-tekst { font-size:12px; font-weight: 700; line-height: 1; padding-inline-end: 4px; }
 .afz-lezer.afz-badge { height: 20px; min-width: 20px; }
-.afz-adres { margin-inline-start: 6px; font-size: max(var(--tekst-mini), .86em); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 24ch; flex: 0 4 auto; }
+.afz-adres { margin-inline-start: 0; padding-inline-start: 4px; box-sizing: border-box; font-size: max(var(--tekst-mini), .86em); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 24ch; flex: 0 4 auto; }
 /* De naam heeft voorrang op het adres als de rij smal wordt (het adres krimpt eerst). */
 
 .afz-tip { position: fixed; z-index: 2147483000; width: min(308px, calc(100vw - 16px)); padding: 12px 14px; border-radius: 12px;

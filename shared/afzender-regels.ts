@@ -1,6 +1,7 @@
 // Версія правил відправника. Старий автоматичний вердикт можна замінити новішим. Ручний — ні.
 // 3: автоматично знімається ЛИШЕ автоматичний вердикт «ім’я контакту», і лише коли лист підписаний власним доменом.
-export const AFZENDER_REGELS_VERSIE = 3;
+// 4: розширено перелік офіційних доменів відомих служб та переоцінка старих автоматичних хибних спрацювань.
+export const AFZENDER_REGELS_VERSIE = 4;
 
 const HANDMATIG = new Set(['HANDMATIG', 'HANDMATIG_VERDACHT']);
 export const CONTACTNAAM_REDEN = 'NAAM_VAN_CONTACT_ANDER_ADRES';

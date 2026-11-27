@@ -23,7 +23,7 @@ import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
 import { jsonbTekst } from '../shared/tekst-veilig';
 import {
-  AFZENDER_STATUSSEN, adresVan, adressenVan, authGeslaagdVoor, bekendeDienstVoor, bewijsRegels, classificeer, domeinAuthVan, geldigAdres, isGratisMailbox, naamSleutel, niveauVoor,
+  AFZENDER_STATUSSEN, adresVan, adressenVan, authGeslaagdVoor, bekendeDienstVoor, bewijsRegels, classificeer, domeinAuthVan, geldigAdres, isAlgemeneAfzenderNaam, isGratisMailbox, naamSleutel, niveauVoor,
   normaliseerAdres, organisatieDomein, parseAuthResults, vertrouwenVan,
   type AfzenderBron, type AfzenderStatus, type AuthResultaten, type Classificatie, type ContactInvoer, type DnsBewijs, type DomeinAuthStand,
 } from '../shared/mail-afzenders';
@@ -207,12 +207,27 @@ export function samenvoegen(rij: AfzenderRij | null, w: Waarneming, nu = Date.no
   return basis;
 }
 
-/** Перегляд збереженого Authentication-Results. Ручну позначку не знімає. Без доказу статус не змінюється, але версію правил ставимо. */
+/** Перегляд збереженого Authentication-Results та розширеного переліку офіційних доменів. Ручну позначку не знімає. */
 export function herbeoordeelUitBewijs(rij: AfzenderRij, nu = Date.now()): AfzenderRij {
   const stempel = (r: AfzenderRij): AfzenderRij => r.bewijs?.regelVersie === AFZENDER_REGELS_VERSIE ? r : { ...r, bewijs: { ...r.bewijs, regelVersie: AFZENDER_REGELS_VERSIE } };
   if (rij.bron === 'handmatig' || rij.reden === 'HANDMATIG' || rij.reden === 'HANDMATIG_VERDACHT') return stempel(rij);
   const laatste = rij.bewijs?.laatste;
-  if (!laatste?.dmarc) return stempel(rij);
+  if (!laatste?.dmarc) {
+    if (rij.status === 'verdacht' && (bekendeDienstVoor(rij.domein) || (rij.reden === 'NAAM_VAN_CONTACT_ANDER_ADRES' && isAlgemeneAfzenderNaam(rij.naam)))) {
+      const zonderAuth = classificeer({ naam: rij.naam, adres: rij.adres, domein: rij.domein });
+      if (zonderAuth.status !== 'verdacht') {
+        return stempel({
+          ...rij,
+          status: zonderAuth.status,
+          bron: zonderAuth.bron,
+          reden: zonderAuth.reden,
+          merk: zonderAuth.merk,
+          historie: metHistorie(rij.historie, { op: 'automatisch', tijd: nu, door: 'systeem', van: rij.status, naar: zonderAuth.status, reden: zonderAuth.reden }),
+        });
+      }
+    }
+    return stempel(rij);
+  }
   const auth: AuthResultaten = {
     betrouwbaar: true, authserv: laatste.authserv || '', spf: authUitslag(laatste.spf || ''), spfDomein: laatste.spfDomein || '',
     dkim: laatste.dkimDomein ? [{ uitslag: 'pass', domein: laatste.dkimDomein }] : [],
@@ -220,13 +235,24 @@ export function herbeoordeelUitBewijs(rij: AfzenderRij, nu = Date.now()): Afzend
   };
   const klass = classificeer({ naam: rij.naam, adres: rij.adres, domein: rij.domein, auth });
   if (klass.status === rij.status && klass.reden === rij.reden) return stempel(rij);
-  return stempel(samenvoegen(rij, { adres: rij.adres, naam: rij.naam, domein: rij.domein, klass, auth, tijd: laatste.tijd || nu, telt: false }, nu));
+  const samengevoegd = samenvoegen(rij, { adres: rij.adres, naam: rij.naam, domein: rij.domein, klass, auth, tijd: laatste.tijd || nu, telt: false }, nu);
+  if (rij.status === 'verdacht' && samengevoegd.status === 'verdacht' && klass.status !== 'verdacht' && (bekendeDienstVoor(rij.domein) || (rij.reden === 'NAAM_VAN_CONTACT_ANDER_ADRES' && isAlgemeneAfzenderNaam(rij.naam)))) {
+    return stempel({
+      ...samengevoegd,
+      status: klass.status,
+      bron: klass.bron,
+      reden: klass.reden,
+      merk: klass.merk,
+      historie: metHistorie(rij.historie, { op: 'automatisch', tijd: nu, door: 'systeem', van: 'verdacht', naar: klass.status, reden: klass.reden }),
+    });
+  }
+  return stempel(samengevoegd);
 }
 
 // ------------------------------------------------------------------------------------------------ status voor de lijst (+ luie controle)
 const lazyCache = new Map<string, { auth: AuthResultaten; tot: number }>();
 const lazyEmmer = new Map<string, number[]>();
-const LAZY_PER_VERZOEK = 5, LAZY_PER_5MIN = 40;
+const LAZY_PER_VERZOEK = 25, LAZY_PER_5MIN = 200;
 const magLazy = (userId: string) => {
   const nu = Date.now(), lijst = (lazyEmmer.get(userId) || []).filter((t) => nu - t < 300_000);
   if (lijst.length >= LAZY_PER_5MIN) { lazyEmmer.set(userId, lijst); return false; }
@@ -271,12 +297,25 @@ function authSamenvattingVoor(domein: string, auth?: AuthResultaten, laatste?: B
 export async function afzenderStatus(userId: string, items: StatusItem[]): Promise<StatusUit[]> {
   const invoer = items.slice(0, 100).map((i) => ({ ...adresVan(i.from), messageId: String(i.messageId || ''), accountId: String(i.accountId || '') }));
   const adressen = [...new Set(invoer.map((i) => i.adres).filter(Boolean))];
-  const { rijen, contacten } = await inLade(userId, async (q, lade) => ({ rijen: await leesRijen(q, lade, adressen), contacten: await contactenVan(q, lade) }));
-  // Luie controle: berichten van bekende diensten én geopende losse berichten van organisatiedomeinen zonder bewijs, beperkt per verzoek en per 5 min.
-  const enkelBericht = invoer.length <= 3;
+  const { rijen, contacten } = await inLade(userId, async (q, lade) => {
+    const geladen = await leesRijen(q, lade, adressen);
+    for (const [adres, rij] of geladen) {
+      if ((rij.bewijs?.regelVersie || 0) < AFZENDER_REGELS_VERSIE) {
+        const herzien = herbeoordeelUitBewijs(rij);
+        if (herzien.status !== rij.status || herzien.reden !== rij.reden || (herzien.bewijs?.regelVersie || 0) !== (rij.bewijs?.regelVersie || 0)) {
+          await schrijfRij(q, lade, herzien);
+          geladen.set(adres, herzien);
+        }
+      }
+    }
+    return { rijen: geladen, contacten: await contactenVan(q, lade) };
+  });
+  // Luie controle: berichten van bekende diensten én organisatiedomeinen zonder bewijs, bekende diensten eerst, beperkt per verzoek en per 5 min.
   const teControleren = invoer.filter((i) => i.adres && i.messageId && /^[A-Za-z0-9_-]{1,200}$/.test(i.messageId)
-    && (bekendeDienstVoor(i.domein) || (enkelBericht && !isGratisMailbox(i.domein)))
-    && (!rijen.get(i.adres) || (rijen.get(i.adres)!.status === 'onbekend' && !rijen.get(i.adres)!.bewijs?.laatste))).slice(0, LAZY_PER_VERZOEK);
+    && (bekendeDienstVoor(i.domein) || !isGratisMailbox(i.domein))
+    && (!rijen.get(i.adres) || (rijen.get(i.adres)!.status === 'onbekend' && !rijen.get(i.adres)!.bewijs?.laatste)))
+    .sort((a, b) => Number(!!bekendeDienstVoor(b.domein)) - Number(!!bekendeDienstVoor(a.domein)))
+    .slice(0, LAZY_PER_VERZOEK);
   const authPerBericht = new Map<string, AuthResultaten>();
   for (const i of teControleren) {
     const c = lazyCache.get(i.messageId);

@@ -70,8 +70,9 @@ export default function AfzenderBadge({
       a.domeinAuth === 'pass' ||
       dmarcStand === 'pass' ||
       (spfStand === 'pass' && dkimStand === 'pass'));
-  // Vóór de eerste volledige controle: geen oranje pastille in de lijst; in het geopende bericht tonen we wel het bevestigde domein.
-  if (a.status === 'onbekend' && !markeringen && !(domeinBevestigd && plek === 'lezer')) return null;
+  // Vóór de eerste volledige controle: geen oranje pastille in de lijst; een cryptografisch bevestigd domein tonen we wel meteen, en een officiële bekende dienst die nog op kopregels wacht krijgt in de rij geen vals oranje vraagteken.
+  if (a.status === 'onbekend' && a.reden === 'BEKENDE_DIENST_ZONDER_AUTH' && plek === 'rij' && !domeinBevestigd) return null;
+  if (a.status === 'onbekend' && !markeringen && !domeinBevestigd) return null;
   const adresTekst = toonAdres && a.status !== 'geverifieerd' ? <span className='afz-adres' title={a.adres}>{a.adres}</span> : null;
   const toets = (e: KeyboardEvent) => { e.stopPropagation(); if (e.key === 'Escape') setOpen(false); };
   const druk = (e: RPointerEvent) => { e.stopPropagation(); };
