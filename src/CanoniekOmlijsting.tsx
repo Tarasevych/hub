@@ -77,15 +77,15 @@ function OpgeslagenAccountFoto({user}:{user:AccountMenuUser}){
   {toonAfbeelding?<img className='mr-sign-in-avatar-img' src={foto.src} alt='' width={42} height={42} decoding='async' draggable={false} referrerPolicy='no-referrer' onError={()=>setMisluktBron(foto.src)}/>:foto.initials}
  </span>;
 }
-function OpgeslagenAccountKaart({item,lang,meerdere,bezig,geblokkeerd,onSelect,onForget}:{item:RememberedAccount;lang:'uk'|'nl';meerdere:boolean;bezig:boolean;geblokkeerd:boolean;onSelect:()=>void;onForget?:()=>void}){
+function OpgeslagenAccountKaart({item,lang,meerdere,hoofdactie=false,bezig,geblokkeerd,onSelect,onForget}:{item:RememberedAccount;lang:'uk'|'nl';meerdere:boolean;hoofdactie?:boolean;bezig:boolean;geblokkeerd:boolean;onSelect:()=>void;onForget?:()=>void}){
  const uk=lang==='uk',naam=String(item.user.name||'').trim(),email=String(item.user.email||'').trim(),titel=naam||email;
  const toonEmail=Boolean(naam&&email&&naam.toLowerCase()!==email.toLowerCase());
  const statusTekst=item.silentAllowed===true?(uk?'Швидкий вхід на цьому пристрої':'Snelle aanmelding op dit apparaat'):item.silentAllowed===false?(uk?'Підтвердити через Google · збережений на пристрої':'Bevestigen met Google · op dit apparaat bewaard'):(uk?'Збережений на цьому пристрої':'Op dit apparaat bewaard');
  const kiesLabel=uk?`Увійти як ${titel}${toonEmail?` (${email})`:''}`:`Aanmelden als ${titel}${toonEmail?` (${email})`:''}`;
  const vergeetLabel=uk?`Забути на цьому пристрої: ${email||titel}`:`Op dit apparaat vergeten: ${email||titel}`;
  const vergeetTitel=uk?'Забути на цьому пристрої':'Op dit apparaat vergeten';
- return <div className={`mr-sign-in-account-row${onForget?' has-forget':''}`} role={meerdere?'listitem':undefined} data-account-bezig={bezig?'true':'false'}>
-  <button type='button' className='mr-sign-in-account' disabled={geblokkeerd} aria-busy={bezig?'true':undefined} aria-label={kiesLabel} onClick={onSelect}>
+ return <div className={`mr-sign-in-account-row${onForget?' has-forget':''}`} role={meerdere?'listitem':undefined} data-account-bezig={bezig?'true':'false'} data-hoofdactie={hoofdactie?'true':undefined}>
+  <button type='button' className='mr-sign-in-account' data-hoofdactie={hoofdactie?'true':'false'} disabled={geblokkeerd} aria-busy={bezig?'true':undefined} aria-label={kiesLabel} onClick={onSelect}>
    <OpgeslagenAccountFoto user={item.user}/>
    <span className='mr-sign-in-account-copy'>
     <strong>{titel}</strong>
@@ -162,13 +162,16 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  /* IDENTITEIT-015 (aanmelden): лише ті способи без Google, які сервер назвав робочими; решта лишається вимкненим рядком із причиною. */
  const werkendZonderGoogle=(Array.isArray(aanmeldCfg?.methoden)?aanmeldCfg!.methoden:[]).filter(m=>(ZONDER_GOOGLE as readonly string[]).includes(m));
  const googleG=<img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/>;
- const googleKnop=(
-   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} data-pauze={pauze.actief?'true':undefined} disabled={(!checking&&pauze.actief)||undefined} aria-disabled={checking||Boolean(selectingGrant)||pauze.actief||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
+ const heeftBewaard=zichtbareOpgeslagen.length>0;
+ const maakGoogleKnop=(isHoofd:boolean)=>(
+   <button type='button' className='mr-sign-in-main-button' data-hoofdactie={isHoofd?'true':'false'} data-activated={draait?'true':'false'} data-pauze={pauze.actief?'true':undefined} disabled={(!checking&&pauze.actief)||undefined} aria-disabled={checking||Boolean(selectingGrant)||pauze.actief||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
     <span className='mr-sign-in-logo' aria-hidden='true'>{googleG}</span>
     <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):pauze.actief&&pauzeTekst?pauzeTekst.knop:(uk?'Увійти через Google':'Aanmelden met Google')}</span>
     <span className='mr-sign-in-arrow' aria-hidden='true'>{pauze.actief?<Clock aria-hidden='true'/>:<ArrowRight aria-hidden='true'/>}</span>
    </button>
  );
+ const zichtbareHoofd=indeling.hoofd.filter(m=>m==='google'||(m==='telegram'&&!checking&&Boolean(aanmeldCfg?.zichtbaar))||(werkendZonderGoogle.includes(m)&&!checking));
+ const eersteHoofdMethode=!heeftBewaard?zichtbareHoofd[0]:undefined;
  return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={bezet?'true':'false'} aria-live={checking?'polite':undefined}>
   {postdienst&&<Suspense fallback={null}><MailAchtergrond lang={lang} plaats='aanmelden'/></Suspense>}
   {isMaquette&&<div className='mq-aanmeld-sfeer' aria-hidden='true'>
@@ -184,12 +187,12 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
    <h1>{uk?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
    <p className='mr-sign-in-subtitle'>{uk?'Єдиний обліковий запис для вашої роботи, файлів і сервісів.':'Eén account voor uw werk, bestanden en diensten.'}</p>
    {zichtbareOpgeslagen.length>0&&<div className='mr-sign-in-accounts' role={zichtbareOpgeslagen.length>1?'list':undefined} aria-label={zichtbareOpgeslagen.length>1?(uk?'Збережені облікові записи':'Opgeslagen accounts'):undefined}>
-    {zichtbareOpgeslagen.map((item,index)=><OpgeslagenAccountKaart key={item.grantId||accountIdentityKey(item.user)||String(index)} item={item} lang={lang} meerdere={zichtbareOpgeslagen.length>1} bezig={Boolean(item.grantId)&&selectingGrant===item.grantId} geblokkeerd={Boolean(activating||checking||selectingGrant||forgettingGrant||pauze.actief)} onSelect={()=>kiesAccount(item)} onForget={item.grantId&&onForgetAccount?()=>vergeetAccount(item):undefined}/>)}
+    {zichtbareOpgeslagen.map((item,index)=><OpgeslagenAccountKaart key={item.grantId||accountIdentityKey(item.user)||String(index)} item={item} lang={lang} meerdere={zichtbareOpgeslagen.length>1} hoofdactie={index===0} bezig={Boolean(item.grantId)&&selectingGrant===item.grantId} geblokkeerd={Boolean(activating||checking||selectingGrant||forgettingGrant||pauze.actief)} onSelect={()=>kiesAccount(item)} onForget={item.grantId&&onForgetAccount?()=>vergeetAccount(item):undefined}/>)}
     {opgeslagenLijst.length>MAX_ZICHTBARE_OPGESLAGEN&&<button type='button' className='mr-sign-in-alternative mr-sign-in-alle-accounts' disabled={pauze.actief||bezet||undefined} onClick={open}><span>{uk?`Усі збережені облікові записи (${opgeslagenLijst.length})`:`Alle opgeslagen accounts (${opgeslagenLijst.length})`}</span><ChevronDown className='mr-sign-in-alt-pijl' aria-hidden='true'/></button>}
    </div>}
    {/* Focus naar een ander element op de pagina (bv. de accountkeuze die opent) = geen aanmelding meer; het venster verlaten (relatedTarget leeg) niet. */}
-   {/* AANMELD-PLAATSING v1: volgorde en plaats per methode komen van de beheerder (met de vlag aan); zonder plaatsing exact zoals vroeger. */}
-   {indeling.hoofd.map(m=>m==='google'?<Fragment key='google'>{googleKnop}</Fragment>:m==='telegram'&&!checking?<AanmeldTelegram key='telegram' lang={lang} remember={rememberBrowser}/>:werkendZonderGoogle.includes(m)&&!checking?<AanmeldZonderGoogle key={m} id={m as ZonderGoogleId} lang={lang} remember={rememberBrowser} hoofd/>:null)}
+   {/* AANMELD-PLAATSING v1 + SITE-001 (пункт 20): рівно один головний заклик до дії (перший збережений запис або перший видимий спосіб у hoofd). */}
+   {indeling.hoofd.map(m=>m==='google'?<Fragment key='google'>{maakGoogleKnop(eersteHoofdMethode==='google')}</Fragment>:m==='telegram'&&!checking?<AanmeldTelegram key='telegram' lang={lang} remember={rememberBrowser}/>:werkendZonderGoogle.includes(m)&&!checking?<AanmeldZonderGoogle key={m} id={m as ZonderGoogleId} lang={lang} remember={rememberBrowser} hoofd={eersteHoofdMethode===m}/>:null)}
    {!checking&&pauzeTekst&&(pauze.actief||pauze.zojuistVrij)&&<div className={`mr-sign-in-pauze${pauze.zojuistVrij?' is-vrij':''}`} role='status' aria-live='polite' data-aanmeld-pauze={pauze.actief?'wacht':'vrij'}>
     {pauze.actief?<><strong>{pauzeTekst.kop}</strong><span>{pauzeTekst.uitleg}</span></>:<span>{pauzeTekst.vrij}</span>}
    </div>}

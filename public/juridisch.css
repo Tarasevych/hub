@@ -5,6 +5,7 @@ a{color:#2f6f73}
 .kop{position:sticky;top:0;background:#fff;border-bottom:1px solid #dce1e6}
 .kop nav{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;max-width:860px;margin:0 auto;padding:10px 18px;font-size:.95rem}
 .kop nav>a{font-weight:700;text-decoration:none;display:inline-flex;align-items:center;min-height:24px}
+.kop nav>a.hoofdactie{background:#23575a;color:#fff;padding:5px 14px;border-radius:999px;min-height:32px}
 main{max-width:860px;margin:0 auto;padding:12px 18px 32px}
 section{scroll-margin-top:64px}
 h1{font-size:clamp(1.4rem,6.5vw,1.7rem);margin:24px 0 4px}
@@ -18,4 +19,4 @@ hr{margin:40px 0;border:0;border-top:1px solid #dce1e6}
 .voet{border-top:1px solid #dce1e6;background:#fff;padding:14px 18px;text-align:center;font-size:.9rem}
 .voet p{margin:4px 0}
 /* SITE-001 (пункт 13): темна тема наприкінці — раніше правило a{…} нижче перекривало її, і посилання мали контраст 2,6:1. */
-@media(prefers-color-scheme:dark){body{background:#14181d;color:#f3f6f8}a{color:#8dbab7}.kop,.voet{background:#20262d!important;border-color:#46515c!important}code{background:#29313a!important}.datum{color:#a3adb7}}
+@media(prefers-color-scheme:dark){body{background:#14181d;color:#f3f6f8}a{color:#8dbab7}.kop,.voet{background:#20262d!important;border-color:#46515c!important}.kop nav>a.hoofdactie{background:#99c7c4;color:#14181d}code{background:#29313a!important}.datum{color:#a3adb7}}

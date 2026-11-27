@@ -62,7 +62,7 @@ const pagina = (titel: string, pad: string, beschrijving: string, ander: { pad: 
 <body>
 <header class="kop">
 <nav aria-label="Навігація / Navigatie">
-<a href="/">Мій простір · Mijn Ruimte</a>
+<a class="hoofdactie" data-hoofdactie="true" href="/">Мій простір · Mijn Ruimte</a>
 <span class="talen"><a href="#uk" hreflang="uk">Українська</a> · <a href="#nl" hreflang="nl">Nederlands</a></span>
 <span class="pagina"><a href="${ander.pad}">${ander.uk}</a> · <a href="${ander.pad}#nl">${ander.nl}</a></span>
 </nav>

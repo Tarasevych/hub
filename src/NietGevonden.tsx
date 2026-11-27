@@ -75,8 +75,8 @@ export default function NietGevonden({ lang, los = false }: { lang: 'uk' | 'nl';
       <h1 id='niet-gevonden-kop'>{uk ? 'Сторінку не знайдено' : 'Pagina niet gevonden'}</h1>
       <p className='mq-niet-gevonden-uitleg'>{uk ? 'Такої адреси на цьому сайті немає: ' : 'Dit adres bestaat niet op deze site: '}<code>{pad}</code></p>
       <div className='niet-gevonden-acties'>
-        <a className='primary' href={start}>{uk ? 'На початок розділу' : 'Naar de start van dit onderdeel'}</a>
-        {route.service !== 'hub' ? <a href={hub}>{uk ? 'До «Мого простору»' : 'Naar «Mijn ruimte»'}</a> : null}
+        <a className='primary' data-hoofdactie='true' href={start}>{uk ? 'На початок розділу' : 'Naar de start van dit onderdeel'}</a>
+        {route.service !== 'hub' ? <a data-hoofdactie='false' href={hub}>{uk ? 'До «Мого простору»' : 'Naar «Mijn ruimte»'}</a> : null}
       </div>
     </section>
   );

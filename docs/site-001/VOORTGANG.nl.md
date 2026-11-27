@@ -37,7 +37,7 @@
 | 17 | Validatie van alle formulieren | ✅ klaar | Server: 400 kapotte verzoeken op 50 openbare formulieren — 0 crashes. Browser: 7 fouten (Cyrillische dubbelgangers in de gastcode, fouten niet aan velden gekoppeld, focus ging verloren) — alle verholpen; bewakingstest 22/22 |
 | 18 | Bescherming tegen spam | ✅ klaar | 56 openbare POST-routes: 23 met een strikte limiet per IP, 33 met eigen bescherming (pogingenteller, handtekening, toegangstoken); live controle — 6 van 6 limieten werken exact; nieuwe bewakingstest 50/50 laat geen nieuwe route zonder bescherming door |
 | 19 | Siteanalyse | ✅ klaar | Eigen anonieme analyse werkt nu echt en alleen met toestemming; tabblad «Bezoeken» voor de beheerder; 12/12 tests |
-| 20 | Eén duidelijke oproep tot actie | wacht | — |
+| 20 | Één duidelijke oproep tot actie | ✅ klaar | Op 6 kernschermen precies 1 hoofdactie: bij een bewaard account op het toestel is de gebruikerskaart de hoofdactie en wordt de Google-knop rustig secundair; op `/privacy` en `/terms` een duidelijke terugkeerknop naar de ruimte toegevoegd; bewakingstest 8/8 |
 | 21 | Knoppen en interactieve elementen | wacht | — |
 | 22 | Foutregistratie en bewaking | wacht | — |
 | 23 | Reservekopieën van de database | wacht | `deploy/backup-maken.sh`, `mijn-ruimte-backup.timer` — controleren |
@@ -283,6 +283,24 @@ Test `tests/eenheid/site-001-analyse.test.ts`: 12/12 (met een echte PostgreSQL 1
 |---|---|
 | ![voor](schermafdrukken/p19-analyse-voor.webp) | ![na](schermafdrukken/p19-analyse-na.webp) |
 
+### 20. Één duidelijke oproep tot actie
+
+**Controle «voor».** Het hulpmiddel `cta.mjs` bekeek 6 kernschermen (`id/` nieuw toestel, `id/` met bewaard account, `mail/`, `id/toegang`, `id/bestaat-niet`, `hub/privacy`) en beoordeelde de visuele hiërarchie van de knoppen en koppelingen in het hoofdgebied (buiten de bovenbalk met taal/thema, de juridische voetregel en de wettelijk gelijkwaardige knoppen van de toestemmingsbalk). Twee fouten gevonden:
+1. Op het aanmeldscherm met een bewaard account was de kaart van de gebruiker bleek en ondergeschikt, terwijl de knop «Aanmelden met Google» eronder donker gevuld bleef als hoofdactie — de nevenactie overschreeuwde het snelle aanmelden van de eigenaar van het toestel.
+2. Op de openbare juridische pagina's `/privacy` en `/terms` ontbrak in de kop een herkenbare hoofdknop terug naar de ruimte (`0` hoofdacties — enkel gewone tekstkoppelingen).
+
+**Verbeteringen:**
+- In `src/CanoniekOmlijsting.tsx`, `src/aanmeld-herontwerp.css` en `src/maquette-kern/maquette-aanmelden.css` kreeg de eerste bewaarde accountkaart `data-hoofdactie="true"` en de opvallende opmaak van de hoofdknop (contrast > 10:1), terwijl de Google-knop en extra methoden eronder een rustige omlijnde weergave `data-hoofdactie="false"` krijgen. Zonder bewaard account blijft de eerste aanmeldmethode de enige hoofdactie.
+- In `backend/juridisch.ts` en `public/juridisch.css` is de koppeling «Мій простір · Mijn Ruimte» in de kop vormgegeven als de enige opvallende pilknop (contrast 8,1:1 in lichte en 9,6:1 in donkere weergave; `axe-core` — 0 schendingen). Op de 404-pagina (`src/NietGevonden.tsx`) zijn hoofd- en nevenactie expliciet gemarkeerd.
+
+Herhaalde controle met `cta.mjs` — **0 fouten** (6 van 6 schermen hebben precies 1 hoofdactie). Nieuwe bewakingstest `tests/eenheid/site-001-cta.test.ts` — `8/8`, `aanmelden-integ` — `43/43`, `juridisch` — `12/12`.
+
+| Voor | Na |
+|---|---|
+| ![voor: 2 fouten bij hoofdactie](schermafdrukken/p20-kaart-voor.webp) | ![na: 0 fouten op 6 schermen](schermafdrukken/p20-kaart-na.webp) |
+| ![voor: Google-knop overschreeuwt bewaard account](schermafdrukken/p20-bewaard-voor.webp) | ![na: bewaard account is de enige hoofdactie](schermafdrukken/p20-bewaard-na.webp) |
+| ![voor: kop van privacybeleid zonder hoofdknop](schermafdrukken/p20-privacy-voor.webp) | ![na: duidelijke knop terug naar de ruimte](schermafdrukken/p20-privacy-na.webp) |
+
 ### Taalzuivering op besluit van de eigenaar («акаунт» → «обліковий запис»)
 
 Op uitdrukkelijk besluit van de eigenaar is het anglicisme «акаунт» in alle naamvallen en vormen overal vervangen door het zuivere Oekraïense «обліковий запис» in de interfacecode, gedeelde modules, servermeldingen, zoekwoordenboeken en uitrolscripts (`src/`, `shared/`, `backend/`, `server/`, `public/`, `deploy/`, `index.html` — samen 852 voorkomens in 285 bestanden; het ontwerp van het accountcentrum is opnieuw opgebouwd via `scripts/identiteit-maquette/bouw.mjs` en de zoekindex `shared/zoek-ui-knoppen.generated.ts` is bijgewerkt voor 2439 elementen). Het ondertekende browserextensiepakket `extension/` versie `0.9.7` bleef bewust ongewijzigd om de geldige `CRX3`-handtekening van de eigenaar te behouden tot herondertekening.
@@ -309,3 +327,4 @@ Een vergelijkende proef van alle 638 eenheidstestbestanden ten opzichte van de b
 - **26.11.2026 08:00** — punt 18 klaar: snelheidslimieten live gecontroleerd (6 van 6), 56 openbare routes uitgezocht, nieuwe bewakingstest.
 - **26.11.2026 22:55** — sessie overgenomen door `Gemini 4 Carbon High` (`Google Antigravity`) na stop door limietuitputting van `Claude Opus 5.5 (High)` (`Antigravity Google`) op vastlegging `204f9ec8`; vervanging naar «обліковий запис» in 285 bestanden afgerond met bewakingstest 8/8 en auteurschapsregistratie van beide modellen.
 - **26.11.2026 23:35** — punt 12 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): `/toegang` 67 % lichter (666 → 220 kB), `id/` versneld (`LCP` −46 %, netwerkstilte 15,5 → 1,48 s, CPU-blokkering op telefoon −72 %, `4xx`-fouten 2 → 0), bewakingstest 9/9 toegevoegd.
+- **26.11.2026 23:52** — punt 20 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): op alle 6 kernschermen precies één hoofdactie gewaarborgd (2 → 0 fouten), bewakingstest 8/8.

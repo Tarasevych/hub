@@ -216,6 +216,19 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 }
 .canonical-signed-out.mr-sign-in .mr-sign-in-account-forget:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:1px}
 .canonical-signed-out.mr-sign-in .mr-sign-in-account-forget:disabled{cursor:default;opacity:.4}
+/* SITE-001 (пункт 20): коли на пристрої є збережений обліковий запис, саме перший збережений запис є єдиним головним закликом до дії. */
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true']{
+ border:1px solid rgba(139,151,173,.46);
+ background:linear-gradient(#222933,#222933) padding-box,linear-gradient(90deg,rgba(88,187,194,.48),rgba(146,130,193,.42),rgba(215,164,113,.42)) border-box;
+ color:#f9fafb
+}
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account{color:#f9fafb!important}
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-copy strong{color:#f9fafb}
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-email,
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-copy small,
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-enter{color:#d3dce7}
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-initials:not(.mr-sign-in-avatar){background:#343f4e;border-color:rgba(203,213,225,.35);color:#f9fafb}
+.canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-forget{color:#d8e0ea!important;opacity:1}
 
 /* Hoofdknop: drie kolommen [logo · tekst · pijl] met gelijke buitenkolommen. */
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button{
@@ -229,6 +242,12 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:hover,
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:focus-visible{
  border-color:rgba(176,190,212,.72)!important;box-shadow:0 0 0 3px rgba(115,139,171,.14)!important
+}
+/* SITE-001 (пункт 20): другорядний вигляд кнопки Google, коли вище вже стоїть збережений обліковий запис. */
+.canonical-signed-out.mr-sign-in .mr-sign-in-main-button[data-hoofdactie='false']:not([data-activated='true']):not([data-pauze='true']){
+ border:1px solid var(--mr-login-border)!important;
+ background:var(--mr-login-card)!important;
+ color:var(--mr-login-ink)!important
 }
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button[data-activated='true']{
  border-color:transparent!important;
