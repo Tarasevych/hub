@@ -38,7 +38,7 @@ age -d -i /pad/naar/herstelsleutel-age.txt mijn-ruimte-<stempel>-volledig.tar.ag
 sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt --proefrun   # eerst alleen tonen
 sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt              # echt uitvoeren
 ```
-Het script controleert de sommen, installeert Node/PostgreSQL 17/age/cloudflared, ontsleutelt, herstelt database/bestanden, bouwt de site voor deze
+Het script controleert de sommen, installeert Node/PostgreSQL 18/age/cloudflared, ontsleutelt, herstelt database/bestanden, bouwt de site voor deze
 architectuur (`installeer-app.sh`) en wacht op de gezondheidscontrole. Nog niet op een lege machine volledig doorlopen; de proefrun en het maken zijn
 getest op de productie-VM. De tweegeneratieregeling, de harde link en het herstel van de git-opslagplaatsen zijn nog niet op de VM getest.
 De handmatige stappen hieronder blijven de bewezen weg.
@@ -63,7 +63,7 @@ Get-Content SHA256SUMS | % { $h,$n = $_ -split '\s+',2; if ((Get-FileHash $n).Ha
 
 ## 1. Nieuwe VM
 Ubuntu met LUKS, gebruiker `beheer` met de SSH-sleutel `T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver(.pub)`.
-Pakketten: Node 24, npm, git, rsync, curl, PostgreSQL 17 (+ client), `age`, `cloudflared` (zie `deploy/PROJECTOVERZICHT.nl.md`).
+Pakketten: Node 24, npm, git, rsync, curl, PostgreSQL 18 (+ client), `age`, `cloudflared` (zie `deploy/PROJECTOVERZICHT.nl.md`).
 
 ## 2. Broncode en inrichten (op de VM)
 ```bash

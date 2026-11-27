@@ -40,7 +40,7 @@
 | 20 | Één duidelijke oproep tot actie | ✅ klaar | Op 6 kernschermen precies 1 hoofdactie: bij een bewaard account op het toestel is de gebruikerskaart de hoofdactie en wordt de Google-knop rustig secundair; op `/privacy` en `/terms` een duidelijke terugkeerknop naar de ruimte toegevoegd; bewakingstest 8/8 |
 | 21 | Knoppen en interactieve elementen | ✅ klaar | 4 → 0 fouten in live controle zonder en met aanmelding (`knoppen.mjs`): `aria-label` van taalwisselaar op `/toegang`, 404 op `/api/owner/workspaces/list` verholpen, `document.title` werkt bij na aanmelden, kaart en knoppen voor leeg werkblad in `WerkbladV3`; bewakingstest 7/7 |
 | 22 | Foutregistratie en bewaking | ✅ klaar | `proces-vangnet`, `/__gezondheid?diep=1` (`ALLEEN_LOKAAL`), 401/403/404-tellers, register van 333 acties en `nazorg` gecontroleerd; `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0, alle 3 cookies) en `rook-controle`-test hersteld (40/40); bewakingstest 7/7 |
-| 23 | Reservekopieën van de database | wacht | `deploy/backup-maken.sh`, `mijn-ruimte-backup.timer` — controleren |
+| 23 | Reservekopieën van de database | ✅ klaar | Live keten `backup-maken.sh` → `age` → `SHA256SUMS` → `age -d \| pg_restore` op PostgreSQL 18.7 getest (208/208 migraties, 224/224 tabellen, 3322/3322 rijen, 193/193 RLS-tabellen); onverenigbaar `postgresql-17` → `postgresql-18` hersteld in `archief-herstellen.sh` (dumpindeling `1.16-0`); bewakingstest 6/6 |
 | 24 | Beveiligingskoppen en aanvraagbeperking | wacht | `server/start.ts`, `rateLimit` — controleren |
 | 25 | Registratie, aanmelding en wachtwoordherstel | wacht | — |
 
@@ -350,6 +350,24 @@ Nieuwe bewakingstest `tests/eenheid/site-001-monitoring.test.ts` — `7/7`, aang
 | ![voor: server/rook.ts stopt met code 2 bij ruimtes v2](schermafdrukken/p22-kaart-voor.webp) | ![na: 0 fouten, alle controles groen](schermafdrukken/p22-kaart-na.webp) |
 | — | ![live Diagnostiek-paneel in de technische ruimte via het herstelde rook.ts](schermafdrukken/p22-diagnostiek-na.webp) |
 
+### 23. Reservekopieën van de database
+
+**Controle van de reservekopieketen (`deploy/backup-maken.sh`, `mijn-ruimte-backup.timer`, `mijn-ruimte-backup.service`, `installeer-app.sh`):**
+- Elke nacht om `03:30` (`Persistent=true`) en automatisch vóór elke uitgave-installatie en migratie (`installeer-app.sh` breekt de installatie na twee mislukte pogingen af) draait `mijn-ruimte-backup.service` onder een aparte gebruiker met `ProtectSystem=strict`, `NoNewPrivileges=yes` en `RestrictSUIDSGID=no`.
+- `deploy/backup-maken.sh` ontleedt `DATABASE_URL_SYSTEM` naar `PG*`-omgevingsvariabelen met `unset DUMP_URL` (geen wachtwoorden in procesargumenten), stuurt `pg_dump --format=custom --compress=6` rechtstreeks door `age --encrypt --recipients-file` zonder klare tekst op schijf (de privésleutel blijft enkel offline bij de eigenaar), sluit geheimen uit het systeemarchief uit, berekent `SHA256SUMS` en schrijft als laatste atomair het merkteken `KLAAR`. Zonder een `BYPASSRLS`-rol weigert `pg_dump` zelf een opname, zodat een onvolledige kopie van RLS-tabellen onmogelijk is.
+
+**Kritieke bevinding en verbetering:**
+- In het noodherstelscript voor een lege machine `deploy/archief-herstellen.sh` (`vidnovyty.sh`), de toelichting in `deploy/archief-maken.sh` en de handleidingen `deploy/ВІДНОВЛЕННЯ.uk.md` / `deploy/HERSTEL.nl.md` stond nog **`postgresql-17` / `PostgreSQL 17`**, terwijl de productiedatabase op **PostgreSQL 18** draait en een dump van formaat `Dump Version: 1.16-0` maakt die door `pg_restore` 17 wordt geweigerd (`unsupported version (1.16) in file header`), en de migraties PostgreSQL 18 vereisen. Alle herstelscripts en handleidingen zijn bijgewerkt naar **`postgresql-18` (`postgresql-client-18`, `PostgreSQL 18`)**.
+
+**Live proef van maken én terugzetten:**
+- Met een proefsleutelpaar van `age` is `deploy/backup-maken.sh` echt uitgevoerd tegen de lokale PostgreSQL 18.7-database, zijn alle controlesommen met `sha256sum -c SHA256SUMS` en de kop `age-encryption.org/v1` geverifieerd.
+- Via `age --decrypt | pg_restore --no-owner --role=mijnruimte` is de kopie teruggezet in een schone tijdelijke PostgreSQL 18.7-database: **100 % overeenkomst** met de brondatabase (`208/208` migraties, `224/224` `app`-tabellen, `3322/3322` rijen in `app.records`, `193/193` tabellen met actieve rijbeveiliging RLS).
+- Nieuwe bewakingstest `tests/eenheid/site-001-backups.test.ts` — `6/6`, aangrenzende test `archief-herstellen-20261116` — `19/19`.
+
+| Voor | Na |
+|---|---|
+| ![voor: onverenigbaar postgresql-17 in vidnovyty.sh voor PG 18-dumps 1.16-0](schermafdrukken/p23-kaart-voor.webp) | ![na: PostgreSQL 18 gelijkgetrokken, live keten backup-maken.sh + age + pg_restore 100 % sluitend](schermafdrukken/p23-kaart-na.webp) |
+
 ## Logboek
 
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
@@ -368,3 +386,4 @@ Nieuwe bewakingstest `tests/eenheid/site-001-monitoring.test.ts` — `7/7`, aang
 - **26.11.2026 23:52** — punt 20 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): op alle 6 kernschermen precies één hoofdactie gewaarborgd (2 → 0 fouten), bewakingstest 8/8.
 - **27.11.2026 00:21** — punt 21 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): live controle van alle knoppen en interactieve acties zonder en met aanmelding (4 → 0 fouten: `aria-label` op `/toegang`, 404 `/api/owner/workspaces/list` verholpen, tabbladtitel na aanmelden, kaart voor leeg werkblad in `WerkbladV3`), bewakingstest 7/7.
 - **27.11.2026 00:33** — punt 22 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): alle lagen van foutregistratie en gezondheidsbewaking gecontroleerd (`/__gezondheid?diep=1`, `proces-vangnet`, `nazorg`, register van 333 acties); `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0) en `rook-controle`-test hersteld (40/40), bewakingstest 7/7 toegevoegd.
+- **27.11.2026 00:44** — punt 23 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): live cyclus van versleutelde reservekopie `backup-maken.sh` + `age` en terugzetten `pg_restore` op PostgreSQL 18.7 uitgevoerd (100 % overeenkomst van 208 migraties, 224 tabellen en 3322 rijen); onverenigbaar `postgresql-17` → `postgresql-18` hersteld in `archief-herstellen.sh` en herstelgidsen, bewakingstest 6/6 toegevoegd.
