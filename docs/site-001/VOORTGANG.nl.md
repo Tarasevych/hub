@@ -42,7 +42,7 @@
 | 22 | Foutregistratie en bewaking | ✅ klaar | `proces-vangnet`, `/__gezondheid?diep=1` (`ALLEEN_LOKAAL`), 401/403/404-tellers, register van 333 acties en `nazorg` gecontroleerd; `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0, alle 3 cookies) en `rook-controle`-test hersteld (40/40); bewakingstest 7/7 |
 | 23 | Reservekopieën van de database | ✅ klaar | Live keten `backup-maken.sh` → `age` → `SHA256SUMS` → `age -d \| pg_restore` op PostgreSQL 18.7 getest (208/208 migraties, 224/224 tabellen, 3322/3322 rijen, 193/193 RLS-tabellen); onverenigbaar `postgresql-17` → `postgresql-18` hersteld in `archief-herstellen.sh` (dumpindeling `1.16-0`); bewakingstest 6/6 |
 | 24 | Beveiligingskoppen en aanvraagbeperking | ✅ klaar | `BASE_HEADERS` in `server/start.ts` aangevuld tot 9 beveiligingskoppen (`COOP: same-origin-allow-popups`, `CORP: same-site` met `cross-origin` voor pictogrammen/voorbeeldafbeelding en Telegram-venster, `X-Permitted-Cross-Domain-Policies: none`); IPv6 `/64`-maskering, `rateLimit` (`failClosed`), `pogingReserveren` en `Origin`/`Host`-weigering geverifieerd; bewakingstest 7/7 |
-| 25 | Registratie, aanmelding en wachtwoordherstel | wacht | — |
+| 25 | Registratie, aanmelding en wachtwoordherstel | ✅ klaar | Volledige live controle op PostgreSQL 18.7 met afgedwongen RLS (11 reeksen, 432/432 controles): registratie `new→pending→approved`, aanmelden met toegangssleutel, wachtwoord + TOTP, herstelcodes, vervanging van vergeten wachtwoord en `mustChange`-reset, 7-daags methodeherstel en 30-daags accountherstel; vlaggencache direct geleegd in `accountMeteenWissen` en 2 testreeksen; bewakingstest 12/12 |
 
 ## Gevonden fouten die nog op hun punt wachten
 
@@ -387,6 +387,26 @@ Live controle op de proefomgeving bevestigde alle **9 beveiligingskoppen**. Nieu
 |---|---|
 | ![voor: 6 van 9 beveiligingskoppen, zonder COOP/CORP/X-Permitted-Cross-Domain-Policies](schermafdrukken/p24-kaart-voor.webp) | ![na: volledige set van 9 beveiligingskoppen en geverifieerde limieten, bewaking 7/7](schermafdrukken/p24-kaart-na.webp) |
 
+### 25. Registratie, aanmelding en wachtwoordherstel
+
+De volledige levenscyclus van het account is gecontroleerd op een actieve PostgreSQL 18.7-database met de drie standaardrollen (`mijnruimte_migrator`, `mijnruimte_app`, `mijnruimte_system`), afgedwongen rijbeveiliging (`rls-aan`) en Chromium:
+
+1. **Vertraging in het legen van het vlaggengeheugen (`VLAG-001`) opgespoord en verholpen:**
+   - in `backend/account-wissen.ts` wordt na `COMMIT` van `accountMeteenWissen` direct `wisVlagGeheugen()` aangeroepen, zodat een gewist account niet alleen uit `app.feature_flags.gebruikers` in PostgreSQL verdwijnt, maar ook meteen uit het geheugen van de server (zonder 15 seconden wachttijd);
+   - in `tests/eenheid/identiteit-015-herstel.test.ts` (`24/27 → 27/27`) en `tests/eenheid/identiteit-015-sleutels-gasten.test.ts` (`28/32 → 38/38`) is `wisVlagGeheugen()` toegevoegd na rechtstreekse SQL-bijwerkingen `UPDATE app.feature_flags`;
+   - na het instellen van de standaardrollen via `deploy/db-rollen-instellen.sh instellen` en `rls-aan` slaagde `toegangscodes.test.ts` volledig (`54/56 → 56/56`).
+2. **Nieuwe ketenbewaker `tests/eenheid/site-001-aanmelden-herstel.test.ts` (`12/12`):**
+   - **registratie van een nieuw account:** eerste aanmelding maakt het account aan in de stand `new` en houdt de werkruimte dicht (`403`) → `POST /api/owner/access/request` zet de stand op `pending` en meldt dit aan de eigenaar → goedkeuring door de eigenaar via `POST /api/owner/admin/access-requests/:id` zet de stand op `approved` en maakt de eigen werkruimte aan;
+   - **aanmelden zonder Google:** weigering van te korte wachtwoorden (`< 10` tekens), `scrypt`-opslag, inschakelen van tweestapsverificatie (`TOTP`) met uitgifte van 10 eenmalige herstelcodes (alleen HMAC-SHA256-controlewaarden in de database), gelijke weigering `401 ACCESS_CREDENTIALS_INVALID` bij onjuist wachtwoord of ontbrekende/hergebruikte `TOTP`-stap, en sessie-aanmaak met geldig wachtwoord + verse `TOTP` (`authMethod = 'password'`) en WebAuthn-toegangssleutel (`passkey`);
+   - **wachtwoord- en accountherstel:** de dienst verstuurt bewust geen onversleutelde herstelberichten per e-mail — herstel verloopt via een eenmalige herstelcode (eerste code opent de sessie en verlaagt het saldo `10 → 9`, hergebruik van dezelfde code geeft `401`), `stap-op` met een herstelcode om een nieuw wachtwoord in te stellen, of een beheerdersreset (`mustChange: true` → weigering `403 ACCESS_PASSWORD_MUST_CHANGE` tot een eigen wachtwoord is ingesteld); daarnaast zijn het 7-daagse herstel van een ontkoppelde aanmeldmethode (`method/herstel`) en het 30-daagse herstel van een verwijderd account met werkruimte (`account/recover`) bevestigd.
+
+Alle **11 integratiereeksen** zijn voor 100 % geslaagd (**432/432** controles groen).
+
+| Voor | Na |
+|---|---|
+| ![voor: 3 testreeksen met afwijkingen door vlaggengeheugen VLAG-001 en ontbrekende RLS-rollen](schermafdrukken/p25-kaart-voor.webp) | ![na: 432/432 controles in 11 reeksen voor registratie, aanmelden en herstel groen](schermafdrukken/p25-kaart-na.webp) |
+| ![live aanmeldformulier zonder Google: toegangssleutel, wachtwoord en veld voor tweestapscode of herstelcode](schermafdrukken/p25-aanmelden-wachtwoord.webp) | ![live beveiligings- en herstelomgeving van de eigenaar op id.tarasevych.com/recovery](schermafdrukken/p25-kabinet-herstel.webp) |
+
 ## Logboek
 
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
@@ -407,3 +427,4 @@ Live controle op de proefomgeving bevestigde alle **9 beveiligingskoppen**. Nieu
 - **27.11.2026 00:33** — punt 22 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): alle lagen van foutregistratie en gezondheidsbewaking gecontroleerd (`/__gezondheid?diep=1`, `proces-vangnet`, `nazorg`, register van 333 acties); `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0) en `rook-controle`-test hersteld (40/40), bewakingstest 7/7 toegevoegd.
 - **27.11.2026 00:44** — punt 23 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): live cyclus van versleutelde reservekopie `backup-maken.sh` + `age` en terugzetten `pg_restore` op PostgreSQL 18.7 uitgevoerd (100 % overeenkomst van 208 migraties, 224 tabellen en 3322 rijen); onverenigbaar `postgresql-17` → `postgresql-18` hersteld in `archief-herstellen.sh` en herstelgidsen, bewakingstest 6/6 toegevoegd.
 - **27.11.2026 00:54** — punt 24 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` en `X-Permitted-Cross-Domain-Policies` toegevoegd (volledige 9/9 beveiligingskoppen met behoud van voorbeeldafbeelding en Telegram-venster), snelheidslimieten en blokkering geverifieerd, bewakingstest 7/7.
+- **27.11.2026 01:18** — punt 25 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): volledige ketencontrole van registratie, aanmelding en wachtwoord-/accountherstel afgerond (11 reeksen, 432/432 controles op PostgreSQL 18.7 met afgedwongen RLS), direct legen van vlaggengeheugen hersteld in `backend/account-wissen.ts` en twee testreeksen, ketenbewaker `site-001-aanmelden-herstel.test.ts` (12/12) toegevoegd. **Alle 25 van 25 punten zijn voltooid.**

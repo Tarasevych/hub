@@ -5,6 +5,7 @@ import { isOwnerEmail, storage } from '../server/platform';
 import { getPool } from '../server/platform/pg';
 import { EXTRA_WIS, ONTKOPPELEN, STANDAARD_KOLOM, wisOpdrachten, type WisTabel } from '../shared/account-wissen';
 import { wisRecordsVanAccount } from './privacy';
+import { wisVlagGeheugen } from './vlaggen-geheugen';
 
 // SEC-002 (slot-z, продовження): також колонка `veld` з ONTKOPPELEN — так у план потрапляють таблиці без колонки облікового запису
 // (app.huis_gebeurtenissen, app.feature_flags), де треба лише відв’язати id. Ook de `veld` van ONTKOPPELEN: tabellen zonder accountkolom.
@@ -112,6 +113,7 @@ export async function accountMeteenWissen(userId: string, email: string, nu = Da
   } finally {
     client.release();
   }
+  wisVlagGeheugen();
   const records = await wisRecordsVanAccount(userId, email, nu);
   for (let i = 0; i < paden.length; i += 100) await storage.delete(paden.slice(i, i + 100), { eigenaar: userId });
   return { opdrachten: opdrachten.length, rijen: rijen + records.rijen, bestanden: Math.max(paden.length, records.bestanden) };
