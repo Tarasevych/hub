@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261127-100415-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-27T10:04:15.718Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Завершено роботу з місця зупинки на фіксації 204f9ec8 до повного виконання всіх 25 із 25 пунктів готовності сайту (фіксації 96c298d0..8a8c475a): завершено заміну слова «акаунт» на «обліковий запис» у 285 файлах зі сторожем 8/8; виконано пункт 12 швидкості завантаження (/toegang 666 → 220 кБ, −67 %, відкладено TechLaag і MeldingenPortaal без сеансу, усунено марні 401, LCP на id/ 572 → 308 мс, блокування процесора на телефоні −72 %, сторож 9/9); виконано пункти 20–25 зі знімками до/після та 6 новими сторожами: 20) один чіткий заклик до дії на 6 основних екранах (2 → 0 вад, сторож 8/8), 21) перевірка кнопок і інтерактивних елементів без входу і за входом (4 → 0 вад, сторож 7/7), 22) журналювання помилок і моніторинг із відновленням server/rook.ts під tech-ruimtes-v2 (код 2 → 0, rook-controle 40/40, сторож 7/7), 23) живий цикл backup-maken.sh + age + SHA256SUMS + pg_restore на PostgreSQL 18.7 зі 100 % збігом і виправленням postgresql-17 → postgresql-18 у archief-herstellen.sh та посібниках відновлення (сторож 6/6), 24) заголовки безпеки COOP, CORP і X-Permitted-Cross-Domain-Policies (9/9 заголовків), IPv6 /64 і rateLimit (сторож 7/7), 25) реєстрація, вхід і відновлення доступу на живій PostgreSQL 18.7 із примусовим RLS (432/432 у 11 наборах) і миттєвим скиданням wisVlagGeheugen у backend/account-wissen.ts (сторож 12/12); узгоджено гілку з живою основою сервера HERSTEL-001 (20261126-181653 @ c7561d0a) без втрати можливостей та підготовлено пакет випуску.",
+    "nl": "Werk vanaf het stoppunt op vastlegging 204f9ec8 volledig afgerond tot 25 van de 25 gereedheidspunten (vastleggingen 96c298d0..8a8c475a): Oekraiense taalzuivering in 285 bestanden afgerond met bewakingstest 8/8; punt 12 laadsnelheid voltooid (/toegang 666 naar 220 kB, min 67 procent, TechLaag en MeldingenPortaal uitgesteld zonder sessie, overbodige 401-verzoeken verwijderd, LCP op id/ 572 naar 308 ms, processorblokkering op telefoon min 72 procent, bewaker 9/9); punten 20 tot en met 25 voltooid met schermafdrukken voor/na en 6 nieuwe bewakers: 20) een duidelijke hoofdactie op 6 kernschermen (2 naar 0 fouten, bewaker 8/8), 21) interactieve elementen zonder en met aanmelding getest (4 naar 0 fouten, bewaker 7/7), 22) foutregistratie en gezondheidsbewaking met herstel van server/rook.ts voor tech-ruimtes-v2 (rook-controle 40/40, bewaker 7/7), 23) volledige reservekopie- en herstelketen op PostgreSQL 18.7 live geverifieerd en postgresql-17 naar postgresql-18 hersteld in archief-herstellen.sh (bewaker 6/6), 24) beveiligingskoppen COOP, CORP en X-Permitted-Cross-Domain-Policies toegevoegd (9/9 koppen), IPv6 /64 en snelheidslimieten gecontroleerd (bewaker 7/7), 25) registratie, aanmelden en accountherstel op PostgreSQL 18.7 met RLS geverifieerd (432/432 in 11 suites) en direct legen van wisVlagGeheugen in backend/account-wissen.ts hersteld (bewaker 12/12); tak samengevoegd met de live serverbasis HERSTEL-001 (20261126-181653 op c7561d0a) zonder verlies van mogelijkheden en uitrolpakket voorbereid."
+  },
+  "waarom": {
+    "uk": "Доведення завдання SITE-001 до 100 % виконання всіх 25 пунктів після обриву попереднього сеансу Claude Opus 5.5 (High) через Antigravity Google та узгодження з живою встановленою версією сервера для оприлюднення випуску.",
+    "nl": "Voltooiing van taak SITE-001 tot 100 procent van alle 25 punten na onderbreking van de eerdere sessie van Claude Opus 5.5 (High) via Antigravity Google en afstemming op de live geinstalleerde serverversie voor publicatie."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": null,
+  "commits": [
+    "8a8c475a56ba9b27931617ce451b361d27e08479",
+    "232dd2a6c1c1e67817c030774dc417a4b3d02459",
+    "a68297b8aedbdc13a8bc3baefaaf37b72fcc1f19",
+    "0d8a230f51356dac0a6ff338650742d18f38d938",
+    "b961927df3269ccc742670d510adbea3f304d0c6",
+    "0574ba6dcbd113cb2e6130ed8183df4b161be238",
+    "09081c2bade52a49e777ba656410cccc2aef55ea",
+    "52e7b8600336d881de598e1415f1689548ff6b15",
+    "36d8f010ae6fe01cb09ccf6ff01b8416c741c83a",
+    "96c298d0395f75a5fc8e5b19c96e699f27c39276"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring",
+    "meldingen"
+  ]
+}

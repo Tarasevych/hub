@@ -1,0 +1,682 @@
+name: 'SITE-001 · Випуск готовності сайту «Мій простір» за всіма 25 пунктами, мовного очищення та 16 сторожів'
+
+# Ніколи не встановлює пакунок на живий сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу на сервері
+# (20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34), правила координації 1.8.0 (B-027 / VLAG-001), облік BIJDRAGE-001
+# обох моделей ШІ (Claude Opus 5.5 (High) через Antigravity Google та Gemini 4 Carbon High від Google Antigravity),
+# сторож бази сповіщень MELDINGEN-REGISTER-001, типи клієнта й сервера, статичні сторожі, TRACE-001, 12 стендів «Плюща» на Node 24,
+# 20 хмарних випробувань, подвійний прогін усіх міграцій 0001..0342 на PostgreSQL із трьома ролями, усі 16 нових тестів-сторожів
+# SITE-001 та ключові регресійні випробування, повне складання з CRX3 0.9.7, pakketVoorcontrole і перевірку root TRACE-001.
+# Installeert nooit automatisch. Controleert vooraf de live serverbasis (20261126-181653 @ c7561d0a4ee7), regels 1.8.0 (VLAG-001),
+# BIJDRAGE-001 voor beide AI-modellen (Claude Opus 5.5 (High) via Antigravity Google en Gemini 4 Carbon High van Google Antigravity),
+# MELDINGEN-REGISTER-001, client- en servertypen, statische bewakers, TRACE-001, 12 Klimop-proeven, 20 cloudtests, dubbele migraties
+# 0001..0342 met drie rollen, alle 16 SITE-001-bewakers, volledige productiebouw met CRX3 0.9.7, pakketVoorcontrole en root TRACE-001.
+on:
+  push:
+    branches:
+      - feature/site-001-20261125-232500
+    paths:
+      - .github/workflows/site-001-uitgave.yml
+      - orchestratie/ontwikkelarchieven/SITE-001.json
+  workflow_dispatch:
+    inputs:
+      model_id:
+        description: 'Ідентифікатор моделі ШІ пакування (необов’язково)'
+        required: false
+        type: string
+      model_versie:
+        description: 'Версія моделі (необов’язково)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-001-uitgave
+  cancel-in-progress: false
+
+env:
+  TAAK: SITE-001
+  BEKENDE_BASISSEN: '20261126-181653=c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34 20261125-090113=c4271d894d36d46c6994772fb2003e93fd3decaf 20261123-145553=f56ba3fea1e4da191970e57c9a92272ba861e3ad'
+  ROOT_BASIS_VERSIE: '20261126-181653'
+  ROOT_BASIS_COMMIT: 'c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34'
+  INTEGRATIE_BASIS: '8890f85a1c34c9f12e945eb78bd2e8588cceb56a'
+  MODEL_ID: ${{ inputs.model_id || 'Gemini 4 Carbon High' }}
+  MODEL_VERSIE: ${{ inputs.model_versie || '' }}
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie -d mijnruimte_schoon" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Дозволити запуск лише з гілки завдання · alleen vanaf de taaktak
+        run: |
+          if [ "$GITHUB_REF_NAME" != "feature/site-001-20261125-232500" ]; then
+            echo "Випуск SITE-001 можна запускати лише з гілки feature/site-001-20261125-232500." >&2
+            exit 1
+          fi
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Перевірити системні інструменти та встановити залежності
+        run: |
+          set -euo pipefail
+          for cmd in python3 ssh-keygen zip unzip flock psql openssl; do
+            command -v "$cmd" >/dev/null || { echo "Відсутній обов’язковий інструмент: $cmd" >&2; exit 1; }
+          done
+          npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="000"
+          for poging in 1 2 3 4; do
+            HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/versie.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+          const bekendLijst = process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('='));
+          const bekend = new Map(bekendLijst);
+          const code = process.env.HTTP_CODE || '000';
+          let versie = process.env.ROOT_BASIS_VERSIE;
+          let levend = process.env.ROOT_BASIS_COMMIT;
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+            const liveVersie = v.versie;
+            const liveCommit = v.bronCommit || v.commit;
+            if (bekend.get(liveVersie) !== liveCommit) {
+              throw Error(`Встановлена версія (${liveVersie} @ ${liveCommit}) не входить до відомих основ цієї гілки. Випуск зупинено.`);
+            }
+            versie = liveVersie;
+            levend = liveCommit;
+            console.log(`Жива відповідь /api/version: ${liveVersie} @ ${liveCommit}`);
+          } else if (['000', '403', '429', '502', '504', '522', '524', '530'].includes(code)) {
+            console.log(`Зовнішній тунель тимчасово відхилив запит без сеансу (HTTP ${code}); продовжуємо зі звіреною базою ${versie} @ ${levend}.`);
+          } else {
+            throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
+          }
+          const gi = JSON.parse(readFileSync('orchestratie/geinstalleerd.json', 'utf8'));
+          if (gi.versie !== versie || gi.bronCommit !== levend) {
+            writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie, bronCommit: levend, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+            appendFileSync(process.env.GITHUB_ENV, 'GI_AANGEPAST=1\n');
+            console.log(`orchestratie/geinstalleerd.json узгоджено з живою встановленою базою ${versie} @ ${levend}`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${levend}\n`);
+          JS
+          BASIS_COMMIT="$(grep '^BASIS_COMMIT=' "$GITHUB_ENV" | tail -n 1 | cut -d= -f2)"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+          if grep -q '^GI_AANGEPAST=1' "$GITHUB_ENV"; then git update-index --skip-worktree orchestratie/geinstalleerd.json; fi
+      - name: Перевірити правила координації 1.8.0 (VLAG-001), облік BIJDRAGE-001, сторож бази сповіщень та журнал походження TRACE-001
+        shell: bash
+        run: |
+          set -euo pipefail
+          DOEL_BASIS="${BASIS_COMMIT:-c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34}"
+          unset BASIS_VERSIE BASIS_COMMIT
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/orch.mjs behoud --tegen "$DOEL_BASIS"
+          node scripts/orch.mjs behoud --tegen "$INTEGRATIE_BASIS"
+          node scripts/vaardigheden/valideer.mjs
+          node scripts/meldingen-register-controle.mjs
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            import { leesRisicoUitleg, valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
+            const d = JSON.parse(fs.readFileSync('orchestratie/ontwikkelarchieven/SITE-001.json', 'utf8'));
+            const f = valideerOntwikkelDossier(d, 'SITE-001');
+            if (f.length) throw Error(f.join(', '));
+            const r = leesRisicoUitleg(d);
+            if (r.fouten.length) throw Error(r.fouten.join(', '));
+            if (d.privacy?.geheimenUitgesloten !== true) throw Error('privacy.geheimenUitgesloten ≠ true');
+            console.log('Журнал SITE-001 дійсний; пояснень ризику:', r.uitleg.length);"
+          printf '=== FILE: trace-001-ontwikkelarchief.test.ts ===\n' >> "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+      - name: Перевірити статичні правила, 12 стендів «Плюща», 20 хмарних і безбазові випробування
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
+          find deploy -name '*.sh' -exec bash -n {} +
+          node scripts/kaart-controle.mjs --stil
+          node scripts/plaatsing-controle.mjs --stil
+          node scripts/l002-audit.mjs
+          node scripts/hulp-vraagtekens-controle.mjs --stil
+          node scripts/kleur-contrast-controle.mjs --stil
+          node scripts/mail-slimme-inbox-audit.mjs
+          node scripts/keten-controle.mjs --zonder-audit
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/klant-servergrens-controle.mjs --stil
+          node deploy/agent/agent.mjs selftest --root /tmp
+          for s in \
+            scripts/klimop-etappe0-audit.mjs \
+            scripts/klimop-proefnetwerk.mjs \
+            scripts/klimop-etappe3-opslag-proef.mjs \
+            scripts/klimop-etappe4-frost-proef.mjs \
+            scripts/klimop-etappe5-identiteit-proef.mjs \
+            scripts/klimop-etappe6-bestuur-proef.mjs \
+            scripts/klimop-etappe7-immuunsysteem-proef.mjs \
+            scripts/klimop-etappe8-diensten-proef.mjs \
+            scripts/klimop-etappe9-mensbescherming-proef.mjs \
+            scripts/klimop-etappe10-hechtranken-proef.mjs \
+            scripts/klimop-etappe11-beveiligingsaudit-proef.mjs \
+            scripts/klimop-etappe12-zaden-proef.mjs; do
+            node "$s" >/dev/null
+          done
+          for f in tests/eenheid/cloud-*.test.mjs; do
+            printf '=== FILE: %s ===\n' "$f" >> "$RUNNER_TEMP/eenheidstests.log"
+            node --test "$f" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+          for t in \
+            werkstromen-veilig-20261116 \
+            vlag-001-pakket \
+            juridisch \
+            uitrol-vereisten-001 \
+            herstel-001-telegram-archief-stroom \
+            herstel-001-aanmelden-mobiel-vier-gebreken \
+            herstel-001-telegram-aanmelden-tien-gebreken \
+            herstel-001-google-terugkeer-staat-verlopen \
+            herstel-001-meldingen-tien-gebreken \
+            herstel-001-mail-weergave-twaalf-gebreken \
+            accountmenu-strook-20261115 \
+            werkblad-v3-normalisatie \
+            consol-m5b-vlaggen-20261123 \
+            klimop-001-manifest-agenten-20261120; do
+            printf '=== FILE: %s.test.ts ===\n' "$t" >> "$RUNNER_TEMP/eenheidstests.log"
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+      - name: Перевірити типи клієнта й сервера та виконати повне виробниче складання
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Подвійний прогін усіх міграцій 0001..0342 на PostgreSQL із трьома ролями та прогін усіх 16 сторожів SITE-001 і базових тестів
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
+          export DATABASE_URL=postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export RECOVERY_CODE_PEPPER="$(openssl rand -base64 32)"
+          export AUDIT_IP_PEPPER="$(openssl rand -base64 40)"
+          export SESSION_SECRET="$(openssl rand -base64 32)"
+          export OWNER_VAULT_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export MAIL_APP_WACHTWOORD_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export SLEUTELKLUIS_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export MAIL_TOKEN_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export AGENDA_ABONNEMENT_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export GITHUB_KOPPELING_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export CLOUD_OAUTH_TOKEN_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export CLOUD_M8_CURSOR_KEY_V1="$(openssl rand -hex 32)"
+          export CLOUD_M6_CI_ATTESTATION_HMAC_KEY="$(openssl rand -hex 32)"
+          export RUIMTE_BINDING_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export AI_BEVESTIGING_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export SESSION_PEPPER="$(openssl rand -hex 24)"
+          export UITROL_TELEGRAM_WEBHOOK_GEHEIM="$(openssl rand -hex 24)"
+          export UITROL_GITHUB_WEBHOOK_GEHEIM="$(openssl rand -hex 24)"
+          export UITROL_TELEGRAM_ARCHIEF_SLEUTEL="$(openssl rand -hex 32)"
+          export TELEGRAM_AANMELD_PEPER="$(openssl rand -hex 24)"
+          export AFZENDER_BEELD_PEPPER="$(openssl rand -hex 24)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          export UPLOADS_DIR="$RUNNER_TEMP/uploads"
+          export DIST_DIR="$PWD/dist"
+          mkdir -p "$UPLOADS_DIR"
+
+          node dist-server/migrate.mjs | tail -5
+          W_MIG="$(openssl rand -hex 24)"
+          W_APP="$(openssl rand -hex 24)"
+          W_SYS="$(openssl rand -hex 24)"
+          S_MIG="$(printf '%s\n' "$W_MIG" | node deploy/scram-verifier.mjs)"
+          S_APP="$(printf '%s\n' "$W_APP" | node deploy/scram-verifier.mjs)"
+          S_SYS="$(printf '%s\n' "$W_SYS" | node deploy/scram-verifier.mjs)"
+          psql "$DATABASE_URL" -v legacy_rol=migratie -v migrator_scram="$S_MIG" -v app_scram="$S_APP" -v systeem_scram="$S_SYS" -f deploy/db-rollen.sql
+          export DATABASE_URL_APP="postgres://mijnruimte_app:${W_APP}@127.0.0.1:5432/mijnruimte_schoon"
+          export DATABASE_URL_MIGRATIE="postgres://mijnruimte_migrator:${W_MIG}@127.0.0.1:5432/mijnruimte_schoon"
+          export DATABASE_URL_SYSTEM="postgres://mijnruimte_system:${W_SYS}@127.0.0.1:5432/mijnruimte_schoon"
+          node dist-server/migrate.mjs | tail -5
+
+          for t in \
+            site-001-404 \
+            site-001-aanmelden-herstel \
+            site-001-akaunt \
+            site-001-alt \
+            site-001-analyse \
+            site-001-backups \
+            site-001-beveiliging \
+            site-001-cta \
+            site-001-formulieren \
+            site-001-knoppen \
+            site-001-koppelingen \
+            site-001-metadata \
+            site-001-monitoring \
+            site-001-snelheid \
+            site-001-spam \
+            site-001-toestemming \
+            rls \
+            rls-groepen \
+            vlaggen \
+            herstel-001-verbinding-meldingen-bewijs \
+            werkblad-v3-routes \
+            uitrol-goedkeuring \
+            uitrol-stroom \
+            uitrol-risico-20261116; do
+            printf '=== FILE: %s.test.ts ===\n' "$t" >> "$RUNNER_TEMP/eenheidstests.log"
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску з повним обліком обох моделей ШІ та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Тарасевич Павло (tarasevych.pavlo@gmail.com)';
+          const functievlaggen = [
+            { sleutel: 'melding-verbinding-bewijs-v1', migratie: '0336_melding_verbinding_bewijs_vlag.sql' },
+            { sleutel: 'melding-kapsel-aflevering-v1', migratie: '0340_melding_kapsel_aflevering_vlag.sql' }
+          ];
+          const uk = {
+            titel: 'SITE-001 · Повна готовність «Мій простір» за всіма 25 пунктами, заміна «акаунт» → «обліковий запис» у 285 файлах та 16 сторожів',
+            samenvatting: 'Повний випуск готовності сайту «Мій простір» за всіма 25 пунктами поверх живої встановленої основи HERSTEL-001 (20261126-181653 @ c7561d0a) із мовним очищенням 285 файлів («акаунт» → «обліковий запис») і 16 новими автоматичними тестами-сторожами. До зупинки через вичерпання ліміту над завданням працював Claude Opus 5.5 (High) через Antigravity Google (виконано 18 пунктів: № 1–11 та № 13–19 у фіксаціях c2f5186f..204f9ec8); із місця зупинки роботу продовжив і довів до 100 % Gemini 4 Carbon High від Google Antigravity (мовне очищення 285 файлів, пункт 12 швидкості завантаження, пункти 20–25, узгодження з живою основою сервера та пакування випуску у фіксаціях 96c298d0..HEAD).',
+            wijzigingen: [
+              'Виконано Claude Opus 5.5 (High) через Antigravity Google до вичерпання ліміту (пункти 1–5 і 19): очищено мову й метадані /privacy та /terms і додано розділ «Зміни умов» (juridisch 12/12); перевірено 1063 фіксації через gitleaks (0 таємниць) і додано .gitleaks.toml та конвеєр geheimen-scan.yml; звірено HTTPS/HSTS на 11 піддоменах; створено двомовну смугу згоди на реп’яшки ToestemmingBand (24/24) та знеособлену аналітику відвідувань за згодою з оглядом для адміністратора (13/13).',
+              'Виконано Claude Opus 5.5 (High) через Antigravity Google до вичерпання ліміту (пункти 6–11 і 13–18): уніфіковано заголовки вкладок і метаописи, створено прев’ю 1200×630, відновлено значки й favicon.ico, сформовано sitemap.xml і robots.txt (21/21); додано змістовні alt-тексти (4/4) і стиснено PNG на 32 % без зміни SHA-256 логотипів; усунено вади контрасту (0 порушень axe-core); виправлено мобільну адаптивність 320–768 px і орбіту пошти (174 → 0 вад); реалізовано справжній код 404 і окрему сторінку 404 без входу (24/24); виправлено биті посилання (6/6), стійкість 50 форм (22/22) та захист 56 публічних маршрутів від спаму (50/50).',
+              'Продовжено й виконано Gemini 4 Carbon High від Google Antigravity (мовне очищення та пункт 12 швидкості): завершено заміну слова «акаунт» на «обліковий запис» у 285 файлах зі сторожем (8/8) і оновленням каталогу пошуку (2447 елементів); відокремлено завантаження App від гостьової /toegang (666 → 220 кБ, −67 %), відкладено TechLaag і MeldingenPortaal без сеансу, усунено марні 401-запити (LCP на id/ 572 → 308 мс, блокування ЦП на телефоні −72 %, сторож 9/9).',
+              'Продовжено й виконано Gemini 4 Carbon High від Google Antigravity (пункти 20–25): наведено один чіткий головний заклик до дії на 6 основних екранах (8/8); перевірено кнопки й інтерактивні елементи без входу і за входом у 11 живих сценаріях (4 → 0 вад, 7/7); узгоджено server/rook.ts із tech-ruimtes-v2 (rook-controle 40/40, 7/7); перевірено наживо цикл backup-maken.sh + age + pg_restore на PostgreSQL 18.7 та оновлено archief-herstellen.sh під postgresql-18 (6/6); додано заголовки безпеки COOP, CORP і X-Permitted-Cross-Domain-Policies (9/9 заголовків, 7/7); перевірено реєстрацію, вхід і відновлення у 11 наборах (432/432) зі скиданням wisVlagGeheugen після стирання запису (12/12).',
+              'Узгодження з живою основою сервера (Gemini 4 Carbon High від Google Antigravity): злито (--no-ff) встановлену на сервері версію HERSTEL-001 (20261126-181653 @ c7561d0a) без втрати жодної можливості обох гілок (ORCH behoud OK), збережено стандартний UITROL-BASIS для чистої сумісності з встановлювачем.'
+            ],
+            fixes: [
+              'Усунено конкуренцію двох головних закликів на екрані збереженого облікового запису, бите відносне посилання способів входу на mcp/api, 174 вади мобільної верстки на ширинах 320–768 px, чорний екран вкладки «Відвідування», вади контрасту на /privacy і /terms та відсутність справжнього HTTP 404 без сеансу.',
+              'Зменшено обсяг гостьової сторінки /toegang на 67 % (666 → 220 кБ) і час блокування процесора на телефоні на 72 %, усунено марні 401-запити без сеансу на /api/owner/meldingen/regels і /api/owner/uitrol/achtergrond та 404 на /api/owner/workspaces/list.',
+              'Відновлено вихід із кодом 0 у server/rook.ts під tech-ruimtes-v2, виправлено застарілу версію пакунка postgresql-17 → postgresql-18 у deploy/archief-herstellen.sh і посібниках відновлення та усунено 15-секундну затримку очищення пам’яті прапорців wisVlagGeheugen() після стирання облікового запису в backend/account-wissen.ts.',
+              'Повністю прибрано англіцизм «акаунт» у 285 файлах інтерфейсу, повідомлень і словника пошуку на користь питомого відповідника «обліковий запис» з автоматичним сторожем site-001-akaunt (8/8).'
+            ],
+            beperkingen: [
+              'Встановлення пакунка на живий сервер ніколи не відбувається автоматично і потребує особистого підтвердження власника власним ключем доступу на сторінці Адміністрування → Оновлення.',
+              'Перед схваленням встановлення власникові слід переконатися у свіжості офлайнової запасної копії на локальному диску R:\\mijn-ruimte-reservekopie\\ та цілісності контрольних сум SHA256SUMS.',
+              'П’ять безпекових прапорців способів входу сторонніх осіб (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) за рішенням власника залишаються в стані «Тільки для власника».'
+            ],
+            instructies: 'Перед встановленням перевірте свіжу запасну копію на R:\\mijn-ruimte-reservekopie\\; на сторінці Адміністрування → Оновлення завантажте mijn-ruimte-<versie>.tar.gz (окремо від -overdracht.zip) або прийміть випуск із GitHub та підтвердьте встановлення власним ключем доступу.'
+          };
+          const nl = {
+            titel: 'SITE-001 · Volledige gereedheid van «Mijn Ruimte» over alle 25 punten, taalzuivering in 285 bestanden en 16 bewakingstests',
+            samenvatting: 'Volledige gereedheidsuitgave van «Mijn Ruimte» over alle 25 punten boven op de live geinstalleerde basis HERSTEL-001 (20261126-181653 @ c7561d0a) met Oekraiense taalzuivering in 285 bestanden en 16 nieuwe automatische bewakingstests. Tot de onderbreking wegens limietuitputting werkte Claude Opus 5.5 (High) via Antigravity Google aan het project (18 punten voltooid: nr. 1–11 en nr. 13–19 in vastleggingen c2f5186f..204f9ec8); vanaf dat exacte stoppunt nam Gemini 4 Carbon High van Google Antigravity het werk over en rondde alle resterende onderdelen tot 100 % af (taalzuivering in 285 bestanden, punt 12 laadsnelheid, punten 20–25, samenvoeging met de live serverbasis en samenstelling van het uitrolpakket in vastleggingen 96c298d0..HEAD).',
+            wijzigingen: [
+              'Uitgevoerd door Claude Opus 5.5 (High) via Antigravity Google voor limietuitputting (punten 1–5 en 19): juridische paginas /privacy en /terms opgeschoond met wijzigingsbepaling (juridisch 12/12); 1063 vastleggingen gecontroleerd met gitleaks (0 geheimen) en .gitleaks.toml plus geheimen-scan.yml toegevoegd; HTTPS/HSTS op 11 subdomeinen geverifieerd; tweetalige toestemmingsbalk ToestemmingBand (24/24) en anonieme bezoekanalyse na toestemming (13/13) ingevoerd.',
+              'Uitgevoerd door Claude Opus 5.5 (High) via Antigravity Google voor limietuitputting (punten 6–11 en 13–18): eenduidige tabbladtitels en metabeschrijvingen, voorbeeldafbeelding 1200×630, herstelde pictogrammen en favicon.ico, sitemap.xml en robots.txt (21/21); beschrijvende alt-teksten (4/4) en 32 % PNG-verkleining met behoud van SHA-256 van merktekens; kleurcontrast hersteld (0 schendingen in axe-core); mobiele weergave 320–768 px en e-mailbaan zonder overlapping (174 → 0 fouten); echte HTTP 404 en losse 404-pagina zonder aanmelding (24/24); kapotte koppelingen (6/6), 50 formulieren (22/22) en spambescherming op 56 openbare routes (50/50) geborgd.',
+              'Voortgezet en afgerond door Gemini 4 Carbon High van Google Antigravity (taalzuivering en punt 12 laadsnelheid): Oekraiense taalzuivering in 285 bestanden voltooid met bewakingstest (8/8) en bijgewerkte zoekcatalogus (2447 elementen); App dynamisch losgekoppeld van de gastpagina /toegang (666 → 220 kB, −67 %), TechLaag en MeldingenPortaal uitgesteld zonder sessie en overbodige 401-aanroepen verwijderd (LCP op id/ 572 → 308 ms, processorblokkering op telefoon −72 %, bewaker 9/9).',
+              'Voortgezet en afgerond door Gemini 4 Carbon High van Google Antigravity (punten 20–25): een duidelijke hoofdactie op 6 kernschermen (8/8); knoppen en interactieve elementen zonder en met aanmelding getest in 11 live scenarios (4 → 0 fouten, 7/7); server/rook.ts afgestemd op tech-ruimtes-v2 (rook-controle 40/40, 7/7); volledige reservekopie- en herstelcyclus met backup-maken.sh + age + pg_restore live getest op PostgreSQL 18.7 en archief-herstellen.sh bijgewerkt naar postgresql-18 (6/6); beveiligingskoppen COOP, CORP en X-Permitted-Cross-Domain-Policies toegevoegd (9/9 koppen, 7/7); registratie, aanmelden en herstel getest over 11 suites (432/432) met direct legen van wisVlagGeheugen na accountverwijdering (12/12).',
+              'Afstemming op de live serverbasis (Gemini 4 Carbon High van Google Antigravity): geinstalleerde serverversie HERSTEL-001 (20261126-181653 @ c7561d0a) samengevoegd (--no-ff) zonder verlies van mogelijkheden (ORCH behoud OK), met standaard UITROL-BASIS voor directe compatibiliteit.'
+            ],
+            fixes: [
+              'Concurrentie tussen twee primaire knoppen bij een onthouden account, kapotte relatieve koppeling naar aanmeldmethoden op mcp/api, 174 mobiele opmaakfouten op 320–768 px, zwart scherm op tabblad Bezoeken, kleurcontrastfouten op /privacy en /terms en het ontbreken van echte HTTP 404 zonder sessie opgelost.',
+              'Omvang van de gastpagina /toegang met 67 % verkleind (666 → 220 kB) en processorblokkering op telefoon met 72 % teruggebracht, overbodige 401-verzoeken zonder sessie op /api/owner/meldingen/regels en /api/owner/uitrol/achtergrond en 404 op /api/owner/workspaces/list verholpen.',
+              'Sluitcode 0 in server/rook.ts voor tech-ruimtes-v2 hersteld, verouderde pakketnaam postgresql-17 → postgresql-18 in deploy/archief-herstellen.sh en herstelhandleidingen gecorrigeerd en 15-secondenvertraging van wisVlagGeheugen() na accountverwijdering in backend/account-wissen.ts opgeheven.',
+              'Oekraiense taalzuivering over alle 285 bestanden van interface, meldingen en zoekwoordenboek geborgd met automatische bewakingstest site-001-akaunt (8/8).'
+            ],
+            beperkingen: [
+              'Installatie op de productieserver gebeurt nooit automatisch en vereist altijd goedkeuring met de eigen toegangssleutel van de eigenaar op Beheer → Updates.',
+              'Controleer voor goedkeuring dat een recente reservekopie op R:\\mijn-ruimte-reservekopie\\ aanwezig is met kloppende SHA256SUMS.',
+              'De vijf beveiligingsvlaggen voor aanmelding door derden (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) blijven volgens besluit van de eigenaar op «Alleen voor de eigenaar».'
+            ],
+            instructies: 'Controleer voor installatie uw reservekopie op R:\\mijn-ruimte-reservekopie\\; kies mijn-ruimte-<versie>.tar.gz (los van -overdracht.zip) bij Beheer → Updates via «Bestand kiezen» of via GitHub en bevestig met uw eigen toegangssleutel.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            functievlaggen,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'antigravity',
+                platform: 'Antigravity Google',
+                tool: 'Google Antigravity',
+                model: { id: 'Claude Opus 5.5 (High)', versie: null, bron: 'auteur' },
+                rollen: ['ontwikkeling', 'controle', 'testen']
+              },
+              {
+                soort: 'ai',
+                naam: 'antigravity',
+                platform: 'Google Antigravity',
+                tool: 'Google Antigravity',
+                model: { id: e.MODEL_ID, versie: e.MODEL_VERSIE || null, bron: 'auteur' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map();
+          const blokken = readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').split(/^=== FILE: ([^\n]+) ===$/gm);
+          const paren = blokken.length > 1 ? Array.from({ length: Math.floor((blokken.length - 1) / 2) }, (_, k) => [blokken[k * 2 + 1], blokken[k * 2 + 2]]) : [['', blokken[0]]];
+          for (const [fNaam, inhoud] of paren) {
+            for (const r of inhoud.matchAll(/^(\d+)\/(\d+) geslaagd \(([^\n]+)\)$/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]);
+            for (const r of inhoud.matchAll(/^([a-zA-Z0-9_-]+):\s+(\d+)\/(\d+) geslaagd/gm)) perTest.set(r[1], [Number(r[2]), Number(r[3])]);
+            for (const r of inhoud.matchAll(/^([a-zA-Z0-9_-]+):\s+(\d+)\/(\d+) OK/gm)) perTest.set(r[1], [Number(r[2]), Number(r[3])]);
+            for (const r of inhoud.matchAll(/^([a-zA-Z0-9_-]+):\s+(\d+) controles goed,\s+(\d+) fout/gm)) { const g = Number(r[2]); const ms = Number(r[3]); perTest.set(r[1], [g, g + ms]); }
+            const pMatch = /^ℹ pass (\d+)$/m.exec(inhoud) || /^# pass (\d+)$/m.exec(inhoud);
+            const fMatch = /^ℹ fail (\d+)$/m.exec(inhoud) || /^# fail (\d+)$/m.exec(inhoud);
+            if (pMatch) {
+              const g = Number(pMatch[1]);
+              const f = fMatch ? Number(fMatch[1]) : 0;
+              const key = (fNaam || 'cloud').replace(/^.*\//, '').replace(/\.test\.(ts|mjs)$/, '');
+              perTest.set(key, [g, g + f]);
+            }
+          }
+          for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; }
+          const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) {
+            throw Error(`Немає виміряних результатів випробувань або є невдалі перевірки (${gemeten.geslaagd}/${gemeten.mislukt}).`);
+          }
+          const tests = {
+            geslaagd: gemeten.geslaagd,
+            mislukt: gemeten.mislukt,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено правила координації 1.8.0 (VLAG-001), облік BIJDRAGE-001 обох моделей ШІ, сторож бази сповіщень MELDINGEN-REGISTER-001, перевірку походження TRACE-001, усі статичні сторожі, 12 стендів «Плюща» на Node 24, 20 хмарних випробувань, перевірку типів клієнта та сервера, повне виробниче складання з CRX3 0.9.7, подвійний прогін усіх міграцій 0001..0342 із трьома ролями та всі 16 сторожів SITE-001. Виміряно в цьому запуску (' + gemeten.geslaagd + ' успішних): ' + gemetenLijst.slice(0, 1500) + '.',
+              nl: 'Geslaagd: coordinatieregels 1.8.0 (VLAG-001), BIJDRAGE-001 voor beide AI-modellen, meldingenregister MELDINGEN-REGISTER-001, herkomstcontrole TRACE-001, alle statische bewakers, 12 Klimop-proeven op Node 24, 20 cloudtests, typecontrole van client en server, volledige productiebouw met CRX3 0.9.7, dubbele uitvoering van alle migraties 0001..0342 met drie rollen en alle 16 SITE-001-bewakers. Gemeten in deze uitvoering (' + gemeten.geslaagd + ' geslaagd): ' + gemetenLijst.slice(0, 1500) + '.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          const opis = [
+            `${uk.titel} · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            'Хто що виконав у випуску SITE-001:',
+            '- До зупинки через вичерпання ліміту — Claude Opus 5.5 (High) через Antigravity Google (фіксації c2f5186f..204f9ec8): реєстрація SITE-001, місцевий стенд та 18 із 25 пунктів готовності (пункти 1–11 і 13–19: юридичні сторінки /privacy і /terms, перевірка 1063 фіксацій gitleaks і geheimen-scan.yml, HTTPS/HSTS на 11 піддоменах, двомовна смуга згоди на реп’яшки, заголовки й метаописи, прев’ю 1200×630, значки й favicon.ico, sitemap.xml і robots.txt, змістовні alt-тексти, стиснення PNG на 32 %, контраст кольорів axe-core 0 порушень, мобільна адаптивність 320–768 px і орбіта пошти, справжній код 404 і сторінка 404 без входу, биті посилання, 50 форм, захист 56 маршрутів від спаму та знеособлена аналітика відвідувань за згодою).',
+            '- Після відновлення до 100 % завершення — Gemini 4 Carbon High від Google Antigravity (фіксації 96c298d0..HEAD): заміна «акаунт» → «обліковий запис» у 285 файлах (сторож 8/8), пункт 12 швидкості (/toegang −67 %, відкладення TechLaag і MeldingenPortaal без сеансу, LCP 572 → 308 мс, блокування ЦП −72 %) та пункти 20–25 (один головний заклик до дії на 6 екранах, жива перевірка інтерактивних елементів 4 → 0 вад, відновлення server/rook.ts під tech-ruimtes-v2, живий цикл backup-maken.sh + pg_restore на PostgreSQL 18.7 і archief-herstellen.sh під postgresql-18, заголовки безпеки COOP/CORP/X-Permitted-Cross-Domain-Policies 9/9, наскрізні 432/432 перевірки реєстрації/входу/відновлення та скидання wisVlagGeheugen), узгодження з живою основою HERSTEL-001 (20261126-181653 @ c7561d0a) і пакування випуску.',
+            '',
+            'Основні зміни:',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Виправлення та перевірки:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            'Обмеження:',
+            ...uk.beperkingen.map((x) => `- ${x}`),
+            '',
+            uk.instructies,
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies,
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі за правилами VLAG-001 та TRACE-001
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Тарасевич Павло (tarasevych.pavlo@gmail.com)' \
+            --agent antigravity --platform 'Google Antigravity' --tool 'Google Antigravity' \
+            --model-id "$MODEL_ID" --model-bron auteur \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Випуск SITE-001 поверх живої основи 20261126-181653: усі 25 із 25 пунктів готовності сайту, заміна «акаунт» → «обліковий запис» у 285 файлах і 16 сторожів. Виконавці: до зупинки через ліміт — Claude Opus 5.5 (High) через Antigravity Google (п. 1–11, 13–19); продовжив і завершив — Gemini 4 Carbon High від Google Antigravity (мовне очищення, п. 12, 20–25, злиття основи й пакування)." \
+            --samenvatting-nl "Uitgave SITE-001 boven op live basis 20261126-181653: alle 25 gereedheidspunten, taalzuivering in 285 bestanden en 16 bewakers. Uitvoerders: voor limietuitputting — Claude Opus 5.5 (High) via Antigravity Google (p. 1–11, 13–19); voortgezet en afgerond — Gemini 4 Carbon High van Google Antigravity (taalzuivering, p. 12, 20–25, samenvoeging en verpakking)." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip"
+      - name: Перевірити UITROL-MANIFEST.json, ONTWIKKELARCHIEF.json, UITROL-BASIS та пофайлову попередню перевірку pakketVoorcontrole
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/UITROL-MANIFEST.json" > "$RUNNER_TEMP/manifest-in-archief.json"
+          tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/archief-in-archief.json"
+          tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/UITROL-BASIS" > "$RUNNER_TEMP/basis-in-archief.txt"
+          grep -q "^${BASIS_VERSIE}" "$RUNNER_TEMP/basis-in-archief.txt"
+          mkdir -p "$RUNNER_TEMP/geinstalleerd-boom"
+          git archive "$BASIS_COMMIT" | tar -x -C "$RUNNER_TEMP/geinstalleerd-boom"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { valideerManifest } from './shared/uitrol-manifest.ts';
+          import { leesOntwikkelArchief } from './shared/ontwikkelarchief.ts';
+          const e = process.env;
+          const { manifest, fouten } = valideerManifest(readFileSync(e.RUNNER_TEMP + '/manifest-in-archief.json', 'utf8'), e.VERSIE);
+          if (fouten.length || !manifest) {
+            for (const f of fouten) console.error('::error::UITROL-MANIFEST.json · ' + (f.veld || '') + ': ' + (f.uk || JSON.stringify(f)));
+            throw Error('Маніфест в архіві не проходить перевірку встановлювача.');
+          }
+          const aiModellen = manifest.deelnemers.filter((d) => d.soort === 'ai').map((d) => `${d.model?.id} (${d.platform})`);
+          console.log('Учасники ШІ в UITROL-MANIFEST.json:', aiModellen.join(' · '));
+          if (aiModellen.length < 2) throw Error('У маніфесті мають бути зазначені обидві моделі ШІ.');
+          const ar = leesOntwikkelArchief(readFileSync(e.RUNNER_TEMP + '/archief-in-archief.json', 'utf8'), e.VERSIE, e.GITHUB_SHA);
+          if (ar.fouten.length || !ar.ref) {
+            throw Error('ONTWIKKELARCHIEF.json в архіві не пройшов перевірку: ' + ar.fouten.join(', '));
+          }
+          console.log('UITROL-MANIFEST.json і ONTWIKKELARCHIEF.json в архіві: 0 помилок, обидві моделі та bijdragen присутні');
+          JS
+          npx esbuild backend/uitrol-vereisten.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/ver.mjs" --log-level=error
+          npx esbuild src/platform/tar-lezen.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/tar.mjs" --log-level=error
+          npx esbuild src/uitrol/vereisten-client.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/vc-client.mjs" --log-level=error
+          node --input-type=module - "$RUNNER_TEMP" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$BASIS_VERSIE" "$BASIS_COMMIT" <<'JS'
+          import { readFileSync } from 'node:fs';
+          const [dir, pakketPad, basisVersie, basisCommit] = process.argv.slice(2);
+          const { leesPakket } = await import(dir + '/tar.mjs');
+          const { archiefBeschrijving } = await import(dir + '/vc-client.mjs');
+          const { vereistenBeoordelen } = await import(dir + '/ver.mjs');
+          const buf = readFileSync(pakketPad);
+          const { info, sha256 } = await leesPakket(new Blob([buf]));
+          if (info.problemen.length || !info.basis || info.basis.versie !== basisVersie || info.basis.commit !== basisCommit) {
+            throw Error('Оглядачева перевірка виявила невідповідність: ' + JSON.stringify({ problemen: info.problemen, basis: info.basis }));
+          }
+          const besch = archiefBeschrijving(info, { name: pakketPad.split('/').pop(), size: buf.length }, 50);
+          const ant = await vereistenBeoordelen({ ...besch, sha256, ontwikkelArchief: info.ontwikkelArchief }, {
+            actief: () => ({ versie: basisVersie, commit: basisCommit }),
+            toegepast: async () => new Set(info.migraties.map((m) => m.naam)),
+            pg: async () => ({ tekst: '18.6', melding: null }),
+            lopendeInstallatie: async () => false,
+            vrijeSchijf: async () => 30 * 1024 ** 3,
+            rootLeeftijdSec: async () => 15,
+            passkeyKlaar: async () => true,
+            proefBeschikbaar: async () => true,
+            archiefOnline: async () => ({ ok: true, code: 'OK', reden: '' }),
+          });
+          console.log('Перевірка «Обрати файл» проти встановленої версії:', { ok: ant.ok, fouten: ant.vereisten.filter((x) => x.niveau === 'fout').map((x) => x.id) });
+          if (!ant.ok) throw Error('Перевірка вимог заблокувала архів.');
+          JS
+          npx esbuild backend/uitrol-voorcontrole.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/voorcontrole.mjs" --log-level=warning
+          cat > "$RUNNER_TEMP/voorcontrole-draai.mjs" <<'JS'
+          import { readFileSync } from 'node:fs';
+          const [mod, pakket, versie, actief, geinstalleerdPad, dossierPad] = process.argv.slice(2);
+          const { pakketVoorcontrole } = await import(mod);
+          const dossier = JSON.parse(readFileSync(dossierPad, 'utf8'));
+          const { resultaat, meta } = await pakketVoorcontrole(pakket, {
+            versie,
+            actieveVersie: actief,
+            geinstalleerd: geinstalleerdPad,
+            archiefControle: async () => ({
+              ok: true,
+              code: 'OK',
+              reden: 'offline vooraf · онлайн-перевірка після публікації',
+              risicoUitleg: dossier.risicoUitleg ?? []
+            })
+          });
+          for (const c of resultaat.controles) console.log(`${c.niveau.padEnd(12)} ${c.id}: ${c.uk}${c.details?.length ? ' — ' + c.details.slice(0, 6).join('; ') : ''}`);
+          console.log(`fouten=${resultaat.fouten} waarschuwingen=${resultaat.waarschuwingen} commit=${meta.commit} agent=${meta.agent}`);
+          if (!resultaat.ok || resultaat.fouten) process.exit(1);
+          JS
+          node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$PWD/uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$VERSIE" "$BASIS_VERSIE" "$RUNNER_TEMP/geinstalleerd-boom" "$PWD/orchestratie/ontwikkelarchieven/SITE-001.json"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          cp "$RUNNER_TEMP/archief-in-archief.json" "$RUNNER_TEMP/overdracht/ONTWIKKELARCHIEF.json"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: site-001-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+  uitgave:
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: site-001-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          VERTROUWD=" ${BEKENDE_BASISSEN:-} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Неправильні метадані випуску.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа поза довіреним переліком.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск із таким позначенням уже існує.' >&2
+            exit 1
+          fi
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/pered-vypuskom.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const bekend = new Map((process.env.BEKENDE_BASISSEN || '').trim().split(/\s+/).map((p) => p.split('=')));
+          const code = process.env.HTTP_CODE || '000';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+            const liveVersie = v.versie;
+            const liveCommit = v.bronCommit || v.commit;
+            if (bekend.get(liveVersie) !== liveCommit) {
+              throw Error(`Робочий сервер оновився під час перевірок (${liveVersie} @ ${liveCommit}). Оприлюднення зупинено.`);
+            }
+            console.log(`Повторна звірка /api/version: ${liveVersie} @ ${liveCommit} (у довіреному переліку; UITROL-BASIS=${process.env.BASIS_VERSIE})`);
+          } else if (!['000', '403', '429', '502', '504', '522', '524', '530'].includes(code)) {
+            throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "SITE-001 · Випуск готовності сайту «Мій простір» за всіма 25 пунктами, мовного очищення та 16 сторожів · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || (archief.digest && archief.digest !== 'sha256:' + som)) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Перевірка TRACE-001 самим сценарієм встановлювача після публікації
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          trap 'sudo rm -rf /etc/mijn-ruimte' EXIT
+          sudo install -d -m 0700 -o root -g root /etc/mijn-ruimte
+          printf '%s\n' "$GH_TOKEN" | sudo tee /etc/mijn-ruimte/github-token >/dev/null
+          sudo chown root:root /etc/mijn-ruimte/github-token
+          sudo chmod 0600 /etc/mijn-ruimte/github-token
+          mkdir -p "$RUNNER_TEMP/download"
+          gh release download "$VERSIE" --repo "$GITHUB_REPOSITORY" --pattern "mijn-ruimte-${VERSIE}.tar.gz" --dir "$RUNNER_TEMP/download"
+          cmp "$RUNNER_TEMP/download/mijn-ruimte-${VERSIE}.tar.gz" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz"
+          awk 'f && /^PY$/ {exit} f {print} /^  ARCHIEF_UITKOMST=.*<<.PY./ {f=1}' deploy/uitrol/mijn-ruimte-uitrol.sh > "$RUNNER_TEMP/root-trace.py"
+          grep -q "releases/tags/{versie}" "$RUNNER_TEMP/root-trace.py"
+          UITKOMST="$(sudo timeout 55 python3 "$RUNNER_TEMP/root-trace.py" "$RUNNER_TEMP/overdracht/ONTWIKKELARCHIEF.json" "$GITHUB_SHA" "$VERSIE" "$RUNNER_TEMP/download/mijn-ruimte-${VERSIE}.tar.gz")"
+          echo "root TRACE-001: $UITKOMST"
+          test "$UITKOMST" = "OK"
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'

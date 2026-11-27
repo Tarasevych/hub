@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "taakId": "SITE-001",
+  "datum": "2026-11-27",
+  "taal": "uk",
+  "titel": "SITE-001 · Повна готовність «Мій простір» за всіма 25 пунктами, заміна «акаунт» → «обліковий запис» у 285 файлах, 16 нових тестів-сторожів та узгодження з живою основою HERSTEL-001 (20261126-181653)",
+  "opdracht": "За дорученням власника послідовно перевірити й довести до належного рівня всі 25 пунктів готовності сайту Mijn Ruimte зі знімками до/після на місцевому випробувальному стенді, проміжними фіксаціями на GitHub і мовним очищенням («акаунт» → «обліковий запис» у всьому інтерфейсі), а після завершення у пакеті випуску та всіх відповідних полях чітко зазначити розподіл роботи: що виконав до зупинки через вичерпання ліміту Claude Opus 5.5 (High) через Antigravity Google і що продовжив та завершив Gemini 4 Carbon High від Google Antigravity, оприлюднивши перевірений випуск mijn-ruimte-<versie>.tar.gz на GitHub Releases за правилами VLAG-001 і TRACE-001 без автоматичного встановлення на живий сервер.",
+  "herkomst": {
+    "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
+    "agent": "antigravity",
+    "model": "Claude Opus 5.5 (High) (Antigravity Google) → Gemini 4 Carbon High (Google Antigravity)",
+    "uitvoerders": [
+      {
+        "agent": "antigravity",
+        "platform": "Antigravity Google",
+        "tool": "Google Antigravity",
+        "model": "Claude Opus 5.5 (High)",
+        "bereik": "c2f5186f6cac755553f876b43dbf66d12972f875..204f9ec8d53390f1dda782525eaf39c6a65cf78e",
+        "werk": "До зупинки через вичерпання ліміту: реєстрація SITE-001, розгортання місцевого стенда, виконання 18 із 25 пунктів (№ 1–11 та № 13–19) із 9 новими тестами-сторожами, підготовка заміни «акаунт» → «обліковий запис» з порівнянням 638 наборів випробувань і первинний замір швидкості п. 12."
+      },
+      {
+        "agent": "antigravity",
+        "platform": "Google Antigravity",
+        "tool": "Google Antigravity",
+        "model": "Gemini 4 Carbon High",
+        "bereik": "96c298d0395f75a5fc8e5b19c96e699f27c39276..HEAD",
+        "werk": "Продовження з місця зупинки до повного завершення всіх 25 із 25 пунктів: фіксація заміни «акаунт» → «обліковий запис» у 285 файлах (сторож 8/8), виконання пункту 12 швидкості та пунктів 20–25 із 7 додатковими сторожами, злиття живої встановленої основи сервера HERSTEL-001 (20261126-181653 @ c7561d0a) без втрати можливостей і формування пакета випуску."
+      }
+    ],
+    "repo": "Tarasevych/hub",
+    "tak": "feature/site-001-20261125-232500",
+    "basisCommit": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
+    "basisVersie": "20261105-061659",
+    "geinstalleerdeBasis": "c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34",
+    "geinstalleerdeVersie": "20261126-181653",
+    "integratieBasis": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
+    "regelsVersie": "1.8.0",
+    "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
+    "samengevoegd": [
+      {
+        "taak": "HERSTEL-001 (жива встановлена версія сервера 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34)",
+        "commit": "c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34",
+        "reden": "Звірено через https://hub.tarasevych.com/api/version і злито (--no-ff) у гілку feature/site-001-20261125-232500 для 100 % сумісності UITROL-BASIS та збереження всіх змін 5 етапів HERSTEL-001, потокового Telegram-архівування й міграцій 0336..0342."
+      }
+    ]
+  },
+  "commits": [
+    "c2f5186f6cac755553f876b43dbf66d12972f875",
+    "9702b42427df9c9ef75c7796ca2f18182ee083b6",
+    "bd3d49089ca1db561ae33a0ee1ecffc7c3286742",
+    "76383e50e3155b0dbd0069b13e3ca21c6498256a",
+    "526e29345b51d5ab374f7fcf1b2694512af9e1fb",
+    "18edd872f1125aa53367769db6aa1f5c976512d4",
+    "fca8693be774c27a6f541151bca876c352e1303c",
+    "df6036e03d7af41c0c82d1ddd88fe7b690c39ffe",
+    "a3ddfe729fac5b6488dbd094cdc8cbd4d5dc4ea1",
+    "87cb0bd9b208ca506d730dd2d599aa297ac41125",
+    "204f9ec8d53390f1dda782525eaf39c6a65cf78e",
+    "96c298d0395f75a5fc8e5b19c96e699f27c39276",
+    "36d8f010ae6fe01cb09ccf6ff01b8416c741c83a",
+    "52e7b8600336d881de598e1415f1689548ff6b15",
+    "09081c2bade52a49e777ba656410cccc2aef55ea",
+    "0574ba6dcbd113cb2e6130ed8183df4b161be238",
+    "b961927df3269ccc742670d510adbea3f304d0c6",
+    "0d8a230f51356dac0a6ff338650742d18f38d938",
+    "a68297b8aedbdc13a8bc3baefaaf37b72fcc1f19",
+    "232dd2a6c1c1e67817c030774dc417a4b3d02459",
+    "8a8c475a56ba9b27931617ce451b361d27e08479"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Claude Opus 5.5 (High) через Antigravity Google (c2f5186f..bd3d4908): пункти 1–5 і 19 — юридичні сторінки, відсутність таємниць, HTTPS/HSTS, смуга згоди на реп’яшки та знеособлена аналітика.",
+      "resultaat": "Очищено мову й метадані /privacy та /terms, додано розділ «Зміни умов» (juridisch 12/12); перевірено 1063 фіксації змін через gitleaks (0 витоків) і додано .gitleaks.toml та .github/workflows/geheimen-scan.yml; звірено HTTPS/HSTS на 11 піддоменах; створено двомовну смугу згоди ToestemmingBand із двома рівноцінними кнопками (site-001-toestemming 24/24) та знеособлену аналітику відвідувань за згодою з оглядом для адміністратора (site-001-analyse 13/13)."
+    },
+    {
+      "stap": "2) Claude Opus 5.5 (High) через Antigravity Google (76383e50..204f9ec8): пункти 6–11 і 13–18 — метадані, прев’ю соцмереж, значки, sitemap/robots, alt-тексти, стиснення PNG, контраст, адаптивність, сторінка 404, посилання, перевірка форм і захист від спаму.",
+      "resultaat": "Уніфіковано заголовки вкладок і метаописи, створено прев’ю 1200×630, відновлено значки й favicon.ico, сформовано sitemap.xml і robots.txt (site-001-metadata 21/21); додано alt-тексти зі сторожем (4/4) і стиснено PNG на 32 % без зміни SHA-256 логотипів; усунено вади контрасту (0 порушень axe-core); виправлено адаптивність 320–768 px і орбіту пошти (174 → 0 вад); реалізовано справжній код 404 і окрему сторінку 404 без входу (site-001-404 24/24); виправлено биті посилання (6/6); перевірено 50 форм 400 зламаними запитами та нормалізацію двійників коду (22/22) і захист 56 публічних маршрутів від спаму (50/50)."
+    },
+    {
+      "stap": "3) Gemini 4 Carbon High від Google Antigravity (96c298d0..52e7b860): перейняття після обриву ліміту, мовне очищення 285 файлів, пункт 12 (швидкість завантаження) та пункт 20 (один головний заклик до дії).",
+      "resultaat": "Завершено заміну слова «акаунт» на «обліковий запис» у 285 файлах із повним збереженням поведінки та сторожем site-001-akaunt (8/8); відокремлено завантаження App від гостьової /toegang (666 → 220 кБ, −67 %), відкладено TechLaag і MeldingenPortaal без сеансу, усунено марні 401 (LCP на id/ 572 → 308 мс, блокування ЦП на телефоні −72 %, site-001-snelheid 9/9); наведено один головний заклик до дії на 6 екранах (2 → 0 вад, site-001-cta 8/8)."
+    },
+    {
+      "stap": "4) Gemini 4 Carbon High від Google Antigravity (09081c2b..a68297b8): пункти 21–25 — інтерактивні елементи, журналювання помилок і моніторинг, запасні копії бази даних, заголовки безпеки та реєстрація/вхід/відновлення.",
+      "resultaat": "Перевірено кнопки й елементи в 11 живих сценаріях без входу і за входом (4 → 0 вад, site-001-knoppen 7/7); оновлено server/rook.ts під tech-ruimtes-v2 (код 2 → 0, rook-controle 40/40, site-001-monitoring 7/7); перевірено наживо цикл backup-maken.sh + age + SHA256SUMS + pg_restore у PostgreSQL 18.7 (224 таблиці, 3322 записи — 100 % збіг) та оновлено archief-herstellen.sh під postgresql-18 (site-001-backups 6/6); додано COOP, CORP і X-Permitted-Cross-Domain-Policies (9/9 заголовків, site-001-beveiliging 7/7); прогнано 11 наборів реєстрації/входу/відновлення на PostgreSQL 18.7 із примусовим RLS (432/432) і виправлено миттєве скидання wisVlagGeheugen у backend/account-wissen.ts (site-001-aanmelden-herstel 12/12)."
+    },
+    {
+      "stap": "5) Gemini 4 Carbon High від Google Antigravity (232dd2a6..HEAD): узгодження з живою встановленою основою HERSTEL-001 (20261126-181653 @ c7561d0a) та підготовка випуску.",
+      "resultaat": "Виконано злиття (--no-ff) встановленої на живому сервері версії 20261126-181653 @ c7561d0a без жодної втраченої можливості (ORCH behoud OK), узгоджено сигнатури routeOnbekend() та CANONICAL_AUTH_CHANGE (0 помилок tsc клієнта й сервера), оновлено каталог пошуку (2447 елементів), досьє функцій, три записи обліку BIJDRAGE-001 та конвеєр оприлюднення site-001-uitgave.yml."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Відокремити завантаження ядра App через динамічний import('./App') у src/main.tsx та відкласти завантаження TechLaag і MeldingenPortaal до підтвердження активного сеансу.",
+      "reden": "Гостьова сторінка /toegang та екран входу без сеансу не використовують технічний прошарок і портал сповіщень; їх відкладення зменшило обсяг гостьової сторінки на 67 % (666 → 220 кБ), скоротило блокування процесора на телефоні на 72 % і прибрало марні 401-запити."
+    },
+    {
+      "besluit": "Для Cross-Origin-Resource-Policy віддавати cross-origin виключно для публічних значків, маніфесту, og-afbeelding.png та маршрутів вбудованого входу Telegram, а для решти відповідей — суворий same-site; для COOP — same-origin-allow-popups.",
+      "reden": "Суворий CORP same-site для основних маршрутів ізолює дані користувача між сайтами, водночас cross-origin на значках і прев’ю дозволяє коректні картки соцмереж, а same-origin-allow-popups у COOP зберігає працездатність спливних вікон OAuth (Google, GitHub, Telegram)."
+    },
+    {
+      "besluit": "Очищати 15-секундну серверну пам’ять прапорців викликом wisVlagGeheugen() одразу після COMMIT у backend/account-wissen.ts.",
+      "reden": "Під час наскрізної перевірки пункту 25 на живій PostgreSQL 18.7 виявлено, що стертий ідентифікатор користувача міг залишатися в 15-секундному кеші прапорців після видалення з бази даних; миттєве скидання усуває цю затримку."
+    },
+    {
+      "besluit": "Злити встановлену на живому сервері версію HERSTEL-001 (20261126-181653 @ c7561d0a) у гілку SITE-001 зі збереженням стандартного UITROL-BASIS.",
+      "reden": "Жива перевірка /api/version підтвердила встановлення 20261126-181653 @ c7561d0a на робочому сервері; злиття цієї основи забезпечує 100 % сумісність UITROL-BASIS із сервером та повне збереження всіх напрацювань обох гілок."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "src/toestemming/ToestemmingBand.tsx, backend/bezoek-teller.ts, src/NietGevonden.tsx, public/og-afbeelding.png, public/favicon.ico, public/sitemap.xml, public/robots.txt, .gitleaks.toml, .github/workflows/geheimen-scan.yml",
+      "omschrijving": "Виконано Claude Opus 5.5 (High) через Antigravity Google (пункти 1–11 та 13–19): двомовна смуга згоди на реп’яшки, знеособлений лічильник відвідувань за згодою, окрема сторінка 404 без входу, зображення попереднього перегляду 1200×630, відновлені значки та favicon.ico, карта сайту й правила індексації, налаштування та конвеєр пошуку таємниць."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/main.tsx, src/CanoniekMeldingencentrum.tsx, src/meldingen/v2/regels-opslag.ts, src/platform/uitrol-achtergrond-beheer.ts, src/CanoniekOmlijsting.tsx, src/JuridischPagina.tsx, src/GastToegang.tsx, src/werkblad/WerkbladV3.tsx, backend/owner-platform.ts, server/rook.ts, server/start.ts, backend/account-wissen.ts",
+      "omschrijving": "Виконано Gemini 4 Carbon High від Google Antigravity (пункти 12 та 20–25): полегшений старт без сеансу (−67 % на /toegang, −72 % блокування ЦП), єдиний головний заклик до дії на 6 екранах, виправлення інтерактивних елементів і порожнього стану столу, сумісність server/rook.ts із tech-ruimtes-v2, заголовки безпеки COOP/CORP/X-Permitted-Cross-Domain-Policies (9/9) та миттєве скидання wisVlagGeheugen після стирання облікового запису."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "285 файлів інтерфейсу, повідомлень і словника пошуку + shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Мовне очищення проєкту (підготовлено Claude Opus 5.5 (High), перевірено, зафіксовано й поширено на злиту основу Gemini 4 Carbon High): повна заміна англіцизму «акаунт» на «обліковий запис» з перегенерацією пошукового каталогу (2447 елементів)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/site-001-*.test.ts (16 нових наборів випробувань-сторожів), docs/site-001-gereedheid/* (перебіг робіт uk/nl та знімки до/після p01..p25)",
+      "omschrijving": "Створено 16 постійних автоматичних сторожів (сумарно 228 перевірок поверх наявних наборів) для всіх критичних вимог 25 пунктів готовності та повний двомовний реєстр знімків до/після."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "deploy/archief-herstellen.sh, deploy/archief-maken.sh, deploy/ВІДНОВЛЕННЯ.uk.md, deploy/HERSTEL.nl.md, .github/workflows/site-001-uitgave.yml, orchestratie/bijdragen/SITE-001/*.json, orchestratie/onderwerpen/*.json",
+      "omschrijving": "Узгоджено сценарії та посібники аварійного відновлення з PostgreSQL 18, зафіксовано повний облік внесків обох моделей ШІ за правилом BIJDRAGE-001 і створено ізольований конвеєр перевірки й оприлюднення випуску SITE-001."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": "deploy/archief-herstellen.sh",
+      "uk": "Оновлено цільову версію пакунка бази даних під час аварійного розгортання чистого сервера з архіву відновлення (postgresql-17 → postgresql-18) відповідно до чинного виробничого стека Ubuntu 26.04.1 LTS та PostgreSQL 18.6 (рішення B-009), без зміни логіки прав чи розпакування.",
+      "nl": "De doelversie van het databasepakket bij noodherstel op een schone server is bijgewerkt van postgresql-17 naar postgresql-18 conform de productiestapel Ubuntu 26.04.1 LTS en PostgreSQL 18.6 (besluit B-009), zonder wijziging van rechten of uitpaklogica."
+    },
+    {
+      "pad": "deploy/archief-maken.sh",
+      "uk": "Оновлено виключно текст вбудованої пам’ятки відновлення LEES-MIJ.txt (актуальна згадка PostgreSQL 18 замість 17 та мовне очищення українського тексту) без жодної зміни команд створення архіву, прав доступу чи шифрування age.",
+      "nl": "Uitsluitend de ingebouwde herstelhandleiding LEES-MIJ.txt is bijgewerkt (vermelding van PostgreSQL 18 in plaats van 17 en Oekraïense taalzuivering) zonder enige wijziging in archiefopdrachten, toegangsrechten of age-versleuteling."
+    },
+    {
+      "pad": "deploy/cloud/cloud-koppelen.ps1",
+      "uk": "Виконано виключно мовну правку одного українського підказкового рядка на екрані («Google-акаунт» → «обліковий запис Google») відповідно до мовного закону без будь-якої зміни команд rclone, мережевих викликів чи прав доступу.",
+      "nl": "Uitsluitend een taalkundige verbetering van één Oekraïense schermmelding volgens de taalwet, zonder enige wijziging in rclone-opdrachten, netwerkverkeer of rechten."
+    },
+    {
+      "pad": "deploy/db-rollen-instellen.sh",
+      "uk": "Виконано виключно мовну правку двох українських повідомлень у підказках керування аудитом («акаунт» → «обліковий запис») без жодної зміни SQL-запитів, прав ролей mijnruimte_app/migrator/system чи політик захисту рядків.",
+      "nl": "Uitsluitend een taalkundige aanpassing van twee Oekraïense meldingen bij het auditbeheer, zonder enige wijziging van SQL-opdrachten, databaserollen of rijbeveiliging."
+    },
+    {
+      "pad": ".github/workflows/geheimen-scan.yml",
+      "uk": "Перевірковий конвеєр пошуку відкритих таємниць gitleaks лише з правами читання (permissions: contents: read, persist-credentials: false, checkout закріплений 40-символьним відбитком SHA, контрольна сума SHA-256 бінарного файла gitleaks звіряється перед запуском, без secrets.* і без розгортання).",
+      "nl": "Controlewerkstroom voor geheimzoeker gitleaks met uitsluitend leesrechten (permissions: contents: read, persist-credentials: false, checkout vastgepind op 40-tekens-SHA, SHA-256-verificatie van gitleaks vooraf, zonder secrets.* en zonder uitrol)."
+    },
+    {
+      "pad": ".github/workflows/site-001-uitgave.yml",
+      "uk": "Ізольований конвеєр перевірки й оприлюднення випуску SITE-001 поверх живої встановленої основи сервера 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34: верхній рівень permissions: contents: read, усі дії закріплені 40-символьними відбитками SHA, persist-credentials: false, npm ci --ignore-scripts, без pull_request_target і без secrets.*, перевіряє всі 16 сторожів SITE-001, подвійні міграції 0001..0342, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на живий сервер автоматично.",
+      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor uitgave SITE-001 boven op de live serverbasis 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34: permissions: contents: read op topniveau, alle acties vastgepind op 40-tekens-SHA’s, persist-credentials: false, npm ci --ignore-scripts, zonder pull_request_target of secrets.*, toetst alle 16 SITE-001-bewakers, dubbele migraties 0001..0342, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/orch.mjs controleer && node scripts/orch.mjs behoud --tegen c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34 && node scripts/vaardigheden/valideer.mjs && node scripts/meldingen-register-controle.mjs && node scripts/zoek-ui-catalogus.mjs --controle && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=6144 npx tsc -p tsconfig.json --noEmit",
+      "resultaat": "Замок правил 1.8.0 (VLAG-001), перевірка збереження всіх можливостей та внесків відносно живої основи c7561d0a, сторож бази сповіщень MELDINGEN-REGISTER-001 (596 серверних кодів, 703 записи ACTIE_LABELS, 0 у 'overig'), пошуковий каталог (2447 елементів) та обидві перевірки типів TypeScript (клієнт і сервер) пройшли з 0 помилок."
+    },
+    {
+      "opdracht": "Прогін усіх 16 нових тестів-сторожів tests/eenheid/site-001-*.test.ts + juridisch.test.ts + 11 повних наборів реєстрації/входу/відновлення на живій PostgreSQL 18.7 із примусовим RLS + живий цикл backup-maken.sh + age + pg_restore у PostgreSQL 18.7 + перевірки у безголовому Chromium (320..1280 px, uk і nl)",
+      "resultaat": "Усі 16 сторожів SITE-001 пройшли на 100 % (228/228 перевірок), 11 наборів входу й відновлення на PostgreSQL 18.7 дали 432/432, живий цикл резервного копіювання та відновлення в чисту базу PostgreSQL 18.7 дав побайтовий збіг 224 таблиць і 3322 рядків, axe-core показав 0 порушень контрасту, гостьова сторінка /toegang зменшилася з 666 до 220 кБ (−67 %)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs pakket + pakket-controleer + backend/uitrol-voorcontrole.ts (pakketVoorcontrole проти дерева c7561d0a) + перевірка root TRACE-001 після публікації GitHub Release",
+      "resultaat": "Узгоджено UITROL-BASIS із фактично встановленою на сервері версією 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34, перевірено прапорці VLAG-001 і всі 6 пояснень risicoUitleg, пройдено pakketVoorcontrole (0 помилок) та перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "orchestratie/BESLUITEN.md",
+    "orchestratie/ontwikkelarchieven/HERSTEL-001.json",
+    "orchestratie/bijdragen/SITE-001/20261126-155700-antigravity.json",
+    "orchestratie/bijdragen/SITE-001/20261127-064541-antigravity.json",
+    "orchestratie/bijdragen/SITE-001/20261127-100415-antigravity.json",
+    "docs/site-001-gereedheid/ПЕРЕБІГ-РОБІТ.uk.md",
+    "docs/site-001-gereedheid/VOORTGANG.nl.md",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Оприлюднений пакунок mijn-ruimte-<versie>.tar.gz ніколи не встановлюється автоматично на живий сервер: встановлення запускає виключно власник на сторінці Адміністрування → Оновлення з особистим підтвердженням власним ключем доступу.",
+    "Прямого доступу до локального диска запасних копій R:\\mijn-ruimte-reservekopie\\ із хмарного середовища розробки немає — перед схваленням встановлення власник має переконатися у свіжості запасної копії на R:\\ та цілісності SHA256SUMS.",
+    "Знеособлена аналітика відвідувань (пункт 19) працює виключно після явного натискання відвідувачем кнопки згоди у смузі ToestemmingBand і ніколи не зберігає IP-адрес, ідентифікаторів сеансу чи сторонніх лічильників.",
+    "П’ять безпекових прапорців способів входу сторонніх осіб (gastcodes-iedereen, aanmelden-passkey, aanmelden-wachtwoord, aanmelden-extern, aanmelden-sms) за рішенням власника залишаються в стані «Тільки для власника»."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "До досьє, знімків стенда та маніфесту випуску включено виключно публічні метадані координації, відбитки фіксацій змін і штучні випробувальні зразки на місцевому стенді; жодних паролів, закритих ключів, маркерів доступу чи особистих даних не використано."
+  }
+}
