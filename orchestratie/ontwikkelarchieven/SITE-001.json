@@ -3,12 +3,12 @@
   "taakId": "SITE-001",
   "datum": "2026-11-27",
   "taal": "uk",
-  "titel": "SITE-001 · Повна готовність «Мій простір» за всіма 25 пунктами, заміна «акаунт» → «обліковий запис» у 285 файлах, 16 нових тестів-сторожів та узгодження з живою основою HERSTEL-001 (20261126-181653)",
-  "opdracht": "За дорученням власника послідовно перевірити й довести до належного рівня всі 25 пунктів готовності сайту Mijn Ruimte зі знімками до/після на місцевому випробувальному стенді, проміжними фіксаціями на GitHub і мовним очищенням («акаунт» → «обліковий запис» у всьому інтерфейсі), а після завершення у пакеті випуску та всіх відповідних полях чітко зазначити розподіл роботи: що виконав до зупинки через вичерпання ліміту Claude Opus 5.5 (High) через Antigravity Google і що продовжив та завершив Gemini 4 Carbon High від Google Antigravity, оприлюднивши перевірений випуск mijn-ruimte-<versie>.tar.gz на GitHub Releases за правилами VLAG-001 і TRACE-001 без автоматичного встановлення на живий сервер.",
+  "titel": "SITE-001 · Повна готовність «Мій простір» за всіма 25 пунктами, заміна «акаунт» → «обліковий запис» у 285 файлах, єдина згода на реп’яшки між піддоменами, стабільне перемикання просторів та 16 сторожів поверх основи 20261127-103137",
+  "opdracht": "За дорученням власника послідовно перевірити й довести до належного рівня всі 25 пунктів готовності сайту Mijn Ruimte зі знімками до/після на місцевому випробувальному стенді, проміжними фіксаціями на GitHub і мовним очищенням («акаунт» → «обліковий запис» у всьому інтерфейсі), усунути дві живі проблеми за зауваженням власника (єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com та перемикач між звичайним і технічним простором у меню сайту без самовільного повернення технічного профілю), а в пакеті випуску поверх актуальної встановленої основи сервера 20261127-103137 (5404c83b4c31) та всіх відповідних полях чітко зазначити розподіл роботи між усіма трьома моделями ШІ: Claude Opus 5.5 (High) через Antigravity Google (до зупинки через ліміт, п. 1–11 і 13–19), Gemini 4 Carbon High від Google Antigravity (продовження з місця зупинки, мовне очищення 285 файлів, п. 12, п. 20–25 та випуск 20261127-103137) і Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення двох живих проблем за зауваженням власника та пакування випуску поверх 20261127-103137).",
   "herkomst": {
     "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
     "agent": "antigravity",
-    "model": "Claude Opus 5.5 (High) (Antigravity Google) → Gemini 4 Carbon High (Google Antigravity)",
+    "model": "Claude Opus 5.5 (High) (Antigravity Google) → Gemini 4 Carbon High (Google Antigravity) → Gemini 4 Argon High (Google Antigravity)",
     "uitvoerders": [
       {
         "agent": "antigravity",
@@ -23,24 +23,32 @@
         "platform": "Google Antigravity",
         "tool": "Google Antigravity",
         "model": "Gemini 4 Carbon High",
-        "bereik": "96c298d0395f75a5fc8e5b19c96e699f27c39276..HEAD",
-        "werk": "Продовження з місця зупинки до повного завершення всіх 25 із 25 пунктів: фіксація заміни «акаунт» → «обліковий запис» у 285 файлах (сторож 8/8), виконання пункту 12 швидкості та пунктів 20–25 із 7 додатковими сторожами, злиття живої встановленої основи сервера HERSTEL-001 (20261126-181653 @ c7561d0a) без втрати можливостей і формування пакета випуску."
+        "bereik": "96c298d0395f75a5fc8e5b19c96e699f27c39276..5404c83b4c3143fe3383df2fc56d4eca62ab6c68",
+        "werk": "Продовження з місця зупинки до повного завершення всіх 25 із 25 пунктів і випуску 20261127-103137: фіксація заміни «акаунт» → «обліковий запис» у 285 файлах (сторож 8/8), виконання пункту 12 швидкості та пунктів 20–25 із 7 додатковими сторожами, злиття живої встановленої основи сервера HERSTEL-001 (20261126-181653 @ c7561d0a) без втрати можливостей."
+      },
+      {
+        "agent": "antigravity",
+        "platform": "Google Antigravity",
+        "tool": "Google Antigravity",
+        "model": "Gemini 4 Argon High",
+        "bereik": "16d28123998f355a35d72c4c485bc9309c1eb965..HEAD",
+        "werk": "Повернув утрачене та усунув дві живі проблеми за зауваженням власника поверх встановленої основи 20261127-103137 (5404c83b4c31): 1) єдина згода на реп’яшки один раз на всі піддомени *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) зі сторожем 32/32; 2) виправлення перемикача між звичайним і технічним простором у бічному меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx та зі збереженням tabContext і обраного простору відображення між усіма піддоменами, а також пакування випуску поверх 20261127-103137."
       }
     ],
     "repo": "Tarasevych/hub",
     "tak": "feature/site-001-20261125-232500",
     "basisCommit": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
     "basisVersie": "20261105-061659",
-    "geinstalleerdeBasis": "c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34",
-    "geinstalleerdeVersie": "20261126-181653",
+    "geinstalleerdeBasis": "5404c83b4c3143fe3383df2fc56d4eca62ab6c68",
+    "geinstalleerdeVersie": "20261127-103137",
     "integratieBasis": "8890f85a1c34c9f12e945eb78bd2e8588cceb56a",
     "regelsVersie": "1.8.0",
     "regelsHash": "a0d8153f3da90485f83aa62cc403d6e58bd2901f7e261ac4d93c9a74af8cd3e5",
     "samengevoegd": [
       {
-        "taak": "HERSTEL-001 (жива встановлена версія сервера 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34)",
-        "commit": "c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34",
-        "reden": "Звірено через https://hub.tarasevych.com/api/version і злито (--no-ff) у гілку feature/site-001-20261125-232500 для 100 % сумісності UITROL-BASIS та збереження всіх змін 5 етапів HERSTEL-001, потокового Telegram-архівування й міграцій 0336..0342."
+        "taak": "HERSTEL-001 (попередня основа 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34) та встановлений на сервері випуск SITE-001 (20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68)",
+        "commit": "5404c83b4c3143fe3383df2fc56d4eca62ab6c68",
+        "reden": "Пакет зібрано безпосередньо поверх актуальної встановленої на живому сервері версії 20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68 для 100 % сумісності UITROL-BASIS без помилки BASIS_VEROUDERD."
       }
     ]
   },
@@ -69,7 +77,8 @@
     "0d4d949dc869713cbeb225ec0e9c74264f903e52",
     "6bacb11a5195e43ff57e393ba534cbffbb13c7d6",
     "5404c83b4c3143fe3383df2fc56d4eca62ab6c68",
-    "16d28123998f355a35d72c4c485bc9309c1eb965"
+    "16d28123998f355a35d72c4c485bc9309c1eb965",
+    "a26d9c9105c2ef91b6fb1b7200d978a6aa61a8b6"
   ],
   "tijdlijn": [
     {
@@ -90,11 +99,11 @@
     },
     {
       "stap": "5) Gemini 4 Carbon High від Google Antigravity (232dd2a6..5404c83b): узгодження з живою встановленою основою HERSTEL-001 (20261126-181653 @ c7561d0a) та перший випуск 20261127-103137.",
-      "resultaat": "Виконано злиття (--no-ff) встановленої на живому сервері версії 20261126-181653 @ c7561d0a без жодної втраченої можливості (ORCH behoud OK), узгоджено сигнатури routeOnbekend() та CANONICAL_AUTH_CHANGE (0 помилок tsc клієнта й сервера), оновлено каталог пошуку (2447 елементів) та оприлюднено випуск 20261127-103137."
+      "resultaat": "Виконано злиття (--no-ff) встановленої на живому сервері версії 20261126-181653 @ c7561d0a без жодної втраченої можливості (ORCH behoud OK), узгоджено сигнатури routeOnbekend() та CANONICAL_AUTH_CHANGE (0 помилок tsc клієнта й сервера), оновлено каталог пошуку (2447 елементів) та оприлюднено випуск 20261127-103137, який власник встановив на сервері."
     },
     {
-      "stap": "6) Gemini 4 Carbon High від Google Antigravity (16d28123..HEAD): виправлення двох живих проблем за зауваженням власника (єдина згода на реп’яшки для всіх піддоменів та стабільний перемикач між звичайним і технічним простором у меню).",
-      "resultaat": "Збереження згоди на реп’яшки поширено на всі 11 піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com (site-001-toestemming 32/32); усунено перехоплення кліку setPointerCapture на <main> у відкритій мобільній шторці меню CanoniekOmlijsting.tsx для кнопок .zr, вимкнено самовільне повернення технічного профілю в TechPoort.tsx при зміні URL та забезпечено збереження єдиного tabContext і обраного простору відображення між усіма піддоменами у tab-context.ts, ruimte-signaal.ts, tech-opslag.ts, ruimtes-opslag.ts, RuimteWissel.tsx, backend/tech-ruimtes-kern.ts і backend/tech-ruimtes.ts."
+      "stap": "6) Gemini 4 Argon High від Google Antigravity (16d28123..HEAD): виправлення двох живих проблем за зауваженням власника («повернув утрачене»: єдина згода на реп’яшки для всіх піддоменів та стабільний перемикач між звичайним і технічним простором у меню) і пакування випуску поверх встановленої основи 20261127-103137.",
+      "resultaat": "Збереження згоди на реп’яшки поширено на всі 11 піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com (site-001-toestemming 32/32); усунено перехоплення кліку setPointerCapture на <main> у відкритій мобільній шторці меню CanoniekOmlijsting.tsx для кнопок .zr, вимкнено самовільне повернення технічного профілю в TechPoort.tsx при зміні URL та забезпечено збереження єдиного tabContext і обраного простору відображення між усіма піддоменами у tab-context.ts, ruimte-signaal.ts, tech-opslag.ts, ruimtes-opslag.ts, RuimteWissel.tsx, backend/tech-ruimtes-kern.ts і backend/tech-ruimtes.ts; узгоджено UITROL-BASIS із встановленою на сервері версією 20261127-103137 @ 5404c83b4c31."
     }
   ],
   "keuzes": [
@@ -111,8 +120,8 @@
       "reden": "Під час наскрізної перевірки пункту 25 на живій PostgreSQL 18.7 виявлено, що стертий ідентифікатор користувача міг залишатися в 15-секундному кеші прапорців після видалення з бази даних; миттєве скидання усуває цю затримку."
     },
     {
-      "besluit": "Злити встановлену на живому сервері версію HERSTEL-001 (20261126-181653 @ c7561d0a) у гілку SITE-001 зі збереженням стандартного UITROL-BASIS.",
-      "reden": "Жива перевірка /api/version підтвердила встановлення 20261126-181653 @ c7561d0a на робочому сервері; злиття цієї основи забезпечує 100 % сумісність UITROL-BASIS із сервером та повне збереження всіх напрацювань обох гілок."
+      "besluit": "Зібрати випуск поверх актуальної встановленої на живому сервері версії 20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68 із повним обліком усіх трьох моделей ШІ (Claude Opus 5.5 (High), Gemini 4 Carbon High та Gemini 4 Argon High).",
+      "reden": "На живому сервері вже встановлено випуск 20261127-103137 @ 5404c83b4c31, який є безпосереднім предком поточної гілки; встановлення UITROL-BASIS на 20261127-103137 усуває відхилення BASIS_VEROUDERD і точно фіксує авторство кожного з трьох етапів."
     }
   ],
   "wijzigingen": [
@@ -123,8 +132,13 @@
     },
     {
       "soort": "gewijzigd",
-      "pad": "src/main.tsx, src/CanoniekMeldingencentrum.tsx, src/meldingen/v2/regels-opslag.ts, src/platform/uitrol-achtergrond-beheer.ts, src/CanoniekOmlijsting.tsx, src/JuridischPagina.tsx, src/GastToegang.tsx, src/werkblad/WerkbladV3.tsx, backend/owner-platform.ts, server/rook.ts, server/start.ts, backend/account-wissen.ts",
+      "pad": "src/main.tsx, src/CanoniekMeldingencentrum.tsx, src/meldingen/v2/regels-opslag.ts, src/platform/uitrol-achtergrond-beheer.ts, src/JuridischPagina.tsx, src/GastToegang.tsx, src/werkblad/WerkbladV3.tsx, backend/owner-platform.ts, server/rook.ts, server/start.ts, backend/account-wissen.ts",
       "omschrijving": "Виконано Gemini 4 Carbon High від Google Antigravity (пункти 12 та 20–25): полегшений старт без сеансу (−67 % на /toegang, −72 % блокування ЦП), єдиний головний заклик до дії на 6 екранах, виправлення інтерактивних елементів і порожнього стану столу, сумісність server/rook.ts із tech-ruimtes-v2, заголовки безпеки COOP/CORP/X-Permitted-Cross-Domain-Policies (9/9) та миттєве скидання wisVlagGeheugen після стирання облікового запису."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/toestemming/toestemming.ts, src/toestemming/ToestemmingBand.tsx, src/CanoniekOmlijsting.tsx, src/tab-context.ts, src/tech/TechPoort.tsx, src/tech/tech-opslag.ts, src/tech/ruimtes/RuimteWissel.tsx, src/tech/ruimtes/ruimte-signaal.ts, src/tech/ruimtes/ruimtes-opslag.ts, backend/tech-ruimtes-kern.ts, backend/tech-ruimtes.ts",
+      "omschrijving": "Виконано Gemini 4 Argon High від Google Antigravity («повернув утрачене» — усунення двох живих проблем за зауваженням власника): єдина згода на реп’яшки на всі піддомени *.tarasevych.com через mr_toestemming_v1 (Domain=.tarasevych.com, 32/32) та стабільний перемикач між звичайним і технічним простором у меню (.zr) без setPointerCapture на <main>, без самовільного повернення технічного профілю в TechPoort.tsx і зі збереженням tabContext та обраного простору відображення між усіма піддоменами."
     },
     {
       "soort": "gewijzigd",
@@ -134,12 +148,12 @@
     {
       "soort": "toegevoegd",
       "pad": "tests/eenheid/site-001-*.test.ts (16 нових наборів випробувань-сторожів), docs/site-001-gereedheid/* (перебіг робіт uk/nl та знімки до/після p01..p25)",
-      "omschrijving": "Створено 16 постійних автоматичних сторожів (сумарно 228 перевірок поверх наявних наборів) для всіх критичних вимог 25 пунктів готовності та повний двомовний реєстр знімків до/після."
+      "omschrijving": "Створено 16 постійних автоматичних сторожів (сумарно 236 перевірок поверх наявних наборів) для всіх критичних вимог 25 пунктів готовності та повний двомовний реєстр знімків до/після."
     },
     {
       "soort": "gewijzigd",
       "pad": "deploy/archief-herstellen.sh, deploy/archief-maken.sh, deploy/ВІДНОВЛЕННЯ.uk.md, deploy/HERSTEL.nl.md, .github/workflows/site-001-uitgave.yml, orchestratie/bijdragen/SITE-001/*.json, orchestratie/onderwerpen/*.json",
-      "omschrijving": "Узгоджено сценарії та посібники аварійного відновлення з PostgreSQL 18, зафіксовано повний облік внесків обох моделей ШІ за правилом BIJDRAGE-001 і створено ізольований конвеєр перевірки й оприлюднення випуску SITE-001."
+      "omschrijving": "Узгоджено сценарії та посібники аварійного відновлення з PostgreSQL 18, зафіксовано повний облік внесків усіх трьох моделей ШІ за правилом BIJDRAGE-001 і налаштовано конвеєр перевірки й оприлюднення випуску SITE-001 поверх встановленої основи 20261127-103137."
     }
   ],
   "risicoUitleg": [
@@ -170,22 +184,22 @@
     },
     {
       "pad": ".github/workflows/site-001-uitgave.yml",
-      "uk": "Ізольований конвеєр перевірки й оприлюднення випуску SITE-001 поверх живої встановленої основи сервера 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34: верхній рівень permissions: contents: read, усі дії закріплені 40-символьними відбитками SHA, persist-credentials: false, npm ci --ignore-scripts, без pull_request_target і без secrets.*, перевіряє всі 16 сторожів SITE-001, подвійні міграції 0001..0342, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на живий сервер автоматично.",
-      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor uitgave SITE-001 boven op de live serverbasis 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34: permissions: contents: read op topniveau, alle acties vastgepind op 40-tekens-SHA’s, persist-credentials: false, npm ci --ignore-scripts, zonder pull_request_target of secrets.*, toetst alle 16 SITE-001-bewakers, dubbele migraties 0001..0342, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
+      "uk": "Ізольований конвеєр перевірки й оприлюднення випуску SITE-001 поверх живої встановленої основи сервера 20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68: верхній рівень permissions: contents: read, усі дії закріплені 40-символьними відбитками SHA, persist-credentials: false, npm ci --ignore-scripts, без pull_request_target і без secrets.*, перевіряє всі 16 сторожів SITE-001, подвійні міграції 0001..0342, pakketVoorcontrole і root TRACE-001, ніколи не встановлює пакунок на живий сервер автоматично.",
+      "nl": "Geïsoleerde controle- en publicatiewerkstroom voor uitgave SITE-001 boven op de live serverbasis 20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68: permissions: contents: read op topniveau, alle acties vastgepind op 40-tekens-SHA’s, persist-credentials: false, npm ci --ignore-scripts, zonder pull_request_target of secrets.*, toetst alle 16 SITE-001-bewakers, dubbele migraties 0001..0342, pakketVoorcontrole en root TRACE-001, en installeert nooit automatisch op de server."
     }
   ],
   "controles": [
     {
-      "opdracht": "node scripts/orch.mjs controleer && node scripts/orch.mjs behoud --tegen c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34 && node scripts/vaardigheden/valideer.mjs && node scripts/meldingen-register-controle.mjs && node scripts/zoek-ui-catalogus.mjs --controle && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=6144 npx tsc -p tsconfig.json --noEmit",
-      "resultaat": "Замок правил 1.8.0 (VLAG-001), перевірка збереження всіх можливостей та внесків відносно живої основи c7561d0a, сторож бази сповіщень MELDINGEN-REGISTER-001 (596 серверних кодів, 703 записи ACTIE_LABELS, 0 у 'overig'), пошуковий каталог (2447 елементів) та обидві перевірки типів TypeScript (клієнт і сервер) пройшли з 0 помилок."
+      "opdracht": "node scripts/orch.mjs controleer && node scripts/orch.mjs behoud --tegen 5404c83b4c3143fe3383df2fc56d4eca62ab6c68 && node scripts/vaardigheden/valideer.mjs && node scripts/meldingen-register-controle.mjs && node scripts/zoek-ui-catalogus.mjs --controle && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=6144 npx tsc -p tsconfig.json --noEmit",
+      "resultaat": "Замок правил 1.8.0 (VLAG-001), перевірка збереження всіх можливостей та внесків відносно живої встановленої основи 20261127-103137 (5404c83b4c31), сторож бази сповіщень MELDINGEN-REGISTER-001 (596 серверних кодів, 703 записи ACTIE_LABELS, 0 у 'overig'), пошуковий каталог (2447 елементів) та обидві перевірки типів TypeScript (клієнт і сервер) пройшли з 0 помилок."
     },
     {
-      "opdracht": "Прогін усіх 16 нових тестів-сторожів tests/eenheid/site-001-*.test.ts + juridisch.test.ts + 11 повних наборів реєстрації/входу/відновлення на живій PostgreSQL 18.7 із примусовим RLS + живий цикл backup-maken.sh + age + pg_restore у PostgreSQL 18.7 + перевірки у безголовому Chromium (320..1280 px, uk і nl)",
-      "resultaat": "Усі 16 сторожів SITE-001 пройшли на 100 % (228/228 перевірок), 11 наборів входу й відновлення на PostgreSQL 18.7 дали 432/432, живий цикл резервного копіювання та відновлення в чисту базу PostgreSQL 18.7 дав побайтовий збіг 224 таблиць і 3322 рядків, axe-core показав 0 порушень контрасту, гостьова сторінка /toegang зменшилася з 666 до 220 кБ (−67 %)."
+      "opdracht": "Прогін усіх 16 нових тестів-сторожів tests/eenheid/site-001-*.test.ts + тестів перемикання просторів upd-007/upd-008/tech-ruimtes-ui/toestemming-ruimte-cyclus + juridisch.test.ts + 11 повних наборів реєстрації/входу/відновлення на живій PostgreSQL 18.7 із примусовим RLS + живий цикл backup-maken.sh + age + pg_restore у PostgreSQL 18.7",
+      "resultaat": "Усі 16 сторожів SITE-001 пройшли на 100 % (зокрема site-001-toestemming 32/32 для міждоменного реп’яшка mr_toestemming_v1), усі набори просторів (upd-007 8/8, upd-008 8/8, tech-ruimtes-ui 37/37, toestemming-ruimte-cyclus 26/26) та 11 наборів входу й відновлення на PostgreSQL 18.7 (432/432) пройшли з 0 помилок."
     },
     {
-      "opdracht": "node scripts/orch.mjs pakket + pakket-controleer + backend/uitrol-voorcontrole.ts (pakketVoorcontrole проти дерева c7561d0a) + перевірка root TRACE-001 після публікації GitHub Release",
-      "resultaat": "Узгоджено UITROL-BASIS із фактично встановленою на сервері версією 20261126-181653 @ c7561d0a4ee7507bc4e01bd2bd5fa39a76000a34, перевірено прапорці VLAG-001 і всі 6 пояснень risicoUitleg, пройдено pakketVoorcontrole (0 помилок) та перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
+      "opdracht": "node scripts/orch.mjs pakket + pakket-controleer + backend/uitrol-voorcontrole.ts (pakketVoorcontrole проти дерева 5404c83b4c31) + перевірка root TRACE-001 після публікації GitHub Release",
+      "resultaat": "Узгоджено UITROL-BASIS із фактично встановленою на сервері версією 20261127-103137 @ 5404c83b4c3143fe3383df2fc56d4eca62ab6c68, зазначено всі три моделі ШІ (Claude Opus 5.5 (High), Gemini 4 Carbon High, Gemini 4 Argon High), перевірено прапорці VLAG-001 і всі пояснення risicoUitleg, пройдено pakketVoorcontrole (0 помилок) та перевірку root TRACE-001 із точним збігом SHA-256 оприлюдненого архіву."
     }
   ],
   "bronnen": [

@@ -99,7 +99,15 @@
       "agent": "antigravity",
       "model": "Gemini 4 Carbon High (Google Antigravity)",
       "datum": "2026-11-27",
-      "uk": "Продовжено й завершено роботу з місця зупинки (фіксації 96c298d0..HEAD): завершено заміну «акаунт» на «обліковий запис» у 285 файлах зі сторожем 8/8; виконано пункт 12 швидкості (/toegang 666 → 220 кБ, −67 %, відкладено TechLaag і MeldingenPortaal без сеансу, LCP на id/ 572 → 308 мс, блокування ЦП на телефоні −72 %) та пункти 20–25 (один головний заклик до дії на 6 екранах, інтерактивні елементи 4 → 0 вад, відновлення server/rook.ts під tech-ruimtes-v2, живий цикл backup-maken.sh + pg_restore на PostgreSQL 18.7 і archief-herstellen.sh під postgresql-18, заголовки безпеки COOP/CORP/X-Permitted-Cross-Domain-Policies 9/9, 432/432 перевірки реєстрації/входу/відновлення зі скиданням wisVlagGeheugen), узгоджено гілку з живою основою HERSTEL-001 (20261126-181653 @ c7561d0a), а також усунено повторні запити згоди на реп’яшки між піддоменами (спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com, 32/32) і виправлено перемикач між звичайним та технічним просторами у меню (.zr без setPointerCapture на <main>, без самовільного відкочування в TechPoort і з міждоменною передачею стану відображення)."
+      "uk": "Продовжено й завершено роботу з місця зупинки до випуску 20261127-103137 (фіксації 96c298d0..5404c83b): завершено заміну «акаунт» на «обліковий запис» у 285 файлах зі сторожем 8/8; виконано пункт 12 швидкості (/toegang 666 → 220 кБ, −67 %, відкладено TechLaag і MeldingenPortaal без сеансу, LCP на id/ 572 → 308 мс, блокування ЦП на телефоні −72 %) та пункти 20–25 (один головний заклик до дії на 6 екранах, інтерактивні елементи 4 → 0 вад, відновлення server/rook.ts під tech-ruimtes-v2, живий цикл backup-maken.sh + pg_restore на PostgreSQL 18.7 і archief-herstellen.sh під postgresql-18, заголовки безпеки COOP/CORP/X-Permitted-Cross-Domain-Policies 9/9, 432/432 перевірки реєстрації/входу/відновлення зі скиданням wisVlagGeheugen) та узгоджено гілку з живою основою HERSTEL-001 (20261126-181653 @ c7561d0a)."
+    },
+    {
+      "taakId": "SITE-001",
+      "tak": "feature/site-001-20261125-232500",
+      "agent": "antigravity",
+      "model": "Gemini 4 Argon High (Google Antigravity)",
+      "datum": "2026-11-27",
+      "uk": "Усунено дві живі проблеми за зауваженням власника поверх встановленої основи 20261127-103137 @ 5404c83b (фіксації 16d28123..HEAD, «повернув утрачене»): 1) згода на реп’яшки зберігається один раз для всіх піддоменів *.tarasevych.com через спільний реп’яшок mr_toestemming_v1 (Domain=.tarasevych.com) і синхронізується з localStorage без повторних запитів (site-001-toestemming 32/32); 2) виправлено перемикач між звичайним і технічним простором у бічному меню (.zr) на смартфоні й комп’ютері (прибрано setPointerCapture на <main> у CanoniekOmlijsting.tsx, вимкнено самовільне повернення технічного профілю в TechPoort.tsx при зміні URL та забезпечено збереження tabContext і обраного простору відображення між усіма піддоменами у tab-context.ts, ruimte-signaal.ts, tech-opslag.ts, ruimtes-opslag.ts, RuimteWissel.tsx, backend/tech-ruimtes-kern.ts і backend/tech-ruimtes.ts)."
     }
   ],
   "mogelijkheden": [
