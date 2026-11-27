@@ -62,6 +62,7 @@ import { detecteerLiveVoortgang, isInvoerElementActief, magToastNuTonen } from '
 import { useVlag } from './functievlag-lezen';
 import { leesMeldingWeergaveKeuze, useMeldingWeergaveKeuze } from './meldingen/weergave-keuze';
 import Merk from './merk/Merk';
+import { controleerUitgaandePostOpSubdomein, UITGAANDE_POST_COOKIE, UITGAANDE_POST_EVENT } from './mail/uitgaande-post-achtergrond';
 
 const naarMeldingSubdomein = (dienst: string): MeldingSubdomein => {
   const norm = dienst === 'identity' ? 'id' : dienst;
@@ -130,7 +131,7 @@ export default function CanonicalNotificationCenter(p: Props) {
   const v2Regels = useLeverRegels(aangemeld && (v2 || eenheidPuls));
   // INTEG-001: de blijvende status (archief, opgelost) geldt nu voor elk paneel, niet alleen met de vlag meldingen-uitleg-v3: «Очистити»
   // en «Архів» moeten overal werken. Alleen voor een aangemeld account (anders is er geen server-status).
-  const v3Status = useStatusStand(aangemeld);
+  const v3Status = useStatusStand(!!p.scope && p.scope !== 'anon');
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
   const formatTime = (value: number) => new Date(value).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE');
   const prefs = readSharedPreferences();
@@ -192,6 +193,36 @@ export default function CanonicalNotificationCenter(p: Props) {
   useEffect(() => {
     zetTechActiviteit(activiteitenVanSfeer(activity.events, 'technisch'), activity.read, activity.markRead);
   }, [activity.events, activity.read, activity.markRead]);
+
+  /* Наглядач міждоменної фонової вихідної пошти (*.tarasevych.com): підхоплює незавершені відправлення та показує спливний бокс сповіщення на будь-якому піддомені. */
+  useEffect(() => {
+    if (!aangemeld || typeof window === 'undefined') return;
+    const controleer = () => {
+      void controleerUitgaandePostOpSubdomein(propsRef.current.lang, aangemeld);
+    };
+    controleer();
+    const timer = window.setInterval(controleer, 4000);
+    const opZichtbaarheid = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') controleer();
+    };
+    window.addEventListener('focus', controleer);
+    window.addEventListener(UITGAANDE_POST_EVENT, controleer as EventListener);
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', opZichtbaarheid);
+    let bc: BroadcastChannel | null = null;
+    try {
+      if (typeof BroadcastChannel === 'function') {
+        bc = new BroadcastChannel(UITGAANDE_POST_COOKIE);
+        bc.onmessage = () => controleer();
+      }
+    } catch { /* без BroadcastChannel */ }
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', controleer);
+      window.removeEventListener(UITGAANDE_POST_EVENT, controleer as EventListener);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', opZichtbaarheid);
+      try { bc?.close(); } catch { /* ігноруємо */ }
+    };
+  }, [aangemeld, p.lang]);
 
   /* ---------- Opslag van de lijst (altijd via de ref, zodat herhalingen elkaar direct zien) ---------- */
 
@@ -367,9 +398,12 @@ export default function CanonicalNotificationCenter(p: Props) {
       }, ...rijen.filter((row) => row.id !== id)]);
     }
 
+    const effectieveVoorkeur = notice.retain && !voorkeur.vast
+      ? { ...voorkeur, seconden: Math.max(voorkeur.seconden || 0, 8) }
+      : voorkeur;
     const next: Active = {
       ...notice, type, text: tekst, explain, id, kind, createdAt: nu, expanded: false, origin, stil: !geluid,
-      levensduurMs: popupLevensduurMs(voorkeur, tekst, explain, kind), serverId: opties.serverId,
+      levensduurMs: popupLevensduurMs(effectieveVoorkeur, tekst, explain, kind), serverId: opties.serverId,
       meldingId: notice.meldingId ?? (notice.transient ? (opties.serverId ? `s:${opties.serverId}` : undefined) : `l:${id}`),
     };
     if (voorkeur.opduiken) recentePopups.current = [...recentePopups.current.filter((r) => nu - r.t <= 120_000), { sectie, kind, transient: !!notice.transient, t: nu }].slice(-20);
@@ -388,7 +422,7 @@ export default function CanonicalNotificationCenter(p: Props) {
         queueRef.current.push(next);
         if (queueRef.current.length > 6) queueRef.current.splice(0, queueRef.current.length - 6);
       }
-    } else if (!notice.voorbeeld && !magToastNuTonen({ isKritiek: isKritiekType(type), laatsteToetsDrukMs: laatsteTypMsRef.current, nu })) {
+    } else if (!notice.voorbeeld && !magToastNuTonen({ isKritiek: isKritiekType(type) || kind === 'error' || Boolean(notice.retain), laatsteToetsDrukMs: laatsteTypMsRef.current, nu })) {
       // MELDPANEEL-002: Повага до потоку думки — під час активного набору в полі вводу некритичне вікно чекає 2,5 с паузи.
       queueRef.current.push(next);
       if (queueRef.current.length > 6) queueRef.current.splice(0, queueRef.current.length - 6);
@@ -1150,8 +1184,18 @@ export default function CanonicalNotificationCenter(p: Props) {
             {toastSectie ? <span className='canonical-notification-toast-sectie'>{toastSectie}</span> : null}
             <span className='canonical-notification-toast-titel'>{toastTitel?.titel || active.text}</span>
             {active.explain ? <p className='canonical-notification-toast-uitleg'>{active.explain}</p> : null}
-            {toastLink || active.meldingId || active.bijlagen?.length ? (
+            {toastLink || active.action || active.meldingId || active.bijlagen?.length ? (
               <div className='canonical-notification-toast-acties'>
+                {active.action ? (
+                  <button
+                    type='button'
+                    className='canonical-notification-link mr-toast-hoofd'
+                    data-qa-id='melding-actie-knop'
+                    onClick={() => void runAction(active.id, active.action!, true)}
+                  >
+                    {active.action.label}
+                  </button>
+                ) : null}
                 {toastLink ? <a className='canonical-notification-link mr-toast-hoofd' href={toastLink.href} data-qa-id='melding-openen'>{toastLink.label}</a> : null}
                 {active.bijlagen?.length ? (
                   <button

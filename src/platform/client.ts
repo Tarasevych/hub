@@ -111,7 +111,7 @@ function withQuery(url: string, data: unknown): string {
 
 // Menu v2 fase B1: aantal lopende API-verzoeken (voor de voortgangsbalk: klaar als het stil is) en optioneel afbreken
 // (alleen voor LEZENDE verzoeken die door een nieuwe navigatie overbodig zijn geworden — nooit voor schrijvende acties).
-export type ApiOpties = { signal?: AbortSignal; achtergrond?: boolean };
+export type ApiOpties = { signal?: AbortSignal; achtergrond?: boolean; keepalive?: boolean };
 export const ACHTERGROND_PAD = /^\/api\/(flags|ofrep\/v1\/evaluate\/flags|owner\/(session\/bootstrap|mail\/(bootstrap|resume|view-preferences|snooze\/list|google-suite\/(labels|period-bounds|accounts|attachments\/metadata)|imap\/aanbieders|accounts\/list)|tech\/status|hub\/tech\/ruimtes\/(status|controle)|sleutelkluis\/stand|cognitive\/resume))(\/|$)/;
 let lopend = 0;
 const activiteitLuisteraars = new Set<(n: number) => void>();
@@ -250,13 +250,16 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
   let text: string;
   try {
     try {
+      const bodyText = hasBody ? JSON.stringify(data ?? {}) : undefined;
+      const useKeepalive = Boolean(opties.keepalive && (!bodyText || bodyText.length <= 60_000));
       response = await fetch(target, {
         signal: opties.signal,
         method,
         credentials: 'same-origin',
         cache: 'no-store',
+        ...(useKeepalive ? { keepalive: true } : {}),
         headers: hasBody ? { 'Content-Type': 'application/json', Accept: 'application/json' } : { Accept: 'application/json' },
-        body: hasBody ? JSON.stringify(data ?? {}) : undefined,
+        body: bodyText,
       });
     } catch {
       if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');

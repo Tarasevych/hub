@@ -1070,7 +1070,7 @@ export function mailAfzenderRoutes(deps: { requireSession: RequireSession }): Re
     const ctx = raw as unknown as Ctx;
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
-    if (auth.service !== 'mail' || auth.user.status !== 'approved') return error('OWNER_MAIL_SESSION_REQUIRED', 403);
+    if (!auth.service || auth.user.status !== 'approved') return error('OWNER_MAIL_SESSION_REQUIRED', 403);
     const body = (ctx.body && typeof ctx.body === 'object' ? ctx.body : {}) as Record<string, unknown>;
     try { return json({ ok: true, ...(await run(body, auth.user.id) as object) }); }
     catch (e) {

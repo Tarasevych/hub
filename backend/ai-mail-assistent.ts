@@ -204,7 +204,7 @@ const STATUS: Record<string, number> = { no_api_key: 409, invalid: 400, too_long
 export function createMailAssistantRoutes(deps: { requireSession: (event: Record<string, unknown>, body: unknown) => Promise<SessionAuth>; audit: (userId: string, action: string, result: string, details?: Record<string, unknown>) => Promise<unknown> }) {
   const handler = (name: string, run: (userId: string, body: Record<string, unknown>) => Promise<AssistantResult | ToneResult>) => [async (ctx: any) => {
     const auth = await deps.requireSession(ctx.event, ctx.body);
-    if ('errorCode' in auth || auth.service !== 'mail' || auth.user.status !== 'approved') return error('OWNER_MAIL_SESSION_REQUIRED', 403);
+    if ('errorCode' in auth || !auth.service || auth.user.status !== 'approved') return error('OWNER_MAIL_SESSION_REQUIRED', 403);
     if (!(await rateLimit(`mail-ai:${auth.user.id}`, 40, 600, { failClosed: true })).ok) return error('RATE_LIMITED', 429);
     const result = await run(auth.user.id, bodyOf(ctx.body));
     // у журнал — лише дія й результат, ніколи текст листа

@@ -8,7 +8,8 @@ import { emitCanonicalNotice } from './canoniek-meldingen';
 import MailAiToolbar from './MailAiWerkbalk';
 import MailDiskKnop from './MailDriveKnop';
 import MailScheduleMenu from './MailPlanningMenu';
-import { composeErrorText, deleteDraftRemote, getDraftRemote, saveDraftRemote, scheduleRemote, sendRemote, type DraftSync } from './mail-opstel-api';
+import { deleteDraftRemote, getDraftRemote, saveDraftRemote, scheduleRemote, type DraftSync } from './mail-opstel-api';
+import { verzendNieuwBerichtOpAchtergrond } from './mail/uitgaande-post-achtergrond';
 import './mail-concepten.css';
 import MailComposeEditor, { type MailComposeEditorHandle } from './MailOpstelBewerker';
 import MailInputTools from './MailInvoerHulpmiddelen';
@@ -597,25 +598,39 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     onSent();
     onClose();
   };
-  const payload = () => ({ to, cc, bcc, subject, html: body, plainText: editorRef.current?.getPlainText().trim() || '', accountId, localId: localDraftIdRef.current, ...(bijlagen.length ? { attachments: bijlagen.map(({ filename, contentType, data }) => ({ filename, contentType, data })) } : {}) });
+  const leesPlatteTekst = () => {
+    const uitEditor = editorRef.current?.getPlainText().trim() || '';
+    if (uitEditor) return uitEditor;
+    try { return (new DOMParser().parseFromString(String(body || ''), 'text/html').body.textContent || '').trim(); } catch { return ''; }
+  };
+  const payload = () => ({ to, cc, bcc, subject, html: body, plainText: leesPlatteTekst(), accountId, localId: localDraftIdRef.current, ...(bijlagen.length ? { attachments: bijlagen.map(({ filename, contentType, data }) => ({ filename, contentType, data })) } : {}) });
 
   const send = async () => {
-    const plainText = editorRef.current?.getPlainText().trim() || '';
-    if (!accountId || sending || !adressenGeldig(to) || !plainText) return;
+    const plainText = leesPlatteTekst();
+    if (!accountId || sending || !adressenGeldig(to) || (!plainText && !bijlagen.length)) return;
     setSending(true);
     setFailure('');
     if (!requestIdRef.current) requestIdRef.current = newRequestId();
-    try {
-      // De server verstuurt de HTML-versie én een platte-tekstversie via de Gmail API (users.messages.send).
-      const out = await sendRemote(context, payload(), requestIdRef.current);
-      if (out?.item?.status === 'sent') {
-        emitCanonicalNotice({ text: t('Лист надіслано', 'Bericht verzonden'), kind: 'success', source: 'mail' });
-        finishCompose();
-      } else {
-        setFailure(t('Лист зараз не вдалося надіслати. Текст залишився у редакторі, спробуйте ще раз.', 'Het bericht kon nu niet worden verzonden. De tekst blijft in de editor staan, probeer het opnieuw.'));
-      }
-    } catch (error) {
-      setFailure(composeErrorText(error, t));
+    lokaalSchrijven();
+    const p = payload();
+    const uitkomst = await verzendNieuwBerichtOpAchtergrond({
+      lang,
+      context,
+      accountId,
+      localId: p.localId,
+      to: p.to,
+      cc: p.cc,
+      bcc: p.bcc,
+      subject: p.subject,
+      html: p.html,
+      plainText: p.plainText,
+      attachments: p.attachments,
+      requestId: requestIdRef.current,
+    });
+    if (uitkomst.ok) {
+      finishCompose();
+    } else {
+      setFailure(`${uitkomst.foutTekst} ${t('Текст залишився у редакторі, спробуйте ще раз.', 'De tekst blijft in de editor staan, probeer het opnieuw.')}`);
     }
     setSending(false);
   };

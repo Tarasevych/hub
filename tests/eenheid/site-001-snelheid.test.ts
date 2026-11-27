@@ -65,8 +65,62 @@ export async function main(): Promise<number> {
     const navSnel = await readFile(join(root, 'src/navigatie-snel.ts'), 'utf8');
     check('client та navigatie-snel: фонові маршрути синхронізації не запускають видиму смугу завантаження на вже відмальованій сторінці',
       client.includes('ACHTERGROND_PAD') && navSnel.includes('if (stand.alleenAchtergrond && paginaHeeftZichtbareInhoud()) return;'));
+
+    // SITE-001 (надійне надсилання листів і відповідей, міждоменне фонове відправлення та спливний бокс сповіщення):
+    const mailBrowser = await readFile(join(root, 'backend/google-suite-mail-browser.ts'), 'utf8');
+    check('google-suite-mail-browser: фільтрація чернеток DRAFT, вибір lastIncoming та збір усіх учасників гілки у reply',
+      mailBrowser.includes(".includes('DRAFT')")
+      && mailBrowser.includes('lastIncoming=[...messages].reverse().find(')
+      && mailBrowser.includes("if(!to||!to.includes('@'))throw new Error('GOOGLE_MAIL_REPLY_RECIPIENT_INVALID')")
+      && mailBrowser.includes('deleteDraftsForThread(auth.user.id,threadId)'));
+
+    const { _mailBrowserIntern } = await import('../../backend/google-suite-mail-browser');
+    const rawB64 = _mailBrowserIntern.buildReplyRaw({
+      from: 'tarasevych.pavlo@gmail.com',
+      to: 'ontvanger@example.com',
+      cc: [],
+      subject: 'Re: Перевірка української теми та довгого HTML-листа без обриву рядків RFC 5322',
+      inReplyTo: '<msg-1@example.com>',
+      references: ['<msg-1@example.com>'],
+      plainText: 'Привіт! Це перевірка відповіді з кирилицею. '.repeat(20),
+      html: `<p>${'Привіт! Це довгий HTML-рядок без переносів, який раніше перевищував 998 байтів у 8bit. '.repeat(25)}</p>`,
+      attachments: [],
+    });
+    const decodedMime = Buffer.from(rawB64.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+    const maxLineLen = Math.max(...decodedMime.split('\r\n').map((l) => Buffer.byteLength(l, 'utf8')));
+    check('buildReplyRaw: base64 MIME-кодування тексту/HTML, RFC 2047 Subject та жодного рядка > 998 байтів',
+      decodedMime.includes('Content-Transfer-Encoding: base64')
+      && decodedMime.includes('Subject: =?UTF-8?B?')
+      && maxLineLen <= 998);
+
+    const mailOpstel = await readFile(join(root, 'backend/mail-opstel.ts'), 'utf8');
+    check('mail-opstel та google-suite-mail-browser: резервний вибір активної скриньки та дозвіл фонових запитів з будь-якого піддомену (!auth.service)',
+      mailOpstel.includes('!auth.service')
+      && mailBrowser.includes('!auth.service')
+      && mailOpstel.includes('snapshot.account || snapshot.accounts[0]')
+      && mailBrowser.includes('snapshot.account||snapshot.accounts[0]'));
+
+    const uitgaand = await readFile(join(root, 'src/mail/uitgaande-post-achtergrond.ts'), 'utf8');
+    check('uitgaande-post-achtergrond: міждоменний репʼяшок mr_uitgaande_post_v1, keepalive: true та спливний бокс toonMisluktMeldingBox з кнопкою «Повторити надсилання»',
+      uitgaand.includes("UITGAANDE_POST_COOKIE = 'mr_uitgaande_post_v1'")
+      && uitgaand.includes('keepalive: true')
+      && uitgaand.includes('toonMisluktMeldingBox')
+      && uitgaand.includes("kind: 'error'")
+      && uitgaand.includes('herhaalUitgaandePost')
+      && uitgaand.includes('controleerUitgaandePostOpSubdomein'));
+
+    const gesprek = await readFile(join(root, 'src/MailGesprekInhoud.tsx'), 'utf8');
+    const nieuwDialoog = await readFile(join(root, 'src/MailNieuwBerichtDialoog.tsx'), 'utf8');
+    check('MailGesprekInhoud та MailNieuwBerichtDialoog: підключено фонове надсилання verzendAntwoordOpAchtergrond і verzendNieuwBerichtOpAchtergrond',
+      gesprek.includes('verzendAntwoordOpAchtergrond') && nieuwDialoog.includes('verzendNieuwBerichtOpAchtergrond'));
+
+    check('CanoniekMeldingencentrum: наглядач controleerUitgaandePostOpSubdomein на всіх піддоменах та кнопка дії data-qa-id="melding-actie-knop" у спливному боксі',
+      cnc.includes('controleerUitgaandePostOpSubdomein')
+      && cnc.includes("data-qa-id='melding-actie-knop'")
+      && cnc.includes("kind === 'error' || Boolean(notice.retain)"));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }
   return einde();
 }
+
