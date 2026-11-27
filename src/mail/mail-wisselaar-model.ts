@@ -112,14 +112,16 @@ export function meldMailAccountsGewijzigd(): void {
   try { localStorage.setItem(OPSLAG_SLEUTEL, stempel); } catch { /* privé-venster */ }
 }
 
+export type MailAccountsVerversReden = 'signaal' | 'bfcache' | 'zichtbaar';
+
 /** Luisteren naar elke reden om de lijst te verversen. Geeft een opruimfunctie terug. */
-export function luisterMailAccounts(ververs: () => void): () => void {
+export function luisterMailAccounts(ververs: (reden?: MailAccountsVerversReden) => void): () => void {
   let kanaal: BroadcastChannel | null = null;
-  try { kanaal = new BroadcastChannel(MAIL_ACCOUNTS_KANAAL); kanaal.onmessage = () => ververs(); } catch { kanaal = null; }
-  const opslag = (e: StorageEvent) => { if (e.key === OPSLAG_SLEUTEL) ververs(); };
+  try { kanaal = new BroadcastChannel(MAIL_ACCOUNTS_KANAAL); kanaal.onmessage = () => ververs('signaal'); } catch { kanaal = null; }
+  const opslag = (e: StorageEvent) => { if (e.key === OPSLAG_SLEUTEL) ververs('signaal'); };
   // Terug uit de bfcache (Android Chrome «terug» na /accounts) of terug naar het tabblad.
-  const toon = (e: PageTransitionEvent) => { if (e.persisted) ververs(); };
-  const zicht = () => { if (document.visibilityState === 'visible') ververs(); };
+  const toon = (e: PageTransitionEvent) => { if (e.persisted) ververs('bfcache'); };
+  const zicht = () => { if (document.visibilityState === 'visible') ververs('zichtbaar'); };
   window.addEventListener('storage', opslag);
   window.addEventListener('pageshow', toon);
   document.addEventListener('visibilitychange', zicht);

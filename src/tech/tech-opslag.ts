@@ -100,11 +100,13 @@ export const techBody = () => ({ service: zijbalkServerDienst() || serviceFromLo
 let statussen = 0;
 let techVolgnummer = 0;
 let techMoetVers = false;
+let laatsteTechSync = 0;
 const neem = (data: any) => {
   const scheef = data?.nu ? Number(data.nu) - Date.now() : 0;
   const activatie = (data?.activatie ?? null) as TechActivatie | null;
   bewaarBandHint(activatie, scheef);
   statussen += 1;
+  laatsteTechSync = Date.now();
   return zet({ geladen: true, profiel: data?.profiel ?? null, activatie, catalogus: data?.catalogus ?? toestand.catalogus, scheef, fout: null });
 };
 
@@ -297,6 +299,6 @@ export function startTech(): void {
     const wasActief = Boolean(toestand.activatie);
     void techVernieuwen().then(() => { if (wasActief && !toestand.activatie) meld({ t: 'uit' }); });
   });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && sleutel) void techVernieuwen(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && sleutel && (!toestand.geladen || toestand.fout !== null || techMoetVers || Date.now() - laatsteTechSync >= 60_000)) void techVernieuwen(); });
   window.setInterval(() => { if (!document.hidden && sleutel && toestand.activatie) void techVernieuwen(); }, 60_000);
 }

@@ -111,7 +111,8 @@ function withQuery(url: string, data: unknown): string {
 
 // Menu v2 fase B1: aantal lopende API-verzoeken (voor de voortgangsbalk: klaar als het stil is) en optioneel afbreken
 // (alleen voor LEZENDE verzoeken die door een nieuwe navigatie overbodig zijn geworden — nooit voor schrijvende acties).
-export type ApiOpties = { signal?: AbortSignal };
+export type ApiOpties = { signal?: AbortSignal; achtergrond?: boolean };
+export const ACHTERGROND_PAD = /^\/api\/(flags|ofrep\/v1\/evaluate\/flags|owner\/(session\/bootstrap|mail\/(bootstrap|resume|view-preferences|snooze\/list|google-suite\/(labels|period-bounds|accounts|attachments\/metadata)|imap\/aanbieders|accounts\/list)|tech\/status|hub\/tech\/ruimtes\/(status|controle)|sleutelkluis\/stand|cognitive\/resume))(\/|$)/;
 let lopend = 0;
 const activiteitLuisteraars = new Set<(n: number) => void>();
 const meldActiviteit = (d: number) => { lopend = Math.max(0, lopend + d); for (const f of activiteitLuisteraars) { try { f(lopend); } catch { /* luisteraar mag de client niet breken */ } } };
@@ -242,8 +243,9 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
   const hasBody = method !== 'GET' && method !== 'DELETE';
   const target = hasBody ? url : withQuery(url, data);
   if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
-  const route = `${method} ${target.split('?')[0]}`;
-  const klaarVerzoek = registreerActiefVerzoek(route);
+  const pad = target.split('?')[0];
+  const route = `${method} ${pad}`;
+  const klaarVerzoek = registreerActiefVerzoek(route, { achtergrond: Boolean(opties.achtergrond || ACHTERGROND_PAD.test(pad)) });
   let response: Response;
   let text: string;
   try {

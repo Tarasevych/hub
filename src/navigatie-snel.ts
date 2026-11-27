@@ -454,6 +454,7 @@ function verwerkLaadStand(stand: LaadStand) {
   if (totaalActief > 0) {
     stilSinds = 0;
     if (!staat) {
+      if (stand.alleenAchtergrond && paginaHeeftZichtbareInhoud()) return;
       voortgangStart(dienstVanUrl(location.href), {
         extern: false,
         achtergrond: stand.alleenAchtergrond,

@@ -23,6 +23,8 @@ export const useRuimtes = () => useSyncExternalStore((f) => { luisteraars.add(f)
 export const POLL_MS = 15_000;
 let kanaal: BroadcastChannel | null = null;
 let ruimtesVolgnummer = 0;
+let laatsteRuimtesSync = 0;
+let laatsteRuimteBijSync: Ruimte = 'prive';
 const meld = () => { try { kanaal?.postMessage({ t: 'ruimtes' }); } catch { /* geen kanaal: poll vangt het op */ } };
 const code = (e: unknown) => String((e as Error)?.message || 'FOUT');
 const synchroniseerSchil = (naar: Ruimte, sessie: RuimtesStatus['sessie'] | null = null) => {
@@ -41,6 +43,8 @@ export async function ruimtesVernieuwen(): Promise<void> {
       zetGebruikerPrive(s.actief === 'prive');
       synchroniseerSchil(s.actief, s.sessie);
     }
+    laatsteRuimtesSync = Date.now();
+    laatsteRuimteBijSync = s.aan ? s.actief : 'prive';
     zet({ geladen: true, status: s, fout: '' });
   } catch (e) {
     if (v !== ruimtesVolgnummer) return;
@@ -55,6 +59,8 @@ async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesSt
     const s = await f();
     ruimtesVolgnummer += 1;
     if (s.aan) synchroniseerSchil(s.actief, s.sessie);
+    laatsteRuimtesSync = Date.now();
+    laatsteRuimteBijSync = s.aan ? s.actief : 'prive';
     zet({ status: s, bezig: '' }, false);
     meld();
     await techVernieuwen();
@@ -121,7 +127,14 @@ export function startRuimtes(): void {
   gestart = true;
   try { kanaal = typeof BroadcastChannel === 'function' ? new BroadcastChannel('mr-ruimtes') : null; if (kanaal) kanaal.onmessage = () => { void ruimtesVernieuwen(); void techVernieuwen(); }; } catch { kanaal = null; }
   void ruimtesVernieuwen();
-  const zichtbaar = () => { if (!document.hidden) { void ruimtesVernieuwen(); void ruimteControle(); } };
+  const zichtbaar = () => {
+    if (document.hidden) return;
+    const ruimteNu = huidigeRuimte();
+    if (!toestand.geladen || toestand.fout || ruimteNu !== laatsteRuimteBijSync || Date.now() - laatsteRuimtesSync >= 60_000) {
+      void ruimtesVernieuwen();
+      void ruimteControle();
+    }
+  };
   // Een 401/403 van een ruimte-API of een kop X-Ruimte die niet past bij wat de pagina denkt: meteen controleren.
   window.addEventListener('mr-ruimte-antwoord', (ev) => {
     const d = (ev as CustomEvent<{ status: number; ruimte: string | null; pad: string; code?: string }>).detail;

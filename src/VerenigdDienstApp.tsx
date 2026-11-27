@@ -400,6 +400,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
         setMessage(null);
         return;
       }
+      laatsteSync.current=Date.now();
       applyStable(data);
       setMessage(null);
     }catch(caught){
@@ -426,11 +427,11 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
   useEffect(()=>{
     listenCanonicalAuthChanges();
     const sync=()=>{laatsteSync.current=Date.now();void bootstrap(true);void techVernieuwen();void ruimtesVernieuwen()};
-    /* Tabblad weer naar voren gehaald: bij een ander actief browseraccount direct bijwerken, anders hoogstens één keer per 10 s. */
+    /* Tabblad weer naar voren gehaald: bij een ander actief browseraccount direct bijwerken, anders hoogstens één keer per 5 min. */
     const zichtbaar=()=>{
       if(document.visibilityState!=='visible')return;
       const nu=Date.now(),verwacht=viewAccountForService(serviceRef.current),huidig=huidigUserIdRef.current?cacheAccountKey(huidigUserIdRef.current):'anon',gewisseld=verwacht!==huidig;
-      if(!gewisseld&&nu-laatsteSync.current<10000)return;
+      if(!gewisseld&&nu-laatsteSync.current<300000)return;
       laatsteSync.current=nu;
       void bootstrap(true);
       if(gewisseld){void techVernieuwen();void ruimtesVernieuwen()}

@@ -7,7 +7,9 @@ import {MaquetteHeld,MaquetteAnkerRail,useIsKlassiekMaquette,type MaquetteAnkerI
 import {useIsMaquette} from './thema/useThema';
 import {useVensters} from './platform/vensters';
 import {useOnthoudenVensters} from './platform/vensters-onthouden';
-import {opRuimteWissel} from './tech/ruimtes/ruimte-signaal';
+import {huidigeRuimte,opRuimteWissel} from './tech/ruimtes/ruimte-signaal';
+import {ruimteSleutel} from './tech/ruimtes/ruimte-sleutel';
+import {retainEqual} from './stabiel-toestand';
 
 import './mail-functioneel.css';import './mail-ux-beoordeling-20261021.css';import './mailfix-001-accounts.css';
 import './mail/mail-panelen-maquette.css';
@@ -129,6 +131,11 @@ const replyTemplate=(item:MailItem,style:ReplyStyle,lang:Lang)=>{
  return `Шановний/шановна ${name},\n\nДякую за ваше повідомлення щодо «${item.subject||'цього питання'}». Підтверджую його отримання та надам змістовну відповідь найближчим часом.\n\nЗ повагою`;
 };
 
+const BOOTSTRAP_CACHE_PREFIX='tsv:mail-bootstrap-cache-v1:';
+const mailBootstrapCacheSleutel=(userId:string)=>{if(!userId)return'';const r=huidigeRuimte();return`${BOOTSTRAP_CACHE_PREFIX}${r==='prive'?userId:ruimteSleutel(r,userId)}`};
+const leesMailBootstrapCache=(userId:string):Bootstrap|null=>{const k=mailBootstrapCacheSleutel(userId);if(!k)return null;try{const raw=(typeof sessionStorage!=='undefined'&&sessionStorage.getItem(k))||(typeof localStorage!=='undefined'&&localStorage.getItem(k))||'';if(!raw)return null;const parsed=JSON.parse(raw)as Bootstrap;return parsed&&Array.isArray(parsed.items)?parsed:null}catch{return null}};
+const schrijfMailBootstrapCache=(userId:string,waarde:Bootstrap)=>{const k=mailBootstrapCacheSleutel(userId);if(!k)return;try{const payload=JSON.stringify(waarde);if(typeof sessionStorage!=='undefined')sessionStorage.setItem(k,payload);if(typeof localStorage!=='undefined')localStorage.setItem(k,payload)}catch{}};
+
 export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigin,tabContext,homeSignal,sessionReady,onFocusChange}:Props){
  const isMaquette=useIsMaquette();
  const isKlassiek=useIsKlassiekMaquette();
@@ -143,8 +150,9 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const [actiefAnker,setActiefAnker]=useState('mail-sectie-aanbieders');
 
  const notify=(message:string,kind:'info'|'success'|'warning'|'error'='info')=>emitCanonicalNotice({text:message,kind,source:'mail'});
- const [data,setData]=useState<Bootstrap>(INITIAL_BOOTSTRAP);
- const [loading,setLoading]=useState(true);
+ const initialBootstrapCache=useMemo(()=>leesMailBootstrapCache(userId),[userId]);
+ const [data,setData]=useState<Bootstrap>(()=>initialBootstrapCache||INITIAL_BOOTSTRAP);
+ const [loading,setLoading]=useState(()=>!initialBootstrapCache);
  const [busy,setBusy]=useState(false);
  const [showNoise,setShowNoise]=useState(false);
 
@@ -159,6 +167,8 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const [taskTitle,setTaskTitle]=useState('');
  const [energy,setEnergy]=useState<Energy>('low');
  const context={service:'mail',tabContext,sourceOrigin};
+
+ useEffect(()=>{if(!userId)return;const gecachet=leesMailBootstrapCache(userId);if(gecachet){setData(current=>retainEqual(current,gecachet));setLoading(false)}},[userId]);
 
  useEffect(()=>{
   if(typeof window==='undefined')return;
@@ -179,8 +189,9 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
   if(doel)doel.scrollIntoView({behavior:'smooth',block:'start'});
  },[]);
 
- const load=async()=>{
-  setLoading(true);
+ const load=async(stil=false)=>{
+  const gecachet=leesMailBootstrapCache(userId);
+  if(!stil&&!gecachet&&!data.googleMail?.accounts?.length)setLoading(true);
   try{
    const response=await api.post('/api/owner/mail/bootstrap',context);
    const raw=(response.data||{}) as Partial<Bootstrap>;
@@ -195,7 +206,8 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
     provider:{...INITIAL_BOOTSTRAP.provider,...(raw.provider||{})},
     platform:{...INITIAL_BOOTSTRAP.platform,...(raw.platform||{})},
    };
-   setData(next);
+   schrijfMailBootstrapCache(userId,next);
+   setData(current=>retainEqual(current,next));
    setEnergy(next.resume?.energy||'low');
    if(next.resume?.focus&&next.resume.currentItemId){
     setSelectedId(next.resume.currentItemId);
@@ -203,11 +215,11 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
     onFocusChange(true);
    }
   }catch{
-   notify(text(lang,'Не вдалося відкрити поштовий фронт. Дані не втрачено.','De mailwerkruimte kon niet worden geopend. Er zijn geen gegevens verloren.'),'error');
+   if(!gecachet&&!data.googleMail?.accounts?.length)notify(text(lang,'Не вдалося відкрити поштовий фронт. Дані не втрачено.','De mailwerkruimte kon niet worden geopend. Er zijn geen gegevens verloren.'),'error');
   }finally{setLoading(false)}
  };
  useEffect(()=>{try{const url=new URL(location.href);if(url.searchParams.get('google_suite_callback')==='success'&&url.searchParams.get('google_suite_connected')==='mail'){notify(text(lang,'Gmail підключено. Останній лист — у картці облікового запису, без теми.','Gmail is gekoppeld. Het laatste bericht staat op de accountkaart, zonder onderwerp.'),'success');url.searchParams.delete('google_suite_callback');url.searchParams.delete('google_suite_connected');history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`)}}catch{}},[lang]);
- useEffect(()=>{if(sessionReady)void load()},[userId,sessionReady]);useEffect(()=>{if(!sessionReady)return;return opRuimteWissel(()=>{setData(current=>({...current,googleMail:undefined}));void load()})},[sessionReady]);useEffect(()=>()=>{onFocusChange(false)},[onFocusChange]);
+ useEffect(()=>{if(sessionReady)void load(Boolean(leesMailBootstrapCache(userId)))},[userId,sessionReady]);useEffect(()=>{if(!sessionReady)return;return opRuimteWissel(()=>{const gecachet=leesMailBootstrapCache(userId);setData(gecachet||({...INITIAL_BOOTSTRAP,googleMail:undefined}));setLoading(!gecachet);void load(Boolean(gecachet))})},[sessionReady,userId]);useEffect(()=>()=>{onFocusChange(false)},[onFocusChange]);
  useEffect(()=>{onFocusChange(focus)},[focus,onFocusChange]);
 
  const current=useMemo(()=>data.items.find(item=>item.id===selectedId)||null,[data.items,selectedId]);
@@ -384,7 +396,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  // MAILACC-002: geen gedeelde strook «Що можна підключити тут» meer — de orbit op deze pagina is al de volledige catalogus (dubbel).
  if(tab==='accounts')body=accountView;
  else if(tab==='contacts')body=<Suspense fallback={null}><ContactenWeergave lang={lang}/></Suspense>;
- else if(standardMailSurface)body=<GoogleMailWorkspace lang={lang} tab={tab} sourceOrigin={sourceOrigin} tabContext={tabContext} ownerUserId={userId} homeSignal={homeSignal} initialSnapshot={data.googleMail||null} bootstrapPending={loading}/>;
+ else if(standardMailSurface)body=<GoogleMailWorkspace lang={lang} tab={tab} sourceOrigin={sourceOrigin} tabContext={tabContext} ownerUserId={userId} homeSignal={homeSignal} initialSnapshot={data.googleMail||null} bootstrapPending={loading} onSnapshotChange={next=>setData(current=>{const bijgewerkt:Bootstrap={...current,googleMail:{...(current.googleMail||next),...next,runtime:current.googleMail?.runtime||'verified'}};schrijfMailBootstrapCache(userId,bijgewerkt);return retainEqual(current,bijgewerkt)})}/>;
  else if(loading)body=null;
  else if(data.items.length===0)body=onboarding;
  else if(focus)body=focusView;
