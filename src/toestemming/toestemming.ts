@@ -6,6 +6,7 @@
 // nl: toestemming voor optionele analyse en eigen anonieme analyse. Alleen noodzakelijke cookies; analyse standaard uit.
 
 export const TOESTEMMING_SLEUTEL = 'mr-toestemming-v1';
+export const TOESTEMMING_COOKIE = 'mr_toestemming_v1';
 export const TOESTEMMING_VERSIE = 1;
 export const TOESTEMMING_ROUTE = '/api/owner/privacy/toestemming';
 export const GEBEURTENIS_ROUTE = '/api/owner/privacy/gebeurtenis';
@@ -17,26 +18,81 @@ export type Keuze = { versie: number; analyse: boolean; tijd: number };
 type Opslag = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 const veiligeOpslag = (): Opslag | null => { try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; } };
-
-/** Читає збережений вибір; пошкоджений або застарілий запис вважається відсутнім (смуга згоди з'явиться знову). */
-export function leesKeuze(opslag: Opslag | null = veiligeOpslag()): Keuze | null {
+const isStandaardOpslag = (opslag: Opslag | null): boolean => opslag !== null && opslag === veiligeOpslag();
+const gedeeldDomein = (): boolean => {
   try {
-    const ruw = opslag?.getItem(TOESTEMMING_SLEUTEL);
-    if (!ruw) return null;
+    const h = typeof location !== 'undefined' ? String(location.hostname || '').toLowerCase() : '';
+    return h === 'tarasevych.com' || h.endsWith('.tarasevych.com');
+  } catch { return false; }
+};
+const ontleedKeuze = (ruw: string | null | undefined): Keuze | null => {
+  if (!ruw) return null;
+  try {
     const k = JSON.parse(ruw) as Partial<Keuze>;
     if (k?.versie !== TOESTEMMING_VERSIE || typeof k.analyse !== 'boolean' || !Number.isFinite(k.tijd)) return null;
     return { versie: TOESTEMMING_VERSIE, analyse: k.analyse, tijd: Number(k.tijd) };
   } catch { return null; }
+};
+const leesCookieKeuze = (): Keuze | null => {
+  try {
+    if (typeof document === 'undefined' || typeof document.cookie !== 'string') return null;
+    const deel = document.cookie.split('; ').find((item) => item.startsWith(`${TOESTEMMING_COOKIE}=`));
+    if (!deel) return null;
+    return ontleedKeuze(decodeURIComponent(deel.slice(TOESTEMMING_COOKIE.length + 1)));
+  } catch { return null; }
+};
+const schrijfCookieKeuze = (k: Keuze | null): void => {
+  try {
+    if (typeof document === 'undefined') return;
+    const desc = Object.getOwnPropertyDescriptor(document, 'cookie');
+    const waarde = k ? encodeURIComponent(JSON.stringify(k)) : '';
+    if (desc && 'value' in desc && desc.writable) {
+      const overig = String(document.cookie || '').split('; ').filter((s) => s && !s.startsWith(`${TOESTEMMING_COOKIE}=`));
+      if (k) overig.push(`${TOESTEMMING_COOKIE}=${waarde}`);
+      document.cookie = overig.join('; ');
+      return;
+    }
+    const domein = gedeeldDomein() ? '; Domain=.tarasevych.com' : '';
+    const secure = typeof location !== 'undefined' && location.protocol === 'http:' ? '' : '; Secure';
+    if (k) {
+      document.cookie = `${TOESTEMMING_COOKIE}=${waarde}; Path=/; Max-Age=31536000; SameSite=Lax${secure}${domein}`;
+    } else {
+      document.cookie = `${TOESTEMMING_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}${domein}`;
+      if (domein) document.cookie = `${TOESTEMMING_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+    }
+  } catch { /* немає документа */ }
+};
+
+/** Читає збережений вибір (місцеве сховище + спільний реп'яшок для всіх піддоменів *.tarasevych.com); пошкоджений або застарілий запис вважається відсутнім. */
+export function leesKeuze(opslag: Opslag | null = veiligeOpslag()): Keuze | null {
+  if (!opslag) return null;
+  let ruw: string | null = null;
+  try { ruw = opslag.getItem(TOESTEMMING_SLEUTEL); } catch { ruw = null; }
+  const lokaal = ontleedKeuze(ruw);
+  if (ruw !== null && ruw !== undefined && !lokaal) return null;
+  const uitCookie = isStandaardOpslag(opslag) ? leesCookieKeuze() : null;
+  if (lokaal && uitCookie) {
+    const nieuwste = uitCookie.tijd > lokaal.tijd ? uitCookie : lokaal;
+    if (nieuwste !== lokaal) { try { opslag.setItem(TOESTEMMING_SLEUTEL, JSON.stringify(nieuwste)); } catch { /* немає сховища */ } }
+    return nieuwste;
+  }
+  if (!lokaal && uitCookie) {
+    try { opslag.setItem(TOESTEMMING_SLEUTEL, JSON.stringify(uitCookie)); } catch { /* немає сховища */ }
+    return uitCookie;
+  }
+  return lokaal;
 }
 
 export function bewaarKeuze(analyse: boolean, opslag: Opslag | null = veiligeOpslag(), nu = Date.now()): Keuze {
   const k: Keuze = { versie: TOESTEMMING_VERSIE, analyse: analyse === true, tijd: nu };
   try { opslag?.setItem(TOESTEMMING_SLEUTEL, JSON.stringify(k)); } catch { /* приватний режим без сховища: вибір діє до перезавантаження */ }
+  if (isStandaardOpslag(opslag)) schrijfCookieKeuze(k);
   return k;
 }
 
 export function wisKeuze(opslag: Opslag | null = veiligeOpslag()): void {
   try { opslag?.removeItem(TOESTEMMING_SLEUTEL); } catch { /* немає сховища */ }
+  if (isStandaardOpslag(opslag)) schrijfCookieKeuze(null);
 }
 
 /** Смуга згоди потрібна, лише поки немає дійсного вибору. */

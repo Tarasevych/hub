@@ -59,10 +59,50 @@ export async function main(): Promise<number> {
 
   // Інтерфейс: дві рівноцінні кнопки, посилання на політику, обидві мови, без попередньої згоди.
   const tsx = await readFile('src/toestemming/ToestemmingBand.tsx', 'utf8');
+  const toestTs = await readFile('src/toestemming/toestemming.ts', 'utf8');
   check('twee knoppen «nodig» en «analyse»', tsx.includes('data-toestemming="nodig"') && tsx.includes('data-toestemming="analyse"'));
   check('koppeling naar /privacy', tsx.includes('/privacy'));
   check('geen vooraf aangevinkt vakje', !/defaultChecked|checked=\{true\}/.test(tsx));
+  check('één toestemmingskeuze voor alle subdomeinen via Domain=.tarasevych.com cookie', toestTs.includes('TOESTEMMING_COOKIE') && toestTs.includes('Domain=.tarasevych.com'));
+
+  // Міждоменне збереження згоди (наприклад, вибір на hub.tarasevych.com діє на mail.tarasevych.com без повторного запиту).
+  const g = globalThis as Record<string, unknown>;
+  const vorigeLs = Object.getOwnPropertyDescriptor(g, 'localStorage');
+  const vorigeDoc = Object.getOwnPropertyDescriptor(g, 'document');
+  const vorigeLoc = Object.getOwnPropertyDescriptor(g, 'location');
+  try {
+    const hubOpslag = geheugen();
+    const mailOpslag = geheugen();
+    const nepDoc = { cookie: '' };
+    g.document = nepDoc;
+    g.location = { hostname: 'hub.tarasevych.com', protocol: 'https:' };
+    g.localStorage = hubOpslag;
+    check('hub: vóór keuze is de balk nodig', bandNodig(leesKeuze()) === true);
+    bewaarKeuze(false, undefined, 2500);
+    check('hub: keuze bewaard in localStorage én gedeelde cookie', bandNodig(leesKeuze()) === false && nepDoc.cookie.includes('mr_toestemming_v1='));
+    // Перехід на інший піддомен (mail.tarasevych.com): localStorage там порожній, але спільний реп'яшок уже є.
+    g.location = { hostname: 'mail.tarasevych.com', protocol: 'https:' };
+    g.localStorage = mailOpslag;
+    const mailKeuze = leesKeuze();
+    check('mail: geen nieuwe vraag op ander subdomein, keuze overgenomen uit gedeelde cookie', mailKeuze !== null && mailKeuze.analyse === false && mailKeuze.tijd === 2500 && bandNodig(mailKeuze) === false && mailOpslag.getItem(TOESTEMMING_SLEUTEL) !== null);
+    wisKeuze();
+    check('wissen verwijdert zowel localStorage als gedeelde cookie', leesKeuze() === null && !nepDoc.cookie.includes('mr_toestemming_v1='));
+  } finally {
+    if (vorigeLs) Object.defineProperty(g, 'localStorage', vorigeLs); else delete g.localStorage;
+    if (vorigeDoc) Object.defineProperty(g, 'document', vorigeDoc); else delete g.document;
+    if (vorigeLoc) Object.defineProperty(g, 'location', vorigeLoc); else delete g.location;
+  }
+
+  // Перемикач між звичайним і технічним простором: без setPointerCapture на <main>, без самовільного відкочування в TechPoort і з міждоменною передачею стану.
+  const omlTsx = await readFile('src/CanoniekOmlijsting.tsx', 'utf8');
+  const poortTsx = await readFile('src/tech/TechPoort.tsx', 'utf8');
+  const signaalTs = await readFile('src/tech/ruimtes/ruimte-signaal.ts', 'utf8');
+  const kernTs = await readFile('backend/tech-ruimtes-kern.ts', 'utf8');
+  check('zijbalk op telefoon: geen setPointerCapture op <main> die klik op ruimtewissel .zr blokkeert', !omlTsx.includes('setPointerCapture') && omlTsx.includes('.zr,button'));
+  check('TechPoort en ruimte-signaal: geen automatische terugval naar technisch bij paginawissel of subdomeinwissel', signaalTs.includes('RUIMTE_WEERGAVE_COOKIE') && !signaalTs.includes('huidigePaginaSleutel') && poortTsx.includes('!gebruikerKoosPrive() && false'));
+  check('server registreerTab en weergaveVan: nieuw subdomein erft laatst gekozen weergave van de sessie', kernTs.includes('ORDER BY t.gezien_op DESC LIMIT 1'));
+
   const verboden = new RegExp('[\u0401\u0451\u042A\u044A\u042B\u044B\u042D\u044D]');
-  check('Oekraïense tekst zonder verboden letters', !verboden.test(tsx) && !verboden.test(await readFile('src/toestemming/toestemming.ts', 'utf8')));
+  check('Oekraïense tekst zonder verboden letters', !verboden.test(tsx) && !verboden.test(toestTs) && !verboden.test(signaalTs));
   return einde();
 }

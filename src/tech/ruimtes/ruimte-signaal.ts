@@ -13,10 +13,52 @@ export type RuimteWisselDetail = { van: RuimteScope; naar: RuimteScope };
 export const ruimteVanStatus = (s: { aan?: boolean; actief?: string } | null | undefined): RuimteScope => (s && s.aan && s.actief === 'technisch' ? 'technisch' : 'prive');
 
 export const TAB_RUIMTE_SLEUTEL = 'mr-ruimte-tab-v1';
+export const RUIMTE_WEERGAVE_COOKIE = 'mr_ruimte_weergave_v1';
+
+const isGedeeldDomein = (): boolean => {
+  try {
+    const h = typeof location !== 'undefined' ? String(location.hostname || '').toLowerCase() : '';
+    return h === 'tarasevych.com' || h.endsWith('.tarasevych.com');
+  } catch { return false; }
+};
+const leesRuimteCookie = (): RuimteScope | null => {
+  try {
+    if (typeof document === 'undefined' || typeof document.cookie !== 'string') return null;
+    const deel = document.cookie.split('; ').find((s) => s.startsWith(`${RUIMTE_WEERGAVE_COOKIE}=`));
+    if (!deel) return null;
+    const w = decodeURIComponent(deel.slice(RUIMTE_WEERGAVE_COOKIE.length + 1));
+    return w === 'technisch' ? 'technisch' : w === 'prive' ? 'prive' : null;
+  } catch { return null; }
+};
+const schrijfRuimteCookie = (r: RuimteScope | null): void => {
+  try {
+    if (typeof document === 'undefined') return;
+    const desc = Object.getOwnPropertyDescriptor(document, 'cookie');
+    if (desc && 'value' in desc && desc.writable) {
+      const overig = String(document.cookie || '').split('; ').filter((s) => s && !s.startsWith(`${RUIMTE_WEERGAVE_COOKIE}=`));
+      if (r) overig.push(`${RUIMTE_WEERGAVE_COOKIE}=${r}`);
+      document.cookie = overig.join('; ');
+      return;
+    }
+    const domein = isGedeeldDomein() ? '; Domain=.tarasevych.com' : '';
+    const secure = typeof location !== 'undefined' && location.protocol === 'http:' ? '' : '; Secure';
+    if (r) {
+      document.cookie = `${RUIMTE_WEERGAVE_COOKIE}=${r}; Path=/; SameSite=Lax${secure}${domein}`;
+    } else {
+      document.cookie = `${RUIMTE_WEERGAVE_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}${domein}`;
+      if (domein) document.cookie = `${RUIMTE_WEERGAVE_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+    }
+  } catch { /* приватний режим або поза оглядачем */ }
+};
+
 const leesTabRuimte = (): RuimteScope => {
   try {
-    if (typeof sessionStorage === 'undefined') return 'prive';
-    return sessionStorage.getItem(TAB_RUIMTE_SLEUTEL) === 'technisch' ? 'technisch' : 'prive';
+    if (typeof sessionStorage !== 'undefined') {
+      const s = sessionStorage.getItem(TAB_RUIMTE_SLEUTEL);
+      if (s === 'technisch') return 'technisch';
+      if (s === 'prive') return 'prive';
+    }
+    return leesRuimteCookie() === 'technisch' ? 'technisch' : 'prive';
   } catch { return 'prive'; }
 };
 const bewaarTabRuimte = (r: RuimteScope): void => {
@@ -47,30 +89,33 @@ export function meldRuimte(naar: RuimteScope): boolean {
   return true;
 }
 export const GEBRUIKER_PRIVE_SLEUTEL = 'mr-gebruiker-prive-pad-v1';
-let gebruikerPrivePad: string | null = null;
-const huidigePaginaSleutel = (): string => (typeof location !== 'undefined' ? `${location.origin}${location.pathname}${location.search}` : '1');
-/** Позначає, що користувач у цій вкладці свідомо перемкнувся на звичайний інтерфейс на поточній сторінці (щоб TechPoort не відкочував вкладку назад у технічний простір). */
+let gebruikerPriveKeuze: boolean | null = null;
+/** Позначає, що користувач свідомо перемкнувся на звичайний інтерфейс (діє на всіх сторінках і піддоменах, доки користувач сам не перемкне на технічний простір). */
 export function zetGebruikerPrive(aan: boolean): void {
-  const waarde = aan ? huidigePaginaSleutel() : null;
-  gebruikerPrivePad = waarde;
+  gebruikerPriveKeuze = aan ? true : false;
   try {
-    if (typeof sessionStorage === 'undefined') return;
-    if (waarde) sessionStorage.setItem(GEBRUIKER_PRIVE_SLEUTEL, waarde);
-    else sessionStorage.removeItem(GEBRUIKER_PRIVE_SLEUTEL);
+    if (typeof sessionStorage !== 'undefined') {
+      if (aan) sessionStorage.setItem(GEBRUIKER_PRIVE_SLEUTEL, '1');
+      else sessionStorage.removeItem(GEBRUIKER_PRIVE_SLEUTEL);
+    }
   } catch { /* приватний режим без сховища */ }
+  schrijfRuimteCookie(aan ? 'prive' : null);
 }
 export const wisGebruikerPrive = (): void => zetGebruikerPrive(false);
 export function gebruikerKoosPrive(): boolean {
-  const nu = huidigePaginaSleutel();
-  if (gebruikerPrivePad !== null) return gebruikerPrivePad === nu;
+  if (gebruikerPriveKeuze !== null) return gebruikerPriveKeuze;
   try {
-    if (typeof sessionStorage === 'undefined') return false;
-    return sessionStorage.getItem(GEBRUIKER_PRIVE_SLEUTEL) === nu;
-  } catch { return false; }
+    if (typeof sessionStorage !== 'undefined') {
+      const s = sessionStorage.getItem(GEBRUIKER_PRIVE_SLEUTEL);
+      if (s) return true;
+    }
+  } catch { /* немає сховища сеансу */ }
+  return leesRuimteCookie() === 'prive';
 }
 /** Явне перемикання простору дією користувача, щоб інтерфейс міг одразу показати смугу чи підказку і не відкочувати вибір назад. */
 export function meldGebruikerWissel(naar: RuimteScope): void {
   zetGebruikerPrive(naar === 'prive');
+  if (naar === 'technisch') schrijfRuimteCookie('technisch');
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<{ naar: RuimteScope }>(RUIMTE_GEBRUIKER_WISSEL_GEBEURTENIS, { detail: { naar } }));
 }
 export function opGebruikerWissel(f: (naar: RuimteScope) => void): () => void {

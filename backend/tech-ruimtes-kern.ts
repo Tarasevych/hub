@@ -203,18 +203,27 @@ export function alsActivatie(b: Awaited<ReturnType<typeof besluit>>): tp.Activat
     sessieId: r.sessie_id, tabSessieId: null, herkomst: 'eigen' };
 }
 
-/** Tabblad bij de sessie van deze aanmelding registreren (alleen als dat tabblad met DIE sessie aanmeldt). */
+/** Tabblad bij de sessie van deze aanmelding registreren (alleen als dat tabblad met DIE sessie aanmeldt). Erft de laatst gekozen weergave van deze sessie zodat een subdomeinwissel nooit ongevraagd naar 'technisch' terugspringt. */
 export async function registreerTab(userId: string, sessieId: string, tab: string): Promise<void> {
   if (!tp.TAB_RE.test(tab)) return;
-  await sys().query(`INSERT INTO app.tech_ruimte_tabs (ruimte_sessie_id, user_id, tab_hash)
-    SELECT r.id, r.user_id, $3 FROM app.tech_ruimte_sessies r WHERE r.user_id = $1 AND r.sessie_id = $2 AND r.beeindigd_op IS NULL
+  await sys().query(`INSERT INTO app.tech_ruimte_tabs (ruimte_sessie_id, user_id, tab_hash, weergave)
+    SELECT r.id, r.user_id, $3,
+           COALESCE((SELECT t.weergave FROM app.tech_ruimte_tabs t WHERE t.ruimte_sessie_id = r.id ORDER BY t.gezien_op DESC LIMIT 1), 'technisch')
+    FROM app.tech_ruimte_sessies r WHERE r.user_id = $1 AND r.sessie_id = $2 AND r.beeindigd_op IS NULL
     ON CONFLICT (ruimte_sessie_id, tab_hash) DO UPDATE SET gezien_op = now()`, [userId, sessieId, sha(`tech-ruimte-tab:${tab}`)]);
 }
 
-/** RUIMTE-WEERGAVE-001: welke ruimte toont dit tabblad bij deze sessie? Onbekend tabblad = 'technisch' (de sessie beslist). */
+/** RUIMTE-WEERGAVE-001: welke ruimte toont dit tabblad bij deze sessie? Nieuw subdomein volgt de laatst gekozen weergave van de sessie. */
 export async function weergaveVan(rijId: string, tab: string): Promise<Ruimte> {
   if (!tp.TAB_RE.test(tab)) return 'technisch';
-  const r = (await sys().query('SELECT weergave FROM app.tech_ruimte_tabs WHERE ruimte_sessie_id = $1 AND tab_hash = $2', [rijId, sha(`tech-ruimte-tab:${tab}`)])).rows[0];
+  const r = (await sys().query(
+    `SELECT COALESCE(
+       (SELECT weergave FROM app.tech_ruimte_tabs WHERE ruimte_sessie_id = $1 AND tab_hash = $2 LIMIT 1),
+       (SELECT weergave FROM app.tech_ruimte_tabs WHERE ruimte_sessie_id = $1 ORDER BY gezien_op DESC LIMIT 1),
+       'technisch'
+     ) AS weergave`,
+    [rijId, sha(`tech-ruimte-tab:${tab}`)],
+  )).rows[0];
   return r?.weergave === 'prive' ? 'prive' : 'technisch';
 }
 async function zetWeergave(userId: string, rijId: string, tab: string, weergave: Ruimte): Promise<void> {

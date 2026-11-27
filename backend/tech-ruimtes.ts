@@ -56,10 +56,10 @@ export function techRuimtesRoutes(requireSession: RequireSession, deps: TechRuim
     [`POST ${P}/beeindigen`]: [gate({ schrijven: true }, async (_b, a, tab) => { await k.beeindigen(a.user, sessie(a)); return st(a, tab); })],
     // Ruimtes-scheiding (0123): directe link/bladwijzer naar een technische pagina of API. 401 zonder sessie (gate),
     // 403 met code + tweetalige uitleg als de technische ruimte voor DEZE aanmelding niet geldt, 200 als ze geldt.
-    [`POST ${P}/controle`]: [gate({}, async (_b, a) => {
+    [`POST ${P}/controle`]: [gate({}, async (_b, a, tab) => {
       const s = sessie(a);
       if (!s) return weigering('SITE_SESSIE_WEG');
-      const b = await k.besluit(a.user.id, { bron: 'site', sessieId: s.id });
+      const b = await k.besluit(a.user.id, { bron: 'site', sessieId: s.id, tab });
       return b.toegestaan && b.ruimte === 'technisch' ? json({ ruimte: 'technisch', eindTijd: b.eind ? new Date(b.eind).toISOString() : null }) : weigering(b.code);
     })],
     [`POST ${P}/toegang`]: [gate({}, async (_b, a, tab) => json(await k.toegang(a.user, sessie(a), tab)))],

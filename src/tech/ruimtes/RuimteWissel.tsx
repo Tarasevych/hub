@@ -13,7 +13,7 @@
 import { useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { Home, Lock, Pause, Play, Power, ShieldCheck } from 'lucide-react';
 import { canonicalNavigationUrl, sessieDienst } from '../../canoniek-navigatie';
-import { openTechVenster } from '../tech-opslag';
+import { openTechVenster, techActief } from '../tech-opslag';
 import type { RuimtesStatus } from '../ruimtes-contract';
 import { RUIMTE_NAAM, standTekst, wisselFoutTekst, type Taal } from './teksten';
 import { beeindigen, pauzeer, ruimtesToestand, useRuimtes, wissel } from './ruimtes-opslag';
@@ -30,7 +30,8 @@ const GEEN_RECHT = { uk: 'Немає дозволу на технічний пр
 /** Eén plek voor klik én sneltoets (Ctrl+Alt+1/2). Geeft de uitkomst als tekst, of null als er niets te doen was. */
 export async function kiesRuimte(naar: 'prive' | 'technisch', taal: Taal): Promise<{ ok: boolean; tekst: string } | null> {
   const r = ruimtesToestand(); const s = r.status; const uk = taal === 'uk';
-  if (!s || !s.aan || naar === s.actief || r.bezig) return null;
+  const techKomtOvereen = techActief() === (naar === 'technisch');
+  if (!s || !s.aan || (naar === s.actief && techKomtOvereen) || r.bezig) return null;
   if (naar === 'technisch' && !s.technischToegestaan) return { ok: false, tekst: GEEN_RECHT[taal] };
   if (naar === 'technisch' && !s.sessie) { openTechVenster('activeren'); return null; }
   try {

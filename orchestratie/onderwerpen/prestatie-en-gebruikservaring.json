@@ -37,6 +37,16 @@
     "src/navigatie-snel.ts",
     "src/platform/client.ts",
     "src/CanoniekOmlijsting.tsx",
+    "src/tab-context.ts",
+    "src/toestemming/toestemming.ts",
+    "src/toestemming/ToestemmingBand.tsx",
+    "src/tech/TechPoort.tsx",
+    "src/tech/tech-opslag.ts",
+    "src/tech/ruimtes/RuimteWissel.tsx",
+    "src/tech/ruimtes/ruimtes-opslag.ts",
+    "src/tech/ruimtes/ruimte-signaal.ts",
+    "backend/tech-ruimtes.ts",
+    "backend/tech-ruimtes-kern.ts",
     "src/zichtbaar-voorladen.ts",
     "src/achtergrond/LevendeAchtergrond.tsx",
     "src/uitrol/upload-herstel-db.ts",
@@ -89,7 +99,7 @@
       "agent": "antigravity",
       "model": "Gemini 4 Carbon High (Google Antigravity)",
       "datum": "2026-11-27",
-      "uk": "Продовжено й завершено роботу з місця зупинки (фіксації 96c298d0..8a8c475a): завершено заміну «акаунт» на «обліковий запис» у 285 файлах зі сторожем 8/8; виконано пункт 12 швидкості (гостьова /toegang 666 → 220 кБ, −67 %, відкладено TechLaag і MeldingenPortaal без сеансу, LCP на id/ 572 → 308 мс, блокування ЦП на телефоні −72 %) та пункти 20–25 (один головний заклик до дії на 6 екранах, перевірка всіх інтерактивних елементів за входом і без входу 4 → 0 вад, моніторинг і відновлення server/rook.ts під tech-ruimtes-v2, живий цикл backup-maken.sh + pg_restore на PostgreSQL 18.7 і виправлення archief-herstellen.sh під postgresql-18, заголовки безпеки COOP/CORP/X-Permitted-Cross-Domain-Policies 9/9 та 432/432 наскрізних перевірки реєстрації, входу й відновлення зі скиданням wisVlagGeheugen у account-wissen.ts), а також узгоджено гілку з живою основою сервера HERSTEL-001 (20261126-181653 @ c7561d0a)."
+      "uk": "Продовжено й завершено роботу з місця зупинки (фіксації 96c298d0..HEAD): завершено заміну «акаунт» на «обліковий запис» у 285 файлах зі сторожем 8/8; виконано пункт 12 швидкості (/toegang 666 → 220 кБ, −67 %, відкладено TechLaag і MeldingenPortaal без сеансу, LCP на id/ 572 → 308 мс, блокування ЦП на телефоні −72 %) та пункти 20–25 (один головний заклик до дії на 6 екранах, інтерактивні елементи 4 → 0 вад, відновлення server/rook.ts під tech-ruimtes-v2, живий цикл backup-maken.sh + pg_restore на PostgreSQL 18.7 і archief-herstellen.sh під postgresql-18, заголовки безпеки COOP/CORP/X-Permitted-Cross-Domain-Policies 9/9, 432/432 перевірки реєстрації/входу/відновлення зі скиданням wisVlagGeheugen), узгоджено гілку з живою основою HERSTEL-001 (20261126-181653 @ c7561d0a), а також усунено повторні запити згоди на реп’яшки між піддоменами (спільний реп’яшок mr_toestemming_v1 з Domain=.tarasevych.com, 32/32) і виправлено перемикач між звичайним та технічним просторами у меню (.zr без setPointerCapture на <main>, без самовільного відкочування в TechPoort і з міждоменною передачею стану відображення)."
     }
   ],
   "mogelijkheden": [

@@ -49,10 +49,20 @@ export default function ToestemmingBand() {
       void melden.then(() => telBezoek(sessieDienst(), post, context()));
     }
     const heropen = () => { setLang(taal()); setOpen(true); };
+    const controleer = () => { if (!bandNodig(leesKeuze())) setOpen(false); };
     window.addEventListener(HEROPEN_GEBEURTENIS, heropen);
+    window.addEventListener('storage', controleer);
+    window.addEventListener('focus', controleer);
+    document.addEventListener('visibilitychange', controleer);
     const waarnemer = new MutationObserver(() => setLang(taal()));
     waarnemer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-    return () => { window.removeEventListener(HEROPEN_GEBEURTENIS, heropen); waarnemer.disconnect(); };
+    return () => {
+      window.removeEventListener(HEROPEN_GEBEURTENIS, heropen);
+      window.removeEventListener('storage', controleer);
+      window.removeEventListener('focus', controleer);
+      document.removeEventListener('visibilitychange', controleer);
+      waarnemer.disconnect();
+    };
   }, []);
 
   if (!open) return null;

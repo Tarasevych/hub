@@ -27,11 +27,11 @@ export default function TechPoort({ lang, onAccount, heeftProfiel = true }: { la
     catch { setFout(uk ? 'Не вдалося перемкнути. Спробуйте ще раз.' : 'Wisselen lukte niet. Probeer het opnieuw.'); }
     finally { setBezig(false); }
   };
-  // RUIMTE-WEERGAVE-001 + UPD-007: автоматичний перехід у технічний простір при відкритті технічної сторінки працює,
-  // лише якщо користувач у цій вкладці щойно НЕ перемикнувся вручну на «Звичайний» (!gebruikerKoosPrive()).
+  // RUIMTE-WEERGAVE-001 + UPD-007 + SITE-001: коли вкладка перебуває у звичайному просторі (r.status.actief === 'prive' або gebruikerKoosPrive()),
+  // TechPoort показує тиху браму з кнопкою переходу і ніколи не повертає технічний профіль самовільно під час навігації між сторінками й піддоменами.
   const r = useRuimtes();
   const auto = useRef(false);
-  const kanMeteen = v2 && heeftProfiel && !!r.status?.aan && !!r.status.sessie && !r.status.pauze && r.status.actief === 'prive' && !r.bezig && !gebruikerKoosPrive();
+  const kanMeteen = v2 && heeftProfiel && !!r.status?.aan && !!r.status.sessie && !r.status.pauze && !r.bezig && !gebruikerKoosPrive() && false;
   const knopTekst = r.status?.pauze ? (uk ? 'Продовжити технічний доступ і відкрити' : 'Technische toegang hervatten en openen') : (uk ? 'Перейти в технічний простір' : 'Naar de technische ruimte');
   useEffect(() => { if (kanMeteen && !auto.current) { auto.current = true; void naarTech(); } }, [kanMeteen]); // eslint-disable-line react-hooks/exhaustive-deps
 

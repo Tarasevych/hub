@@ -4,8 +4,11 @@
 // vernieuwen, zodat de band en html[data-tech] meteen (zonder herladen) meegaan.
 import { useSyncExternalStore } from 'react';
 import { CANONICAL_AUTH_CHANGE } from '../../canoniek-gebeurtenissen';
+import { zetWeergaveRuimte } from '../../gedeelde-voorkeuren';
+import { bewaarTabOverdracht } from '../../tab-context';
+import { zijbalkRuimte } from '../../zijbalk-voorkeuren';
 import { ruimtesApi, type Ruimte, type RuimtesStatus, type TermijnModus } from '../ruimtes-api';
-import { techVernieuwen } from '../tech-opslag';
+import { techSynchroniseerRuimte, techVernieuwen } from '../tech-opslag';
 import { gebruikerKoosPrive, huidigeRuimte, meldGebruikerWissel, meldRuimte, ruimteVanStatus, zetGebruikerPrive } from './ruimte-signaal';
 
 export type RuimtesToestand = { geladen: boolean; status: RuimtesStatus | null; bezig: '' | 'wisselen' | 'starten' | 'beeindigen' | 'verlengen' | 'pauzeren'; fout: string; nu: number; uitleg: string };
@@ -19,20 +22,43 @@ export const useRuimtes = () => useSyncExternalStore((f) => { luisteraars.add(f)
 
 export const POLL_MS = 15_000;
 let kanaal: BroadcastChannel | null = null;
+let ruimtesVolgnummer = 0;
 const meld = () => { try { kanaal?.postMessage({ t: 'ruimtes' }); } catch { /* geen kanaal: poll vangt het op */ } };
 const code = (e: unknown) => String((e as Error)?.message || 'FOUT');
+const synchroniseerSchil = (naar: Ruimte, sessie: RuimtesStatus['sessie'] | null = null) => {
+  const menuRuimte = naar === 'technisch' ? 'technisch' : 'gebruiker';
+  zetWeergaveRuimte(menuRuimte);
+  zijbalkRuimte(menuRuimte);
+  techSynchroniseerRuimte(naar, sessie);
+};
 
 export async function ruimtesVernieuwen(): Promise<void> {
-  try { zet({ geladen: true, status: await ruimtesApi.status(), fout: '' }); }
-  catch (e) { const st = Number((e as { status?: number })?.status || 0); zet({ geladen: true, ...(st === 401 || st === 403 || st === 404 ? { status: null } : {}), fout: st >= 500 || !st ? 'NETWERK' : String((e as { code?: string })?.code || (e as Error)?.message || `HTTP ${st}`) }); }
+  const v = ++ruimtesVolgnummer;
+  try {
+    const s = await ruimtesApi.status();
+    if (v !== ruimtesVolgnummer) return;
+    if (s.aan) {
+      zetGebruikerPrive(s.actief === 'prive');
+      synchroniseerSchil(s.actief, s.sessie);
+    }
+    zet({ geladen: true, status: s, fout: '' });
+  } catch (e) {
+    if (v !== ruimtesVolgnummer) return;
+    const st = Number((e as { status?: number })?.status || 0);
+    zet({ geladen: true, ...(st === 401 || st === 403 || st === 404 ? { status: null } : {}), fout: st >= 500 || !st ? 'NETWERK' : String((e as { code?: string })?.code || (e as Error)?.message || `HTTP ${st}`) });
+  }
 }
 async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesStatus>): Promise<RuimtesStatus> {
+  ruimtesVolgnummer += 1;
   zet({ bezig: soort, fout: '', uitleg: '' }, false); laatsteActie = Date.now();
   try {
     const s = await f();
+    ruimtesVolgnummer += 1;
+    if (s.aan) synchroniseerSchil(s.actief, s.sessie);
     zet({ status: s, bezig: '' }, false);
     meld();
     await techVernieuwen();
+    if (s.aan) synchroniseerSchil(s.actief, s.sessie);
     // UPD-008: сигнал зміни простору для пошти, хмари й лічильників іде ТІЛЬКИ після того, як сервер зафіксував новий простір і techVernieuwen() узгодив оболонку.
     meldRuimte(ruimteVanStatus(s));
     return s;
@@ -44,17 +70,23 @@ async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesSt
 export async function wissel(naar: Ruimte): Promise<RuimtesStatus> {
   const oud = toestand.status;
   const wasPrive = gebruikerKoosPrive();
+  bewaarTabOverdracht();
   // UPD-007: фіксуємо вибір користувача ще до techVernieuwen() усередині actie(), інакше TechPoort одразу поверне вкладку в технічний простір.
   zetGebruikerPrive(naar === 'prive');
+  synchroniseerSchil(naar, oud?.sessie ?? null);
   // RUIMTE-WEERGAVE-001 + UPD-008: wisselen = alleen wat dit tabblad toont; optimistisch zonder meldRuimte zodat de post pas ná serverbevestiging herlaadt.
   if (oud) zet({ status: { ...oud, actief: naar, pauze: naar === 'technisch' ? false : oud.pauze } }, false);
   try {
     const s = await actie('wisselen', () => ruimtesApi.wisselen(naar));
+    bewaarTabOverdracht();
     meldGebruikerWissel(naar);
     return s;
   } catch (e) {
     zetGebruikerPrive(wasPrive);
-    if (oud) zet({ status: oud }, false);
+    if (oud) {
+      synchroniseerSchil(oud.actief, oud.sessie);
+      zet({ status: oud }, false);
+    }
     throw e;
   }
 }
