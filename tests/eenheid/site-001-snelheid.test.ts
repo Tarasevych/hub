@@ -141,6 +141,30 @@ export async function main(): Promise<number> {
       && mqWerkCss.includes('[data-zoek-compact="veld"] .mail-top-search-shell input')
       && mqWerkCss.includes('[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell')
       && mailMobCss.includes('html body .mail-top-command-bar>.mail-top-search-area{flex:1 1 0!important;min-width:0!important}'));
+
+    const bv2Werkbalk = await readFile(join(root, 'src/bijlage-v2/BijlageWerkbalk.tsx'), 'utf8');
+    const bv2Poort = await readFile(join(root, 'src/bijlage-v2/Poort.tsx'), 'utf8');
+    const bv2Kop = await readFile(join(root, 'src/bijlage-v2/BijlageV2Kop.tsx'), 'utf8');
+    const wgKop = await readFile(join(root, 'src/bijlage-weergave/Weergave.tsx'), 'utf8');
+    check('BijlageWerkbalk.tsx (Компактна панель v2) містить увесь функціонал трьох переглядачів: перевірку безпеки й відправника, швидку картку рахунку, Оплату в Календар, Що змінилося, Пошук у вкладеннях, Підписати/позначити та Темні сторінки документа',
+      bv2Werkbalk.includes('bewijsUitBlob')
+      && bv2Werkbalk.includes('metAfzender')
+      && bv2Werkbalk.includes('technischeRijen')
+      && bv2Werkbalk.includes('WeergaveSnelkaart')
+      && bv2Werkbalk.includes('KalenderBetalingVenster')
+      && bv2Werkbalk.includes('VersieVergelijk')
+      && bv2Werkbalk.includes('ZoekVeld')
+      && bv2Werkbalk.includes('toontOndertekenen')
+      && bv2Werkbalk.includes('data-donkere-paginas'));
+    check('Меню ••• у BijlageWerkbalk.tsx та Weergave.tsx більше не показує три перемикачі переглядачів (Спільний переглядач, Компактна панель v2, Класична)',
+      !bv2Werkbalk.includes('bv2-modus-groep')
+      && !bv2Werkbalk.includes("role='menuitemradio'")
+      && !wgKop.includes('weergave-modus-groep'));
+    check('Poort.tsx, BijlageV2Kop.tsx та GoogleMailWerkruimte.tsx завжди використовують єдину об’єднану Компактну панель v2 разом зі стрічкою вкладень, свайпом і запам’ятовуванням позиції',
+      bv2Poort.includes('const aan = v2Vlag || gedeeldVlag;')
+      && bv2Kop.includes('const aan = v2Vlag || gedeeldVlag;')
+      && werk.includes('gedeeldeWeergave=gedeeldeVlagAan||bijlageV2VlagAan')
+      && werk.includes('blob={attachmentPreview.blob} archiefNamen={(attachmentPreview.archiveEntries||[]).map(e=>e.name)} afzender={weergaveAfzender?'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

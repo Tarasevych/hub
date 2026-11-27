@@ -12,7 +12,7 @@ import { technischeRijen } from './details';
 import { toonWaarde } from './labels';
 import { actiesVoor, type Beschikbaar } from './acties';
 import { WeergaveEtappe3, type WeergaveExtra } from './Etappe3'; /* етап 3: Claude Opus 5.5 (High) через Antigravity */
-import { BIJLAGE_MODUS_LABELS, type BijlageWeergaveWissel } from './weergave-modus';
+import type { BijlageWeergaveWissel } from './weergave-modus';
 import './weergave.css';
 
 export type WeergaveItem = { naam: string; contentType: string; grootte: number };
@@ -201,26 +201,6 @@ export function WeergaveKop(p: KopProps) {
                     </button>
                   )}
                   {papier && <button type='button' role='menuitemcheckbox' aria-checked={donker} className='weergave-keuze' onClick={() => { const n = !donker; setDonker(n); bewaarDonker(n); }}>{donker ? '✓ ' : ''}{donker ? t('Темні сторінки документа · повернути оригінал', 'Donkere documentpagina’s · origineel tonen') : t('Темні сторінки документа', 'Donkere documentpagina’s')}</button>}
-                  {p.weergaveWissel && p.weergaveWissel.opties.length > 1 && (
-                    <div className='weergave-modus-groep' role='group' aria-label={t('Режим переглядача', 'Weergavestijl')}>
-                      {p.weergaveWissel.opties.map((modus) => {
-                        const gekozen = p.weergaveWissel!.huidig === modus;
-                        return (
-                          <button
-                            key={`modus:${modus}`}
-                            type='button'
-                            role='menuitemradio'
-                            aria-checked={gekozen}
-                            data-weergave-modus={modus}
-                            className='weergave-keuze'
-                            onClick={() => { meer.setOpen(false); p.weergaveWissel!.onKies(modus); }}
-                          >
-                            {gekozen ? '✓ ' : ''}{kies(p.taal, BIJLAGE_MODUS_LABELS[modus])}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               )}
             </div>

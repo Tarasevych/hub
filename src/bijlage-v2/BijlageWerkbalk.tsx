@@ -1,17 +1,40 @@
-// Bijlageviewer v2 — kop van de mail-bijlagewerkbank (vlag `bijlage-viewer-v2`). Vervangt alleen de <header>; de inhoud
-// (PDF-engine, voorbeelden, vertaling) en het venster zelf blijven dezelfde. Eén regel, nooit 2–3 regels:
-//   [naam ⓘ] [‹ 1/3 ›] [zoom (afbeelding)] | [ШІ] [bewerken] | [Завантажити ▾] [•••] | [згорнути] [закрити]
-// Bij te weinig breedte: eerst labels weg, dan gaan de secundaire groepen naar «•••». Zie docs/bijlage-viewer-v2/INVENTARIS.md.
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Info, Minimize2, MoreHorizontal, PenLine, Printer, Save, Share2, Sparkles, X } from 'lucide-react';
-import { BIJLAGE_MODUS_LABELS, type BijlageWeergaveWissel } from '../bijlage-weergave/weergave-modus';
+// Bijlageviewer v2 — єдина об'єднана компактна панель переглядача вкладень (Компактна панель v2).
+// Об'єднує весь функціонал трьох попередніх переглядачів (Компактна панель v2, Спільний переглядач, Класична шапка)
+// в один компактний однорядковий переглядач без зайвого перемикача трьох режимів:
+//   [назва ⓘ] [‹ 1/3 ›] [масштаб] | [ШІ] [редагувати] | [Завантажити ▾] [Друк] [•••] | [згорнути] [закрити]
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { CalendarPlus, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, GitCompare, Info, Minimize2, Moon, MoreHorizontal, PenLine, Printer, Save, Search, Share2, Sparkles, X } from 'lucide-react';
+import { formaatVan, kies, soortVan } from '../bijlage-weergave/soort';
+import { bewijsUitBlob, metAfzender, type AfzenderBewijs, type Vertrouwen } from '../bijlage-weergave/vertrouwen';
+import { technischeRijen } from '../bijlage-weergave/details';
+import { toonWaarde } from '../bijlage-weergave/labels';
+import { useRekeningVelden, WeergaveSnelkaart, type WeergaveExtra } from '../bijlage-weergave/Etappe3';
+import { toontKalenderBetaling, type BetalingBron } from '../bijlage-weergave/kalender-betaling';
+import { KalenderBetalingVenster } from '../bijlage-weergave/KalenderBetalingVenster';
+import { groepVoor, vorigeVersie } from '../bijlage-weergave/versies';
+import { ZoekVeld } from '../bijlage-weergave/ZoekVeld';
+import { ONDERTEKEN_LABEL, toontOndertekenen } from '../bijlage-weergave/ondertekenen';
+import type { ContextActie, WeergaveBron } from '../bijlage-weergave/Weergave';
+import type { BijlageWeergaveWissel } from '../bijlage-weergave/weergave-modus';
+import { useDonkerThema } from '../mail-donker/weergave';
 import { IconKnop, ZoomGroep, type KnopStaat } from './Knoppen';
 import './bijlage-v2.css';
+
+const VersieVergelijk = lazy(() => import('../mail/VersieVergelijk'));
+const DONKER_SLEUTEL = 'tsv:bijlage-donkere-paginas';
 
 export type Paneel = 'ai' | 'details' | null;
 export type WerkbalkProps = {
   lang: 'uk' | 'nl';
   bestandsnaam: string; contentType: string; grootte: string; bewerkBadge: string; weergaveLabel: string;
+  grootteBytes?: number;
+  blob?: Blob | null;
+  archiefNamen?: string[];
+  afzender?: AfzenderBewijs | null;
+  extra?: WeergaveExtra | null;
+  staat?: { fase: 'laden' | 'fout'; naam: string; code: string; onOpnieuw: () => void } | null;
+  bron?: WeergaveBron;
+  contextActies?: ContextActie[] | null;
   nav: { index: number; totaal: number } | null; onVorige: () => void; onVolgende: () => void;
   canvasZoom: boolean; zoom: number; onZoom: (z: number) => void;
   downloadUrl: string; onPrint: () => void; onOpslaan: () => void; onDelen?: () => void;
@@ -29,9 +52,47 @@ export default function BijlageWerkbalk(p: WerkbalkProps) {
   const [niveau, setNiveau] = useState<Niveau>('ruim');
   const [paneel, setPaneelRaw] = useState<Paneel>(null);
   const [menu, setMenu] = useState<null | 'download' | 'meer'>(null);
+  const [actieVenster, setActieVenster] = useState<null | 'kalender' | 'versies' | 'zoek'>(null);
   const [aiBeschikbaar, setAiBeschikbaar] = useState(false);
   const [downloadStaat, setDownloadStaat] = useState<KnopStaat>('normaal');
   const [printStaat, setPrintStaat] = useState<KnopStaat>('normaal');
+
+  const soort = soortVan(p.bestandsnaam, p.contentType);
+  const formaat = formaatVan(p.bestandsnaam);
+  const [bestandVertrouwen, setVertrouwen] = useState<Vertrouwen | null>(null);
+  const vertrouwen = useMemo(() => (bestandVertrouwen ? metAfzender(bestandVertrouwen, p.afzender) : null), [bestandVertrouwen, p.afzender]);
+  const [maat, setMaat] = useState<{ b: number; h: number } | null>(null);
+  const papier = ['rekening', 'contract', 'document', 'tekst', 'presentatie', 'tabel'].includes(soort.sleutel) || /pdf/i.test(p.contentType || '');
+  const donkerThema = useDonkerThema();
+  const [donkerKeuze, setDonkerKeuze] = useState<'aan' | 'uit' | null>(() => {
+    try { const v = window.localStorage.getItem(DONKER_SLEUTEL); return v === 'aan' || v === 'uit' ? v : null; } catch { return null; }
+  });
+  const donker = donkerKeuze === null ? donkerThema : donkerKeuze === 'aan';
+  const wisselDonker = () => {
+    const volgende = !donker;
+    setDonkerKeuze(volgende ? 'aan' : 'uit');
+    try { window.localStorage.setItem(DONKER_SLEUTEL, volgende ? 'aan' : 'uit'); } catch { /* сеанс без запису */ }
+  };
+
+  const { velden: rekeningData } = useRekeningVelden({ naam: p.bestandsnaam, contentType: p.contentType, blob: p.blob });
+  const x: WeergaveExtra = p.extra || {};
+  const kalenderBron = useMemo<BetalingBron | null>(() => {
+    if (!rekeningData || !toontKalenderBetaling(soort.sleutel, rekeningData)) return null;
+    return { velden: rekeningData, soort: soort.sleutel, taal: p.lang, bestandsnaam: p.bestandsnaam, afzender: x.afzender, profielId: x.profielId, rekeningId: x.rekeningId, briefId: x.briefId, bijlageId: x.bijlageId, tijdzone: x.tijdzone };
+  }, [rekeningData, soort.sleutel, p.lang, p.bestandsnaam, x.afzender, x.profielId, x.rekeningId, x.briefId, x.bijlageId, x.tijdzone]);
+  const versie = useMemo(() => {
+    const vb = x.versieBron, briefId = x.briefId || '', bijlageId = x.bijlageId || '';
+    if (!vb || !briefId || !bijlageId || vb.berichten.length === 0) return null;
+    const groep = groepVoor(vb.berichten, briefId, bijlageId);
+    if (!groep) return null;
+    const vorige = vorigeVersie(groep, briefId, bijlageId);
+    const huidig = groep.items.find((it) => it.berichtId === briefId && it.bijlage.providerAttachmentId === bijlageId);
+    if (!vorige || !huidig) return null;
+    return { groep, vorige, huidig, bron: vb.bron };
+  }, [x.versieBron, x.briefId, x.bijlageId]);
+  const heeftZoek = Boolean(x.zoekBron && x.zoekBron.items.length > 1);
+  const heeftOndertekenen = Boolean(x.onOndertekenen && (toontOndertekenen(soort.sleutel, p.contentType) || toontOndertekenen(soort.sleutel, p.bestandsnaam)));
+  const ctxActies = p.contextActies || [];
 
   // Breedte meten (venster kan smaller zijn dan het scherm): bepaalt het niveau.
   useLayoutEffect(() => {
@@ -46,7 +107,23 @@ export default function BijlageWerkbalk(p: WerkbalkProps) {
   const setPaneel = (v: Paneel) => { setPaneelRaw(v); const a = artikel(); if (a) { if (v) a.dataset.bv2Paneel = v; else delete a.dataset.bv2Paneel; } };
   // Het venster markeren (CSS van v2 hangt aan [data-bijlage-v2]); bij afsluiten van v2 weer weg.
   useLayoutEffect(() => { const a = artikel(); if (a) a.dataset.bijlageV2 = '1'; return () => { if (a) { delete a.dataset.bijlageV2; delete a.dataset.bv2Paneel; } }; }, []);
-  useEffect(() => { setPaneel(null); setMenu(null); }, [p.bestandsnaam]); // andere bijlage: panelen dicht
+  useEffect(() => {
+    const a = artikel() || kop.current?.closest('.google-mail-attachment-preview, [data-weergave-drager]') as HTMLElement | null;
+    if (!a) return;
+    if (donker && papier) a.setAttribute('data-donkere-paginas', 'ja'); else a.removeAttribute('data-donkere-paginas');
+    return () => a.removeAttribute('data-donkere-paginas');
+  }, [donker, papier]);
+  useEffect(() => {
+    let weg = false; setVertrouwen(null); setMaat(null);
+    if (p.blob) {
+      void bewijsUitBlob(p.blob, p.bestandsnaam, p.archiefNamen).then((v) => { if (!weg) setVertrouwen(v); }).catch(() => undefined);
+      if (soort.sleutel === 'foto' && typeof createImageBitmap === 'function') {
+        void createImageBitmap(p.blob).then((bm) => { if (!weg) setMaat({ b: bm.width, h: bm.height }); bm.close(); }).catch(() => undefined);
+      }
+    }
+    return () => { weg = true; };
+  }, [p.blob, p.bestandsnaam]);
+  useEffect(() => { setPaneel(null); setMenu(null); setActieVenster(null); }, [p.bestandsnaam]); // andere bijlage: panelen dicht
   // Is er een ШІ-/vertaalbalk in de inhoud? (alleen dan de knop tonen; geen knop zonder functie)
   useEffect(() => {
     const a = artikel(); if (!a) return;
@@ -78,6 +155,19 @@ export default function BijlageWerkbalk(p: WerkbalkProps) {
   const doePrint = () => { setPrintStaat('bezig'); window.setTimeout(() => { try { p.onPrint(); gelukt(setPrintStaat); } catch { setPrintStaat('fout'); window.setTimeout(() => setPrintStaat('normaal'), 2400); } }, 30); };
   const smal = niveau === 'smal', ruim = niveau === 'ruim';
   const zoomProcent = Math.round(p.zoom * 100);
+  const extraRijen = useMemo(() => (
+    p.grootteBytes !== undefined || vertrouwen || maat
+      ? technischeRijen({
+          taal: p.lang,
+          naam: p.bestandsnaam,
+          contentType: p.contentType,
+          grootte: Number(p.grootteBytes || p.blob?.size || 0),
+          vertrouwen,
+          breedte: maat?.b,
+          hoogte: maat?.h,
+        })
+      : []
+  ), [p.lang, p.bestandsnaam, p.contentType, p.grootteBytes, p.blob, vertrouwen, maat]);
 
   const menuItem = (label: string, pict: React.ReactNode, doe: () => void, data: string, href?: string) => href
     ? <a role='menuitem' className='bv2-menu-item' href={href} download={p.bestandsnaam} data-bv2={data} onClick={() => { setMenu(null); doe(); }}>{pict}<span>{label}</span></a>
@@ -97,9 +187,10 @@ export default function BijlageWerkbalk(p: WerkbalkProps) {
       </div>}
       {p.canvasZoom && <ZoomGroep lang={p.lang} procent={zoomProcent} min={50} max={250} onZet={(v) => p.onZoom(v / 100)}
         onMin={() => p.onZoom(Math.max(0.5, Math.round((p.zoom - 0.1) * 10) / 10))} onPlus={() => p.onZoom(Math.min(2.5, Math.round((p.zoom + 0.1) * 10) / 10))} onPassend={() => p.onZoom(1)} data='beeld-zoom' compact={smal} />}
-      {!smal && (aiBeschikbaar || p.onBewerk) && <div className='bv2-groep' role='group' aria-label={t('Інструменти', 'Gereedschap')}>
+      {!smal && (aiBeschikbaar || p.onBewerk || heeftZoek) && <div className='bv2-groep' role='group' aria-label={t('Інструменти', 'Gereedschap')}>
         {aiBeschikbaar && <IconKnop toon='ai' label={t('ШІ і переклад', 'AI en vertaling')} actief={paneel === 'ai'} onClick={() => setPaneel(paneel === 'ai' ? null : 'ai')} data='ai'><Sparkles size={17} /></IconKnop>}
         {p.onBewerk && <IconKnop label={p.bewerkLabel || t('Редагувати', 'Bewerken')} onClick={p.onBewerk} data='bewerk'><PenLine size={17} /></IconKnop>}
+        {heeftZoek && <IconKnop label={t('Пошук у вкладеннях', 'Zoeken in bijlagen')} actief={actieVenster === 'zoek'} onClick={() => setActieVenster(actieVenster === 'zoek' ? null : 'zoek')} data='zoek-bijlagen'><Search size={17} /></IconKnop>}
       </div>}
       <div className='bv2-groep bv2-split bv2-menu-anker' role='group' aria-label={t('Завантаження', 'Downloaden')}>
         <IconKnop toon='hoofd' label={t('Завантажити', 'Downloaden')} toonLabel={ruim} href={p.downloadUrl} download={p.bestandsnaam} staat={downloadStaat} onClick={() => gelukt(setDownloadStaat)} data='download'><Download size={17} /></IconKnop>
@@ -113,42 +204,28 @@ export default function BijlageWerkbalk(p: WerkbalkProps) {
       {!smal && <div className='bv2-groep' role='group' aria-label={t('Файл', 'Bestand')}>
         <IconKnop label={t('Друк', 'Afdrukken')} onClick={doePrint} staat={printStaat} data='print'><Printer size={17} /></IconKnop>
       </div>}
-      {(smal || Boolean(p.onNotitieUitBijlage) || Boolean(p.weergaveWissel && p.weergaveWissel.opties.length > 1)) && <div className='bv2-groep bv2-menu-anker'>
+      <div className='bv2-groep bv2-menu-anker'>
         <IconKnop label={t('Більше дій', 'Meer acties')} ariaExpanded={menu === 'meer'} onClick={() => setMenu(menu === 'meer' ? null : 'meer')} data='meer'><MoreHorizontal size={18} /></IconKnop>
         {menu === 'meer' && <div className='bv2-zwevend bv2-menu' role='menu' aria-label={t('Більше дій', 'Meer acties')}>
-          {smal && <>
-            {menuItem(t('Про файл', 'Over het bestand'), <Info size={17} />, () => setPaneel('details'), 'm-details')}
-            {aiBeschikbaar && menuItem(t('ШІ і переклад', 'AI en vertaling'), <Sparkles size={17} />, () => setPaneel('ai'), 'm-ai')}
-            {p.onBewerk && menuItem(p.bewerkLabel || t('Редагувати', 'Bewerken'), <PenLine size={17} />, p.onBewerk, 'm-bewerk')}
-            {menuItem(t('Друк', 'Afdrukken'), <Printer size={17} />, doePrint, 'm-print2')}
-            {menuItem(t('Зберегти в сховище…', 'Opslaan in opslag…'), <Save size={17} />, p.onOpslaan, 'm-opslaan2')}
-            {p.onDelen && menuItem(t('Поділитися', 'Delen'), <Share2 size={17} />, p.onDelen, 'm-delen2')}
-            {p.canvasZoom && menuItem(t('Згорнути перегляд', 'Weergave minimaliseren'), <Minimize2 size={17} />, p.onMinimaliseer, 'm-minimaliseer')}
-          </>}
+          {menuItem(t('Про файл', 'Over het bestand'), <Info size={17} />, () => setPaneel('details'), 'm-details')}
+          {aiBeschikbaar && menuItem(t('ШІ і переклад', 'AI en vertaling'), <Sparkles size={17} />, () => setPaneel('ai'), 'm-ai')}
+          {p.onBewerk && menuItem(p.bewerkLabel || t('Редагувати', 'Bewerken'), <PenLine size={17} />, p.onBewerk, 'm-bewerk')}
+          {heeftOndertekenen && menuItem(kies(p.lang, ONDERTEKEN_LABEL), <PenLine size={17} />, () => x.onOndertekenen?.(), 'm-ondertekenen')}
+          {kalenderBron && menuItem(t('Оплату в Календар', 'Betaling in Agenda'), <CalendarPlus size={17} />, () => setActieVenster('kalender'), 'm-kalender')}
+          {versie && menuItem(t('Що змінилося', 'Wat is er veranderd'), <GitCompare size={17} />, () => setActieVenster('versies'), 'm-versies')}
+          {heeftZoek && menuItem(t('Пошук у вкладеннях', 'Zoeken in bijlagen'), <Search size={17} />, () => setActieVenster('zoek'), 'm-zoek')}
+          {ctxActies.map((a) => {
+            const Icoon = a.icoon;
+            return <button key={`ctx:${a.sleutel}`} role='menuitem' type='button' className='bv2-menu-item' data-bv2={`m-ctx-${a.sleutel}`} onClick={() => { setMenu(null); a.uitvoeren(); }}>{Icoon ? <Icoon size={17} /> : <FileText size={17} />}<span>{kies(p.lang, a.label)}</span></button>;
+          })}
+          {menuItem(t('Друк', 'Afdrukken'), <Printer size={17} />, doePrint, 'm-print2')}
+          {menuItem(t('Зберегти в сховище…', 'Opslaan in opslag…'), <Save size={17} />, p.onOpslaan, 'm-opslaan2')}
+          {p.onDelen && menuItem(t('Поділитися', 'Delen'), <Share2 size={17} />, p.onDelen, 'm-delen2')}
           {p.onNotitieUitBijlage && menuItem(t('Створити нотатку з вкладення', 'Notitie uit bijlage maken'), <FileText size={17} />, p.onNotitieUitBijlage, 'm-notitie')}
-          {p.weergaveWissel && p.weergaveWissel.opties.length > 1 && (
-            <div className='bv2-modus-groep' role='group' aria-label={t('Режим переглядача', 'Weergavestijl')}>
-              {p.weergaveWissel.opties.map((modus) => {
-                const gekozen = p.weergaveWissel!.huidig === modus;
-                const label = BIJLAGE_MODUS_LABELS[modus][p.lang === 'uk' ? 0 : 1];
-                return (
-                  <button
-                    key={`bv2-modus:${modus}`}
-                    role='menuitemradio'
-                    aria-checked={gekozen}
-                    type='button'
-                    className='bv2-menu-item'
-                    data-bv2={`modus-${modus}`}
-                    onClick={() => { setMenu(null); p.weergaveWissel!.onKies(modus); }}
-                  >
-                    <span>{gekozen ? `✓ ${label}` : label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {papier && menuItem(donker ? t('✓ Темні сторінки документа · повернути оригінал', '✓ Donkere documentpagina’s · origineel tonen') : t('Темні сторінки документа', 'Donkere documentpagina’s'), <Moon size={17} />, wisselDonker, 'm-donkere-paginas')}
+          {smal && p.canvasZoom && menuItem(t('Згорнути перегляд', 'Weergave minimaliseren'), <Minimize2 size={17} />, p.onMinimaliseer, 'm-minimaliseer')}
         </div>}
-      </div>}
+      </div>
       <div className='bv2-groep bv2-venster' role='group' aria-label={t('Вікно', 'Venster')}>
         {!(smal && p.canvasZoom) && <IconKnop label={t('Згорнути перегляд', 'Weergave minimaliseren')} onClick={p.onMinimaliseer} data='minimaliseer'><Minimize2 size={16} /></IconKnop>}
         <IconKnop label={t('Закрити', 'Sluiten')} sneltoets='Esc' onClick={p.onSluit} data='sluit'><X size={18} /></IconKnop>
@@ -159,14 +236,43 @@ export default function BijlageWerkbalk(p: WerkbalkProps) {
         <strong>{paneel === 'ai' ? t('ШІ і переклад', 'AI en vertaling') : t('Про файл', 'Over het bestand')}</strong>
         <IconKnop label={t('Закрити панель', 'Paneel sluiten')} onClick={() => setPaneel(null)} data='paneel-sluit'><X size={16} /></IconKnop>
       </div>
-      {paneel === 'details' && <dl className='bv2-details'>
-        <div><dt>{t('Назва', 'Naam')}</dt><dd>{p.bestandsnaam}</dd></div>
-        <div><dt>{t('Тип', 'Type')}</dt><dd>{p.contentType || '—'}</dd></div>
-        <div><dt>{t('Розмір', 'Grootte')}</dt><dd>{p.grootte}</dd></div>
-        <div><dt>{t('Перегляд', 'Weergave')}</dt><dd>{p.weergaveLabel}</dd></div>
-        <div><dt>{t('Редагування', 'Bewerken')}</dt><dd>{p.bewerkBadge}</dd></div>
-      </dl>}
+      {paneel === 'details' && <div className='bv2-details-omhulsel'>
+        <WeergaveSnelkaart taal={p.lang} velden={rekeningData} />
+        <dl className='bv2-details'>
+          <div><dt>{t('Назва', 'Naam')}</dt><dd>{p.bestandsnaam}</dd></div>
+          <div><dt>{t('Вид документа', 'Soort document')}</dt><dd>{kies(p.lang, soort.naam)}{formaat ? ` (${formaat})` : ''}</dd></div>
+          <div><dt>{t('Тип', 'Type')}</dt><dd>{p.contentType || '—'}</dd></div>
+          <div><dt>{t('Розмір', 'Grootte')}</dt><dd>{p.grootte}</dd></div>
+          <div><dt>{t('Перегляд', 'Weergave')}</dt><dd>{p.weergaveLabel}</dd></div>
+          <div><dt>{t('Редагування', 'Bewerken')}</dt><dd>{p.bewerkBadge}</dd></div>
+          {extraRijen.filter((r) => !['Назва', 'Naam', 'Розмір', 'Grootte', 'Заявлений тип', 'Opgegeven soort'].includes(r.label)).map((r) => (
+            <div key={r.label}><dt>{r.label}</dt><dd>{toonWaarde(r.waarde, p.lang)}</dd></div>
+          ))}
+        </dl>
+        {vertrouwen && (
+          <div className='bv2-vertrouwen-blok' data-niveau={vertrouwen.niveau}>
+            <strong>{kies(p.lang, vertrouwen.zin)}</strong>
+            <ul className='weergave-bevindingen'>
+              {vertrouwen.bevindingen.map((b) => <li key={b.sleutel} data-ernst={b.ernst}>{kies(p.lang, b.tekst)}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>}
       {paneel === 'ai' && <p className='bv2-paneel-hulp'>{t('Переклад і ШІ працюють із цим файлом. Документ лишається відкритим ліворуч.', 'Vertaling en AI werken met dit bestand. Het document blijft links open.')}</p>}
     </aside>}
+    {actieVenster === 'kalender' && kalenderBron && <KalenderBetalingVenster taal={p.lang} bron={kalenderBron} onSluit={() => setActieVenster(null)} />}
+    {actieVenster === 'zoek' && x.zoekBron && (
+      <div className='weergave-dialoog-laag' role='presentation' onMouseDown={(e) => { if (e.target === e.currentTarget) setActieVenster(null); }}>
+        <div className='weergave-dialoog' role='dialog' aria-modal='true' aria-label={t('Пошук у вкладеннях', 'Zoeken in bijlagen')}>
+          <ZoekVeld taal={p.lang} bron={x.zoekBron} onSluit={() => setActieVenster(null)} />
+        </div>
+      </div>
+    )}
+    {actieVenster === 'versies' && versie && (
+      <Suspense fallback={null}>
+        <VersieVergelijk lang={p.lang} bron={versie.bron} groep={versie.groep} beginKeuze={{ oud: versie.vorige.nummer, nieuw: versie.huidig.nummer }} onSluit={() => setActieVenster(null)} />
+      </Suspense>
+    )}
   </header>;
 }
+
