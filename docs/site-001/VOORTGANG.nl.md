@@ -39,16 +39,14 @@
 | 19 | Siteanalyse | ✅ klaar | Eigen anonieme analyse werkt nu echt en alleen met toestemming; tabblad «Bezoeken» voor de beheerder; 12/12 tests |
 | 20 | Één duidelijke oproep tot actie | ✅ klaar | Op 6 kernschermen precies 1 hoofdactie: bij een bewaard account op het toestel is de gebruikerskaart de hoofdactie en wordt de Google-knop rustig secundair; op `/privacy` en `/terms` een duidelijke terugkeerknop naar de ruimte toegevoegd; bewakingstest 8/8 |
 | 21 | Knoppen en interactieve elementen | ✅ klaar | 4 → 0 fouten in live controle zonder en met aanmelding (`knoppen.mjs`): `aria-label` van taalwisselaar op `/toegang`, 404 op `/api/owner/workspaces/list` verholpen, `document.title` werkt bij na aanmelden, kaart en knoppen voor leeg werkblad in `WerkbladV3`; bewakingstest 7/7 |
-| 22 | Foutregistratie en bewaking | wacht | — |
+| 22 | Foutregistratie en bewaking | ✅ klaar | `proces-vangnet`, `/__gezondheid?diep=1` (`ALLEEN_LOKAAL`), 401/403/404-tellers, register van 333 acties en `nazorg` gecontroleerd; `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0, alle 3 cookies) en `rook-controle`-test hersteld (40/40); bewakingstest 7/7 |
 | 23 | Reservekopieën van de database | wacht | `deploy/backup-maken.sh`, `mijn-ruimte-backup.timer` — controleren |
 | 24 | Beveiligingskoppen en aanvraagbeperking | wacht | `server/start.ts`, `rateLimit` — controleren |
 | 25 | Registratie, aanmelding en wachtwoordherstel | wacht | — |
 
 ## Gevonden fouten die nog op hun punt wachten
 
-| Fout | Waar | Punt |
-|---|---|---|
-| De weergavecontrole van het installatieprogramma (`server/rook.ts`) stopt met code 2: `/api/owner/tech/activeren` → 409 `GEBRUIK_RUIMTES_V2` sinds ruimtes v2 aan staan | `server/rook.ts`, `backend/tech-profiel.ts:156` | 22 |
+_Alle eerder genoteerde fouten zijn verholpen (waaronder `server/rook.ts` → `409 GEBRUIK_RUIMTES_V2` in punt 22)._
 
 ## Verslagen per punt
 
@@ -334,6 +332,24 @@ Herhaalde proef met `knoppen.mjs` — **0 fouten** (11 van 11 live scenario's ge
 | ![voor: leeg mobiel canvas zonder uitleg](schermafdrukken/p21-werkblad-voor.webp) | ![na: kaart voor leeg werkblad met acties](schermafdrukken/p21-werkblad-na.webp) |
 | — | ![na klik op «Standaardindeling»](schermafdrukken/p21-werkblad-standaard-na.webp) |
 
+### 22. Foutregistratie en bewaking
+
+**Controle van de bestaande bewakings- en foutregistratielagen:**
+- **Vangnet van het serverproces (`server/platform/proces-vangnet.ts`, `server/start.ts`):** onopgevangen uitzonderingen en afgewezen beloften worden zonder verzoekinhoud of geheimen in het serverjournaal vastgelegd, zodat één fout niet alle sessies en geheugensleutels verbreekt; bij meer dan 50 fouten binnen 60 s stopt het proces met code `1` voor een schone herstart via `systemd`. De vertraging van de gebeurtenislus wordt gemeten met `monitorEventLoopDelay`.
+- **Gezondheidscontroles (`/__gezondheid` en `/__gezondheid?diep=1`, `backend/diepe-gezondheid.ts`):** de basiscontrole geeft `{"ok":true,"db":true}`; de diepe controle vanaf `127.0.0.1` toetst in 20 ms de database, een proefsessie van de technische ruimte v2, uitgifte en intrekking van het toegangskoekje voor `/assets/tech/*` en de aanwezigheid van de gebouwde modules, terwijl elk verzoek met een tunnelkop (`cf-connecting-ip`) `403 {"ok":false,"fout":"ALLEEN_LOKAAL"}` krijgt.
+- **Ontvanger voor clientstoringen en lekvrije logboeken (`backend/toegangsfout-tellers.ts`, `shared/beheer-journaal.ts`):** `401`/`403`/`404`-antwoorden en meldingen van niet-geladen modules (`POST /api/storing/tech-bundel`) worden per uur in 6 groepen geteld zonder IP-adressen of gebruikers; `meldingen-register-controle.mjs` bevestigde alle 333 serveractiecodes en 537 tweetalige omschrijvingen (`overig: 0`). De nazorgdienst `deploy/uitrol/mijn-ruimte-nazorg.sh` bewaakt elke minuut de gezondheid en weergave en draait bij uitval automatisch terug naar de vorige uitgave.
+
+**Gevonden en verholpen fouten:**
+1. **De eenmalige weergavestand `server/rook.ts` stopte met code `2`** op een verse database met de vlag `tech-ruimtes-v2`: `POST /api/owner/tech/activeren` gaf `409 GEBRUIK_RUIMTES_V2`. Nu voert de stand bij `409 GEBRUIK_RUIMTES_V2` een herbevestiging op `hub` uit, start hij de technische ruimte v2 via `POST /api/owner/hub/tech/ruimtes/starten` en haalt hij via `POST /api/owner/tech/status` alle 3 cookies op (inclusief `mr_tech_asset` voor `/assets/tech/*`). Een live proef met het ongewijzigde `dist-server/rook.mjs` opende `https://admin.tarasevych.com/diagnostiek` in de technische ruimte met status `200` en `0` fouten.
+2. **Verouderde verwachting in `tests/eenheid/rook-controle-20261022.test.ts` (`39/40`):** de test rekende op 13 pagina's in `paginaLijst` terwijl dat er na toevoeging van `crm` 14 zijn — bijgewerkt (`40/40`).
+
+Nieuwe bewakingstest `tests/eenheid/site-001-monitoring.test.ts` — `7/7`, aangrenzende tests `rook-controle-20261022` (`40/40`), `beheer-diagnostiek-rook-20261022` (`26/26`) en `uitrol-nazorg-rook-20261022` (`13/13`) alle groen.
+
+| Voor | Na |
+|---|---|
+| ![voor: server/rook.ts stopt met code 2 bij ruimtes v2](schermafdrukken/p22-kaart-voor.webp) | ![na: 0 fouten, alle controles groen](schermafdrukken/p22-kaart-na.webp) |
+| — | ![live Diagnostiek-paneel in de technische ruimte via het herstelde rook.ts](schermafdrukken/p22-diagnostiek-na.webp) |
+
 ## Logboek
 
 - **25.11.2026 23:25** — vertakking gemaakt vanaf `integratie`, taak `SITE-001` geregistreerd, `orch controleer` groen. Eerste overzicht van bestaande onderdelen.
@@ -351,3 +367,4 @@ Herhaalde proef met `knoppen.mjs` — **0 fouten** (11 van 11 live scenario's ge
 - **26.11.2026 23:35** — punt 12 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): `/toegang` 67 % lichter (666 → 220 kB), `id/` versneld (`LCP` −46 %, netwerkstilte 15,5 → 1,48 s, CPU-blokkering op telefoon −72 %, `4xx`-fouten 2 → 0), bewakingstest 9/9 toegevoegd.
 - **26.11.2026 23:52** — punt 20 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): op alle 6 kernschermen precies één hoofdactie gewaarborgd (2 → 0 fouten), bewakingstest 8/8.
 - **27.11.2026 00:21** — punt 21 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): live controle van alle knoppen en interactieve acties zonder en met aanmelding (4 → 0 fouten: `aria-label` op `/toegang`, 404 `/api/owner/workspaces/list` verholpen, tabbladtitel na aanmelden, kaart voor leeg werkblad in `WerkbladV3`), bewakingstest 7/7.
+- **27.11.2026 00:33** — punt 22 klaar (`Gemini 4 Carbon High` · `Google Antigravity`): alle lagen van foutregistratie en gezondheidsbewaking gecontroleerd (`/__gezondheid?diep=1`, `proces-vangnet`, `nazorg`, register van 333 acties); `server/rook.ts` aangepast voor `tech-ruimtes-v2` (code 2 → 0) en `rook-controle`-test hersteld (40/40), bewakingstest 7/7 toegevoegd.

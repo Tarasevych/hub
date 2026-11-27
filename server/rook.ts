@@ -149,7 +149,13 @@ async function hoofd(): Promise<number> {
   if (r1.data.sessionCreated !== true) { zeg(`aanmelden als testeigenaar mislukt: ${JSON.stringify(r1.data).slice(0, 200)}`); server.close(); return 2; }
   const r2 = await aanmelden('step-up', 'mcp');
   if (r2.data.sessionCreated !== true && r2.data.ok !== true) zeg(`step-up gaf ${JSON.stringify(r2.data).slice(0, 160)} (ga door)`);
-  const r3 = await verzoek(SERVICE_HOSTS.mcp, '/api/owner/tech/activeren', { service: 'mcp', tabContext: tab, sourceOrigin: `https://${SERVICE_HOSTS.mcp}`, minuten: 60, reden: 'Rook-controle van een release (installer)' });
+  let r3 = await verzoek(SERVICE_HOSTS.mcp, '/api/owner/tech/activeren', { service: 'mcp', tabContext: tab, sourceOrigin: `https://${SERVICE_HOSTS.mcp}`, minuten: 60, reden: 'Rook-controle van een release (installer)' });
+  if (r3.status === 409 && r3.data.error === 'GEBRUIK_RUIMTES_V2') {
+    const r2h = await aanmelden('step-up', 'hub');
+    if (r2h.data.sessionCreated !== true && r2h.data.ok !== true) zeg(`step-up hub gaf ${JSON.stringify(r2h.data).slice(0, 160)} (ga door)`);
+    r3 = await verzoek(SERVICE_HOSTS.hub, '/api/owner/hub/tech/ruimtes/starten', { service: 'hub', tabContext: tab, sourceOrigin: `https://${SERVICE_HOSTS.hub}`, modus: 'tijd', minuten: 60, reden: 'Rook-controle van een release (installer)' });
+    if (r3.status === 200) await verzoek(SERVICE_HOSTS.mcp, '/api/owner/tech/status', { service: 'mcp', tabContext: tab, sourceOrigin: `https://${SERVICE_HOSTS.mcp}` });
+  }
   if (r3.status !== 200) { zeg(`technisch profiel activeren mislukt: HTTP ${r3.status} ${JSON.stringify(r3.data).slice(0, 200)}`); server.close(); return 2; }
   zeg(`testeigenaar aangemeld, technisch profiel actief (${jar.size} cookies)`);
   // Diepe controle (29.10.2026): proefsessie technische ruimte v2 + proefcookie voor /assets/tech/* in deze stand.
