@@ -94,6 +94,10 @@
     {
       "sha": "fe3ad6c7502c9420b077ac30f27bb0d6965abb61",
       "boodschap": "SITE-001: чисті заокруглені кути верхнього листа в списку пошти та компактна капсула сповіщення технічного простору з історією в панелі сповіщень"
+    },
+    {
+      "sha": "e6bbcd9e3e5a8910cb07cb8c56e29b1c20fbb759",
+      "boodschap": "SITE-001: узгодження селектора .rw-dok-melding із реєстром plaatsing-vaste-elementen.json"
     }
   ],
   "tijdlijn": [
