@@ -17,6 +17,7 @@ import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStap
 import {kritiekeActie} from '../shared/kritieke-acties';
 import {stapOpKanalen,telegramSterkGekozen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
 import {instellingen as apparaatInstellingen} from './apparaat-bevestiging/opslag'; /* UPD-012 */
+import {accountBeeld,veiligeFoto} from './telegram-aanmelden/account-foto';
 import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
 import {registreerTweedeFactorBeleid,tweedeFactorBeleidVergeten,tweedeFactorBevestigdOp,tweedeFactorVers} from './tweede-factor-poort';
 import {codewoordSessieId} from '../shared/codewoord-poort'; /* IDENTITEIT-015: правило mfa діє під час входу */
@@ -666,8 +667,14 @@ export function createAccessPlaneRoutes(deps:{
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const body=deps.body(ctx.body);
       const[totp,herstel,passkeys,heeftCodewoord,geldigTot,onthouden]=await Promise.all([totpFor(auth.user.id),recoveryFor(auth.user.id),passkeyAantal(auth.user.id),codewoordHeeft(auth.user.id),stapOpGeldigTot(auth as unknown as StapOpAuth),onthoudenSessies(auth.user.id)]);
-      const u=auth.user as {email:string;name?:string;picture?:string};
-      const foto=typeof u.picture==='string'&&/^https:\/\/[a-z0-9.-]*\.googleusercontent\.com\//i.test(u.picture)?u.picture.slice(0,2048):'';
+      const u=auth.user as {id:string;email:string;name?:string;picture?:string;geenFoto?:boolean};
+      let foto=u.geenFoto?'':veiligeFoto(u.picture);
+      let naam=String(u.name||'').slice(0,120);
+      if((!foto&&!u.geenFoto)||!naam){
+        const ab=await accountBeeld(auth.user.id).catch(()=>null);
+        if(!foto&&!u.geenFoto&&ab?.foto)foto=ab.foto;
+        if(!naam&&ab?.naam)naam=ab.naam.slice(0,120);
+      }
       // Mag deze actie onthouden worden? «sterk» (rechten intrekken, sleutels, goedkeuren) en de lijst NOOIT_ONTHOUDEN: nee.
       const onthoudMag=body.sterk!==true&&onthoudMagVoorActie(actieVan(body.actie));
       const onthoudTot=Number(onthouden[onthoudSessieId(auth as unknown as StapOpAuth)]||0);
@@ -681,7 +688,7 @@ export function createAccessPlaneRoutes(deps:{
         :await stapOpKanalen(auth as never).then(k=>body.sterk===true
           ?{...k,telegram:sterkTg?k.telegram:false,apparaat:sterkApparaat?k.apparaat:false,apparaten:sterkApparaat?k.apparaten:0}
           :k).catch(()=>null);
-      return deps.respond({ok:true,email:auth.user.email,naam:String(u.name||'').slice(0,120),foto,telegramSterk:sterkTg,apparaatSterk:sterkApparaat,
+      return deps.respond({ok:true,email:auth.user.email,naam,foto,telegramSterk:sterkTg,apparaatSterk:sterkApparaat,
         methoden:{passkey:passkeys>0,totp:Boolean(totp?.confirmed),herstelcode:Boolean(herstel&&herstel.remaining>0),google:true,codewoord:heeftCodewoord,telegram:!!kanalen?.telegram,apparaat:!!kanalen?.apparaat},
         kanalen:kanalen?{apparaten:kanalen.apparaten,reden:kanalen.reden,eis:kanalen.eis,eisTekst:kanalen.eisTekst}:null,
         geldigTot,maxAgeSeconds:STAP_OP_MS/1000,onthoudMag,onthoudTot,onthoudUren:Math.round(STAP_OP_ONTHOUD_MS/3600000)});

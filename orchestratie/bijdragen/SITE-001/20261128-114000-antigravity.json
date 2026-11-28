@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261128-114000-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-28T11:40:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Упорядковано мобільний та комп’ютерний вигляд вікна «Підтвердіть доступ» (src/platform/bevestig-toegang.tsx, src/platform/bevestig-toegang.css, backend/toegangslaag.ts, tests/eenheid/bevestig-toegang-opmaak-20261025.test.ts, tests/eenheid/site-001-snelheid.test.ts): 1) у маршруті POST /api/owner/access/stap-op/methoden (backend/toegangslaag.ts) замінено вузьку перевірку фото лише з googleusercontent.com на veiligeFoto(u.picture) з підтримкою власних завантажених фото профілю data:image/(jpeg|png|webp);base64,... та резервним підвантаженням accountBeeld(auth.user.id), а на клієнті додано lokaalAccountFallback(); 2) прибрано візуальне дублювання заголовка «Підтвердіть доступ» під шапкою вікна та зсунутий у 3 поверхи текст «Ви / ввійшли / як» з розірваною поштою tarasevych.pavlo@g / mail.com — замість цього оформлено паспорт облікового запису (.bevestig-toegang-wie, data-bevestigend-account=\"1\") із круглою фотографією профілю 36×36 px, щитом «Ви ввійшли як · Підтверджує дію», повним ім’ям власника (.bevestig-toegang-naam) і цілісною електронною адресою в один рядок; 3) картку дії (.bevestig-toegang-wat) оформлено як єдину тоновану панель із пігулкою «Журнал і сповіщення» (data-stap-op-kroniek=\"1\"), рядками «Що ви підтверджуєте» (без хибного рожевого боксу помилки для відомих дій), «Наслідок» і новим поясненням «Хронологія й сповіщення: Фіксується в журналі безпеки та сповіщеннях із цим обліковим записом.»; 4) усунено 60-піксельні порожні коробки на розкривних рядках <details class=\"bevestig-toegang-extra\"> та громіздкі рамки альтернативних способів у «Виникли проблеми?», замінивши їх на компактні однорядкові пункти й охайні пігулки-чипи (site-001-snelheid 32/32, bevestig-toegang-opmaak-20261025 19/19).",
+    "nl": "De mobiele en desktopweergave van het venster «Toegang bevestigen» heringericht (src/platform/bevestig-toegang.tsx, src/platform/bevestig-toegang.css, backend/toegangslaag.ts, tests/eenheid/bevestig-toegang-opmaak-20261025.test.ts, tests/eenheid/site-001-snelheid.test.ts): 1) in POST /api/owner/access/stap-op/methoden (backend/toegangslaag.ts) is de beperkte googleusercontent.com-controle vervangen door veiligeFoto(u.picture) met ondersteuning voor eigen profielfoto’s data:image/(jpeg|png|webp);base64,... en terugval op accountBeeld(auth.user.id), aangevuld met lokaalAccountFallback() op de client; 2) de dubbele titel onder de vensterkop en de samengedrukte tekst met afgebroken e-mailadres vervangen door een duidelijk accountpaspoort (.bevestig-toegang-wie, data-bevestigend-account=\"1\") met ronde profielfoto 36×36 px, schild «Aangemeld als · Bevestigt deze actie», volledige naam (.bevestig-toegang-naam) en onafgebroken e-mailadres; 3) het actieblok (.bevestig-toegang-wat) vormgegeven als één getinte kaart met pil «Kroniek & meldingen» (data-stap-op-kroniek=\"1\"), «Wat u bevestigt» (zonder onterecht foutkader voor bekende acties), «Gevolg» en de toelichting «Kroniek en meldingen: Wordt met dit account vastgelegd in het beveiligingslogboek en meldingencentrum.»; 4) de 60 px hoge lege kaders op <details class=\"bevestig-toegang-extra\"> en de te grote knoppen onder «Problemen?» vervangen door compacte uitklapregels en chipknoppen (site-001-snelheid 32/32, bevestig-toegang-opmaak-20261025 19/19)."
+  },
+  "waarom": {
+    "uk": "Власник надіслав знімок мобільного вікна «Підтвердіть доступ» і зазначив, що попереднє стискання зсунуло й порушило структуру вікна: зникла фотографія профілю, не було видно повного облікового запису, який підтверджує дію, не було пояснено збереження в хронології та сповіщеннях, а розкривні блоки й альтернативні кнопки виглядали надмірно великими та неохайними.",
+    "nl": "De eigenaar stuurde een mobiele schermafdruk van het venster «Toegang bevestigen» en gaf aan dat de eerdere verkleining de structuur en vormgeving had verstoord: de profielfoto ontbrak, het bevestigende account en de vastlegging in kroniek en meldingen waren onduidelijk, en de uitklapblokken en alternatieve knoppen oogden te groot en rommelig."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261128-092500-antigravity",
+    "SITE-001/20261127-221500-antigravity",
+    "SITE-001/20261127-212800-antigravity",
+    "SITE-001/20261127-205000-antigravity",
+    "SITE-001/20261127-200800-antigravity",
+    "SITE-001/20261127-192200-antigravity",
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "60bd23ba65be5c848fb0de75fce6c9ba556c0bc2",
+    "3680f3424581994e54a74dc8b95e9cf0920b9081"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring"
+  ]
+}

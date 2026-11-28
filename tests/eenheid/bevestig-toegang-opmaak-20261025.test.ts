@@ -69,7 +69,7 @@ export async function main(): Promise<number> {
     const oud = contrast(meng(lang(p.muted), kaart, 0.8), kaart);
     if (oud < 4.5) oudLaag.push(`${naam} ${oud.toFixed(2)}`);
   }
-  check(`uitleg en label ≥ 4.5:1 op de kaart in alle ${paletten.length} paletten (grifel, violet, puur, kleur × 10 secties; licht en donker)`, !laag.length && paletten.length === 26, laag.join(' | '));
+  check(`uitleg en label ≥ 4.5:1 op de kaart in alle ${paletten.length} paletten (grifel, violet, puur, kleur × ${SECTIES.length} secties; licht en donker)`, !laag.length && paletten.length === 6 + SECTIES.length * 2, laag.join(' | '));
   check('ter controle: met de oude opacity .8 zakte de uitleg in de lichte paletten onder 4.5:1', oudLaag.some((x) => x.startsWith('grifel licht')) && oudLaag.some((x) => x.startsWith('violet licht')), oudLaag.slice(0, 4).join(', '));
 
   // ------------------------------------------------------------------ 4. chips in de toestemming (connector-v2.css)

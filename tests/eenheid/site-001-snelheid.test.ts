@@ -219,6 +219,21 @@ export async function main(): Promise<number> {
       && !berichtTekstTsx.includes("if(node instanceof HTMLTableCellElement)node.style.overflowWrap='anywhere'")
       && tekstPassendTs.includes('export function herstelKnellendeTabelKolommen(doc: Document): void')
       && tekstPassendTs.includes('herstelKnellendeTabelKolommen(doc);'));
+
+    const toegangslaagTs = await readFile(join(root, 'backend/toegangslaag.ts'), 'utf8');
+    const bevestigTsx = await readFile(join(root, 'src/platform/bevestig-toegang.tsx'), 'utf8');
+    const bevestigCss = await readFile(join(root, 'src/platform/bevestig-toegang.css'), 'utf8');
+    check('Вікно «Підтвердіть доступ» (bevestig-toegang): фотографія профілю (veiligeFoto + accountBeeld + lokaalAccountFallback), паспорт облікового запису підтвердження з ім’ям та нерозірваною поштою, блок хронології та сповіщень і компактні мобільні чипи без 60-піксельних порожніх коробок',
+      toegangslaagTs.includes("import {accountBeeld,veiligeFoto} from './telegram-aanmelden/account-foto';")
+      && toegangslaagTs.includes("let foto=u.geenFoto?'':veiligeFoto(u.picture);")
+      && toegangslaagTs.includes('const ab=await accountBeeld(auth.user.id).catch(()=>null);')
+      && bevestigTsx.includes('function lokaalAccountFallback(): { email: string; naam: string; foto: string }')
+      && bevestigTsx.includes("data-bevestigend-account='1'")
+      && bevestigTsx.includes("data-stap-op-kroniek='1'")
+      && bevestigTsx.includes("className='bevestig-toegang-naam'")
+      && bevestigTsx.includes("className='bevestig-toegang-uitleg bevestig-toegang-kroniek-tekst'")
+      && bevestigCss.includes('html body .venster.bevestig-toegang-venster .bevestig-toegang details.bevestig-toegang-extra>summary')
+      && bevestigCss.includes('html body .venster.bevestig-toegang-venster .bevestig-toegang .bevestig-toegang-alt button'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }
