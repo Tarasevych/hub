@@ -18,7 +18,7 @@ import { mailHtmlToPlainText, normalizeOutboundMailHtml } from './mail-opstel-ht
 import { listGrants } from './mcp-connector-opslag';
 import { CHAT_KLANT } from './mcp-namens';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
-import { alineasVoorModel, controleerPunten, gespreksAlineas, type BronAlinea } from '../shared/ai-bronnen';
+import { alineasVoorModel, controleerPunten, gespreksAlineas, taalVan, type BronAlinea } from '../shared/ai-bronnen';
 import { klantVan } from '../shared/ai-verbinding';
 import { actiesHints, actiesPunten, type ActiesModelAntwoord } from '../shared/ai-acties-model';
 import {
@@ -552,14 +552,7 @@ async function defaultLoadUserMailStore(userId: string): Promise<{
 }
 
 function detectLanguageCode(text: string): string {
-  const sample = String(text || '').slice(0, 2000);
-  if (/[іїєґІЇЄҐ]/.test(sample)) return 'uk';
-  if (/[а-яА-Я]/.test(sample)) return 'uk';
-  if (/\b(?:de|het|een|voor|met|niet|van|naar|bij|vriendelijke|groet|factuur|betaling)\b/i.test(sample)) return 'nl';
-  if (/\b(?:der|die|das|und|für|mit|nicht|von|rechnung|vielen|dank)\b/i.test(sample)) return 'de';
-  if (/\b(?:le|la|les|des|pour|avec|dans|bonjour|merci|facture)\b/i.test(sample)) return 'fr';
-  if (/\b(?:czy|dla|jest|nie|tak|proszę|dziękuję|faktura)\b/i.test(sample)) return 'pl';
-  return 'en';
+  return taalVan(text);
 }
 
 // Punt 16 (19.10.2026): hier stond `deterministicTranslateText()` met drie woordenlijstjes. Als het model niets teruggaf, zette

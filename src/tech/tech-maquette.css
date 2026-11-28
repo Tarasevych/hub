@@ -331,7 +331,7 @@ html.palet-maquette[data-ruimte="technisch"][data-tech="aan"] body::after {
 }
 
 html.palet-maquette .rw-dok-melding {
-  border-radius: var(--mq-straal-knop);
+  border-radius: 999px;
   border: 1px solid var(--mq-rand-sterk);
   background: var(--mq-popover-glas);
   backdrop-filter: blur(18px) saturate(145%);
@@ -1028,7 +1028,7 @@ html.palet-maquette .tech-poort-knoppen {
 
 html.palet-maquette .tech-poort button {
   min-height: 44px;
-  padding: 0 18px;
+  padding: 8px 16px;
   border-radius: var(--mq-straal-knop);
   border: 1px solid var(--mq-rand-sterk);
   background: var(--mq-tech-invoer);
@@ -1082,9 +1082,13 @@ html.palet-maquette .tech-poort.tech-poort-stil {
 
 html.palet-maquette .mq-tech-poort-stil-kern {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 14px 16px;
+}
+
+html.palet-maquette .mq-tech-poort-stil-kern > .tech-poort-stil-acties {
+  grid-column: 1 / -1;
 }
 
 html.palet-maquette .mq-tech-poort-medaillon {
@@ -1127,7 +1131,7 @@ html.palet-maquette .tech-poort button.tech-poort-naar {
   justify-content: center;
   gap: 8px;
   min-height: 44px;
-  padding: 0 18px;
+  padding: 8px 16px;
   border-radius: var(--mq-straal-knop);
   border-color: transparent;
   background: linear-gradient(
@@ -1138,6 +1142,12 @@ html.palet-maquette .tech-poort button.tech-poort-naar {
   color: var(--mq-accent-op);
   box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-accent) 26%, transparent);
   white-space: nowrap;
+}
+
+html.palet-maquette .tech-poort button.tech-poort-naar svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
 }
 
 html.palet-maquette .tech-poort button.tech-poort-naar:hover:not(:disabled) {
@@ -1405,9 +1415,9 @@ html.palet-maquette[data-maquette-stijl="klassiek"][data-ruimte="technisch"][dat
   border-top-width: 0;
 }
 
-/* Спливні позаоболонкові панелі: 16px, матові поверхні без розмиття та градієнтів */
+/* Спливні позаоболонкові панелі: 16px, матові поверхні без розмиття та градієнтів; капсула стану простору — пігулка 999px */
 html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {
-  border-radius: 16px;
+  border-radius: 999px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak);
   background-image: none;
@@ -1418,13 +1428,13 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding.is-fout {
-  border-color: var(--fout);
+  border-color: color-mix(in srgb, var(--fout) 45%, var(--mq-rand));
   background: var(--mq-oppervlak);
   color: var(--fout);
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding .rw-dok-sluit {
-  border-radius: 11px;
+  border-radius: 999px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak-2);
   color: var(--mq-tekst);
@@ -1836,7 +1846,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .mq-tech-poort-geen {
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button {
   min-height: 42px;
-  padding: 0 16px;
+  padding: 8px 16px;
   border-radius: 11px;
   border: 1px solid var(--mq-rand-sterk);
   background: var(--mq-oppervlak-2);
@@ -2068,13 +2078,8 @@ html.palet-maquette[data-maquette-stijl="klassiek"] :is(
     color: var(--fout);
   }
 
-  html.palet-maquette .mq-tech-poort-stil-kern {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  html.palet-maquette .tech-poort.tech-poort-stil button.tech-poort-naar {
-    grid-column: 1 / -1;
-    width: 100%;
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button {
+    min-height: 44px;
   }
 
   html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open {
@@ -2111,8 +2116,21 @@ html.palet-maquette[data-maquette-stijl="klassiek"] :is(
     padding: 18px;
   }
 
-  html.palet-maquette .tech-poort-knoppen button {
+  html.palet-maquette .mq-tech-poort-stil-kern > .tech-poort-stil-acties {
+    width: 100%;
+  }
+
+  html.palet-maquette .tech-poort.tech-poort-stil .tech-poort-stil-acties > button,
+  html.palet-maquette .tech-poort button.tech-poort-naar,
+  html.palet-maquette .tech-poort .tech-poort-knoppen button {
     flex: 1 1 100%;
+    width: 100%;
+    height: auto;
+    min-height: 44px;
+    padding: 10px 16px;
+    line-height: 1.3;
+    white-space: normal;
+    text-align: center;
     justify-content: center;
   }
 

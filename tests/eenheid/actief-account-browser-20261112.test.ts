@@ -1,7 +1,7 @@
 // Модульне та інтеграційне випробування IDENTITEIT-010 (12.11.2026):
 // Простір як єдине джерело правди для активного облікового запису в оглядачі на всіх піддоменах *.tarasevych.com,
 // узгодження silentAllowed (живий 30-денний дозвіл OwnerGrant) і криптографічно перевіреного login_hint після виходу,
-// а також захист від перегонів паралельних вкладок і миттєве завершення технічного профілю попереднього акаунта.
+// а також захист від перегонів паралельних вкладок і миттєве завершення технічного профілю попереднього облікового запису.
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -255,7 +255,7 @@ export async function main(): Promise<number> {
         JSON.stringify({ status: wisselNaarA.status, techBeeindigd: wisselNaarA.data.techBeeindigd })
       );
 
-      // Паралельна вкладка зі старим реп’яшком у межах OWNER_PREVIOUS_GRACE_MS не вилітає в signed_out, а слідує за новим акаунтом A!
+      // Паралельна вкладка зі старим реп’яшком у межах OWNER_PREVIOUS_GRACE_MS не вилітає в signed_out, а слідує за новим обліковим записом A!
       const raceR = await google.handler({
         headers: {
           host: 'hub.tarasevych.com',
@@ -291,7 +291,7 @@ export async function main(): Promise<number> {
       } as never) as { statusCode: number; headers: Record<string, string>; body: string };
       const valsData = JSON.parse(valsR.body);
       check(
-        '3.7 захист від перегонів паралельних вкладок: запит у польоті зі старим реп’яшком у межах OWNER_PREVIOUS_GRACE_MS повертає новий акаунт A (не старий B і не signed_out), а підроблений токен відхиляється',
+        '3.7 захист від перегонів паралельних вкладок: запит у польоті зі старим реп’яшком у межах OWNER_PREVIOUS_GRACE_MS повертає новий обліковий запис A (не старий B і не signed_out), а підроблений токен відхиляється',
         raceR.statusCode === 200 &&
         raceData.user?.email === mailA &&
         String(raceData.state || '') !== 'signed_out' &&

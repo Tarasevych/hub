@@ -240,7 +240,7 @@ const domeinUit = (waarde: string, adres: boolean): string =>
 /**
  * SEC-002 (post-08): is BEWEZEN dat Gmail dit bericht NIET zelf via SMTP aannam? Dan is de bovenste Authentication-Results
  * niet van Gmail maar van de afzender (of van een vreemde server) en mag ze nergens voor tellen.
- *   • de POP3-verzamelaar («Перевіряти пошту з інших акаунтів») zet zelf bovenaan «Received: by … with POP3» en
+ *   • de POP3-verzamelaar («Перевіряти пошту з інших облікових записів») zet zelf bovenaan «Received: by … with POP3» en
  *     «X-Gmail-Fetch-Info»; alles daaronder — ook een nagemaakte «mx.google.com»-regel — komt uit de andere postbus;
  *   • een geïmporteerd of via de API ingevoegd bericht heeft geen enkele «Received: … by mx.google.com with (E)SMTP(S)».
  * `koppen` = de kopregels van het bericht in volgorde (Gmail API, format=metadata), waarbij «Received» en
@@ -255,13 +255,27 @@ export function gmailOntvangstWeerlegd(koppen: ReadonlyArray<{ name?: string; va
   if (/(?:^|\s)with POP3\s/i.test(ontvangen[0])) return true;
   return !ontvangen.some((r) => /(?:^|\s)by mx\.google\.com with \S*SMTP\S*\s/i.test(`${r} `));
 }
-/** Geslaagd en «aligned» met het From-domein: dmarc=pass voor dat domein, of dkim=pass van hetzelfde organisatiedomein. */
+/** Geslaagd en «aligned» met het From-domein: dmarc=pass voor dat domein, of dkim=pass van hetzelfde organisatiedomein / dezelfde officiële dienst. */
 export function authGeslaagdVoor(auth: AuthResultaten, domein: string): boolean {
   if (!auth.betrouwbaar || !domein) return false;
-  if (auth.dmarc === 'pass' && auth.dmarcDomein && (auth.dmarcDomein === domein || organisatieDomein(auth.dmarcDomein) === organisatieDomein(domein))) return true;
-  return auth.dmarc !== 'fail' && auth.dkim.some((k) => k.uitslag === 'pass' && k.domein && organisatieDomein(k.domein) === organisatieDomein(domein));
+  const dienst = bekendeDienstVoor(domein);
+  const zelfdeDienst = (d: string) => !!d && (d === domein || organisatieDomein(d) === organisatieDomein(domein) || (!!dienst && vanMerk(dienst, d)));
+  if (auth.dmarc === 'pass' && auth.dmarcDomein && zelfdeDienst(auth.dmarcDomein)) return true;
+  return auth.dmarc !== 'fail' && auth.dkim.some((k) => k.uitslag === 'pass' && !!k.domein && zelfdeDienst(k.domein));
 }
 export const authMisluktVoor = (auth: AuthResultaten, domein: string) => auth.betrouwbaar && !!domein && auth.dmarc === 'fail' && (!auth.dmarcDomein || organisatieDomein(auth.dmarcDomein) === organisatieDomein(domein));
+
+export type DomeinAuthStand = 'pass' | 'deels' | 'fail' | 'geen';
+
+/** Оцінює криптографічне підтвердження власного домену відправника (SPF / DKIM / DMARC) для чесного індикатора без підміни контактів. */
+export function domeinAuthVan(domein: string, auth?: AuthResultaten | null): DomeinAuthStand {
+  const d = String(domein || '').trim().toLowerCase();
+  if (!d || GRATIS_MAILBOXEN.includes(d) || !auth || !auth.betrouwbaar) return 'geen';
+  if (authMisluktVoor(auth, d) || (auth.spf === 'fail' && !auth.dkim.some((k) => k.uitslag === 'pass'))) return 'fail';
+  if (authGeslaagdVoor(auth, d)) return 'pass';
+  if (auth.spf === 'pass' || auth.dkim.some((k) => k.uitslag === 'pass')) return 'deels';
+  return 'geen';
+}
 
 // ------------------------------------------------------------------------------------------------ classificeren
 export type Classificatie = { status: AfzenderStatus; bron: AfzenderBron | null; reden: string; merk: string };
@@ -273,23 +287,35 @@ export type ClassificeerInvoer = {
 };
 export const naamSleutel = (naam: string) => ontwar(naam).replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
+const ALGEMENE_AFZENDER_NAMEN = new Set([
+  'support', 'info', 'noreply', 'no reply', 'do not reply', 'donotreply', 'notifications', 'notification',
+  'klantenservice', 'customer service', 'customer support', 'customer care', 'helpdesk', 'service', 'billing',
+  'security', 'admin', 'team', 'news', 'newsletter', 'updates', 'alert', 'alerts', 'account', 'accounts',
+  'mailer', 'robot', 'підтримка', 'служба підтримки', 'інфо', 'адміністрація', 'бухгалтерія', 'повідомлення', 'сповіщення',
+].map(naamSleutel));
+export const isAlgemeneAfzenderNaam = (naam: string): boolean => ALGEMENE_AFZENDER_NAMEN.has(naamSleutel(naam));
+
 export function classificeer(i: ClassificeerInvoer): Classificatie {
   const auth = i.auth || GEEN_AUTH;
   if (!i.adres) return { status: 'onbekend', bron: null, reden: 'GEEN_ADRES', merk: '' };
   const dienst = bekendeDienstVoor(i.domein);
+  const isSysteemIcloud = i.domein === 'icloud.com' && /^(?:no[-_]?reply|do[-_]?not[-_]?reply)@icloud\.com$/.test(i.adres) && !authMisluktVoor(auth, 'icloud.com');
+  const dkimVanMerk = (m: BekendeDienst) => auth.betrouwbaar && !auth.opmaakVerdacht && auth.dmarc !== 'fail' && auth.dkim.some((k) => k.uitslag === 'pass' && !!k.domein && vanMerk(m, k.domein));
   // 1. Imitatie gaat altijd voor (ook bij een geslaagde DMARC: die bewijst alleen dat het domein klopt).
   const ander = /[^\s@<>"]+@([a-z0-9.-]+\.[a-z]{2,})/i.exec(i.naam);
   if (ander && organisatieDomein(ander[1].toLowerCase()) !== organisatieDomein(i.domein)) return { status: 'verdacht', bron: null, reden: 'NAAM_BEVAT_ANDER_ADRES', merk: '' };
   const merken = merkenInNaam(i.naam);
-  if (merken.length && !merken.some((m) => vanMerk(m, i.domein))) return { status: 'verdacht', bron: null, reden: 'NAAM_MERK_ANDER_DOMEIN', merk: merken[0].merk };
+  if (merken.length && !merken.some((m) => vanMerk(m, i.domein) || dkimVanMerk(m) || (isSysteemIcloud && m.id === 'apple'))) {
+    return { status: 'verdacht', bron: null, reden: 'NAAM_MERK_ANDER_DOMEIN', merk: merken[0].merk };
+  }
   const lijkt = lijktOpMerk(i.domein);
-  if (lijkt) return { status: 'verdacht', bron: null, reden: 'DOMEIN_LIJKT_OP_MERK', merk: lijkt.merk };
+  if (lijkt && !dkimVanMerk(lijkt)) return { status: 'verdacht', bron: null, reden: 'DOMEIN_LIJKT_OP_MERK', merk: lijkt.merk };
   if (gemengdSchrift(i.domein)) return { status: 'verdacht', bron: null, reden: 'DOMEIN_GEMENGD_SCHRIFT', merk: '' };
-  if (i.naam && i.contacten) {
+  if (i.naam && i.contacten && !isAlgemeneAfzenderNaam(i.naam)) {
     const adressen = i.contacten.get(naamSleutel(i.naam));
     // Live-audit 19.10 (F3): noreply@tm.openai.com (DKIM/SPF/DMARC pass, officieel domein) werd «підозрілий» omdat het contact
     // «OpenAI» een ander adres had. Zelfde organisatiedomein als een contactadres telt als hetzelfde contact; en een officieel
-    // merkdomein met geslaagde, aligned controle is geen imitatie — die uitslag (stap 2) gaat dan voor.
+    // merkdomein zonder DMARC-mislukking is geen contact-imitatie — die uitslag (stap 2) gaat dan voor.
     const org = organisatieDomein(i.domein);
     // Безкоштовна пошта — не одна організація: jan@gmail.com і ander@gmail.com з тим самим ім’ям не «той самий контакт».
     const gratisDomein = (d: string) => GRATIS_MAILBOXEN.includes(d.toLowerCase());
@@ -298,8 +324,12 @@ export function classificeer(i: ClassificeerInvoer): Classificatie {
       if (!d || gratisDomein(d)) return '';
       return organisatieDomein(d);
     };
-    const zelfdeOrganisatie = !gratisDomein(i.domein) && (adressen || []).some((a) => { const o = orgVanAdres(a); return !!o && o === org; });
-    const officieel = !!dienst && vanMerk(dienst, i.domein) && authGeslaagdVoor(auth, i.domein);
+    const zelfdeOrganisatie = !gratisDomein(i.domein) && (adressen || []).some((a) => {
+      const d = (a.split('@')[1] || '').toLowerCase();
+      const o = orgVanAdres(a);
+      return (!!o && o === org) || (!!dienst && !!d && vanMerk(dienst, d));
+    });
+    const officieel = (!!dienst && vanMerk(dienst, i.domein) && !authMisluktVoor(auth, i.domein)) || isSysteemIcloud;
     // Підпис власним доменом (DMARC/DKIM aligned) доводить, що лист справді з цієї адреси, а не підробка контакту.
     const eigenHandtekening = authGeslaagdVoor(auth, i.domein);
     if (adressen && adressen.length && !adressen.includes(i.adres) && !zelfdeOrganisatie && !officieel && !eigenHandtekening) return { status: 'verdacht', bron: null, reden: 'NAAM_VAN_CONTACT_ANDER_ADRES', merk: '' };
@@ -310,7 +340,14 @@ export function classificeer(i: ClassificeerInvoer): Classificatie {
     if (authGeslaagdVoor(auth, i.domein)) return { status: 'geverifieerd', bron: 'bekende-dienst', reden: 'BEKENDE_DIENST_DMARC', merk: dienst.merk };
     return { status: 'onbekend', bron: null, reden: auth.betrouwbaar ? 'BEKENDE_DIENST_ZONDER_PASS' : 'BEKENDE_DIENST_ZONDER_AUTH', merk: dienst.merk };
   }
-  return { status: 'onbekend', bron: null, reden: GRATIS_MAILBOXEN.includes(i.domein) ? 'GRATIS_MAILBOX' : 'NIET_BEVESTIGD', merk: '' };
+  if (isSysteemIcloud && (authGeslaagdVoor(auth, 'icloud.com') || (auth.betrouwbaar && !auth.opmaakVerdacht && auth.dmarc !== 'fail' && auth.dkim.some((k) => k.uitslag === 'pass' && (k.domein === 'apple.com' || k.domein.endsWith('.apple.com')))))) {
+    return { status: 'geverifieerd', bron: 'bekende-dienst', reden: 'BEKENDE_DIENST_DMARC', merk: 'Apple' };
+  }
+  const ondertekendMerk = [...merken, ...(lijkt ? [lijkt] : [])].find((m) => dkimVanMerk(m));
+  if (ondertekendMerk) return { status: 'geverifieerd', bron: 'bekende-dienst', reden: 'BEKENDE_DIENST_DMARC', merk: ondertekendMerk.merk };
+  if (GRATIS_MAILBOXEN.includes(i.domein)) return { status: 'onbekend', bron: null, reden: 'GRATIS_MAILBOX', merk: '' };
+  if (authGeslaagdVoor(auth, i.domein)) return { status: 'onbekend', bron: null, reden: 'DOMEIN_AUTH_GESLAAGD', merk: '' };
+  return { status: 'onbekend', bron: null, reden: 'NIET_BEVESTIGD', merk: '' };
 }
 
 /** Uitleg per reden-code (uk, nl) voor de pastille, het venster en de beheerlijst. */
@@ -319,6 +356,7 @@ export const AFZENDER_REDENEN: Record<string, [string, string]> = {
   BEKENDE_DIENST_DMARC: ['Офіційна адреса відомого сервісу, і Gmail підтвердив, що лист справді надіслано з цього домену (DMARC).', 'Officieel adres van een bekende dienst, en Gmail bevestigde dat het bericht echt van dit domein komt (DMARC).'],
   BEKENDE_DIENST_ZONDER_AUTH: ['Домен відомого сервісу, але перевірки доставки (DMARC) ще немає — тому поки не позначено як перевірений.', 'Domein van een bekende dienst, maar nog zonder bezorgcontrole (DMARC) — daarom nog niet als geverifieerd gemarkeerd.'],
   BEKENDE_DIENST_ZONDER_PASS: ['Домен відомого сервісу, але Gmail не підтвердив, що лист надіслано саме з нього.', 'Domein van een bekende dienst, maar Gmail bevestigde niet dat het bericht echt van dit domein komt.'],
+  DOMEIN_AUTH_GESLAAGD: ['Лист справді надіслано з цього домену (підтверджено SPF, DKIM і DMARC). До ваших контактів цю адресу ще не додано.', 'Het bericht komt echt van dit domein (bevestigd via SPF, DKIM en DMARC). Dit adres staat nog niet in uw contacten.'],
   DMARC_MISLUKT: ['Лист видає себе за відомий сервіс, але перевірка Gmail (DMARC) не пройдена. Ймовірна підробка.', 'Het bericht doet zich voor als een bekende dienst, maar de controle van Gmail (DMARC) mislukte. Waarschijnlijk vervalst.'],
   NAAM_MERK_ANDER_DOMEIN: ['Ім’я відправника — назва відомого сервісу, а адреса з іншого домену. Можливе видавання себе за інший сервіс.', 'De afzendernaam is die van een bekende dienst, maar het adres komt van een ander domein. Mogelijke imitatie.'],
   NAAM_BEVAT_ANDER_ADRES: ['В імені відправника вписано іншу адресу, ніж та, з якої прийшов лист.', 'In de afzendernaam staat een ander adres dan waar het bericht vandaan komt.'],

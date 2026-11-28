@@ -4,7 +4,7 @@
 // 2. Paneel: Завантажити (.txt), Копіювати, Друкувати, «Я зберіг коди» → gemaskeerde lijst «Залишилося 10 з 10».
 // 3. Een tweede sessie gebruikt een code in het venster (passkey toevoegen) → in de lijst doorgestreept, «Залишилося 9 з 10».
 // 4. «Відкликати всі» → alles «Відкликано», een code werkt niet meer.
-// 5. Ander Google-account bij de step-up → terug op /methods, venster toont «Ви вибрали інший акаунт», sessie ongewijzigd.
+// 5. Ander Google-account bij de step-up → terug op /methods, venster toont «Ви вибрали інший обліковий запис», sessie ongewijzigd.
 import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
@@ -164,13 +164,13 @@ export async function main(): Promise<number> {
     await p3.getByRole('dialog').getByRole('button', { name: 'Підтвердити повторним входом через Google' }).click();
     await p3.waitForURL(/\/(methods|aanmeldmethoden)/, { timeout: 20000 }).catch(() => undefined);
     const v3 = p3.getByRole('dialog');
-    await v3.getByText('Ви вибрали інший акаунт Google').waitFor({ timeout: 15000 }).catch(() => undefined);
+    await v3.getByText('Ви вибрали інший обліковий запис Google').waitFor({ timeout: 15000 }).catch(() => undefined);
     await p3.waitForTimeout(300);
     await p3.screenshot({ path: `${UIT}/codes-06-ander-account.png` });
     const wie = (await p3.locator('[role=dialog]').allInnerTexts().catch(() => [] as string[])).join(' ');
     const vreemdeRij = await pool.query("select count(*)::int n from app.records where tbl='users' and data->>'sub'=$1", [stub.sub]);
-    check('ander Google-account: terug op /methods, venster toont «Ви вибрали інший акаунт», nog steeds aangemeld als dezelfde gebruiker, geen nieuw account',
-      /\/(methods|aanmeldmethoden)/.test(p3.url()) && /Ви вибрали інший акаунт Google/.test(wie) && wie.includes(cMail) && vreemdeRij.rows[0].n === 0 && await p3.locator('[data-herstel-nieuw]').count() === 0, `${p3.url()} | ${wie.slice(0, 300)}`);
+    check('ander Google-account: terug op /methods, venster toont «Ви вибрали інший обліковий запис», nog steeds aangemeld als dezelfde gebruiker, geen nieuw account',
+      /\/(methods|aanmeldmethoden)/.test(p3.url()) && /Ви вибрали інший обліковий запис Google/.test(wie) && wie.includes(cMail) && vreemdeRij.rows[0].n === 0 && await p3.locator('[data-herstel-nieuw]').count() === 0, `${p3.url()} | ${wie.slice(0, 300)}`);
     stub = { sub: cSub, email: cMail, authTime: oud, iat: Math.floor(Date.now() / 1000) - 600 };
     await v3.getByRole('button', { name: 'Підтвердити повторним входом через Google' }).click();
     await p3.waitForURL(/\/(methods|aanmeldmethoden)/, { timeout: 20000 }).catch(() => undefined);

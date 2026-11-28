@@ -2,7 +2,7 @@
 // Список листів у «Мій простір» приходить наживо з Gmail API (POST /api/owner/mail/google-suite/messages → api(token,'/messages')),
 // тож самі рядки mail_items_v1/mail_accounts_v1 у базі списку не дають (потрібні principal + grant + Gmail). Тому — як у
 // tests/e2e/mail-lijst-ux.e2e.ts — відповіді поштових маршрутів підставляються в браузері (page.route), лише для кроків «mail-agc-*».
-// Нічого не йде назовні: фото акаунтів і мініатюри вкладень — data:/base64 PNG, згенеровані тут.
+// Нічого не йде назовні: фото облікових записів і мініатюри вкладень — data:/base64 PNG, згенеровані тут.
 import { deflateSync } from 'node:zlib';
 
 type Page = import('playwright-core').Page;
@@ -17,7 +17,7 @@ export function png(w: number, h: number, kleur: (x: number, y: number) => [numb
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
 }
-// Фото акаунта: НЕ квадратне (160×120) — коло в ньому видно як коло лише з object-fit:cover і рівними сторонами бокса.
+// Фото облікового запису: НЕ квадратне (160×120) — коло в ньому видно як коло лише з object-fit:cover і рівними сторонами бокса.
 const foto = (r: number, g: number, b: number) => `data:image/png;base64,${png(160, 120, (x, y) => { const d = Math.hypot(x - 80, y - 60); return d < 40 ? [255, 255, 255] : d < 46 ? [20, 20, 20] : [r, g - Math.floor(y / 2), b]; }).toString('base64')}`;
 const FOTO_1 = foto(220, 120, 60), FOTO_2 = foto(60, 140, 210);
 const MINI = png(240, 160, (x, y) => [Math.floor(x / 240 * 255), Math.floor(y / 160 * 255), 140]);

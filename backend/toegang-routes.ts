@@ -1,5 +1,5 @@
 // Routes voor «Способи входу» rond toegangssleutels in context (§13.10): privénotities, één wijziging bekijken (link uit de
-// melding «Це були ви?») en «Це був не я — скасувати та захистити акаунт» (terugdraaien wat technisch kan + de sessie die de
+// melding «Це були ви?») en «Це був не я — скасувати та захистити обліковий запис» (terugdraaien wat technisch kan + de sessie die de
 // wijziging deed intrekken). Zie backend/toegang-context.ts.
 import { error, json } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';

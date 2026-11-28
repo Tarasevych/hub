@@ -83,9 +83,9 @@ export async function main(): Promise<number> {
     check('weesChunks: alleen wees-EEEE', wz.length === 1 && wz[0] === 'wees-EEEE.js', wz.join(','));
     check('klassiekeScripts: ./canonical-boot.js uit index.html', m.klassiekeScripts(gezond).join() === 'canonical-boot.js');
     check('zoekChromium: expliciet pad dat niet bestaat → leeg (geen gok), ROOK_CHROMIUN leeg → lijst', m.zoekChromium('/bestaat/niet') === '' || typeof m.zoekChromium('/bestaat/niet') === 'string');
-    check('paginaLijst: met sessie 13 sleutelpagina\'s incl. admin /updates /diagnostiek /toegang en mcp; zonder sessie 3 publieke', m.paginaLijst({ hub: 'h', identity: 'i', ai: 'a', mail: 'm', cloud: 'c', github: 'g', admin: 'ad', mcp: 'mc' }, true).length === 13
-      && m.paginaLijst({ hub: 'h', identity: 'i', ai: 'a', mail: 'm', cloud: 'c', github: 'g', admin: 'ad', mcp: 'mc' }, true).filter((p) => p.host === 'ad').map((p) => p.pad).join() === '/overzicht,/updates,/diagnostiek,/toegang'
-      && m.paginaLijst({ hub: 'h', identity: 'i', ai: 'a', mail: 'm', cloud: 'c', github: 'g', admin: 'ad', mcp: 'mc' }, false).length === 3);
+    check('paginaLijst: met sessie 14 sleutelpagina\'s incl. admin /updates /diagnostiek /toegang, crm en mcp; zonder sessie 3 publieke', m.paginaLijst({ hub: 'h', identity: 'i', ai: 'a', mail: 'm', cloud: 'c', github: 'g', crm: 'cr', admin: 'ad', mcp: 'mc' }, true).length === 14
+      && m.paginaLijst({ hub: 'h', identity: 'i', ai: 'a', mail: 'm', cloud: 'c', github: 'g', crm: 'cr', admin: 'ad', mcp: 'mc' }, true).filter((p) => p.host === 'ad').map((p) => p.pad).join() === '/overzicht,/updates,/diagnostiek,/toegang'
+      && m.paginaLijst({ hub: 'h', identity: 'i', ai: 'a', mail: 'm', cloud: 'c', github: 'g', crm: 'cr', admin: 'ad', mcp: 'mc' }, false).length === 3);
 
     // ------------------------------------------------------------------ 4. beoordeling voor «Діагностика»
     const nu = Date.now();

@@ -18,7 +18,7 @@
   }
   .mail-provider-view:has([data-mail-accounts-empty='true']) > .mail-kicker,
   .mail-provider-view:has([data-mail-accounts-empty='true']) > .mail-account-intro,
-  /* MAILACC-002: ook met accounts draagt de orbit de kop — geen tweede «Поштові акаунти» erboven op de telefoon. */
+  /* MAILACC-002: ook met accounts draagt de orbit de kop — geen tweede «Поштові облікові записи» erboven op de telefoon. */
   .mail-provider-view:has([data-mail-accounts-orbit='ja']) > .mail-kicker,
   .mail-provider-view:has([data-mail-accounts-orbit='ja']) > .mail-account-intro {
     display: none;
@@ -77,7 +77,7 @@
 }
 
 /* MAILHOEK-001: op de pc sprong de paginakaart na het laden van volle breedte naar 1040 px (mail-initial-loading geldt voor de
-   inbox). Op «Поштові акаунти» houdt de laadfase dezelfde breedte als daarna. · Та сама ширина картки до й після завантаження. */
+   inbox). Op «Поштові облікові записи» houdt de laadfase dezelfde breedte als daarna. · Та сама ширина картки до й після завантаження. */
 .mail-functional.mail-initial-loading:has([data-mail-accounts-laden='ja']) {
   --mail-max: 1040px;
   max-width: var(--mail-max);

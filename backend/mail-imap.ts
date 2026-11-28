@@ -2,7 +2,7 @@
 //
 // WAAROM. Gmail en Outlook hebben hun eigen OAuth-weg; iCloud, Ukr.net, Yahoo en I.ua kennen voor derden geen OAuth en
 // werken uitsluitend met een app-wachtwoord over IMAP/SMTP. Tot vandaag deden hun tegels op «Підключіть свої поштові
-// акаунти» niets (een melding «поки не підключається» achter een gewone knop). Dit bestand maakt die vier tegels echt:
+// облікові записи» niets (een melding «поки не підключається» achter een gewone knop). Dit bestand maakt die vier tegels echt:
 //
 //   1. KOPPELEN controleert de opgegeven gegevens bij de DIENST ZELF, niet bij ons: aanmelden over IMAPS (LOGIN), de
 //      mappen opvragen (LIST) en netjes afmelden (LOGOUT), en daarna ook de verzendkant (SMTP: EHLO, eventueel STARTTLS,

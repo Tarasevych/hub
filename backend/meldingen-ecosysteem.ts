@@ -16,11 +16,13 @@ import { jsonbTekst } from '../shared/tekst-veilig';
 import { zichtbaarVoor, type Ontvanger as MeldingOntvanger } from '../shared/melding-soorten';
 import { sfeerVanRij } from '../shared/meldingen-soorten';
 import {
+  bepaalOntvangstStaat,
   bouwAiPromptVoorGebeurtenis,
   GEBEURTENIS_STATUSSEN,
   herkenKanaal,
   interneAiAnalyse,
   interpreteerGebeurtenis,
+  MELDING_KAPSEL_AFLEVERING_VLAG,
   normaliseerGebeurtenis,
   normaliseerProfiel,
   standaardProfiel,
@@ -31,6 +33,7 @@ import {
   type MeldingKanaal,
   type MeldingPrioriteit,
   type MeldingSubdomein,
+  type OntvangstStaat,
   type RuimteType,
 } from '../shared/meldingen-ecosysteem';
 
@@ -106,7 +109,10 @@ export async function schrijfProfiel(lade: Lade, invoer: unknown): Promise<Meldi
 const KOLOMMEN = `
   id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status,
   titel, bericht, uitleg, context_label, herhalingen,
-  uitgesteld_tot, bijlagen, acties, meta, ai_samenvatting,
+  uitgesteld_tot, auto_gearchiveerd,
+  (extract(epoch FROM afgeleverd_op) * 1000)::bigint AS afgeleverd_op,
+  (extract(epoch FROM gelezen_op) * 1000)::bigint AS gelezen_op,
+  bijlagen, acties, meta, ai_samenvatting,
   (extract(epoch FROM aangemaakt_op) * 1000)::bigint AS aangemaakt_op,
   (extract(epoch FROM bijgewerkt_op) * 1000)::bigint AS bijgewerkt_op
 `;
@@ -115,6 +121,7 @@ export async function slaGebeurtenisOp(
   lade: Lade,
   invoer: Record<string, unknown>,
 ): Promise<MeldingEcosysteemGebeurtenis> {
+  const ruweSoort = typeof invoer.soort === 'string' ? invoer.soort : undefined;
   const geb = interpreteerGebeurtenis(
     {
       ruimte: lade.ruimte,
@@ -122,8 +129,12 @@ export async function slaGebeurtenisOp(
       bron: typeof invoer.bron === 'string' ? invoer.bron : undefined,
       kanaal: typeof invoer.kanaal === 'string' ? (invoer.kanaal as MeldingKanaal) : undefined,
       subdomein: typeof invoer.subdomein === 'string' ? (invoer.subdomein as MeldingSubdomein) : undefined,
-      soort: typeof invoer.soort === 'string' ? invoer.soort : undefined,
+      soort: ruweSoort,
       ernst: typeof invoer.ernst === 'string' ? invoer.ernst : undefined,
+      status: typeof invoer.status === 'string' ? (invoer.status as MeldingGebeurtenisStatus) : undefined,
+      herhalingen: typeof invoer.herhalingen === 'number' ? invoer.herhalingen : undefined,
+      aangemaaktOp: typeof invoer.aangemaaktOp === 'number' ? invoer.aangemaaktOp : undefined,
+      bijgewerktOp: typeof invoer.bijgewerktOp === 'number' ? invoer.bijgewerktOp : undefined,
       titel: typeof invoer.titel === 'string' ? invoer.titel : undefined,
       bericht: typeof invoer.bericht === 'string' ? invoer.bericht : undefined,
       uitleg: typeof invoer.uitleg === 'string' ? invoer.uitleg : undefined,
@@ -136,23 +147,37 @@ export async function slaGebeurtenisOp(
     lade.ruimte,
   );
 
-  return alsGebruiker(lade.userId, async (q) => {
+  // Якщо канал некритичного сповіщення вимкнений у профілі користувача, воно автоматично відправляється в архів (auto_gearchiveerd = true),
+  // зберігаючи чесні мітки доставки (✓) та прочитання (✓✓) без фальшивого позначення прочитаним.
+  const profiel = await leesProfiel(lade).catch(() => standaardProfiel(lade.ruimte));
+  const kanaalGefilterd =
+    geb.kanaal !== 'beveiliging' &&
+    geb.prioriteit !== 'kritiek' &&
+    profiel.kanalen[geb.kanaal]?.actief === false;
+  const autoGearchiveerd = Boolean(invoer.autoGearchiveerd) || kanaalGefilterd;
+  const doelStatus: MeldingGebeurtenisStatus =
+    autoGearchiveerd && geb.status === 'nieuw' ? 'archief' : geb.status;
+  const aantalHerhalingen = Math.max(1, geb.herhalingen);
+
+  const opgeslagen = await alsGebruiker(lade.userId, async (q) => {
     if (geb.externeSleutel) {
       const r = await q(
         `INSERT INTO app.melding_ecosysteem_gebeurtenissen
-          (user_id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status, titel, bericht, uitleg, context_label, herhalingen, bijlagen, acties, meta)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 1, $13::jsonb, $14::jsonb, $15::jsonb)
+          (user_id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status, titel, bericht, uitleg, context_label, herhalingen, bijlagen, acties, meta, auto_gearchiveerd)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15::jsonb, $16::jsonb, $17)
            ON CONFLICT (user_id, ruimte, externe_sleutel) WHERE externe_sleutel <> ''
            DO UPDATE SET
-             herhalingen = app.melding_ecosysteem_gebeurtenissen.herhalingen + 1,
+             herhalingen = GREATEST(app.melding_ecosysteem_gebeurtenissen.herhalingen + 1, EXCLUDED.herhalingen),
              prioriteit = CASE
                WHEN EXCLUDED.prioriteit = 'kritiek' THEN 'kritiek'
                ELSE app.melding_ecosysteem_gebeurtenissen.prioriteit
              END,
              status = CASE
+               WHEN EXCLUDED.status = 'opgelost' THEN 'opgelost'
                WHEN app.melding_ecosysteem_gebeurtenissen.status = 'opgelost' THEN EXCLUDED.status
                ELSE app.melding_ecosysteem_gebeurtenissen.status
              END,
+             auto_gearchiveerd = app.melding_ecosysteem_gebeurtenissen.auto_gearchiveerd OR EXCLUDED.auto_gearchiveerd,
              titel = CASE WHEN EXCLUDED.titel <> '' THEN EXCLUDED.titel ELSE app.melding_ecosysteem_gebeurtenissen.titel END,
              bericht = CASE WHEN EXCLUDED.bericht <> '' THEN EXCLUDED.bericht ELSE app.melding_ecosysteem_gebeurtenissen.bericht END,
              uitleg = CASE WHEN EXCLUDED.uitleg <> '' THEN EXCLUDED.uitleg ELSE app.melding_ecosysteem_gebeurtenissen.uitleg END,
@@ -170,14 +195,16 @@ export async function slaGebeurtenisOp(
           geb.subdomein,
           geb.bron,
           geb.prioriteit,
-          geb.status,
+          doelStatus,
           geb.titel,
           geb.bericht,
           geb.uitleg,
           geb.contextLabel,
+          aantalHerhalingen,
           jsonbTekst(geb.bijlagen),
           jsonbTekst(geb.acties),
           jsonbTekst(geb.meta),
+          autoGearchiveerd,
         ],
       );
       return normaliseerGebeurtenis(r.rows[0] as Record<string, unknown>);
@@ -185,8 +212,8 @@ export async function slaGebeurtenisOp(
 
     const r = await q(
       `INSERT INTO app.melding_ecosysteem_gebeurtenissen
-        (user_id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status, titel, bericht, uitleg, context_label, herhalingen, bijlagen, acties, meta)
-       VALUES ($1, $2, '', $3, $4, $5, $6, $7, $8, $9, $10, $11, 1, $12::jsonb, $13::jsonb, $14::jsonb)
+        (user_id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status, titel, bericht, uitleg, context_label, herhalingen, bijlagen, acties, meta, auto_gearchiveerd)
+       VALUES ($1, $2, '', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15::jsonb, $16)
        RETURNING ${KOLOMMEN}`,
       [
         lade.userId,
@@ -195,18 +222,66 @@ export async function slaGebeurtenisOp(
         geb.subdomein,
         geb.bron,
         geb.prioriteit,
-        geb.status,
+        doelStatus,
         geb.titel,
         geb.bericht,
         geb.uitleg,
         geb.contextLabel,
+        aantalHerhalingen,
         jsonbTekst(geb.bijlagen),
         jsonbTekst(geb.acties),
         jsonbTekst(geb.meta),
+        autoGearchiveerd,
       ],
     );
     return normaliseerGebeurtenis(r.rows[0] as Record<string, unknown>);
   });
+
+  if (geb.bron === 'verbinding-bewijs') {
+    const m = (geb.meta || {}) as Record<string, unknown>;
+    const soortCode = ruweSoort || String(m.soort || 'server_storing');
+    const bewijsDetails = {
+      ruimte: lade.ruimte,
+      externeSleutel: opgeslagen.externeSleutel,
+      dienst: String(m.dienst || opgeslagen.subdomein || '').slice(0, 64),
+      foutCode: String(m.foutCode || '').slice(0, 80),
+      statusCode: Number.isFinite(Number(m.statusCode)) ? Math.trunc(Number(m.statusCode)) : 0,
+      duurMs: Number.isFinite(Number(m.duurMs)) ? Math.max(0, Math.trunc(Number(m.duurMs))) : null,
+      pogingenAantal: Math.max(1, Number.isFinite(Number(m.pogingenAantal)) ? Math.trunc(Number(m.pogingenAantal)) : opgeslagen.herhalingen),
+      route: String(m.route || '').slice(0, 200),
+    };
+    if (soortCode === 'netwerk_offline') {
+      await auditToevoegen({
+        ownerId: lade.userId,
+        actorId: lade.userId,
+        action: 'owner.systeem.verbinding.offline',
+        type: 'diagnose',
+        result: 'failure',
+        details: bewijsDetails,
+      }).catch(() => undefined);
+    } else {
+      await auditToevoegen({
+        ownerId: lade.userId,
+        actorId: lade.userId,
+        action: 'owner.systeem.verbinding.storing',
+        type: 'diagnose',
+        result: 'failure',
+        details: bewijsDetails,
+      }).catch(() => undefined);
+    }
+    if (opgeslagen.status === 'opgelost') {
+      await auditToevoegen({
+        ownerId: lade.userId,
+        actorId: lade.userId,
+        action: 'owner.systeem.verbinding.hersteld',
+        type: 'diagnose',
+        result: 'success',
+        details: bewijsDetails,
+      }).catch(() => undefined);
+    }
+  }
+
+  return opgeslagen;
 }
 
 export async function lijstStroom(
@@ -326,14 +401,25 @@ export async function voerActieUit(
     if (actie === 'allesGelezen') {
       await q(
         `UPDATE app.melding_ecosysteem_gebeurtenissen
-            SET status = 'gelezen', bijgewerkt_op = now()
+            SET status = 'gelezen',
+                afgeleverd_op = COALESCE(afgeleverd_op, now()),
+                gelezen_op = COALESCE(gelezen_op, now()),
+                bijgewerkt_op = now()
           WHERE user_id = $1 AND ruimte = $2 AND status = 'nieuw'`,
         [lade.userId, lade.ruimte],
       );
     } else if (UUID_RE.test(rawId) && statusDoel) {
       const r = await q(
         `UPDATE app.melding_ecosysteem_gebeurtenissen
-            SET status = $3, uitgesteld_tot = $4::timestamptz, bijgewerkt_op = now()
+            SET status = $3,
+                uitgesteld_tot = $4::timestamptz,
+                afgeleverd_op = COALESCE(afgeleverd_op, now()),
+                gelezen_op = CASE
+                  WHEN $3 IN ('gelezen', 'opgelost') THEN COALESCE(gelezen_op, now())
+                  WHEN $3 = 'nieuw' THEN NULL
+                  ELSE gelezen_op
+                END,
+                bijgewerkt_op = now()
           WHERE id = $1::uuid AND user_id = $2 AND ruimte = $5
           RETURNING ${KOLOMMEN}`,
         [rawId, lade.userId, statusDoel, uitgesteldTot, lade.ruimte],
@@ -343,7 +429,15 @@ export async function voerActieUit(
       // Подія з іншого джерела або синтетична картка без UUID — оновлюємо за externe_sleutel або створюємо зафіксований стан.
       const r = await q(
         `UPDATE app.melding_ecosysteem_gebeurtenissen
-            SET status = $3, uitgesteld_tot = $4::timestamptz, bijgewerkt_op = now()
+            SET status = $3,
+                uitgesteld_tot = $4::timestamptz,
+                afgeleverd_op = COALESCE(afgeleverd_op, now()),
+                gelezen_op = CASE
+                  WHEN $3 IN ('gelezen', 'opgelost') THEN COALESCE(gelezen_op, now())
+                  WHEN $3 = 'nieuw' THEN NULL
+                  ELSE gelezen_op
+                END,
+                bijgewerkt_op = now()
           WHERE externe_sleutel = $1 AND user_id = $2 AND ruimte = $5
           RETURNING ${KOLOMMEN}`,
         [rawId.slice(0, 180), lade.userId, statusDoel, uitgesteldTot, lade.ruimte],
@@ -584,6 +678,317 @@ export async function verwerkAgentMelding(invoer: {
   }
 }
 
+function schoonSleutelLijst(raw: unknown, max = 120): { uuids: string[]; sleutels: string[]; siteNotifIds: string[] } {
+  if (!Array.isArray(raw)) return { uuids: [], sleutels: [], siteNotifIds: [] };
+  const uuids = new Set<string>();
+  const sleutels = new Set<string>();
+  const siteNotifIds = new Set<string>();
+  for (const item of raw.slice(0, max)) {
+    const s = String(item || '').trim().slice(0, 180);
+    if (!s) continue;
+    if (UUID_RE.test(s)) {
+      uuids.add(s);
+      continue;
+    }
+    if (s.startsWith('s:') && s.length > 2) {
+      const sid = s.slice(2);
+      siteNotifIds.add(sid);
+      sleutels.add(`site_notif:${sid}`);
+      continue;
+    }
+    if (s.startsWith('site_notif:') && s.length > 'site_notif:'.length) {
+      siteNotifIds.add(s.slice('site_notif:'.length));
+    }
+    sleutels.add(s);
+  }
+  return {
+    uuids: Array.from(uuids),
+    sleutels: Array.from(sleutels),
+    siteNotifIds: Array.from(siteNotifIds),
+  };
+}
+
+/**
+ * Фіксує квитанції доставки в клієнтську панель (✓ afgeleverd_op) та фактичного перегляду очима (✓✓ gelezen_op),
+ * включно зі сповіщеннями, автоматично відправленими в архів за правилами фільтрів.
+ */
+export async function bevestigOntvangstEnLezing(
+  lade: Lade,
+  body: Record<string, unknown>,
+): Promise<{ ok: boolean; vlag: string; afgeleverdBijgewerkt: number; gelezenBijgewerkt: number; tijdstip: number }> {
+  const afgeleverd = schoonSleutelLijst(body.afgeleverdIds, 120);
+  const gelezen = schoonSleutelLijst(body.gelezenIds, 120);
+  const nu = Date.now();
+  let afgeleverdBijgewerkt = 0;
+  let gelezenBijgewerkt = 0;
+
+  await alsGebruiker(lade.userId, async (q) => {
+    if (afgeleverd.uuids.length > 0 || afgeleverd.sleutels.length > 0) {
+      const r = await q(
+        `UPDATE app.melding_ecosysteem_gebeurtenissen
+            SET afgeleverd_op = COALESCE(afgeleverd_op, now())
+          WHERE user_id = $1
+            AND ruimte = $2
+            AND afgeleverd_op IS NULL
+            AND (id::text = ANY($3::text[]) OR (externe_sleutel <> '' AND externe_sleutel = ANY($4::text[])))`,
+        [lade.userId, lade.ruimte, afgeleverd.uuids, afgeleverd.sleutels],
+      );
+      afgeleverdBijgewerkt += Number(r.rowCount || 0);
+    }
+
+    if (gelezen.uuids.length > 0 || gelezen.sleutels.length > 0) {
+      const r = await q(
+        `UPDATE app.melding_ecosysteem_gebeurtenissen
+            SET afgeleverd_op = COALESCE(afgeleverd_op, now()),
+                gelezen_op = COALESCE(gelezen_op, now()),
+                status = CASE WHEN status = 'nieuw' THEN 'gelezen' ELSE status END,
+                bijgewerkt_op = now()
+          WHERE user_id = $1
+            AND ruimte = $2
+            AND (gelezen_op IS NULL OR status = 'nieuw')
+            AND (id::text = ANY($3::text[]) OR (externe_sleutel <> '' AND externe_sleutel = ANY($4::text[])))`,
+        [lade.userId, lade.ruimte, gelezen.uuids, gelezen.sleutels],
+      );
+      gelezenBijgewerkt += Number(r.rowCount || 0);
+    }
+  });
+
+  if (gelezen.siteNotifIds.length > 0) {
+    try {
+      const sids = gelezen.siteNotifIds.slice(0, 40);
+      const rijen = await db.get<Record<string, unknown>>('site_notifications', sids);
+      const teSchrijven: { id: string; record: Record<string, unknown> }[] = [];
+      for (let i = 0; i < sids.length; i += 1) {
+        const rij = rijen[i];
+        const sid = sids[i];
+        if (rij && rij.recipientUserId === lade.userId && rij.read !== true) {
+          const { id: _id, ...record } = rij;
+          teSchrijven.push({ id: sid, record: { ...record, read: true, readAt: nu } });
+        }
+      }
+      if (teSchrijven.length > 0) {
+        await db.update('site_notifications', teSchrijven);
+      }
+    } catch {
+      /* у чистому модульному тесті колекція може бути порожньою */
+    }
+  }
+
+  if (afgeleverdBijgewerkt > 0 || gelezenBijgewerkt > 0) {
+    await auditToevoegen({
+      ownerId: lade.userId,
+      actorId: lade.userId,
+      action: 'owner.meldingen.ecosysteem.ontvangst',
+      type: 'instelling',
+      result: 'success',
+      details: {
+        ruimte: lade.ruimte,
+        afgeleverdBijgewerkt,
+        gelezenBijgewerkt,
+      },
+    }).catch(() => undefined);
+  }
+
+  return {
+    ok: true,
+    vlag: MELDING_KAPSEL_AFLEVERING_VLAG,
+    afgeleverdBijgewerkt,
+    gelezenBijgewerkt,
+    tijdstip: nu,
+  };
+}
+
+export type AfleveringGebruikerSamenvatting = {
+  userId: string;
+  label: string;
+  totaal: number;
+  wachtOpAflevering: number;
+  afgeleverdOngelezen: number;
+  gelezen: number;
+  autoGearchiveerdOngelezen: number;
+  laatsteAfleveringOp: number | null;
+};
+
+export type AfleveringOverzichtItem = {
+  id: string;
+  userId: string;
+  gebruikerLabel: string;
+  ruimte: RuimteType;
+  kanaal: MeldingKanaal;
+  subdomein: MeldingSubdomein;
+  status: MeldingGebeurtenisStatus;
+  ontvangstStaat: OntvangstStaat;
+  autoGearchiveerd: boolean;
+  titel: string;
+  aangemaaktOp: number;
+  afgeleverdOp: number | null;
+  gelezenOp: number | null;
+};
+
+/**
+ * Адміністративний контроль доставки та перегляду сповіщень по користувачах:
+ * дозволяє адміністраторові точно бачити, чи сповіщення надійшло в клієнтську панель (✓),
+ * чи переглянуто людиною (✓✓), чи тихо заархівовано фільтром без перегляду, чи застрягло без доставки (⏳).
+ */
+export async function leesAfleveringOverzichtVoorBeheer(
+  adminUserId: string,
+  body: Record<string, unknown>,
+): Promise<{
+  ok: true;
+  samenvatting: {
+    totaal: number;
+    wachtOpAflevering: number;
+    afgeleverdOngelezen: number;
+    gelezen: number;
+    autoGearchiveerdOngelezen: number;
+  };
+  perGebruiker: AfleveringGebruikerSamenvatting[];
+  items: AfleveringOverzichtItem[];
+}> {
+  const rechten = await technischeRechten(adminUserId).catch(() => ({ ok: false as const }));
+  if (!rechten.ok) throw new RuimteFout('TECHNISCHE_RUIMTE_VEREIST', 403);
+
+  const ruimteFilter = body.ruimte === 'prive' || body.ruimte === 'technisch' ? (body.ruimte as RuimteType) : null;
+  const alleenAandacht = Boolean(body.alleenOngelezen);
+  const limiet = Math.max(5, Math.min(80, Math.trunc(Number(body.limiet) || 40)));
+
+  const gebruikersMap = new Map<string, string>();
+  gebruikersMap.set(adminUserId, adminUserId.slice(0, 8));
+  try {
+    const gebruikers = await db.list<Record<string, unknown>>('users', { limit: 80 });
+    for (const u of gebruikers.items) {
+      const uid = String(u.id || '').trim();
+      if (!uid) continue;
+      if (u.status && u.status !== 'approved') continue;
+      const naam = String(u.displayName || u.name || u.email || uid.slice(0, 8)).trim();
+      gebruikersMap.set(uid, naam.slice(0, 80));
+    }
+  } catch {
+    /* якщо колекція users недоступна в ізольованому тесті — перевіряємо поточного адміністратора */
+  }
+  if (typeof body.doelUserId === 'string' && body.doelUserId.trim()) {
+    const doel = body.doelUserId.trim().slice(0, 80);
+    if (!gebruikersMap.has(doel)) gebruikersMap.set(doel, doel.slice(0, 16));
+  }
+
+  const perGebruiker: AfleveringGebruikerSamenvatting[] = [];
+  const alleItems: AfleveringOverzichtItem[] = [];
+  let totaal = 0;
+  let wachtOpAflevering = 0;
+  let afgeleverdOngelezen = 0;
+  let gelezen = 0;
+  let autoGearchiveerdOngelezen = 0;
+
+  for (const [uid, label] of gebruikersMap.entries()) {
+    await alsGebruiker(uid, async (q) => {
+      const ruimteCond = ruimteFilter ? 'AND ruimte = $2' : '';
+      const params: unknown[] = ruimteFilter ? [uid, ruimteFilter] : [uid];
+      const telRes = await q(
+        `SELECT
+           COUNT(*)::int AS totaal,
+           COUNT(*) FILTER (WHERE afgeleverd_op IS NULL AND gelezen_op IS NULL AND status <> 'gelezen')::int AS wacht,
+           COUNT(*) FILTER (WHERE afgeleverd_op IS NOT NULL AND gelezen_op IS NULL AND status <> 'gelezen')::int AS afgeleverd_ongelezen,
+           COUNT(*) FILTER (WHERE gelezen_op IS NOT NULL OR status = 'gelezen')::int AS gelezen,
+           COUNT(*) FILTER (WHERE auto_gearchiveerd = true AND gelezen_op IS NULL AND status <> 'gelezen')::int AS auto_archief_ongelezen,
+           (extract(epoch FROM MAX(afgeleverd_op)) * 1000)::bigint AS laatste_aflevering
+         FROM app.melding_ecosysteem_gebeurtenissen
+         WHERE user_id = $1 ${ruimteCond}`,
+        params,
+      );
+      const tr = (telRes.rows[0] || {}) as Record<string, unknown>;
+      const uTotaal = Number(tr.totaal || 0);
+      const uWacht = Number(tr.wacht || 0);
+      const uAfg = Number(tr.afgeleverd_ongelezen || 0);
+      const uGel = Number(tr.gelezen || 0);
+      const uAuto = Number(tr.auto_archief_ongelezen || 0);
+      const uLaatste = tr.laatste_aflevering ? Number(tr.laatste_aflevering) : null;
+
+      totaal += uTotaal;
+      wachtOpAflevering += uWacht;
+      afgeleverdOngelezen += uAfg;
+      gelezen += uGel;
+      autoGearchiveerdOngelezen += uAuto;
+
+      if (uTotaal > 0 || uid === adminUserId) {
+        perGebruiker.push({
+          userId: uid,
+          label,
+          totaal: uTotaal,
+          wachtOpAflevering: uWacht,
+          afgeleverdOngelezen: uAfg,
+          gelezen: uGel,
+          autoGearchiveerdOngelezen: uAuto,
+          laatsteAfleveringOp: uLaatste && uLaatste > 0 ? uLaatste : null,
+        });
+      }
+
+      const aandachtCond = alleenAandacht ? `AND (gelezen_op IS NULL AND status <> 'gelezen')` : '';
+      const lijstParams = [...params, limiet];
+      const rijenRes = await q(
+        `SELECT ${KOLOMMEN}
+           FROM app.melding_ecosysteem_gebeurtenissen
+          WHERE user_id = $1 ${ruimteCond} ${aandachtCond}
+          ORDER BY
+            CASE
+              WHEN afgeleverd_op IS NULL AND gelezen_op IS NULL AND status <> 'gelezen' THEN 0
+              WHEN gelezen_op IS NULL AND status <> 'gelezen' THEN 1
+              ELSE 2
+            END,
+            aangemaakt_op DESC
+          LIMIT $${lijstParams.length}`,
+        lijstParams,
+      );
+      for (const r of rijenRes.rows) {
+        const g = normaliseerGebeurtenis(r as Record<string, unknown>);
+        alleItems.push({
+          id: g.id,
+          userId: uid,
+          gebruikerLabel: label,
+          ruimte: g.ruimte,
+          kanaal: g.kanaal,
+          subdomein: g.subdomein,
+          status: g.status,
+          ontvangstStaat: bepaalOntvangstStaat(g),
+          autoGearchiveerd: Boolean(g.autoGearchiveerd),
+          titel: g.titel,
+          aangemaaktOp: g.aangemaaktOp,
+          afgeleverdOp: g.afgeleverdOp ?? null,
+          gelezenOp: g.gelezenOp ?? null,
+        });
+      }
+    });
+  }
+
+  const rangStaat: Record<OntvangstStaat, number> = { wacht: 0, afgeleverd: 1, gelezen: 2 };
+  alleItems.sort((a, b) => {
+    const rDiff = rangStaat[a.ontvangstStaat] - rangStaat[b.ontvangstStaat];
+    if (rDiff !== 0) return rDiff;
+    return b.aangemaaktOp - a.aangemaaktOp;
+  });
+
+  await auditToevoegen({
+    ownerId: adminUserId,
+    actorId: adminUserId,
+    action: 'owner.meldingen.ecosysteem.aflevering_overzicht',
+    type: 'diagnose',
+    result: 'success',
+    details: { ruimteFilter: ruimteFilter || 'alle', totaal, wachtOpAflevering, afgeleverdOngelezen },
+  }).catch(() => undefined);
+
+  return {
+    ok: true,
+    samenvatting: {
+      totaal,
+      wachtOpAflevering,
+      afgeleverdOngelezen,
+      gelezen,
+      autoGearchiveerdOngelezen,
+    },
+    perGebruiker,
+    items: alleItems.slice(0, limiet),
+  };
+}
+
 let geregistreerdeBijlageVlag: ((u: { id: string }) => Promise<boolean>) | undefined;
 
 export function meldingEcosysteemRoutes(deps: {
@@ -647,7 +1052,12 @@ export function meldingEcosysteemRoutes(deps: {
         const limiet = await limietControle(`melding-event:${lade.userId}`, 60, 60);
         if (!limiet.ok) throw new LimietFout(limiet.retryAfter);
         const gebeurtenis = await slaGebeurtenisOp(lade, body);
-        if (deps.bijlageWeergaveVlag && gebeurtenis.bijlagen.length > 0 && gebeurtenis.herhalingen <= 1) {
+        if (
+          deps.bijlageWeergaveVlag &&
+          gebeurtenis.bijlagen.length > 0 &&
+          gebeurtenis.herhalingen <= 1 &&
+          gebeurtenis.status !== 'opgelost'
+        ) {
           void stuurBijlageMeldingNaarTelegram(lade, gebeurtenis, {
             vlagAan: deps.bijlageWeergaveVlag,
             leesProfielFn: leesProfiel,
@@ -658,6 +1068,18 @@ export function meldingEcosysteemRoutes(deps: {
     ],
     'POST /api/owner/meldingen/ecosysteem/actie': [
       metSessie(async (lade, body) => ({ ruimte: lade.ruimte, ...(await voerActieUit(lade, body)) })),
+    ],
+    'POST /api/owner/meldingen/ecosysteem/ontvangst': [
+      metSessie(async (lade, body) => ({
+        ruimte: lade.ruimte,
+        ...(await bevestigOntvangstEnLezing(lade, body)),
+      })),
+    ],
+    'POST /api/owner/meldingen/ecosysteem/aflevering-overzicht': [
+      metSessie(
+        async (_lade, body, user) => await leesAfleveringOverzichtVoorBeheer(user.id, body),
+        { isProfielBeheer: true },
+      ),
     ],
     'POST /api/owner/meldingen/ecosysteem/ai-ontleden': [
       metSessie(async (lade, body) => {

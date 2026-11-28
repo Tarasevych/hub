@@ -104,7 +104,7 @@ export async function main(): Promise<number> {
     // F. recente zoekopdrachten
     const opslag = new Map<string, string>();
     const o = { getItem: (k: string) => opslag.get(k) ?? null, setItem: (k: string, v: string) => { opslag.set(k, v); }, removeItem: (k: string) => { opslag.delete(k); } };
-    bewaarRecent('видалити акаунт', 'all', 1_800_000_000_000, 'u1', o, { soort: 'functie', route: { host: 'identity', pad: 'account' } });
+    bewaarRecent('видалити обліковий запис', 'all', 1_800_000_000_000, 'u1', o, { soort: 'functie', route: { host: 'identity', pad: 'account' } });
     bewaarRecent('кейчейн', 'all', 1_800_000_000_001, 'u1', o, { soort: 'functie', route: { host: 'api', pad: 'vault' } });
     // api.* is technisch: die rij staat in de technische lijst (src/zoek/zoek-recent.ts → isTechRoute), niet in de privélijst.
     const prive = leesRecent('u1', o, 'gebruiker');

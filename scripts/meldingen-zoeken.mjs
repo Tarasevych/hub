@@ -9,6 +9,7 @@
 // Канали / kanalen:
 //   bel        — meld()/notify()/siteMelding()/deelMelden()/melder() у backend/ (дзвіночок, зберігається на сервері)
 //   toast      — emitCanonicalNotice() у src/ (миттєве повідомлення сторінки)
+//   pagina     — publiceerPaginaSignaal() у src/ (сигнали та інформаційні смуги сторінок)
 //   activiteit — SITE_LABELS у src/connector-activiteit.ts (журнал активності в центрі сповіщень)
 //   extensie   — stuurMeldingNaarServer() у extension/ (розширення Chrome → центр сповіщень)
 //   telegram   — naarTelegrams() у backend/telegram-aanmelden (картки в Telegram)
@@ -96,9 +97,9 @@ export function zoek() {
     }
     for (const m of s.matchAll(/channel:\s*'email'[^}]*kind:\s*'([a-z_.]+)'/g)) voeg({ kanaal: 'email', bestand: f, regel: regel(s, m.index), soort: m[1], titel: '' });
   }
-  // ── toast: src
+  // ── toast + pagina: src
   for (const f of bestanden('src', /\.(ts|tsx)$/)) {
-    const s = lees(f);
+    const s = lees(f); const c = constanten(s);
     for (const m of s.matchAll(/emitCanonicalNotice\(/g)) {
       if (/(const|function)\s+emitCanonicalNotice\s*=?\s*$|export const\s*$/.test(s.slice(Math.max(0, m.index - 30), m.index + 19))) continue;
       const a = argumenten(s, m.index + m[0].length);
@@ -106,6 +107,29 @@ export function zoek() {
       const bron = /source\s*:\s*'([^']+)'/.exec(a)?.[1] || (/\bsource\b/.test(a) ? '(variabel)' : '?');
       const tekst = /text\s*:\s*(?:t|tr)\(\s*[`']([^`']{0,100})/.exec(a)?.[1] || '';
       voeg({ kanaal: 'toast', bestand: f, regel: regel(s, m.index), soort: bron, titel: tekst });
+    }
+    for (const m of s.matchAll(/(?<![\w.])publiceerPaginaSignaal\(/g)) {
+      if (f === 'src/canoniek-meldingen.ts') continue;
+      const a = argumenten(s, m.index + m[0].length).trim();
+      if (!a || !a.startsWith('{')) continue;
+      const velden = delen(a.slice(1, a.endsWith('}') ? -1 : a.length));
+      const soortVeld = velden.find((v) => /^soort\s*:/.test(v));
+      const soortExpr = soortVeld ? soortVeld.replace(/^soort\s*:\s*/, '').trim() : '';
+      let soorten = ['?'];
+      if (soortExpr) {
+        const zonderVergelijking = soortExpr
+          .replace(/(?:===|!==|==|!=)\s*'[^']*'/g, '')
+          .replace(/'[^']*'\s*(?:===|!==|==|!=)/g, '');
+        const lits = [...zonderVergelijking.matchAll(/'([a-z0-9_.-]+)'/g)].map((y) => y[1]);
+        if (lits.length > 0) soorten = [...new Set(lits)];
+        else if (c[soortExpr]) soorten = [c[soortExpr]];
+        else soorten = ['(variabel)'];
+      }
+      const titelVeld = velden.find((v) => /^titelUk\s*:/.test(v));
+      const titel = tekstVan(titelVeld ? titelVeld.replace(/^titelUk\s*:\s*/, '') : '');
+      for (const soort of soorten) {
+        voeg({ kanaal: 'pagina', bestand: f, regel: regel(s, m.index), soort, titel });
+      }
     }
   }
   // ── activiteit

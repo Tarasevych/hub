@@ -287,7 +287,7 @@ export default function ExtensionWizard(p: WizardProps) {
       id: 'pair', title: tr('Підключіть до облікового запису', 'Koppel aan uw account'), done: p.paired && p.hasAgent,
       body: (
         <>
-          <p>{tr('Ви вже ввійшли на сайті. Натисніть кнопку: розширення отримає одноразовий код і зв’яжеться з вашим акаунтом.', 'U bent al aangemeld op de site. Klik op de knop: de extensie krijgt een eenmalige code en koppelt met uw account.')}</p>
+          <p>{tr('Ви вже ввійшли на сайті. Натисніть кнопку: розширення отримає одноразовий код і зв’яжеться з вашим обліковим записом.', 'U bent al aangemeld op de site. Klik op de knop: de extensie krijgt een eenmalige code en koppelt met uw account.')}</p>
           <button type='button' className='wiz-primary' disabled={!present || p.busy || (p.paired && p.hasAgent)} onClick={p.onConnect}><Link2 aria-hidden='true' />{p.paired && p.hasAgent ? tr('Підключено', 'Gekoppeld') : tr('Підключити до мого облікового запису', 'Koppelen aan mijn account')}</button>
           {!present ? <p className='wiz-note'>{tr('Кнопка стане активною, щойно розширення буде знайдено.', 'De knop wordt actief zodra de extensie is gevonden.')}</p> : null}
         </>
@@ -321,7 +321,7 @@ export default function ExtensionWizard(p: WizardProps) {
           <b>{tr(`${info.name} поки не підтримується`, `${info.name} wordt nog niet ondersteund`)}</b>
           <p>{browser === 'firefox'
             ? tr('Наше розширення побудоване для Chromium (Chrome, Edge, Opera, Brave, Vivaldi). Firefox потребує окремої збірки (інша модель фонових сторінок, немає chrome.debugger) і підпису Mozilla; це заплановано окремим етапом. Скористайтеся будь-яким із браузерів на Chromium: на цьому ж комп’ютері вони можуть працювати паралельно з Firefox.', 'Onze extensie is gebouwd voor Chromium (Chrome, Edge, Opera, Brave, Vivaldi). Firefox vraagt een aparte build (ander achtergrondmodel, geen chrome.debugger) en een Mozilla-handtekening; dat staat als aparte stap gepland. Gebruik een Chromium-browser: die draaien op dezelfde computer naast Firefox.')
-            : tr('Safari вимагає розширення в окремому форматі через Xcode й Apple Developer-акаунт; це не заплановано найближчим часом. Скористайтеся браузером на Chromium (Chrome, Edge, Opera, Brave, Vivaldi).', 'Safari vraagt een extensie in een apart formaat via Xcode en een Apple Developer-account; dat staat niet op korte termijn gepland. Gebruik een Chromium-browser (Chrome, Edge, Opera, Brave, Vivaldi).')}</p>
+            : tr('Safari вимагає розширення в окремому форматі через Xcode й обліковий запис Apple Developer; це не заплановано найближчим часом. Скористайтеся браузером на Chromium (Chrome, Edge, Opera, Brave, Vivaldi).', 'Safari vraagt een extensie in een apart formaat via Xcode en een Apple Developer-account; dat staat niet op korte termijn gepland. Gebruik een Chromium-browser (Chrome, Edge, Opera, Brave, Vivaldi).')}</p>
         </div>
       </section>
     );
@@ -337,7 +337,7 @@ export default function ExtensionWizard(p: WizardProps) {
           <span style={{ width: `${Math.round((done / steps.length) * 100)}%` }} /><b>{done}/{steps.length}</b>
         </div>
       </div>
-      {p.hasAgent && p.presence === 'absent' ? <p className='wiz-note' role='status' data-ext-other='true'>{tr('У вашому акаунті вже є підключений браузер (див. список зліва). Цей майстер — для встановлення розширення в ЦЬОМУ браузері; кроки «Увімкнути для ШІ» і «Готово» нижче відображають стан уже підключеного браузера.', 'Er is al een browser aan uw account gekoppeld (zie de lijst links). Deze hulp is voor het installeren in DEZE browser; de stappen "Zet aan voor de AI" en "Klaar" tonen de toestand van de al gekoppelde browser.')}</p> : null}
+      {p.hasAgent && p.presence === 'absent' ? <p className='wiz-note' role='status' data-ext-other='true'>{tr('У вашому обліковому записі вже є підключений браузер (див. список зліва). Цей майстер — для встановлення розширення в ЦЬОМУ браузері; кроки «Увімкнути для ШІ» і «Готово» нижче відображають стан уже підключеного браузера.', 'Er is al een browser aan uw account gekoppeld (zie de lijst links). Deze hulp is voor het installeren in DEZE browser; de stappen "Zet aan voor de AI" en "Klaar" tonen de toestand van de al gekoppelde browser.')}</p> : null}
       <BrowserPicker tr={tr} value={browser} onChange={setBrowser} />
       <ol className='wiz-steps' aria-label={tr('Кроки', 'Stappen')}>
         {steps.map((s, i) => {
@@ -357,7 +357,7 @@ export default function ExtensionWizard(p: WizardProps) {
         })}
       </ol>
       {p.notice ? <p className='wiz-note' role='status'>{p.notice}</p> : null}
-      <p className='wiz-foot'><ShieldCheck aria-hidden='true' />{tr('Під час встановлення ми нічого не просимо ввести: ні пароль, ні ключ. Хвилювання викликає лише режим розробника: так браузер вимагає для розширень поза магазином. Chrome Web Store: поки що ні (потрібен акаунт розробника).', 'Tijdens de installatie vragen we nergens om een wachtwoord of sleutel. De ontwikkelaarsmodus is nodig omdat browsers dat eisen voor extensies buiten de winkel. Chrome Web Store: nog niet (ontwikkelaarsaccount nodig).')}</p>
+      <p className='wiz-foot'><ShieldCheck aria-hidden='true' />{tr('Під час встановлення ми нічого не просимо ввести: ні пароль, ні ключ. Хвилювання викликає лише режим розробника: так браузер вимагає для розширень поза магазином. Chrome Web Store: поки що ні (потрібен обліковий запис розробника).', 'Tijdens de installatie vragen we nergens om een wachtwoord of sleutel. De ontwikkelaarsmodus is nodig omdat browsers dat eisen voor extensies buiten de winkel. Chrome Web Store: nog niet (ontwikkelaarsaccount nodig).')}</p>
       {p.welcome && p.onClose && !p.agentArmed ? <button type='button' className='wiz-link' onClick={p.onClose}>{tr('Закрити підказку', 'Hulp sluiten')}</button> : null}
     </section>
   );

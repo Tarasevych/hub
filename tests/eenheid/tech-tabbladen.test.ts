@@ -1,5 +1,5 @@
 // Melding van de eigenaar, 18.10.2026: «технічний профіль злітає в новій вкладці». Nieuw model (migratie 0071):
-//  - open activering («до виходу з акаунта/профілю») = hele browsersessie: elk tabblad van DEZELFDE aanmeldsessie erft, zonder stap-op;
+//  - open activering («до виходу з облікового запису/профілю») = hele browsersessie: elk tabblad van DEZELFDE aanmeldsessie erft, zonder stap-op;
 //  - activering op tijd = eigen tabblad; alleen een tabblad dat vanuit het bron-tabblad is geopend kan een kopie krijgen (zelfde einde);
 //  - verlopen = alleen dat tabblad; zelf verlaten (in elk tabblad), uitloggen, intrekken = alle tabbladen van de sessie;
 //  - een andere sessie/browser erft nooit.

@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom';
 import { ladeBediening } from './plaatsing/plaatsing-staat';
 import {
   Camera,
+  Check,
   ChevronDown,
   FileText,
   KeyRound,
@@ -73,6 +74,7 @@ import './accountmenu-v2/accountmenu-v2.css';
 import { useAccountmenuV3Voorkeuren } from './accountmenu-v3/accountmenu-v3-voorkeuren';
 import { useAccountmenuV3 } from './accountmenu-v3/vlag';
 import { AccountMenuV3 } from './accountmenu-v3/AccountMenuV3';
+import AanmeldKeuzePaneel from './aanmelden/AanmeldKeuzePaneel';
 import Vraag from './tech/Vraag';
 import { isLeesfout } from '../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../shared/foutuitleg';
@@ -112,7 +114,7 @@ type Props = {
   onTheme: (theme: AccountTheme) => void;
   onLoadAccounts?: () => Promise<AccountMenuSnapshot | RememberedAccount[]>;
   /**
-   * KLACHT 2 VAN DE EIGENAAR (20.10.2026): «Треба додати можливість перепідключатися між акаунтами швидко, без натискання
+   * KLACHT 2 VAN DE EIGENAAR (20.10.2026): «Треба додати можливість перепідключатися між обліковими записами швидко, без натискання
    * "вийти з технічного".» Het wisselen zelf kon al (POST /api/owner/session/replace-tab-remembered beëindigt de technische
    * activering van het VORIGE account — R-05 van de audit van 19.10), maar de mens zag daar niets van in het menu: zij werd
    * stil in een ander profiel gezet en moest zelf raden waar zij uitkwam.
@@ -173,19 +175,19 @@ function leesPortaalContext(fallbackThema: AccountTheme): PortaalContext {
 const copy = {
   uk: {
     accounts: 'Облікові записи',
-    close: 'Закрити меню акаунтів',
-    choose: 'Оберіть відомий акаунт або додайте інший',
+    close: 'Закрити меню облікових записів',
+    choose: 'Оберіть відомий обліковий запис або додайте інший',
     firstLoginHint: 'Увійдіть, щоб відкрити свій простір',
     none: 'Відомих облікових записів немає.',
     add: 'Додати інший обліковий запис',
-    firstLogin: 'Увійти в обліковий запис через Google',
+    firstLogin: 'Увійти в обліковий запис',
     manage: 'Керування обліковим записом',
     show: 'Показати інші облікові записи',
     hide: 'Сховати інші облікові записи',
-    chooseExpanded: 'Оберіть інший відомий акаунт або додайте новий',
+    chooseExpanded: 'Оберіть інший відомий обліковий запис або додайте новий',
     settings: 'Налаштування',
-    logout: 'Вийти з цього акаунту',
-    logoutAll: 'Вийти з усіх акаунтів',
+    logout: 'Вийти з цього облікового запису',
+    logoutAll: 'Вийти з усіх облікових записів',
     language: 'Мова',
     theme: 'Тема',
     light: 'Світла',
@@ -209,7 +211,7 @@ const copy = {
     terms: 'Умови',
     loading: 'Оновлюємо список…',
     loadFailed: 'Не вдалося оновити список. Поточні дані збережено.',
-    forget: 'Забути цей акаунт',
+    forget: 'Забути цей обліковий запис',
     active: 'Активний',
     signedIn: 'Увійдено',
     reauth: 'Потрібен вхід',
@@ -217,12 +219,12 @@ const copy = {
     changePhoto: 'Змінити фото профілю',
     photoFailed: 'Не вдалося змінити фото. Спробуйте інше зображення.',
     // Klacht 2 (20.10.2026): snel wisselen zonder eerst «вийти з технічного», en altijd zichtbaar waar je uitkwam.
-    wisselKop: 'Ви перемкнулися на інший акаунт',
+    wisselKop: 'Ви перемкнулися на інший обліковий запис',
     wisselProfielGebruiker: 'Профіль: користувацький',
     wisselProfielTech: 'Профіль: технічний',
-    wisselTechNietMee: 'Технічний профіль не переноситься між акаунтами: активація прив’язана до людини й до цієї вкладки.',
-    wisselTechBeeindigd: 'Технічний профіль попереднього акаунта завершено під час перемикання.',
-    wisselTechAan: 'Увімкнути технічний профіль для цього акаунта',
+    wisselTechNietMee: 'Технічний профіль не переноситься між обліковими записами: активація прив’язана до людини й до цієї вкладки.',
+    wisselTechBeeindigd: 'Технічний профіль попереднього облікового запису завершено під час перемикання.',
+    wisselTechAan: 'Увімкнути технічний профіль для цього облікового запису',
     wisselTechGeenRecht: 'Цей обліковий запис не має технічного профілю, тому вмикати нічого.',
   },
   nl: {
@@ -232,7 +234,7 @@ const copy = {
     firstLoginHint: 'Meld u aan om uw ruimte te openen',
     none: 'Er zijn geen bekende accounts.',
     add: 'Ander account toevoegen',
-    firstLogin: 'Aanmelden bij een account via Google',
+    firstLogin: 'Aanmelden bij uw account',
     manage: 'Account beheren',
     show: 'Andere accounts tonen',
     hide: 'Andere accounts verbergen',
@@ -283,7 +285,7 @@ const copy = {
 /**
  * KLACHT 2 VAN DE EIGENAAR (20.10.2026) — WAT HET MENU ZEGT NA EEN SNELLE WISSEL, als pure functie.
  *
- * «Треба додати можливість перепідключатися між акаунтами швидко, без натискання "вийти з технічного".» Wisselen kon al,
+ * «Треба додати можливість перепідключатися між обліковими записами швидко, без натискання "вийти з технічного".» Wisselen kon al,
  * maar het gebeurde STIL: het menu ging dicht en de mens stond ergens anders zonder te weten in welk profiel. Daarom is dit
  * de enige plek waar bepaald wordt wat er na een wissel te lezen staat — pure invoer, pure uitvoer, dus de eenheidstest
  * meet de echte regels en niet een stuk tekst uit de bron:
@@ -297,7 +299,7 @@ const copy = {
 /** UI-008: één ⓘ per blok in het v2-menu; vervangt de vaste uitlegregels (zelfde inhoud, alleen op verzoek). */
 const V2_HULP = {
   sessie: {
-    wat: ['Вихід, додавання іншого акаунта й вихід з усіх акаунтів у цьому браузері.', 'Afmelden, een ander account toevoegen en afmelden bij alle accounts in deze browser.'],
+    wat: ['Вихід, додавання іншого облікового запису й вихід з усіх облікових записів у цьому браузері.', 'Afmelden, een ander account toevoegen en afmelden bij alle accounts in deze browser.'],
     gevolg: [UITLOG_KEUZES[1].gevolg.uk, UITLOG_KEUZES[1].gevolg.nl],
   },
   weergave: {
@@ -439,7 +441,7 @@ export default function CanonicalAccountMenu({
   const am2 = !am3 && ((am3Vlag && gekozenMenuStijl === 'v2') || (!am3Vlag && am2Vlag && gekozenMenuStijl !== 'klassiek'));
   const mobielVenster = useMobielAccountVenster();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
-  // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
+  // «Вийти з облікового запису на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
   useEffect(() => {
     if (!v2) return;
     const op = (e: Event) => { const k = (e as CustomEvent<string>).detail; if (k === 'site') onLogout?.(); };
@@ -450,10 +452,12 @@ export default function CanonicalAccountMenu({
   useEffect(() => { if (techUid !== undefined) { techGebruiker(techUid); weergaveGebruiker(techUid); } }, [techUid]);
   const root = useRef<HTMLDivElement>(null);
   const portaalRef = useRef<HTMLDivElement>(null);
+  const taalMenuRef = useRef<HTMLDivElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   // UI-008: de tooltip van de kleine avatar noemt ook hoeveel andere accounts er zijn; die lijst één keer ophalen bij aanwijzen.
   const geladenVoorTip = useRef(false);
   const [open, setOpen] = useState(false);
+  const [taalMenuOpen, setTaalMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [snapshot, setSnapshot] = useState<AccountMenuSnapshot>({ accounts: [], previews: [], externalCandidates: [] });
   const [history, setHistory] = useState<AccountPreviewHistoryItem[]>(readAccountPreviewHistory);
@@ -473,13 +477,36 @@ export default function CanonicalAccountMenu({
    */
   const [gewisseld, setGewisseld] = useState<{ naam: string; email: string; techBeeindigd: boolean } | null>(null);
   const [wisselFout, setWisselFout] = useState<WisselFout | null>(null);
+  const [aanmeldKeuzeOpen, setAanmeldKeuzeOpen] = useState(false);
 
   const close = () => {
     setOpen(false);
+    setTaalMenuOpen(false);
     setExpanded(false);
+    setAanmeldKeuzeOpen(false);
     setGewisseld(null);
     setWisselFout(null);
   };
+
+  useEffect(() => {
+    if (!taalMenuOpen) return;
+    const buitenshuis = (event: PointerEvent) => {
+      if (taalMenuRef.current?.contains(event.target as Node)) return;
+      setTaalMenuOpen(false);
+    };
+    const bijEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setTaalMenuOpen(false);
+      taalMenuRef.current?.querySelector<HTMLButtonElement>('button.mr-sign-in-taal')?.focus();
+    };
+    window.addEventListener('pointerdown', buitenshuis, true);
+    window.addEventListener('keydown', bijEscape);
+    return () => {
+      window.removeEventListener('pointerdown', buitenshuis, true);
+      window.removeEventListener('keydown', bijEscape);
+    };
+  }, [taalMenuOpen]);
 
   const sluitMetLade = () => {
     close();
@@ -1056,17 +1083,76 @@ export default function CanonicalAccountMenu({
       data-account-menu-v3={am3 ? 'aan' : undefined}
     >
       {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
-        {/* Taal: echte vlag (SVG) + korte naam; klik wisselt. Dezelfde plek als voorheen, kleiner, met ruimte naast het thema-knopje. */}
-        <button type='button' className='mr-sign-in-taal' aria-label={lang === 'uk' ? `${MOVA_NAAM.uk} · змінити мову на нідерландську` : `${MOVA_NAAM.nl} · taal wijzigen naar Oekraïens`} title={lang === 'uk' ? 'Мова: українська' : 'Taal: Nederlands'} onClick={() => onLanguage(lang === 'uk' ? 'nl' : 'uk')}>
-          <MoviPrapor taal={lang} /><b>{MOVA_NAAM[lang]}</b>
-        </button>
-        <button type='button' aria-label={lang === 'uk' ? 'Перемкнути тему' : 'Thema wisselen'} title={lang === 'uk' ? 'Перемкнути світлу / темну тему' : 'Licht / donker wisselen'} onClick={() => onTheme(theme === 'dark' ? 'light' : theme === 'plum-dark' ? 'plum-light' : theme === 'plum-light' ? 'plum-dark' : 'dark')}>
+        {/* HERSTEL-001 (K1-T1): compacte taalpil (vlag + korte taalnaam, 38 px hoog) op één gelijke as en oppervlak
+            met de ronde knoppen voor thema (38×38 px) en profiel (38×38 px), tikvlak 44 px via ::after en compact keuzemenu. */}
+        <div ref={taalMenuRef} className='mr-sign-in-taal-wrap'>
+          <button
+            type='button'
+            className='mr-sign-in-taal'
+            aria-label={lang === 'uk' ? `Мова інтерфейсу: ${MOVA_VOLLEDIG.uk}` : `Taal: ${MOVA_VOLLEDIG.nl}`}
+            title={lang === 'uk' ? `Мова: ${MOVA_VOLLEDIG.uk}` : `Taal: ${MOVA_VOLLEDIG.nl}`}
+            aria-haspopup='menu'
+            aria-expanded={taalMenuOpen}
+            onClick={() => {
+              if (open) close();
+              setTaalMenuOpen((vorige) => !vorige);
+            }}
+          >
+            <MoviPrapor taal={lang} />
+            <b>{MOVA_NAAM[lang]}</b>
+          </button>
+          {taalMenuOpen && (
+            <div className='mr-sign-in-taal-menu' role='menu' aria-label={lang === 'uk' ? 'Вибір мови' : 'Taalkeuze'}>
+              <button
+                type='button'
+                role='menuitemradio'
+                aria-checked={lang === 'uk'}
+                className={`mr-sign-in-taal-optie${lang === 'uk' ? ' is-active' : ''}`}
+                lang='uk'
+                onClick={() => {
+                  onLanguage('uk');
+                  setTaalMenuOpen(false);
+                }}
+              >
+                <MoviPrapor taal='uk' />
+                <span className='mr-sign-in-taal-naam'>{MOVA_VOLLEDIG.uk}</span>
+                {lang === 'uk' ? <Check className='mr-sign-in-taal-check' aria-hidden='true' /> : <span className='mr-sign-in-taal-check-leeg' aria-hidden='true' />}
+              </button>
+              <span className='mr-sign-in-taal-scheiding' aria-hidden='true' />
+              <button
+                type='button'
+                role='menuitemradio'
+                aria-checked={lang === 'nl'}
+                className={`mr-sign-in-taal-optie${lang === 'nl' ? ' is-active' : ''}`}
+                lang='nl'
+                onClick={() => {
+                  onLanguage('nl');
+                  setTaalMenuOpen(false);
+                }}
+              >
+                <MoviPrapor taal='nl' />
+                <span className='mr-sign-in-taal-naam'>{MOVA_VOLLEDIG.nl}</span>
+                {lang === 'nl' ? <Check className='mr-sign-in-taal-check' aria-hidden='true' /> : <span className='mr-sign-in-taal-check-leeg' aria-hidden='true' />}
+              </button>
+            </div>
+          )}
+        </div>
+        <button
+          type='button'
+          className='mr-sign-in-thema is-icoon'
+          aria-label={lang === 'uk' ? 'Перемкнути тему' : 'Thema wisselen'}
+          title={lang === 'uk' ? 'Перемкнути світлу / темну тему' : 'Licht / donker wisselen'}
+          onClick={() => {
+            if (taalMenuOpen) setTaalMenuOpen(false);
+            onTheme(theme === 'dark' ? 'light' : theme === 'plum-dark' ? 'plum-light' : theme === 'plum-light' ? 'plum-dark' : 'dark');
+          }}
+        >
           {dark || theme === 'plum-dark' ? <Moon aria-hidden='true'/> : <Sun aria-hidden='true'/>}
         </button>
       </div>}
       <button
         type='button'
-        className='canonical-avatar-trigger'
+        className={`canonical-avatar-trigger${!displayUser ? ' is-icoon' : ''}`}
         aria-label={open ? t.close : (am2 || am3) && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
         title={(am2 || am3) && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
         data-am2-tip={am2 && displayUser ? 'ja' : undefined}
@@ -1074,7 +1160,10 @@ export default function CanonicalAccountMenu({
         onFocus={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
         aria-haspopup='dialog'
         aria-expanded={open}
-        onClick={() => open ? close() : setOpen(true)}
+        onClick={() => {
+          if (taalMenuOpen) setTaalMenuOpen(false);
+          open ? close() : setOpen(true);
+        }}
       >
         {open
           ? <span className='canonical-avatar-close' data-account-trigger-open='close'><X /></span>
@@ -1302,11 +1391,27 @@ export default function CanonicalAccountMenu({
                 <section className='canonical-expanded-accounts'>
                   <h3>{t.chooseExpanded}</h3>
                   <div className='canonical-add-account-control' data-add-account-control='composite'>
-                    <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>
+                    <button
+                      type='button'
+                      className='canonical-menu-action add-account'
+                      aria-expanded={aanmeldKeuzeOpen}
+                      onClick={() => setAanmeldKeuzeOpen((v) => !v)}
+                      disabled={busy}
+                    >
                       <Plus /><span>{t.add}</span>
                       <IllustrativePreviews items={model.expandedAddPreviewAccounts} mode='stacked' />
                     </button>
                   </div>
+                  {aanmeldKeuzeOpen ? (
+                    <AanmeldKeuzePaneel
+                      lang={lang}
+                      intent='replace-tab'
+                      titel={t.add}
+                      busy={busy}
+                      onGoogle={add}
+                      onSluit={() => setAanmeldKeuzeOpen(false)}
+                    />
+                  ) : null}
                   {loading && <p className='canonical-account-state'>{t.loading}</p>}
                   {loadFailed && <p className='canonical-account-state error'>{t.loadFailed}</p>}
                   {list}
@@ -1342,13 +1447,23 @@ export default function CanonicalAccountMenu({
                   <div className={`am2-blok am2-sessie canonical-session-actions ${expanded ? 'expanded' : 'collapsed'}`} data-am2-blok='sessie' data-account-add-placement={expanded ? 'expanded-list' : 'session-row'}>
                     <div className='am2-sessie-rij'>
                       {!expanded && (
-                        <IconAction icon={<Plus />} label={lang === 'uk' ? 'Додати акаунт' : 'Account toevoegen'} onClick={add} className='canonical-menu-action add-account session-add-account' disabled={busy} />
+                        <IconAction icon={<Plus />} label={lang === 'uk' ? 'Додати обліковий запис' : 'Account toevoegen'} onClick={() => setAanmeldKeuzeOpen((v) => !v)} className='canonical-menu-action add-account session-add-account' disabled={busy} />
                       )}
                       {onLogout && (
                         <IconAction icon={<LogOut />} label={lang === 'uk' ? 'Вийти' : 'Afmelden'} onClick={() => { close(); onLogout(); }} className='canonical-menu-action logout-current' disabled={busy} />
                       )}
                       <Vraag help={V2_HULP.sessie} uk={lang === 'uk'} label={t.logout} />
                     </div>
+                    {!expanded && aanmeldKeuzeOpen ? (
+                      <AanmeldKeuzePaneel
+                        lang={lang}
+                        intent='replace-tab'
+                        titel={lang === 'uk' ? 'Додати обліковий запис' : 'Account toevoegen'}
+                        busy={busy}
+                        onGoogle={add}
+                        onSluit={() => setAanmeldKeuzeOpen(false)}
+                      />
+                    ) : null}
                     {!expanded && showLogoutAll && (
                       <IconAction icon={<Users />} label={t.logoutAll} onClick={() => { close(); onLogoutAll?.(); }} className='canonical-menu-action logout-all' disabled={busy} />
                     )}
@@ -1410,11 +1525,21 @@ export default function CanonicalAccountMenu({
                   <IconAction
                     icon={<Plus />}
                     label={t.add}
-                    onClick={add}
+                    onClick={() => setAanmeldKeuzeOpen((v) => !v)}
                     className='canonical-menu-action add-account session-add-account'
                     disabled={busy}
                   />
                 )}
+                {!expanded && aanmeldKeuzeOpen ? (
+                  <AanmeldKeuzePaneel
+                    lang={lang}
+                    intent='replace-tab'
+                    titel={t.add}
+                    busy={busy}
+                    onGoogle={add}
+                    onSluit={() => setAanmeldKeuzeOpen(false)}
+                  />
+                ) : null}
                 {!expanded && showLogoutAll && (
                   <IconAction
                     icon={<Users />}
@@ -1451,11 +1576,27 @@ export default function CanonicalAccountMenu({
               )}
               {!model.isFirstLogin && list}
               <div className='canonical-add-account-control' data-add-account-control='composite'>
-                <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>
+                <button
+                  type='button'
+                  className='canonical-menu-action add-account'
+                  aria-expanded={aanmeldKeuzeOpen}
+                  onClick={() => setAanmeldKeuzeOpen((v) => !v)}
+                  disabled={busy}
+                >
                   {model.isFirstLogin ? <KeyRound /> : <Plus />}
                   <span>{model.isFirstLogin ? t.firstLogin : t.add}</span>
                 </button>
               </div>
+              {aanmeldKeuzeOpen ? (
+                <AanmeldKeuzePaneel
+                  lang={lang}
+                  intent='login'
+                  titel={model.isFirstLogin ? t.firstLogin : t.add}
+                  busy={busy}
+                  onGoogle={add}
+                  onSluit={() => setAanmeldKeuzeOpen(false)}
+                />
+              ) : null}
             </>
           )}
           {am2 ? controlsV2 : controls}

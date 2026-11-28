@@ -8,10 +8,11 @@ export const t = (x: BotTekst, taal: Taal | 'beide'): string => (taal === 'beide
 // TELEGRAM-002: de geheime code kan nu in het beveiligde venster (kop «Мій простір», adres id.tarasevych.com) — nooit in de chat.
 export const VOETREGEL: BotTekst = { uk: '🔒 У чаті я ніколи не прошу паролів чи кодів. Таємний код — лише в захищеному вікні сайту.', nl: '🔒 In de chat vraag ik nooit om wachtwoorden of codes. De geheime code alleen in het beveiligde venster van de site.' };
 
-export const OPDRACHTEN = ['start', 'status', 'aanmeldingen', 'sessies', 'koppelen', 'ontkoppelen', 'taal', 'hulp'] as const;
+export const OPDRACHTEN = ['start', 'inloggen', 'status', 'aanmeldingen', 'sessies', 'koppelen', 'ontkoppelen', 'taal', 'hulp'] as const;
 export type Opdracht = typeof OPDRACHTEN[number];
 export const OPDRACHT_OMSCHRIJVING: Record<Opdracht, BotTekst> = {
   start: { uk: 'Почати й обрати мову', nl: 'Beginnen en taal kiezen' },
+  inloggen: { uk: 'Викликати активний запит на вхід', nl: 'Actief aanmeldverzoek oproepen' },
   status: { uk: 'Мої прив’язки та їхній стан', nl: 'Mijn koppelingen en hun stand' },
   aanmeldingen: { uk: 'Останні входи на сайт', nl: 'Laatste aanmeldingen op de site' },
   sessies: { uk: 'Активні сеанси й завершення', nl: 'Actieve sessies en beëindigen' },
@@ -84,6 +85,15 @@ export const TEKST = {
     nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nApparaat: {apparaat}\nNetwerk: {netwerk}\nWanneer: {tijd}\n\nOp het scherm van de site staat één pictogram. Tik «Controleren en bevestigen» en kies in het venster HETZELFDE pictogram. U hebt één poging.\nBent u het niet, tik «⛔ Dit ben ik niet».',
   },
   knopVensterInlog: { uk: '🔐 Підтвердити вхід', nl: '🔐 Aanmelding bevestigen' },
+  knopBotInlogOproepen: { uk: '🔐 Підтвердити вхід на сайті', nl: '🔐 Aanmelding op de site bevestigen' },
+  rechtstreeksUit: {
+    uk: '🛡️ Пряме підтвердження без переходу з сайту зараз вимкнено для захисту від телефонних шахраїв. Натисніть «Відкрити Telegram» на своєму екрані входу або увімкніть цю можливість у «Налаштування → Способи входу → Telegram».',
+    nl: '🛡️ Rechtstreeks bevestigen zonder sitelink staat nu uit ter bescherming tegen telefonische oplichting. Kies «Telegram openen» op uw aanmeldscherm of zet deze optie aan bij «Instellingen → Aanmeldmethoden → Telegram».',
+  },
+  rechtstreeksGeenVerzoek: {
+    uk: 'ℹ️ Зараз немає активного запиту на вхід (він діє 3 хвилини). Спершу натисніть «Увійти через Telegram» на сайті «Мій простір», а потім викликайте підтвердження тут.',
+    nl: 'ℹ️ Er is nu geen actief aanmeldverzoek (geldig gedurende 3 minuten). Klik eerst op «Aanmelden met Telegram» op «Mijn Ruimte» en roep de bevestiging daarna hier op.',
+  },
   knopVensterBevestig: { uk: '🛡️ Перевірити й підтвердити', nl: '🛡️ Controleren en bevestigen' },
   knopVensterBrowser: { uk: '🌐 Вікно не відкривається? Відкрити в браузері', nl: '🌐 Venster opent niet? Openen in de browser' },
   symboolFout: { uk: '⛔ Інший символ — дію скасовано. На сайті можна почати знову.', nl: '⛔ Een ander symbool — de handeling is geannuleerd. Op de site kunt u opnieuw beginnen.' },

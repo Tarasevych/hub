@@ -21,16 +21,16 @@ export function CloudAanbiedersM5(){
   void load();return()=>{cancelled=true;controller.abort();};
  },[]);
  return <section className="cloud-m5" aria-label="Каталог хмарних інтеграцій">
-  <header className="cloud-m5__heading"><div><p className="cloud-m5__eyebrow">Cloud · керування інтеграціями</p><h2>Сервіси та підключення</h2><p>Один робочий простір, окремий доступ до кожного акаунта. Доступність визначається сервером.</p></div><span className="cloud-m5__stage">Тестовий режим · не опубліковано</span></header>
+  <header className="cloud-m5__heading"><div><p className="cloud-m5__eyebrow">Cloud · керування інтеграціями</p><h2>Сервіси та підключення</h2><p>Один робочий простір, окремий доступ до кожного облікового запису. Доступність визначається сервером.</p></div><span className="cloud-m5__stage">Тестовий режим · не опубліковано</span></header>
   <label className="cloud-m5__search">Знайти сервіс<input type="search" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Наприклад, Dropbox або S3" /></label>
   {error&&<div role="status" className="cloud-m5__warning">Каталог недоступний. Наявні підключення не змінено. ({error})</div>}
   {data&&!data.allReady&&<div className="cloud-m5__warning">Інтеграції ще проходять тестування. Підключення не відкриваються, доки сервер не підтвердить роботу.</div>}
   <div className="cloud-m5__grid">{data?.providers.filter(p=>p.title.toLocaleLowerCase().includes(filter.toLocaleLowerCase())).map(p=><article className="cloud-m5__card" key={p.id}>
    <div className="cloud-m5__card-head"><div><h3>{p.title}</h3><small>{p.authentication}</small></div><span className={'cloud-m5__status '+(p.ready?'is-ready':'')}>{p.ready?'Перевірено':'У розробці'}</span></div>
-   <p>{p.ready?'Функції перевірено. Для доступу потрібне підключення акаунта.':'Підключення буде доступне лише після приймання інтеграції.'}</p>
+   <p>{p.ready?'Функції перевірено. Для доступу потрібне підключення облікового запису.':'Підключення буде доступне лише після приймання інтеграції.'}</p>
    <div className="cloud-m5__actions"><button type="button" onClick={()=>setExpanded(expanded===p.id?null:p.id)} aria-expanded={expanded===p.id}>Можливості та умови</button><button type="button" disabled title="Майстер підключення буде доступний після серверної інтеграції та перевірки OAuth/ключів">Підключити</button></div>
    {expanded===p.id&&<div className="cloud-m5__details">{p.constraints.map((c,i)=><p key={i}>• {c}</p>)}</div>}
   </article>)}</div>
-  <p className="cloud-m5__footnote">Повідомлення «API підтримує операцію» не означає, що поточний акаунт має дозвіл її виконувати. Доступ перевіряється для кожного файла окремо.</p>
+  <p className="cloud-m5__footnote">Повідомлення «API підтримує операцію» не означає, що поточний обліковий запис має дозвіл її виконувати. Доступ перевіряється для кожного файла окремо.</p>
  </section>;
 }

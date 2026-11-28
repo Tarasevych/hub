@@ -7,11 +7,11 @@
 // Apparaatklasse komt uit de ECHTE containerbreedte (ResizeObserver), niet uit window.innerWidth. Elke klasse heeft een eigen laag;
 // een ontbrekende tablet-/telefoonlaag wordt één keer afgeleid van de computerlaag (aanpassenVanaf) en daarna onafhankelijk bewaard.
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { Check, Image, LayoutGrid, Library, RotateCcw, Settings2, Undo2, X } from 'lucide-react';
+import { CalendarDays, Check, HardDrive, Image, LayoutGrid, Library, Mail, Plus, RotateCcw, Settings2, Undo2, X } from 'lucide-react';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { profielVan, useTech } from '../tech/tech-opslag';
-import { ACHTERGRONDEN, werkbladTekst, werkbladWidget, type WerkbladContext, type WerkbladWidgetId } from '../../shared/werkblad-indeling';
-import { normaliseerLaag, leegLaag } from '../../shared/werkblad-v3';
+import { ACHTERGRONDEN, standaardWerkblad, werkbladTekst, werkbladWidget, type WerkbladContext, type WerkbladWidgetId } from '../../shared/werkblad-indeling';
+import { migreerV2NaarV3, normaliseerLaag, leegLaag } from '../../shared/werkblad-v3';
 import type { ApparaatKlasse, CanvasLayout, DesktopEntry } from '../../shared/werkblad-v3-types';
 import {
   MAP_ITEM, REGISTER_V3_HAKEN, USR_ID, persoonlijkItem, registerItem, registerItemVoorEntry, toegestaanVoor,
@@ -132,7 +132,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   const mislukt = useRef<{ klasse: ApparaatKlasse; layout: CanvasLayout; extra: { achtergrond?: string } } | null>(null);
   const usrGemigreerd = useRef(false);
 
-  // BIB-002: технічний доступ = у акаунта є технічний профіль (його дає власник). Тоді ярлики технічних сторінок можна ставити й на
+  // BIB-002: технічний доступ = у облікового запису є технічний профіль (його дає власник). Тоді ярлики технічних сторінок можна ставити й на
   // приватний стіл — як двері; сама сторінка однаково відкривається лише через браму технічного профілю.
   const techToegang = techProfiel || !!tech.profiel;
   const rctx = useMemo<RegisterContext>(() => ({ ruimte, rechten: { apiPlatform: rechten.apiPlatform, eigenaar: rechten.eigenaar }, techToegang }), [ruimte, rechten.apiPlatform, rechten.eigenaar, techToegang]);
@@ -390,14 +390,23 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
     } catch (e) { zetMelding(weigeringZinUitFout(lang, e) ?? tr(lang, `Не вдалося (${String((e as Error)?.message || e)}).`, `Mislukt (${String((e as Error)?.message || e)}).`)); }
   };
   const kiesAchtergrond = (nieuw: string) => { const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout; if (a && l) bewaar(a, l, { achtergrond: nieuw }); zetAchtergrond(nieuw); };
+  const standaardPlaatsen = () => {
+    const a = klasseRef.current; if (!a || !magBewerken) return;
+    const { v3 } = migreerV2NaarV3(standaardWerkblad({ ruimte }), { ruimte, eigenaar: rechten.eigenaar, ...REGISTER_V3_HAKEN });
+    const l = v3.layouts[a];
+    if (l) bewaar(a, l);
+  };
+  const topAantal = laag ? laag.layout.items.filter((x) => !x.parent).length : 0;
 
   const stijl = achtergrond === 'eigen' && achtergrondEigen ? ({ '--wb-eigen': `url("${achtergrondEigen}")` } as CSSProperties) : undefined;
+  const leegOpCanvas = Boolean(klasse && laag && !bewerken && !laag.layout.items.some((e) => !e.parent));
   return (
     <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad='klaar' data-werkblad-versie='3'
-      data-wb-ruimte={ruimte} data-wb3-klasse={klasse || ''} data-wb3-status={status} aria-labelledby='werkblad-kop'>
+      data-wb-ruimte={ruimte} data-wb-aantal={topAantal} data-wb3-klasse={klasse || ''} data-wb3-status={status} data-wb3-leeg={leegOpCanvas ? '1' : '0'} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
         <span id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</span>
-        {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span> : null}
+        {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span>
+          : leegOpCanvas ? <span className='wb3-leeg-kop-label'>{tr(lang, 'Вільна композиція', 'Vrije compositie')}</span> : null}
         <div className='wb-balk-acties'>
           {magBewerken ? (bewerken ? (
             <>
@@ -454,7 +463,77 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       <p className='sr-only' aria-live='polite' data-wb3-melding=''>{melding}</p>
       {melding ? <p className='wb3-melding melding melding-info' data-wb3-zichtbaar-melding=''>{melding}<button type='button' className='wb-tip-sluit' aria-label={tr(lang, 'Закрити', 'Sluiten')} onClick={() => zetMelding('')}><X aria-hidden='true' /></button></p> : null}
       <div className='wb3-houder' ref={houder} data-wb3-houder='' onDragOver={(e) => { if (bewerken && [...e.dataTransfer.types].includes(BIBLIOTHEEK_MIME)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }} onDrop={opDrop}>
-        {klasse && laag ? (
+        {leegOpCanvas ? (
+          <div className='wb3-leeg-kaart wb3-leeg-eiland wb-leeg-stol' data-wb-leeg='1' data-wb3-leeg-kaart='1'>
+            <div className='wb3-leeg-hoofd'>
+              <div className='wb3-leeg-koprij'>
+                <span className='wb3-leeg-icoon' aria-hidden='true'><LayoutGrid /></span>
+                <strong>{tr(lang, 'Віджети на столі', 'Widgets op het werkblad')}</strong>
+                <span className='wb3-leeg-streep' aria-hidden='true' />
+              </div>
+              <p>{tr(lang, 'Швидкий доступ до найважливішого: пошта, календар, файли, ярлики.', 'Snelle toegang tot wat telt: e-mail, agenda, bestanden en snelkoppelingen.')}</p>
+              <div className='wb3-leeg-actierij'>
+                {magBewerken ? (
+                  <>
+                    <button type='button' className='knop-primair is-klein wb3-leeg-knop is-bloemblad-knop' data-wb3='leeg-toevoegen' onClick={() => { zetBewerken(true); zetBib(true); }}>
+                      <Plus aria-hidden='true' />
+                      <span>{tr(lang, 'Додати віджет', 'Widget toevoegen')}</span>
+                    </button>
+                    <button type='button' className='knop-secundair is-klein wb3-leeg-knop' data-wb3='leeg-standaard' onClick={standaardPlaatsen}>
+                      <RotateCcw aria-hidden='true' />
+                      <span>{tr(lang, 'Стандартна розкладка', 'Standaardindeling')}</span>
+                    </button>
+                  </>
+                ) : null}
+                <div className='wb3-snel-kapsel' role='toolbar' aria-label={tr(lang, 'Швидкі дії простору', 'Snelle acties van de ruimte')}>
+                  {magBewerken ? (
+                    <button type='button' onClick={() => { zetBewerken(true); zetBib(true); }} aria-label={tr(lang, 'Відкрити бібліотеку віджетів', 'Widgetbibliotheek openen')} title={tr(lang, 'Бібліотека віджетів', 'Widgetbibliotheek')}>
+                      <Plus aria-hidden='true' />
+                    </button>
+                  ) : null}
+                  <button type='button' onClick={() => acties.dienst('mail')} aria-label={tr(lang, 'Відкрити пошту', 'E-mail openen')} title={tr(lang, 'Пошта', 'E-mail')}>
+                    <Mail aria-hidden='true' />
+                  </button>
+                  <button type='button' onClick={() => acties.hubTab('calendar')} aria-label={tr(lang, 'Відкрити календар', 'Agenda openen')} title={tr(lang, 'Календар', 'Agenda')}>
+                    <CalendarDays aria-hidden='true' />
+                  </button>
+                  <button type='button' onClick={() => acties.dienst('cloud')} aria-label={tr(lang, 'Відкрити хмарне сховище', 'Cloudopslag openen')} title={tr(lang, 'Хмара', 'Cloud')}>
+                    <HardDrive aria-hidden='true' />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className='wb3-leeg-modules-vlak'>
+              <svg className='wb3-vloei-golf' viewBox='0 0 360 150' preserveAspectRatio='none' aria-hidden='true'>
+                <path d='M 16 62 C 88 22, 148 110, 218 52 C 266 12, 316 44, 344 76 C 324 126, 250 144, 178 128 C 110 112, 52 132, 16 62 Z' />
+              </svg>
+              <div className='wb3-leeg-modules' aria-label={tr(lang, 'Доступні модулі робочого столу', 'Beschikbare werkbladmodules')}>
+                <button type='button' className='wb3-mini-module is-mod-1' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                  <span className='wb3-mini-icoon' aria-hidden='true'><Mail /></span>
+                  <span className='wb3-mini-tekst'>
+                    <b>{tr(lang, 'Пошта', 'E-mail')}</b>
+                    <small>{tr(lang, 'Листи', 'Berichten')}</small>
+                  </span>
+                </button>
+                <button type='button' className='wb3-mini-module is-mod-2' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                  <span className='wb3-mini-icoon' aria-hidden='true'><CalendarDays /></span>
+                  <span className='wb3-mini-tekst'>
+                    <b>{tr(lang, 'Календар', 'Agenda')}</b>
+                    <small>{tr(lang, 'Події', 'Afspraken')}</small>
+                  </span>
+                </button>
+                <button type='button' className='wb3-mini-module is-mod-3' disabled={!magBewerken} onClick={() => { zetBewerken(true); zetBib(true); }}>
+                  <span className='wb3-mini-icoon' aria-hidden='true'><HardDrive /></span>
+                  <span className='wb3-mini-tekst'>
+                    <b>{tr(lang, 'Диск', 'Drive')}</b>
+                    <small>{tr(lang, 'Файли та сховище', 'Bestanden en opslag')}</small>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : klasse && laag ? (
           <Canvas key={klasse} layout={laag.layout} editMode={bewerken && magBewerken} limieten={limietenV3} lang={lang} status={status}
             onCommit={opCommit} onRetry={opnieuw} onReload={() => void herladen()} onRequestAdd={() => zetBib(true)} onRename={magBewerken ? vraagMapHernoem : undefined} titel={titel} render={render}
             interactief={blk.aan ? heeftBlok : undefined} />

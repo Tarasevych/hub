@@ -2,7 +2,22 @@
 // Перетворює сигнали з будь-якого піддомену, серверного журналу, ПК-агента, розширення оглядача,
 // сторінки (інформаційної смуги) чи пошти/сховища/ШІ в єдину структуровану подію екосистеми з діями, контекстом і вкладеннями.
 
-import { normaliseerActies, normaliseerBijlagen, veiligeMeldingUrl, veiligePaginaLink, type MeldingActie, type MeldingBijlage, type MeldingEcosysteemGebeurtenis, type MeldingKanaal, type MeldingPrioriteit, type MeldingSubdomein, type RuimteType, SUBDOMEINEN } from './model';
+import {
+  GEBEURTENIS_STATUSSEN,
+  normaliseerActies,
+  normaliseerBijlagen,
+  veiligeMeldingUrl,
+  veiligePaginaLink,
+  type MeldingActie,
+  type MeldingBijlage,
+  type MeldingEcosysteemGebeurtenis,
+  type MeldingGebeurtenisStatus,
+  type MeldingKanaal,
+  type MeldingPrioriteit,
+  type MeldingSubdomein,
+  type RuimteType,
+  SUBDOMEINEN,
+} from './model';
 
 export type RuweBronGebeurtenis = {
   id?: string;
@@ -13,12 +28,15 @@ export type RuweBronGebeurtenis = {
   subdomein?: MeldingSubdomein;
   soort?: string;
   ernst?: string;
+  status?: MeldingGebeurtenisStatus;
+  herhalingen?: number;
   titel?: string;
   bericht?: string;
   uitleg?: string;
   contextLabel?: string;
   link?: string;
   aangemaaktOp?: number;
+  bijgewerktOp?: number;
   gelezen?: boolean;
   bijlagen?: unknown[];
   acties?: unknown[];
@@ -35,6 +53,13 @@ export function herkenSubdomein(bron = '', link = '', fallback: MeldingSubdomein
   if (/(^|[/:_.\s-])(cloud|drive|bestand|opslag|s3)/.test(g)) return 'cloud';
   if (/(^|[/:_.\s-])(github|git|pr|workflow|repo)/.test(g)) return 'github';
   if (/(^|[/:_.\s-])(huis|home|scene|lamp|thermostat|slim)/.test(g)) return 'huis';
+  if (
+    g.includes('owner.apparaat.nieuw') ||
+    g.includes('apparaat.nieuw') ||
+    /(?:^|[/:_\s-])(?:owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|apparaat\.(?:aangevraagd|bevestigd|niet-ik|fout-symbool|alarm|stap-op|ingetrokken|hersteld|gedeblokkeerd|telegram-sterk)|account\.email\.conflict)(?:$|[/:_.\s-])/.test(g)
+  ) {
+    return 'id';
+  }
   if (/(^|[/:_.\s-])(mcp|connector|agent|browser|pc|terminal|remote|apparaat|vaardigheden|koppeling_gewijzigd)/.test(g)) return 'mcp';
   if (/(^|[/:_.\s-])(ai|gemini|claude|openai|grok|chat|vertal|geheugen)/.test(g)) return 'ai';
   if (/(^|[/:_.\s-])(id|passkey|kluis|sleutelkluis|aanmeld|aanmelden|account|toegang|beveilig|bevestigen|telegram|plaats-eis|stap-op|niet-ik|fout-symbool|privacy)/.test(g)) return 'id';
@@ -46,7 +71,16 @@ export function herkenSubdomein(bron = '', link = '', fallback: MeldingSubdomein
 
 export function herkenKanaal(bron = '', soort = '', subdomein: MeldingSubdomein = 'hub'): MeldingKanaal {
   const b = `${bron} ${soort}`.toLowerCase();
-  if (/(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|auth|aanmeld|bevestigen|niet-ik|fout-symbool|stap-op|vergrendel|blokkeer|fout-auth)/.test(b)) return 'beveiliging';
+  const isExplicieteBeveiligingInMail =
+    /(security_warning|owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|account\.email\.conflict|niet-ik|fout-symbool)/.test(b);
+  if (
+    (subdomein !== 'mail' || isExplicieteBeveiligingInMail) &&
+    /(beveilig|security|passkey|sleutelkluis|kluis|toegang|login|(?<![a-z])auth(?![a-z])|aanmeld|bevestigen|niet-ik|fout-symbool|stap-op|vergrendel|blokkeer|fout-auth|owner\.apparaat\.(?:nieuw|bevestigd|vergeten|melding)|apparaat\.(?:aangevraagd|bevestigd|niet-ik|fout-symbool|alarm|stap-op|ingetrokken|hersteld|gedeblokkeerd|telegram-sterk)|account\.email\.conflict)/.test(
+      b,
+    )
+  ) {
+    return 'beveiliging';
+  }
   if (/(pc[_-]?agent|host|schijf|cpu|geheugen_pc|docker|terminal|remote|lokale[_-]?pc)/.test(b)) return 'pc_agent';
   if (/(extensie|extension|browser|tabblad|debugger)/.test(b)) return 'extensie';
   if (/(pagina|band|strook|banner|offline|versie|herlaad)/.test(b)) return 'pagina';
@@ -62,7 +96,13 @@ export function herkenKanaal(bron = '', soort = '', subdomein: MeldingSubdomein 
 
 export function berekenPrioriteit(soort = '', ernst = '', kanaal: MeldingKanaal = 'app'): MeldingPrioriteit {
   const s = `${soort} ${ernst}`.toLowerCase();
-  if (/(kritiek|critical|geblokkeerd|dreiging|nood|crash|sleutel_dicht|toegang_geweigerd)/.test(s)) return 'kritiek';
+  if (
+    /(kritiek|critical|geblokkeerd|dreiging|nood|crash|sleutel_dicht|toegang_geweigerd|owner\.apparaat\.nieuw|apparaat\.nieuw|(?:\.|^)niet-ik|fout-symbool|\.alarm\.|account\.email\.conflict|vervalsing)/.test(
+      s,
+    )
+  ) {
+    return 'kritiek';
+  }
   if (/(error|fout|warning|waarschuwing|hoog|high|mislukt|verouderd|verlopen|storing)/.test(s)) return 'hoog';
   if (kanaal === 'beveiliging' && !/geslaagd|succes|success|info/.test(s)) return 'hoog';
   if (/(laag|low|info|samenvatting|tip)/.test(s)) return 'laag';
@@ -128,11 +168,12 @@ export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallb
   const ruimte: RuimteType = invoer.ruimte === 'technisch' ? 'technisch' : ruimteFallback;
   // MELDLINK-001: het subdomein herkennen aan de link zoals de bron hem gaf; de link zelf wordt een absolute adres van een bestaande pagina.
   const ruweLink = veiligeMeldingUrl(invoer.link, 500);
-  const subdomein = invoer.subdomein ?? herkenSubdomein(invoer.bron || '', ruweLink || '', 'hub');
+  const bronEnSoort = `${invoer.bron || ''} ${invoer.soort || ''}`.trim();
+  const subdomein = invoer.subdomein ?? herkenSubdomein(bronEnSoort, ruweLink || '', 'hub');
   const linkHint = { soort: invoer.soort || invoer.bron || '', subdomein: invoer.subdomein };
   const veiligeLink = veiligePaginaLink(invoer.link, linkHint, 500);
   const kanaal = invoer.kanaal ?? herkenKanaal(invoer.bron || '', invoer.soort || '', subdomein);
-  const prioriteit = berekenPrioriteit(invoer.soort || '', invoer.ernst || '', kanaal);
+  const prioriteit = berekenPrioriteit(bronEnSoort, invoer.ernst || '', kanaal);
   const bijlagen = normaliseerBijlagen(invoer.bijlagen);
   const eigenActies = normaliseerActies(invoer.acties, linkHint);
   const acties = eigenActies.length ? eigenActies : bouwStandaardActies(subdomein, kanaal, veiligeLink, bijlagen.length);
@@ -149,6 +190,21 @@ export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallb
     return base;
   })();
 
+  const status: MeldingGebeurtenisStatus =
+    typeof invoer.status === 'string' && (GEBEURTENIS_STATUSSEN as readonly string[]).includes(invoer.status)
+      ? (invoer.status as MeldingGebeurtenisStatus)
+      : invoer.gelezen
+        ? 'gelezen'
+        : 'nieuw';
+  const herhalingen =
+    typeof invoer.herhalingen === 'number' && Number.isFinite(invoer.herhalingen) && invoer.herhalingen >= 1
+      ? Math.min(100_000, Math.trunc(invoer.herhalingen))
+      : 1;
+  const bijgewerktOp =
+    typeof invoer.bijgewerktOp === 'number' && Number.isFinite(invoer.bijgewerktOp) && invoer.bijgewerktOp > 0
+      ? Math.trunc(invoer.bijgewerktOp)
+      : nu;
+
   return {
     id: String(invoer.id || externeSleutel || `geb-${nu}-${Math.random().toString(36).slice(2, 8)}`),
     ruimte,
@@ -157,19 +213,19 @@ export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallb
     subdomein,
     bron: String(invoer.bron || kanaal).slice(0, 120),
     prioriteit,
-    status: invoer.gelezen ? 'gelezen' : 'nieuw',
+    status,
     titel: titel.slice(0, 400),
     bericht: String(invoer.bericht || '').slice(0, 4000),
     uitleg: String(invoer.uitleg || '').slice(0, 2000),
     contextLabel: String(invoer.contextLabel || `${subdomein} · ${kanaal}`).slice(0, 240),
-    herhalingen: 1,
+    herhalingen,
     uitgesteldTot: null,
     bijlagen,
     acties,
     meta: schoonMeta,
     aiSamenvatting: null,
     aangemaaktOp: nu,
-    bijgewerktOp: nu,
+    bijgewerktOp,
   };
 }
 
@@ -211,4 +267,25 @@ export function maakDemoBijlagenVoorTest(bijlage?: Partial<MeldingBijlage>): Mel
       ...(bijlage?.tekstVoorbeeld ? { tekstVoorbeeld: bijlage.tekstVoorbeeld } : {}),
     },
   ];
+}
+
+const AANMELD_METHODE_WOORDEN: Readonly<Record<string, readonly [uk: string, nl: string]>> = {
+  passkey: ['Ключ доступу', 'Toegangssleutel'],
+  webauthn: ['Ключ доступу', 'Toegangssleutel'],
+  password: ['Пароль', 'Wachtwoord'],
+  code: ['Одноразовий код', 'Eenmalige code'],
+  totp: ['Одноразовий код', 'Eenmalige code'],
+  otp: ['Одноразовий код', 'Eenmalige code'],
+  google: ['Google', 'Google'],
+  telegram: ['Telegram', 'Telegram'],
+  microsoft: ['Microsoft', 'Microsoft'],
+  apple: ['Apple', 'Apple'],
+  discord: ['Discord', 'Discord'],
+};
+
+export function vertaalAanmeldMethode(methode: string | undefined, lang: 'uk' | 'nl'): string {
+  const sleutel = String(methode || '').trim().toLowerCase();
+  if (!sleutel) return '';
+  const paar = AANMELD_METHODE_WOORDEN[sleutel];
+  return paar ? paar[lang === 'nl' ? 1 : 0] : '';
 }

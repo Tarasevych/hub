@@ -6,7 +6,7 @@ import { useCloudVnext } from './cloud-vnext/cloud-vlag';
 import { useVerbindingenV2 } from './verbindingen/verbindingen-vlag';
 import './cloud-klassiek-maquette.css';
 
-// UI-003: vlag verbindingen-centrum-v2 AAN → op «Акаунти» het nieuwe verbindingencentrum, los van cloud-vnext. UIT = ongewijzigd.
+// UI-003: vlag verbindingen-centrum-v2 AAN → op «Облікові записи» het nieuwe verbindingencentrum, los van cloud-vnext. UIT = ongewijzigd.
 const Verbindingen = lazy(() => import('./verbindingen/VerbindingenCentrum'));
 
 const Oud = lazy(() => import('./CloudFunctioneelWeergave'));

@@ -320,6 +320,27 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     stableView.remember(viewAddress(user?.id||'anon'),{state,user,sessionStartedAt,menu:menuPreferences,language:lang,workspaces,activeWorkspaces,archivedWorkspaces,deelWerkruimtes,notifications,notificationItems,knownAccounts,viewKind:viewKindFor(service,state),rememberedBrowser:sessionRemembered});
   },[state,user,sessionStartedAt,menuPreferences,lang,workspaces,activeWorkspaces,archivedWorkspaces,deelWerkruimtes,notifications,notificationItems,knownAccounts,service,tab]);
   useLayoutEffect(()=>{if(active)releaseBootShell()},[active]);
+  useEffect(()=>{
+    if(!active||state==='checking'||routeOnbekend())return;
+    const dienstTitels:Record<ServiceId,[string,string]>={
+      ai:['ШІ — Мій простір','AI — Mijn Ruimte'],
+      mail:['Пошта — Мій простір','E-mail — Mijn Ruimte'],
+      cloud:['Хмарне сховище — Мій простір','Cloudopslag — Mijn Ruimte'],
+      github:['GitHub — Мій простір','GitHub — Mijn Ruimte'],
+      crm:['Клієнтські взаємини — Мій простір','Klantrelatiebeheer — Mijn Ruimte'],
+      huis:['Розумний будинок — Мій простір','Slim huis — Mijn Ruimte'],
+      mcp:['Міст ШІ — Мій простір','Brug AI — Mijn Ruimte'],
+      identity:['Налаштування — Мій простір','Instellingen — Mijn Ruimte'],
+      api:['API та інтеграції — Мій простір','API en integraties — Mijn Ruimte'],
+      admin:['Адміністрування — Мій простір','Beheer — Mijn Ruimte'],
+    };
+    const aanmeld=service==='identity'&&state==='signed_out'&&(location.pathname||'/')==='/';
+    const paar=aanmeld?['Вхід — Мій простір','Aanmelden — Mijn Ruimte']:dienstTitels[service];
+    const basis=lang==='nl'?paar[1]:paar[0];
+    const techAan=document.documentElement.dataset.tech==='aan';
+    const wens=(techAan?(lang==='nl'?'[TECH] ':'[ТЕХ] '):'')+basis;
+    if(document.title!==wens)document.title=wens;
+  },[active,service,state,lang]);
 
   const names:Record<ServiceId,string>={
     ai:tr('ШІ для вас','AI voor u'),
@@ -338,8 +359,8 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
   const tabs=useMemo<Tab[]>(()=>{
     const catalog:Record<ServiceId,Tab[]>={
       ai:[{id:'workspace',label:tr('Робоча область','Werkgebied')},{id:'agents',label:tr('Агенти','Agenten')},{id:'runs',label:tr('Процеси','Processen')},{id:'workflows',label:tr('Сценарії','Werkstromen')},{id:'verbindingen',label:tr('Підключення ШІ','AI-koppelingen')}],
-      mail:[{id:'inbox',label:tr('Вхідні','Postvak IN')},{id:'starred',label:tr('Із зірочкою','Met ster')},{id:'snoozed',label:tr('Відкладені','Uitgesteld')},{id:'sent',label:tr('Надіслані','Verzonden')},{id:'drafts',label:tr('Чернетки','Concepten')},{id:'all',label:tr('Уся пошта','Alle e-mail')},{id:'important',label:tr('Важливі','Belangrijk')},{id:'spam',label:tr('Спам','Spam')},{id:'trash',label:tr('Кошик','Prullenbak')},{id:'subscriptions',label:tr('Керування підписками','Abonnementen beheren')},{id:'archive',label:tr('Архів','Archief')},{id:'labels',label:tr('Мітки','Labels')},{id:'accounts',label:tr('Акаунти','Accounts')},{id:'contacts',label:tr('Контакти й відправники','Contacten en afzenders')},{id:'local',label:tr('Приватні','Privé')} ],
-      cloud:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'files',label:tr('Мої файли','Mijn bestanden')},{id:'shared',label:tr('Спільний доступ','Gedeeld')},{id:'workspaces',label:tr('Робочі простори','Werkruimtes')},{id:'capture',label:tr('Швидко зберегти','Snel opslaan')},{id:'inbox',label:tr('Швидкий вхід','Snelle invoer')},{id:'search',label:tr('Пошук','Zoeken')},{id:'recent',label:tr('Останні','Recent')},{id:'calendar',label:tr('Календар','Agenda')},{id:'photos',label:tr('Фото','Foto’s')},{id:'accounts',label:tr('Акаунти','Accounts')}],
+      mail:[{id:'inbox',label:tr('Вхідні','Postvak IN')},{id:'starred',label:tr('Із зірочкою','Met ster')},{id:'snoozed',label:tr('Відкладені','Uitgesteld')},{id:'sent',label:tr('Надіслані','Verzonden')},{id:'drafts',label:tr('Чернетки','Concepten')},{id:'all',label:tr('Уся пошта','Alle e-mail')},{id:'important',label:tr('Важливі','Belangrijk')},{id:'spam',label:tr('Спам','Spam')},{id:'trash',label:tr('Кошик','Prullenbak')},{id:'subscriptions',label:tr('Керування підписками','Abonnementen beheren')},{id:'archive',label:tr('Архів','Archief')},{id:'labels',label:tr('Мітки','Labels')},{id:'accounts',label:tr('Облікові записи','Accounts')},{id:'contacts',label:tr('Контакти й відправники','Contacten en afzenders')},{id:'local',label:tr('Приватні','Privé')} ],
+      cloud:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'files',label:tr('Мої файли','Mijn bestanden')},{id:'shared',label:tr('Спільний доступ','Gedeeld')},{id:'workspaces',label:tr('Робочі простори','Werkruimtes')},{id:'capture',label:tr('Швидко зберегти','Snel opslaan')},{id:'inbox',label:tr('Швидкий вхід','Snelle invoer')},{id:'search',label:tr('Пошук','Zoeken')},{id:'recent',label:tr('Останні','Recent')},{id:'calendar',label:tr('Календар','Agenda')},{id:'photos',label:tr('Фото','Foto’s')},{id:'accounts',label:tr('Облікові записи','Accounts')}],
       crm:MENU_PAGINAS.crm.map(id=>({id,label:serviceTabLabel(id,lang)})),
       huis:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'rooms',label:tr('Кімнати','Kamers')},{id:'devices',label:tr('Пристрої','Apparaten')},{id:'scenes',label:tr('Сцени','Scènes')},{id:'automations',label:tr('Автоматизації','Automatiseringen')},{id:'security',label:tr('Безпека','Beveiliging')},{id:'energy',label:tr('Енергія','Energie')},{id:'activity',label:tr('Події','Gebeurtenissen')},{id:'integrations',label:tr('Інтеграції','Integraties')},{id:'assistant',label:tr('ШІ-помічник','AI-assistent')},{id:'settings',label:tr('Налаштування','Instellingen')},{id:'showroom',label:tr('Вітрина','Toonzaal')},{id:'planner',label:tr('Калькулятор','Planner')}],
       mcp:[{id:'overview',label:tr('Огляд','Overzicht')},{id:'dashboard',label:tr('Панель розгортання','Deploy-dashboard')},{id:'services',label:tr('Сервіси','Diensten')},{id:'tools',label:tr('Інструменти','Hulpmiddelen')},{id:'board',label:tr('Дошка','Bord')},{id:'agents',label:tr('Підключення ШІ','AI-koppelingen')},{id:'apps',label:tr('Додатки','Apps')},{id:'playground',label:tr('Пісочниця','Zandbak')},{id:'traffic',label:tr('Трафік','Verkeer')},{id:'connect',label:tr('Підключити','Verbinden')},{id:'roadmap',label:tr('Що далі','Wat hierna')},{id:'download',label:tr('Архів на ПК','Archief op de pc')},{id:'verbindingen',label:tr('Технічні підключення','Technische verbindingen')}],
@@ -379,6 +400,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
         setMessage(null);
         return;
       }
+      laatsteSync.current=Date.now();
       applyStable(data);
       setMessage(null);
     }catch(caught){
@@ -405,11 +427,11 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
   useEffect(()=>{
     listenCanonicalAuthChanges();
     const sync=()=>{laatsteSync.current=Date.now();void bootstrap(true);void techVernieuwen();void ruimtesVernieuwen()};
-    /* Tabblad weer naar voren gehaald: bij een ander actief browseraccount direct bijwerken, anders hoogstens één keer per 10 s. */
+    /* Tabblad weer naar voren gehaald: bij een ander actief browseraccount direct bijwerken, anders hoogstens één keer per 5 min. */
     const zichtbaar=()=>{
       if(document.visibilityState!=='visible')return;
       const nu=Date.now(),verwacht=viewAccountForService(serviceRef.current),huidig=huidigUserIdRef.current?cacheAccountKey(huidigUserIdRef.current):'anon',gewisseld=verwacht!==huidig;
-      if(!gewisseld&&nu-laatsteSync.current<10000)return;
+      if(!gewisseld&&nu-laatsteSync.current<300000)return;
       laatsteSync.current=nu;
       void bootstrap(true);
       if(gewisseld){void techVernieuwen();void ruimtesVernieuwen()}
@@ -511,7 +533,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
       laatsteSync.current=Date.now();
       applyStable(response.data as Record<string,unknown>,true);
       setMessage(null);
-      if(Number(response.data?.techBeeindigd||0)>0)say('Технічний профіль попереднього акаунта завершено під час перемикання. Щоб увімкнути його знову, потрібне повторне підтвердження.','Het technisch profiel van het vorige account is bij het wisselen beëindigd. Opnieuw aanzetten vraagt een nieuwe bevestiging.');
+      if(Number(response.data?.techBeeindigd||0)>0)say('Технічний профіль попереднього облікового запису завершено під час перемикання. Щоб увімкнути його знову, потрібне повторне підтвердження.','Het technisch profiel van het vorige account is bij het wisselen beëindigd. Opnieuw aanzetten vraagt een nieuwe bevestiging.');
       broadcastCanonicalAuthChange();
       void techVernieuwen();
       void ruimtesVernieuwen();
@@ -536,7 +558,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
         if(c.ok)return{ok:false as const,redirected:true};
         return{ok:false as const,fout:lang==='uk'?c.foutUk:c.foutNl,reauth:!leesActieveAanmeldPauze().actief};
       }
-      const ukTxt='Цей запам’ятаний акаунт більше недоступний. Оберіть інший або додайте новий.',nlTxt='Dit onthouden account is niet meer beschikbaar. Kies een ander account of voeg een nieuw toe.';
+      const ukTxt='Цей запам’ятаний обліковий запис більше недоступний. Оберіть інший або додайте новий.',nlTxt='Dit onthouden account is niet meer beschikbaar. Kies een ander account of voeg een nieuw toe.';
       say(ukTxt,nlTxt);
       await refreshKnownAccounts();
       return{ok:false as const,fout:lang==='uk'?ukTxt:nlTxt,reauth};
@@ -579,7 +601,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
       setState('signed_out');
       setSecuritySessions([]);
       broadcastCanonicalAuthChange();
-      say('Усі акаунти в цьому браузері вийшли із сайту. Для наступного входу потрібен Google.','Alle accounts in deze browser zijn afgemeld. Voor de volgende aanmelding is Google vereist.');
+      say('Усі облікові записи в цьому браузері вийшли із сайту. Для наступного входу потрібен Google.','Alle accounts in deze browser zijn afgemeld. Voor de volgende aanmelding is Google vereist.');
     }catch{
       setKnownAccounts([]);
       say('Не вдалося завершити всі входи.','Niet alle aanmeldingen konden worden beëindigd.');
@@ -663,9 +685,9 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
       setState('signed_out');
       setSecuritySessions([]);
       broadcastCanonicalAuthChange();
-      say('Вихід із цього акаунту виконано в усьому браузері. Інші акаунти не змінено.','Dit account is in de hele browser afgemeld. Andere accounts zijn niet gewijzigd.');
+      say('Вихід із цього облікового запису виконано в усьому браузері. Інші облікові записи не змінено.','Dit account is in de hele browser afgemeld. Andere accounts zijn niet gewijzigd.');
     }catch{
-      say('Не вдалося вийти з цього акаунту. Дані не втрачено; спробуйте ще раз.','Afmelden bij dit account is niet gelukt. Er zijn geen gegevens verloren; probeer opnieuw.');
+      say('Не вдалося вийти з цього облікового запису. Дані не втрачено; спробуйте ще раз.','Afmelden bij dit account is niet gelukt. Er zijn geen gegevens verloren; probeer opnieuw.');
     }
     setBusy(false);
   };
@@ -776,7 +798,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     }catch(e){
       const w=foutNaarTekst(e);
       if(w){say(w[0],w[1]);setBusy(false);return}
-      say('Не вдалося видалити акаунт. Перевірте підтвердження.','Het account kon niet worden verwijderd. Controleer de bevestiging.');
+      say('Не вдалося видалити обліковий запис. Перевірте підтвердження.','Het account kon niet worden verwijderd. Controleer de bevestiging.');
     }
     setBusy(false);
   };
@@ -793,7 +815,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
       await api.post('/api/owner/identity/account/recover',{service,tabContext:tabContext(),sourceOrigin,mode});
       await bootstrap();
       say(
-        mode==='restore'?'Обліковий запис і простори відновлено.':'Обліковий запис відновлено з новим простором; старі простори лишилися в архіві («Акаунт» → «Ваші робочі простори»).',
+        mode==='restore'?'Обліковий запис і простори відновлено.':'Обліковий запис відновлено з новим простором; старі простори лишилися в архіві («Обліковий запис» → «Ваші робочі простори»).',
         mode==='restore'?'Het account en de ruimtes zijn hersteld.':'Het account is hersteld met een nieuwe ruimte; de oude ruimtes staan in het archief («Account» → «Uw werkruimtes»).',
       );
     }catch(e){
@@ -839,7 +861,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
         <p>{tr('У цій вкладці немає активної сесії.','Dit tabblad heeft geen actieve sessie.')}</p>
         {knownAccounts.length ? (
           <div className='signed-out-account-list'>
-            <span>{tr('Увійти в інший акаунт','Aanmelden met een ander account')}</span>
+            <span>{tr('Увійти в інший обліковий запис','Aanmelden met een ander account')}</span>
             {knownAccounts.map(item=>(
               <button key={item.grantId} className='remembered-account' onClick={()=>void selectKnownAccount(item.grantId)}>
                 <StableAvatar src={item.user.picture} fallback={<KeyRound/>} alt=''/>
@@ -851,7 +873,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
                 <b aria-hidden='true'><ChevronRight aria-hidden='true'/></b>
               </button>
             ))}
-            <button className='signed-out-add-account' onClick={()=>connect('replace-tab')}><span className='canonical-glyph glyph-key' aria-hidden='true'/>{tr('Додати новий акаунт','Nieuw account toevoegen')}</button>
+            <button className='signed-out-add-account' onClick={()=>connect('replace-tab')}><span className='canonical-glyph glyph-key' aria-hidden='true'/>{tr('Додати новий обліковий запис','Nieuw account toevoegen')}</button>
           </div>
         ) : (
           <button onClick={()=>connect('replace-tab')}><span className='canonical-glyph glyph-key' aria-hidden='true'/>{tr('Увійти','Aanmelden')}</button>
@@ -861,13 +883,13 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
 
   const accessGate=()=>{
     if(!user)return gate();
-    const title=state==='new'?tr('Потрібне схвалення доступу','Goedkeuring voor toegang vereist'):state==='pending'?tr('Очікує схвалення','Wacht op goedkeuring'):state==='blocked'?tr('Доступ обмежено','Toegang beperkt'):tr('Акаунт потребує відновлення','Account moet worden hersteld');
+    const title=state==='new'?tr('Потрібне схвалення доступу','Goedkeuring voor toegang vereist'):state==='pending'?tr('Очікує схвалення','Wacht op goedkeuring'):state==='blocked'?tr('Доступ обмежено','Toegang beperkt'):tr('Обліковий запис потребує відновлення','Account moet worden hersteld');
     const body=state==='new'
       ? tr('Надішліть один запит. До рішення адміністратора Hub і всі сервіси залишаються закритими.','Verstuur één aanvraag. Tot de beslissing van de beheerder blijven Hub en alle diensten gesloten.')
       : state==='pending'
         ? tr('Запит уже надіслано. До схвалення жоден робочий простір або сервісні дані недоступні.','De aanvraag is al verzonden. Tot goedkeuring zijn geen werkruimte- of dienstgegevens beschikbaar.')
         : state==='blocked'
-          ? tr('Адміністратор поки не дозволив доступ цьому акаунту.','De beheerder heeft dit account momenteel geen toegang gegeven.')
+          ? tr('Адміністратор поки не дозволив доступ цьому обліковому запису.','De beheerder heeft dit account momenteel geen toegang gegeven.')
           : (()=>{
               const tot=Number((user as {recoverableUntil?:number}).recoverableUntil||0);
               const datum=tot?new Date(tot).toLocaleDateString(lang==='uk'?'uk-UA':'nl-BE',{day:'numeric',month:'long',year:'numeric'}):'';
@@ -894,7 +916,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
             <small>{tr('Чистий простір; старий лишається в архіві, його можна відновити пізніше.','Een schone ruimte; de oude blijft in het archief en is later te herstellen.')}</small>
           </div>
         )}
-        <button className='signed-out-add-account' onClick={()=>void logout()}>{tr('Вийти з цього акаунта','Afmelden bij dit account')}</button>
+        <button className='signed-out-add-account' onClick={()=>void logout()}>{tr('Вийти з цього облікового запису','Afmelden bij dit account')}</button>
       </section>
     );
   };
@@ -966,7 +988,7 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     return <IdentityAdminView tab={tab} tr={tr} state={state} user={user} requests={requests} users={users} activeWorkspaces={activeWorkspaces} archivedWorkspaces={archivedWorkspaces} busy={busy} message={message?.[lang]||''} securitySessions={securitySessions} securityLoading={securityLoading} menuPreferences={menuPreferences} onSaveMenuPreferences={saveMenuPreferences} onConnect={connect} onRefresh={()=>void refresh()} onRefreshSessions={()=>void loadSessions()} onRevokeSession={item=>void revokeSession(item)} onRevokeAll={()=>void revokeAll()} onShareLocation={()=>{}} onDecision={(id,value)=>void runAdmin(()=>api.post(`/api/owner/admin/access-requests/${id}`,{service:'admin',tabContext:tabContext(),sourceOrigin,decision:value,confirmation:'ADMIN_POLICY_CHANGE'}))} onChangeAccess={(item,status,level,role)=>void runAdmin(()=>api.post(`/api/owner/admin/users/${item.id}`,{service:'admin',tabContext:tabContext(),sourceOrigin,status,accessLevel:level,role,workspaceRole:role,confirmation:'ADMIN_POLICY_CHANGE'}))} onDeleteUser={(item,email)=>void runAdmin(()=>api.post(`/api/owner/identity/admin/users/${item.id}/delete`,{service,tabContext:tabContext(),sourceOrigin,confirmEmail:email}))} onRecoverUser={(item,mode)=>void runAdmin(()=>api.post(`/api/owner/identity/admin/users/${item.id}/recover`,{service,tabContext:tabContext(),sourceOrigin,mode}))} onDeleteSelf={(email: string, codewoord?: string)=>void deleteSelf(email, codewoord)} onRestoreWorkspace={id=>void restoreWorkspace(id)} onChangeEntitlements={(item,entitlements)=>void runAdmin(()=>api.post(`/api/owner/admin/users/${item.id}`,{service:'admin',tabContext:tabContext(),sourceOrigin,status:item.status,accessLevel:item.accessLevel,entitlements,confirmation:'ADMIN_POLICY_CHANGE'}))}/>;
   };
 
-  const isAfgemeldInfo=(s:string)=>/^(?:Вихід із цього|Усі акаунти|Усі канонічні|Цей вхід завершено|Вибір профілю скасовано|Акаунт видалено|Dit account is|Alle accounts|Alle canonieke|Deze aanmelding is|De profielkeuze is|Het account is definitief)/.test(s);
+  const isAfgemeldInfo=(s:string)=>/^(?:Вихід із цього|Усі облікові записи|Усі канонічні|Цей вхід завершено|Вибір профілю скасовано|Обліковий запис видалено|Dit account is|Alle accounts|Alle canonieke|Deze aanmelding is|De profielkeuze is|Het account is definitief)/.test(s);
   useSessieGebruiker(state==='checking'?undefined:(user?.id??null));
   const navigateMenuRef=useRef(navigateMenu);
   navigateMenuRef.current=navigateMenu;
@@ -1014,6 +1036,8 @@ export default function UnifiedServiceApp({active=true}:{active?:boolean}){
     />
   );
 
+  // SITE-001 (пункт 15): невідома адреса без входу — сторінка 404 сама, а не вхід чи меню служб. nl: onbekend adres zonder aanmelding → losse 404-pagina.
+  if(routeOnbekend()&&state==='signed_out')return <NietGevonden lang={lang} los/>;
   return (
     <>
       <CanonicalChrome

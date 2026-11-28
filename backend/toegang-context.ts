@@ -44,7 +44,7 @@ export const ACTIES = Object.freeze({
   beheer: ['Адміністрування', 'Beheer'],
   agenten: ['Агенти й токени', 'Agents en tokens'],
   export: ['Експорт даних', 'Gegevens exporteren'],
-  'account-verwijderen': ['Видалення акаунта', 'Account verwijderen'],
+  'account-verwijderen': ['Видалення облікового запису', 'Account verwijderen'],
   'deel-beheerder': ['Надання ролі адміністратора простору', 'Beheerdersrol voor een werkruimte geven'],
   'werkruimte-overdragen': ['Передача простору іншому учасникові', 'Werkruimte overdragen aan een ander lid'], // IDENTITEIT-015
   sleutelkluis: ['Шифрування моїх даних', 'Versleuteling van mijn gegevens'],

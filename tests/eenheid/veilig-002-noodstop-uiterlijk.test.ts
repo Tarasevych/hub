@@ -126,7 +126,7 @@ export async function main(): Promise<number> {
     registreerStroomAuth(null);
   }
   check(
-    '3 apparaatRoutes та stroomVerzoekApparaat блокують несхвалений акаунт (ACCOUNT_NOT_APPROVED_FORBIDDEN)',
+    '3 apparaatRoutes та stroomVerzoekApparaat блокують несхвалений обліковий запис (ACCOUNT_NOT_APPROVED_FORBIDDEN)',
     openRes.statusCode === 403 &&
       openRes.body.includes('ACCOUNT_NOT_APPROVED_FORBIDDEN') &&
       stroomStatus >= 400 &&

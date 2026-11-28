@@ -198,7 +198,7 @@ export async function main(): Promise<number> {
       await sessiesOpen(p);
       const schakel = p.locator('[data-sessies-onthoud-schakel] input[role="switch"]');
       const ov = await overzicht(p);
-      check('B: перемикач «Зберегти цей акаунт…» увімкнено; у переліку входів є «Запам’ятований браузер» цього пристрою', await schakel.isChecked() && !!ov.sessions?.some((s) => ONTHOUDEN_SOORT.includes(s.kind) && s.current), JSON.stringify(ov.sessions?.map((s) => [s.kind, s.current])));
+      check('B: перемикач «Зберегти цей обліковий запис…» увімкнено; у переліку входів є «Запам’ятований браузер» цього пристрою', await schakel.isChecked() && !!ov.sessions?.some((s) => ONTHOUDEN_SOORT.includes(s.kind) && s.current), JSON.stringify(ov.sessions?.map((s) => [s.kind, s.current])));
       const c1 = await cookies(D1);
       check('B: після входу браузер має cookie сеансу, «запам’ятованого браузера» (на 30+ днів) і власну позначку пристрою',
         c1.some((c) => c.naam.startsWith('__Secure-tsv_ecosystem_')) && c1.some((c) => c.naam.startsWith('tsv_ot_grant_') && c.blijvend) && c1.some((c) => c.naam === '__Secure-tsv_apparaat' && c.blijvend), JSON.stringify(c1.map((c) => c.naam.replace(/_[0-9a-zA-Z-]{8,}$/, '_…'))));

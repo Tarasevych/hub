@@ -281,7 +281,7 @@ export function bijTechEinde(f: (userId: string) => void): void { techEindeLuist
 export function meldTechEindeExtern(userId: string): void { meldTechEinde(userId); }
 function meldTechEinde(userId: string): void { for (const f of techEindeLuisteraars) { try { f(userId); } catch { /* luisteraar faalt: periodieke controle vangt het op */ } } }
 
-/** 0110 (zone E): haak voor wat bij ELK uitloggen van dit account moet eindigen, ook zonder lopende activering (ontgrendelingen «до виходу з акаунта»). */
+/** 0110 (zone E): haak voor wat bij ELK uitloggen van dit account moet eindigen, ook zonder lopende activering (ontgrendelingen «до виходу з облікового запису»). */
 const uitlogLuisteraars: Array<(userId: string, tabContext?: string) => void> = [];
 export function bijUitloggen(f: (userId: string, tabContext?: string) => void): void { uitlogLuisteraars.push(f); }
 /** Uitloggen = het technisch profiel verlaten: beëindigt de activering(en) van dit account (alleen dit tabblad als tabContext is gegeven). */

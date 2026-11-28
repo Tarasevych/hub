@@ -134,7 +134,7 @@ export async function main(): Promise<number> {
         if (await knop.count()) {
           await knop.scrollIntoViewIfNeeded(); await knop.click(); await page.waitForTimeout(250);
           const tekst = await page.locator('.tech-vraag-uitleg').first().innerText().catch(() => '');
-          if (weergave === 'access') toets(`${naam}: één uitleg met status, роль en права`, /Стан акаунта/.test(tekst) && /Роль/.test(tekst) && /Права/.test(tekst), tekst.slice(0, 160));
+          if (weergave === 'access') toets(`${naam}: één uitleg met status, роль en права`, /Стан облікового запису/.test(tekst) && /Роль/.test(tekst) && /Права/.test(tekst), tekst.slice(0, 160));
           if (weergave === 'ssh') toets(`${naam}: één uitleg met Підготувати, перемикач і sshd`, /Підготувати/.test(tekst) && /Перемикач підпису/.test(tekst) && /Прибрати довіру sshd/.test(tekst), tekst.slice(0, 160));
           if (breedte === 390 || weergave !== 'sso') await page.screenshot({ path: join(UIT, `${weergave}-uitleg-${naam}.png`), animations: 'disabled' });
         }

@@ -1,4 +1,4 @@
-// Keuze «Зберегти цей акаунт для наступних сесій» / «Dit account bewaren voor volgende sessies» — PER APPARAAT.
+// Keuze «Зберегти цей обліковий запис для наступних сесій» / «Dit account bewaren voor volgende sessies» — PER APPARAAT.
 //
 // WAT HIER FOUT WAS (audit 20.10.2026): het vinkje op het aanmeldscherm leefde alleen in de React-toestand van ÉÉN tabblad
 // (useState(true)). Elke keer dat het scherm opnieuw werd opgebouwd — nieuw tabblad, F5, ander subdomein, na afmelden —

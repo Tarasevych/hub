@@ -109,6 +109,88 @@ html.palet-maquette .mail-top-command-bar .mail-top-search-shell input::placehol
   color: var(--mq-stil);
 }
 
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="veld"] .mail-top-search-shell input {
+  padding-right: 16px;
+  text-overflow: ellipsis;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="veld"] .mail-top-search-tune {
+  margin-left: 4px;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell {
+  display: inline-grid;
+  grid-template-columns: 1fr;
+  place-items: center;
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  cursor: pointer;
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell > :is(.mail-search-clear, .mail-top-search-tune) {
+  display: none;
+}
+
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker {
+  min-height: 42px;
+  height: 42px;
+  max-width: clamp(92px, 28vw, 172px);
+  padding: 0 12px;
+  gap: 6px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--mq-bovenbalk-glas));
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+  -webkit-backdrop-filter: blur(22px) saturate(1.28);
+  backdrop-filter: blur(22px) saturate(1.28);
+  color: var(--mq-tekst);
+  font-size: 13px;
+  font-weight: 640;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker:hover,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker[aria-expanded="true"] {
+  border-color: rgba(var(--mq-accent-rgb), 0.54);
+  background: color-mix(in srgb, var(--mq-oppervlak) 92%, rgba(var(--mq-accent-rgb), 0.14));
+}
+
+html.palet-maquette .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker > svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker > span:last-of-type {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--mq-gedempt);
+}
+
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-interface-actions {
   padding: 3px 5px;
   border: 1px solid var(--mq-rand);
@@ -126,6 +208,9 @@ html.palet-maquette :is(
   .mail-top-refresh,
   .mail-top-settings
 ) {
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
   color: var(--mq-gedempt);
   transition: background-color 0.18s ease, color 0.18s ease;
 }
@@ -168,6 +253,7 @@ html.palet-maquette :is(.mail-top-refresh, .mail-top-settings)[data-tooltip]::af
   box-shadow: var(--mq-schaduw-zacht);
   font-size: 12px;
 }
+
 
 /* Живі підказки пошуку, панель умов та стан пошуку */
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
@@ -477,6 +563,11 @@ html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport:not(:h
   transition: border-color 0.22s ease, box-shadow 0.24s ease;
 }
 
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list {
+  border-radius: calc(var(--mq-straal-kaart) - 1px);
+  background: transparent;
+}
+
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-oppervlak="technisch"] .google-mail-workspace.mq-schil > .mail-list-viewport:not(:has(> .google-mail-orbit[data-mail-account-resolution-empty="true"])) {
   border-color: var(--mq-tech-lijn);
   box-shadow:
@@ -490,14 +581,27 @@ html.palet-maquette .google-mail-workspace.mq-schil[data-mail-canvas-custom="tru
 
 /* Узгодження радіусів верхнього та нижнього країв усередині картки списку без обрізання спливних меню */
 html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :first-child,
-html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-layered-inbox:first-child > .mail-layered-controls {
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-layered-inbox:first-child > .mail-layered-controls,
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-inbox-group:first-child > header:first-child {
   border-start-start-radius: calc(var(--mq-straal-kaart) - 1px);
   border-start-end-radius: calc(var(--mq-straal-kaart) - 1px);
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :last-child {
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :last-child,
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :is(.mail-layered-inbox, .mail-inbox-group):last-child > .mail-layered-items:last-child > .google-mail-row:last-child,
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-inbox-group:last-child > .google-mail-row:last-child {
   border-end-start-radius: calc(var(--mq-straal-kaart) - 1px);
   border-end-end-radius: calc(var(--mq-straal-kaart) - 1px);
+}
+
+html.palet-maquette .google-mail-workspace.mq-schil .google-mail-row > .mail-row-block-stream {
+  position: relative;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+html.palet-maquette .google-mail-workspace.mq-schil .google-mail-row.unread::before {
+  z-index: 2;
 }
 
 /* Рядки листів у межах студійного полотна */
@@ -510,8 +614,8 @@ html.palet-maquette .google-mail-workspace.mq-schil:not([data-mail-read-custom="
   background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
 }
 
-html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected) {
-  box-shadow: inset 3px 0 0 rgba(var(--mq-accent-rgb), 0.72);
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .google-mail-row.unread:not(.selected) {
+  box-shadow: none;
 }
 
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected):hover {
@@ -924,6 +1028,10 @@ html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace
   html.palet-maquette .google-mail-workspace.mq-schil {
     gap: 10px;
   }
+
+  html.palet-maquette .mail-top-command-bar:has(> .mail-top-search-area[data-zoek-smal="ja"][data-zoek-actief="ja"]) > .mq-anker-onderbalk {
+    display: none;
+  }
 }
 
 @media (max-width: 720px) {
@@ -933,6 +1041,24 @@ html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace
 
   html.palet-maquette .mail-top-interface-actions {
     padding: 2px 3px;
+  }
+
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar > .mq-anker-onderbalk > .mq-onderbalk-trekker {
+    min-height: 46px;
+    height: 46px;
+    max-width: clamp(86px, 31vw, 138px);
+    padding: 0 10px;
+    gap: 5px;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html.palet-maquette .mail-top-command-bar .mail-top-search-area[data-zoek-compact="icoon"]:not([data-zoek-actief="ja"]) > .mail-top-search-shell {
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 46px;
+    min-height: 46px;
   }
 
   /* MAILDOK-001: на телефоні пігулки йдуть рядками, гортання праворуч,

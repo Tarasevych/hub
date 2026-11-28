@@ -62,3 +62,32 @@ html body .google-mail-reader .lz-hulp dl>div{display:grid;grid-template-columns
 .lz-hulp dd{margin:0;font-size:14px}
 .lz-hulp kbd{display:inline-block;min-width:26px;padding:2px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:700;text-align:center}
 .lz-hulp>p{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+
+/* MAIL-9 / MAIL-12: eigen zelfstandige opbouw van het leesvenster en op telefoon één compacte koprij (padding-right: 12px zonder gat rechts). */
+:where(.google-mail-reader-backdrop){position:absolute;inset:0;z-index:230;display:grid;min-height:0;max-height:100dvh;overflow:hidden}
+.google-mail-reader{display:grid;grid-template-rows:auto minmax(0,1fr);width:100%;height:100%;min-width:0;min-height:0;overflow:hidden}
+.google-mail-reader>header{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;padding:8px 12px;border-bottom:1px solid var(--line)}
+.google-mail-reader>header .mail-reader-icon-action{display:inline-grid;place-items:center;flex:0 0 auto;width:40px;height:40px;padding:0;border:1px solid var(--line);background:var(--surface);color:inherit}
+.google-mail-reader>section:not(.mra){min-width:0;min-height:0;overflow:auto}
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader>header{grid-row:1;grid-column:1/-1;align-self:start;z-index:700;display:flex;align-items:center;padding:6px 12px;padding-right:12px;flex-wrap:nowrap;min-height:52px;background:var(--panel)}
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader>section.mail-thread-content{grid-row:1/-1;grid-column:1/-1;padding-top:64px;padding-bottom:72px;scroll-padding-top:64px}
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader>.mail-reader-onderbalk{grid-row:1/-1;grid-column:1/-1;align-self:end;z-index:685;background:var(--panel)}
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-reader-toolbar>:is(.mail-reader-minimize,.mail-reader-close,.mail-reader-action-surface.surface-header){display:none}
+
+/* MAIL-10 / MAIL-14: geopende antwoordeditor of actief uitschuifblad verbergt de onderste actiebalk volledig en legt een sluier over de kop. */
+html body .google-mail-reader[data-reply-open='ja']>.mail-reader-onderbalk{display:none}
+html body .google-mail-reader[data-onder-blad='ja']>.mail-reader-onderbalk{opacity:0;pointer-events:none;transform:translateY(100%)}
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader[data-onder-blad='ja']::before{content:'';grid-area:1/1/-1/-1;z-index:702;background:var(--overlay);opacity:.58;pointer-events:none}
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader[data-onder-blad='ja']>header{z-index:auto}
+
+/* MAIL-13: composiet verbergen/tonen van boven- en onderbalk tijdens omlaag/omhoog bladeren (uitsluitend transform + opacity, zonder will-change op header zodat fixed-bladen aan het scherm verankerd blijven). */
+html body .google-mail-reader>header,
+html body .google-mail-reader>.mail-reader-onderbalk{transition:transform 180ms cubic-bezier(.22,1,.36,1),opacity 160ms ease}
+html body .google-mail-reader[data-scroll-verborgen='ja']:not([data-onder-blad='ja'])>header{transform:translateY(-105%);opacity:0;pointer-events:none}
+html body .google-mail-reader[data-scroll-verborgen='ja']>.mail-reader-onderbalk{transform:translateY(105%);opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){
+  html body .google-mail-reader>header,
+  html body .google-mail-reader>.mail-reader-onderbalk{transition:none}
+}
+
+

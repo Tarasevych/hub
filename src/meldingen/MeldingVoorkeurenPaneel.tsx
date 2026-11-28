@@ -251,7 +251,7 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen, geluid, onGel
           ? t(`Окреме налаштування мають ${eigen.length} з ${alleIds.length} типів — вони позначені «Своє».`, `${eigen.length} van de ${alleIds.length} soorten hebben een eigen instelling — gemarkeerd met «Eigen».`)
           : t('Усі типи діють за загальним. Окремий тип можна налаштувати, розгорнувши його нижче.', 'Alle soorten volgen het algemene. Een soort apart instellen: klap hem hieronder open.')}</p>
       </section>
-      {groep(t('Мої сповіщення', 'Mijn meldingen'), t('Пошта, календар, файли, безпека акаунта', 'E-mail, agenda, bestanden, accountbeveiliging'), prive, 'prive', Bell, true)}
+      {groep(t('Мої сповіщення', 'Mijn meldingen'), t('Пошта, календар, файли, безпека облікового запису', 'E-mail, agenda, bestanden, accountbeveiliging'), prive, 'prive', Bell, true)}
       {techTypen ? groep(t('Технічні', 'Technisch'), t('Лише з технічним профілем і для ваших ролей', 'Alleen met een technisch profiel en voor uw rollen'), tech, 'technisch', Server, false) : null}
     </div>
   );

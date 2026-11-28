@@ -135,7 +135,7 @@ export async function main(): Promise<number> {
     check('correctie in het schrift van de vraag: «Харкив» → «Харків»/«Харкові» (Cyrillisch, niet translit)', corrCyr.suggesties.some(s => s.soort === 'correctie' && /Харк/.test(s.tekst)), JSON.stringify(corrCyr.suggesties.map(s => s.tekst)));
     const trans = await zoek(ladeA, { q: 'Калнедар' });
     check('transpositie «Калнедар» → iets met календар/kalendar (typefout-kanaal) of niets zonder valse 100 %', trans.items.every(x => x.uitleg.some(u => u.code === 'vaag' || u.code === 'translit') || /kalendar|agenda/.test(zoekNorm(x.titel))), JSON.stringify(trans.items.map(x => [x.titel, x.uitleg.map(u => u.code)])));
-    const verzwakt = await zoek(ladeA, { q: 'де подивитися хто входив у мій акаунт' });
+    const verzwakt = await zoek(ladeA, { q: 'де подивитися хто входив у мій обліковий запис' });
     check('beschrijvende vraag: verzwakt (gedeeltelijk) i.p.v. leeg', verzwakt.items.length > 0 && verzwakt.items.some(x => x.id === 'instellingen/sessies'), JSON.stringify([verzwakt.verzwakt, ids(verzwakt.items)]));
     const dub = await zoek(ladeA, { q: 'mail' });
     check('pagina/instelling vóór knop bij gelijke titeltreffer', dub.items.findIndex(x => x.bron === 'pagina' || x.bron === 'instelling' || x.bron === 'ui') >= 0);

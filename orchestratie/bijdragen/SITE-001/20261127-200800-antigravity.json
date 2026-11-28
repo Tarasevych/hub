@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261127-200800-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-27T20:08:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Перероблено довгу мобільну панель розділів пошти (.mq-anker-onderbalk) на компактну кнопку-капсулку (.mq-onderbalk-trekker), вбудовану безпосередньо у верхній рядок команд пошти (.mail-top-command-bar) між кнопкою головного меню («☰») та полем пошуку (MailSearchField), і впроваджено адаптивне поле пошуку в src/MailZoekVeld.tsx: 1) прибрано зайву довгу смугу під верхнім рядком, заощадивши понад 60 px вертикального простору екрана; 2) натискання на компактну кнопку-капсулку «☰ Вхідні ▾» розгортає меню розділів пошти (MaquetteAnkerRail); 3) коли залишкова ширина поля пошуку достатня (MAIL_ZOEK_WOORD_MIN_BREEDTE >= 168 px / MAIL_ZOEK_VOLLEDIG_MIN_BREEDTE >= 248 px), слово «Пошук» відображається з чітким відступом (padding-right: 16px та margin-left: 4px) від кнопки налаштувань пошуку, щоб елементи не зливалися докупи; 4) коли слово «Пошук» не вміщається у залишкову ширину (< 168 px), поле пошуку звужується до компактної кнопки знака пошуку («🔍», data-zoek-compact=\"icoon\") і розгортається на всю ширину верхнього рядка при натисканні/фокусі (site-001-snelheid 25/25).",
+    "nl": "Lange mobiele onderbalk van de e-mailsecties (.mq-anker-onderbalk) omgevormd tot een compacte capsuleknop (.mq-onderbalk-trekker) direct in de bovenste opdrachtbalk (.mail-top-command-bar) tussen de hoofdmenuknop («☰») en het zoekveld (MailSearchField), met adaptief zoekveld in src/MailZoekVeld.tsx: 1) overbodige brede balk onder de kop verwijderd (> 60 px verticale ruimte bespaard); 2) tikken op de compacte capsuleknop «☰ Postvak IN ▾» klapt het sectiemenu (MaquetteAnkerRail) uit; 3) bij voldoende resterende breedte (MAIL_ZOEK_WOORD_MIN_BREEDTE >= 168 px / MAIL_ZOEK_VOLLEDIG_MIN_BREEDTE >= 248 px) blijft het woord «Zoeken» zichtbaar met een duidelijke afstand (padding-right: 16px) tot de zoekfilterknop; 4) wanneer het woord niet in de resterende breedte past (< 168 px), krimpt het zoekveld tot een compact zoekpictogram («🔍», data-zoek-compact=\"icoon\") dat bij aanraken of focus over de volle breedte openklapt (site-001-snelheid 25/25)."
+  },
+  "waarom": {
+    "uk": "Власник вказав на знімку екрана, що довга панель під верхнім рядком пошти є зайвою, краде вертикальний простір і лише розгортає меню натисканням на кнопку, тому її слід переробити на компактну кнопку-капсулку безпосередньо між кнопкою меню та полем пошуку, адаптивно звузивши поле пошуку до знака пошуку за нестачі ширини або зберігаючи достатню відстань між словом «Пошук» і кнопкою налаштувань.",
+    "nl": "De eigenaar gaf op een schermafdruk aan dat het lange paneel onder de bovenbalk van de e-mail overbodig is en enkel ruimte steelt, en vroeg om het om te vormen tot een compacte capsuleknop direct tussen de menuknop en het zoekveld, waarbij het zoekveld krimpt tot een zoekpictogram als het woord «Zoeken» niet met voldoende afstand tot de filterknop in de resterende breedte past."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261127-192200-antigravity",
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "bfb7df9bb8c9f3315bac5d4d03ca50ce4a0f77cc",
+    "c994765ef69e663f574b4bb1d9777b3abcc08bf0",
+    "c375e52920248d538dbda1f15f643cfeb8229695"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring"
+  ]
+}

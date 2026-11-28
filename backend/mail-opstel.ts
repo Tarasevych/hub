@@ -76,13 +76,16 @@ const gmail = async (token: string, path: string, init: RequestInit = {}) =>
 export const gmailTransport: MailTransport = {
   async resolve(userId, accountId) {
     const snapshot = await googleSuiteMailProviderSnapshot(userId);
-    const account = (accountId ? snapshot.accounts.find((a) => a.id === accountId) : snapshot.account) as { id: string; email: string; displayName: string; status: string } | null | undefined;
+    const account = ((accountId && accountId !== 'all' ? snapshot.accounts.find((a) => a.id === accountId) : null) || snapshot.account || snapshot.accounts[0]) as { id: string; email: string; displayName: string; status: string } | null | undefined;
     if (!account || account.status !== 'connected') return null;
     return { accountId: account.id, email: account.email, displayName: account.displayName || '' };
   },
   async send(userId, accountId, rawMime, threadId) {
     const token = await tokenFor(userId, accountId);
-    const res = await gmail(token, '/messages/send', { method: 'POST', body: JSON.stringify({ raw: toGmailRaw(rawMime), ...(threadId ? { threadId } : {}) }) });
+    let res = await gmail(token, '/messages/send', { method: 'POST', body: JSON.stringify({ raw: toGmailRaw(rawMime), ...(threadId ? { threadId } : {}) }) });
+    if (!res.ok && threadId && (res.status === 400 || res.status === 404)) {
+      res = await gmail(token, '/messages/send', { method: 'POST', body: JSON.stringify({ raw: toGmailRaw(rawMime) }) });
+    }
     const body: any = await res.json().catch(() => ({}));
     if (!res.ok) throw new ProviderError(`GMAIL_SEND_${res.status}`, res.status, res.status >= 400 && res.status < 500 && res.status !== 429);
     return { id: String(body.id || ''), threadId: String(body.threadId || '') };
@@ -120,8 +123,8 @@ export const gmailTransport: MailTransport = {
 
 async function tokenFor(userId: string, accountId: string): Promise<string> {
   const snapshot = await googleSuiteMailProviderSnapshot(userId);
-  const account = snapshot.accounts.find((a) => a.id === accountId);
-  if (!account) throw new ProviderError('MAIL_ACCOUNT_NOT_CONNECTED', 409, true);
+  const account = (accountId && accountId !== 'all' ? snapshot.accounts.find((a) => a.id === accountId) : null) || snapshot.account || snapshot.accounts[0];
+  if (!account || account.status !== 'connected') throw new ProviderError('MAIL_ACCOUNT_NOT_CONNECTED', 409, true);
   return googleSuitePrincipalAccessToken(userId, (account as { principalId: string }).principalId, 'mail');
 }
 
@@ -254,6 +257,17 @@ export async function deleteDraft(userId: string, localId: string): Promise<bool
   if (!row) return false;
   if (row.gmail_draft_id) { try { const a = await transport.resolve(userId, row.account_id); if (a) await transport.draftDelete(userId, a.accountId, row.gmail_draft_id); } catch { /* Gmail-kant opruimen is best effort */ } }
   return true;
+}
+export async function deleteDraftsForThread(userId: string, threadId: string): Promise<number> {
+  if (!threadId) return 0;
+  const lade = ladeVereist(userId);
+  const r = await systeem(`DELETE FROM app.mail_drafts WHERE ${W(lade)} AND thread_id=$2 RETURNING account_id, gmail_draft_id`, [userId, threadId]);
+  for (const row of r.rows) {
+    if (row?.gmail_draft_id) {
+      try { const a = await transport.resolve(userId, row.account_id); if (a) await transport.draftDelete(userId, a.accountId, row.gmail_draft_id); } catch { /* Gmail-kant opruimen is best effort */ }
+    }
+  }
+  return r.rowCount ?? 0;
 }
 
 // ---------------------------------------------------------------- wachtrij
@@ -412,7 +426,7 @@ export function createMailComposeRoutes(deps: Deps) {
   // een kijker (viewer/beperkt) mag alleen lijsten en lezen.
   const gateOf = async (ctx: { event: Record<string, unknown>; body: unknown }, write: boolean) => {
     const auth = await deps.requireSession(ctx.event, ctx.body);
-    if ('errorCode' in auth || auth.service !== 'mail' || auth.user.status !== 'approved') return { deny: error('OWNER_MAIL_SESSION_REQUIRED', 403) } as const;
+    if ('errorCode' in auth || !auth.service || auth.user.status !== 'approved') return { deny: error('OWNER_MAIL_SESSION_REQUIRED', 403) } as const;
     const nee = write ? denyMutation(auth.user as never, 'mail.write') : undefined;
     return nee ? ({ deny: nee } as const) : ({ auth } as const);
   };
@@ -448,7 +462,7 @@ export function createMailComposeRoutes(deps: Deps) {
       const out = await sendNow(auth.user.id, body as ComposeInput, requestId);
       if ('error' in out) return error(out.error, MESSAGE_FOR[out.error] ?? 400);
       await deps.audit(auth.user.id, 'owner.mail.compose.send', out.item.status === 'sent' ? 'success' : 'failure', { queueId: out.item.id, status: out.item.status });
-      return json({ ok: out.item.status === 'sent', item: out.item });
+      return json({ ok: out.item.status === 'sent', item: out.item, ...(out.item.status !== 'sent' ? { error: out.item.lastError || 'MAIL_SEND_FAILED' } : {}) });
     }],
     'POST /api/owner/mail/compose/schedule': [async (ctx: any) => {
       const g = await gateOf(ctx, true); if ('deny' in g) return g.deny; const auth = g.auth;

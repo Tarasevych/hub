@@ -4,7 +4,7 @@
 // Вмикач — справжній checkbox із role=switch: клавіатура, читач екрана і наявні data-атрибути працюють як раніше.
 // Довідка: ключ «?» передає виклик (hulp='…'); tests/eenheid/hulp-register.test.ts перевіряє ключ і «?» у файлі виклику.
 import type { ReactNode } from 'react';
-import { Bot, Cable, Cloud, Github, Globe, Home, HousePlug, Mail, Network, Settings, ShieldCheck, type LucideIcon } from 'lucide-react';
+import { Bot, Cable, Cloud, Github, Globe, Handshake, Home, HousePlug, Mail, Network, Settings, ShieldCheck, type LucideIcon } from 'lucide-react';
 import Merk from '../merk/Merk';
 import { DIENST_ACCENT } from '../../shared/menu-model';
 import './host-schakelaar.css';
@@ -18,6 +18,7 @@ const DIENSTEN: Readonly<Record<string, DienstInfo>> = {
   'ai.tarasevych.com': { dienst: 'ai', icoon: Bot, uk: 'ШІ для вас', nl: 'AI voor u' },
   'id.tarasevych.com': { dienst: 'identity', icoon: Settings, uk: 'Обліковий запис', nl: 'Account' },
   'github.tarasevych.com': { dienst: 'github', icoon: Github, uk: 'GitHub', nl: 'GitHub' },
+  'crm.tarasevych.com': { dienst: 'crm', icoon: Handshake, uk: 'Клієнтські взаємини', nl: 'Klantrelatiebeheer' },
   'huis.tarasevych.com': { dienst: 'huis', icoon: HousePlug, uk: 'Розумний будинок', nl: 'Slim huis' },
   'mcp.tarasevych.com': { dienst: 'mcp', icoon: Cable, uk: 'Міст ШІ → сайт', nl: 'Brug AI → site' },
   'admin.tarasevych.com': { dienst: 'admin', icoon: ShieldCheck, uk: 'Адміністрування', nl: 'Beheer' },

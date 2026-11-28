@@ -234,7 +234,7 @@ const sluit = (src, van, naam) => { const i = src.indexOf(`</${naam}>`, van); re
  * `cond && (…)`, `c ? (…) : (…)`, `const x = (…)` of `{ … }`). Wat daarin na de kop staat, wordt samen met de kop getoond — ook in
  * een zustercontainer (`<header><h2/></header><div><button/></div>`) of binnen `{open && …}` / `.map(…)` in die boom.
  * Vroeger (tot 05.11.2026) gold «de laatste kop ervoor in het bestand», ook uit een andere component of uit een tak die nooit samen
- * met de knop zichtbaar is: in GoogleMailWerkruimte.tsx kregen 21 knoppen van de inbox de sectie «Підключені Google-акаунти» (een
+ * met de knop zichtbaar is: in GoogleMailWerkruimte.tsx kregen 21 knoppen van de inbox de sectie «Підключені облікові записи Google» (een
  * kop in de tak mode==='accounts'), in CloudFunctioneelWeergave.tsx kreeg «Вийти з фокусу» (werkruimten) «Зберегти без
  * організації» (vastleggen), in MeldingenV2.tsx kregen de meldingen «Правила сповіщень» (de kop wisselt met de toestand).
  * Liever geen sectie dan een verkeerde: het pad op de zoekkaart is dan «dienst › pagina».
@@ -757,7 +757,7 @@ export const DOORSTUREND = Object.freeze({ mcp: Object.freeze(['overview', 'conn
  *   • na aftrek van doorsturende tabbladen precies één mogelijk → dat;
  *   • meerdere mogelijk → de bestandsregel als die erbij is, anders het eerste in de volgorde van het menu. Vroeger (tot 05.11.2026)
  *     altijd de bestandsregel, ook waar het element niet kan staan: «Відкрити» en de Google-accounts van de cloud stonden op
- *     «Огляд», terwijl ze alleen op «Акаунти» / «Пошук» / «Недавні» … verschijnen;
+ *     «Огляд», terwijl ze alleen op «Облікові записи» / «Пошук» / «Недавні» … verschijnen;
  *   • alleen doorsturende tabbladen mogelijk → null (bv. de takken section==='overview'/'connect' van McpDienstWeergave);
  *   • geen enkel tabblad mogelijk (de bron noemt alleen onbekende tabbladen) → de bestandsregel, voorzichtig zoals vroeger.
  */

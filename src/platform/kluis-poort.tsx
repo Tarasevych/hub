@@ -197,7 +197,7 @@ function KluisKaart() {
     }
     melden(tr('Дані розшифровано.', 'Gegevens ontsleuteld.'), 'success',
       onthoudenGelukt ? tr('Цей пристрій запам’ятано на 30 днів: повторний вхід і оновлення сервера більше не питатимуть ключ доступу.', 'Dit apparaat is 30 dagen onthouden: opnieuw aanmelden en serverupdates vragen geen passkey meer.')
-        : tr('Ключ відкрито до виходу з акаунта або перезапуску сервера.', 'De sleutel is open tot afmelden of een herstart van de server.'));
+        : tr('Ключ відкрито до виходу з облікового запису або перезапуску сервера.', 'De sleutel is open tot afmelden of een herstart van de server.'));
     const herladen = geopend(true);
     setKlaar({ herladen, onthouden: onthoudenGelukt });
   };
@@ -254,10 +254,10 @@ function KluisKaart() {
       <span className='kluis-poort-icoon' data-open={!!klaar} aria-hidden='true'>{klaar ? <LockOpen /> : <Lock />}</span>
       <div className='kluis-poort-tekst'>
         <h2 id='kluis-poort-titel'>{klaar ? tr('Дані розшифровано', 'Gegevens ontsleuteld') : tr('Ваші дані зараз зашифровані', 'Uw gegevens zijn nu versleuteld')}</h2>
-        {!klaar && <p>{tr('Тому пошта, хмара та інші розділи поки порожні: нічого не зникло. Ключ ваших даних закривається, коли ви виходите з акаунта або сервер перезапускається після оновлення. Розшифруйте тут, і сторінка одразу дочитає дані.',
+        {!klaar && <p>{tr('Тому пошта, хмара та інші розділи поки порожні: нічого не зникло. Ключ ваших даних закривається, коли ви виходите з облікового запису або сервер перезапускається після оновлення. Розшифруйте тут, і сторінка одразу дочитає дані.',
           'Daarom zijn mail, cloud en andere onderdelen nu leeg: er is niets verdwenen. De sleutel van uw gegevens sluit wanneer u zich afmeldt of de server na een update herstart. Ontsleutel hier en de pagina laadt meteen verder.')}</p>}
         {klaar && <p>{klaar.onthouden ? tr('Цей пристрій запам’ятано: наступного разу після входу чи оновлення дані розшифруються самі.', 'Dit apparaat is onthouden: na een volgende aanmelding of update worden de gegevens vanzelf ontsleuteld.')
-          : tr('Ключ відкрито до виходу з акаунта або перезапуску сервера.', 'De sleutel is open tot afmelden of een herstart van de server.')}</p>}
+          : tr('Ключ відкрито до виходу з облікового запису або перезапуску сервера.', 'De sleutel is open tot afmelden of een herstart van de server.')}</p>}
       </div>
       {!klaar && !nieuweCode && <button type='button' className='kluis-poort-sluit' onClick={later} aria-label={tr('Пізніше', 'Later')} title={tr('Сховати картку. Розділи лишаться порожніми, поки дані не розшифровано; кнопка «Розшифрувати» залишиться внизу екрана.', 'Kaart verbergen. Onderdelen blijven leeg tot de gegevens ontsleuteld zijn; de knop «Ontsleutelen» blijft onderaan het scherm.')}><X /></button>}
     </div>

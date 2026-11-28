@@ -279,12 +279,12 @@ audit_beheerder() {
   [[ "$wie" =~ ^[A-Za-z0-9_.@+-]{1,200}$ ]] || fout "неочікуваний формат" "onverwacht formaat"
   if [[ "$wie" == *@* ]]; then
     id="$(psql_db -At -c "SELECT id FROM app.records WHERE tbl = 'users' AND lower(data->>'email') = lower('$wie') LIMIT 2")"
-    [ "$(printf '%s\n' "$id" | grep -c .)" = 1 ] || fout "акаунт не знайдено (або їх кілька)" "account niet (of meer dan één keer) gevonden"
+    [ "$(printf '%s\n' "$id" | grep -c .)" = 1 ] || fout "обліковий запис не знайдено (або їх кілька)" "account niet (of meer dan één keer) gevonden"
   else id="$wie"; fi
   if [ "$1" = toevoegen ]; then
     psql_db -c "INSERT INTO app.audit_beheerders (user_id, notitie) VALUES ('$id', 'db-rollen-instellen.sh') ON CONFLICT (user_id) DO NOTHING" >/dev/null \
       || fout "не вдалося (міграцію 0008 виконано?)" "mislukt (is migratie 0008 uitgevoerd?)"
-    zeg "OK: акаунт може видаляти журнал аудиту (лише з причиною; дія записується)." "OK: account mag de audit-log opschonen (alleen met reden; wordt zelf gelogd)."
+    zeg "OK: обліковий запис може видаляти журнал аудиту (лише з причиною; дія записується)." "OK: account mag de audit-log opschonen (alleen met reden; wordt zelf gelogd)."
   else
     psql_db -c "DELETE FROM app.audit_beheerders WHERE user_id = '$id'" >/dev/null || fout "не вдалося" "mislukt"
     zeg "OK: право видалення аудиту знято." "OK: recht om audit te verwijderen ingetrokken."

@@ -1,5 +1,5 @@
 // MELDINGEN IN TWEE GESCHEIDEN LADEN (klacht van de eigenaar, 20.10.2026: «панель сповіщень показує технічні сповіщення, коли
-// користувач в особистому просторі — сповіщення не розділені між технічною й звичайною частинами акаунта»).
+// користувач в особистому просторі — сповіщення не розділені між технічною й звичайною частинами облікового запису»).
 //
 // WAT ER WAS EN WAAROM DAT TE WEINIG WAS
 //   Sinds 18.10.2026 heeft elke meldingssoort een ruimte (shared/melding-soorten.ts) en filterde de BROWSER de bel per webruimte

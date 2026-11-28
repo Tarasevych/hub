@@ -35,12 +35,12 @@ export function CloudVerbindingCentrum(){
   setBusy(a.id);try{const result=await post(`/api/owner/cloud/integrations/v1/accounts/${encodeURIComponent(a.id)}/disconnect`,{confirm:true});
    setStatus(result.remote==='revoked'?'Доступ відкликано.':result.remote==='pending'?'Доступ тут заблоковано. Відкликання у провайдера потребує перевірки.':'Доступ тут заблоковано. Перевірте дозволи на стороні провайдера.');
    sync.announce();}catch(e){setStatus(e instanceof Error?e.message:'Не вдалося відключити');}finally{setBusy('');}}
- async function rename(a:CloudAccountListItem){const label=window.prompt('Підпис акаунта — наприклад «Робота», «Особистий», «Команда»',a.displayName);
+ async function rename(a:CloudAccountListItem){const label=window.prompt('Підпис облікового запису — наприклад «Робота», «Особистий», «Команда»',a.displayName);
   if(label===null)return;setBusy(a.id);try{await post(`/api/owner/cloud/integrations/v1/accounts/${encodeURIComponent(a.id)}/rename`,{label:label.slice(0,80)});
     setStatus('Назву підключення оновлено');sync.announce();}catch(e){setStatus(e instanceof Error?e.message:'Не вдалося змінити назву');}finally{setBusy('');}}
  return <section className="tsv-cloud-accounts" aria-labelledby="tsv-cloud-accounts-title">
   <header className="tsv-cloud-accounts-heading">
-   <div><p className="tsv-cloud-eyebrow">Мій простір · Cloud</p><h2 id="tsv-cloud-accounts-title">Підключення та акаунти</h2>
+   <div><p className="tsv-cloud-eyebrow">Мій простір · Cloud</p><h2 id="tsv-cloud-accounts-title">Підключення та облікові записи</h2>
    <p>Керуйте кількома робочими й особистими сховищами з одного місця. Ваші файли залишаються в обраних сервісах.</p></div>
    <span className="tsv-cloud-counter">{connected.length} підключено</span>
   </header>
@@ -59,7 +59,7 @@ export function CloudVerbindingCentrum(){
     <p className="tsv-cloud-note">У Box режим лише читання обмежується нашою системою; фактичні дозволи застосунку задаються у Box Developer Console. Nextcloud та S3 мають окремі способи авторизації й будуть доступні після перевірки їхніх захищених майстрів підключення. Google Drive використовує наявне канонічне підключення Google Suite.</p>
    </section>
    <section className="tsv-cloud-panel" aria-labelledby="tsv-cloud-connected-heading">
-    <div className="tsv-cloud-panel-header"><h3 id="tsv-cloud-connected-heading">Мої акаунти</h3>
+    <div className="tsv-cloud-panel-header"><h3 id="tsv-cloud-connected-heading">Мої облікові записи</h3>
      <button type="button" className="tsv-cloud-subtle" onClick={()=>sync.refresh(true)}>Оновити</button></div>
     {shown.length===0?<p className="tsv-cloud-empty">Поки немає підключень у цьому просторі.</p>:
     <div className="tsv-cloud-connections">{shown.map(a=><article key={a.id} className={`tsv-cloud-connected ${a.id===selected?'tsv-cloud-current':''}`}>
@@ -75,6 +75,6 @@ export function CloudVerbindingCentrum(){
    </section>
   </div>
   <p role="status" aria-live="polite" className="tsv-cloud-status">{status}</p>
-  <aside className="tsv-cloud-bottom-note">Вибір акаунта не перемикає інші вкладки. Підключення й відкликання дозволів синхронізуються через сервер між браузерами та пристроями. Секретні ключі ніколи не передаються в цей інтерфейс.</aside>
+  <aside className="tsv-cloud-bottom-note">Вибір облікового запису не перемикає інші вкладки. Підключення й відкликання дозволів синхронізуються через сервер між браузерами та пристроями. Секретні ключі ніколи не передаються в цей інтерфейс.</aside>
  </section>;
 }

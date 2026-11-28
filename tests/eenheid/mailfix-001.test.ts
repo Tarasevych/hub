@@ -14,7 +14,7 @@ export async function main(): Promise<number> {
 
   // MAILACC-002 (15.11.2026): de strook «Що можна підключити тут» dubbelde ook bij gekoppelde accounts de orbit eronder —
   // op het tabblad «accounts» staat ze nu helemaal niet meer; de orbit is de enige catalogus.
-  check('op «Поштові акаунти» staat geen tweede strook «Що можна підключити тут» naast de orbit',
+  check('op «Поштові облікові записи» staat geen tweede strook «Що можна підключити тут» naast de orbit',
     !page.includes('<IntegratieStrook dienst=\'mail\'/>') && !page.includes('IntegratieStrook')
     && page.includes("if(tab==='accounts')body=accountView;"));
   // MAILHOEK-001: de afgeronde paginakaart mag na het laden niet meer platgemaakt worden (rechte hoeken op de telefoon).

@@ -7,7 +7,9 @@ import {MaquetteHeld,MaquetteAnkerRail,useIsKlassiekMaquette,type MaquetteAnkerI
 import {useIsMaquette} from './thema/useThema';
 import {useVensters} from './platform/vensters';
 import {useOnthoudenVensters} from './platform/vensters-onthouden';
-import {opRuimteWissel} from './tech/ruimtes/ruimte-signaal';
+import {huidigeRuimte,opRuimteWissel} from './tech/ruimtes/ruimte-signaal';
+import {ruimteSleutel} from './tech/ruimtes/ruimte-sleutel';
+import {retainEqual} from './stabiel-toestand';
 
 import './mail-functioneel.css';import './mail-ux-beoordeling-20261021.css';import './mailfix-001-accounts.css';
 import './mail/mail-panelen-maquette.css';
@@ -129,6 +131,11 @@ const replyTemplate=(item:MailItem,style:ReplyStyle,lang:Lang)=>{
  return `Шановний/шановна ${name},\n\nДякую за ваше повідомлення щодо «${item.subject||'цього питання'}». Підтверджую його отримання та надам змістовну відповідь найближчим часом.\n\nЗ повагою`;
 };
 
+const BOOTSTRAP_CACHE_PREFIX='tsv:mail-bootstrap-cache-v1:';
+const mailBootstrapCacheSleutel=(userId:string)=>{if(!userId)return'';const r=huidigeRuimte();return`${BOOTSTRAP_CACHE_PREFIX}${r==='prive'?userId:ruimteSleutel(r,userId)}`};
+const leesMailBootstrapCache=(userId:string):Bootstrap|null=>{const k=mailBootstrapCacheSleutel(userId);if(!k)return null;try{const raw=(typeof sessionStorage!=='undefined'&&sessionStorage.getItem(k))||(typeof localStorage!=='undefined'&&localStorage.getItem(k))||'';if(!raw)return null;const parsed=JSON.parse(raw)as Bootstrap;return parsed&&Array.isArray(parsed.items)?parsed:null}catch{return null}};
+const schrijfMailBootstrapCache=(userId:string,waarde:Bootstrap)=>{const k=mailBootstrapCacheSleutel(userId);if(!k)return;try{const payload=JSON.stringify(waarde);if(typeof sessionStorage!=='undefined')sessionStorage.setItem(k,payload);if(typeof localStorage!=='undefined')localStorage.setItem(k,payload)}catch{}};
+
 export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigin,tabContext,homeSignal,sessionReady,onFocusChange}:Props){
  const isMaquette=useIsMaquette();
  const isKlassiek=useIsKlassiekMaquette();
@@ -143,8 +150,9 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const [actiefAnker,setActiefAnker]=useState('mail-sectie-aanbieders');
 
  const notify=(message:string,kind:'info'|'success'|'warning'|'error'='info')=>emitCanonicalNotice({text:message,kind,source:'mail'});
- const [data,setData]=useState<Bootstrap>(INITIAL_BOOTSTRAP);
- const [loading,setLoading]=useState(true);
+ const initialBootstrapCache=useMemo(()=>leesMailBootstrapCache(userId),[userId]);
+ const [data,setData]=useState<Bootstrap>(initialBootstrapCache||INITIAL_BOOTSTRAP);/*useState<Bootstrap>(INITIAL_BOOTSTRAP)*/
+ const [loading,setLoading]=useState(()=>!initialBootstrapCache);
  const [busy,setBusy]=useState(false);
  const [showNoise,setShowNoise]=useState(false);
 
@@ -159,6 +167,8 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const [taskTitle,setTaskTitle]=useState('');
  const [energy,setEnergy]=useState<Energy>('low');
  const context={service:'mail',tabContext,sourceOrigin};
+
+ useEffect(()=>{if(!userId)return;const gecachet=leesMailBootstrapCache(userId);if(gecachet){setData(current=>retainEqual(current,gecachet));setLoading(false)}},[userId]);
 
  useEffect(()=>{
   if(typeof window==='undefined')return;
@@ -179,8 +189,9 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
   if(doel)doel.scrollIntoView({behavior:'smooth',block:'start'});
  },[]);
 
- const load=async()=>{
-  setLoading(true);
+ const load=async(stil=false)=>{
+  const gecachet=leesMailBootstrapCache(userId);
+  if(!stil&&!gecachet&&!data.googleMail?.accounts?.length)setLoading(true);
   try{
    const response=await api.post('/api/owner/mail/bootstrap',context);
    const raw=(response.data||{}) as Partial<Bootstrap>;
@@ -195,7 +206,8 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
     provider:{...INITIAL_BOOTSTRAP.provider,...(raw.provider||{})},
     platform:{...INITIAL_BOOTSTRAP.platform,...(raw.platform||{})},
    };
-   setData(next);
+   schrijfMailBootstrapCache(userId,next);
+   setData(current=>retainEqual(current,next));
    setEnergy(next.resume?.energy||'low');
    if(next.resume?.focus&&next.resume.currentItemId){
     setSelectedId(next.resume.currentItemId);
@@ -203,11 +215,11 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
     onFocusChange(true);
    }
   }catch{
-   notify(text(lang,'Не вдалося відкрити поштовий фронт. Дані не втрачено.','De mailwerkruimte kon niet worden geopend. Er zijn geen gegevens verloren.'),'error');
+   if(!gecachet&&!data.googleMail?.accounts?.length)notify(text(lang,'Не вдалося відкрити поштовий фронт. Дані не втрачено.','De mailwerkruimte kon niet worden geopend. Er zijn geen gegevens verloren.'),'error');
   }finally{setLoading(false)}
  };
- useEffect(()=>{try{const url=new URL(location.href);if(url.searchParams.get('google_suite_callback')==='success'&&url.searchParams.get('google_suite_connected')==='mail'){notify(text(lang,'Gmail підключено. Останній лист — у картці акаунта, без теми.','Gmail is gekoppeld. Het laatste bericht staat op de accountkaart, zonder onderwerp.'),'success');url.searchParams.delete('google_suite_callback');url.searchParams.delete('google_suite_connected');history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`)}}catch{}},[lang]);
- useEffect(()=>{if(sessionReady)void load()},[userId,sessionReady]);useEffect(()=>{if(!sessionReady)return;return opRuimteWissel(()=>{setData(current=>({...current,googleMail:undefined}));void load()})},[sessionReady]);useEffect(()=>()=>{onFocusChange(false)},[onFocusChange]);
+ useEffect(()=>{try{const url=new URL(location.href);if(url.searchParams.get('google_suite_callback')==='success'&&url.searchParams.get('google_suite_connected')==='mail'){notify(text(lang,'Gmail підключено. Останній лист — у картці облікового запису, без теми.','Gmail is gekoppeld. Het laatste bericht staat op de accountkaart, zonder onderwerp.'),'success');url.searchParams.delete('google_suite_callback');url.searchParams.delete('google_suite_connected');history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`)}}catch{}},[lang]);
+ useEffect(()=>{if(sessionReady)void load(Boolean(leesMailBootstrapCache(userId)))},[userId,sessionReady]);useEffect(()=>{if(!sessionReady)return;return opRuimteWissel(()=>{const gecachet=leesMailBootstrapCache(userId);setData(gecachet||({...INITIAL_BOOTSTRAP,googleMail:undefined}));setLoading(!gecachet);void load(Boolean(gecachet))})},[sessionReady,userId]);useEffect(()=>()=>{onFocusChange(false)},[onFocusChange]);
  useEffect(()=>{onFocusChange(focus)},[focus,onFocusChange]);
 
  const current=useMemo(()=>data.items.find(item=>item.id===selectedId)||null,[data.items,selectedId]);
@@ -265,8 +277,8 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  // Wat er IN dat venster gebeurt, bepaalt shared/mail-aanbieders.ts: Google-OAuth, Microsoft-OAuth, IMAP met app-wachtwoord,
  // of — zonder knop — de lijst van wat nog ontbreekt. Geen melding «ще не підтримується» meer waar een knop stond.
  const connectProvider=(provider:string)=>{const dienstNaam=mailAanbieder(provider)?.naam||provider;mailKoppelenOpenen(provider,`${text(lang,'Підключення','Koppelen')}: ${dienstNaam}`,'mail')};
- /* 21.10.2026: de aparte Microsoft-sectie voor extra accounts (select + e-mailveld + «Додати акаунт») was een dubbel van de tegel Outlook en is weg. De
-    Microsoft-stromen (startMicrosoftConnection, disconnectMicrosoftAccount) staan nu in src/MailAccountsHub.tsx, bij «Підключені акаунти»,
+ /* 21.10.2026: de aparte Microsoft-sectie voor extra accounts (select + e-mailveld + «Додати обліковий запис») was een dubbel van de tegel Outlook en is weg. De
+    Microsoft-stromen (startMicrosoftConnection, disconnectMicrosoftAccount) staan nu in src/MailAccountsHub.tsx, bij «Підключені облікові записи»,
     met dezelfde routes (accounts/:id/connect/start, accounts/:id/disconnect) — en het koppelen zelf in het venster van de tegel Outlook. */
  
  const saveNotificationLevel=async(value:NotificationLevel)=>{setBusy(true);try{const response=await api.post('/api/owner/mail/notification-preferences/save',{...context,minimum:value});setData(current=>({...current,notificationPreference:response.data.notificationPreference as NotificationPreference,items:current.items.map(item=>({...item,notificationEligible:Boolean((response.data.eligibility||{})[item.id])}))}));notify(text(lang,'Поріг важливості збережено. Зовнішній канал сповіщень ще не підключений.','De belangrijkheidsdrempel is bewaard. Een extern meldingskanaal is nog niet gekoppeld.'),'warning')}catch{notify(text(lang,'Не вдалося зберегти поріг сповіщень.','De meldingsdrempel kon niet worden bewaard.'),'error')}finally{setBusy(false)}};
@@ -326,7 +338,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const accountView=(
   <section className='mail-provider-view' data-mail-provider-foundation='v1'>
    <div className='mail-kicker'><ShieldCheck/>{text(lang,'Підключення','Koppelingen')}</div>
-   <div className='mail-account-intro'><h1>{text(lang,'Поштові акаунти','E-mailaccounts')}</h1><p>{text(lang,'Керуйте основною поштою та додатковими адресами в одному місці.','Beheer uw primaire mailbox en extra adressen op één plek.')}</p></div><div className='mail-account-manager' data-mail-account-manager='canonical-v1'><MailAccountsHub lang={lang} userName={userName||''} onConnect={connectProvider} accounts={(data.googleMail?.accounts||[]).map(a=>({id:a.id,email:a.email,provider:'Google',status:a.status,accountRole:a.accountRole}))} tabContext={tabContext} sourceOrigin={sourceOrigin} onVeranderd={()=>void load()} onLeegVeranderd={setHubLeeg} onAantalVeranderd={setHubAantal} />
+   <div className='mail-account-intro'><h1>{text(lang,'Поштові облікові записи','E-mailaccounts')}</h1><p>{text(lang,'Керуйте основною поштою та додатковими адресами в одному місці.','Beheer uw primaire mailbox en extra adressen op één plek.')}</p></div><div className='mail-account-manager' data-mail-account-manager='canonical-v1'><MailAccountsHub lang={lang} userName={userName||''} onConnect={connectProvider} accounts={(data.googleMail?.accounts||[]).map(a=>({id:a.id,email:a.email,provider:'Google',status:a.status,accountRole:a.accountRole}))} tabContext={tabContext} sourceOrigin={sourceOrigin} onVeranderd={()=>void load()} onLeegVeranderd={setHubLeeg} onAantalVeranderd={setHubAantal} />
    {/* 05.11.2026 (ZOEKDIEP-001, стара помилка): de beheerweergave van GoogleMailWorkspace (mode='accounts') werd nergens gerenderd. Alleen daar
        staan «Оновити доступ» (zoektoestemming van Gmail, mailSearchConsentRequired) en «Обрати» (actieve Gmail-postbus) — dus wie de zoektoegang
        moest bijwerken, kon dat nergens. Ingeklapt; vanzelf open als een account de toegang moet bijwerken. */}
@@ -384,7 +396,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  // MAILACC-002: geen gedeelde strook «Що можна підключити тут» meer — de orbit op deze pagina is al de volledige catalogus (dubbel).
  if(tab==='accounts')body=accountView;
  else if(tab==='contacts')body=<Suspense fallback={null}><ContactenWeergave lang={lang}/></Suspense>;
- else if(standardMailSurface)body=<GoogleMailWorkspace lang={lang} tab={tab} sourceOrigin={sourceOrigin} tabContext={tabContext} ownerUserId={userId} homeSignal={homeSignal} initialSnapshot={data.googleMail||null} bootstrapPending={loading}/>;
+ else if(standardMailSurface)body=<GoogleMailWorkspace lang={lang} tab={tab} sourceOrigin={sourceOrigin} tabContext={tabContext} ownerUserId={userId} homeSignal={homeSignal} initialSnapshot={data.googleMail||null} bootstrapPending={loading} onSnapshotChange={next=>setData(current=>{const bijgewerkt:Bootstrap={...current,googleMail:{...(current.googleMail||next),...next,runtime:current.googleMail?.runtime||'verified'}};schrijfMailBootstrapCache(userId,bijgewerkt);return retainEqual(current,bijgewerkt)})}/>;
  else if(loading)body=null;
  else if(data.items.length===0)body=onboarding;
  else if(focus)body=focusView;
@@ -464,6 +476,6 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
   {/* «Контакти й відправники»: start de volledige controle automatisch één keer en toont de voortgang (Пауза / Зупинити). */}
   <Suspense fallback={null}>{sessionReady&&<ContactenScanMelding lang={lang} actief={tab!=='contacts'}/>}</Suspense>
 
-  {importOpen&&<div className='mail-dialog-backdrop' role='presentation'><section className='mail-import-dialog' role='dialog' aria-modal='true' aria-labelledby='mail-import-title'><header><div><small>{text(lang,'Приватний ручний імпорт','Privé handmatige import')}</small><h2 id='mail-import-title'>{text(lang,'Додати один лист','Eén bericht toevoegen')}</h2></div><button onClick={()=>setImportOpen(false)}><X/></button></header><label>{text(lang,'Ім’я відправника','Naam afzender')}<input value={form.senderName} onChange={event=>setForm(value=>({...value,senderName:event.target.value}))} maxLength={200}/></label><label>{text(lang,'Email відправника','E-mail afzender')}<input type='email' value={form.senderEmail} onChange={event=>setForm(value=>({...value,senderEmail:event.target.value}))} maxLength={320}/></label><label>{text(lang,'Тема','Onderwerp')}<input value={form.subject} onChange={event=>setForm(value=>({...value,subject:event.target.value}))} maxLength={500}/></label><label>{text(lang,'Текст листа','Tekst van het bericht')}<textarea value={form.body} onChange={event=>setForm(value=>({...value,body:event.target.value}))} rows={12} maxLength={80000} required/></label><p><ShieldCheck/>{text(lang,'Текст зберігається як plain text у вашому приватному акаунті. Він не надсилається зовнішній AI-моделі.','De tekst wordt als platte tekst in uw privéaccount bewaard en niet naar een extern AI-model gestuurd.')}</p><button className='mail-primary' disabled={busy||!form.body.trim()} onClick={()=>void importMail()}><Upload/>{text(lang,'Зберегти й розібрати','Bewaren en analyseren')}</button></section></div>}
+  {importOpen&&<div className='mail-dialog-backdrop' role='presentation'><section className='mail-import-dialog' role='dialog' aria-modal='true' aria-labelledby='mail-import-title'><header><div><small>{text(lang,'Приватний ручний імпорт','Privé handmatige import')}</small><h2 id='mail-import-title'>{text(lang,'Додати один лист','Eén bericht toevoegen')}</h2></div><button onClick={()=>setImportOpen(false)}><X/></button></header><label>{text(lang,'Ім’я відправника','Naam afzender')}<input value={form.senderName} onChange={event=>setForm(value=>({...value,senderName:event.target.value}))} maxLength={200}/></label><label>{text(lang,'Email відправника','E-mail afzender')}<input type='email' value={form.senderEmail} onChange={event=>setForm(value=>({...value,senderEmail:event.target.value}))} maxLength={320}/></label><label>{text(lang,'Тема','Onderwerp')}<input value={form.subject} onChange={event=>setForm(value=>({...value,subject:event.target.value}))} maxLength={500}/></label><label>{text(lang,'Текст листа','Tekst van het bericht')}<textarea value={form.body} onChange={event=>setForm(value=>({...value,body:event.target.value}))} rows={12} maxLength={80000} required/></label><p><ShieldCheck/>{text(lang,'Текст зберігається як plain text у вашому приватному обліковому записі. Він не надсилається зовнішній AI-моделі.','De tekst wordt als platte tekst in uw privéaccount bewaard en niet naar een extern AI-model gestuurd.')}</p><button className='mail-primary' disabled={busy||!form.body.trim()} onClick={()=>void importMail()}><Upload/>{text(lang,'Зберегти й розібрати','Bewaren en analyseren')}</button></section></div>}
  </div>;
 }

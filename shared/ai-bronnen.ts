@@ -26,12 +26,14 @@ export type PuntSoort = 'vraag' | 'verzoek' | 'termijn' | 'feit';
 /** Een punt zoals het model (of het eenvoudige ontleden) het geeft. */
 export type AiPunt = { id: string; tekst: string; citaat: string; brief?: number; alinea?: number; termijn?: string; soort?: PuntSoort };
 export type TermijnStaat = 'in-bron' | 'niet-in-bron' | 'geen';
+export type PuntKoppeling = { label: string; url: string };
 export type GecontroleerdPunt = AiPunt & {
   status: 'letterlijk' | 'niet-gevonden';
   bron: BronPlek | null;
   /** Het model gaf een ander alineanummer dan waar het citaat echt staat (het nummer is verbeterd). */
   verplaatst: boolean;
   termijnStaat: TermijnStaat;
+  koppelingen?: PuntKoppeling[];
 };
 export type Opbouw = 'model' | 'eenvoudig';
 
@@ -254,7 +256,17 @@ export function controleerPunten(punten: readonly AiPunt[], alineas: readonly Br
       termijnStaat = bron ? termijnInBron(termijn, alinea) : 'niet-in-bron';
       if (termijnStaat !== 'in-bron') termijn = '';
     }
-    return { ...p, termijn, status: bron ? 'letterlijk' : 'niet-gevonden', bron, verplaatst, termijnStaat };
+    const schoon = opschonenPuntTekst(p.tekst);
+    return {
+      ...p,
+      tekst: schoon.tekst,
+      termijn,
+      status: bron ? 'letterlijk' : 'niet-gevonden',
+      bron,
+      verplaatst,
+      termijnStaat,
+      ...(schoon && schoon.koppelingen.length ? { koppelingen: schoon.koppelingen } : {}),
+    };
   });
 }
 
@@ -304,6 +316,48 @@ export function termijnInZin(zin: string): string {
 
 type EenvoudigeBrief = { brief: number; tekst: string };
 
+const RUWE_ANKER_HAAKJES_RE = /\(\s*<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>\s*\)/gi;
+const RUWE_ANKER_LOS_RE = /<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi;
+const LOSSE_HTML_TAG_RE = /<\/?[a-z][a-z0-9:-]*(?:\s+[^<>]{0,400})?>/gi;
+
+function herstelAanhefPunt(tekst: string): string {
+  const kort = String(tekst || '').replace(/\s+/g, ' ').trim();
+  if (!kort.startsWith('Ні ')) return tekst;
+  const m = /^Ні\s+([\p{Lu}][\p{L}'’-]{0,40}(?:\s+[\p{Lu}][\p{L}'’-]{0,40}){0,2})([,!.:;—-]?\s+[\s\S]+)$/u.exec(kort);
+  if (!m) return tekst;
+  const rest = m[2];
+  const lat = (rest.match(/\p{Script=Latin}/gu) || []).length;
+  const cyr = (rest.match(/\p{Script=Cyrillic}/gu) || []).length;
+  if (lat >= 4 && lat > cyr * 2) return `Hi ${m[1]}${rest}`;
+  return tekst;
+}
+
+/** Очищує сирі HTML-посилання <a href="..."> у видимому тексті пункту, зберігаючи безпечні https/http адреси в окремому масиві. */
+export function opschonenPuntTekst(ruw: string): { tekst: string; koppelingen: PuntKoppeling[] } {
+  const bron = String(ruw ?? '');
+  if (!bron.includes('<')) return { tekst: herstelAanhefPunt(bron), koppelingen: [] };
+  const koppelingen: PuntKoppeling[] = [];
+  const ontcijferUrl = (u: string) => u.replace(/&amp;/gi, '&').trim();
+  const verwerkAnker = (u1: string, u2: string, u3: string, inhoud: string, tussenHaakjes: boolean): string => {
+    const url = ontcijferUrl(String(u1 || u2 || u3 || ''));
+    const label = String(inhoud ?? '').replace(LOSSE_HTML_TAG_RE, ' ').replace(/\s+/g, ' ').trim();
+    if (/^https?:\/\/[^\s"'<>]+$/i.test(url)) {
+      koppelingen.push({ label: label || url, url });
+      return tussenHaakjes ? '' : (label || '');
+    }
+    return tussenHaakjes ? (label ? `(${label})` : '') : label;
+  };
+  const stap1 = bron.replace(RUWE_ANKER_HAAKJES_RE, (_m, u1, u2, u3, l) => verwerkAnker(u1, u2, u3, l, true));
+  const stap2 = stap1.replace(RUWE_ANKER_LOS_RE, (_m, u1, u2, u3, l) => verwerkAnker(u1, u2, u3, l, false));
+  const tekst = stap2
+    .replace(LOSSE_HTML_TAG_RE, ' ')
+    .replace(/javascript\s*:\s*[^\s<>)]*/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .trim();
+  return { tekst: herstelAanhefPunt(tekst || bron.replace(LOSSE_HTML_TAG_RE, '').trim()), koppelingen };
+}
+
 /**
  * «Простий розбір» zonder model: vragen (zin eindigt op «?»), verzoeken en termijnen als PUNTEN; datums met tijd, bijlagen en
  * bedragen als «Коротко». Elk punt is een letterlijke zin uit de brief, met zijn bron — dus altijd «знайдено дослівно».
@@ -319,7 +373,21 @@ export function eenvoudigeOntleding(brieven: readonly EenvoudigeBrief[]): { punt
     const plek = zoekCitaat(zin, [a]);
     if (!plek) return null;
     gezien.add(n);
-    return { id: `e:${a.brief}.${a.nr}.${gezien.size}`, tekst: zin, citaat: zin, brief: a.brief, alinea: a.nr, termijn, soort, status: 'letterlijk', bron: plek, verplaatst: false, termijnStaat: termijn ? 'in-bron' : 'geen' };
+    const schoon = opschonenPuntTekst(zin);
+    return {
+      id: `e:${a.brief}.${a.nr}.${gezien.size}`,
+      tekst: schoon.tekst,
+      citaat: zin,
+      brief: a.brief,
+      alinea: a.nr,
+      termijn,
+      soort,
+      status: 'letterlijk',
+      bron: plek,
+      verplaatst: false,
+      termijnStaat: termijn ? 'in-bron' : 'geen',
+      ...(schoon && schoon.koppelingen.length ? { koppelingen: schoon.koppelingen } : {}),
+    };
   };
   for (const a of alineas) {
     if (GROET.test(a.tekst.trim())) continue;
@@ -350,22 +418,67 @@ export function eenvoudigeOntleding(brieven: readonly EenvoudigeBrief[]): { punt
 /* SEC-002 (g10c-toets-1): adres uit de LAATSTE hoekhaken (adresVan), niet de eerste «<…>» uit de weergavenaam */
 const adres = (v: string) => adresVan(v).adres || (String(v || '').includes('<') ? '' : String(v || '').trim().toLocaleLowerCase());
 
+export type EenrichtingSignalen = {
+  replyTo?: string;
+  autoSubmitted?: string;
+  precedence?: string;
+};
+
+const EENRICHTING_LOKAAL_RE = /^(?:no[-_.]?reply|do[-_.]?not[-_.]?reply|dont[-_.]?reply|cannot[-_.]?reply|mailer[-_.]?daemon|postmaster|bounce[s]?|auto[-_.]?(?:confirm|mailer|notify|reply)|automated|system[-_.]?noreply)(?:[+._-].*)?$/i;
+const EENRICHTING_DOMEIN_RE = /(?:^|\.)(?:no-?reply|autoreply)\./i;
+
+function adresIsEenrichting(a: string): boolean {
+  if (!a) return false;
+  const at = a.lastIndexOf('@');
+  const lokaal = at > 0 ? a.slice(0, at) : a;
+  const domein = at > 0 ? a.slice(at + 1) : '';
+  return EENRICHTING_LOKAAL_RE.test(lokaal) || EENRICHTING_DOMEIN_RE.test(domein);
+}
+
+/** Розпізнає односторонні автоматичні розсилки (no-reply@, mailer-daemon@, Auto-Submitted) з повагою до живої адреси Reply-To. */
+export function isEenrichtingsAfzender(
+  from: string,
+  replyToOfOpties?: string | EenrichtingSignalen,
+  signalen?: EenrichtingSignalen,
+): boolean {
+  const opties: EenrichtingSignalen =
+    typeof replyToOfOpties === 'object' && replyToOfOpties !== null
+      ? replyToOfOpties
+      : { ...signalen, replyTo: typeof replyToOfOpties === 'string' ? replyToOfOpties : signalen?.replyTo };
+  const antwoordAdres = adres(opties.replyTo || '');
+  if (antwoordAdres) return adresIsEenrichting(antwoordAdres);
+  const afzenderAdres = adres(from);
+  if (!afzenderAdres) return false;
+  if (adresIsEenrichting(afzenderAdres)) return true;
+  if (opties.autoSubmitted && /^auto-(?:generated|replied)/i.test(opties.autoSubmitted.trim())) return true;
+  return false;
+}
+
 /**
- * Wacht dit gesprek op een antwoord van mij? Ja als de laatste brief niet van mij is en er na mijn laatste brief een vraag of
- * verzoek staat (in `punten`, met `brief` = volgnummer). Geeft de reden (het eerste punt) terug, of null.
+ * Wacht dit gesprek op een antwoord van mij? Ja als de laatste brief niet van mij is, niet van een eenrichtingsadres komt
+ * en er na mijn laatste brief een vraag of verzoek staat (in `punten`, met `brief` = volgnummer).
  */
 export function antwoordNodig(
-  gesprek: ReadonlyArray<{ from: string }>,
+  gesprek: ReadonlyArray<{ from: string; replyTo?: string; autoSubmitted?: string }>,
   mijnAdressen: readonly string[],
   punten: readonly GecontroleerdPunt[],
 ): GecontroleerdPunt | null {
   if (!gesprek.length) return null;
   const mijn = new Set(mijnAdressen.map(adres).filter(Boolean));
   const vanMij = (i: number) => mijn.has(adres(gesprek[i].from));
+  const laatste = gesprek[gesprek.length - 1];
   if (vanMij(gesprek.length - 1)) return null;
+  if (isEenrichtingsAfzender(laatste.from, laatste.replyTo, { autoSubmitted: laatste.autoSubmitted })) return null;
   let laatsteVanMij = 0;
   gesprek.forEach((_, i) => { if (vanMij(i)) laatsteVanMij = i + 1; });
-  return punten.find((p) => p.status === 'letterlijk' && (p.soort === 'vraag' || p.soort === 'verzoek') && (p.bron?.brief || 0) > laatsteVanMij) || null;
+  return punten.find((p) => {
+    if (p.status !== 'letterlijk' || (p.soort !== 'vraag' && p.soort !== 'verzoek')) return false;
+    const briefNr = p.bron?.brief || 0;
+    if (briefNr <= laatsteVanMij) return false;
+    const bronBrief = gesprek[briefNr - 1];
+    if (bronBrief && isEenrichtingsAfzender(bronBrief.from, bronBrief.replyTo, { autoSubmitted: bronBrief.autoSubmitted })) return false;
+    return true;
+  }) || null;
 }
 
 // ------------------------------------------------------------------ markeren (aanwijzen in de ORIGINELE tekst)
@@ -430,16 +543,65 @@ export function markeerCitaat(tekst: string, citaat: string): Array<{ tekst: str
   return uit;
 }
 
-/** Ruwe taal van een tekst (zelfde regels als de server, backend/ai-vertaling-routes.ts detectLanguageCode). */
+const TAAL_AANHEF_NAAM_RE = /(^|\n)\s*(Hi|Hello|Dear|Beste|Geachte|Dag|Hallo|Bonjour|Cher|Chère|Guten\s+Tag|Liebe[rs]?|Sehr\s+geehrte[rs]?|Cześć|Dzień\s+dobry|Вітаю|Вітаємо|Добрий\s+день|Доброго\s+дня|Шановн(?:ий|а|і))\s+[\p{Lu}][\p{L}'’-]{0,30}(?:\s+[\p{Lu}][\p{L}'’-]{0,30}){0,3}(?=\s*[,!.\n])/gu;
+const TAAL_STOPWOORDEN: ReadonlyArray<readonly [string, RegExp, RegExp | null, number]> = [
+  [
+    'nl',
+    /(?<![\p{L}])(?:de|het|een|voor|met|niet|van|naar|bij|uw|onze|wij|hierbij|ontvangt|bestelling|winkel|vriendelijke|groet|groeten|factuur|betaling|beste|geachte|kunt|graag|bijlage|bedankt|leveringsvoorwaarden)(?![\p{L}])/giu,
+    null,
+    0,
+  ],
+  [
+    'de',
+    /(?<![\p{L}])(?:der|die|das|und|für|mit|nicht|von|ihre|ihren|unserer|guten|sehr|geehrte|rechnung|vielen|dank|bitte|rückmeldung|antwort|schnelle)(?![\p{L}])/giu,
+    /[äöüßÄÖÜ]/gu,
+    1.5,
+  ],
+  [
+    'fr',
+    /(?<![\p{L}])(?:le|la|les|des|pour|avec|dans|votre|notre|bonjour|merci|beaucoup|facture|veuillez|cordialement|confirmation|rapide|espace)(?![\p{L}])/giu,
+    /[çœæàèùêîôé]/giu,
+    1.2,
+  ],
+  [
+    'pl',
+    /(?<![\p{L}])(?:czy|dla|jest|nie|tak|nas|proszę|dziękuję|faktura|fakturę|dzień|dobry|poważaniem|możemy|potwierdzić|spotkanie|gotowa)(?![\p{L}])/giu,
+    /[ąćęłńśźżĄĆĘŁŃŚŹŻ]/gu,
+    2,
+  ],
+  [
+    'en',
+    /(?<![\p{L}])(?:the|and|for|with|your|you|thank|thanks|order|made|from|this|that|please|have|has|been|will|pick|collect|confirmed|remember|tomorrow|between|hello|hi|team)(?![\p{L}])/giu,
+    null,
+    0,
+  ],
+];
+
+/** Статистичне визначення основної мови тексту листа (спільне для клієнта та сервера). */
 export function taalVan(tekst: string): string {
-  const sample = String(tekst || '').split('[ПРИХОВАНО_СЕКРЕТ]').join(' ').slice(0, 2000);
-  if (/[іїєґІЇЄҐ]/.test(sample)) return 'uk';
-  if (/[а-яА-Я]/.test(sample)) return 'uk';
-  if (/\b(?:de|het|een|voor|met|niet|van|naar|bij|vriendelijke|groet|factuur|betaling)\b/i.test(sample)) return 'nl';
-  if (/\b(?:der|die|das|und|für|mit|nicht|von|rechnung|vielen|dank)\b/i.test(sample)) return 'de';
-  if (/\b(?:le|la|les|des|pour|avec|dans|bonjour|merci|facture)\b/i.test(sample)) return 'fr';
-  if (/\b(?:czy|dla|jest|nie|tak|proszę|dziękuję|faktura)\b/i.test(sample)) return 'pl';
-  return 'en';
+  const gekuist = String(tekst || '')
+    .replace(/\[(?:ПРИХОВАНО|VERBORGEN)_[\p{L}\p{N}_]+\]/gu, ' ')
+    .replace(LOSSE_HTML_TAG_RE, ' ')
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/\S+@\S+/g, ' ')
+    .replace(TAAL_AANHEF_NAAM_RE, '$1$2')
+    .slice(0, 4000);
+  const cyr = (gekuist.match(/\p{Script=Cyrillic}/gu) || []).length;
+  const lat = (gekuist.match(/\p{Script=Latin}/gu) || []).length;
+  if (cyr + lat === 0) return 'en';
+  if (cyr >= 2 && (lat === 0 || cyr / (cyr + lat) >= 0.35)) return 'uk';
+  let besteTaal = 'en';
+  let besteScore = 0;
+  for (const [code, woordenRe, diakrietRe, gewicht] of TAAL_STOPWOORDEN) {
+    const woorden = (gekuist.match(woordenRe) || []).length;
+    const diakriet = diakrietRe ? (gekuist.match(diakrietRe) || []).length * gewicht : 0;
+    const score = woorden + diakriet;
+    if (score > besteScore) {
+      besteScore = score;
+      besteTaal = code;
+    }
+  }
+  return besteScore > 0 ? besteTaal : 'en';
 }
 
 // ------------------------------------------------------------------ juridisch dossier & anonimiseren (AutoClaw / GLM-5.3-flashX-Legal)

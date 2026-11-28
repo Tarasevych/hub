@@ -12,7 +12,7 @@ export async function main(): Promise<number> {
   check('migratie 0141: standaard UIT, idempotent', /'accountmenu-v2'/.test(mig) && /false,\s*false/.test(mig) && /ON CONFLICT \(sleutel\) DO NOTHING/.test(mig));
   check('tip: naam + e-mail', avatarTip('uk', 'Pavlo', 'p@x.org', 0) === 'Pavlo\np@x.org');
   check('tip: naam gelijk aan e-mail → één regel', avatarTip('nl', 'p@x.org', 'p@x.org', 0) === 'p@x.org');
-  check('tip: andere accounts uk', avatarTip('uk', 'Pavlo', 'p@x.org', 2).endsWith('Ще акаунтів: 2 — натисніть, щоб перемкнутися'));
+  check('tip: andere accounts uk', avatarTip('uk', 'Pavlo', 'p@x.org', 2).endsWith('Ще облікових записів: 2 — натисніть, щоб перемкнутися'));
   check('tip: andere accounts nl', avatarTip('nl', 'Pavlo', 'p@x.org', 1).includes('Nog 1 account(s)'));
   const menu = readFileSync('src/CanoniekAccountMenu.tsx', 'utf8');
   check('poort: v2-delen alleen met am2', /\{am2 \? controlsV2 : controls\}/.test(menu) && /\{am2 \? \(\n\s+<>\n\s+<div className='am2-blok am2-acties'/.test(menu));

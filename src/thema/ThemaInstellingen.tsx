@@ -146,7 +146,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
           <strong>{naam}</strong><small>{hint}</small>
         </button>)}
       </div>
-      {!violetToegestaan && <p className='settings-honest-note'>{tr('Фіолетова тема не дозволена для цього акаунта.', 'Het violette thema is niet toegestaan voor dit account.')}</p>}
+      {!violetToegestaan && <p className='settings-honest-note'>{tr('Фіолетова тема не дозволена для цього облікового запису.', 'Het violette thema is niet toegestaan voor dit account.')}</p>}
     </section>
     </ZoneBlok>
     <ZoneBlok laag='accent' standaardOpen onWijs={setWijs} titel={tr('Акцент', 'Accent')} waarde={accentNaam} uitleg={laagTekst('accent')}>

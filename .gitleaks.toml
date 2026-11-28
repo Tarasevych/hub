@@ -1,0 +1,46 @@
+# SITE-001 (пункт 3): налаштування сканера таємниць gitleaks.
+# Усі знахідки ручно перевірено 25.11.2026: це назви змінних середовища, штучні тестові значення
+# («012345…», «rooktest…»), приклад ключа WebSocket із RFC 6455 та публічний ключ розширення оглядача.
+# Справжніх таємниць у дереві немає. Нові винятки додавати лише з поясненням.
+# nl: Configuratie van de geheimscanner. Alle treffers zijn handmatig gecontroleerd; geen echte geheimen.
+
+title = "Mijn Ruimte — gitleaks"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Перевірені хибні спрацювання · gecontroleerde valse treffers"
+paths = [
+  '''^tests/''',
+  '''^node_modules/''',
+  '''^dist/''',
+  '''^dist-server/''',
+  '''^package-lock\.json$''',
+  # Публічний ключ розширення (поле «key» у маніфесті Chrome) — не таємниця · publieke sleutel.
+  '''^extension/manifest\.json$''',
+]
+regexes = [
+  # Назви змінних середовища без значень · namen van omgevingsvariabelen.
+  '''^[A-Z0-9_]+_(KEY|SLEUTEL|PEPPER)(_V[0-9])?$''',
+  # Штучні значення з послідовністю цифр · kunstmatige waarden.
+  '''0123456789''',
+  # Приклад ключа WebSocket із RFC 6455 · voorbeeld uit RFC 6455.
+  '''dGhlIHNhbXBsZSBub25jZQ==''',
+  # Штучні паролі місцевих димових перевірок · wachtwoorden van lokale rooktests.
+  '''rooktest''',
+  # Штучний пробний маркер GitHub в історії `backend/integraties-wizard.ts` (тепер GITHUB_PROEFTOKEN).
+  # nl: kunstmatige proeftoken in de geschiedenis.
+  '''^gho_mijn''',
+  # Назви контрактів і правил у таблицях документації · namen van contracten en regels.
+  '''^owner_scoped_[a-z0-9_]+$''',
+  '''^stap-op-onthouden''',
+]
+
+# Публічні ідентифікатори моделей автентифікаторів FIDO (AAGUID) — не таємниці.
+# nl: publieke AAGUID's van FIDO-authenticators — geen geheimen.
+[[allowlists]]
+description = "AAGUID ключів доступу · AAGUID's van toegangssleutels"
+condition = "AND"
+paths = [ '''^backend/toegangssleutels\.ts$''' ]
+regexes = [ '''^[0-9a-f]{32}$''' ]

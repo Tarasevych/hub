@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261127-064541-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-27T06:45:41.425Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "overname",
+  "wat": {
+    "uk": "Перейнято завдання SITE-001 із точного місця зупинки на фіксації 204f9ec8 без повторення вже виконаних 18 пунктів: перевірка й завершення незафіксованої заміни «акаунт» на «обліковий запис», завершення пункту 12 (швидкість завантаження), виконання пунктів 20–25 та складання пакета випуску із зазначенням обох моделей.",
+    "nl": "Taak SITE-001 overgenomen vanaf het exacte stoppunt op vastlegging 204f9ec8 zonder de reeds voltooide 18 punten over te doen: controle en afronding van de voorbereide Oekraiense taalzuivering, afronding van punt 12 (laadsnelheid), uitvoering van punten 20 tot en met 25 en samenstelling van het uitrolpakket met vermelding van beide modellen."
+  },
+  "waarom": {
+    "uk": "Попередній сеанс моделі Claude Opus 5.5 (High) через Antigravity Google перервався через вичерпання ліміту під час розбору швидкості пункту 12 і очікування фонового порівняння випробувань заміни слова «акаунт»; власник доручив продовжити роботу з місця зупинки.",
+    "nl": "De vorige sessie van model Claude Opus 5.5 (High) via Antigravity Google werd onderbroken wegens limietuitputting tijdens de snelheidsanalyse van punt 12 en het wachten op de testvergelijking; de eigenaar gaf opdracht om vanaf het stoppunt verder te gaan."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261126-155700-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": null,
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring",
+    "meldingen"
+  ]
+}

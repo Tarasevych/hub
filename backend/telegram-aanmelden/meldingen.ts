@@ -37,6 +37,66 @@ export async function beheerAlarm(soort: string, details: Record<string, unknown
   if (eigenaar) await meld(eigenaar, 'security', '🚨 Telegram: тривога безпеки / beveiligingsalarm', `${tekst.uk} / ${tekst.nl}`, `https://${SERVICE_HOSTS.admin}/sso#telegram-beheer`).catch(() => undefined);
 }
 
+/** Закриває попередні непрочитані картки про збій входу Telegram, коли зв’язок уже відновлено. */
+export async function sluitOpenTelegramStoringMeldingen(eigenaarId: string): Promise<void> {
+  if (!eigenaarId) return;
+  await sql(
+    `UPDATE app.records
+        SET data = jsonb_set(
+              jsonb_set(data, '{read}', 'true'::jsonb, true),
+              '{readAt}',
+              COALESCE(data->'readAt', to_jsonb((extract(epoch from now()) * 1000)::bigint)),
+              true
+            ),
+            updated_at = now()
+      WHERE tbl = 'site_notifications'
+        AND data->>'recipientUserId' = $1
+        AND COALESCE(
+              CASE
+                WHEN jsonb_typeof(data->'read') = 'boolean' THEN (data->>'read')::boolean
+                WHEN lower(COALESCE(data->>'read', '')) IN ('true', 'false') THEN (data->>'read')::boolean
+                ELSE false
+              END,
+              false
+            ) = false
+        AND (
+          COALESCE(data->>'message', '') LIKE '%Вхід через Telegram не працює%'
+          OR COALESCE(data->>'message', '') LIKE '%Aanmelden met Telegram werkt niet%'
+          OR COALESCE(data->>'message', '') LIKE '%Aanmelden met Telegram werkt al meer dan%'
+        )`,
+    [eigenaarId],
+  ).catch(() => undefined);
+  await sql(
+    `UPDATE app.melding_ecosysteem_gebeurtenissen
+        SET status = 'opgelost',
+            bijgewerkt_op = now()
+      WHERE user_id = $1
+        AND status IN ('nieuw', 'gelezen', 'uitgesteld')
+        AND (
+          bericht LIKE '%Вхід через Telegram не працює%'
+          OR bericht LIKE '%Aanmelden met Telegram werkt niet%'
+          OR bericht LIKE '%Aanmelden met Telegram werkt al meer dan%'
+        )`,
+    [eigenaarId],
+  ).catch(() => undefined);
+}
+
+/** Спокійне сповіщення про відновлення зв’язку лише після підтвердженого тривалого чи стійкого збою. */
+export async function beheerHerstelMelding(details: Record<string, unknown>, tekst: BotTekst): Promise<void> {
+  const eigenaar = await eigenaarUserId().catch(() => '');
+  if (eigenaar) await sluitOpenTelegramStoringMeldingen(eigenaar);
+  await auditToevoegen({ ownerId: eigenaar || null, action: 'telegram.status.hersteld', type: 'identity', result: 'ok', details }).catch(() => undefined);
+  if (eigenaar) {
+    await meld(
+      eigenaar,
+      'security',
+      '✅ Telegram: зв’язок відновлено / verbinding hersteld',
+      `${tekst.uk} / ${tekst.nl}`,
+      `https://${SERVICE_HOSTS.admin}/sso#telegram-beheer`,
+    ).catch(() => undefined);
+  }
+}
+
 /** Kaart naar alle gekoppelde Telegrams van een account met recht «meldingen». Fouten per chat stoppen de rest niet. */
 export async function naarTelegrams(userId: string, inhoud: (taal: 'uk' | 'nl' | 'beide') => string, kaart: KaartSoort, knoppen?: (telegramId: string, taal: 'uk' | 'nl' | 'beide') => Promise<Knop[][]>, alleenKoppeling?: string): Promise<number> {
   const naam = await accountNaam(userId);

@@ -178,7 +178,7 @@ export async function main(): Promise<number> {
       '4b mail-mobiel.css не ховає кнопку швидких налаштувань пошти (.mail-top-settings) і адаптує шапку на ≤440px (360–390px)',
       !mailMobCss.includes('.mail-top-settings{display:none') &&
         mailMobCss.includes('@media (max-width:440px)') &&
-        mailMobCss.includes('.mail-top-settings{width:36px;height:44px}') &&
+        mailMobCss.includes('.mail-top-settings{flex:0 0 40px;aspect-ratio:1/1;border-radius:50%;width:40px;height:40px;min-width:40px;min-height:40px}') &&
         mailMobCss.includes('.mail-quick-settings{max-width:100vw;box-sizing:border-box}'),
     );
 

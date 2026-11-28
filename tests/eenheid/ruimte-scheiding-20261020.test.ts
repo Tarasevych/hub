@@ -237,7 +237,7 @@ export async function main(): Promise<number> {
         async () => { await pool.query('UPDATE app.tech_profielen SET ingetrokken_op = NULL WHERE user_id=$1', [eig.id]); }],
       ['роль змінено', async () => { await pool.query(`UPDATE app.records SET data = data || '{"role":"member"}'::jsonb WHERE tbl='users' AND id=$1`, [eig.id]); },
         async () => { await pool.query(`UPDATE app.records SET data = data || '{"role":"owner"}'::jsonb WHERE tbl='users' AND id=$1`, [eig.id]); }],
-      ['акаунт заблоковано', async () => { await pool.query(`UPDATE app.records SET data = data || '{"status":"blocked"}'::jsonb WHERE tbl='users' AND id=$1`, [eig.id]); },
+      ['обліковий запис заблоковано', async () => { await pool.query(`UPDATE app.records SET data = data || '{"status":"blocked"}'::jsonb WHERE tbl='users' AND id=$1`, [eig.id]); },
         async () => { await pool.query(`UPDATE app.records SET data = data || '{"status":"approved"}'::jsonb WHERE tbl='users' AND id=$1`, [eig.id]); }],
     ];
     for (const [naam, breek, herstel] of wegen) {

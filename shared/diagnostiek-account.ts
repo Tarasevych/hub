@@ -1,7 +1,7 @@
 // Diagnose «voor iedereen / alleen voor mij» (verslag van de eigenaar 18.10.2026: «Діагностика «для всіх / лише для мене» — не
 // впроваджено»). Per dienst twee kolommen:
 //   «Сервер (для всіх)» — de serverkant van die dienst, uit de gewone diagnoseronde (app.diagnostiek_uitslagen, elke 15 min);
-//   «Цей акаунт»        — synthetische controle voor één account: is de koppeling er, geldt het token, werkt het apparaat…
+//   «Цей обліковий запис»        — synthetische controle voor één account: is de koppeling er, geldt het token, werkt het apparaat…
 // Zo is meteen te zien of een storing iedereen raakt (server) of alleen dit account (koppeling opnieuw geven, apparaat herstarten).
 //
 // Alles hier is zuiver (geen server, geen database) en getest. Alleen metadata: stand + korte code. Nooit inhoud, adressen,
@@ -86,14 +86,14 @@ export function beoordeelAccount(f: AccountFeiten): Record<AccountDienst, { stan
 /** Uitleg + advies per code, voor de gebruiker zelf (in de 2e persoon) en de beheerder. */
 export const CODE_ADVIES: Record<string, { wat: Tekst; doe: Tekst }> = {
   GEEN_GEGEVENS: { wat: ['Немає даних про підключення Google.', 'Geen gegevens over de Google-koppeling.'], doe: ['Повторіть перевірку пізніше.', 'Probeer de controle later opnieuw.'] },
-  SERVER_NIET_INGESTELD: { wat: ['На сервері ще не налаштоване підключення Google.', 'De Google-koppeling is op de server nog niet ingesteld.'], doe: ['Це питання до власника сайту, не до вашого акаунта.', 'Dit ligt bij de eigenaar van de site, niet bij uw account.'] },
+  SERVER_NIET_INGESTELD: { wat: ['На сервері ще не налаштоване підключення Google.', 'De Google-koppeling is op de server nog niet ingesteld.'], doe: ['Це питання до власника сайту, не до вашого облікового запису.', 'Dit ligt bij de eigenaar van de site, niet bij uw account.'] },
   GMAIL_NIET_GEKOPPELD: { wat: ['Пошту Gmail ще не підключено.', 'Gmail is nog niet gekoppeld.'], doe: ['Відкрийте «Пошта» і натисніть «Підключити Gmail».', 'Open «Пошта» en klik op «Gmail koppelen».'] },
   AGENDA_NIET_GEKOPPELD: { wat: ['Календар ще не підключено.', 'De agenda is nog niet gekoppeld.'], doe: ['Підключіть календар у «Налаштування» → «Підключення».', 'Koppel de agenda via «Instellingen» → «Koppelingen».'] },
   DRIVE_NIET_GEKOPPELD: { wat: ['Google Drive ще не підключено.', 'Google Drive is nog niet gekoppeld.'], doe: ['Підключіть Drive у «Хмара».', 'Koppel Drive via «Cloud».'] },
   GMAIL_KOPPELING_ZONDER_TOESTEMMING: { wat: ['Підключення Gmail є, але дозвіл Google втрачено.', 'De Gmail-koppeling bestaat, maar de Google-toestemming is weg.'], doe: ['Підключіть Gmail ще раз (дозвіл на сторінці Google).', 'Koppel Gmail opnieuw (toestemming op de Google-pagina).'] },
   AGENDA_KOPPELING_ZONDER_TOESTEMMING: { wat: ['Дозвіл Google для календаря втрачено.', 'De Google-toestemming voor de agenda is weg.'], doe: ['Підключіть календар ще раз.', 'Koppel de agenda opnieuw.'] },
   DRIVE_KOPPELING_ZONDER_TOESTEMMING: { wat: ['Дозвіл Google для Drive втрачено.', 'De Google-toestemming voor Drive is weg.'], doe: ['Підключіть Drive ще раз.', 'Koppel Drive opnieuw.'] },
-  GMAIL_TOKEN_ONGELDIG: { wat: ['Google більше не приймає доступ до пошти цього акаунта.', 'Google aanvaardt de toegang tot de mail van dit account niet meer.'], doe: ['Підключіть Gmail ще раз; якщо ви змінювали пароль Google — це очікувано.', 'Koppel Gmail opnieuw; na een gewijzigd Google-wachtwoord is dat normaal.'] },
+  GMAIL_TOKEN_ONGELDIG: { wat: ['Google більше не приймає доступ до пошти цього облікового запису.', 'Google aanvaardt de toegang tot de mail van dit account niet meer.'], doe: ['Підключіть Gmail ще раз; якщо ви змінювали пароль Google — це очікувано.', 'Koppel Gmail opnieuw; na een gewijzigd Google-wachtwoord is dat normaal.'] },
   AGENDA_TOKEN_ONGELDIG: { wat: ['Google не приймає доступ до календаря.', 'Google aanvaardt de toegang tot de agenda niet.'], doe: ['Підключіть календар ще раз.', 'Koppel de agenda opnieuw.'] },
   DRIVE_TOKEN_ONGELDIG: { wat: ['Google не приймає доступ до Drive.', 'Google aanvaardt de toegang tot Drive niet.'], doe: ['Підключіть Drive ще раз.', 'Koppel Drive opnieuw.'] },
   MAIL_OPNIEUW_AANMELDEN: { wat: ['Поштова скринька чекає повторного входу.', 'Een postvak wacht op opnieuw aanmelden.'], doe: ['Відкрийте «Пошта» → «Скриньки» і увійдіть ще раз.', 'Open «Пошта» → «Postvakken» en meld opnieuw aan.'] },
@@ -130,15 +130,15 @@ export function conclusie(server: Stand | 'nooit', account: Stand | 'nooit'): Co
   return 'onbekend';
 }
 export const CONCLUSIE_TEKST: Record<Conclusie, Tekst> = {
-  'alles-ok': ['Усе гаразд — і на сервері, і в цьому акаунті.', 'Alles in orde — op de server en in dit account.'],
-  server: ['Проблема на сервері — вона стосується всіх, не лише цього акаунта.', 'Probleem op de server — het raakt iedereen, niet alleen dit account.'],
-  account: ['Сервер справний — проблема лише в цьому акаунті (підключення, токен або пристрій).', 'De server is in orde — het probleem zit alleen in dit account (koppeling, token of apparaat).'],
-  beide: ['Збій і на сервері, і в акаунті — спершу дочекайтеся відновлення сервера.', 'Storing op de server én in het account — wacht eerst tot de server hersteld is.'],
+  'alles-ok': ['Усе гаразд — і на сервері, і в цьому обліковому записі.', 'Alles in orde — op de server en in dit account.'],
+  server: ['Проблема на сервері — вона стосується всіх, не лише цього облікового запису.', 'Probleem op de server — het raakt iedereen, niet alleen dit account.'],
+  account: ['Сервер справний — проблема лише в цьому обліковому записі (підключення, токен або пристрій).', 'De server is in orde — het probleem zit alleen in dit account (koppeling, token of apparaat).'],
+  beide: ['Збій і на сервері, і в обліковому записі — спершу дочекайтеся відновлення сервера.', 'Storing op de server én in het account — wacht eerst tot de server hersteld is.'],
   onbekend: ['Даних замало — запустіть перевірку.', 'Te weinig gegevens — start de controle.'],
 };
 
 export type TabelRij = { dienst: AccountDienst; naam: Tekst; server: ServerCel | null; account: AccountUitslag | null; conclusie: Conclusie };
-/** De tabel «Сервер (для всіх) / Цей акаунт». `server` = null betekent: kolom niet tonen (gewone gebruiker). */
+/** De tabel «Сервер (для всіх) / Цей обліковий запис». `server` = null betekent: kolom niet tonen (gewone gebruiker). */
 export function tabel(server: Record<string, { stand: Stand; op: number } | undefined> | null, account: AccountUitslag[]): TabelRij[] {
   const perDienst = new Map(account.map((u) => [u.dienst, u]));
   return ACCOUNT_DIENSTEN.map((d) => {

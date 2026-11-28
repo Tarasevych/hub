@@ -90,7 +90,7 @@ export async function main(): Promise<number> {
     await pool.query(`UPDATE app.records SET data = jsonb_set(data, '{revokedAt}', to_jsonb($2::bigint)) WHERE id = $1`, [s.id, Date.now()]);
     const w = await mcp('beheer_journaal_lezen');
     check('MCP: hoofdsessie ingetrokken → 403, live ruimte prive', w.status === 403 && (w as any).live === 'prive', JSON.stringify(w));
-    check('MCP: melding is SITE_SESSIE_WEG «Основний акаунт не активний» (of sessie al gesloten)', ['SITE_SESSIE_WEG', 'GEEN_TECH_SESSIE'].includes(w.code) && !!w.uitleg?.uk, w.code);
+    check('MCP: melding is SITE_SESSIE_WEG «Основний обліковий запис не активний» (of sessie al gesloten)', ['SITE_SESSIE_WEG', 'GEEN_TECH_SESSIE'].includes(w.code) && !!w.uitleg?.uk, w.code);
     check('MCP: prive hulpmiddel werkt nog na intrekken', (await mcp('mail_lezen')).status === 200);
 
     await naUitloggen(uid);

@@ -1,4 +1,4 @@
-// Налаштування → Акаунт → «Стан моїх служб»: de gebruiker controleert ALLEEN het eigen account (pošta, kalender, Drive, GitHub,
+// Налаштування → Обліковий запис → «Стан моїх служб»: de gebruiker controleert ALLEEN het eigen account (pošta, kalender, Drive, GitHub,
 // ШІ-підключення, пристрої, налаштування). Geen serverkolom, geen andere gebruikers: de route negeert elk gebruikerId.
 // Bij een probleem staat er per dienst wat er mis is en wat te doen. Alleen standen en korte codes; nooit inhoud of tokens.
 import { useCallback, useEffect, useState } from 'react';
@@ -43,7 +43,7 @@ export default function MijnDiensten({ lang }: { lang: Lang }) {
         </button>
       </header>
       <p className='mdt-uitleg'>{uk
-        ? 'Перевіряємо лише ваш акаунт: чи підключені пошта, календар і Drive, чи дійсний доступ Google, GitHub, підключення ШІ та пристрої. Вміст листів і файлів не читається.'
+        ? 'Перевіряємо лише ваш обліковий запис: чи підключені пошта, календар і Drive, чи дійсний доступ Google, GitHub, підключення ШІ та пристрої. Вміст листів і файлів не читається.'
         : 'We controleren alleen uw account: of mail, agenda en Drive gekoppeld zijn, of de Google-toegang geldt, GitHub, AI-koppelingen en apparaten. De inhoud van mails en bestanden wordt niet gelezen.'}</p>
       {fout && <p className='mdt-fout' role='alert'>{fout}</p>}
       {bezig === 'laden' && !rijen.length ? <p className='mdt-uitleg'><Loader2 className='mdt-draai' aria-hidden='true' /> {uk ? 'Завантаження…' : 'Laden…'}</p> : <DienstenTabel lang={lang} rijen={rijen} metServer={false} />}

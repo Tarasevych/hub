@@ -61,6 +61,31 @@ export async function analyticsTellen(userId: string, naam: unknown): Promise<'g
   return 'geteld';
 }
 
+/**
+ * SITE-001 (punt 19): overzicht van de anonieme dagtellers voor de beheerder (alleen lezen).
+ * Bevat per dag en per gebeurtenisnaam alleen een aantal — geen account, IP, apparaat of paginapad.
+ * uk: огляд знеособлених денних лічильників для адміністратора (лише читання).
+ */
+export type AnalyseRij = { dag: string; naam: string; aantal: number };
+export async function analyseOverzicht(dagen: unknown = 30, nu = Date.now()): Promise<{ vanaf: string; tot: string; dagen: number; rijen: AnalyseRij[]; totaal: number; perNaam: Array<{ naam: string; aantal: number }> }> {
+  const n = Math.min(366, Math.max(1, Math.floor(Number(dagen) || 30)));
+  const tot = new Date(nu).toISOString().slice(0, 10);
+  const vanaf = new Date(nu - (n - 1) * 86_400_000).toISOString().slice(0, 10);
+  const r = await getPool().query(
+    `SELECT data->>'dag' AS dag, data->>'naam' AS naam, COALESCE((data->>'aantal')::bigint, 0) AS aantal
+       FROM app.records WHERE tbl = $1 AND data->>'dag' BETWEEN $2 AND $3
+      ORDER BY data->>'dag' DESC, data->>'naam' ASC LIMIT 5000`,
+    [ANALYTICS_TABEL, vanaf, tot],
+  );
+  const rijen: AnalyseRij[] = r.rows
+    .map((x: { dag: unknown; naam: unknown; aantal: unknown }) => ({ dag: String(x.dag || ''), naam: String(x.naam || ''), aantal: Number(x.aantal) || 0 }))
+    .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.dag) && GEBEURTENIS.test(x.naam));
+  const som = new Map<string, number>();
+  for (const x of rijen) som.set(x.naam, (som.get(x.naam) || 0) + x.aantal);
+  const perNaam = [...som].map(([naam, aantal]) => ({ naam, aantal })).sort((a, b) => b.aantal - a.aantal || a.naam.localeCompare(b.naam));
+  return { vanaf, tot, dagen: n, rijen, totaal: perNaam.reduce((s, x) => s + x.aantal, 0), perNaam };
+}
+
 export function zonderGeheimen(waarde: unknown, diepte = 0): unknown {
   if (diepte > 12) return '[diep]';
   if (waarde instanceof Date) return waarde;
@@ -199,7 +224,7 @@ export async function persoonsgegevensZip(data: Export): Promise<{ bytes: Buffer
   return { bytes: Buffer.from(zipSync(inhoud, { level: 6 })), tabellen };
 }
 
-/** Стерти записи й файли одного акаунта і лишити надгробок без персональних даних. Власника сервера не чіпає. */
+/** Стерти записи й файли одного облікового запису і лишити надгробок без персональних даних. Власника сервера не чіпає. */
 export async function wisRecordsVanAccount(userId: string, email: string, nu = Date.now()): Promise<{ rijen: number; bestanden: number }> {
   const pool = getPool();
   const rol = await pool.query("SELECT COALESCE(data->>'role', '') AS role FROM app.records WHERE tbl = 'users' AND id = $1", [userId]);

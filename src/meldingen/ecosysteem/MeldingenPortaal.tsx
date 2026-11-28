@@ -22,8 +22,11 @@ import {
   BookOpen,
   CheckCheck,
   CheckCircle2,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Clock3,
   Columns2,
+  Info,
   Layers,
   Maximize2,
   Minimize2,
@@ -45,6 +48,7 @@ import {
 } from 'lucide-react';
 import {
   KANALEN,
+  MELDING_KAPSEL_AFLEVERING_VLAG,
   contextVoorSubdomein,
   kanaalLabel,
   klemVenster,
@@ -55,6 +59,7 @@ import {
   type MeldingEcosysteemGebeurtenis,
   type MeldingEcosysteemProfiel,
   type MeldingGebeurtenisStatus,
+  type MeldingGeluidContext,
   type MeldingKanaal,
   type MeldingSubdomein,
   type RandRichting,
@@ -62,6 +67,7 @@ import {
   type VensterGeometrie,
   type VensterModus,
 } from '../../../shared/meldingen-ecosysteem';
+import type { MeldingType, TypeVoorkeur } from '../../../shared/melding-typen';
 import {
   bouwRustigOverzicht,
   bundelOorzaakKetens,
@@ -73,7 +79,10 @@ import {
   type VoorwaardelijkUitstelSoort,
 } from '../../../shared/meldingen-puls/kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
+import { vertaalAanmeldMethode } from '../../../shared/meldingen-ecosysteem/tolk';
 import Merk from '../../merk/Merk';
+import { useZijbalkVoorkeuren } from '../../zijbalk-voorkeuren';
+import IcoonActieKnop from '../IcoonActieKnop';
 import MeldingModusKiezer from '../MeldingModusKiezer';
 import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
 import PulsOorzaakKetenKaart from '../puls/PulsOorzaakKetenKaart';
@@ -85,9 +94,10 @@ import {
   PulsMandaatStraalBlok,
 } from '../puls/PulsVisueelAnker';
 import { usePulsSlimmeStaat } from '../puls/puls-opslag';
+import MeldingAfleveringControle from './MeldingAfleveringControle';
 import MeldingAiPaneel from './MeldingAiPaneel';
 import MeldingBijlageSpeler from './MeldingBijlageSpeler';
-import MeldingVeegKaart from './MeldingVeegKaart';
+import MeldingVeegKaart, { schoonKaartTitel } from './MeldingVeegKaart';
 
 const RANDEN: readonly RandRichting[] = ['n', 'z', 'w', 'o', 'nw', 'no', 'zw', 'zo'];
 const DND_KEUZES_MIN = [30, 60, 120, 480] as const;
@@ -123,6 +133,18 @@ function leesScherm() {
     dokLinks,
     dokRechts,
   };
+}
+
+function leesIsAanraakApparaat(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (typeof window.matchMedia === 'function') {
+    try {
+      if (window.matchMedia('(hover: none), (pointer: coarse)').matches) return true;
+    } catch {
+      /* без медіа-запиту */
+    }
+  }
+  return (window.innerWidth || 1280) <= 768;
 }
 
 function leesCompactMaat(): { breedte: number; hoogte: number } {
@@ -198,6 +220,7 @@ type Props = {
   stroom: MeldingEcosysteemGebeurtenis[];
   laden: boolean;
   sound: boolean;
+  typeVoorkeuren?: Partial<Record<MeldingType, TypeVoorkeur>>;
   techTypen?: boolean;
   nietStorenTot?: number | null;
   onZetNietStoren?: (minuten: number | null) => void;
@@ -207,6 +230,9 @@ type Props = {
   onToggleSound: () => void;
   onVervers: () => void;
   onSlaGeometrieOp: (geo: VensterGeometrie, direct?: boolean) => void;
+  onWerkProfielBij?: (updater: (oud: MeldingEcosysteemProfiel) => MeldingEcosysteemProfiel, directOpslaan?: boolean) => void;
+  onRegistreerAfgeleverd?: (gebeurtenissen: ReadonlyArray<Pick<MeldingEcosysteemGebeurtenis, 'id' | 'externeSleutel' | 'afgeleverdOp'>>) => void;
+  onRegistreerZichtGelezen?: (g: MeldingEcosysteemGebeurtenis) => void;
   onStatusWijzigen: (g: MeldingEcosysteemGebeurtenis, status: MeldingGebeurtenisStatus, uitstelMinuten?: number) => Promise<void>;
   onOntleden: (g: MeldingEcosysteemGebeurtenis, modus: 'intern' | 'extern', aanbieder?: AiAanbiederKeuze) => Promise<MeldingAiSamenvatting>;
   onMarkAll: () => void;
@@ -234,6 +260,7 @@ export default function MeldingenPortaal({
   stroom,
   laden,
   sound,
+  typeVoorkeuren,
   techTypen = false,
   nietStorenTot = null,
   onZetNietStoren,
@@ -243,6 +270,9 @@ export default function MeldingenPortaal({
   onToggleSound,
   onVervers,
   onSlaGeometrieOp,
+  onWerkProfielBij,
+  onRegistreerAfgeleverd,
+  onRegistreerZichtGelezen,
   onStatusWijzigen,
   onOntleden,
   onMarkAll,
@@ -266,7 +296,9 @@ export default function MeldingenPortaal({
   const laatsteGeoRef = useRef<VensterGeometrie>(geo);
   laatsteGeoRef.current = geo;
   const vorigeVoorVolledigRef = useRef<VensterGeometrie | null>(null);
+  const compactMaatDoorGebruikerRef = useRef<{ breedte: number; hoogte: number } | null>(null);
 
+  const [schermBreedte, setSchermBreedte] = useState<number>(() => leesScherm().breedte);
   const [zoek, setZoek] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('actief');
@@ -276,13 +308,39 @@ export default function MeldingenPortaal({
   const [dndMenuOpen, setDndMenuOpen] = useState(false);
   const [geselecteerdId, setGeselecteerdId] = useState<string>('');
   const [spatieOpenId, setSpatieOpenId] = useState<string>('');
+  const [globaalUitgeklapt, setGlobaalUitgeklapt] = useState<boolean | null>(null);
   const [detailMandaatDuur, setDetailMandaatDuur] = useState<'eenmalig' | '15m'>('eenmalig');
   const [detailBijlageIdx, setDetailBijlageIdx] = useState(0);
   const [modaalBijlage, setModaalBijlage] = useState<{ gebeurtenis: MeldingEcosysteemGebeurtenis; index: number } | null>(null);
   const [ongedaan, setOngedaan] = useState<OngedaanMakenStaat | null>(null);
   const [ongedaanSec, setOngedaanSec] = useState(5);
+  const [bovenMaten, setBovenMaten] = useState<{ alleenKop: number; kopMetDnd: number; totaalBoven: number }>({
+    alleenKop: 45,
+    kopMetDnd: 45,
+    totaalBoven: 82,
+  });
+  const [scrollStaat, setScrollStaat] = useState<{ kanScrollen: boolean; voortgang: number; duimHoogtePct: number; duimTopPct: number }>({
+    kanScrollen: false,
+    voortgang: 0,
+    duimHoogtePct: 0.25,
+    duimTopPct: 0,
+  });
+  const [schuifActief, setSchuifActief] = useState(false);
   const vensterRef = useRef<HTMLElement | null>(null);
+  const kopRef = useRef<HTMLElement | null>(null);
+  const dndStrookRef = useRef<HTMLDivElement | null>(null);
+  const filtersRef = useRef<HTMLDivElement | null>(null);
+  const lijstRef = useRef<HTMLDivElement | null>(null);
+  const schuifSpoorRef = useRef<HTMLDivElement | null>(null);
+  const schuifPointerIdRef = useRef<number | null>(null);
   const zoekInputRef = useRef<HTMLInputElement | null>(null);
+
+  const isMobielLangscroll = open && schermBreedte <= 768 && !compactBijBel;
+  const isAanraakScherm = leesIsAanraakApparaat() || schermBreedte <= 768;
+  const isMobielLangscrollRef = useRef(isMobielLangscroll);
+  isMobielLangscrollRef.current = isMobielLangscroll;
+  const scrollStaatRef = useRef(scrollStaat);
+  scrollStaatRef.current = scrollStaat;
 
   const wekGebeurtenis = useCallback(
     (geb: MeldingEcosysteemGebeurtenis) => {
@@ -399,24 +457,196 @@ export default function MeldingenPortaal({
 
   useEffect(() => {
     const onResize = () => {
+      const scherm = leesScherm();
+      setSchermBreedte(scherm.breedte);
+      if (sleepStaat.current) return;
       setGeo((h) => {
-        const scherm = leesScherm();
         if (compactBijBel) {
+          const m = compactMaatDoorGebruikerRef.current ?? leesCompactMaat();
           const r = vindZichtbareBel();
           if (r) {
-            const bijBel = klemVenster({ ...h, x: r.right - h.breedte, y: r.bottom + 10 }, scherm);
+            const bijBel = klemVenster(
+              { ...h, breedte: m.breedte, hoogte: m.hoogte, modus: 'normaal', x: r.right - m.breedte, y: r.bottom + 10 },
+              scherm,
+            );
             laatsteGeoRef.current = bijBel;
             return bijBel;
           }
+          if (scherm.breedte > 768) {
+            const hersteldCompact = klemVenster(
+              { ...h, breedte: m.breedte, hoogte: m.hoogte, modus: 'normaal', x: scherm.breedte - m.breedte - 16, y: 66 },
+              scherm,
+            );
+            laatsteGeoRef.current = hersteldCompact;
+            return hersteldCompact;
+          }
+        }
+        if (!compactBijBel && scherm.breedte > 768 && h.breedte < 620 && (h.modus === 'breed' || h.modus === 'volledig')) {
+          const m = maatVanModus(h.modus, scherm);
+          const hersteld = klemVenster({ ...h, breedte: m.breedte, hoogte: Math.max(h.hoogte, m.hoogte) }, scherm);
+          laatsteGeoRef.current = hersteld;
+          return hersteld;
         }
         const geklemd = klemVenster(h, scherm);
         laatsteGeoRef.current = geklemd;
         return geklemd;
       });
     };
+    onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [compactBijBel]);
+
+  // HERSTEL-001: на вузькому екрані (<= 768px) у розгорнутому режимі вмикаємо справжнє прокручування документа,
+  // щоб системна кнопка смартфона Android «Довгий знімок екрана» (Scroll Capture) охоплювала всю стрічку карток.
+  useIsomorfLayoutEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const wortelEl = document.documentElement;
+    if (!isMobielLangscroll) {
+      if (wortelEl.getAttribute('data-mel-mobiel-langscroll') === '1') {
+        wortelEl.removeAttribute('data-mel-mobiel-langscroll');
+      }
+      return undefined;
+    }
+    wortelEl.setAttribute('data-mel-mobiel-langscroll', '1');
+    try {
+      window.scrollTo?.(0, 0);
+    } catch {
+      /* без прокручування у тестовому оточенні */
+    }
+    return () => {
+      wortelEl.removeAttribute('data-mel-mobiel-langscroll');
+    };
+  }, [isMobielLangscroll]);
+
+  const werkScrollStaatBij = useCallback(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    let scrollHoogte = 0;
+    let zichtHoogte = 0;
+    let scrollTop = 0;
+    if (isMobielLangscrollRef.current) {
+      const sc = document.scrollingElement || document.documentElement;
+      scrollHoogte = sc?.scrollHeight || 0;
+      zichtHoogte = window.innerHeight || sc?.clientHeight || 0;
+      scrollTop = window.scrollY || sc?.scrollTop || 0;
+    } else if (lijstRef.current) {
+      scrollHoogte = lijstRef.current.scrollHeight || 0;
+      zichtHoogte = lijstRef.current.clientHeight || 0;
+      scrollTop = lijstRef.current.scrollTop || 0;
+    }
+    const kanScrollen = scrollHoogte > zichtHoogte + 8 && zichtHoogte > 0;
+    if (!kanScrollen) {
+      setScrollStaat((oud) => (oud.kanScrollen ? { kanScrollen: false, voortgang: 0, duimHoogtePct: 0.25, duimTopPct: 0 } : oud));
+      return;
+    }
+    const maxScroll = Math.max(1, scrollHoogte - zichtHoogte);
+    const voortgang = Math.min(1, Math.max(0, scrollTop / maxScroll));
+    const duimHoogtePct = Math.min(0.9, Math.max(0.1, zichtHoogte / Math.max(1, scrollHoogte)));
+    const duimTopPct = voortgang * (1 - duimHoogtePct);
+    setScrollStaat((oud) => {
+      if (
+        oud.kanScrollen === kanScrollen &&
+        Math.abs(oud.voortgang - voortgang) < 0.002 &&
+        Math.abs(oud.duimHoogtePct - duimHoogtePct) < 0.002
+      ) {
+        return oud;
+      }
+      return { kanScrollen, voortgang, duimHoogtePct, duimTopPct };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') return undefined;
+    const meetAlles = () => {
+      const alleenKop = Math.max(38, kopRef.current?.offsetHeight || 45);
+      const dndH = dndStrookRef.current?.offsetHeight || 0;
+      const filtH = filtersRef.current?.offsetHeight || 0;
+      const kopMetDnd = alleenKop + dndH;
+      const totaalBoven = kopMetDnd + filtH;
+      setBovenMaten((oud) =>
+        oud.alleenKop === alleenKop && oud.kopMetDnd === kopMetDnd && oud.totaalBoven === totaalBoven
+          ? oud
+          : { alleenKop, kopMetDnd, totaalBoven },
+      );
+      werkScrollStaatBij();
+    };
+    const r = requestAnimationFrame(meetAlles);
+    window.addEventListener('scroll', werkScrollStaatBij, { passive: true });
+    window.addEventListener('resize', meetAlles, { passive: true });
+    let obs: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      obs = new ResizeObserver(meetAlles);
+      if (lijstRef.current) obs.observe(lijstRef.current);
+      if (kopRef.current) obs.observe(kopRef.current);
+      if (filtersRef.current) obs.observe(filtersRef.current);
+    }
+    return () => {
+      cancelAnimationFrame(r);
+      window.removeEventListener('scroll', werkScrollStaatBij);
+      window.removeEventListener('resize', meetAlles);
+      obs?.disconnect();
+    };
+  }, [open, isMobielLangscroll, toonVoorkeuren, filterOpen, zoek, statusFilter, kanaalFilter, stroom.length, geo.hoogte, geo.modus, werkScrollStaatBij]);
+
+  const springSchuifNaarClientY = useCallback(
+    (clientY: number) => {
+      const spoor = schuifSpoorRef.current;
+      if (!spoor) return;
+      const rect = spoor.getBoundingClientRect();
+      if (rect.height <= 4) return;
+      const duimPx = Math.max(32, rect.height * scrollStaatRef.current.duimHoogtePct);
+      const vrijPx = Math.max(1, rect.height - duimPx);
+      const doelVoortgang = Math.min(1, Math.max(0, (clientY - rect.top - duimPx / 2) / vrijPx));
+      if (isMobielLangscrollRef.current) {
+        const sc = document.scrollingElement || document.documentElement;
+        const max = Math.max(0, (sc?.scrollHeight || 0) - (window.innerHeight || sc?.clientHeight || 0));
+        try {
+          window.scrollTo(0, Math.round(doelVoortgang * max));
+        } catch {
+          if (sc) sc.scrollTop = Math.round(doelVoortgang * max);
+        }
+      } else if (lijstRef.current) {
+        const el = lijstRef.current;
+        const max = Math.max(0, el.scrollHeight - el.clientHeight);
+        el.scrollTop = Math.round(doelVoortgang * max);
+      }
+      werkScrollStaatBij();
+    },
+    [werkScrollStaatBij],
+  );
+
+  const startSchuifSleep = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.button > 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    schuifPointerIdRef.current = e.pointerId;
+    setSchuifActief(true);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* без перехоплення вказівника */
+    }
+    springSchuifNaarClientY(e.clientY);
+  };
+
+  const beweegSchuifSleep = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (schuifPointerIdRef.current !== e.pointerId) return;
+    e.preventDefault();
+    springSchuifNaarClientY(e.clientY);
+  };
+
+  const eindigSchuifSleep = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (schuifPointerIdRef.current !== e.pointerId) return;
+    schuifPointerIdRef.current = null;
+    setSchuifActief(false);
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      /* без перехоплення вказівника */
+    }
+  };
 
   useEffect(() => {
     if (!open || modaalBijlage) return;
@@ -469,13 +699,13 @@ export default function MeldingenPortaal({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [open, modaalBijlage, dndMenuOpen, ongedaan, voerOngedaanUit, onSluiten]);
 
-  // Автозакриття при натисканні зовні (коли вікно не закріплене або відкрите компактно біля дзвіночка)
+  // Автозакриття при натисканні зовні (коли вікно не закріплене або відкрите компактно біля дзвіночка; у повноекранному мобільному режимі закривається явно кнопкою ✕)
   useEffect(() => {
-    if (!open || (geo.vastgepind && !compactBijBel)) return;
+    if (!open || isMobielLangscroll || (geo.vastgepind && !compactBijBel)) return;
     const onDown = (e: PointerEvent) => {
-      if (sleepStaat.current) return;
+      if (sleepStaat.current || schuifPointerIdRef.current !== null) return;
       const el = e.target as Element | null;
-      if (!el) return;
+      if (!el || el === document.documentElement || el === document.body) return;
       if (
         el.closest('.mel-ecosysteem-portaal') ||
         el.closest('.mel-bijlage-portaal') ||
@@ -488,7 +718,7 @@ export default function MeldingenPortaal({
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [open, geo.vastgepind, compactBijBel, onSluiten]);
+  }, [open, isMobielLangscroll, geo.vastgepind, compactBijBel, onSluiten]);
 
   const sleepStaat = useRef<{
     soort: 'verplaats' | 'maat';
@@ -528,6 +758,7 @@ export default function MeldingenPortaal({
       sleepStaat.current = null;
       const eindGeo = pasSleepBewegingToe(clientX, clientY) ?? laatsteGeoRef.current;
       if (s.compactModus) {
+        compactMaatDoorGebruikerRef.current = { breedte: Math.round(eindGeo.breedte), hoogte: Math.round(eindGeo.hoogte) };
         bewaarCompactMaat(eindGeo.breedte, eindGeo.hoogte);
       } else {
         onSlaGeometrieOp(eindGeo, true);
@@ -559,7 +790,7 @@ export default function MeldingenPortaal({
   }, [pasSleepBewegingToe, rondSleepAf]);
 
   const startVerplaats = (e: ReactPointerEvent<HTMLElement>) => {
-    if (compactBijBel || e.button > 0 || geo.modus === 'volledig') return;
+    if (isMobielLangscroll || compactBijBel || e.button > 0 || geo.modus === 'volledig') return;
     const el = e.target as HTMLElement | null;
     if (el?.closest('button,a,input,select')) return;
     e.preventDefault();
@@ -578,9 +809,9 @@ export default function MeldingenPortaal({
     };
   };
 
-  // Гнучке розтягування працює за всі 8 країв і кутів як у віконному, так і в компактному режимі (крім повного екрана).
+  // Гнучке розтягування працює за всі 8 країв і кутів як у віконному, так і в компактному режимі (крім повного екрана та мобільного потоку).
   const startMaat = (richting: RandRichting, e: ReactPointerEvent<HTMLElement>) => {
-    if (e.button > 0 || (!compactBijBel && geo.modus === 'volledig')) return;
+    if (isMobielLangscroll || e.button > 0 || (!compactBijBel && geo.modus === 'volledig')) return;
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -702,11 +933,25 @@ export default function MeldingenPortaal({
     [stroom],
   );
 
+  const verrijkingPerId = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof verrijkGebeurtenisVoorPuls>>();
+    for (const g of stroom) {
+      m.set(g.id, verrijkGebeurtenisVoorPuls(g, lang));
+    }
+    return m;
+  }, [stroom, lang]);
+
   const gefilterd = useMemo(() => {
     const q = zoek.trim().toLowerCase();
     return stroom.filter((g) => {
-      if (statusFilter === 'actief' && (g.status === 'archief' || g.status === 'opgelost')) return false;
-      if (statusFilter !== 'actief' && statusFilter !== 'alle' && g.status !== statusFilter) return false;
+      if (statusFilter === 'actief') {
+        if (g.status === 'archief' || g.status === 'opgelost' || g.status === 'uitgesteld') return false;
+        const v = verrijkingPerId.get(g.id) ?? verrijkGebeurtenisVoorPuls(g, lang);
+        const vereistBevestiging = v.niveau === 'gevaar' || v.niveau === 'besluit';
+        if (g.status !== 'nieuw' && !vereistBevestiging) return false;
+      } else if (statusFilter !== 'alle' && g.status !== statusFilter) {
+        return false;
+      }
       if (kanaalFilter !== 'alle' && g.kanaal !== kanaalFilter) return false;
       if (alleenDitSubdomein && g.subdomein !== subdomeinNu) return false;
       if (q) {
@@ -715,7 +960,7 @@ export default function MeldingenPortaal({
       }
       return true;
     });
-  }, [stroom, statusFilter, kanaalFilter, alleenDitSubdomein, subdomeinNu, zoek]);
+  }, [stroom, verrijkingPerId, lang, statusFilter, kanaalFilter, alleenDitSubdomein, subdomeinNu, zoek]);
 
   const stroomEenheden = useMemo(() => {
     if (zoek.trim() || (statusFilter !== 'actief' && statusFilter !== 'nieuw')) {
@@ -763,11 +1008,24 @@ export default function MeldingenPortaal({
   }, [stroom]);
 
   const isBreed =
+    !isMobielLangscroll &&
     ((!compactBijBel && (geo.modus === 'breed' || geo.modus === 'volledig')) || geo.breedte >= 680) &&
     !toonVoorkeuren;
   const instellingenHref = canonicalNavigationUrl('identity', 'melding', lang);
   const registerHref = `${instellingenHref}#melding-register`;
   const dndActief = Boolean(nietStorenTot && nietStorenTot > Date.now());
+  const zijbalk = useZijbalkVoorkeuren();
+  const effectieveTypeVoorkeuren = typeVoorkeuren ?? zijbalk.meldingen.soorten;
+  const geluidContext = useMemo<MeldingGeluidContext>(
+    () => ({
+      profiel,
+      geluidGlobaal: sound && profiel.geluidGlobaal,
+      nietStorenActief: dndActief,
+      nietStorenTot,
+      typeVoorkeuren: effectieveTypeVoorkeuren,
+    }),
+    [profiel, sound, dndActief, nietStorenTot, effectieveTypeVoorkeuren],
+  );
   const heeftActiefFilter = Boolean(zoek.trim() || kanaalFilter !== 'alle' || alleenDitSubdomein);
 
   const opPaneelToets = (e: ReactKeyboardEvent<HTMLElement>) => {
@@ -861,7 +1119,18 @@ export default function MeldingenPortaal({
     [alleGebeurtenissenMap, slim, registreerActieMetOngedaan, lang],
   );
 
+  useEffect(() => {
+    setGlobaalUitgeklapt(null);
+  }, [profiel.standaardUitgeklapt]);
+
+  useEffect(() => {
+    if (!open || !onRegistreerAfgeleverd || !stroom.length) return;
+    onRegistreerAfgeleverd(stroom);
+  }, [open, stroom, onRegistreerAfgeleverd]);
+
   if (!open && !geo.minimalePil && !modaalBijlage) return null;
+
+  const effectiefAllesOpen = globaalUitgeklapt ?? Boolean(profiel.standaardUitgeklapt);
 
   const renderLosseKaart = (geb: MeldingEcosysteemGebeurtenis) => (
     <MeldingVeegKaart
@@ -869,10 +1138,22 @@ export default function MeldingenPortaal({
       lang={lang}
       gebeurtenis={geb}
       profiel={profiel}
+      geluidContext={geluidContext}
       geselecteerd={isBreed && geselecteerd?.id === geb.id}
-      geforceerdOpen={spatieOpenId ? spatieOpenId === geb.id : undefined}
+      geforceerdOpen={
+        spatieOpenId === geb.id
+          ? true
+          : globaalUitgeklapt !== null
+            ? globaalUitgeklapt
+            : undefined
+      }
+      zichtActief={open && !toonVoorkeuren}
       bijlageVoorkeur={profiel.bijlageWeergave}
       onSelect={() => setGeselecteerdId(geb.id)}
+      onZichtGelezen={() => {
+        if (onRegistreerZichtGelezen) onRegistreerZichtGelezen(geb);
+        else if (geb.status === 'nieuw') void behandelKaartStatus(geb, 'gelezen');
+      }}
       onStatus={(st, min) => behandelKaartStatus(geb, st, min)}
       onVoorwaardelijkUitstel={(soort) => behandelVoorwaardelijkUitstel(geb, soort)}
       onOntleden={(modus, aanbieder) => onOntleden(geb, modus, aanbieder)}
@@ -922,12 +1203,32 @@ export default function MeldingenPortaal({
         </div>
       )}
 
+      {open && compactBijBel && schermBreedte <= 768 && (
+        <div
+          className='mel-compact-sluier'
+          data-qa-id='mel-compact-sluier'
+          aria-hidden='true'
+          onClick={onSluiten}
+        />
+      )}
+
       {open && (
         <section
           ref={vensterRef}
-          className={`mel-ecosysteem-portaal puls-portaal is-modus-${compactBijBel ? 'kompakt' : geo.modus}${isBreed ? ' is-tweekolom' : ''}${compactBijBel ? ' is-compact-bij-bel' : ''}`}
+          className={`mel-ecosysteem-portaal puls-portaal is-modus-${compactBijBel ? 'kompakt' : geo.modus}${isBreed ? ' is-tweekolom' : ''}${compactBijBel ? ' is-compact-bij-bel' : ''}${isMobielLangscroll ? ' is-mobiel-langscroll' : ''}${
+            isMobielLangscroll && typeof document !== 'undefined'
+              ? (() => {
+                  const bron = document.querySelector('.canonical-chrome') || document.documentElement;
+                  for (const k of ['theme-plum-dark', 'theme-plum-light', 'theme-dark', 'theme-light']) {
+                    if (bron.classList.contains(k)) return ` ${k}`;
+                  }
+                  return '';
+                })()
+              : ''
+          }`}
           data-qa-id='canonical-notification-panel'
           data-puls-vorm={compactBijBel ? 'compact' : 'venster'}
+          data-mel-langscroll={isMobielLangscroll ? '1' : undefined}
           data-no-edge-swipe='1'
           data-ruimte={ruimte}
           data-subdomein={subdomeinNu}
@@ -940,6 +1241,9 @@ export default function MeldingenPortaal({
             ['--mel-y' as string]: `${geo.y}px`,
             ['--mel-w' as string]: `${geo.breedte}px`,
             ['--mel-h' as string]: `${geo.hoogte}px`,
+            ['--mel-alleen-kop-h' as string]: `${bovenMaten.alleenKop}px`,
+            ['--mel-kop-h' as string]: `${bovenMaten.kopMetDnd}px`,
+            ['--mel-boven-h' as string]: `${bovenMaten.totaalBoven}px`,
           }}
         >
           {RANDEN.map((r) => (
@@ -955,6 +1259,7 @@ export default function MeldingenPortaal({
           ))}
 
           <header
+            ref={kopRef}
             className='mel-kop puls-kop'
             onPointerDown={startVerplaats}
             onPointerMove={beweegVenster}
@@ -968,18 +1273,24 @@ export default function MeldingenPortaal({
               <div>
                 <strong>{t('Сповіщення', 'Meldingen')}</strong>
                 <small>
-                  {subdomeinMenselijkLabel(subdomeinNu, lang)} ·{' '}
-                  {tellers.nieuw > 0
-                    ? t(`нових: ${tellers.nieuw}`, `nieuw: ${tellers.nieuw}`)
-                    : t('спокійно', 'alles rustig')}
+                  {subdomeinMenselijkLabel(subdomeinNu, lang)}
+                  {tellers.nieuw === 0 ? ` · ${t('спокійно', 'alles rustig')}` : ''}
                 </small>
               </div>
             </div>
 
             <div className='mel-kop-gereedschap'>
-              <button
-                type='button'
-                className={`mel-ikoon-knop puls-filter-schakel${filterOpen || heeftActiefFilter ? ' is-actief' : ''}`}
+              <IcoonActieKnop
+                className='puls-filter-schakel'
+                toon={filterOpen || heeftActiefFilter ? 'actief' : 'standaard'}
+                stip={heeftActiefFilter}
+                icoon={<Search aria-hidden='true' />}
+                label={
+                  isAanraakScherm
+                    ? t('Пошук, канали та звук', 'Zoeken, kanalen en geluid')
+                    : t('Пошук, канали та звук (клавіша /)', 'Zoeken, kanalen en geluid (toets /)')
+                }
+                ariaLabel={t('Пошук і фільтри каналів', 'Zoeken en kanaalfilters')}
                 data-qa-id='puls-filter-knop'
                 aria-pressed={filterOpen || heeftActiefFilter}
                 aria-expanded={filterOpen}
@@ -991,37 +1302,28 @@ export default function MeldingenPortaal({
                     return volgende;
                   });
                 }}
-                title={t('Пошук, канали та звук (клавіша /)', 'Zoeken, kanalen en geluid (toets /)')}
-                aria-label={t('Пошук і фільтри каналів', 'Zoeken en kanaalfilters')}
-              >
-                <Search aria-hidden='true' />
-                {heeftActiefFilter && <i className='puls-filter-stip' aria-hidden='true' />}
-              </button>
+              />
 
-              <button
-                type='button'
-                className={`mel-ikoon-knop${toonVoorkeuren ? ' is-actief' : ''}`}
-                onClick={() => setToonVoorkeuren((v) => !v)}
+              <IcoonActieKnop
+                toon={toonVoorkeuren ? 'actief' : 'standaard'}
+                icoon={<SlidersHorizontal aria-hidden='true' />}
+                label={t('Швидкі налаштування типів сповіщень', 'Snelle instellingen per soort')}
+                ariaLabel={t('Типи сповіщень', 'Soorten meldingen')}
                 aria-pressed={toonVoorkeuren}
-                title={t('Швидкі налаштування типів сповіщень', 'Snelle instellingen per soort')}
-                aria-label={t('Типи сповіщень', 'Soorten meldingen')}
-              >
-                <SlidersHorizontal aria-hidden='true' />
-              </button>
+                onClick={() => setToonVoorkeuren((v) => !v)}
+              />
 
               {onZetNietStoren && (
                 <div className='puls-uitstel-anker'>
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${dndActief ? ' is-actief' : ''}`}
+                  <IcoonActieKnop
+                    toon={dndActief ? 'actief' : 'standaard'}
+                    icoon={<Moon aria-hidden='true' />}
+                    label={t('Не турбувати (безпека все одно проходить)', 'Niet storen (beveiliging blijft zichtbaar)')}
+                    ariaLabel={t('Не турбувати', 'Niet storen')}
                     aria-pressed={dndActief}
                     aria-expanded={dndMenuOpen}
                     onClick={() => setDndMenuOpen((v) => !v)}
-                    title={t('Не турбувати (безпека все одно проходить)', 'Niet storen (beveiliging blijft zichtbaar)')}
-                    aria-label={t('Не турбувати', 'Niet storen')}
-                  >
-                    <Moon aria-hidden='true' />
-                  </button>
+                  />
                   {dndMenuOpen && (
                     <div className='puls-uitstel-menu puls-dnd-menu' role='menu' onClick={(e) => e.stopPropagation()}>
                       <div className='puls-uitstel-kop'>{t('Режим тиші (без звуку й спливання)', 'Stiltestand (geen geluid of pop-ups)')}</div>
@@ -1065,91 +1367,93 @@ export default function MeldingenPortaal({
                 </div>
               )}
 
-              {!compactBijBel && (
+              {!compactBijBel && !isMobielLangscroll && (
                 <>
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${geo.modus === 'breed' ? ' is-actief' : ''}`}
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    toon={geo.modus === 'breed' ? 'actief' : 'standaard'}
+                    icoon={<Columns2 aria-hidden='true' />}
+                    label={
+                      geo.modus === 'breed'
+                        ? t('Одна колонка', 'Eén kolom')
+                        : t('Дві колонки: список і подробиці поруч', 'Twee kolommen: lijst en details naast elkaar')
+                    }
+                    ariaLabel={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки', 'Twee kolommen')}
                     aria-pressed={geo.modus === 'breed'}
                     onClick={() => pasModusToe(geo.modus === 'breed' ? 'normaal' : 'breed')}
-                    title={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки: список і подробиці поруч', 'Twee kolommen: lijst en details naast elkaar')}
-                    aria-label={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки', 'Twee kolommen')}
-                  >
-                    <Columns2 aria-hidden='true' />
-                  </button>
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${geo.modus === 'volledig' ? ' is-actief' : ''}`}
+                  />
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    toon={geo.modus === 'volledig' ? 'actief' : 'standaard'}
+                    icoon={geo.modus === 'volledig' ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}
+                    label={
+                      geo.modus === 'volledig'
+                        ? t('Повернути звичайний розмір вікна', 'Terug naar de gewone venstergrootte')
+                        : t('На весь екран', 'Volledig scherm')
+                    }
+                    ariaLabel={geo.modus === 'volledig' ? t('Звичайний розмір', 'Gewone grootte') : t('На весь екран', 'Volledig scherm')}
                     aria-pressed={geo.modus === 'volledig'}
                     onClick={() => pasModusToe(geo.modus === 'volledig' ? 'normaal' : 'volledig')}
-                    title={geo.modus === 'volledig' ? t('Повернути звичайний розмір вікна', 'Terug naar de gewone venstergrootte') : t('На весь екран', 'Volledig scherm')}
-                    aria-label={geo.modus === 'volledig' ? t('Звичайний розмір', 'Gewone grootte') : t('На весь екран', 'Volledig scherm')}
-                  >
-                    {geo.modus === 'volledig' ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}
-                  </button>
+                  />
 
-                  <button
-                    type='button'
-                    className={`mel-ikoon-knop${geo.vastgepind ? ' is-actief' : ''}`}
-                    onClick={toggleVastpinnen}
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    toon={geo.vastgepind ? 'actief' : 'standaard'}
+                    icoon={geo.vastgepind ? <Pin aria-hidden='true' /> : <PinOff aria-hidden='true' />}
+                    label={
+                      geo.vastgepind
+                        ? t('Відкріпити вікно', 'Venster losmaken')
+                        : t('Закріпити вікно поверх сайту', 'Vastpinnen boven de site')
+                    }
                     aria-pressed={geo.vastgepind}
-                    title={geo.vastgepind ? t('Відкріпити: вікно закриється після натискання поза ним', 'Losmaken: het venster sluit bij een klik erbuiten') : t('Закріпити: вікно лишається відкритим, коли працюєте на сторінці', 'Vastpinnen: het venster blijft open terwijl u op de pagina werkt')}
-                    aria-label={geo.vastgepind ? t('Відкріпити вікно', 'Venster losmaken') : t('Закріпити поверх сайту', 'Vastpinnen boven de site')}
-                  >
-                    {geo.vastgepind ? <Pin aria-hidden='true' /> : <PinOff aria-hidden='true' />}
-                  </button>
+                    onClick={toggleVastpinnen}
+                  />
 
-                  <button
-                    type='button'
-                    className='mel-ikoon-knop'
+                  <IcoonActieKnop
+                    className='puls-kop-alleen-pc'
+                    icoon={<Minus aria-hidden='true' />}
+                    label={t('Згорнути в рухому кнопку з лічильником', 'Minimaliseren naar zwevende knop met teller')}
+                    ariaLabel={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
                     onClick={() => togglePil(true)}
-                    title={t('Згорнути в маленьку рухому кнопку з лічильником', 'Minimaliseren naar een kleine zwevende knop met teller')}
-                    aria-label={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
-                  >
-                    <Minus aria-hidden='true' />
-                  </button>
+                  />
                 </>
               )}
 
               {compactBijBel && onOpenVensterModus ? (
-                <button
-                  type='button'
-                  className='mel-vorm-schakel'
+                <IcoonActieKnop
+                  className='mel-vorm-schakel-icoon is-vorm-venster-knop'
+                  toon='actief'
+                  icoon={<AppWindow aria-hidden='true' />}
+                  label={t('Розгорнути у широке вікно з інспектором', 'Uitklappen naar breed venster met inspectie')}
+                  srTekst={t('Вікно', 'Venster')}
+                  zichtbareTekst={t('Вікно', 'Venster')}
+                  zichtbareTekstKlas='puls-vorm-tekst'
                   data-qa-id='melding-vorm-venster-puls'
                   onClick={openVensterVanuitCompact}
-                  title={t('Розгорнути цю ж панель у широке вікно з інспектором. Повернутися — кнопкою «Компактно» у вікні.', 'Dit paneel uitklappen naar een breed venster met inspectie. Terug met «Compact» in het venster.')}
-                >
-                  <AppWindow aria-hidden='true' />
-                  <span>{t('Вікно', 'Venster')}</span>
-                </button>
+                />
               ) : null}
 
-              <button
-                type='button'
-                className='mel-vorm-schakel'
+              <IcoonActieKnop
+                className='mel-vorm-schakel-icoon'
                 style={compactBijBel && onOpenVensterModus ? { display: 'none' } : undefined}
+                icoon={<PanelRightClose aria-hidden='true' />}
+                label={t('Компактна панель. Повернутися до вікна — кнопкою «Вікно».', 'Compact paneel bij de bel. Terug met «Venster».')}
+                srTekst={t('Компактно', 'Compact')}
                 data-qa-id='melding-vorm-compact'
                 onClick={onSwitchToClassic}
-                title={t('Показувати сповіщення компактною панеллю біля дзвіночка. Повернутися до вікна — кнопкою «Вікно» в тій панелі.', 'Meldingen tonen als compact paneel bij de bel. Terug naar het venster met de knop «Venster» in dat paneel.')}
-              >
-                <PanelRightClose aria-hidden='true' />
-                <span>{t('Компактно', 'Compact')}</span>
-              </button>
+              />
 
-              <button
-                type='button'
-                className='mel-ikoon-knop'
-                onClick={onSluiten}
-                title={t('Закрити', 'Sluiten')}
+              <IcoonActieKnop
+                icoon={<X aria-hidden='true' />}
+                label={t('Закрити', 'Sluiten')}
                 aria-label={t('Закрити', 'Sluiten')}
-              >
-                <X aria-hidden='true' />
-              </button>
+                onClick={onSluiten}
+              />
             </div>
           </header>
 
           {dndActief && nietStorenTot ? (
-            <div className='puls-dnd-strook' role='status'>
+            <div ref={dndStrookRef} className='puls-dnd-strook' role='status'>
               <Moon aria-hidden='true' />
               <span>
                 {t('Не турбувати до ', 'Niet storen tot ')}
@@ -1164,35 +1468,67 @@ export default function MeldingenPortaal({
           ) : null}
 
           {!toonVoorkeuren && (
-            <div className='mel-filters puls-filters-slank'>
-              <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
-                {(
-                  [
-                    ['actief', t('Увага', 'Actief')],
-                    ['nieuw', tellers.nieuw > 0 ? t(`Нові (${tellers.nieuw})`, `Nieuw (${tellers.nieuw})`) : t('Нові', 'Nieuw')],
+            <div ref={filtersRef} className='mel-filters puls-filters-slank' data-vlag={MELDING_KAPSEL_AFLEVERING_VLAG}>
+              <div className='puls-tabs-rij'>
+                <div className='mel-tabs puls-tabs' role='tablist' aria-label={t('Стани подій', 'Gebeurtenisstatus')}>
+                  {(
                     [
-                      'uitgesteld',
-                      tellers.uitgesteld > 0
-                        ? t(`Умова (${tellers.uitgesteld})`, `Uitstel (${tellers.uitgesteld})`)
-                        : t('Умова', 'Uitstel'),
-                    ],
-                    ['opgelost', t('Вирішені', 'Opgelost')],
-                    ['archief', t('Журнал', 'Archief')],
-                    ['alle', t('Усі', 'Alle')],
-                  ] as const
-                ).map(([sleutel, tekst]) => (
-                  <button
-                    key={sleutel}
-                    type='button'
-                    role='tab'
-                    aria-selected={statusFilter === sleutel}
-                    className={`mel-tab puls-tab is-tab-${sleutel}${statusFilter === sleutel ? ' is-actief' : ''}`}
-                    onClick={() => setStatusFilter(sleutel)}
-                  >
-                    <TabIcoon sleutel={sleutel} />
-                    <span>{tekst}</span>
-                  </button>
-                ))}
+                      ['actief', t('Увага · Потребують дії', 'Actief · Vragen aandacht'), t('Увага', 'Aandacht'), undefined],
+                      [
+                        'nieuw',
+                        tellers.nieuw > 0
+                          ? t(`Нові сповіщення (${tellers.nieuw})`, `Nieuwe meldingen (${tellers.nieuw})`)
+                          : t('Нові сповіщення', 'Nieuwe meldingen'),
+                        t('Нові', 'Nieuw'),
+                        tellers.nieuw > 0 ? tellers.nieuw : undefined,
+                      ],
+                      [
+                        'uitgesteld',
+                        tellers.uitgesteld > 0
+                          ? t(`Відкладені за умовою (${tellers.uitgesteld})`, `Voorwaardelijk uitgesteld (${tellers.uitgesteld})`)
+                          : t('Відкладені за умовою', 'Voorwaardelijk uitgesteld'),
+                        t('Відкладені', 'Uitgesteld'),
+                        tellers.uitgesteld > 0 ? tellers.uitgesteld : undefined,
+                      ],
+                      ['opgelost', t('Вирішені', 'Opgelost'), t('Вирішені', 'Opgelost'), undefined],
+                      ['archief', t('Спокійний журнал', 'Rustig archief'), t('Архів', 'Archief'), undefined],
+                      ['alle', t('Усі сповіщення', 'Alle meldingen'), t('Усі', 'Alle'), undefined],
+                    ] as const
+                  ).map(([sleutel, tekst, korteNaam, tabTeller]) => (
+                    <IcoonActieKnop
+                      key={sleutel}
+                      modus='tab'
+                      role='tab'
+                      toon={statusFilter === sleutel ? 'actief' : 'standaard'}
+                      aria-selected={statusFilter === sleutel}
+                      className={`mel-tab puls-tab is-tab-${sleutel}${statusFilter === sleutel ? ' is-actief' : ''}`}
+                      icoon={<TabIcoon sleutel={sleutel} />}
+                      teller={tabTeller}
+                      label={tekst}
+                      zichtbareTekst={statusFilter === sleutel ? korteNaam : undefined}
+                      zichtbareTekstKlas='puls-actieve-tab-naam'
+                      data-qa-id={`puls-tab-${sleutel}`}
+                      onClick={() => setStatusFilter(sleutel)}
+                    />
+                  ))}
+                </div>
+
+                <IcoonActieKnop
+                  className='puls-alles-klap-knop'
+                  toon={effectiefAllesOpen ? 'actief' : 'standaard'}
+                  icoon={effectiefAllesOpen ? <ChevronsDownUp aria-hidden='true' /> : <ChevronsUpDown aria-hidden='true' />}
+                  label={
+                    effectiefAllesOpen
+                      ? t('Згорнути всі сповіщення в капсули', 'Alle meldingen inklappen tot capsules')
+                      : t('Розгорнути всі сповіщення', 'Alle meldingen uitklappen')
+                  }
+                  aria-pressed={effectiefAllesOpen}
+                  data-qa-id='puls-alles-uitklappen'
+                  onClick={() => {
+                    setSpatieOpenId('');
+                    setGlobaalUitgeklapt(!effectiefAllesOpen);
+                  }}
+                />
               </div>
 
               {!filterOpen && (kanaalFilter !== 'alle' || alleenDitSubdomein) && (
@@ -1234,25 +1570,19 @@ export default function MeldingenPortaal({
                   </label>
 
                   <div className='mel-werkbalk-knoppen'>
-                    <button
-                      type='button'
-                      className={`mel-ikoon-knop${laden ? ' is-laden' : ''}`}
+                    <IcoonActieKnop
+                      className={laden ? 'is-laden' : undefined}
+                      icoon={<RefreshCw className={laden ? 'mel-draai' : undefined} aria-hidden='true' />}
+                      label={t('Оновити потік', 'Stroom verversen')}
                       onClick={onVervers}
-                      title={t('Оновити потік', 'Stroom verversen')}
-                      aria-label={t('Оновити потік', 'Stroom verversen')}
-                    >
-                      <RefreshCw className={laden ? 'mel-draai' : undefined} aria-hidden='true' />
-                    </button>
+                    />
 
-                    <button
-                      type='button'
-                      className='mel-ikoon-knop'
+                    <IcoonActieKnop
+                      toon={sound ? 'actief' : 'standaard'}
+                      icoon={sound ? <Volume2 aria-hidden='true' /> : <VolumeX aria-hidden='true' />}
+                      label={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}
                       onClick={onToggleSound}
-                      title={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}
-                      aria-label={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}
-                    >
-                      {sound ? <Volume2 aria-hidden='true' /> : <VolumeX aria-hidden='true' />}
-                    </button>
+                    />
                   </div>
                 </div>
 
@@ -1312,104 +1642,205 @@ export default function MeldingenPortaal({
             </div>
           )}
 
-          <div className='mel-lichaam'>
+          <div className='mel-lichaam mel-inhoud'>
             {toonVoorkeuren ? (
               <div className='mel-voorkeuren-kader'>
+                <section className='puls-kapsel-voorkeuren' data-qa-id='puls-kapsel-voorkeuren'>
+                  <div className='puls-kapsel-voorkeur-kop'>
+                    <strong>{t('Стан карток за замовчуванням та прочитання', 'Standaardweergave van capsules en leesstatus')}</strong>
+                    <small>
+                      {t(
+                        'У згорнутому вигляді сповіщення не створюють візуального шуму, а натиск розгортає подробиці й кнопки.',
+                        'Ingeklapte capsules vermijden knoppenruis; één tik klapt details en acties uit.',
+                      )}
+                    </small>
+                  </div>
+
+                  <div className='puls-kapsel-stand-keuze' role='radiogroup' aria-label={t('Стан сповіщень за замовчуванням', 'Standaardstaat van meldingen')}>
+                    <button
+                      type='button'
+                      role='radio'
+                      aria-checked={!profiel.standaardUitgeklapt}
+                      className={`puls-stand-knop${!profiel.standaardUitgeklapt ? ' is-actief' : ''}`}
+                      data-qa-id='puls-standaard-ingeklapt'
+                      onClick={() => {
+                        setGlobaalUitgeklapt(null);
+                        onWerkProfielBij?.((oud) => ({ ...oud, standaardUitgeklapt: false }));
+                      }}
+                    >
+                      <ChevronsDownUp aria-hidden='true' />
+                      <span>{t('Згортати в компактні капсули', 'Standaard inklappen tot capsules')}</span>
+                    </button>
+                    <button
+                      type='button'
+                      role='radio'
+                      aria-checked={Boolean(profiel.standaardUitgeklapt)}
+                      className={`puls-stand-knop${profiel.standaardUitgeklapt ? ' is-actief' : ''}`}
+                      data-qa-id='puls-standaard-uitgeklapt'
+                      onClick={() => {
+                        setGlobaalUitgeklapt(null);
+                        onWerkProfielBij?.((oud) => ({ ...oud, standaardUitgeklapt: true }));
+                      }}
+                    >
+                      <ChevronsUpDown aria-hidden='true' />
+                      <span>{t('Розгортати автоматично', 'Automatisch uitklappen')}</span>
+                    </button>
+                  </div>
+
+                  <label className='puls-kapsel-auto-lees'>
+                    <input
+                      type='checkbox'
+                      checked={profiel.autoGelezenBijZicht !== false}
+                      onChange={(e) => {
+                        const aan = e.target.checked;
+                        onWerkProfielBij?.((oud) => ({ ...oud, autoGelezenBijZicht: aan }));
+                      }}
+                    />
+                    <span>
+                      {t(
+                        'Автоматично позначати прочитаним (✓✓) при появі сповіщення на очах',
+                        'Automatisch als gelezen markeren (✓✓) zodra de melding in beeld komt',
+                      )}
+                    </span>
+                  </label>
+                </section>
+
                 <MeldingModusKiezer lang={lang} />
                 <MeldingVoorkeurenPaneel lang={lang} techTypen={techTypen} />
+
+                {techTypen && (
+                  <MeldingAfleveringControle lang={lang} ruimte={ruimte} fallbackStroom={stroom} compact />
+                )}
               </div>
             ) : (
               <>
-                <div className='mel-stroom-kolom'>
-                  {/* 15-секундне Спокійне зведення у прокручуваному потоці (не відбирає постійну висоту вікна) */}
-                  {statusFilter === 'actief' && !zoek.trim() && rustigOverzicht.toon && (
-                    <div className='puls-rustig-overzicht' data-puls-overzicht='1'>
-                      <div className='puls-overzicht-tekst'>
-                        <strong>{rustigOverzicht.titel}</strong>
-                        <span>{rustigOverzicht.subtitel}</span>
-                      </div>
-                      <button
-                        type='button'
-                        className='mel-knop puls-knop-overzicht'
-                        onClick={() => {
-                          const items = rustigOverzicht.achtergrondKlaarIds
-                            .map((id) => alleGebeurtenissenMap.get(id))
-                            .filter(Boolean) as MeldingEcosysteemGebeurtenis[];
-                          void registreerActieMetOngedaan(
-                            items,
-                            'archief',
-                            t(`Згорнуто в спокійний журнал: ${items.length} фонових дій`, `${items.length} achtergrondtaken opgeruimd`),
-                          );
-                        }}
-                      >
-                        <CheckCheck aria-hidden='true' />
-                        <span>{rustigOverzicht.actieLabel}</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Розумна підказка тиші після 3 закриттів однотипних некритичних подій */}
-                  {slim.stilteSuggestie && (
-                    <div className='puls-stilte-suggestie' role='status'>
-                      <PulsBronTeken
-                        anker={{
-                          merkSleutel: slim.stilteSuggestie.merkSleutel,
-                          icoon: slim.stilteSuggestie.icoon,
-                          toon: 'systeem',
-                          label: slim.stilteSuggestie.bronLabel,
-                        }}
-                        maat={28}
-                      />
-                      <p>{slim.stilteSuggestie.vraagTekst}</p>
-                      <div className='puls-actie-groep'>
-                        <button type='button' className='mel-knop mel-knop-zacht' onClick={() => slim.sluitStilteSuggestie(true)}>
-                          {t('Залишити', 'Behouden')}
-                        </button>
+                <div className='mel-lijst-kader'>
+                  <div
+                    ref={lijstRef}
+                    id={`mel-lijst-${scope}`}
+                    className='mel-stroom-kolom mel-lijst'
+                    onScroll={werkScrollStaatBij}
+                  >
+                    {/* 15-секундне Спокійне зведення у потоці прокручування (не відбирає постійну висоту вікна) */}
+                    {statusFilter === 'actief' && !zoek.trim() && rustigOverzicht.toon && (
+                      <div className='puls-rustig-overzicht' data-puls-overzicht='1'>
+                        <div className='puls-overzicht-tekst'>
+                          <strong>{rustigOverzicht.titel}</strong>
+                          <span>{rustigOverzicht.subtitel}</span>
+                        </div>
                         <button
                           type='button'
-                          className='mel-knop mel-knop-primair'
+                          className='mel-knop puls-knop-overzicht'
                           onClick={() => {
-                            const k = slim.stilteSuggestie?.bronSleutel.split(':')[0] as MeldingKanaal | undefined;
-                            if (k && onStilVoorKanaal) onStilVoorKanaal(k);
-                            slim.sluitStilteSuggestie(true);
+                            const items = rustigOverzicht.achtergrondKlaarIds
+                              .map((id) => alleGebeurtenissenMap.get(id))
+                              .filter(Boolean) as MeldingEcosysteemGebeurtenis[];
+                            void registreerActieMetOngedaan(
+                              items,
+                              'archief',
+                              t(`Згорнуто в спокійний журнал: ${items.length} фонових дій`, `${items.length} achtergrondtaken opgeruimd`),
+                            );
                           }}
                         >
-                          <Moon aria-hidden='true' />
-                          <span>{t('Тихо в журнал', 'Stil in logboek')}</span>
+                          <CheckCheck aria-hidden='true' />
+                          <span>{rustigOverzicht.actieLabel}</span>
                         </button>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {stroomEenheden.length === 0 ? (
-                    <div className='mel-leeg-staat'>
-                      <CheckCircle2 aria-hidden='true' />
-                      <strong>{t('Спокій і порядок — активних питань за цим фільтром немає', 'Rust en overzicht — geen openstaande punten voor dit filter')}</strong>
-                      <span>
-                        {t(
-                          'Усі фонові дії збережені у вкладці «Журнал», а жива база типів і правила доступні на /melding.',
-                          'Alle achtergrondtaken staan in het archief en het soortenregister staat op /melding.',
-                        )}
-                      </span>
-                    </div>
-                  ) : (
-                    stroomEenheden.map((eenheid) =>
-                      eenheid.soort === 'keten' ? (
-                        <PulsOorzaakKetenKaart
-                          key={eenheid.keten.sleutel}
-                          lang={lang}
-                          keten={eenheid.keten}
-                          geselecteerd={isBreed && Boolean(geselecteerd && eenheid.keten.alleIds.includes(geselecteerd.id))}
-                          onSelect={(wortel) => setGeselecteerdId(wortel.id)}
-                          onHerstelKeten={behandelKetenActie}
-                          renderLosseKaart={renderLosseKaart}
-                          alleGebeurtenissenMap={alleGebeurtenissenMap}
+                    {/* Розумна підказка тиші після 3 закриттів однотипних некритичних подій */}
+                    {slim.stilteSuggestie && (
+                      <div className='puls-stilte-suggestie' role='status'>
+                        <PulsBronTeken
+                          anker={{
+                            merkSleutel: slim.stilteSuggestie.merkSleutel,
+                            icoon: slim.stilteSuggestie.icoon,
+                            toon: 'systeem',
+                            label: slim.stilteSuggestie.bronLabel,
+                          }}
+                          maat={28}
                         />
-                      ) : (
-                        renderLosseKaart(eenheid.gebeurtenis)
-                      ),
-                    )
-                  )}
+                        <p>{slim.stilteSuggestie.vraagTekst}</p>
+                        <div className='puls-actie-groep'>
+                          <button type='button' className='mel-knop mel-knop-zacht' onClick={() => slim.sluitStilteSuggestie(true)}>
+                            {t('Залишити', 'Behouden')}
+                          </button>
+                          <button
+                            type='button'
+                            className='mel-knop mel-knop-primair'
+                            onClick={() => {
+                              const k = slim.stilteSuggestie?.bronSleutel.split(':')[0] as MeldingKanaal | undefined;
+                              if (k && onStilVoorKanaal) onStilVoorKanaal(k);
+                              slim.sluitStilteSuggestie(true);
+                            }}
+                          >
+                            <Moon aria-hidden='true' />
+                            <span>{t('Тихо в журнал', 'Stil in logboek')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {stroomEenheden.length === 0 ? (
+                      <div className='mel-leeg-staat'>
+                        <CheckCircle2 aria-hidden='true' />
+                        <strong>{t('Спокій і порядок — активних питань за цим фільтром немає', 'Rust en overzicht — geen openstaande punten voor dit filter')}</strong>
+                        <span>
+                          {t(
+                            'Усі фонові дії збережені у вкладці «Журнал», а жива база типів і правила доступні на /melding.',
+                            'Alle achtergrondtaken staan in het archief en het soortenregister staat op /melding.',
+                          )}
+                        </span>
+                      </div>
+                    ) : (
+                      stroomEenheden.map((eenheid) =>
+                        eenheid.soort === 'keten' ? (
+                          <PulsOorzaakKetenKaart
+                            key={eenheid.keten.sleutel}
+                            lang={lang}
+                            keten={eenheid.keten}
+                            geluidContext={geluidContext}
+                            geselecteerd={isBreed && Boolean(geselecteerd && eenheid.keten.alleIds.includes(geselecteerd.id))}
+                            standaardUitgeklapt={Boolean(profiel.standaardUitgeklapt)}
+                            geforceerdOpen={globaalUitgeklapt !== null ? globaalUitgeklapt : undefined}
+                            onSelect={(wortel) => setGeselecteerdId(wortel.id)}
+                            onHerstelKeten={behandelKetenActie}
+                            renderLosseKaart={renderLosseKaart}
+                            alleGebeurtenissenMap={alleGebeurtenissenMap}
+                          />
+                        ) : (
+                          renderLosseKaart(eenheid.gebeurtenis)
+                        ),
+                      )
+                    )}
+                  </div>
+
+                  <div
+                    ref={schuifSpoorRef}
+                    className={`mel-scroll-schuif${scrollStaat.kanScrollen ? ' is-zichtbaar' : ''}${schuifActief ? ' is-actief' : ''}`}
+                    data-qa-id='mel-scroll-schuif'
+                    data-geen-veeg='1'
+                    role='scrollbar'
+                    aria-controls={`mel-lijst-${scope}`}
+                    aria-orientation='vertical'
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(scrollStaat.voortgang * 100)}
+                    aria-hidden={!scrollStaat.kanScrollen}
+                    aria-label={t('Повзунок швидкого прокручування списку сповіщень', 'Snelle schuifbalk voor meldingenlijst')}
+                    onPointerDown={startSchuifSleep}
+                    onPointerMove={beweegSchuifSleep}
+                    onPointerUp={eindigSchuifSleep}
+                    onPointerCancel={eindigSchuifSleep}
+                  >
+                    <span
+                      className='mel-scroll-duim'
+                      style={{
+                        height: `${Math.round(scrollStaat.duimHoogtePct * 1000) / 10}%`,
+                        top: `${Math.round(scrollStaat.duimTopPct * 1000) / 10}%`,
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {isBreed && geselecteerd && geselecteerdVerrijkt && (
@@ -1425,8 +1856,19 @@ export default function MeldingenPortaal({
                             </span>
                             {geselecteerdVerrijkt.klimopKernZegel && <PulsKlimopZegel lang={lang} />}
                           </div>
-                          <strong>{geselecteerd.titel}</strong>
-                          {geselecteerd.contextLabel && <small>{geselecteerd.contextLabel}</small>}
+                          <strong>{schoonKaartTitel(geselecteerd.titel)}</strong>
+                          {(() => {
+                            const ruwDetailCtx = (geselecteerd.contextLabel || '').trim();
+                            const schoonDetailCtx =
+                              !ruwDetailCtx || /^[a-z_]+\s*·\s*[a-z_]+$/i.test(ruwDetailCtx)
+                                ? `${subdomeinMenselijkLabel(geselecteerd.subdomein, lang)} · ${kanaalLabel(geselecteerd.kanaal, lang)}`
+                                : ruwDetailCtx
+                                    .split(/\s*·\s*/)
+                                    .map((stuk) => vertaalAanmeldMethode(stuk, lang) || stuk.trim())
+                                    .filter(Boolean)
+                                    .join(' · ');
+                            return schoonDetailCtx ? <small>{schoonDetailCtx}</small> : null;
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1445,7 +1887,7 @@ export default function MeldingenPortaal({
                               icoon={gev.icoon}
                               toon={gev.toon}
                               label={gev.label}
-                              sub={gev.herstelTekst}
+                              sub={gev.herstelTekst ? (gev.herstelTekst.startsWith('—') ? gev.herstelTekst : `— ${gev.herstelTekst}`) : undefined}
                             />
                           ))}
                         </div>
@@ -1484,6 +1926,39 @@ export default function MeldingenPortaal({
                       />
                     )}
 
+                    <details className='puls-technische-details' data-geen-veeg='1'>
+                      <summary>
+                        <Info aria-hidden='true' />
+                        <span>{t('Технічні подробиці', 'Technische details')}</span>
+                      </summary>
+                      <dl className='puls-technische-dl'>
+                        {typeof geselecteerd.meta?.actieCode === 'string' && geselecteerd.meta.actieCode.trim() && (
+                          <div>
+                            <dt>{t('Код дії', 'Actiecode')}</dt>
+                            <dd><code>{geselecteerd.meta.actieCode.trim()}</code></dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt>{t('Розділ і канал', 'Onderdeel en kanaal')}</dt>
+                          <dd><code>{`${geselecteerd.subdomein} · ${geselecteerd.kanaal}`}</code></dd>
+                        </div>
+                        <div>
+                          <dt>{t('Джерело', 'Bron')}</dt>
+                          <dd><code>{geselecteerd.bron}</code></dd>
+                        </div>
+                        {typeof geselecteerd.meta?.foutCode === 'string' && geselecteerd.meta.foutCode.trim() && (
+                          <div>
+                            <dt>{t('Код причини', 'Redencode')}</dt>
+                            <dd><code>{geselecteerd.meta.foutCode.trim()}</code></dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt>{t('Ключ запису', 'Sleutel')}</dt>
+                          <dd><code>{geselecteerd.externeSleutel || geselecteerd.id}</code></dd>
+                        </div>
+                      </dl>
+                    </details>
+
                     <MeldingAiPaneel
                       lang={lang}
                       gebeurtenis={geselecteerd}
@@ -1502,45 +1977,48 @@ export default function MeldingenPortaal({
               <span>{ongedaan.tekst}</span>
               <button type='button' className='puls-ongedaan-knop' onClick={() => void voerOngedaanUit()}>
                 <Undo2 aria-hidden='true' />
-                <span>{t(`Повернути · Ctrl+Z (${ongedaanSec} с)`, `Ongedaan maken · Ctrl+Z (${ongedaanSec} s)`)}</span>
+                <span>{isAanraakScherm ? t(`Повернути (${ongedaanSec} с)`, `Ongedaan maken (${ongedaanSec} s)`) : t(`Повернути · Ctrl+Z (${ongedaanSec} с)`, `Ongedaan maken · Ctrl+Z (${ongedaanSec} s)`)}</span>
               </button>
             </div>
           )}
 
           <div className='mel-voet puls-voet' role='region' aria-label={t('Дії екосистеми', 'Ecosysteemacties')}>
-            <button
-              type='button'
-              className='mel-knop mel-knop-zacht puls-voet-knop'
-              disabled={tellers.nieuw === 0}
-              onClick={onMarkAll}
-              title={t('Позначити всі нові сповіщення прочитаними', 'Alle nieuwe meldingen als gelezen markeren')}
-            >
-              <CheckCheck aria-hidden='true' />
-              <span>{t('Прочитати всі', 'Alles gelezen')}</span>
-            </button>
-
-            <span className='puls-toets-hints' aria-hidden='true'>
-              <kbd>↑↓</kbd> {t('вибір', 'keuze')} · <kbd>{t('Пробіл', 'Spatie')}</kbd> {t('докази', 'bewijs')} · <kbd>/</kbd> {t('пошук', 'zoeken')} · <kbd>E</kbd> {t('архів', 'archief')}
+            <span className='puls-voet-teller'>
+              {statusFilter === 'actief'
+                ? t(
+                    `Увага: ${gefilterd.length} · Усього: ${tellers.totaal}`,
+                    `Aandacht: ${gefilterd.length} · Totaal: ${tellers.totaal}`,
+                  )
+                : t(`Подій: ${gefilterd.length}`, `Gebeurtenissen: ${gefilterd.length}`)}
             </span>
 
+            {!isAanraakScherm && (
+              <span className='puls-toets-hints' aria-hidden='true'>
+                <kbd>↑↓</kbd> {t('вибір', 'keuze')} · <kbd>{t('Пробіл', 'Spatie')}</kbd> {t('докази', 'bewijs')} · <kbd>/</kbd> {t('пошук', 'zoeken')} · <kbd>E</kbd> {t('архів', 'archief')}
+              </span>
+            )}
+
             <div className='puls-voet-rechts'>
-              <a
+              <IcoonActieKnop
+                icoon={<CheckCheck aria-hidden='true' />}
+                disabled={tellers.nieuw === 0}
+                label={t('Позначити всі прочитаними', 'Alles als gelezen markeren')}
+                data-qa-id='puls-markeer-alle'
+                onClick={onMarkAll}
+              />
+              <IcoonActieKnop
                 href={registerHref}
-                className='mel-knop mel-knop-zacht puls-voet-knop'
+                icoon={<BookOpen aria-hidden='true' />}
+                label={t('База всіх типів сповіщень', 'Register van alle meldingssoorten')}
                 data-qa-id='puls-open-register'
-                title={t('Відкрити живу базу всіх типів і кодів дій сповіщень', 'Open het levende register van alle meldingssoorten en actiecodes')}
-              >
-                <BookOpen aria-hidden='true' />
-                <span>{t('База типів', 'Register')}</span>
-              </a>
-              <a
+              />
+              <IcoonActieKnop
                 href={instellingenHref}
-                className='mel-knop puls-voet-accent puls-voet-knop'
-                title={t('Усі правила, тихі години та налаштування (/melding)', 'Alle regels, stille uren en instellingen (/melding)')}
-              >
-                <Settings aria-hidden='true' />
-                <span>{t('Правила', 'Regels')}</span>
-              </a>
+                toon='actief'
+                icoon={<Settings aria-hidden='true' />}
+                label={t('Правила та налаштування сповіщень', 'Regels en voorkeuren')}
+                data-qa-id='puls-open-regels'
+              />
             </div>
           </div>
         </section>
@@ -1562,7 +2040,9 @@ export default function MeldingenPortaal({
   );
 
   if (typeof document !== 'undefined' && document.body) {
-    const portaalWortel = document.querySelector<HTMLElement>('.canonical-chrome') || document.body;
+    const portaalWortel = isMobielLangscroll
+      ? document.body
+      : document.querySelector<HTMLElement>('.canonical-chrome') || document.body;
     return createPortal(portalLaag, portaalWortel);
   }
   return portalLaag;

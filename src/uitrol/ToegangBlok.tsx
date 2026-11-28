@@ -13,7 +13,7 @@ import { rechtenSamenvatting } from '../../shared/uitrol-wachtrij';
 import { SOORT, datum, tr, type Grant, type Lang, type Overzicht } from './types';
 import { useAnkerScroll } from '../anker-scroll';
 
-const OMVANG: Record<Grant['soort'], [string, string]> = { account: ['свій акаунт', 'eigen account'], agent: ['усі підключення агента', 'alle koppelingen van de agent'], 'mcp-koppeling': ['одне підключення', 'één koppeling'], agenttoken: ['один токен', 'één token'] };
+const OMVANG: Record<Grant['soort'], [string, string]> = { account: ['свій обліковий запис', 'eigen account'], agent: ['усі підключення агента', 'alle koppelingen van de agent'], 'mcp-koppeling': ['одне підключення', 'één koppeling'], agenttoken: ['один токен', 'één token'] };
 const kortTermijn = (lang: Lang, g: Grant) => {
   if (g.onbepaald || new Date(g.verlooptOp).getUTCFullYear() >= 9999) return tr(lang, 'безстроково', 'onbepaald');
   const ms = Date.parse(g.verlooptOp) - Date.now(); if (!(ms > 0)) return tr(lang, 'минув', 'verlopen');
@@ -55,7 +55,7 @@ export default function ToegangBlok({ lang, data, naarInstellen }: { lang: Lang;
           `${sam.niveau} · ${sam.beperking}`,
           `${tr(lang, 'Надано', 'Gegeven')}: ${datum(lang, g.gegevenOp)}${g.gegevenDoor ? ` · ${g.gegevenDoor}` : ''}`,
           g.onbepaald ? tr(lang, 'До відкликання', 'Tot intrekking') : `${tr(lang, 'Діє до', 'Geldig tot')}: ${datum(lang, g.verlooptOp)}`,
-          g.eigenaar?.email ? `${tr(lang, 'Акаунт', 'Account')}: ${g.eigenaar.email}` : '', g.bron === 'ai-beleid' ? tr(lang, 'Автоматично з політики ШІ («Розгортати сайт»)', 'Automatisch uit het AI-beleid («Site uitrollen»)') : '',
+          g.eigenaar?.email ? `${tr(lang, 'Обліковий запис', 'Account')}: ${g.eigenaar.email}` : '', g.bron === 'ai-beleid' ? tr(lang, 'Автоматично з політики ШІ («Розгортати сайт»)', 'Automatisch uit het AI-beleid («Site uitrollen»)') : '',
           zonderKoppeling ? tr(lang, 'Зараз агент не має жодного підключення в технічному просторі — дозвіл є, але скористатися ним нікому.', 'De agent heeft nu geen enkele koppeling in de technische ruimte — de toestemming bestaat, maar niemand kan haar gebruiken.') : '',
           klikUitleg].filter(Boolean).join('\n');
         return <li key={g.id} className='ut-toegang-rij' data-staat={staat} data-zonder-koppeling={zonderKoppeling || undefined} title={titel} tabIndex={0} role='button'

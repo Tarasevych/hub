@@ -55,18 +55,32 @@
    betekent; per melding «Відкрити» en «Очистити» als tekstknoppen; onderaan «Очистити все тут» en «Усі сповіщення». */
 .menu-badge[data-klik='ja']{pointer-events:auto;cursor:pointer}
 .menu-badge[data-klik='ja']::before{content:'';position:absolute;inset:-8px}
-.menu-bellen .menu-bellen-uitleg{margin:0 6px 8px;color:var(--muted);font-size:12px;line-height:1.4}
-.menu-bellen .menu-bel{grid-template-columns:8px minmax(0,1fr)}
-.menu-bellen .menu-bel-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg{display:inline-flex;align-items:center;gap:5px;width:auto;height:auto;min-height:30px;padding:0 10px;border:1px solid color-mix(in srgb,var(--mb) 35%,var(--line));border-radius:8px;background:var(--panel);color:var(--text);font:600 12px/1.2 inherit;cursor:pointer}
-.menu-bellen .menu-bel-openen svg{width:13px;height:13px}
-.menu-bellen .menu-bel-openen:hover,.menu-bellen .menu-bel-weg:hover{background:color-mix(in srgb,var(--mb) 16%,var(--panel))}
-.menu-bellen .menu-bellen-voet{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.menu-bellen .menu-bellen-voet .menu-bellen-alles{flex:1 1 auto;width:auto;margin:0;border:1px solid var(--line);color:var(--text)}
-.menu-bellen .menu-bellen-paneel{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1 1 auto;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text);font:600 12px/1.2 inherit;cursor:pointer}
-.menu-bellen .menu-bellen-paneel svg{width:14px;height:14px}
-.menu-bellen .menu-bellen-paneel:hover{background:var(--nav-hover)}
-@media (pointer:coarse),(max-width:700px){.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg,.menu-bellen .menu-bellen-alles,.menu-bellen .menu-bellen-paneel{min-height:var(--tik-hoogte)}}
+.menu-bellen .menu-bellen-uitleg{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.menu-bellen .menu-bellen-uitleg.is-open{position:static;width:auto;height:auto;margin:0 2px 8px;padding:8px 10px;overflow:visible;clip:auto;white-space:normal;border:1px solid color-mix(in srgb,var(--accent) 26%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--accent) 7%,var(--surface));color:var(--muted);font-size:12px;line-height:1.4}
+.menu-bellen .menu-bel{grid-template-columns:34px minmax(0,1fr)}
+.menu-bellen .menu-bel-acties{display:inline-flex;flex-wrap:nowrap;align-items:center;flex:none;gap:4px;margin:0;align-self:start}
+.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg{position:relative;display:inline-grid;place-items:center;flex:none;box-sizing:border-box;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;gap:0;border-radius:9px;font-size:0;line-height:0;overflow:visible;cursor:pointer;transition:background-color .14s ease,color .14s ease,border-color .14s ease,box-shadow .14s ease}
+.menu-bellen .menu-bel-openen{border:1px solid color-mix(in srgb,var(--bel-kleur,var(--mb)) 36%,var(--line));background:color-mix(in srgb,var(--bel-kleur,var(--mb)) 12%,var(--panel));color:var(--text)}
+.menu-bellen .menu-bel-weg{border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+.menu-bellen .menu-bel-openen svg,.menu-bellen .menu-bel-weg svg{flex:none;width:15px;height:15px}
+.menu-bellen .menu-bel-openen:hover,.menu-bellen .menu-bel-openen:focus-visible{background:color-mix(in srgb,var(--bel-kleur,var(--mb)) 22%,var(--panel));border-color:color-mix(in srgb,var(--bel-kleur,var(--mb)) 48%,var(--line))}
+.menu-bellen .menu-bel-weg:hover,.menu-bellen .menu-bel-weg:focus-visible{background:color-mix(in srgb,var(--staat-goed) 15%,var(--panel));border-color:color-mix(in srgb,var(--staat-goed) 38%,var(--line));color:var(--text)}
+.menu-bellen .menu-bellen-voet{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:6px;margin-top:6px;padding-top:7px;border-top:1px solid var(--line)}
+.menu-bellen .menu-bellen-voet-status{margin-right:auto;min-width:0;color:var(--muted);font-size:12px;font-weight:560;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-bellen .menu-bellen-voet .menu-bellen-alles,.menu-bellen .menu-bellen-paneel{position:relative;display:inline-grid;place-items:center;flex:none;box-sizing:border-box;width:32px;height:32px;min-width:32px;min-height:32px;margin:0;padding:0;gap:0;border-radius:9px;font-size:0;line-height:0;overflow:visible;cursor:pointer;transition:background-color .14s ease,color .14s ease,border-color .14s ease,box-shadow .14s ease}
+.menu-bellen .menu-bellen-voet .menu-bellen-alles{border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.menu-bellen .menu-bellen-voet .menu-bellen-alles svg,.menu-bellen .menu-bellen-paneel svg{flex:none;width:16px;height:16px}
+.menu-bellen .menu-bellen-voet .menu-bellen-alles:hover,.menu-bellen .menu-bellen-voet .menu-bellen-alles:focus-visible{background:var(--nav-hover);border-color:color-mix(in srgb,var(--staat-goed) 38%,var(--line))}
+.menu-bellen .menu-bellen-paneel{border:1px solid color-mix(in srgb,var(--accent) 36%,var(--line));background:color-mix(in srgb,var(--accent) 11%,var(--panel));color:var(--accent)}
+.menu-bellen .menu-bellen-paneel:hover,.menu-bellen .menu-bellen-paneel:focus-visible{background:color-mix(in srgb,var(--accent) 19%,var(--panel));color:var(--text)}
+.menu-bellen :is(.menu-bellen-info,.menu-bellen-sluit,.menu-bel-openen,.menu-bel-weg,.menu-bellen-voet .menu-bellen-alles,.menu-bellen-paneel)[data-tip-actief='ja']{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--panel));color:var(--text);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 38%,transparent)}
+@media (pointer:coarse),(max-width:700px){
+  .menu-bellen .menu-bel{grid-template-columns:32px minmax(0,1fr);gap:8px}
+  .menu-bellen .menu-bel-acties{gap:6px}
+  .menu-bellen .menu-bellen-voet{gap:8px}
+  .menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg,.menu-bellen .menu-bellen-voet .menu-bellen-alles,.menu-bellen .menu-bellen-paneel{width:32px;height:32px;min-width:32px;min-height:32px;border-radius:9px}
+  .menu-bellen .menu-bel-openen::after,.menu-bellen .menu-bel-weg::after,.menu-bellen .menu-bellen-voet .menu-bellen-alles::after,.menu-bellen .menu-bellen-paneel::after{content:'';position:absolute;left:50%;top:50%;width:var(--tik-hoogte);height:var(--tik-hoogte);transform:translate(-50%,-50%)}
+}
 
 /* INTEG-001 (eigenaar: «дзвіночок — піктограма»): in de bovenbalk, de kop van het menu en de zijbalk is de bel een pictogram — geen ronde
    knop met rand en schaduw. Alleen zwevend in de actiestapel (boven de inhoud) houdt hij zijn rondje, anders verdwijnt hij in de pagina.

@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261127-171500-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-27T17:15:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herstel",
+  "wat": {
+    "uk": "Усунено повторні перезавантаження пошти, вкладень і сторінок під час повернення до вкладки та переходів між піддоменами поверх встановленої основи 20261127-145130 @ 4a67264fb55b: синхронне відновлення знімку пошти (MailFunctioneelWeergave.tsx) та міток (mail-aanbieder-toestand.ts) із sessionStorage/localStorage з першого кадру, 5-хвилинне вікно свіжості списку листів і міток, збереження attachmentsByMessage у MailListViewSnapshot (mail-bijlage-cache.ts) та tsv:mail-ui-context-v3 (GoogleMailWerkruimte.tsx), миттєве відкриття листів і вкладень із CacheStorage без скидання у стан завантаження, дроселювання фонової звірки при поверненні до вкладки до 5 хв / 60 с та вимкнення верхньої смуги #tsv-voortgang для фонових маршрутів ACHTERGROND_PAD (client.ts, navigatie-snel.ts; site-001-snelheid 16/16).",
+    "nl": "Herhaald herladen van e-mail, bijlagen en pagina's bij terugkeer naar het tabblad en tussen subdomeinen verholpen bovenop geïnstalleerde basis 20261127-145130 @ 4a67264fb55b: synchroon herstel van e-mail- en labelopnamen uit sessionStorage/localStorage vanaf het eerste beeld, 5-minuten versheidsvenster voor berichtenlijst en labels, behoud van attachmentsByMessage in MailListViewSnapshot en tsv:mail-ui-context-v3, direct openen van berichten en bijlagen uit CacheStorage zonder laadstand, beperking van achtergrondverificatie bij zichtbaarheid tot 5 min / 60 s en uitschakeling van de voortgangsbalk #tsv-voortgang voor achtergrondroutes ACHTERGROND_PAD (site-001-snelheid 16/16)."
+  },
+  "waarom": {
+    "uk": "Власник повідомив, що при поверненні до сайту та переходах між піддоменами пошта, вкладення і сторінки щоразу скидали стан і перезавантажувалися заново навіть за відсутності нових листів чи змін в інтерфейсі.",
+    "nl": "De eigenaar meldde dat bij terugkeer naar de site en bij overgangen tussen subdomeinen e-mail, bijlagen en pagina's telkens opnieuw werden geladen zonder dat er nieuwe berichten of wijzigingen waren."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "f8227fcea4699d886be3204110dab7f007aa35a9",
+    "4a67264fb55bd8c82e1d8efe907e8ae22edc0a53",
+    "a26d9c9105c211e6a14e48ad0c552c113f4c0392",
+    "16d28123998f355a35d72c4c485bc9309c1eb965"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring",
+    "meldingen"
+  ]
+}

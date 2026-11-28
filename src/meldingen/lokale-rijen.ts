@@ -43,7 +43,7 @@ export type BewaardeRij = {
 /** Hoeveel meldingen de lijst bewaart; ouder dan dit valt er vanzelf af. */
 export const MAX_RIJEN = 50;
 // SEC-002 (interface-06): het voorvoegsel («tsv:canonical-notification-history-v2:») komt uit src/lokale-sporen.ts, dat deze lijst
-// bij afmelden zonder «Запам'ятати цей акаунт» wist — vroeger bleven de laatste 50 meldingen (tekst, details, koppelingen) staan.
+// bij afmelden zonder «Запам'ятати цей обліковий запис» wist — vroeger bleven de laatste 50 meldingen (tekst, details, koppelingen) staan.
 export const historyKey = (scope: string) => `${MELDINGEN_VOORVOEGSEL}${scope || 'anon'}`;
 const legacyKey = (scope: string) => `tsv:canonical-notification-retained-v1:${scope || 'anon'}`;
 const DETAIL_ICONS: CanonicalNoticeDetailIcon[] = ['scope', 'query', 'server', 'provider', 'results', 'durable', 'request', 'saved', 'cursor', 'duration', 'accounts', 'error'];

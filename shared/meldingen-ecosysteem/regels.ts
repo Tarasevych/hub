@@ -118,7 +118,7 @@ export function contextVoorSubdomein(subdomein: MeldingSubdomein, ruimte: Ruimte
   }
   const map: Record<MeldingSubdomein, Omit<SubdomeinContext, 'subdomein'>> = {
     hub: { accent: '#3b82f6', tintAchtergrond: 'rgba(59, 130, 246, 0.12)', naamUk: 'Загальний хаб', naamNl: 'Algemene hub', snelFilters: ['beveiliging', 'mail', 'cloud', 'ai', 'huis'] },
-    id: { accent: '#6366f1', tintAchtergrond: 'rgba(99, 102, 241, 0.14)', naamUk: 'Акаунт і безпека', naamNl: 'Account en veiligheid', snelFilters: ['beveiliging', 'systeem', 'extensie', 'pagina'] },
+    id: { accent: '#6366f1', tintAchtergrond: 'rgba(99, 102, 241, 0.14)', naamUk: 'Обліковий запис і безпека', naamNl: 'Account en veiligheid', snelFilters: ['beveiliging', 'systeem', 'extensie', 'pagina'] },
     ai: { accent: '#8b5cf6', tintAchtergrond: 'rgba(139, 92, 246, 0.14)', naamUk: 'Простір ШІ', naamNl: 'AI-werkruimte', snelFilters: ['ai', 'mcp', 'pc_agent', 'extensie'] },
     mail: { accent: '#0ea5e9', tintAchtergrond: 'rgba(14, 165, 233, 0.14)', naamUk: 'Пошта і вкладення', naamNl: 'Post en bijlagen', snelFilters: ['mail', 'beveiliging', 'ai', 'pagina'] },
     cloud: { accent: '#10b981', tintAchtergrond: 'rgba(16, 185, 129, 0.14)', naamUk: 'Хмарне сховище', naamNl: 'Cloudopslag', snelFilters: ['cloud', 'beveiliging', 'ai', 'app'] },

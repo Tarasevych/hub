@@ -285,7 +285,34 @@ html.palet-maquette .mr-sign-in-initials {
   color: var(--mq-am-tekst);
 }
 
-html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-activated='true']):not([data-pauze='true']) {
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--mq-am-hoofdknop-kern), var(--mq-am-hoofdknop-kern)) padding-box,
+    linear-gradient(96deg, var(--mq-am-accent), var(--mq-am-accent-2), var(--mq-am-accent-3)) border-box;
+  color: var(--mq-am-hoofdknop-tekst);
+  box-shadow: 0 14px 32px rgba(5, 8, 22, 0.24);
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account,
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-copy strong {
+  color: var(--mq-am-hoofdknop-tekst) !important;
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-email,
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-copy small,
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-enter,
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-account-forget {
+  color: color-mix(in srgb, var(--mq-am-hoofdknop-tekst) 82%, transparent) !important;
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-account-row[data-hoofdactie='true'] .mr-sign-in-initials:not(.mr-sign-in-avatar) {
+  background: color-mix(in srgb, var(--mq-am-hoofdknop-tekst) 16%, var(--mq-am-hoofdknop-kern));
+  border-color: color-mix(in srgb, var(--mq-am-hoofdknop-tekst) 30%, transparent);
+  color: var(--mq-am-hoofdknop-tekst);
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-hoofdactie='false']):not([data-activated='true']):not([data-pauze='true']) {
   border-color: transparent !important;
   background:
     linear-gradient(var(--mq-am-hoofdknop-kern), var(--mq-am-hoofdknop-kern)) padding-box,
@@ -295,8 +322,15 @@ html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not
   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-activated='true']):not([data-pauze='true']):hover,
-html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-activated='true']):not([data-pauze='true']):focus-visible {
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button[data-hoofdactie='false']:not([data-activated='true']):not([data-pauze='true']) {
+  border: 1px solid var(--mq-am-rand-sterk) !important;
+  background: color-mix(in srgb, var(--mq-am-oppervlak-2) 82%, transparent) !important;
+  color: var(--mq-am-tekst) !important;
+  box-shadow: none !important;
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-hoofdactie='false']):not([data-activated='true']):not([data-pauze='true']):hover,
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-hoofdactie='false']):not([data-activated='true']):not([data-pauze='true']):focus-visible {
   transform: translateY(-1px);
   box-shadow:
     0 18px 36px rgba(5, 8, 22, 0.30),

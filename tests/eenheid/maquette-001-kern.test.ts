@@ -76,7 +76,8 @@ export async function main(): Promise<number> {
   // 4. Сторінка 404 (NietGevonden.tsx) та гостьовий зал (GastToegang.tsx) і перехід підтвердження (EigenaarIdentiteitAutoriseer.tsx).
   check(
     'NietGevonden зберігає ознаки доступності й навігації та додає студійну вітрину 404 для палітри maquette',
-    nietGevonden.includes("className='niet-gevonden' role='main' aria-labelledby='niet-gevonden-kop' data-niet-gevonden={route.path}") &&
+    nietGevonden.includes("const pad = leesbaarPad(route.path)") &&
+      nietGevonden.includes("className='niet-gevonden' role='main' aria-labelledby='niet-gevonden-kop' data-niet-gevonden={pad}") &&
       nietGevonden.includes("<h1 id='niet-gevonden-kop'>") &&
       nietGevonden.includes("className='mq-niet-gevonden-vitrine'") &&
       nietGevonden.includes("className='mq-niet-gevonden-bovenregel'"),

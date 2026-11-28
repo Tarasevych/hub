@@ -18,12 +18,12 @@ export const MELDING_TYPES = {
   post: { ruimte: 'prive', naam: ['Пошта', 'E-mail'] },
   agenda: { ruimte: 'prive', naam: ['Календар', 'Agenda'] },
   cloud: { ruimte: 'prive', naam: ['Хмара й файли', 'Cloud en bestanden'] },
-  beveiliging: { ruimte: 'prive', naam: ['Безпека мого акаунта', 'Beveiliging van mijn account'], kritiek: true },
+  beveiliging: { ruimte: 'prive', naam: ['Безпека мого облікового запису', 'Beveiliging van mijn account'], kritiek: true },
   toegang: { ruimte: 'prive', naam: ['Мій доступ і запити', 'Mijn toegang en verzoeken'] },
   delen: { ruimte: 'prive', naam: ['Спільний доступ', 'Delen'] },
   ai: { ruimte: 'prive', naam: ['ШІ-агенти (мій простір)', 'AI-agenten (mijn ruimte)'] },
   apparaten: { ruimte: 'prive', naam: ['Мої пристрої', 'Mijn apparaten'] },
-  'inzage': { ruimte: 'prive', naam: ['Запити на перегляд мого акаунта', 'Verzoeken om mijn account in te zien'], kritiek: true },
+  'inzage': { ruimte: 'prive', naam: ['Запити на перегляд мого облікового запису', 'Verzoeken om mijn account in te zien'], kritiek: true },
   // INTEG-001: niet het vage «Інше» — wat er wel onder valt (meldingen van de site zelf: indeling, ruimte, concepten …).
   systeem: { ruimte: 'prive', naam: ['Сайт і система (решта)', 'Site en systeem (overige)'] },
   // ---------------------------------------------------------------- technisch (alleen wie een technisch profiel heeft)

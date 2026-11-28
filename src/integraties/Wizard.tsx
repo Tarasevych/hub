@@ -239,7 +239,7 @@ export default function Wizard({ lang, context, onGewijzigd }: Props) {
       <section className='il-d-sectie'>
         <h4><ShieldCheck aria-hidden />{tr('Без майстра (нічого реєструвати не треба)', 'Zonder wizard (niets te registreren)')}</h4>
         <ul>
-          <li>{tr('Пошта через пароль застосунку (iCloud, Ukr.net, Yahoo, I.ua): користувач вводить пароль застосунку на сторінці Пошта → Акаунти; сервер перевіряє його у IMAP/SMTP самої служби. Потрібен лише MAIL_APP_WACHTWOORD_SLEUTEL_V1 (вище).', 'Mail met app-wachtwoord (iCloud, Ukr.net, Yahoo, I.ua): de gebruiker voert het app-wachtwoord in op E-mail → Accounts; de server controleert het bij IMAP/SMTP van de dienst zelf. Alleen MAIL_APP_WACHTWOORD_SLEUTEL_V1 is nodig (hierboven).')}</li>
+          <li>{tr('Пошта через пароль застосунку (iCloud, Ukr.net, Yahoo, I.ua): користувач вводить пароль застосунку на сторінці Пошта → Облікові записи; сервер перевіряє його у IMAP/SMTP самої служби. Потрібен лише MAIL_APP_WACHTWOORD_SLEUTEL_V1 (вище).', 'Mail met app-wachtwoord (iCloud, Ukr.net, Yahoo, I.ua): de gebruiker voert het app-wachtwoord in op E-mail → Accounts; de server controleert het bij IMAP/SMTP van de dienst zelf. Alleen MAIL_APP_WACHTWOORD_SLEUTEL_V1 is nodig (hierboven).')}</li>
           <li>{tr('Календар CalDAV / ICS: адреса, логін і пароль застосунку на сторінці Календар; потрібен AGENDA_ABONNEMENT_SLEUTEL_V1.', 'Agenda CalDAV / ICS: adres, login en app-wachtwoord op de pagina Agenda; AGENDA_ABONNEMENT_SLEUTEL_V1 is nodig.')}</li>
           <li>{tr('Cloudflare Tunnel: налаштовується на сервері (deploy/cloudflared-config.yml), не через OAuth.', 'Cloudflare Tunnel: op de server (deploy/cloudflared-config.yml), niet via OAuth.')}</li>
         </ul>

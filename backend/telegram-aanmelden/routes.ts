@@ -6,7 +6,7 @@
 import type { RouterContext, RouterMiddleware, RouterResponse } from '../../server/platform/router';
 import { json } from '../../server/platform';
 import { passkeyStapOpGeldig, stapOpSessieId } from '../stap-op';
-import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikbaarVoor, plaatsEisMethoden, plaatsEisZetten, type PoortAuth } from './beleid-poort';
+import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikbaarVoor, plaatsEisMethoden, plaatsEisZetten, rechtstreeksBevestigenVoor, rechtstreeksBevestigenZetten, type PoortAuth } from './beleid-poort';
 import { PLAATS_EIS_NAAM, plaatsEisSchoon } from '../../shared/aanmeld-plaats-eis';
 import { actieSoorten, instellingen, koppelingenVanGebruiker, registreerVlagBeoordelaar, sql, vlagHoofdschakelaar, vlagVoor } from './opslag';
 import { koppelAnnuleren, koppelBevestigen, koppelStart, koppelStatus, magTelegram, profielFotoData } from './koppelen';
@@ -215,6 +215,7 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       beschikbaar: [...beschikbaar],
       // TELEGRAM-004 (0299): eist dit account de plaats van het toestel bij aanmelden met Telegram?
       plaatsEis: await plaatsEisMethoden(a.user.id).catch(() => []),
+      rechtstreeksBevestigen: await rechtstreeksBevestigenVoor(a.user.id).catch(() => false),
       geblokkeerd: (await sql<{ sleutel: string; op: Date }>('SELECT sleutel, op FROM app.tg_geblokkeerd WHERE user_id = $1 ORDER BY op DESC LIMIT 50', [a.user.id])).map((g) => ({ apparaat: g.sleutel, op: new Date(g.op).toISOString() })),
       status: await publiekeStand(),
       standen: KOPPEL_STANDEN,
@@ -412,10 +413,33 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       if (erbij.length || eraf.length) {
         const lijst = (taal: 'uk' | 'nl') => methoden.map((m) => PLAATS_EIS_NAAM[m][taal]).join(', ');
         await siteMelding(a.user.id, methoden.length ? { uk: '📍 Вимогу місця пристрою під час входу змінено', nl: '📍 De eis van de plaats van het apparaat bij aanmelden is gewijzigd' } : { uk: '📍 Вимогу місця пристрою під час входу вимкнено', nl: '📍 De eis van de plaats van het apparaat bij aanmelden staat uit' },
-          methoden.length ? { uk: `Місце пристрою тепер вимагають способи входу: ${lijst('uk')}. Без дозволу браузера на місце вхід цими способами не відбудеться; решта способів працюють як раніше. Змінити: «Способи входу» → «Вимагати місце пристрою».${eraf.length ? ' Якщо вимогу для якогось способу зняли не ви — поверніть її й перевірте активні сеанси.' : ''}`, nl: `De plaats van het apparaat is nu vereist bij: ${lijst('nl')}. Zonder toestemming van de browser voor de locatie lukt aanmelden met deze methoden niet; de andere methoden werken zoals voorheen. Wijzigen: «Aanmeldmethoden» → «Plaats van het apparaat eisen».${eraf.length ? ' Haalde u de eis bij een methode niet zelf weg, zet hem dan terug en controleer de actieve sessies.' : ''}` }
+          methoden.length ? { uk: `Місце пристрою тепер вимагають способи входу: ${lijst('uk')}. Без дозволу оглядача на місце вхід цими способами не відбудеться; решта способів працюють як раніше. Змінити: «Способи входу» → «Вимагати місце пристрою».${eraf.length ? ' Якщо вимогу для якогось способу зняли не ви — поверніть її й перевірте активні сеанси.' : ''}`, nl: `De plaats van het apparaat is nu vereist bij: ${lijst('nl')}. Zonder toestemming van de browser voor de locatie lukt aanmelden met deze methoden niet; de andere methoden werken zoals voorheen. Wijzigen: «Aanmeldmethoden» → «Plaats van het apparaat eisen».${eraf.length ? ' Haalde u de eis bij een methode niet zelf weg, zet hem dan terug en controleer de actieve sessies.' : ''}` }
             : { uk: 'Вхід будь-яким способом знову можливий без місця пристрою. Якщо це зробили не ви — увімкніть вимогу знову й перевірте активні сеанси.', nl: 'Aanmelden kan met elke methode weer zonder de plaats van het apparaat. Deed u dit niet zelf, zet de eis dan weer aan en controleer de actieve sessies.' }).catch(() => undefined);
       }
       return json({ ok: true, plaatsEis: methoden });
+    }),
+    'POST /api/owner/telegram/rechtstreeks-bevestigen': bewaakt('matrix-wijzigen', async (_rc, a, d) => {
+      const voor = await rechtstreeksBevestigenVoor(a.user.id).catch(() => false);
+      const aan = await rechtstreeksBevestigenZetten(a.user.id, d.aan === true);
+      await audit(a.user.id, 'telegram.rechtstreeks-bevestigen', 'success', { aan, voor });
+      if (aan !== voor) {
+        await siteMelding(
+          a.user.id,
+          aan
+            ? { uk: '⚠️ Увімкнено пряме підтвердження входу в боті Telegram', nl: '⚠️ Rechtstreekse aanmeldbevestiging in Telegram-bot ingeschakeld' }
+            : { uk: '🛡️ Пряме підтвердження входу в боті Telegram вимкнено', nl: '🛡️ Rechtstreekse aanmeldbevestiging in Telegram-bot uitgeschakeld' },
+          aan
+            ? {
+                uk: 'Тепер активний запит на вхід можна викликати командою /inloggen або кнопкою безпосередньо в боті Telegram без переходу з сайту. Пам’ятайте: ніколи не натискайте підтвердження в Telegram на прохання телефонних співрозмовників — це шахрайство.',
+                nl: 'U kunt een actief aanmeldverzoek nu met /inloggen of een knop rechtstreeks in de Telegram-bot oproepen zonder sitelink. Bevestig nooit op telefonisch verzoek van derden — dat is oplichting.',
+              }
+            : {
+                uk: 'Запит на вхід знову відкривається лише після переходу з вашого екрана входу на сайті.',
+                nl: 'Een aanmeldverzoek opent weer uitsluitend na een overstap vanaf uw aanmeldscherm op de site.',
+              },
+        ).catch(() => undefined);
+      }
+      return json({ ok: true, rechtstreeksBevestigen: aan });
     }),
     'POST /api/owner/telegram/bevestiging/aanvragen': alleenSessie(async (rc, a, d) => {
       const m = contextMetaVan(rc);

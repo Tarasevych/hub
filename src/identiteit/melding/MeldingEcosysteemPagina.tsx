@@ -48,6 +48,7 @@ import {
   publiceerPaginaSignaal,
 } from '../../canoniek-meldingen';
 import {
+  MeldingAfleveringControle,
   MeldingBijlageSpeler,
   MeldingVeegKaart,
   bewaarProfielOpServer,
@@ -480,6 +481,38 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
           <label className='mp-schakel'>
             <input
               type='checkbox'
+              checked={Boolean(profiel.standaardUitgeklapt)}
+              onChange={(e) => slaProfielOp((c) => ({ ...c, standaardUitgeklapt: e.target.checked }))}
+            />
+            <span>
+              {t('Розгортати картки сповіщень автоматично', 'Meldingskaarten standaard uitklappen')}
+              <small>
+                {t(
+                  'Якщо вимкнено (типово), усі звичайні сповіщення відкриваються в охайних 1-рядкових капсулах без шуму кнопок.',
+                  'Standaard uitgeschakeld: gewone meldingen verschijnen als rustige capsules van één regel.',
+                )}
+              </small>
+            </span>
+          </label>
+          <label className='mp-schakel'>
+            <input
+              type='checkbox'
+              checked={profiel.autoGelezenBijZicht !== false}
+              onChange={(e) => slaProfielOp((c) => ({ ...c, autoGelezenBijZicht: e.target.checked }))}
+            />
+            <span>
+              {t('Автоматично позначати прочитаним при появі на очах (✓✓)', 'Automatisch als gelezen markeren bij weergave (✓✓)')}
+              <small>
+                {t(
+                  'Знімає кольорове підсвічування й ставить дві галочки, щойно сповіщення реально з’явилося перед очима.',
+                  'Verwijdert de kleurtint en plaatst dubbele vinkjes zodra de melding echt in beeld komt.',
+                )}
+              </small>
+            </span>
+          </label>
+          <label className='mp-schakel'>
+            <input
+              type='checkbox'
               checked={profiel.contextAdaptatie}
               onChange={(e) => slaProfielOp((c) => ({ ...c, contextAdaptatie: e.target.checked }))}
             />
@@ -901,7 +934,7 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
                   <strong>{kanaalLabel(k, lang)}</strong>
                   <small>
                     {isBeveiliging
-                      ? t('Завжди увімкнений для захисту акаунта', 'Altijd actief voor accountbescherming')
+                      ? t('Завжди увімкнений для захисту облікового запису', 'Altijd actief voor accountbescherming')
                       : k}
                   </small>
                 </div>
@@ -1221,6 +1254,12 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
           />
         </div>
       </section>
+
+      {magTechnisch && (
+        <section id='melding-aflevering' className='mp-sectie'>
+          <MeldingAfleveringControle lang={lang} ruimte={ruimte} />
+        </section>
+      )}
 
       {/* 8. Жива класифікована база типів сповіщень, кодів дій та схем доказів (MELDINGEN-REGISTER-001) */}
       <MeldingRegisterVerkenner lang={lang} magTechnisch={magTechnisch} />

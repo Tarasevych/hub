@@ -6,7 +6,7 @@ import { tr, taalcode, type Lang } from '../tekst';
 import { ABONNEMENT_FOUT, foutCodeTekst } from '../../abonnement-fouten';
 
 export function laadFoutTekst(lang: Lang, code: string): string {
-  if (/OWNER_AGENDA_SESSIE_VEREIST|401|403/.test(code)) return tr(lang, 'Календар доступний лише після входу у ваш акаунт.', 'De agenda is alleen beschikbaar na aanmelden in uw account.');
+  if (/OWNER_AGENDA_SESSIE_VEREIST|401|403/.test(code)) return tr(lang, 'Календар доступний лише після входу у ваш обліковий запис.', 'De agenda is alleen beschikbaar na aanmelden in uw account.');
   if (/Network|Failed to fetch|timeout|ECONN/i.test(code)) return tr(lang, 'Немає зв’язку з сервером.', 'Geen verbinding met de server.');
   return tr(lang, `Не вдалося оновити календар (${code}).`, `De agenda verversen is mislukt (${code}).`);
 }

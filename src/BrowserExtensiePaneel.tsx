@@ -228,8 +228,8 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
   const anderAccount = !!ping?.ok && !!ping.paired && (ping.account === 'mismatch' || (!!hb.geweigerd && !!ping.agentId && hb.agentId === ping.agentId && !agents.some((a) => a.id === ping.agentId)));
   const mismatchKaart = anderAccount ? (
     <section className='hub-note is-warn ext-mismatch' role='status' data-ext-mismatch='1'>
-      <p><b>{tr('Розширення прив’язане до іншого облікового запису', 'De extensie is aan een ander account gekoppeld')}</b>{ping?.agentId ? ` (${ping.agentId.slice(0, 8)}…)` : ''}. {tr('У цьому браузері воно працює від імені іншого акаунта, тому ваші сторінки воно не бачить, а підтвердження з цієї сторінки зупинено. Підключіть його до цього акаунта — попередня прив’язка буде замінена.', 'In deze browser werkt ze namens een ander account; uw pagina’s ziet ze dus niet, en de bevestigingen vanaf deze pagina zijn gestopt. Koppel ze aan dit account — de vorige koppeling wordt vervangen.')}</p>
-      <div className='hub-actions'><IconButton tone='primary' icon={<RefreshCw />} disabled={busy || presence !== 'present'} onClick={() => void connect()}>{tr('Підключити до цього акаунта', 'Aan dit account koppelen')}</IconButton></div>
+      <p><b>{tr('Розширення прив’язане до іншого облікового запису', 'De extensie is aan een ander account gekoppeld')}</b>{ping?.agentId ? ` (${ping.agentId.slice(0, 8)}…)` : ''}. {tr('У цьому браузері воно працює від імені іншого облікового запису, тому ваші сторінки воно не бачить, а підтвердження з цієї сторінки зупинено. Підключіть його до цього облікового запису — попередня прив’язка буде замінена.', 'In deze browser werkt ze namens een ander account; uw pagina’s ziet ze dus niet, en de bevestigingen vanaf deze pagina zijn gestopt. Koppel ze aan dit account — de vorige koppeling wordt vervangen.')}</p>
+      <div className='hub-actions'><IconButton tone='primary' icon={<RefreshCw />} disabled={busy || presence !== 'present'} onClick={() => void connect()}>{tr('Підключити до цього облікового запису', 'Aan dit account koppelen')}</IconButton></div>
     </section>
   ) : null;
   const koppelBlock = (

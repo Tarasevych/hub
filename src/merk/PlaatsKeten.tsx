@@ -41,13 +41,13 @@ function Vlag({ n, taal, klein }: { n: PlaatsNiveau; taal: Taal; klein?: boolean
   const naam = naamVan(n, taal);
   if (!n.vlag) return <span className={`plaats-keten-vlag plaats-keten-leeg${klein ? ' klein' : ''}`} title={`${naam}: ${t.geenVlag}`} />;
   if (n.soort === 'land') return <MerkPlaats keten={[n.vlag]} vorm='tegel' maat={klein ? 13 : 18} titel={`${t.vlag}: ${naam}`} className='plaats-keten-landvlag' />;
-  return <img className={`plaats-keten-vlag${klein ? ' klein' : ''}`} src={plaatsBeeldUrl(n.vlag)} alt='' title={`${t.vlag}: ${naam}`} draggable={false} decoding='async' loading='lazy' />;
+  return <img className={`plaats-keten-vlag${klein ? ' klein' : ''}`} src={plaatsBeeldUrl(n.vlag)} alt={`${t.vlag}: ${naam}`} title={`${t.vlag}: ${naam}`} draggable={false} decoding='async' loading='lazy' />;
 }
 function Wapen({ n, taal, klein }: { n: PlaatsNiveau; taal: Taal; klein?: boolean }) {
   const t = T[taal];
   const naam = naamVan(n, taal);
   if (!n.wapen) return <span className={`plaats-keten-wapen plaats-keten-leeg${klein ? ' klein' : ''}`} title={`${naam}: ${t.geenWapen}`} />;
-  return <img className={`plaats-keten-wapen${klein ? ' klein' : ''}`} src={plaatsBeeldUrl(n.wapen)} alt='' title={`${t.wapen}: ${naam}`} draggable={false} decoding='async' loading='lazy' />;
+  return <img className={`plaats-keten-wapen${klein ? ' klein' : ''}`} src={plaatsBeeldUrl(n.wapen)} alt={`${t.wapen}: ${naam}`} title={`${t.wapen}: ${naam}`} draggable={false} decoding='async' loading='lazy' />;
 }
 
 export default function PlaatsKeten({ antwoord, bron = 'ip', taal = 'uk', landNaam, open: openStart = false, className }: PlaatsKetenProps) {

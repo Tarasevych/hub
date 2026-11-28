@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261127-221500-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-27T22:15:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Усунено обрізання значків відправника (.afz-groep / .afz-badge) та хибне маркування офіційних сервісів як підозрілих (src/afzenders/afzenders.css, src/afzenders/AfzenderBadge.tsx, shared/mail-bekende-afzenders.ts, shared/mail-afzenders.ts, shared/afzender-regels.ts, backend/mail-afzenders.ts): 1) у src/afzenders/afzenders.css для .afz-groep встановлено overflow: visible, у .afz-adres зовнішній відступ замінено на margin-inline-start: 0; padding-inline-start: 4px; box-sizing: border-box (щоб при стисканні адреси до 0 px значок .afz-badge 3 px + 18 px = 21 px <= 22 px ніколи не виштовхувався за межі 22 px і не зрізався справа), а для рядків списку та шапки відкритого листа задано align-items: center і display: grid із скороченням довгого імені трикрапкою; 2) у shared/mail-bekende-afzenders.ts розширено перелік офіційних поштових і регіональних доменів (rozetka.ua, postnl.be/.com, chatgpt.com, claude.ai, monobank.com.ua, universalbank.com.ua, privat24.ua, pb.ua, oschadbank.com.ua, fuib.com, ukrgasbank.ua, sensebank.ua, novaposhta.com, np.ua, ukrposhta.com, office.com, office365.com, microsoftonline.com, onedrive.com, xbox.com, google.be/.nl/.com.ua/.de/.fr/.co.uk, withgoogle.com, paypal.eu, paypal-communication.com, revolut.be/.nl/.eu, mollie.nl/.be, bpost.cloud, airbnbmail.com, bstatic.com, toogoodtogo.com/.be/.nl, telegram.org, dhl.com/.be/.nl, dpd.be/.nl/.com, nmbs.be, delijn.be); 3) у shared/mail-afzenders.ts враховано крос-доменний DKIM-підпис доменом тієї самої офіційної служби, системні адреси noreply@icloud.com та виключено родові службові імена (Support, Info, No-Reply, Klantenservice, Підтримка тощо) з правила NAAM_VAN_CONTACT_ANDER_ADRES; 4) у shared/afzender-regels.ts піднято AFZENDER_REGELS_VERSIE = 4, а в backend/mail-afzenders.ts (herbeoordeelUitBewijs та afzenderStatus) реалізовано автоматичну переоцінку старих хибних автоматичних статусів verdacht і розширено ліниву перевірку Authentication-Results (LAZY_PER_VERZOEK = 25, LAZY_PER_5MIN = 200) для офіційних та організаційних доменів (site-001-snelheid 30/30).",
+    "nl": "Het afkappen van afzenderbadges (.afz-groep / .afz-badge) en het onterecht als verdacht markeren van officiële diensten verholpen (src/afzenders/afzenders.css, src/afzenders/AfzenderBadge.tsx, shared/mail-bekende-afzenders.ts, shared/mail-afzenders.ts, shared/afzender-regels.ts, backend/mail-afzenders.ts): 1) in src/afzenders/afzenders.css heeft .afz-groep nu overflow: visible, in .afz-adres is de buitenmarge vervangen door margin-inline-start: 0; padding-inline-start: 4px; box-sizing: border-box (zodat bij het krimpen van het adres tot 0 px het schild .afz-badge 3 px + 18 px = 21 px <= 22 px nooit voorbij 22 px wordt geduwd of rechts wordt afgesneden), met align-items: center en display: grid voor lijstregels en berichtkop; 2) in shared/mail-bekende-afzenders.ts zijn officiële regionale en verzenddomeinen toegevoegd (rozetka.ua, postnl.be/.com, chatgpt.com, claude.ai, monobank.com.ua, universalbank.com.ua, privat24.ua, pb.ua, office.com, microsoftonline.com, google.be/.nl/.com.ua, withgoogle.com, paypal.eu, paypal-communication.com, revolut.be/.nl/.eu, mollie.nl/.be, bpost.cloud, airbnbmail.com, bstatic.com, toogoodtogo.com/.be/.nl, telegram.org, dhl.com/.be/.nl, dpd.be/.nl/.com, nmbs.be, delijn.be); 3) in shared/mail-afzenders.ts telt een geldige DKIM-handtekening van dezelfde officiële dienst mee, zijn systeemadressen noreply@icloud.com toegestaan en zijn algemene dienstnamen (Support, Info, No-Reply, Klantenservice, Service) uitgesloten van NAAM_VAN_CONTACT_ANDER_ADRES; 4) in shared/afzender-regels.ts is AFZENDER_REGELS_VERSIE verhoogd naar 4 en in backend/mail-afzenders.ts (herbeoordeelUitBewijs en afzenderStatus) worden eerdere onterechte automatische verdacht-statussen automatisch herbeoordeeld met verhoogde luie controle (LAZY_PER_VERZOEK = 25, LAZY_PER_5MIN = 200; site-001-snelheid 30/30)."
+  },
+  "waarom": {
+    "uk": "Власник повідомив, що маркування, які вказують на відправника, наполовину скриваються (обрізаються) або хибно маркуються як небезпечні, хоча відправники є офіційними.",
+    "nl": "De eigenaar meldde dat de afzendermarkeringen half wegvallen (worden afgesneden) of onterecht als gevaarlijk/verdacht worden gemarkeerd terwijl het om officiële afzenders gaat."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261127-212800-antigravity",
+    "SITE-001/20261127-205000-antigravity",
+    "SITE-001/20261127-200800-antigravity",
+    "SITE-001/20261127-192200-antigravity",
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "f01fe60837621a5fd017b8f8951563e9de327f40",
+    "b3e037a050f9782c4580ee3adf193a343f730046",
+    "fdcd024473d2c49dbf55e43914ab19a2d266d168"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring"
+  ]
+}

@@ -26,7 +26,7 @@ export default function SessiesOverzicht(p:Props){
   const[bezig,setBezig]=useState(false);
   const[melding,setMelding]=useState('');
   const[bevestig,setBevestig]=useState(false);
-  // «Зберегти цей акаунт для наступних сесій» — de keuze van het aanmeldscherm, nu ook HIER zichtbaar en te wijzigen (per apparaat).
+  // «Зберегти цей обліковий запис для наступних сесій» — de keuze van het aanmeldscherm, nu ook HIER zichtbaar en te wijzigen (per apparaat).
   const[onthouden,setOnthouden]=useState(leesAanmeldenOnthouden);
   /* IDENTITEIT-015: увімкнено, але діятиме лише з наступного входу (цей вхід не запам'ятовано) */
   const[vanafVolgende,setVanafVolgende]=useState(leesOnthoudenVanafVolgende);
@@ -52,7 +52,7 @@ export default function SessiesOverzicht(p:Props){
       {melding&&<p className='sessies-melding' role='status'>{melding}</p>}
     </section>
     <section className='sessies-onthouden' data-sessies-onthouden={onthouden?'aan':'uit'}>
-      <h3>{tr('Збереження акаунта на цьому пристрої','Dit account op dit apparaat bewaren')}</h3>
+      <h3>{tr('Збереження облікового запису на цьому пристрої','Dit account op dit apparaat bewaren')}</h3>
       {/* ID-06 (klacht 20.10): dezelfde schakelaar als elders op de site (.zijbalk-schakel, zie src/ZijbalkInstellingen.tsx),
           niet het reuzen-vinkje van de browser. role='switch' + de eigen spoor/knop; het vinkje zelf is onzichtbaar maar bedienbaar. */}
       <label className='zijbalk-schakel' data-sessies-onthoud-schakel='1'>

@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261127-205000-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-27T20:50:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Об’єднано всі три вікна переглядачів вкладень («Спільний переглядач», «Компактна панель v2», «Класична») у єдиний переглядач «Компактна панель v2» (src/bijlage-v2/BijlageWerkbalk.tsx, src/bijlage-v2/Poort.tsx, src/bijlage-v2/BijlageV2Kop.tsx, src/GoogleMailWerkruimte.tsx) без втрати жодної можливості: 1) прибрано зайвий перемикач між трьома переглядачами в меню «•••»; 2) у Компактну панель v2 інтегровано всі можливості Спільного переглядача: перевірку безпеки та справжності файла за першими байтами (bewijsUitBlob: PDF без прихованих дій, макроси DOCX/XLSM, підміна формату програмою) і перевірку відправника (metAfzender) з індикатором у шапці, розширені технічні подробиці (technischeRijen) та швидку картку рахунку (WeergaveSnelkaart: сума, строк оплати, номер рахунку) у панелі «ⓘ Про файл», дії й модальні вікна «Оплату в Календар» (KalenderBetalingVenster), «Що змінилося» (VersieVergelijk), «Пошук у вкладеннях» (ZoekVeld), «Підписати або позначити» (onOndertekenen), перемикач «Темні сторінки документа» (data-donkere-paginas), контекстні дії джерела (contextActies), нижню стрічку мініатюр вкладень (WeergaveStrook), гортання свайпом (useVeeg) та запам’ятовування позиції читання (usePlekOnthouden); 3) збережено всі 30+ галузевих підписів редагування (bewerkLabel), створення нотатки з вкладення, точне масштабування ZoomGroep (25–400%), бічну панель ШІ і перекладу, панель PDF (PdfWerkbalk) та повний перелік дій у меню «•••» на всіх ширинах екрана (site-001-snelheid 28/28).",
+    "nl": "Alle drie de bijlageweergaven («Gedeelde weergave», «Compact paneel v2», «Klassiek») samengevoegd tot één enkele bijlageweergave «Compact paneel v2» (src/bijlage-v2/BijlageWerkbalk.tsx, src/bijlage-v2/Poort.tsx, src/bijlage-v2/BijlageV2Kop.tsx, src/GoogleMailWerkruimte.tsx) met behoud van alle mogelijkheden: 1) de overbodige keuzeschakelaar tussen drie weergavemodi uit het menu «•••» verwijderd; 2) alle functies van de Gedeelde weergave in het Compact paneel v2 geïntegreerd: byte- en afzenderveiligheidscontrole (bewijsUitBlob, metAfzender) met statusstip in de kop, uitgebreide technische gegevens (technischeRijen) en snelle factuurkaart (WeergaveSnelkaart: bedrag, vervaldatum, factuurnummer) in het paneel «ⓘ Over bestand», acties en vensters «Betaling in Agenda» (KalenderBetalingVenster), «Wat is gewijzigd» (VersieVergelijk), «Zoeken in bijlagen» (ZoekVeld), «Ondertekenen of markeren» (onOndertekenen), schakelaar «Donkere documentpagina’s» (data-donkere-paginas), contextacties (contextActies), onderste miniatuurstrook (WeergaveStrook), veegnavigatie (useVeeg) en positieherinnering (usePlekOnthouden); 3) alle 30+ vakspecifieke bewerkingslabels, notitie uit bijlage, ZoomGroep (25–400%), AI- en vertaalpaneel, PdfWerkbalk en volledige actielijst in «•••» op elke schermbreedte behouden (site-001-snelheid 28/28)."
+  },
+  "waarom": {
+    "uk": "Власник вказав зі знімком екрана, що мати три окремі вікна переглядачів вкладень немає сенсу, оскільки одні переглядачі підтримують одні кнопки, а інші — додатковий функціонал, якого немає в інших, і доручив залишити лише один переглядач — Компактну панель v2, зібравши в ній увесь функціонал усіх трьох переглядачів.",
+    "nl": "De eigenaar gaf met een schermafdruk aan dat het onzinnig is om drie afzonderlijke bijlageweergaven te hebben waarbij elke weergave andere knoppen en extra functies bevat, en gaf opdracht om uitsluitend het Compact paneel v2 te behouden en daarin alle functionaliteit van alle drie de weergaven samen te brengen."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261127-200800-antigravity",
+    "SITE-001/20261127-192200-antigravity",
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "fdcd024473d2c49dbf55e43914ab19a2d266d168",
+    "c375e52920248d538dbda1f15f643cfeb8229695"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring"
+  ]
+}

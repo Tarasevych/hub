@@ -158,7 +158,7 @@ export async function main(): Promise<number> {
       await page.hover('.canonical-avatar-trigger'); await page.waitForTimeout(500);
       const tip = await page.locator('.canonical-avatar-trigger').getAttribute('title');
       check(`tooltip (${accounts} account): naam en e-mail`, !!tip && tip.includes('Eigenaar Test') && tip.includes('pavlo@example.org'), String(tip));
-      check(`tooltip (${accounts} account): aantal andere accounts ${accounts > 1 ? 'genoemd' : 'niet genoemd'}`, accounts > 1 ? !!tip?.includes('Ще акаунтів: 2') : !tip?.includes('Ще акаунтів'), String(tip));
+      check(`tooltip (${accounts} account): aantal andere accounts ${accounts > 1 ? 'genoemd' : 'niet genoemd'}`, accounts > 1 ? !!tip?.includes('Ще облікових записів: 2') : !tip?.includes('Ще облікових записів'), String(tip));
       const al = await page.locator('.canonical-avatar-trigger').getAttribute('aria-label');
       check(`aria-label (${accounts}) noemt account`, !!al?.includes('Eigenaar Test'), String(al));
       await c.close();

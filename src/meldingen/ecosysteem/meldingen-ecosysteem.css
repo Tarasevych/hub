@@ -24,6 +24,11 @@
   user-select: text;
 }
 
+.mel-ecosysteem-portaal:focus,
+.mel-ecosysteem-portaal:focus-visible {
+  outline: none;
+}
+
 .mel-ecosysteem-portaal.is-modus-volledig {
   border-radius: 14px;
 }
@@ -335,22 +340,30 @@
   max-width: 280px;
 }
 
-/* Картки зі змахами */
+/* Картки-капсули зі змахами та нижньою прив’язкою дій */
 .mel-veeg-houder {
   position: relative;
   flex: 0 0 auto;
-  border-radius: 13px;
+  border-radius: 0;
+  overflow: visible;
+}
+.mel-veeg-kapsel-baan {
+  position: relative;
+  border-radius: 999px;
   overflow: hidden;
+}
+.mel-veeg-kapsel-baan.is-open {
+  border-radius: 22px;
 }
 .mel-veeg-achtergrond {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 18px;
   font-size: 12px;
   font-weight: 700;
-  border-radius: 13px;
+  border-radius: inherit;
 }
 .mel-veeg-achtergrond.is-rechts {
   justify-content: flex-start;
@@ -454,10 +467,18 @@
   color: var(--warn, #d97706);
 }
 .mel-herhaling {
-  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5.5px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--text) 10%, transparent);
+  background: color-mix(in srgb, var(--muted) 14%, var(--panel));
+  color: var(--muted);
+  font-size: 10.5px;
   font-weight: 700;
+  line-height: 1;
 }
 .mel-tijd {
   margin-left: auto;
@@ -1135,7 +1156,7 @@
   cursor: default;
 }
 
-/* Дозволяємо випадаючому меню умовного відкладення виходити за межі картки */
+/* Дозволяємо спадному меню умовного відкладення виходити за межі картки */
 .mel-veeg-houder:has(.puls-uitstel-menu),
 .puls-keten-houder {
   overflow: visible;
@@ -1250,6 +1271,7 @@
 }
 .puls-knop-overzicht {
   border-color: color-mix(in srgb, var(--ok, var(--good, #16a34a)) 42%, var(--line));
+  border-radius: 999px;
   background: var(--panel);
 }
 .puls-knop-overzicht:hover {
@@ -1604,7 +1626,7 @@
   filter: brightness(1.06);
 }
 
-/* Випадаюче меню розумного умовного відкладення */
+/* Спадне меню розумного умовного відкладення */
 .puls-uitstel-anker {
   position: relative;
   display: inline-flex;
@@ -2044,6 +2066,1737 @@
   }
   .puls-portaal .puls-kaart .mel-knop {
     min-height: 34px;
+  }
+}
+
+/* ============================================================================
+   HERSTEL-001: Нативна підтримка довгих знімків екрана на смартфоні
+   (html[data-mel-mobiel-langscroll="1"]), видимий системний бігунок на .mel-lijst
+   та інтерактивний повзунок швидкого прокручування .mel-scroll-schuif (чиста специфічність селекторів).
+   ============================================================================ */
+
+.mel-lijst-kader {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mel-lijst-kader > .mel-lijst {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 18px;
+}
+
+.mel-lijst {
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 55%, var(--muted)) transparent;
+}
+.mel-lijst::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.mel-lijst::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mel-lijst::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 55%, var(--muted));
+  background-clip: padding-box;
+}
+.mel-lijst::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 78%, var(--text));
+  background-clip: padding-box;
+}
+
+.mel-scroll-schuif {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  right: 3px;
+  z-index: 18;
+  width: 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 46%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+  transition: opacity 0.16s ease, width 0.14s ease, background-color 0.14s ease;
+}
+.mel-scroll-schuif.is-zichtbaar {
+  opacity: 0.92;
+  pointer-events: auto;
+}
+.mel-scroll-schuif.is-zichtbaar:hover,
+.mel-scroll-schuif.is-actief {
+  opacity: 1;
+  width: 13px;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+}
+.mel-scroll-duim {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  min-height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 68%, var(--muted));
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.mel-scroll-schuif:hover .mel-scroll-duim,
+.mel-scroll-schuif.is-actief .mel-scroll-duim {
+  background: var(--mel-accent, var(--accent));
+}
+
+/* Мобільний розгорнутий режим (<= 768px): корінь документа <html> справді прокручується по вертикалі,
+   а <body> залишається overflow: visible, щоб position: sticky прилипав прямо до вікна переглядача. */
+html[data-mel-mobiel-langscroll="1"] {
+  height: auto;
+  min-height: 100%;
+  overflow-x: clip;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 60%, var(--muted)) transparent;
+}
+
+html[data-mel-mobiel-langscroll="1"] body {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
+html[data-mel-mobiel-langscroll="1"] #root {
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+html[data-mel-mobiel-langscroll="1"] body .mel-ecosysteem-portaal.puls-portaal {
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  overflow: visible;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-rand {
+  display: none;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-kop {
+  position: sticky;
+  top: 0;
+  z-index: 23;
+  cursor: default;
+  touch-action: pan-y;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .puls-dnd-strook {
+  position: sticky;
+  top: var(--mel-alleen-kop-h, 45px);
+  z-index: 22;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-filters {
+  position: sticky;
+  top: var(--mel-kop-h, 45px);
+  z-index: 21;
+  background: color-mix(in srgb, var(--surface) 92%, var(--panel));
+  backdrop-filter: blur(14px);
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-lichaam,
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-inhoud {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voorkeuren-kader {
+  flex: 1 0 auto;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-lijst-kader {
+  display: flex;
+  align-items: flex-start;
+  flex: 1 0 auto;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-lijst-kader > .mel-lijst {
+  flex: 1 1 100%;
+  min-width: 0;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  padding-right: 18px;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-scroll-schuif {
+  position: sticky;
+  top: calc(var(--mel-boven-h, 82px) + 8px);
+  right: auto;
+  bottom: auto;
+  flex: 0 0 12px;
+  width: 12px;
+  height: calc(100dvh - var(--mel-boven-h, 82px) - 54px);
+  margin-left: -14px;
+  margin-right: 2px;
+  z-index: 20;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-scroll-schuif:not(.is-zichtbaar) {
+  height: 0;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .puls-ongedaan-balk {
+  position: sticky;
+  bottom: 48px;
+  z-index: 24;
+}
+
+html[data-mel-mobiel-langscroll="1"] .mel-ecosysteem-portaal .mel-voet {
+  position: sticky;
+  bottom: 0;
+  z-index: 23;
+  background: color-mix(in srgb, var(--surface) 94%, var(--panel));
+  backdrop-filter: blur(14px);
+}
+
+/* ============================================================================
+   HERSTEL-001 (Частина 7Б): Компактні однорядкові піктограмні кнопки зі спливними
+   назвами на ПК (наведення) та смартфоні (перший дотик — підказка, другий — дія)
+   + людські назви схем MELDING_SCHEMAS та кольори станів із staat-kleuren.css.
+   ============================================================================ */
+
+.puls-icoon-knop .mr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.puls-icoon-knop.mel-ikoon-knop,
+.puls-portaal .puls-kaart .puls-icoon-knop.mel-ikoon-knop,
+.puls-kaart .puls-icoon-knop.mel-ikoon-knop,
+.puls-portaal .puls-voet .puls-icoon-knop.mel-ikoon-knop {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--icoon-knop-rand, color-mix(in srgb, var(--line) 86%, transparent));
+  border-radius: 9px;
+  background: var(--icoon-knop-achtergrond, color-mix(in srgb, var(--panel) 84%, var(--surface)));
+  color: var(--icoon-knop-kleur, var(--muted));
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.puls-portaal .mel-kop-gereedschap .puls-icoon-knop.mel-ikoon-knop {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 9px;
+}
+
+.puls-icoon-knop.heeft-teller {
+  margin-right: 3px;
+}
+
+.puls-icoon-symbool {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.puls-icoon-symbool > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.puls-icoon-knop.mel-ikoon-knop:hover:not(:disabled),
+.puls-icoon-knop.mel-ikoon-knop:focus-visible:not(:disabled) {
+  --icoon-knop-rand: color-mix(in srgb, var(--mel-accent, var(--accent)) 42%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--mel-accent, var(--accent)) 11%, var(--panel));
+  --icoon-knop-kleur: var(--text);
+}
+
+.puls-icoon-knop.is-toon-actief {
+  --icoon-knop-rand: color-mix(in srgb, var(--mel-accent, var(--accent)) 54%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--mel-accent, var(--accent)) 16%, var(--panel));
+  --icoon-knop-kleur: var(--mel-accent, var(--accent));
+}
+.puls-icoon-knop.is-toon-actief:hover:not(:disabled),
+.puls-icoon-knop.is-toon-actief:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--mel-accent, var(--accent));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--mel-accent, var(--accent)) 22%, var(--panel));
+  --icoon-knop-kleur: var(--mel-accent, var(--accent));
+}
+
+.puls-icoon-knop.is-toon-primair-let {
+  --icoon-knop-rand: color-mix(in srgb, var(--staat-let) 52%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-let) 16%, var(--panel));
+  --icoon-knop-kleur: var(--staat-let);
+}
+.puls-icoon-knop.is-toon-primair-let:hover:not(:disabled),
+.puls-icoon-knop.is-toon-primair-let:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--staat-let);
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-let) 24%, var(--panel));
+  --icoon-knop-kleur: var(--staat-let);
+}
+
+.puls-icoon-knop.is-toon-primair-goed {
+  --icoon-knop-rand: color-mix(in srgb, var(--staat-goed) 52%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-goed) 16%, var(--panel));
+  --icoon-knop-kleur: var(--staat-goed);
+}
+.puls-icoon-knop.is-toon-primair-goed:hover:not(:disabled),
+.puls-icoon-knop.is-toon-primair-goed:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--staat-goed);
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-goed) 24%, var(--panel));
+  --icoon-knop-kleur: var(--staat-goed);
+}
+
+.puls-icoon-knop.is-toon-primair-fout {
+  --icoon-knop-rand: color-mix(in srgb, var(--staat-fout) 54%, var(--line));
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-fout) 16%, var(--panel));
+  --icoon-knop-kleur: var(--staat-fout);
+}
+.puls-icoon-knop.is-toon-primair-fout:hover:not(:disabled),
+.puls-icoon-knop.is-toon-primair-fout:focus-visible:not(:disabled) {
+  --icoon-knop-rand: var(--staat-fout);
+  --icoon-knop-achtergrond: color-mix(in srgb, var(--staat-fout) 24%, var(--panel));
+  --icoon-knop-kleur: var(--staat-fout);
+}
+
+.puls-icoon-knop.is-tip-open {
+  --icoon-knop-rand: var(--mel-accent, var(--accent));
+  --icoon-knop-kleur: var(--text);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mel-accent, var(--accent)) 36%, transparent);
+}
+
+.puls-icoon-teller {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 1.5px solid var(--panel);
+  border-radius: 999px;
+  background: var(--mel-accent, var(--accent));
+  color: var(--accentText, #ffffff);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.puls-icoon-tip {
+  min-height: 0;
+  height: max-content;
+  max-height: min(140px, 30dvh);
+  width: max-content;
+  padding: 6px 11px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 96%, var(--surface));
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+  box-shadow: 0 12px 30px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+/* Однорядкова смуга 6 компактних піктограмних вкладок у .mel-filters */
+.mel-filters.puls-filters-slank {
+  container-type: inline-size;
+  padding: 6px 10px;
+}
+
+.puls-filters-slank .mel-tabs.puls-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.puls-filters-slank .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+/* Семантичні стани карток та індикатори типів MELDING_SCHEMAS (--staat-goed / --staat-let / --staat-fout) */
+.puls-kaart.is-staat-goed {
+  border-left: 4px solid var(--staat-goed);
+  background: color-mix(in srgb, var(--staat-goed) 5%, var(--surface));
+}
+
+.puls-kaart.is-staat-let {
+  border-left: 4px solid var(--staat-let);
+  background: color-mix(in srgb, var(--staat-let) 5%, var(--surface));
+}
+
+.puls-kaart.is-staat-fout {
+  border-left: 4px solid var(--staat-fout);
+  background: color-mix(in srgb, var(--staat-fout) 5%, var(--surface));
+}
+
+.puls-schema-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1.5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.puls-schema-chip.is-staat-goed {
+  border-color: color-mix(in srgb, var(--staat-goed) 38%, var(--line));
+  background: color-mix(in srgb, var(--staat-goed) 9%, var(--panel));
+  color: var(--staat-goed);
+}
+
+.puls-schema-chip.is-staat-let {
+  border-color: color-mix(in srgb, var(--staat-let) 38%, var(--line));
+  background: color-mix(in srgb, var(--staat-let) 9%, var(--panel));
+  color: var(--staat-let);
+}
+
+.puls-schema-chip.is-staat-fout {
+  border-color: color-mix(in srgb, var(--staat-fout) 40%, var(--line));
+  background: color-mix(in srgb, var(--staat-fout) 9%, var(--panel));
+  color: var(--staat-fout);
+}
+
+/* Однорядковий тихий мета-рядок картки без багатоповерхових рамок і дублювання марок */
+.puls-portaal .puls-kaart .mel-kaart-kop,
+.puls-kaart .mel-kaart-kop {
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+}
+
+.puls-kaart .mel-kaart-meta.puls-meta-slank {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--muted);
+}
+
+.puls-meta-onderdeel {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-meta-punt {
+  flex: none;
+  opacity: 0.52;
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: 650;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip.is-staat-goed {
+  color: var(--staat-goed);
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip.is-staat-let {
+  color: var(--staat-let);
+}
+
+.puls-kaart .puls-meta-slank .puls-schema-chip.is-staat-fout {
+  color: var(--staat-fout);
+}
+
+.puls-meta-rechts {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  flex: none;
+  white-space: nowrap;
+}
+
+.puls-meta-rechts .mel-tijd {
+  margin-left: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.puls-klimop-zegel .mr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.puls-klimop-zegel.is-compact {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--staat-goed);
+  opacity: 0.88;
+}
+
+.puls-klimop-zegel.is-compact > svg {
+  width: 13px;
+  height: 13px;
+}
+
+.puls-kaart .puls-meta-slank .puls-oorzaak-badge {
+  padding: 1.5px 7px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.puls-kaart .puls-keten-gevolgen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.puls-kaart .puls-keten-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.puls-kaart .puls-dienst-chip {
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  font-size: 11px;
+}
+
+/* Однорядкові смуги дій у картках першопричини й окремих сповіщень та підвал */
+.puls-portaal .puls-kaart .mel-kaart-acties.puls-kaart-acties,
+.puls-kaart .mel-kaart-acties.puls-kaart-acties {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.puls-kaart .puls-actie-groep.puls-keten-acties,
+.puls-kaart .puls-actie-groep.puls-kaart-knoppen-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-left: 0;
+}
+
+.puls-kaart .puls-keten-acties .puls-keten-rechts {
+  margin-left: auto;
+}
+
+.puls-voet-teller {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.puls-voet .puls-voet-rechts {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .puls-kop-alleen-pc {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   HERSTEL-001 (Пункт 9): Капсульний вигляд без шуму кнопок, розгортання за натиском,
+   ідеально пряма бічна лінія лише у непрочитаних (без вигину й стирчання),
+   галочки доставки й прочитання як у месенджері (✓ / ✓✓ / ⏳), 2-рядковий акцент
+   для підтверджень, перемикач «Розгорнути всі / Згорнути всі» та контроль доставки.
+   ============================================================================ */
+
+/* Рядок вкладок стану + швидка кнопка «Розгорнути всі / Згорнути всі» праворуч */
+.puls-tabs-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+  gap: 5px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 380px) {
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 4px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop,
+  .puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
+
+/* Кругла капсула сповіщення (півкруглі торці border-radius: 999px у згорнутому стані, як у месенджері) */
+.puls-portaal .puls-kaart.is-kapsel,
+.puls-kaart.is-kapsel {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  min-height: 42px;
+  padding: 6px 13px 6px 8px;
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.puls-portaal .puls-kaart.is-kapsel.is-open,
+.puls-kaart.is-kapsel.is-open {
+  padding: 10px 14px;
+  gap: 8px;
+  border-radius: 22px;
+}
+
+/* Прочитане сповіщення (✓✓ або статус не новий): жодного кольорового підсвічування і жодної бічної смуги */
+.puls-portaal .puls-kaart.is-kapsel.is-gelezen,
+.puls-kaart.is-kapsel.is-gelezen {
+  border-color: var(--line);
+  border-left-color: var(--line);
+  border-left-width: 1px;
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.puls-portaal .puls-kaart.is-kapsel.is-open.is-gelezen,
+.puls-kaart.is-kapsel.is-open.is-gelezen {
+  border-radius: 22px;
+}
+
+/* Непрочитане сповіщення: зберігає круглу форму капсули (999px), делікатне підсвічування та ідеально пряму вертикальну смужку всередині без вигину й без стирчання */
+.puls-portaal .puls-kaart.is-kapsel.is-ongelezen,
+.puls-kaart.is-kapsel.is-ongelezen {
+  --kapsel-kleur: var(--mel-accent, var(--accent));
+  --kapsel-teller-vlak: var(--mel-accent, var(--accent));
+  --kapsel-teller-tekst: var(--accentText, #ffffff);
+  border-color: color-mix(in srgb, var(--kapsel-kleur) 36%, var(--line));
+  border-left-color: color-mix(in srgb, var(--kapsel-kleur) 36%, var(--line));
+  border-left-width: 1px;
+  border-radius: 999px;
+  padding-left: 16px;
+  background: color-mix(in srgb, var(--kapsel-kleur) 7.5%, var(--surface));
+}
+
+.puls-portaal .puls-kaart.is-kapsel.is-open.is-ongelezen,
+.puls-kaart.is-kapsel.is-open.is-ongelezen {
+  border-radius: 22px;
+  padding-left: 17px;
+}
+
+.puls-kaart.is-kapsel.is-ongelezen.is-staat-goed {
+  --kapsel-kleur: var(--staat-goed);
+  --kapsel-teller-vlak: var(--staat-goed-vlak, var(--staat-goed));
+  --kapsel-teller-tekst: var(--text-on-vlak, #ffffff);
+}
+
+.puls-kaart.is-kapsel.is-ongelezen.is-staat-let,
+.puls-kaart.is-kapsel.is-ongelezen.is-puls-oorzaak {
+  --kapsel-kleur: var(--staat-let);
+  --kapsel-teller-vlak: var(--staat-let-vlak, var(--staat-let));
+  --kapsel-teller-tekst: var(--text-on-vlak, #ffffff);
+}
+
+.puls-kaart.is-kapsel.is-ongelezen.is-staat-fout,
+.puls-kaart.is-kapsel.is-ongelezen.is-niveau-gevaar {
+  --kapsel-kleur: var(--staat-fout);
+  --kapsel-teller-vlak: var(--staat-fout-vlak, var(--staat-fout));
+  --kapsel-teller-tekst: var(--text-on-vlak, #ffffff);
+}
+
+.puls-kaart.is-kapsel.is-ongelezen::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  width: 3px;
+  height: 15px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--kapsel-kleur);
+  pointer-events: none;
+}
+
+.puls-kaart.is-kapsel.is-open.is-ongelezen::before {
+  left: 8px;
+  top: 18px;
+  bottom: 18px;
+  height: auto;
+  transform: none;
+}
+
+.puls-kaart.is-kapsel:hover {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 38%, var(--line));
+}
+
+.puls-kaart.is-kapsel.is-geselecteerd {
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--mel-accent, var(--accent)) 52%, transparent);
+}
+
+/* Рядок круглої капсули */
+.puls-kapsel-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.puls-kapsel-rij .puls-bron-teken {
+  border-radius: 999px;
+}
+
+.puls-kapsel-rij .puls-bron-teken > svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Специфічність (0,5,0) > (0,3,1) у mobiel.css, щоб заголовкова кнопка всередині капсули не роздувалася до 44px */
+.mel-veeg-houder .puls-kaart.is-kapsel .puls-kapsel-rij .puls-kapsel-titel-knop,
+.mel-kaart-titel-knop.puls-kapsel-titel-knop {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.puls-kaart.is-kapsel.is-ingeklapt .puls-kapsel-titel-knop strong {
+  display: block;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.32;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-kaart.is-kapsel.is-gelezen .puls-kapsel-titel-knop strong {
+  font-weight: 560;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+}
+
+.puls-kaart.is-kapsel.is-ongelezen .puls-kapsel-titel-knop strong {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.puls-kaart.is-kapsel.is-open .puls-kapsel-titel-knop strong {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow: visible;
+}
+
+.puls-kapsel-rechts {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Пропорційна мініатюрна капсула кількості непрочитаних сповіщень (число без «×», висота 18 px, border-radius: 999px) */
+.puls-aantal-kapsel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5.5px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Непрочитані сповіщення ЗІ ЗВУКОМ: колір теми сповіщення або розділу */
+.puls-aantal-kapsel.is-met-geluid {
+  border: 1px solid color-mix(in srgb, var(--kapsel-teller-vlak, var(--mel-accent, var(--accent))) 86%, transparent);
+  background: var(--kapsel-teller-vlak, var(--mel-accent, var(--accent)));
+  color: var(--kapsel-teller-tekst, var(--accentText, #ffffff));
+}
+
+/* Непрочитані сповіщення БЕЗ ЗВУКУ: спокійна сіра капсула з сірим числом */
+.puls-aantal-kapsel.is-stil {
+  border: 1px solid color-mix(in srgb, var(--muted) 26%, var(--line));
+  background: color-mix(in srgb, var(--muted) 14%, var(--panel));
+  color: var(--muted);
+}
+
+.puls-kapsel-rechts .mel-tijd {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.puls-kapsel-rechts .mel-pijl-klap {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  opacity: 0.72;
+  flex: none;
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+
+.puls-kapsel-rechts .mel-pijl-klap.is-open {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.puls-kapsel-bijlage-stip {
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+  opacity: 0.82;
+}
+
+.puls-kapsel-bijlage-stip > svg {
+  width: 12.5px;
+  height: 12.5px;
+}
+
+.puls-auto-archief-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.puls-auto-archief-pil > svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Галочки месенджера: ✓ доставлено, ✓✓ прочитано, ⏳ очікує доставки в панель */
+.puls-ontvangst-vinkjes {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+  flex: none;
+}
+
+.puls-ontvangst-vinkjes > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-gelezen {
+  color: var(--staat-goed);
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-gelezen > svg {
+  width: 15px;
+  height: 15px;
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-afgeleverd {
+  color: var(--muted);
+}
+
+.puls-ontvangst-vinkjes.is-ontvangst-wacht {
+  color: var(--staat-let);
+}
+
+/* Тонесенька горизонтальна розділювальна смужечка між сповіщеннями, де є прив’язані знизу кнопочки */
+.mel-veeg-houder.heeft-onder-kapsels {
+  --houder-koppeling-kleur: color-mix(in srgb, var(--line) 95%, var(--muted));
+}
+
+.mel-veeg-houder.heeft-onder-kapsels.is-houder-ongelezen {
+  --houder-koppeling-kleur: color-mix(in srgb, var(--mel-accent, var(--accent)) 45%, var(--line));
+}
+
+.mel-veeg-houder.heeft-onder-kapsels.is-houder-ongelezen.is-houder-staat-fout {
+  --houder-koppeling-kleur: color-mix(in srgb, var(--staat-fout) 45%, var(--line));
+}
+
+.mel-veeg-houder.heeft-onder-kapsels.is-houder-ongelezen.is-houder-staat-let {
+  --houder-koppeling-kleur: color-mix(in srgb, var(--staat-let) 45%, var(--line));
+}
+
+.mel-veeg-houder.heeft-onder-kapsels.is-houder-ongelezen.is-houder-staat-goed {
+  --houder-koppeling-kleur: color-mix(in srgb, var(--staat-goed) 45%, var(--line));
+}
+
+.mel-veeg-houder.heeft-onder-kapsels:not(:last-child) {
+  padding-bottom: 10px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+}
+
+.mel-veeg-houder:not(.heeft-onder-kapsels) + .mel-veeg-houder.heeft-onder-kapsels {
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+}
+
+/* Прив’язаний знизу однорядковий ряд круглих кнопок-капсул (виключно 1 ряд — жодних дворядкових кнопок) */
+.mel-veeg-houder.heeft-onder-kapsels .puls-kapsel-onder-rij,
+.puls-kapsel-onder-rij {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 5px;
+  padding-left: 20px;
+  overflow: hidden;
+  transition: transform 0.14s ease;
+}
+
+.puls-kapsel-koppeling {
+  display: inline-block;
+  width: 11px;
+  height: 14px;
+  margin-top: -9px;
+  margin-right: 1px;
+  flex: 0 0 auto;
+  border-left: 1.5px solid var(--houder-koppeling-kleur, var(--line));
+  border-bottom: 1.5px solid var(--houder-koppeling-kleur, var(--line));
+  border-bottom-left-radius: 7px;
+  pointer-events: none;
+}
+
+.puls-keten-chips.puls-keten-chips-slank {
+  display: inline-flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  gap: 5px;
+}
+
+.puls-keten-chips.puls-keten-chips-slank .puls-dienst-chip {
+  min-height: 30px;
+  height: 30px;
+  max-width: 112px;
+  padding: 0 10px;
+  gap: 5px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  flex: 0 1 auto;
+}
+
+.puls-keten-chips.puls-keten-chips-slank .puls-dienst-chip > svg {
+  width: 12.5px;
+  height: 12.5px;
+}
+
+.puls-keten-chips.puls-keten-chips-slank .puls-dienst-naam {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Специфічність (0,4,0) > (0,3,1) у mobiel.css: компактна кругла капсула 30px із невидимою сенсорною зоною дотику ::after */
+.mel-veeg-houder.heeft-onder-kapsels .puls-kapsel-onder-rij .puls-bevestig-pil,
+.puls-bevestig-pil {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 30px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 620;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.puls-bevestig-pil::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -5px;
+  bottom: -5px;
+}
+
+.puls-bevestig-pil > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.puls-bevestig-pil > span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.puls-bevestig-pil.is-fout {
+  border-color: color-mix(in srgb, var(--staat-fout) 46%, var(--line));
+  background: color-mix(in srgb, var(--staat-fout) 13%, var(--surface));
+  color: var(--staat-fout);
+}
+
+.puls-bevestig-pil.is-fout:hover {
+  background: color-mix(in srgb, var(--staat-fout) 21%, var(--surface));
+}
+
+.puls-bevestig-pil.is-goed {
+  border-color: color-mix(in srgb, var(--staat-goed) 46%, var(--line));
+  background: color-mix(in srgb, var(--staat-goed) 13%, var(--surface));
+  color: var(--staat-goed);
+}
+
+.puls-bevestig-pil.is-goed:hover {
+  background: color-mix(in srgb, var(--staat-goed) 21%, var(--surface));
+}
+
+.puls-bevestig-pil.is-let {
+  border-color: color-mix(in srgb, var(--staat-let) 46%, var(--line));
+  background: color-mix(in srgb, var(--staat-let) 13%, var(--surface));
+  color: var(--staat-let);
+}
+
+.puls-bevestig-pil.is-let:hover {
+  background: color-mix(in srgb, var(--staat-let) 21%, var(--surface));
+}
+
+.puls-bevestig-pil.is-bestand {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 42%, var(--line));
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 10%, var(--surface));
+  color: var(--text);
+}
+
+.puls-bevestig-pil.is-bestand > svg {
+  color: var(--mel-accent, var(--accent));
+}
+
+.puls-bevestig-pil.is-bestand:hover {
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 18%, var(--surface));
+}
+
+.puls-bevestig-pil.is-zacht:hover {
+  background: var(--nav-hover);
+}
+
+@media (max-width: 420px) {
+  .mel-veeg-houder.heeft-onder-kapsels .puls-kapsel-onder-rij,
+  .puls-kapsel-onder-rij {
+    padding-left: 14px;
+  }
+}
+
+
+/* Прогресивне розкриття подробиць у капсулі */
+.mel-kaart-details {
+  display: grid;
+  gap: 7px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+}
+
+.mel-kaart-details[hidden] {
+  display: none;
+}
+
+.mel-ontvangst-samenvatting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* Блок налаштувань капсул у самій панелі сповіщень */
+.puls-kapsel-voorkeuren {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.puls-kapsel-voorkeur-kop {
+  display: grid;
+  gap: 2px;
+}
+
+.puls-kapsel-voorkeur-kop strong {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.puls-kapsel-voorkeur-kop small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.puls-kapsel-stand-keuze {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.puls-stand-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.puls-stand-knop > svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.puls-stand-knop.is-actief {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 48%, var(--line));
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, var(--panel));
+  color: var(--text);
+}
+
+.puls-kapsel-auto-lees {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Панель адміністративного контролю доставки й перегляду сповіщень */
+.puls-aflevering-controle {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+}
+
+.puls-aflevering-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.puls-aflevering-titel {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.puls-aflevering-titel > svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--staat-goed);
+  flex: none;
+}
+
+.puls-aflevering-titel strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.puls-aflevering-titel small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.puls-aflevering-gereedschap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.puls-aflevering-filter-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.puls-aflevering-tellers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 6px;
+}
+
+.puls-aflevering-kaart {
+  display: grid;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.puls-aflevering-kaart small {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+
+.puls-aflevering-kaart strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.puls-aflevering-kaart.is-filter strong > svg {
+  width: 13.5px;
+  height: 13.5px;
+  color: var(--muted);
+}
+
+.puls-aflevering-gebruikers {
+  display: grid;
+  gap: 4px;
+}
+
+.puls-aflevering-gebruiker-rij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  font-size: 11.5px;
+}
+
+.puls-aflevering-naam {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.puls-aflevering-naam > svg {
+  width: 13.5px;
+  height: 13.5px;
+  color: var(--muted);
+}
+
+.puls-aflevering-cijfers {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.puls-aflevering-cijfers small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.puls-aflevering-lijst {
+  display: grid;
+  gap: 5px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.puls-aflevering-rij {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.puls-aflevering-rij-hoofd {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.puls-aflevering-rij-hoofd strong {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-aflevering-rij-hoofd small {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.puls-aflevering-leeg {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+/* ============================================================================
+   HERSTEL-001 (Етап 4 · MELD-2, MELD-8, MELD-10): видима кнопка «Вікно» у компактній
+   панелі, однорядкова смуга 6 вкладок із видимою назвою активної .puls-actieve-tab-naam,
+   2-й мікро-рядок капсули .puls-kapsel-sub та розкривний блок .puls-technische-details.
+   ============================================================================ */
+
+.puls-portaal .mel-kop-gereedschap .puls-icoon-knop.mel-ikoon-knop.is-vorm-venster-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  min-width: 68px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+}
+
+.puls-vorm-tekst {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.puls-icoon-knop.heeft-zichtbare-tekst .puls-icoon-symbool {
+  flex: 0 0 auto;
+}
+
+.puls-icoon-knop.heeft-zichtbare-tekst.heeft-teller {
+  margin-right: 0;
+}
+
+.puls-icoon-knop.heeft-zichtbare-tekst .puls-icoon-teller {
+  position: static;
+  top: auto;
+  right: auto;
+  flex: 0 0 auto;
+  margin-left: 2px;
+  border-width: 1px;
+}
+
+.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  min-width: 0;
+  max-width: 148px;
+  flex: 0 1 auto;
+  padding: 0 9px;
+  border-radius: 999px;
+}
+
+.puls-actieve-tab-naam {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 440px) {
+  .mel-filters.puls-filters-slank {
+    padding: 6px 8px;
+  }
+  .puls-filters-slank .puls-tabs-rij {
+    gap: 4px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 3px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+  .puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 30px;
+    min-height: 30px;
+    max-width: 126px;
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mel-filters.puls-filters-slank {
+    padding: 6px 6px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij {
+    gap: 3px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 2px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.heeft-teller:not(.is-actief) {
+    margin-right: 1px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .mel-filters.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop.mel-ikoon-knop {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 28px;
+    min-height: 28px;
+    max-width: 102px;
+    padding: 0 6px;
+    gap: 3px;
+  }
+}
+
+@container (max-width: 424px) {
+  .mel-filters.puls-filters-slank .puls-tabs-rij {
+    gap: 4px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 3px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .mel-filters.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop.mel-ikoon-knop {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 30px;
+    min-height: 30px;
+    max-width: 126px;
+    padding: 0 8px;
+  }
+}
+
+@container (max-width: 368px) {
+  .mel-filters.puls-filters-slank .puls-tabs-rij {
+    gap: 3px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs {
+    gap: 2px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.heeft-teller:not(.is-actief) {
+    margin-right: 1px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop:not(.is-actief),
+  .mel-filters.puls-filters-slank .puls-tabs-rij .puls-alles-klap-knop.puls-icoon-knop.mel-ikoon-knop {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .mel-filters.puls-filters-slank .puls-tabs-rij .mel-tabs.puls-tabs .mel-tab.puls-tab.puls-icoon-knop.is-actief {
+    height: 28px;
+    min-height: 28px;
+    max-width: 102px;
+    padding: 0 6px;
+    gap: 3px;
+  }
+}
+
+.puls-kaart.is-kapsel.is-ingeklapt .puls-kapsel-titel-knop .puls-kapsel-sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puls-kaart.is-kapsel.is-ingeklapt:has(.puls-kapsel-sub) {
+  border-radius: 18px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.puls-technische-details {
+  margin-top: 2px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 84%, var(--surface));
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.puls-technische-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-weight: 650;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.puls-technische-details[open] > summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+  color: var(--text);
+}
+
+.puls-technische-dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 7px 10px;
+}
+
+.puls-technische-dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.puls-technische-dl dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.puls-technische-dl dd {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.puls-technische-dl code {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 88%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.puls-technische-details > summary > svg {
+  width: 13.5px;
+  height: 13.5px;
+  flex: none;
+}
+
+.mel-compact-sluier {
+  position: fixed;
+  inset: 0;
+  z-index: 104990;
+  background: rgba(15, 23, 42, 0.36);
+  backdrop-filter: blur(2px);
+}
+
+@media (max-width: 768px) {
+  .mel-ecosysteem-portaal.is-compact-bij-bel {
+    left: calc(8px + var(--veilig-links, 0px));
+    right: calc(8px + var(--veilig-rechts, 0px));
+    top: calc(56px + var(--veilig-boven, 0px));
+    width: auto;
+    min-width: 0;
+    max-width: 440px;
+    height: min(520px, calc(100dvh - 88px - var(--veilig-boven, 0px) - var(--veilig-onder, 0px)));
+    max-height: min(520px, calc(100dvh - 88px));
+    border-radius: 20px;
   }
 }
 

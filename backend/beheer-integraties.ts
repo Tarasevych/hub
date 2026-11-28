@@ -152,7 +152,7 @@ export function adminIntegratieRoutes(gate: AdminGate, requireSession: RequireSe
         if (!i.levend || !(i.levend.startsWith('agent:') || VAULT_ID[i.levend])) continue;
         try { const l = await levendVoor(i, a.user.id, a.user.email || '', cache); if (l) levend[i.id] = l; } catch (e) { console.error('[admin-integraties] stand', i.id, (e as Error).message); }
       }
-      // UI-013: IMAP-koppelingen (Пошта → Акаунти) van het eigen account in dezelfde stand, zodat de catalogus ze ziet.
+      // UI-013: IMAP-koppelingen (Пошта → Облікові записи) van het eigen account in dezelfde stand, zodat de catalogus ze ziet.
       try { Object.assign(levend, imapLevend(await mailImapLijst(a.user.id, 'prive'))); } catch (e) { console.error('[admin-integraties] stand imap', (e as Error).message); }
       const [beleid, controles] = await Promise.all([beleidMap().catch(() => ({})), laatsteControles().catch(() => ({}))]);
       return { levend, beleid, controles, voor: 'eigen-account' };

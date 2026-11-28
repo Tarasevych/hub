@@ -49,7 +49,7 @@ export function termijnOpties(rollen: readonly string[], profielMax: number): Te
   const open = (modus: RuimteModus, label: Tweetalig) => opties.push(metReden({ modus, label }, rollenVoorTermijn(alle, profielMax, modus),
     () => profielMax < OPEN_MIN_PLAFOND ? { uk: 'Ваш профіль обмежений часом: без часу потрібно щонайменше 4 год.', nl: 'Uw profiel is in tijd beperkt: zonder tijdsgrens vraagt minstens 4 uur.' } : { uk: 'Потрібна роль із лімітом щонайменше 4 год (не «Адміністратор»).', nl: 'Vraagt een rol met een plafond van minstens 4 uur (niet «Beheerder»).' }));
   open('tot-technisch-einde', { uk: 'До завершення технічного сеансу', nl: 'Tot het einde van de technische sessie' });
-  open('tot-site-uitloggen', { uk: 'До виходу з акаунта на сайті', nl: 'Tot uitloggen van de site-account' });
+  open('tot-site-uitloggen', { uk: 'До виходу з облікового запису на сайті', nl: 'Tot uitloggen van de site-account' });
   return opties;
 }
 /** Langste termijn op tijd: de BESTE rol telt (begrensd door het profiel en 8 uur). */

@@ -40,6 +40,7 @@ const ALLE: StapOpMethode[] = ['passkey', 'totp', 'apparaat', 'telegram', 'herst
 const T = {
   titel: ['Підтвердіть доступ', 'Toegang bevestigen'],
   ingelogd: ['Ви ввійшли як', 'Aangemeld als'],
+  bevestigendAccount: ['Підтверджує дію', 'Bevestigt deze actie'],
   laden: ['Завантаження…', 'Laden…'],
   passkeyKnop: ['Використати ключ доступу', 'Passkey gebruiken'],
   passkeyUitleg: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу.', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de passkey staat.'],
@@ -51,7 +52,7 @@ const T = {
   bevestigen: ['Підтвердити', 'Bevestigen'],
   googleKnop: ['Підтвердити повторним входом через Google', 'Bevestigen door opnieuw in te loggen bij Google'],
   codewoordLabel: ['Кодове слово', 'Codewoord'],
-  codewoordUitleg: ['Введіть кодове слово цього акаунта.', 'Voer het codewoord van dit account in.'],
+  codewoordUitleg: ['Введіть кодове слово цього облікового запису.', 'Voer het codewoord van dit account in.'],
   googleUitleg: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди, і дія продовжиться автоматично.', 'De aanmeldpagina van Google opent. Daarna kom je hier terug en gaat de actie automatisch verder.'],
   /* IDENTITEIT-015 (приймання blokken-profiel): дія без автоматичного продовження (немає hervat) — після повернення її треба повторити */
   googleUitlegHerhalen: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди — тоді повторіть дію: протягом 5 хвилин нового підтвердження вона не вимагатиме.', 'De aanmeldpagina van Google opent. Daarna kom je hier terug — voer de actie dan opnieuw uit: binnen 5 minuten vraagt ze geen nieuwe bevestiging.'],
@@ -67,7 +68,7 @@ const T = {
   altApparaat: ['Підтвердити з іншого пристрою', 'Bevestigen vanaf een ander apparaat'],
   altTelegram: ['Підтвердити в Telegram', 'Bevestigen in Telegram'],
   tip: ['Порада: після підтвердження протягом 5 хвилин важливі дії в цьому вікні не вимагатимуть повторного підтвердження.', 'Tip: na de bevestiging vragen we 5 minuten lang in dit venster niet opnieuw om bevestiging voor belangrijke acties.'],
-  onthoudUitleg: ['Ми запам’ятаємо підтвердження лише для цього браузера й цього акаунта. Воно зникає, коли ви виходите з акаунта, і діє щонайбільше {u} год.', 'We onthouden de bevestiging alleen voor deze browser en dit account. Hij verdwijnt zodra je uitlogt en geldt hoogstens {u} uur.'],
+  onthoudUitleg: ['Ми запам’ятаємо підтвердження лише для цього браузера й цього облікового запису. Воно зникає, коли ви виходите з облікового запису, і діє щонайбільше {u} год.', 'We onthouden de bevestiging alleen voor deze browser en dit account. Hij verdwijnt zodra je uitlogt en geldt hoogstens {u} uur.'],
   onthoudNooit: ['Цю дію запам’ятати не можна: вона завжди вимагає підтвердження. Це стосується схвалення випусків, видалення, ключів у сховищі, passkey, кодів відновлення та зміни способів входу.', 'Deze actie kan niet onthouden worden: hiervoor vragen we altijd opnieuw. Dat geldt voor het goedkeuren van uitrollen, verwijderen, sleutels in de kluis, passkeys, herstelcodes en het wijzigen van aanmeldmethoden.'],
   onthoudMislukt: ['Доступ підтверджено на 5 хвилин, але 12-годинне запам’ятовування не збереглося. Для наступної дії доведеться підтвердити доступ знову.', 'Toegang 5 minuten bevestigd, maar 12 uur onthouden is niet opgeslagen. De volgende actie kan opnieuw om bevestiging vragen.'],
   onthoudCodewoord: ['Запам’ятовування на 12 годин недоступне для кодового слова. Використайте ключ доступу або код автентифікатора.', 'Twaalf uur onthouden is niet beschikbaar met het codewoord. Gebruik een passkey of authenticatorcode.'],
@@ -75,6 +76,9 @@ const T = {
   // SEC-002 interface-07: WAT wordt bevestigd en wat volgt eruit (shared/stap-op-beschrijving.ts).
   watKop: ['Що ви підтверджуєте', 'Wat u bevestigt'],
   gevolgKop: ['Наслідок', 'Gevolg'],
+  kroniekPil: ['Журнал і сповіщення', 'Kroniek & meldingen'],
+  kroniekKop: ['Хронологія й сповіщення', 'Kroniek en meldingen'],
+  kroniekTekst: ['Фіксується в журналі безпеки та сповіщеннях із цим обліковим записом.', 'Wordt met dit account vastgelegd in het beveiligingslogboek en meldingencentrum.'],
   // STAPOP-OMSCHR-001: het technische adres van een actie zonder beschrijving — klein, in de details, niet als hoofdtekst.
   details: ['Подробиці для перевірки', 'Details om te controleren'],
   technischAdres: ['Технічна адреса запиту', 'Technisch adres van het verzoek'],
@@ -89,7 +93,7 @@ const FOUT: Record<string, readonly [string, string]> = {
   SecurityError: ['Браузер не дозволив ключ доступу на цій адресі.', 'De browser staat de passkey op dit adres niet toe.'],
   GEEN_WEBAUTHN: ['Цей браузер не підтримує ключ доступу. Виберіть інший спосіб.', 'Deze browser ondersteunt geen passkeys. Kies een andere manier.'],
   GEEN_PASSKEY: ['У вас немає ключа доступу. Виберіть інший спосіб.', 'Je hebt geen passkey. Kies een andere manier.'],
-  PASSKEY_SLEUTEL_ONBEKEND: ['Цей ключ доступу не належить до вашого акаунта. Виберіть інший ключ доступу.', 'Deze passkey hoort niet bij je account. Kies een andere passkey.'],
+  PASSKEY_SLEUTEL_ONBEKEND: ['Цей ключ доступу не належить до вашого облікового запису. Виберіть інший ключ доступу.', 'Deze passkey hoort niet bij je account. Kies een andere passkey.'],
   PASSKEY_TELLER_TERUG: ['Ключ доступу відхилено (можлива копія ключа).', 'Passkey geweigerd (mogelijk een kopie van de sleutel).'],
   UITDAGING_ONGELDIG: ['Запит застарів. Спробуйте ще раз.', 'Het verzoek is verlopen. Probeer het opnieuw.'],
   ACCESS_TOTP_INVALID: ['Неправильний код. Перевірте час на телефоні й спробуйте ще раз.', 'Onjuiste code. Controleer de tijd op je telefoon en probeer opnieuw.'],
@@ -100,8 +104,8 @@ const FOUT: Record<string, readonly [string, string]> = {
   RATE_LIMITED: ['Забагато спроб. Зачекайте кілька хвилин.', 'Te veel pogingen. Wacht een paar minuten.'],
   STEP_UP_TOTP_NOT_ENROLLED: ['Застосунок-автентифікатор не налаштовано.', 'De authenticator-app is niet ingesteld.'],
   STEP_UP_RECOVERY_NOT_ENROLLED: ['Кодів відновлення немає.', 'Er zijn geen herstelcodes.'],
-  OWNER_IDENTITY_MISMATCH: ['Цей Google-акаунт не збігається з ідентичністю власника. Вхід відхилено.', 'Dit Google-account hoort niet bij de identiteit van de eigenaar. Geweigerd.'],
-  STEP_UP_ACCOUNT_MISMATCH: ['Ви вибрали інший акаунт Google. Підтвердьте тим самим акаунтом, з яким ви ввійшли сюди.', 'Je koos een ander Google-account. Bevestig met hetzelfde account waarmee je hier bent aangemeld.'],
+  OWNER_IDENTITY_MISMATCH: ['Цей обліковий запис Google не збігається з ідентичністю власника. Вхід відхилено.', 'Dit Google-account hoort niet bij de identiteit van de eigenaar. Geweigerd.'],
+  STEP_UP_ACCOUNT_MISMATCH: ['Ви вибрали інший обліковий запис Google. Підтвердьте тим самим обліковим записом, з яким ви ввійшли сюди.', 'Je koos een ander Google-account. Bevestig met hetzelfde account waarmee je hier bent aangemeld.'],
   STEP_UP_NOT_FRESH: ['Google не підтвердив новий вхід. Спробуйте ще раз або виберіть інший спосіб.', 'Google bevestigde geen nieuwe aanmelding. Probeer opnieuw of kies een andere manier.'],
   STEP_UP_GOOGLE_NIET_BEVESTIGD: ['Повторний вхід через Google не підтвердив доступ. Спробуйте ще раз або виберіть інший спосіб.', 'Opnieuw inloggen bij Google heeft de toegang niet bevestigd. Probeer opnieuw of kies een andere manier.'],
   GOOGLE_INVALID_GRANT: ['Google-вхід застарів. Спробуйте ще раз.', 'De Google-aanmelding is verlopen. Probeer het opnieuw.'],
@@ -182,10 +186,52 @@ function geenAlternatievenUitleg(lang: Lang, info: Info, opties: BevestigOpties,
   return nl ? `Andere methoden zijn nu niet beschikbaar: ${lijst}.` : `Інші способи зараз недоступні: ${lijst}.`;
 }
 
+function veiligeClientFoto(waarde: unknown): string {
+  const ruw = String(waarde || '').trim();
+  if (/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ruw) && ruw.length <= 340000) return ruw;
+  if (/^data:image\/svg\+xml;utf8,/i.test(ruw) && ruw.length <= 64000) return ruw;
+  try {
+    const u = new URL(ruw);
+    const host = u.hostname.toLowerCase();
+    if (u.protocol === 'https:' && !u.username && !u.password && (host === 'lh3.googleusercontent.com' || host.endsWith('.googleusercontent.com'))) {
+      u.hash = '';
+      return u.toString();
+    }
+  } catch { /* negeren */ }
+  return '';
+}
+
+function lokaalAccountFallback(): { email: string; naam: string; foto: string } {
+  let email = '', naam = '', foto = '';
+  try {
+    const w = window as unknown as { __TSV_PRESENTATION__?: { avatarUrl?: unknown; persoon?: { avatar?: unknown }; domainEntry?: { model?: { user?: { email?: unknown; name?: unknown; picture?: unknown } } } } };
+    const p = w.__TSV_PRESENTATION__;
+    const u = p?.domainEntry?.model?.user;
+    if (u?.email) email = String(u.email).trim();
+    if (u?.name) naam = String(u.name).trim();
+    foto = veiligeClientFoto(u?.picture) || veiligeClientFoto(p?.avatarUrl) || veiligeClientFoto(p?.persoon?.avatar);
+    if (!email || !foto) {
+      const raw = sessionStorage.getItem('tsv-domain-view-cache-v1') || localStorage.getItem('tsv-domain-view-cache-v1') || '';
+      if (raw) {
+        const entries = Object.values((JSON.parse(raw)?.entries || {}) as Record<string, { model?: { user?: { email?: unknown; name?: unknown; picture?: unknown } } }>);
+        for (const e of entries) {
+          const eu = e?.model?.user;
+          if (!email && eu?.email) email = String(eu.email).trim();
+          if (!naam && eu?.name) naam = String(eu.name).trim();
+          if (!foto && eu?.picture) foto = veiligeClientFoto(eu.picture);
+          if (email && foto) break;
+        }
+      }
+    }
+  } catch { /* negeren */ }
+  return { email, naam, foto };
+}
+
 function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpUitkomst) => void }) {
   const lang = useLang();
   const t = (k: keyof typeof T) => T[k][lang === 'nl' ? 1 : 0];
   const [info, setInfo] = useState<Info | null>(null);
+  const [lokaalAccount] = useState(lokaalAccountFallback);
   const [weergave, setWeergave] = useState<StapOpMethode | null>(null);
   const [code, setCode] = useState('');
   const [onthoud, setOnthoud] = useState(false);
@@ -310,29 +356,43 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   const onthoudLabel = ruimtesV2Nu() ? WOORDEN.onthoud[lang === 'nl' ? 'nl' : 'uk'].replace('{u}', String(info?.onthoudUren || 12)) : lang === 'nl' ? 'Onthoud deze browser (niet opnieuw vragen tot uitloggen)' : 'Запам’ятати цей браузер (не питати знову до виходу)';
   const cat = categorieVoorActie(opties.actie, opties.pad, lang === 'nl' ? wat.nl : wat.uk);
   const CatIcoon = CAT_ICOON[cat.id];
+  const accountEmail = (info?.email || lokaalAccount.email).trim();
+  const accountNaam = (info?.naam || lokaalAccount.naam).trim();
+  const accountFoto = (info?.foto || lokaalAccount.foto).trim();
 
   // Kritiek venster in de gezamenlijke laag: altijd boven elk ander venster (ook boven het venster dat erom vroeg).
   return <VensterLaag id='bevestig-toegang' titel={t('titel')} prioriteit='kritiek' breedte={400} onSluit={() => klaar({ ok: false, reden: 'geannuleerd' })} sluitenUit={!!bezig} labelledBy='bevestig-toegang-titel' lang={lang} className='bevestig-toegang-venster'>
     <div className='bevestig-toegang' data-categorie={cat.id}>
       <div className='bevestig-toegang-kop'>
-        <ShieldCheck className='bevestig-toegang-logo' />
-        <h2 id='bevestig-toegang-titel'>{t('titel')}</h2>
-        {info?.email && <p className='bevestig-toegang-wie'>
-          {t('ingelogd')}
-          <span className='bevestig-toegang-account'>
-            {info.foto ? <img src={info.foto} alt='' referrerPolicy='no-referrer' /> : <span className='bevestig-toegang-initiaal' aria-hidden='true'>{(info.naam || info.email).slice(0, 1).toUpperCase()}</span>}
-            <strong>{info.email}</strong>
-          </span>
-        </p>}
+        <div className='bevestig-toegang-kop-titel'>
+          <ShieldCheck className='bevestig-toegang-logo' />
+          <h2 id='bevestig-toegang-titel'>{t('titel')}</h2>
+        </div>
+        {accountEmail && <div className='bevestig-toegang-wie' data-bevestigend-account='1'>
+          {accountFoto
+            ? <img className='bevestig-toegang-foto' src={accountFoto} alt='' referrerPolicy='no-referrer' />
+            : <span className='bevestig-toegang-initiaal' aria-hidden='true'>{(accountNaam || accountEmail).slice(0, 1).toUpperCase()}</span>}
+          <div className='bevestig-toegang-account'>
+            <span className='bevestig-toegang-wie-label'><ShieldCheck className='bevestig-toegang-logo' aria-hidden='true' /><span>{t('ingelogd')} · {t('bevestigendAccount')}</span></span>
+            {accountNaam && accountNaam.toLowerCase() !== accountEmail.toLowerCase()
+              ? <span className='bevestig-toegang-naam'>{accountNaam}</span>
+              : null}
+            <strong>{accountEmail}</strong>
+          </div>
+        </div>}
       </div>
 
       <div className='bevestig-toegang-wat' data-stap-op-wat={wat.bekend ? 'bekend' : 'onbekend'} data-sterk={opties.sterk ? '1' : undefined} data-categorie={cat.id} style={{ ['--cat-kleur' as string]: cat.kleur }} role='note'>
         <div className='bevestig-toegang-cat-kop'>
           <span className='bevestig-toegang-cat-icoon' aria-hidden='true'><CatIcoon /></span>
           <div className='bevestig-toegang-cat-body'>
-            <span className='bevestig-toegang-cat-badge'>{lang === 'nl' ? cat.badgeNl : cat.badgeUk}</span>
-            <p className={wat.gevaar || !wat.bekend ? 'bevestig-toegang-fout' : 'bevestig-toegang-uitleg'}><strong>{!wat.bekend ? '⚠ ' : ''}{t('watKop')}:</strong> {lang === 'nl' ? wat.nl : wat.uk}</p>
+            <div className='bevestig-toegang-cat-meta'>
+              <span className='bevestig-toegang-cat-badge'>{lang === 'nl' ? cat.badgeNl : cat.badgeUk}</span>
+              <span className='bevestig-toegang-kroniek-pil' data-stap-op-kroniek='1'>{t('kroniekPil')}</span>
+            </div>
+            <p className={!wat.bekend ? 'bevestig-toegang-fout' : 'bevestig-toegang-uitleg bevestig-toegang-wat-regel'}><strong>{!wat.bekend ? '⚠ ' : ''}{t('watKop')}:</strong> {lang === 'nl' ? wat.nl : wat.uk}</p>
             <p className='bevestig-toegang-uitleg'><strong>{t('gevolgKop')}:</strong> {lang === 'nl' ? wat.gevolgNl : wat.gevolgUk}</p>
+            <p className='bevestig-toegang-uitleg bevestig-toegang-kroniek-tekst'><strong>{t('kroniekKop')}:</strong> {t('kroniekTekst')}</p>
           </div>
         </div>
         {wat.technisch && <details className='bevestig-toegang-details' data-stap-op-technisch=''>
@@ -393,18 +453,21 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
       {info && (alternatieven.length > 0 ? (
         <div className='bevestig-toegang-alt'>
           <h3>{t('problemen')}</h3>
-          <ul>{alternatieven.map((m) => { const [k, Icoon] = ALT[m]; return <li key={m}><button type='button' disabled={!!bezig} onClick={() => setWeergave(m)}><Icoon />{t(k)}</button></li>; })}</ul>
+          <ul>{alternatieven.map((m) => { const [k, Icoon] = ALT[m]; return <li key={m}><button type='button' disabled={!!bezig} onClick={() => setWeergave(m)}><Icoon /><span>{t(k)}</span></button></li>; })}</ul>
         </div>
       ) : (
         <div className='bevestig-toegang-alt' data-geen-alternatieven='1'>
           <h3>{t('geenAltKop')}</h3>
           <p className='bevestig-toegang-uitleg'>{geenAlternatievenUitleg(lang, info, opties, toegestaan)}</p>
-          <p className='bevestig-toegang-uitleg'><a href='/aanmeldmethoden'>{t('naarMethoden')}</a></p>
+          {/* SITE-001 (пункт 16): діалог відкривається на будь-якій службі (mcp, api, …), тому адреса абсолютна — відносна вела на 404. nl: absoluut adres. */}
+          <p className='bevestig-toegang-uitleg'><a href='https://id.tarasevych.com/aanmeldmethoden'>{t('naarMethoden')}</a></p>
         </div>
       ))}
 
-      <details className='bevestig-toegang-extra'><summary>{lang === 'nl' ? 'Tip over geldigheid (5 min)' : 'Порада про дію підтвердження (5 хв)'}</summary><p className='bevestig-toegang-tip'>{t('tip')}</p></details>
-      <div className='bevestig-toegang-voet'><button type='button' className='bevestig-toegang-annuleer' disabled={!!bezig} onClick={() => klaar({ ok: false, reden: 'geannuleerd' })}>{t('annuleren')}</button></div>
+      <div className='bevestig-toegang-voet'>
+        <details className='bevestig-toegang-extra bevestig-toegang-voet-tip'><summary>{lang === 'nl' ? 'Tip over geldigheid (5 min)' : 'Порада про дію підтвердження (5 хв)'}</summary><p className='bevestig-toegang-tip'>{t('tip')}</p></details>
+        <button type='button' className='bevestig-toegang-annuleer' disabled={!!bezig} onClick={() => klaar({ ok: false, reden: 'geannuleerd' })}>{t('annuleren')}</button>
+      </div>
     </div>
   </VensterLaag>;
 }

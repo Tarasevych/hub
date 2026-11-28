@@ -1,5 +1,5 @@
 // KLACHT 2 VAN DE EIGENAAR (20.10.2026):
-//   «Треба додати можливість перепідключатися між акаунтами швидко, без натискання "вийти з технічного".»
+//   «Треба додати можливість перепідключатися між обліковими записами швидко, без натискання "вийти з технічного".»
 //
 // WAT ER WAS. Wisselen tussen onthouden accounts in hetzelfde tabblad bestond al
 // (POST /api/owner/session/replace-tab-remembered), en die route beëindigde de technische activering van het VORIGE account

@@ -405,7 +405,7 @@ function Detail({ lang, rij, personen, systeem, sluit, filterActor, filterActie,
         <span className='aj-res aj-res-groot' data-res={rij.resultaatKlasse}><RI size={16} aria-hidden='true' />{RESULTAAT_NAMEN[rij.resultaatKlasse][lang]}{rij.result ? ` · ${rij.result}` : ''}</span>
         <dl className='aj-feiten'>
           {rijTekst(tr(lang, 'Хто', 'Wie'), <Wie id={rij.actorId || rij.ownerId} personen={personen} agent={rij.agent} systeem={systeem} lang={lang} />)}
-          {rij.ownerId && rij.ownerId !== rij.actorId ? rijTekst(tr(lang, 'Чий акаунт', 'Welk account'), <Wie id={rij.ownerId} personen={personen} agent='' systeem={systeem} lang={lang} />) : null}
+          {rij.ownerId && rij.ownerId !== rij.actorId ? rijTekst(tr(lang, 'Чий обліковий запис', 'Welk account'), <Wie id={rij.ownerId} personen={personen} agent='' systeem={systeem} lang={lang} />) : null}
           {rij.doel ? rijTekst(tr(lang, 'Кому / що', 'Voor wie / wat'), <Doelwit doel={rij.doel} personen={personen} agent={rij.agent} />) : null}
           {w ? rijTekst(tr(lang, 'Було → стало', 'Van → naar'), <code>{w}</code>) : null}
           {rij.reden ? rijTekst(tr(lang, 'Причина', 'Reden'), rij.reden) : null}

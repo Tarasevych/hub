@@ -226,7 +226,7 @@ function AgentToegangGereedheid({
             </div>
             <div className='ag-diagnose-acties'>
               <button type='button' className='ag-knop' data-diagnose-actie='ai_termijn_venster'
-                title={tr('Відкриває «Доступ і терміни» → «Доступ ШІ»: точна дата чи швидкий термін, що робити при паузі, після скількох хвилин бездіяльності і при виході з акаунта.', 'Opent «Toegang en termijnen» → «AI-toegang»: exacte datum of snelle termijn, wat er bij pauze gebeurt, na hoeveel minuten zonder activiteit en bij afmelden.')}
+                title={tr('Відкриває «Доступ і терміни» → «Доступ ШІ»: точна дата чи швидкий термін, що робити при паузі, після скількох хвилин бездіяльності і при виході з облікового запису.', 'Opent «Toegang en termijnen» → «AI-toegang»: exacte datum of snelle termijn, wat er bij pauze gebeurt, na hoeveel minuten zonder activiteit en bij afmelden.')}
                 onClick={() => { try { localStorage.setItem('mr-ruimtes-tab', 'ai'); } catch { /* geen opslag */ } window.dispatchEvent(new CustomEvent('mr-ruimtes-tab', { detail: 'ai' })); openTechVenster('toegang'); }}>
                 <SlidersHorizontal size={14} aria-hidden='true' />{tr('Терміни й правила…', 'Termijnen en regels…')}
               </button>
@@ -241,7 +241,7 @@ function AgentToegangGereedheid({
               ) : (
                 <>
                   <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='zet_ai_sessie_standaard'
-                    title={tr(`Технічний простір для ${naam} до вашого виходу з акаунта. Пауза технічного профілю лише призупиняє доступ, після 60 хв без дій ШІ його знято. Змінити — «Терміни й правила…».`, `Technische ruimte voor ${naam} tot u zich afmeldt. Pauze van het technische profiel zet de toegang alleen stil; na 60 min zonder AI-activiteit vervalt hij. Wijzigen via «Termijnen en regels…».`)}
+                    title={tr(`Технічний простір для ${naam} до вашого виходу з облікового запису. Пауза технічного профілю лише призупиняє доступ, після 60 хв без дій ШІ його знято. Змінити — «Терміни й правила…».`, `Technische ruimte voor ${naam} tot u zich afmeldt. Pauze van het technische profiel zet de toegang alleen stil; na 60 min zonder AI-activiteit vervalt hij. Wijzigen via «Termijnen en regels…».`)}
                     onClick={() => void voerActieUit('delegatie-standaard', async () => {
                       await api.post('/api/owner/connector-v2/activeer-tech', {
                         ...sessionBody(),
@@ -250,7 +250,7 @@ function AgentToegangGereedheid({
                         verbindingId: doelGrantId,
                         naam,
                       });
-                      return tr(`Технічний простір дозволено для ${naam} до виходу з акаунта (типові правила).`, `Technische ruimte toegestaan voor ${naam} tot afmelden (standaardregels).`);
+                      return tr(`Технічний простір дозволено для ${naam} до виходу з облікового запису (типові правила).`, `Technische ruimte toegestaan voor ${naam} tot afmelden (standaardregels).`);
                     })}>
                     <Zap size={14} aria-hidden='true' />{tr('Дозволити', 'Toestaan')}
                   </button>

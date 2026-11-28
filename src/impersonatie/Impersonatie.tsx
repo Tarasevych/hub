@@ -2,7 +2,7 @@
 //  - ImpersonatieKnop + ImpersonatieVenster: beheerder in een actief technisch profiel vraagt, ziet zijn verzoeken en opent de
 //    site van de gebruiker in DIT tabblad (src/impersonatie/modus.ts).
 //  - ImpersonatieGebruiker (voor ELKE gebruiker): verzoek «Дозволити / Відхилити» met wie, waarom, hoe lang en wat zichtbaar is;
-//    zolang iemand meekijkt een rode pil linksonder; venster «Хто зараз має доступ до мого акаунта» met «Завершити негайно» en het
+//    zolang iemand meekijkt een rode pil linksonder; venster «Хто зараз має доступ до мого облікового запису» met «Завершити негайно» en het
 //    journaal van wat de beheerder deed. «Дозволити» vraagt een verse passkey/code (client.ts opent dat venster bij STEP_UP_STRONG_REQUIRED).
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -31,7 +31,7 @@ const FOUTEN: Record<string, [string, string]> = {
   TECH_IMPERSONATIE_VEREIST: ['Потрібен активний технічний профіль із правом «Подивитися як користувач».', 'Een actief technisch profiel met «Bekijken als gebruiker» is nodig.'],
   GEBRUIKER_NIET_GEVONDEN: ['Користувача з такою поштою не знайдено.', 'Geen gebruiker met dit e-mailadres.'],
   GEBRUIKER_NIET_GOEDGEKEURD: ['Цей обліковий запис ще не схвалено.', 'Dit account is nog niet goedgekeurd.'],
-  EIGENAAR_ONAANTASTBAAR: ['Акаунт власника сервера переглядати не можна.', 'Het account van de eigenaar kan niet bekeken worden.'],
+  EIGENAAR_ONAANTASTBAAR: ['Обліковий запис власника сервера переглядати не можна.', 'Het account van de eigenaar kan niet bekeken worden.'],
   NIET_AAN_JEZELF: ['Собі — не можна.', 'Niet bij uzelf.'],
   DUUR_ONGELDIG: [`Термін — від ${IMPERSONATIE_MIN} до ${IMPERSONATIE_MAX} хв.`, `Duur ${IMPERSONATIE_MIN}–${IMPERSONATIE_MAX} min.`],
   REDEN_ONGELDIG: ['Вкажіть причину (від 3 символів).', 'Geef een reden (minstens 3 tekens).'],
@@ -174,13 +174,13 @@ export function ImpersonatieGebruiker() {
       {actief.length ? (
         <div className='imp-pil' role='status' data-imp-pil='1'>
           <Eye aria-hidden='true' />
-          <span className='imp-pil-tekst'>{actief.length === 1 ? (uk ? `${actief[0].beheerder} бачить ваш акаунт до ${tijd(actief[0].eind)}` : `${actief[0].beheerder} bekijkt uw account tot ${tijd(actief[0].eind)}`) : (uk ? `${actief.length} адміністратори бачать ваш акаунт` : `${actief.length} beheerders bekijken uw account`)}</span>
+          <span className='imp-pil-tekst'>{actief.length === 1 ? (uk ? `${actief[0].beheerder} бачить ваш обліковий запис до ${tijd(actief[0].eind)}` : `${actief[0].beheerder} bekijkt uw account tot ${tijd(actief[0].eind)}`) : (uk ? `${actief.length} адміністратори бачать ваш обліковий запис` : `${actief.length} beheerders bekijken uw account`)}</span>
           <button type='button' onClick={() => setToegang(true)} data-imp-knop='wie'>{uk ? 'Хто має доступ' : 'Wie heeft toegang'}</button>
           {actief.length === 1 ? <button type='button' className='is-hoofd' onClick={() => void doe('/api/impersonatie/beeindigen', actief[0].id)} disabled={!!bezig} data-imp-knop='nu-beeindigen'><X aria-hidden='true' />{uk ? 'Завершити' : 'Beëindigen'}</button> : null}
         </div>
       ) : null}
       {wacht ? (
-        <Venster id='imp-toestemming' titel={uk ? 'Запит: подивитися ваш акаунт вашими очима' : 'Verzoek: uw account met uw ogen bekijken'} breedte={520} onSluit={() => setVerborgen((l) => [...l, wacht.id])} prioriteit='kritiek'>
+        <Venster id='imp-toestemming' titel={uk ? 'Запит: подивитися ваш обліковий запис вашими очима' : 'Verzoek: uw account met uw ogen bekijken'} breedte={520} onSluit={() => setVerborgen((l) => [...l, wacht.id])} prioriteit='kritiek'>
           <div className='imp-venster' data-imp-toestemming={wacht.id}>
             <p className='imp-vraag-rij'><span><ShieldAlert aria-hidden='true' style={{ width: 16, height: 16, verticalAlign: '-3px' }} /> <b>{wie(wacht)}</b> {uk ? `просить ${wacht.minuten} хв, щоб побачити сайт так, як бачите його ви.` : `vraagt ${wacht.minuten} min om de site te zien zoals u die ziet.`}</span> <Vraag help={HELP_IMP_TOESTEMMING} uk={uk} label={uk ? 'Що це означає' : 'Wat dit betekent'} /></p>
             <p className='imp-reden'><b>{uk ? 'Причина' : 'Reden'}:</b> {wacht.reden}</p>
@@ -200,9 +200,9 @@ export function ImpersonatieGebruiker() {
         </Venster>
       ) : null}
       {toegang ? (
-        <Venster id='imp-wie-heeft-toegang' titel={uk ? 'Хто зараз має доступ до мого акаунта' : 'Wie heeft nu toegang tot mijn account'} breedte={600} onSluit={() => { setToegang(false); if (/wie-heeft-toegang/.test(location.hash)) history.replaceState(history.state, '', location.pathname + location.search); }}>
+        <Venster id='imp-wie-heeft-toegang' titel={uk ? 'Хто зараз має доступ до мого облікового запису' : 'Wie heeft nu toegang tot mijn account'} breedte={600} onSluit={() => { setToegang(false); if (/wie-heeft-toegang/.test(location.hash)) history.replaceState(history.state, '', location.pathname + location.search); }}>
           <div className='imp-venster' data-imp-toegang='1'>
-            {!open.length ? <p className='imp-melding is-ok' data-imp-niemand='1'><EyeOff aria-hidden='true' style={{ width: 16, height: 16, verticalAlign: '-3px' }} /> {uk ? 'Зараз ніхто не має доступу до вашого акаунта.' : 'Niemand heeft nu toegang tot uw account.'}</p> : (
+            {!open.length ? <p className='imp-melding is-ok' data-imp-niemand='1'><EyeOff aria-hidden='true' style={{ width: 16, height: 16, verticalAlign: '-3px' }} /> {uk ? 'Зараз ніхто не має доступу до вашого облікового запису.' : 'Niemand heeft nu toegang tot uw account.'}</p> : (
               <ul className='imp-lijst'>{open.map((v) => (
                 <li key={v.id} data-imp-sessie={v.id} data-imp-status={v.status}>
                   <span className='imp-lijst-kop'><b>{wie(v)}</b>{statusChip(v.status, uk)}</span>

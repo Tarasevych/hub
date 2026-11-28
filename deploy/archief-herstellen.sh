@@ -178,9 +178,9 @@ tunnel_inrichten() {
   return 0
 }
 
-stap_pg17_installeren() {
+stap_pg18_installeren() {
   /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-  apt-get install -y postgresql-17 postgresql-client-17
+  apt-get install -y postgresql-18 postgresql-client-18
 }
 
 stap_pad_schrijven_proef() {
@@ -252,7 +252,7 @@ stap_site_bouwen() {
   fi
 }
 
-# Wordt dit bestand ingelezen in plaats van uitgevoerd (de eenheidstest van de functies hierboven), dan stopt het hier: er gebeurt niets.
+# Wordt dit bestand ingelezen in plaats van uitgevoerd (de eenheidstest van de functies hieronder), dan stopt het hier: er gebeurt niets.
 if [ "${BASH_SOURCE[0]}" != "$0" ]; then return 0; fi
 
 [ "$PROEF" -eq 1 ] || [ "$(id -u)" -eq 0 ] || fout "voer dit uit als root (sudo)"
@@ -286,12 +286,12 @@ if [ -z "$CF_VERSIE" ] && [ -n "$CF_VERSIE_VAST" ]; then
   if [ "$DEB_ARCH" = amd64 ]; then CF_SHA256="$CF_SHA256_AMD64_VAST"; else CF_SHA256="$CF_SHA256_ARM64_VAST"; fi
 fi
 
-stap "2/10 Pakketten (age, git, rsync, curl, PostgreSQL 17)"
+stap "2/10 Pakketten (age, git, rsync, curl, PostgreSQL 18)"
 export DEBIAN_FRONTEND=noninteractive
 doe apt-get update -y
 doe apt-get install -y ca-certificates curl gnupg rsync git unzip xz-utils age postgresql-common
-if ! dpkg -s postgresql-17 >/dev/null 2>&1; then
-  doe_fn "/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && apt-get install -y postgresql-17 postgresql-client-17" stap_pg17_installeren
+if ! dpkg -s postgresql-18 >/dev/null 2>&1; then
+  doe_fn "/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && apt-get install -y postgresql-18 postgresql-client-18" stap_pg18_installeren
 fi
 if [ "$PROEF" -eq 0 ]; then command -v age >/dev/null || fout "age is niet geïnstalleerd"; fi
 

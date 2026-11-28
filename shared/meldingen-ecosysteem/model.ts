@@ -1,6 +1,8 @@
 // Модель даних єдиної екосистеми сповіщень («застосунок у застосунку», GEMINI-002).
 // Усі типи та нормалізатори сумісні як із сервером (Node.js), так і з оглядачем (React).
 import { LINK_DIENSTEN, routeerMeldingLink, type LinkDienst } from '../melding-link';
+import { isBekendeSoort, soortInfo, typeVanBron } from '../melding-soorten';
+import { isMeldingType, voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../melding-typen';
 
 export const SUBDOMEINEN = ['hub', 'id', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'api', 'admin', 'systeem'] as const;
 export type MeldingSubdomein = (typeof SUBDOMEINEN)[number];
@@ -27,6 +29,9 @@ export const AI_AANBIEDERS_KEUZE = ['gemini', 'claude', 'openai', 'grok', 'autoc
 export type AiAanbiederKeuze = (typeof AI_AANBIEDERS_KEUZE)[number];
 
 export type RuimteType = 'prive' | 'technisch';
+
+export const MELDING_KAPSEL_AFLEVERING_VLAG = 'melding-kapsel-aflevering-v1' as const;
+export type OntvangstStaat = 'wacht' | 'afgeleverd' | 'gelezen';
 
 export type MeldingBijlage = {
   id: string;
@@ -82,6 +87,9 @@ export type MeldingEcosysteemGebeurtenis = {
   contextLabel: string;
   herhalingen: number;
   uitgesteldTot: number | null;
+  afgeleverdOp?: number | null;
+  gelezenOp?: number | null;
+  autoGearchiveerd?: boolean;
   bijlagen: MeldingBijlage[];
   acties: MeldingActie[];
   meta: Record<string, unknown>;
@@ -141,6 +149,8 @@ export type MeldingEcosysteemProfiel = {
   ruimte: RuimteType;
   geometrie: VensterGeometrie;
   veeg: VeegRegels;
+  standaardUitgeklapt?: boolean;
+  autoGelezenBijZicht?: boolean;
   contextAdaptatie: boolean;
   toonBannersInCentrum: boolean;
   geluidGlobaal: boolean;
@@ -234,7 +244,7 @@ export function standaardKanaalVoorkeuren(): Record<MeldingKanaal, KanaalVoorkeu
 
 export function standaardProfiel(ruimte: RuimteType = 'prive'): MeldingEcosysteemProfiel {
   return {
-    versie: 1,
+    versie: 2,
     ruimte,
     geometrie: {
       x: 24,
@@ -247,11 +257,13 @@ export function standaardProfiel(ruimte: RuimteType = 'prive'): MeldingEcosystee
     },
     veeg: {
       actief: true,
-      drempelPx: 76,
+      drempelPx: 72,
       links: 'archief',
-      rechts: 'gelezen',
+      rechts: 'archief',
       trilling: true,
     },
+    standaardUitgeklapt: false,
+    autoGelezenBijZicht: true,
     contextAdaptatie: true,
     toonBannersInCentrum: true,
     geluidGlobaal: true,
@@ -306,8 +318,14 @@ export function normaliseerProfiel(raw: unknown, ruimte: RuimteType = 'prive'): 
   // Безпека завжди активна у списку: критичні події безпеки неможливо повністю приховати.
   kanalen.beveiliging.actief = true;
 
+  const rawVersie = begrensGetal(raw.versie, 1, 10, 1);
+  const rechtsNorm =
+    rawVersie < 2 && vRaw.links === 'archief' && vRaw.rechts === 'gelezen'
+      ? 'archief'
+      : kiesEnum(vRaw.rechts, VEEG_ACTIES, def.veeg.rechts);
+
   return {
-    versie: 1,
+    versie: 2,
     ruimte: raw.ruimte === 'technisch' || ruimte === 'technisch' ? (ruimte === 'technisch' ? 'technisch' : 'prive') : 'prive',
     geometrie: {
       x: begrensGetal(gRaw.x, 0, 4000, def.geometrie.x),
@@ -322,9 +340,11 @@ export function normaliseerProfiel(raw: unknown, ruimte: RuimteType = 'prive'): 
       actief: vRaw.actief !== false,
       drempelPx: begrensGetal(vRaw.drempelPx, 48, 180, def.veeg.drempelPx),
       links: kiesEnum(vRaw.links, VEEG_ACTIES, def.veeg.links),
-      rechts: kiesEnum(vRaw.rechts, VEEG_ACTIES, def.veeg.rechts),
+      rechts: rechtsNorm,
       trilling: vRaw.trilling !== false,
     },
+    standaardUitgeklapt: Boolean(raw.standaardUitgeklapt),
+    autoGelezenBijZicht: raw.autoGelezenBijZicht !== false,
     contextAdaptatie: raw.contextAdaptatie !== false,
     toonBannersInCentrum: raw.toonBannersInCentrum !== false,
     geluidGlobaal: raw.geluidGlobaal !== false,
@@ -405,7 +425,7 @@ export function normaliseerActies(raw: unknown, hint: { soort?: string; subdomei
   return uit;
 }
 
-export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEcosysteemGebeurtenis {
+export function normaliseerGebeurtenis(raw: Record<string, unknown>, fallbackRuimte?: RuimteType): MeldingEcosysteemGebeurtenis {
   const ai = isRecord(raw.ai_samenvatting ?? raw.aiSamenvatting)
     ? (raw.ai_samenvatting ?? raw.aiSamenvatting) as Record<string, unknown>
     : null;
@@ -418,6 +438,11 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     }
     return fb;
   };
+  const optTs = (v: unknown): number | null => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = ts(v, 0);
+    return n > 0 ? n : null;
+  };
   const schoonMeta = (() => {
     if (!isRecord(raw.meta)) return {};
     const kopie: Record<string, unknown> = { ...raw.meta };
@@ -428,21 +453,29 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     }
     return kopie;
   })();
+  const statusNorm = kiesEnum(raw.status, GEBEURTENIS_STATUSSEN, 'nieuw');
+  const ruweAfgeleverd = optTs(raw.afgeleverd_op ?? raw.afgeleverdOp);
+  const ruweGelezen = optTs(raw.gelezen_op ?? raw.gelezenOp);
+  const aangemaaktOp = ts(raw.aangemaakt_op ?? raw.aangemaaktOp, nu);
+  const bijgewerktOp = ts(raw.bijgewerkt_op ?? raw.bijgewerktOp, nu);
   return {
     id: String(raw.id || ''),
-    ruimte: raw.ruimte === 'technisch' ? 'technisch' : 'prive',
+    ruimte: raw.ruimte === 'technisch' ? 'technisch' : raw.ruimte === 'prive' ? 'prive' : (fallbackRuimte ?? 'prive'),
     externeSleutel: String(raw.externe_sleutel ?? raw.externeSleutel ?? '').slice(0, 180),
     kanaal: kiesEnum(raw.kanaal, KANALEN, 'systeem'),
     subdomein: kiesEnum(raw.subdomein, SUBDOMEINEN, 'hub'),
     bron: String(raw.bron || '').slice(0, 120),
     prioriteit: kiesEnum(raw.prioriteit, PRIORITEITEN, 'normaal'),
-    status: kiesEnum(raw.status, GEBEURTENIS_STATUSSEN, 'nieuw'),
+    status: statusNorm,
     titel: String(raw.titel || '').slice(0, 400),
     bericht: String(raw.bericht || '').slice(0, 4000),
     uitleg: String(raw.uitleg || '').slice(0, 2000),
     contextLabel: String(raw.context_label ?? raw.contextLabel ?? '').slice(0, 240),
     herhalingen: begrensGetal(raw.herhalingen, 1, 99_999, 1),
     uitgesteldTot: raw.uitgesteld_tot || raw.uitgesteldTot ? ts(raw.uitgesteld_tot ?? raw.uitgesteldTot, 0) || null : null,
+    afgeleverdOp: ruweAfgeleverd ?? (statusNorm === 'gelezen' ? aangemaaktOp : null),
+    gelezenOp: ruweGelezen ?? (statusNorm === 'gelezen' ? bijgewerktOp : null),
+    autoGearchiveerd: Boolean(raw.auto_gearchiveerd ?? raw.autoGearchiveerd ?? schoonMeta.autoGearchiveerd),
     bijlagen: normaliseerBijlagen(raw.bijlagen),
     acties: normaliseerActies(raw.acties, { soort: String(raw.bron || ''), subdomein: String(raw.subdomein || '') }),
     meta: schoonMeta,
@@ -459,7 +492,174 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
           geschoond: ai.geschoond !== false,
         }
       : null,
-    aangemaaktOp: ts(raw.aangemaakt_op ?? raw.aangemaaktOp, nu),
-    bijgewerktOp: ts(raw.bijgewerkt_op ?? raw.bijgewerktOp, nu),
+    aangemaaktOp,
+    bijgewerktOp,
   };
 }
+
+/**
+ * Визначає стан квитанції доставки й прочитання (як у месенджері):
+ * - 'gelezen' (✓✓ дві галочки): сповіщення доставлено і реально переглянуто / прочитано людиною;
+ * - 'afgeleverd' (✓ одна галочка): сповіщення доставлено в панель пристрою, але ще не переглянуто очима;
+ * - 'wacht' (⏳ очікування доставки): сповіщення створене або тихо заархівоване на сервері й ще не надійшло в панель користувача.
+ */
+export function bepaalOntvangstStaat(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'status' | 'afgeleverdOp' | 'gelezenOp'>,
+): OntvangstStaat {
+  if ((typeof geb.gelezenOp === 'number' && geb.gelezenOp > 0) || geb.status === 'gelezen') {
+    return 'gelezen';
+  }
+  if (typeof geb.afgeleverdOp === 'number' && geb.afgeleverdOp > 0) {
+    return 'afgeleverd';
+  }
+  return 'wacht';
+}
+
+/** Перевіряє, чи сповіщення ще непрочитане (кольорове підсвічування й пряма бічна лінія відображаються лише на непрочитаних). */
+export function isMeldingOngelezen(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'status' | 'gelezenOp'>,
+): boolean {
+  if (geb.status === 'gelezen' || geb.status === 'opgelost' || geb.status === 'archief') return false;
+  if (typeof geb.gelezenOp === 'number' && geb.gelezenOp > 0 && geb.status !== 'nieuw') return false;
+  return geb.status === 'nieuw';
+}
+
+export type MeldingGeluidContext = {
+  profiel?: Pick<MeldingEcosysteemProfiel, 'geluidGlobaal' | 'stilleUren' | 'kanalen'>;
+  geluidGlobaal?: boolean;
+  nietStorenActief?: boolean;
+  nietStorenTot?: number | null;
+  typeVoorkeuren?: Partial<Record<MeldingType, TypeVoorkeur>>;
+  nu?: Date | number;
+};
+
+export type KapselTellerToon = 'geluid' | 'stil';
+
+export type KapselTellerStaat = {
+  zichtbaar: boolean;
+  aantal: number;
+  toon: KapselTellerToon;
+};
+
+function isStilleUrenNu(stilleUren: StilleUrenEcosysteem | undefined, nu: Date): boolean {
+  if (!stilleUren?.actief) return false;
+  const naarMin = (hhmm: string) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+  };
+  const van = naarMin(stilleUren.van);
+  const tot = naarMin(stilleUren.tot);
+  if (van === tot) return false;
+  const huidig = nu.getHours() * 60 + nu.getMinutes();
+  return van < tot ? huidig >= van && huidig < tot : huidig >= van || huidig < tot;
+}
+
+/** Визначає канонічний тип сповіщення (`MeldingType`) для перевірки налаштувань звуку цього типу. */
+export function bepaalMeldingType(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'kanaal' | 'subdomein' | 'bron' | 'ruimte' | 'meta'>,
+): MeldingType {
+  const metaType = geb.meta?.meldingType ?? geb.meta?.type;
+  if (isMeldingType(metaType)) return metaType;
+
+  const metaKind = typeof geb.meta?.kind === 'string' ? geb.meta.kind.trim() : '';
+  if (metaKind) {
+    const info = soortInfo(metaKind);
+    if (isBekendeSoort(metaKind) || info.type !== 'systeem') return info.type;
+  }
+
+  const bron = String(geb.bron || '').trim();
+  if (bron) {
+    const infoBron = soortInfo(bron);
+    if (isBekendeSoort(bron) || infoBron.type !== 'systeem') return infoBron.type;
+    const uitBron = typeVanBron(bron);
+    if (uitBron !== 'systeem') return uitBron;
+  }
+
+  const tech = geb.ruimte === 'technisch';
+  if (geb.kanaal === 'beveiliging') return tech ? 'tech.bescherming' : 'beveiliging';
+  if (geb.kanaal === 'mail') return 'post';
+  if (geb.kanaal === 'cloud') return 'cloud';
+  if (geb.kanaal === 'ai' || geb.kanaal === 'mcp') return tech ? 'tech.integraties' : 'ai';
+  if (geb.kanaal === 'pc_agent' || geb.kanaal === 'extensie') return 'apparaten';
+  if (geb.kanaal === 'github') return tech ? 'tech.integraties' : 'systeem';
+  return tech ? 'tech.server' : 'systeem';
+}
+
+/**
+ * Визначає, чи має сповіщення активний звук у поточному стані користувача.
+ * Повертає `false`, якщо звук вимкнено хоча б на одному рівні:
+ * 1) загальне вимкнення звуку (сайт або профіль);
+ * 2) режим тиші («Не турбувати», активні тихі години або тиха позначка події);
+ * 3) вимкнений звук каналу;
+ * 4) вимкнений звук відповідного типу сповіщення.
+ */
+export function isMeldingMetGeluid(
+  geb: Pick<MeldingEcosysteemGebeurtenis, 'kanaal' | 'subdomein' | 'bron' | 'ruimte' | 'prioriteit' | 'meta'>,
+  ctx: MeldingGeluidContext = {},
+): boolean {
+  if (ctx.geluidGlobaal === false) return false;
+  if (ctx.profiel && ctx.profiel.geluidGlobaal === false) return false;
+
+  const meta = geb.meta || {};
+  if (meta.geluid === false || meta.stil === true || meta.leverModus === 'stil' || meta.leverModus === 'uit') {
+    return false;
+  }
+
+  const nuDate = ctx.nu instanceof Date ? ctx.nu : typeof ctx.nu === 'number' ? new Date(ctx.nu) : new Date();
+  const nuMs = nuDate.getTime();
+  if (ctx.nietStorenActief === true) return false;
+  if (typeof ctx.nietStorenTot === 'number' && ctx.nietStorenTot > nuMs) return false;
+
+  if (ctx.profiel?.stilleUren && isStilleUrenNu(ctx.profiel.stilleUren, nuDate)) {
+    const kritiekOmzeilt =
+      ctx.profiel.stilleUren.kritiekStilOmzeilen !== false &&
+      (geb.prioriteit === 'kritiek' || geb.kanaal === 'beveiliging');
+    if (!kritiekOmzeilt) return false;
+  }
+
+  const kanaalVoorkeur = ctx.profiel?.kanalen?.[geb.kanaal];
+  if (kanaalVoorkeur && (kanaalVoorkeur.actief === false || kanaalVoorkeur.geluid === false)) {
+    return false;
+  }
+
+  if (ctx.typeVoorkeuren) {
+    const soortType = bepaalMeldingType(geb);
+    const typeVoorkeur = voorkeurVoor(ctx.typeVoorkeuren, soortType);
+    if (!typeVoorkeur.tonen || !typeVoorkeur.geluid) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Обчислює стан мініатюрної капсули кількості сповіщень:
+ * - прочитані сповіщення — без капсули з цифрою (`zichtbaar: false`);
+ * - непрочитані зі звуком — капсула в кольорі теми сповіщення або розділу (`toon: 'geluid'`);
+ * - непрочитані без звуку — спокійна сіра капсула (`toon: 'stil'`).
+ */
+export function bepaalKapselTellerStaat(
+  geb: Pick<
+    MeldingEcosysteemGebeurtenis,
+    'status' | 'gelezenOp' | 'herhalingen' | 'kanaal' | 'subdomein' | 'bron' | 'ruimte' | 'prioriteit' | 'meta'
+  >,
+  ctx: MeldingGeluidContext = {},
+  opties?: { aantal?: number; minAantal?: number },
+): KapselTellerStaat {
+  if (!isMeldingOngelezen(geb)) {
+    return { zichtbaar: false, aantal: 0, toon: 'stil' };
+  }
+  const minAantal = Math.max(1, Math.trunc(opties?.minAantal ?? 2));
+  const ruw =
+    typeof opties?.aantal === 'number' && Number.isFinite(opties.aantal)
+      ? Math.trunc(opties.aantal)
+      : Math.trunc(geb.herhalingen || 1);
+  if (ruw < minAantal) {
+    return { zichtbaar: false, aantal: 0, toon: 'stil' };
+  }
+  return {
+    zichtbaar: true,
+    aantal: ruw,
+    toon: isMeldingMetGeluid(geb, ctx) ? 'geluid' : 'stil',
+  };
+}
+

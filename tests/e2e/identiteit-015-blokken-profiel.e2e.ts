@@ -469,7 +469,7 @@ export async function main(): Promise<number> {
       check('E: телефон 380 — «Ваші дані» без горизонтальної прокрутки', (await horizontaal(page)) <= 0);
       await foto(page, 'uitvoer-zip-klaar-telefoon');
       const kandidatenNa = verzoeken.filter(([, p]) => p.endsWith('/overdracht/kandidaten')).length;
-      check('E: сторінка «Акаунт» не перезапитує кандидатів «Передати простір» після кожної дії (два вивантаження, зміна ширини — жодного нового запиту)', kandidatenNa === kandidatenVoor, `${kandidatenVoor} → ${kandidatenNa}`);
+      check('E: сторінка «Обліковий запис» не перезапитує кандидатів «Передати простір» після кожної дії (два вивантаження, зміна ширини — жодного нового запиту)', kandidatenNa === kandidatenVoor, `${kandidatenVoor} → ${kandidatenNa}`);
     }
 
     // ================================================================ F. видалення окремого облікового запису й відновлення
@@ -573,7 +573,7 @@ export async function main(): Promise<number> {
       await p2.goto(`${ID}/account?lang=uk`, { waitUntil: 'networkidle' });
       const poort = p2.locator('[data-account-herstel]');
       await poort.waitFor({ state: 'visible', timeout: 15000 }).catch(() => undefined);
-      check('F: новий вхід — екран «Акаунт потребує відновлення» з датою кінця строку й двома варіантами', await poort.isVisible().catch(() => false) && /Обліковий запис видалено, але дані ще збережено до/.test(await p2.locator('.access-gate').innerText().catch(() => '')));
+      check('F: новий вхід — екран «Обліковий запис потребує відновлення» з датою кінця строку й двома варіантами', await poort.isVisible().catch(() => false) && /Обліковий запис видалено, але дані ще збережено до/.test(await p2.locator('.access-gate').innerText().catch(() => '')));
       check('F: телефон 380 — екран відновлення без горизонтальної прокрутки', (await horizontaal(p2)) <= 0);
       await foto(p2, 'herstel-poort-telefoon');
       const herst = p2.waitForResponse((r) => r.url().endsWith('/api/owner/identity/account/recover'));

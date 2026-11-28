@@ -9,13 +9,18 @@ import { COMMAND_LABELS } from './agenten-gegevens';
 import { textOf } from './mcp-teksten';
 import { siteToolOorzaak, siteToolStatus, siteToolTitel } from '../shared/mcp-acties';
 import { activiteitNaamUitJournaal } from '../shared/meldingen-soorten';
+import { vertaalAanmeldMethode } from '../shared/meldingen-ecosysteem/tolk';
 import { abonneerGelezen, stuurGelezen } from './meldingen/gelezen-sync';
+export { vertaalAanmeldMethode };
 
 export type ActivityEvent = {
   id: string; source: string; kind: 'command' | 'tool' | 'grant' | 'site'; type: string; subject: string;
   status: string; createdAt: number; finishedAt: number | null; platform?: string;
   /** AI-actie op de site (owner.mcp.tool): hulpmiddel, doel, client en bij mislukking de foutcode/reden. */
   tool?: string; doel?: string; client?: string; geweigerd?: boolean; code?: string; reden?: string; eind?: string;
+  /** HERSTEL-001 (MELD-6): безпечний ідентифікатор запису пристрою (UUID) та код способу входу для перекладу на клієнті. */
+  apparaatId?: string;
+  methode?: string;
   /** 22.10.2026: sfeer van de regel (shared/meldingen-soorten.ts) — de server zet hem en levert alleen de sfeer van dit tabblad. */
   sfeer?: 'prive' | 'technisch';
 };
@@ -39,7 +44,7 @@ export const statusInfo = (status: string, lang: Lang) => {
 
 /** Namen van sitegebeurtenissen (auditacties) in de taal van de site. Onbekende acties krijgen een nette algemene naam. */
 const SITE_LABELS: Record<string, [string, string]> = {
-  'owner.mail.send.committed': ['Лист надіслано', 'Bericht verzonden'], 'owner.mail.account.disconnected': ['Поштовий акаунт відключено', 'Mailaccount ontkoppeld'], 'owner.mail.labels.modified': ['Мітки листа змінено', 'Labels van bericht gewijzigd'],
+  'owner.mail.send.committed': ['Лист надіслано', 'Bericht verzonden'], 'owner.mail.account.disconnected': ['Поштовий обліковий запис відключено', 'Mailaccount ontkoppeld'], 'owner.mail.labels.modified': ['Мітки листа змінено', 'Labels van bericht gewijzigd'],
   'owner.github.issue_create': ['Створено issue на GitHub', 'Issue aangemaakt op GitHub'], 'owner.github.issue_comment': ['Коментар додано на GitHub', 'Reactie geplaatst op GitHub'],
   // SEC-002 interface-02: geen vaste «Claude» — WELKE klant staat in de context van de regel (e.client, zie activiteitContext).
   'owner.mcp.grant.approved': ['ШІ-клієнт отримав доступ', 'AI-klant kreeg toegang'], 'owner.mcp.grant.denied': ['Доступ для ШІ-клієнта відхилено', 'Toegang voor AI-klant geweigerd'], 'owner.mcp.grant.revoked': ['Доступ ШІ-клієнта відкликано', 'Toegang van AI-klant ingetrokken'],
@@ -142,9 +147,21 @@ export function activiteitContext(e: ActivityEvent, lang: Lang): string | undefi
   // SEC-002 interface-02: de server geeft bij een aanroep de naam van de klant die hem vroeg (subject); anders de algemene bron.
   else if (e.kind === 'tool') delen.push(e.subject || sourceLabel(e.source, lang));
   else if (e.client) delen.push(e.client);
+  const methodeLabel = vertaalAanmeldMethode(e.methode, lang);
+  if (methodeLabel) delen.push(methodeLabel);
   const os = platformNaam(e.platform);
   if (os) delen.push(os);
-  if (e.doel) delen.push(e.doel.length > 80 ? `${e.doel.slice(0, 79)}…` : e.doel);
+  if (e.doel) {
+    const ruwDoel = e.doel
+      .split(/\s*·\s*/)
+      .map((stuk) => vertaalAanmeldMethode(stuk, lang) || stuk.trim())
+      .filter(Boolean)
+      .join(' · ');
+    if (ruwDoel && (!methodeLabel || ruwDoel.toLowerCase() !== methodeLabel.toLowerCase())) {
+      const zonderDubbel = methodeLabel && ruwDoel.startsWith(`${methodeLabel} · `) ? ruwDoel.slice(methodeLabel.length + 3) : ruwDoel;
+      if (zonderDubbel) delen.push(zonderDubbel.length > 80 ? `${zonderDubbel.slice(0, 79)}…` : zonderDubbel);
+    }
+  }
   const uit = delen.map((d) => d.trim()).filter(Boolean).join(' · ');
   return uit || undefined;
 }

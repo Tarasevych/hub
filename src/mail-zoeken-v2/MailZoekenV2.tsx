@@ -221,8 +221,8 @@ export default function MailZoekenV2(p: Props) {
               onKies={(v) => set({ locationKind: v, locationValue: '', locationName: '', accountIds: v === 'all' ? allIds : [p.currentAccountId].filter(Boolean) })}
               opties={[['current', t('Поточний розділ', 'Huidige sectie')], ['all', t('Уся пошта', 'Alle e-mail')]]} />
             <p className="mzv2-noot">{c.locationKind === 'current'
-              ? t('Шукати лише у відкритій зараз теці цього акаунта.', 'Alleen zoeken in de nu geopende map van dit account.')
-              : t('Шукати в усіх теках усіх підключених акаунтів. Інші умови діють разом із цим.', 'Zoeken in alle mappen van alle gekoppelde accounts. Andere voorwaarden gelden tegelijk.')}</p>
+              ? t('Шукати лише у відкритій зараз теці цього облікового запису.', 'Alleen zoeken in de nu geopende map van dit account.')
+              : t('Шукати в усіх теках усіх підключених облікових записів. Інші умови діють разом із цим.', 'Zoeken in alle mappen van alle gekoppelde accounts. Andere voorwaarden gelden tegelijk.')}</p>
             {(['SPAM', 'TRASH'] as const).map((id) => (
               <Schakelaar key={id} aan={c.excludeSystemLabels.includes(id)}
                 onWissel={(v) => set({ excludeSystemLabels: v ? [...new Set([...c.excludeSystemLabels, id])] : c.excludeSystemLabels.filter((x) => x !== id) })}>

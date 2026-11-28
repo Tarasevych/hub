@@ -38,7 +38,7 @@ export async function knoppenMaken(telegramId: string, groep: string, knoppen: K
       if ('webApp' in k) { uit.push({ text: k.tekst, web_app: { url: k.webApp } }); continue; }
       const id = nieuweId();
       await sql('INSERT INTO app.tg_knoppen (id, letter, telegram_id, doel, verloopt_sec, groep, aftel_sec) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [id, k.letter, telegramId, k.doel, verlooptSec, groep, JA_LETTERS.has(k.letter) ? inst.aftelSeconden : 0]);
+        [id, k.letter, telegramId, k.doel, verlooptSec, groep, JA_LETTERS.has(k.letter) && k.doel !== 'rechtstreeks' ? inst.aftelSeconden : 0]);
       uit.push({ text: k.tekst, callback_data: knopTekenen(sleutel, k.letter, id, telegramId, verlooptSec) });
     }
     rijen.push(uit);

@@ -62,8 +62,8 @@ export async function main(): Promise<number> {
   check('de kolommen zijn nooit breder dan de kaart (minmax(min(100%,…)))',
     heeft(sessiesCss, '.sessie-diensten', 'repeat(auto-fill,minmax(min(100%,17rem),1fr))') && heeft(sessiesCss, '.sessie-netwerk', 'minmax(min(100%,14rem),1fr)'));
 
-  // ------------------------------------------------------------------ 4. de schakelaar «Зберегти цей акаунт»
-  check('«Зберегти цей акаунт для наступних сесій» gebruikt DE schakelaar van de site (.zijbalk-schakel + spoor)',
+  // ------------------------------------------------------------------ 4. de schakelaar «Зберегти цей обліковий запис»
+  check('«Зберегти цей обліковий запис для наступних сесій» gebruikt DE schakelaar van de site (.zijbalk-schakel + spoor)',
     overzicht.includes("className='zijbalk-schakel'") && overzicht.includes("className='zijbalk-schakel-spoor'") && overzicht.includes("role='switch'"));
   check('geen reuzen-vinkje meer: de oude kaartklasse van het aanmeldscherm staat niet meer op dit vinkje',
     !overzicht.includes('canonical-signed-out-remember'));

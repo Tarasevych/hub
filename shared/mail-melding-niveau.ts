@@ -9,7 +9,7 @@ export function isMailMeldingNiveau(value: unknown): value is MailMeldingNiveau 
   return MAIL_MELDING_NIVEAUS.includes(value as MailMeldingNiveau);
 }
 
-/** `google:<id>` | `microsoft:<id>` | `imap:<id>` — той самий ключ, що на картці акаунта. */
+/** `google:<id>` | `microsoft:<id>` | `imap:<id>` — той самий ключ, що на картці облікового запису. */
 export const MAIL_MELDING_SLEUTEL = /^(google|microsoft|imap):[A-Za-z0-9_.:@-]{1,160}$/;
 
 export function mailMeldingSleutelGeldig(value: string): boolean {

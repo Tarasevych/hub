@@ -33,7 +33,7 @@ export async function main(): Promise<number> {
     const Bb = G.browser() as unknown as Br; await Bb.aanmelden(subB, emailB, { service: 'hub' });
     B = String((await pool.query("select id from app.records where tbl='users' and data->>'email'=$1", [emailB])).rows[0]?.id || '');
     await pool.query(`update app.records set data = data || '{"status":"approved"}'::jsonb where tbl='users' and id = ANY($1)`, [[A, B]]);
-    check('підготовка: два акаунти (A власник, B звичайний), обидва approved', !!A && !!B && A !== B);
+    check('підготовка: два облікові записи (A власник, B звичайний), обидва approved', !!A && !!B && A !== B);
 
     // ---------------------------------------------------------------- 1. geen rij → bestaat:false; A bewaart; B ziet niets van A
     const l0 = await via(Bb, 'laden');

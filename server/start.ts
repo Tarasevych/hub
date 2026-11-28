@@ -48,6 +48,7 @@ import { isCanoniekPad, type LambdaEvent, type RouterResponse } from './platform
 import { schakelaarsVerversen } from './platform/schakelaars';
 import { procesVangnetInstellen } from './platform/proces-vangnet';
 import { statischDoel } from './platform/statisch-pad'; /* SEC-002 http-rand-04 */
+import { onbekendAppPad } from './platform/onbekend-pad'; /* SITE-001 пункт 15: справжня 404 */
 import { limietSleutel } from '../shared/ip-limiet';
 import { leesBodyBegrensd, zetAanmeldControle } from './platform/tekst-budget';
 import { aanmeldingEcht } from './platform/tekst-aanmelding';
@@ -92,6 +93,9 @@ const BASE_HEADERS: Record<string, string> = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'Cross-Origin-Resource-Policy': 'same-site',
+  'X-Permitted-Cross-Domain-Policies': 'none',
 };
 
 // PERF-001: welk achtergrondwerk loopt (voor de bewaking van de hoofdthread hieronder).
@@ -142,8 +146,11 @@ function send(res: http.ServerResponse, status: number, headers: Record<string, 
   if (res.headersSent) return;
   const alle: Record<string, string | string[]> = { ...BASE_HEADERS, ...headers };
   // TELEGRAM-002: een route mag X-Frame-Options weglaten (lege waarde) als haar eigen CSP frame-ancestors zet (Telegram-venster).
-  if (alle['X-Frame-Options'] === '' && /frame-ancestors https:\/\//.test(String(alle['Content-Security-Policy'] || ''))) delete alle['X-Frame-Options'];
-  else if (alle['X-Frame-Options'] === '') alle['X-Frame-Options'] = 'DENY';
+  if (alle['X-Frame-Options'] === '' && /frame-ancestors https:\/\//.test(String(alle['Content-Security-Policy'] || ''))) {
+    delete alle['X-Frame-Options'];
+    alle['Cross-Origin-Resource-Policy'] = 'cross-origin';
+    alle['Cross-Origin-Opener-Policy'] = 'unsafe-none';
+  } else if (alle['X-Frame-Options'] === '') alle['X-Frame-Options'] = 'DENY';
   res.writeHead(status, alle);
   res.end(body);
 }
@@ -239,7 +246,8 @@ async function fileStat(p: string) {
   try { const s = await stat(p); return s.isFile() ? s : null; } catch { return null; }
 }
 
-async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, file: string, csp: string, immutable: boolean, extra?: Readonly<Record<string, string>>) {
+// SITE-001 (пункт 15): `status` — 404 для невідомої адреси застосунку (тіло — та сама index.html, сторінку «не знайдено» малює застосунок).
+async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, file: string, csp: string, immutable: boolean, extra?: Readonly<Record<string, string>>, status = 200) {
   const s = await fileStat(file);
   if (!s) return false;
   const ext = path.extname(file).toLowerCase();
@@ -250,6 +258,10 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     ETag: etag,
     ...(extra || {}),
   };
+  const basisNaam = path.basename(file);
+  if (basisNaam === 'og-afbeelding.png' || basisNaam === 'apple-touch-icon.png' || basisNaam.startsWith('favicon')) {
+    headers['Cross-Origin-Resource-Policy'] = 'cross-origin';
+  }
   if (ext === '.html') {
     headers['Content-Security-Policy'] = csp;
     // Menu v2 fase B1: vooruitladen tussen de eigen onderdelen. De regels staan in een apart bestand (geen inline script, de CSP
@@ -263,8 +275,8 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     // Overal elders blijft geolocation=() — geen enkele andere pagina kan de locatie opvragen.
     if (String(req.headers.host || '').split(':')[0].toLowerCase() === SERVICE_HOSTS.identity) headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()';
   }
-  if (path.basename(file) === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
-  if (path.basename(file) === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';
+  if (basisNaam === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
+  if (basisNaam === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';
   // PERF-001: tekstbestanden gecomprimeerd (brotli/gzip, één keer per bestand in het geheugen; zie server/platform/statisch-comprimeren.ts).
   if (COMPRIMEERBAAR.has(ext) && s.size >= MIN_BYTES) {
     headers.Vary = headers.Vary ? `${headers.Vary}, Accept-Encoding` : 'Accept-Encoding';
@@ -273,18 +285,18 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     if (codering && buf) {
       const etagGz = `${etag.slice(0, -1)}-${codering === 'br' ? 'br' : 'gz'}"`;
       headers.ETag = etagGz;
-      if (req.headers['if-none-match'] === etagGz) { send(res, 304, headers); return true; }
+      if (status === 200 && req.headers['if-none-match'] === etagGz) { send(res, 304, headers); return true; }
       headers['Content-Encoding'] = codering;
       headers['Content-Length'] = String(buf.length);
-      if (req.method === 'HEAD') { send(res, 200, headers); return true; }
-      send(res, 200, headers, buf);
+      if (req.method === 'HEAD') { send(res, status, headers); return true; }
+      send(res, status, headers, buf);
       return true;
     }
   }
-  if (req.headers['if-none-match'] === etag) { send(res, 304, headers); return true; }
+  if (status === 200 && req.headers['if-none-match'] === etag) { send(res, 304, headers); return true; }
   headers['Content-Length'] = String(s.size);
-  if (req.method === 'HEAD') { send(res, 200, headers); return true; }
-  res.writeHead(200, { ...BASE_HEADERS, ...headers });
+  if (req.method === 'HEAD') { send(res, status, headers); return true; }
+  res.writeHead(status, { ...BASE_HEADERS, ...headers });
   createReadStream(file).on('error', () => res.destroy()).pipe(res);
   return true;
 }
@@ -315,7 +327,9 @@ async function serveStatic(req: http.IncomingMessage, res: http.ServerResponse, 
   if (await serveFile(req, res, file, csp, immutable)) return;
   // SPA-fallback: alleen voor "pagina"-paden zonder extensie (tabpaden zoals /inbox).
   if (spa && !path.posix.extname(doel.pad)) {
-    if (await serveFile(req, res, path.join(root, 'index.html'), csp, false)) return;
+    // SITE-001 (пункт 15): адреса, якої застосунок не знає (та сама перевірка, що в оглядачі), — код 404 замість «м'якої» 200.
+    const status = onbekendAppPad(root, String(req.headers.host || ''), url) ? 404 : 200;
+    if (await serveFile(req, res, path.join(root, 'index.html'), csp, false, undefined, status)) return;
   }
   return sendText(res, 404, 'Niet gevonden');
 }

@@ -17,7 +17,7 @@
 // aanmelding. Gaat een weg later echt werken, dan zet men `beschikbaar` op true en geeft men `onKies` mee — de weergave is klaar.
 // Logo's: GitHub en Apple uit het merkregister (simple-icons, CC0), Microsoft het officiële bestand (src/merk/officieel); voor
 // passkey bestaat in de open pakketten van de site geen merklogo — dan een neutraal pictogram (vingerafdruk), niets nagetekend.
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, Fingerprint } from 'lucide-react';
 import Merk from './merk/Merk';
 
@@ -39,26 +39,26 @@ const NIET_BESCHIKBAAR: T2 = ['Недоступно', 'Niet beschikbaar'];
 export const AANMELD_INGANGEN: readonly AanmeldIngang[] = Object.freeze([
   {
     id: 'github', merk: 'github', titel: ['Увійти через GitHub', 'Aanmelden met GitHub'], beschikbaar: false,
-    reden: ['Сервер не видає вхід через GitHub: GitHub підключається лише після входу — як служба для репозиторіїв.',
-      'De server kent geen aanmelding met GitHub: GitHub wordt pas na het aanmelden gekoppeld, als dienst voor repositories.'],
+    reden: ['Вхід через GitHub не підтримується: обліковий запис GitHub підключається після входу як робоча служба для сховищ коду.',
+      'Aanmelden met GitHub wordt niet ondersteund: uw GitHub-account koppelt u na het aanmelden als dienst voor code-opslagplaatsen.'],
   },
   {
     id: 'apple', merk: 'apple', titel: ['Увійти через Apple', 'Aanmelden met Apple'], beschikbaar: false,
-    reden: ['Зараз недоступно: вхід через Apple вмикає власник сайту — ключі Apple, пройдена самоперевірка й прапорець «Вхід через Microsoft, Discord або Apple». Потім прив’яжіть Apple у «Способах входу».',
-      'Nu niet beschikbaar: aanmelden met Apple zet de site-eigenaar aan — Apple-sleutels, geslaagde zelftest en de vlag «Aanmelden met Microsoft, Discord of Apple». Koppel daarna Apple bij «Aanmeldmethoden».'],
+    reden: ['Цей спосіб входу зараз не активований власником простору. Увійдіть через Google або Telegram; після активації Apple можна прив’язати у «Способах входу».',
+      'Deze aanmeldmethode is nu niet geactiveerd door de eigenaar van de ruimte. Meld u aan met Google of Telegram; na activatie koppelt u Apple bij «Aanmeldmethoden».'],
   },
   {
     id: 'microsoft', merk: 'microsoft', titel: ['Увійти через Microsoft', 'Aanmelden met Microsoft'], beschikbaar: false,
-    reden: ['Зараз недоступно: вхід через Microsoft вмикає власник сайту — ключі Microsoft, пройдена самоперевірка й прапорець «Вхід через Microsoft, Discord або Apple». Потім прив’яжіть Microsoft у «Способах входу».',
-      'Nu niet beschikbaar: aanmelden met Microsoft zet de site-eigenaar aan — Microsoft-sleutels, geslaagde zelftest en de vlag «Aanmelden met Microsoft, Discord of Apple». Koppel daarna Microsoft bij «Aanmeldmethoden».'],
+    reden: ['Цей спосіб входу зараз не активований власником простору. Увійдіть через Google або Telegram; після активації Microsoft можна прив’язати у «Способах входу».',
+      'Deze aanmeldmethode is nu niet geactiveerd door de eigenaar van de ruimte. Meld u aan met Google of Telegram; na activatie koppelt u Microsoft bij «Aanmeldmethoden».'],
   },
   {
     id: 'passkey', merk: '',
     // Dezelfde woorden als de bevestigingsstap (src/platform/bevestig-toegang.tsx) en als de eigenaar ze vroeg.
     titel: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de toegangssleutel staat'],
     beschikbaar: false,
-    reden: ['Зараз недоступно: вхід лише ключем доступу вмикає власник сайту (прапорець «Вхід лише ключем доступу»). До того ключ підтверджує важливі дії після входу через Google; додати його можна в «Безпеці».',
-      'Nu niet beschikbaar: aanmelden met alleen een toegangssleutel zet de site-eigenaar aan (vlag «Aanmelden met alleen een toegangssleutel»). Tot dan bevestigt de sleutel belangrijke acties na het aanmelden met Google; toevoegen kan bij «Beveiliging».'],
+    reden: ['Прямий вхід одним лише ключем доступу зараз вимкнено власником простору. Ключ доступу захищає важливі дії після входу; додати його можна в розділі «Безпека».',
+      'Rechtstreeks aanmelden met alleen een toegangssleutel staat nu uit. De toegangssleutel bevestigt belangrijke handelingen na het aanmelden; toevoegen kan bij «Beveiliging».'],
   },
 ]);
 
@@ -70,19 +70,81 @@ export const AANMELD_INGANGEN: readonly AanmeldIngang[] = Object.freeze([
  */
 export default function AanmeldAndereOpties({ lang, onKies, standaardOpen = false, ids, extra = {} }: { lang: Lang; onKies?: (id: AanmeldIngang['id']) => void; standaardOpen?: boolean; ids?: readonly string[]; extra?: Record<string, ReactNode> }) {
   const [open, setOpen] = useState(standaardOpen);
+  const doorKlikOpenRef = useRef(false);
+  const lijstRef = useRef<HTMLUListElement | null>(null);
+  const knopRef = useRef<HTMLButtonElement | null>(null);
   const volgorde: readonly string[] = ids ?? AANMELD_INGANGEN.map((o) => o.id);
   const items = volgorde.filter((id) => extra[id] || AANMELD_INGANGEN.some((o) => o.id === id));
   const basis = `mr-andere-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const t = (p: T2) => (lang === 'uk' ? p[0] : p[1]);
+  useEffect(() => {
+    if (!open || !doorKlikOpenRef.current || typeof window === 'undefined' || typeof document === 'undefined') return;
+    doorKlikOpenRef.current = false;
+    const raf = window.requestAnimationFrame(() => {
+      const lijst = lijstRef.current;
+      if (!lijst) return;
+      const paneelHouder = lijst.closest('.canonical-account-panel') as HTMLElement | null;
+      const houder =
+        paneelHouder ??
+        (lijst.closest('main.canonical-chrome') as HTMLElement | null) ??
+        (lijst.closest('.canonical-workspace') as HTMLElement | null) ??
+        (document.scrollingElement as HTMLElement | null);
+      if (!houder) return;
+      const vensterHoogte = window.innerHeight || houder.clientHeight || 0;
+      let zichtbareOnderkant: number;
+      if (paneelHouder) {
+        const paneelRect = paneelHouder.getBoundingClientRect();
+        zichtbareOnderkant = Math.min(vensterHoogte - 12, paneelRect.bottom - 12);
+      } else {
+        const band = document.querySelector<HTMLElement>('.mr-toestemming');
+        const bandRect = band?.getBoundingClientRect();
+        zichtbareOnderkant =
+          bandRect && bandRect.height > 0 && bandRect.top > 80 && bandRect.top < vensterHoogte
+            ? bandRect.top - 12
+            : vensterHoogte - 16;
+      }
+      const lijstRect = lijst.getBoundingClientRect();
+      const knopRect = knopRef.current?.getBoundingClientRect();
+      const houderBoven = paneelHouder ? Math.max(0, paneelHouder.getBoundingClientRect().top) : 0;
+      const bovenGrens = Math.max(16, (knopRect ? knopRect.top : lijstRect.top) - houderBoven - 16);
+      if (lijstRect.bottom > zichtbareOnderkant) {
+        const nodig = lijstRect.bottom - zichtbareOnderkant;
+        const delta = Math.max(0, Math.min(bovenGrens, nodig));
+        if (delta > 4) {
+          const minderBeweging =
+            typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (typeof houder.scrollBy === 'function') {
+            houder.scrollBy({ top: delta, behavior: minderBeweging ? 'auto' : 'smooth' });
+          } else {
+            houder.scrollTop += delta;
+          }
+        }
+      }
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [open]);
   if (!items.length) return null;
   return (
     <div className='mr-sign-in-andere'>
-      <button type='button' className='mr-sign-in-alternative' aria-expanded={open} aria-controls={`${basis}-lijst`} onClick={() => setOpen((v) => !v)}>
+      <button
+        ref={knopRef}
+        type='button'
+        className='mr-sign-in-alternative'
+        aria-expanded={open}
+        aria-controls={`${basis}-lijst`}
+        onClick={() =>
+          setOpen((v) => {
+            const volgende = !v;
+            doorKlikOpenRef.current = volgende;
+            return volgende;
+          })
+        }
+      >
         <span>{lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}</span>
         <ChevronDown className='mr-sign-in-alt-pijl' aria-hidden='true' />
       </button>
       {open && (
-        <ul id={`${basis}-lijst`} className='mr-sign-in-opties' aria-label={lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}>
+        <ul ref={lijstRef} id={`${basis}-lijst`} className='mr-sign-in-opties' aria-label={lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}>
           {items.map((id) => {
             if (extra[id]) return <li key={id} data-aanmeld-ingang={id}>{extra[id]}</li>;
             const o = AANMELD_INGANGEN.find((x) => x.id === id) as AanmeldIngang;

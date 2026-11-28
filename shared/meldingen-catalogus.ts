@@ -12,7 +12,8 @@
 //     файл, де воно виникає, група налаштувань (shared/melding-typen.ts), рівень (небезпека / рішення / звичайне), схема й заголовок
 //     українською та нідерландською.
 //   • Канали: bel (дзвіночок, сервер), telegram (картка в Telegram), email (лист власнику), extensie (розширення Chrome → центр),
-//     toast (миттєве повідомлення сторінки, emitCanonicalNotice), activiteit (журнал активності в центрі сповіщень).
+//     toast (миттєве повідомлення сторінки, emitCanonicalNotice), activiteit (журнал активності в центрі сповіщень),
+//     pagina (сигнали та смуги стану сторінки, publiceerPaginaSignaal — зокрема стан зв’язку з сервером і хронологія перерв).
 //
 // ПРАВИЛО / REGEL
 //   Нове сповіщення спершу з'являється ТУТ (рядок у MELDINGEN), потім у коді. Сторож tests/eenheid/meldingen-catalogus-20261117.test.ts
@@ -29,7 +30,7 @@
 // Puur (geen React/DOM/DB): hetzelfde register in de browser, op de server, in tests en in de stand.
 import type { MeldingType } from './melding-typen';
 
-export type MeldingKanaal = 'bel' | 'telegram' | 'email' | 'extensie' | 'toast' | 'activiteit';
+export type MeldingKanaal = 'bel' | 'telegram' | 'email' | 'extensie' | 'toast' | 'activiteit' | 'pagina';
 export type MeldingNiveau = 'gevaar' | 'besluit' | 'gewoon';
 export type MeldingSchemaId = `S${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20}`;
 type Tekst = readonly [uk: string, nl: string];
@@ -56,8 +57,8 @@ export const MELDING_SCHEMAS: Readonly<Record<MeldingSchemaId, MeldingSchema>> =
     emblemen: [['Що', 'Wat'], ['Спосіб', 'Methode'], ['Хто', 'Wie'], ['Пристрій', 'Apparaat'], ['Коли', 'Wanneer'], ['Лишилось', 'Over']], knoppen: [['Пізніше', 'Later'], ['Способи входу', 'Aanmeldmethoden']] },
   S3: { naam: ['Ключі й коди', 'Sleutels en codes'], wanneer: ['коди відновлення, коди доступу, сховище ключів', 'herstelcodes, toegangscodes, sleutelkluis'],
     emblemen: [['Що', 'Wat'], ['Скільки', 'Hoeveel'], ['Діє до', 'Geldig tot'], ['Хто', 'Wie'], ['Пристрій', 'Apparaat']], knoppen: [['Пізніше', 'Later'], ['Відкрити', 'Openen']] },
-  S4: { naam: ['Конфлікт облікового запису', 'Conflict van het account'], wanneer: ['інший Google-акаунт з тією ж адресою чи спроба чужим акаунтом', 'ander Google-account met hetzelfde adres'],
-    emblemen: [['Ваш акаунт', 'Uw account'], ['Інший акаунт', 'Ander account'], ['Адреса', 'Adres'], ['Місце', 'Plaats'], ['Коли', 'Wanneer']], knoppen: [['Пізніше', 'Later'], ['Розібратися', 'Uitzoeken']] },
+  S4: { naam: ['Конфлікт облікового запису', 'Conflict van het account'], wanneer: ['інший обліковий запис Google з тією ж адресою чи спроба чужим обліковим записом', 'ander Google-account met hetzelfde adres'],
+    emblemen: [['Ваш обліковий запис', 'Uw account'], ['Інший обліковий запис', 'Ander account'], ['Адреса', 'Adres'], ['Місце', 'Plaats'], ['Коли', 'Wanneer']], knoppen: [['Пізніше', 'Later'], ['Розібратися', 'Uitzoeken']] },
   S5: { naam: ['Запит на доступ', 'Toegangsverzoek'], wanneer: ['хтось просить доступ або рішення щодо запиту', 'iemand vraagt toegang of er is beslist'],
     emblemen: [['Хто', 'Wie'], ['До чого', 'Waartoe'], ['Права', 'Rechten'], ['Термін', 'Termijn'], ['Звідки', 'Vanwaar'], ['Вхід', 'Aanmelding']], knoppen: [['Пізніше', 'Later'], ['Відкрити', 'Openen']] },
   S6: { naam: ['Спільний доступ', 'Delen'], wanneer: ['простір, оселя, посилання, ролі, учасники', 'ruimte, woning, link, rollen, leden'],
@@ -74,7 +75,7 @@ export const MELDING_SCHEMAS: Readonly<Record<MeldingSchemaId, MeldingSchema>> =
     emblemen: [['Агент', 'Agent'], ['До чого', 'Waartoe'], ['Дія', 'Actie'], ['Термін', 'Termijn'], ['Звідки', 'Vanwaar'], ['Ризик', 'Risico']], knoppen: [['Відхилити', 'Weigeren'], ['Дозволити', 'Toestaan']] },
   S12: { naam: ['Доступ ШІ й розширення', 'AI-toegang en extensie'], wanneer: ['підключення ШІ, токени, розширення браузера, MCP', 'AI-koppeling, tokens, browserextensie, MCP'],
     emblemen: [['Агент', 'Agent'], ['Що', 'Wat'], ['Права', 'Rechten'], ['Термін', 'Termijn'], ['Пристрій', 'Apparaat'], ['Простір', 'Ruimte']], knoppen: [['Пізніше', 'Later'], ['Доступ ШІ', 'AI-toegang']] },
-  S13: { naam: ['Сайт і система', 'Site en systeem'], wanneer: ['налаштування, меню, тло, дані акаунта, сервіс закритий', 'instellingen, menu, achtergrond, accountgegevens'],
+  S13: { naam: ['Сайт і система', 'Site en systeem'], wanneer: ['налаштування, меню, тло, дані облікового запису, сервіс закритий', 'instellingen, menu, achtergrond, accountgegevens'],
     emblemen: [['Що', 'Wat'], ['Де', 'Waar'], ['Коли', 'Wanneer'], ['Ваші дані', 'Uw gegevens'], ['Стан', 'Staat']], knoppen: [['Пізніше', 'Later'], ['Відкрити', 'Openen']] },
   S14: { naam: ['Оновлення сайту', 'Update van de site'], wanneer: ['пакет чекає, встановлено, не пройшов, права підготовника', 'pakket wacht, geïnstalleerd, afgewezen, rechten'],
     emblemen: [['Версія', 'Versie'], ['Змін', 'Wijzigingen'], ['Перевірка', 'Controle'], ['Хто', 'Wie'], ['Перерва', 'Onderbreking'], ['Ризик', 'Risico']], knoppen: [['Пізніше', 'Later'], ['Що нового', 'Wat is nieuw']] },
@@ -177,6 +178,8 @@ export const MELDINGEN: readonly MeldingItem[] = [
     titel: ['✅ Telegram прив’язано', '✅ Telegram gekoppeld'] },
   { id: 'bel.telegram-aanmelden-meldingen.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/meldingen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
     titel: ['Подія Telegram-входу', 'Gebeurtenis bij aanmelden met Telegram'] },
+  { id: 'bel.telegram-aanmelden-meldingen.security.hersteld', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/meldingen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S15',
+    titel: ['✅ Telegram: зв’язок відновлено', '✅ Telegram: verbinding hersteld'] },
   { id: 'bel.telegram-aanmelden-ontkoppelen.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/ontkoppelen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
     titel: ['Telegram відв’язано', 'Telegram ontkoppeld'] },
   { id: 'bel.telegram-aanmelden-routes.security', kanaal: 'bel', soort: 'security', bestand: 'backend/telegram-aanmelden/routes.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S2',
@@ -236,9 +239,9 @@ export const MELDINGEN: readonly MeldingItem[] = [
   { id: 'beveiliging.kluis', kanaal: 'bel', soort: 'security', sub: 'kluis', bestand: 'backend/beveiliging-meldingen.ts', type: 'beveiliging', niveau: 'gewoon', schema: 'S3',
     titel: ['Зміна в сховищі ключів', 'Wijziging in de sleutelkluis'] },
   { id: 'bel.index.account-email-conflict', kanaal: 'bel', soort: 'account_email_conflict', bestand: 'backend/index.ts', type: 'beveiliging', niveau: 'gevaar', schema: 'S4',
-    titel: ['Інший Google-акаунт з вашою адресою', 'Ander Google-account met uw adres'] },
+    titel: ['Інший обліковий запис Google з вашою адресою', 'Ander Google-account met uw adres'] },
   { id: 'bel.index.owner-identity-mismatch', kanaal: 'bel', soort: 'owner_identity_mismatch', bestand: 'backend/index.ts', type: 'beveiliging', niveau: 'gevaar', schema: 'S4',
-    titel: ['Спроба входу з іншим Google-акаунтом', 'Aanmeldpoging met een ander Google-account'] },
+    titel: ['Спроба входу з іншим обліковим записом Google', 'Aanmeldpoging met een ander Google-account'] },
   { id: 'bel.index.access-decision', kanaal: 'bel', soort: 'access_decision', bestand: 'backend/index.ts', type: 'toegang', niveau: 'gewoon', schema: 'S5',
     titel: ['Рішення щодо вашого запиту на доступ', 'Beslissing over uw toegangsverzoek'] },
   { id: 'bel.index.access-request', kanaal: 'bel', soort: 'access_request', bestand: 'backend/index.ts', type: 'tech.toegang', niveau: 'besluit', schema: 'S5',
@@ -268,7 +271,7 @@ export const MELDINGEN: readonly MeldingItem[] = [
   { id: 'bel.index.workspace-share-link-revoked', kanaal: 'bel', soort: 'workspace_share_link_revoked', bestand: 'backend/index.ts', type: 'delen', niveau: 'gewoon', schema: 'S6',
     titel: ['Посилання на простір закрито', 'Link naar de ruimte ingetrokken'] },
   { id: 'bel.impersonatie.impersonatie', kanaal: 'bel', soort: 'impersonatie', bestand: 'backend/impersonatie.ts', type: 'inzage', niveau: 'gevaar', schema: 'S7',
-    titel: ['Адміністратор просить подивитися ваш акаунт вашими очима', 'Een beheerder vraagt uw account met uw ogen te bekijken'] },
+    titel: ['Адміністратор просить подивитися ваш обліковий запис вашими очима', 'Een beheerder vraagt uw account met uw ogen te bekijken'] },
   { id: 'bel.impersonatie.impersonatie.beheerder', kanaal: 'bel', soort: 'impersonatie.beheerder', bestand: 'backend/impersonatie.ts', type: 'tech.impersonatie', niveau: 'gewoon', schema: 'S7',
     titel: ['Відповідь користувача на перегляд', 'Antwoord van de gebruiker op inzage'] },
   { id: 'bel.ondersteuning.ondersteuning', kanaal: 'bel', soort: 'ondersteuning', bestand: 'backend/ondersteuning.ts', type: 'inzage', niveau: 'gevaar', schema: 'S7',
@@ -564,7 +567,7 @@ export const MELDINGEN: readonly MeldingItem[] = [
   { id: 'activiteit.connector-activiteit.admin.user.updated', kanaal: 'activiteit', soort: 'owner.admin.user.updated', bestand: 'src/connector-activiteit.ts', type: 'tech.toegang', niveau: 'gewoon', schema: 'S5',
     titel: ['Користувача змінено', 'Gebruiker gewijzigd'] },
   { id: 'activiteit.connector-activiteit.mail.account.disconnected', kanaal: 'activiteit', soort: 'owner.mail.account.disconnected', bestand: 'src/connector-activiteit.ts', type: 'post', niveau: 'gewoon', schema: 'S8',
-    titel: ['Поштовий акаунт відключено', 'Mailaccount ontkoppeld'] },
+    titel: ['Поштовий обліковий запис відключено', 'Mailaccount ontkoppeld'] },
   { id: 'activiteit.connector-activiteit.mail.ai-vertaling.dienst-akkoord', kanaal: 'activiteit', soort: 'owner.mail.ai_vertaling.dienst_akkoord', bestand: 'src/connector-activiteit.ts', type: 'post', niveau: 'gewoon', schema: 'S8',
     titel: ['Змінено згоду на спільний рушій ШІ в пошті', 'Akkoord voor een gedeelde AI-motor in de mail gewijzigd'] },
   { id: 'activiteit.connector-activiteit.mail.ai-vertaling.settings', kanaal: 'activiteit', soort: 'owner.mail.ai_vertaling.settings', bestand: 'src/connector-activiteit.ts', type: 'post', niveau: 'gewoon', schema: 'S8',
@@ -683,6 +686,27 @@ export const MELDINGEN: readonly MeldingItem[] = [
     titel: ['Заплановано зустріч із клієнтом у календарі', 'Afspraak met klant ingepland in agenda'] },
   { id: 'activiteit.connector-activiteit.klantrelatie.hulp', kanaal: 'activiteit', soort: 'owner.klantrelatie.hulp', bestand: 'src/connector-activiteit.ts', type: 'systeem', niveau: 'gewoon', schema: 'S19',
     titel: ['Підготовлено чернетку за досьє клієнта', 'Tekstvoorstel voor klantdossier voorbereid'] },
+  // ── pagina: сигнали та інформаційні смуги сторінок (publiceerPaginaSignaal)
+  { id: 'pagina.verbinding.server-storing', kanaal: 'pagina', soort: 'server_storing', bestand: 'src/CanoniekVerbindingBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S15',
+    titel: ['Перерва зв’язку сторінки з сервером (зафіксовано доказ і хронологію)', 'Verbindingsonderbreking van de pagina met de server (bewijs en tijdlijn vastgelegd)'] },
+  { id: 'pagina.verbinding.netwerk-offline', kanaal: 'pagina', soort: 'netwerk_offline', bestand: 'src/CanoniekVerbindingBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S15',
+    titel: ['Втрата мережевого з’єднання пристрою (зафіксовано доказ і хронологію)', 'Geen netwerkverbinding op het apparaat (bewijs en tijdlijn vastgelegd)'] },
+  { id: 'pagina.verbinding.hersteld', kanaal: 'pagina', soort: 'verbinding_hersteld', bestand: 'src/CanoniekVerbindingBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S15',
+    titel: ['Сервер знову відповідає — зв’язок відновлено', 'De server antwoordt weer — verbinding hersteld'] },
+  { id: 'pagina.nieuwe-versie.info', kanaal: 'pagina', soort: 'info', bestand: 'src/platform/NieuweVersieBand.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S14',
+    titel: ['Сайт оновлено до нової версії', 'De site is bijgewerkt naar een nieuwe versie'] },
+  { id: 'pagina.sleutelkluis.sleutel-dicht', kanaal: 'pagina', soort: 'sleutel_dicht', bestand: 'src/platform/kluis-poort.tsx', type: 'beveiliging', niveau: 'besluit', schema: 'S3',
+    titel: ['Дані зараз зашифровані — потрібне розшифрування ключем на місці', 'Uw gegevens zijn nu versleuteld — ontsleutelen ter plaatse vereist'] },
+  { id: 'pagina.extensie-update.kritiek', kanaal: 'pagina', soort: 'kritiek', bestand: 'src/ExtensieUpdateBand.tsx', type: 'apparaten', niveau: 'besluit', schema: 'S12',
+    titel: ['Розширення оглядача застаріло — потрібне оновлення', 'De browserextensie is verouderd — bijwerken vereist'] },
+  { id: 'pagina.extensie-update.waarschuwing', kanaal: 'pagina', soort: 'waarschuwing', bestand: 'src/ExtensieUpdateBand.tsx', type: 'apparaten', niveau: 'gewoon', schema: 'S12',
+    titel: ['Доступне оновлення розширення оглядача', 'Update van de browserextensie beschikbaar'] },
+  { id: 'pagina.ruimte-strook.info', kanaal: 'pagina', soort: 'info', bestand: 'src/RuimteStrook.tsx', type: 'tech.server', niveau: 'gewoon', schema: 'S13',
+    titel: ['Активна смуга технічного простору даних', 'Actieve strook van de technische gegevensruimte'] },
+  { id: 'pagina.ruimte-strook.waarschuwing', kanaal: 'pagina', soort: 'waarschuwing', bestand: 'src/RuimteStrook.tsx', type: 'tech.server', niveau: 'besluit', schema: 'S13',
+    titel: ['Службу вимкнено або заморожено в технічному просторі', 'Dienst uitgeschakeld of bevroren in de technische ruimte'] },
+  { id: 'pagina.melding-ecosysteem.zandbak', kanaal: 'pagina', soort: '(variabel)', bestand: 'src/identiteit/melding/MeldingEcosysteemPagina.tsx', type: 'systeem', niveau: 'gewoon', schema: 'S13',
+    titel: ['Перевірковий сигнал зі стенда сторінки сповіщень', 'Proefsignaal vanuit de zandbak op de meldingenpagina'] },
 ];
 
 /** Вид описано в shared/melding-soorten.ts, але жоден сервіс його ще не надсилає (запас на майбутнє). Soort bestaat, nog geen afzender. */

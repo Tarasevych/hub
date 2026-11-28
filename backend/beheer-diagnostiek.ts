@@ -574,7 +574,7 @@ export function adminDiagnostiekRoutes(deps: { requireSession: RequireSession })
         return error('DIAGNOSE_FOUT', 500);
       }
     })],
-    // «Сервер (для всіх) / Цей акаунт» (backend/diagnostiek-account.ts): het eigen account of een gekozen gebruiker; alleen metadata.
+    // «Сервер (для всіх) / Цей обліковий запис» (backend/diagnostiek-account.ts): het eigen account of een gekozen gebruiker; alleen metadata.
     'POST /api/owner/admin/diagnostiek/account': [gate(async (auth, b) => {
       const id = b.gebruikerId === undefined || b.gebruikerId === '' ? auth.user.id : b.gebruikerId;
       if (!isAccountId(id)) return error('GEBRUIKER_ONBEKEND', 400);

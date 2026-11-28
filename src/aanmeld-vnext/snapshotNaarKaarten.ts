@@ -41,7 +41,7 @@ export function snapshotNaarKaarten(data: SnapshotLike): MethodeUi[] {
     const staat: MethodeStaat = laadt ? 'loading' : actief ? 'active' : google.configured ? 'ready' : stilleStaat(google.status, 'not-configured');
     uit.push({
       id: 'google', titel: T('Електронна пошта та Google', 'E-mail en Google'),
-      ondertitel: T('Вхід через пов’язаний Google-акаунт', 'Aanmelden met het gekoppelde Google-account'),
+      ondertitel: T('Вхід через пов’язаний обліковий запис Google', 'Aanmelden met het gekoppelde Google-account'),
       icoon: 'google', staat, hoofdActie: staat === 'unknown' ? 'retry' : staat === 'not-configured' ? 'details' : 'manage',
       vermogen: 'sign-in',
       ...(binding?.email ? { accountLabel: binding.email } : {}),

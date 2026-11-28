@@ -75,6 +75,14 @@ export async function main(): Promise<number> {
   check('log heeft tijdstempels', a1.log.length > 5 && a1.log.every((r) => !Number.isNaN(Date.parse(r.t))));
   const a2 = await vereistenBeoordelen(archief({ basis: { versie: '20261109-051901', commit: 'd'.repeat(40) } }), omg());
   check('basis ouder dan geïnstalleerd → fout (BASIS_VEROUDERD vóór de upload)', a2.vereisten.find((x) => x.id === 'basis')?.niveau === 'fout' && a2.ok === false);
+  const omgNaTerugdraai = omg({
+    actief: () => ({ versie: '20261109-050000', commit: 'c'.repeat(40) }),
+    laatsteRootBasis: async () => ({ versie: '20261109-060206', commit: 'a'.repeat(40) }),
+  });
+  const a2TerugOk = await vereistenBeoordelen(archief({ basis: { versie: '20261109-060206', commit: 'a'.repeat(40) } }), omgNaTerugdraai);
+  check('na terugdraai: pakket op hoogste root-basis (laatsteRootBasis) → ok, niet geblokkeerd door oudere actieve versie', a2TerugOk.vereisten.find((x) => x.id === 'basis')?.niveau === 'ok' && a2TerugOk.ok === true && /root-basis 20261109-060206/.test(a2TerugOk.vereisten.find((x) => x.id === 'basis')?.waardeNl || ''));
+  const a2TerugOud = await vereistenBeoordelen(archief({ basis: { versie: '20261109-050000', commit: 'c'.repeat(40) } }), omgNaTerugdraai);
+  check('na terugdraai: pakket op teruggedraaide oudere versie → fout vóór upload (voorkomt BASIS_VEROUDERD bij root)', a2TerugOud.vereisten.find((x) => x.id === 'basis')?.niveau === 'fout' && a2TerugOud.ok === false);
   const a3 = await vereistenBeoordelen(archief({ versie: '20261109-050000' }), omg());
   check('niet nieuwer → fout', a3.vereisten.find((x) => x.id === 'versie')?.niveau === 'fout');
   const a4 = await vereistenBeoordelen(archief(), omg({ vrijeSchijf: async () => 1024 ** 3 }));

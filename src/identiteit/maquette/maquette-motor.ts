@@ -19,7 +19,7 @@ export type MaquetteOpties = {
   bijRender: () => void;
   /** Кнопка смуги сервісів: перехід до справжнього сервісу сайту (hub, ai, mail, cloud, github). */
   bijDienst: (id: string) => void;
-  /** Діалог світлини: відкрити меню облікового запису сайту (інші акаунти, вихід). */
+  /** Діалог світлини: відкрити меню облікового запису сайту (інші облікові записи, вихід). */
   bijAccountMenu: () => void;
   /** IDENTITEIT-015: справжні налаштування сайту для елементів макета (обліковий запис). Echte instellingen van de site. */
   weergave?: MaquetteWeergave;
@@ -77,7 +77,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         choose:"↑ ↓ обрати",go:"↵ перейти",noResults:"Нічого не знайдено. Спробуйте іншу назву.",
         beginning:"Початок",manage:"КЕРУВАННЯ",openSettings:"Відкрити налаштування",
         collapseSection:"Згорнути налаштування",inlineEyebrow:"НАЛАШТУВАННЯ РОЗДІЛУ",inlineHeading:"Керуйте прямо на сторінці",
-        profileName:"Відображуване ім’я",demoOnly:"Лише демонстраційне поле — дані акаунта не змінюються",prepareCopy:"Підготувати приклад",
+        profileName:"Відображуване ім’я",demoOnly:"Лише демонстраційне поле — дані облікового запису не змінюються",prepareCopy:"Підготувати приклад",
         dockInline:"Положення якорів",dockInlineHint:"Лише навігація цієї сторінки; меню сайту не зміниться",
         themeInline:"Атмосфера прототипу",themeInlineHint:"Відразу побачите різницю",
         accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
@@ -85,7 +85,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",
         moved:"Панель якорів переміщено:",demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу.",
         navDemoToast:"Це візуальний макет. Переходи до реальних сервісів тут не підключені.",
-        drawerControls:"Налаштування",drawerPreview:"Вигляд у роботі",drawerDemo:"ДЕМО · Без змін акаунта",drawerDone:"Готово",
+        drawerControls:"Налаштування",drawerPreview:"Вигляд у роботі",drawerDemo:"ДЕМО · Без змін облікового запису",drawerDone:"Готово",
         drawerHint:"Зміни тут діють одразу: це справжні налаштування вашого облікового запису.",
         drawerVisualTitle:"Ось як виглядає відкритий розділ",drawerVisualNote:"Простора панель, зрозумілі групи й миттєвий відгук на дії.",
         previewSample:"Попередній перегляд",previewEnabled:"Увімкнено",previewOptions:"Ваші параметри",
@@ -146,7 +146,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         account:[
           {type:"profile",label:"Профіль",note:"Вкажіть демонстраційне ім’я — справжній профіль не зміниться"},
           {type:"export",label:"Дані й експорт",note:"Оберіть формат прикладу архіву без справжнього завантаження"},
-          {type:"warning",label:"Небезпечні дії",note:"Видалення акаунта — лише в окремій зоні з підтвердженням. У прототипі недоступно."}
+          {type:"warning",label:"Небезпечні дії",note:"Видалення облікового запису — лише в окремій зоні з підтвердженням. У прототипі недоступно."}
         ],
         sessions:[
           {type:"info",label:"Поточний пристрій",note:"Приклад картки: ноутбук · Chrome · Windows"},
@@ -308,7 +308,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const дозволенаСвітлина=(значення)=>{
     if(typeof значення!=="string"||!значення.trim())return "";
     const чисте=значення.trim();
-    // У чинному застосунку власне фото може бути збережене як зображення всередині даних акаунта.
+    // У чинному застосунку власне фото може бути збережене як зображення всередині даних облікового запису.
     if(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(чисте)&&чисте.length<=340000)return чисте;
     if(чисте.length>1024)return "";
     try{
@@ -322,7 +322,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const світлинаПрофілю={
     імʼя:даніВласника?.bevestigd===true&&typeof даніВласника.naam==="string"?даніВласника.naam.trim():"",
     адреса:початковаАдреса,
-    джерело:даніВласника?.bevestigd===true?(початковаАдреса?"акаунт":"безФото"):"немає",
+    джерело:даніВласника?.bevestigd===true?(початковаАдреса?"обліковий":"безФото"):"немає",
     місцеваАдреса:""
   };
 
@@ -334,7 +334,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     світлинаПрофілю.імʼя=новийПрофіль?.bevestigd===true&&typeof новийПрофіль.naam==="string"?новийПрофіль.naam.trim():"";
     const новаАдреса=новийПрофіль?.bevestigd===true?дозволенаСвітлина(новийПрофіль.foto):"";
     світлинаПрофілю.адреса=новаАдреса;
-    світлинаПрофілю.джерело=новийПрофіль?.bevestigd===true?(новаАдреса?"акаунт":"безФото"):"немає";
+    світлинаПрофілю.джерело=новийПрофіль?.bevestigd===true?(новаАдреса?"обліковий":"безФото"):"немає";
     оновитиФотоПрофілю();
   }
   luister(window,"mijn-ruimte:profiel-bijgewerkt",подія=>прийнятиФотоПрофілю(подія.detail));
@@ -370,8 +370,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!рядок||!пояснення)return;
     const мова=моваПрофілю();
     const написи={
-      акаунт:["Світлина отримана з облікового запису","Foto ontvangen uit het account","Зображення надане авторизованим застосунком. Змінити або прибрати світлину можна в розділі «Акаунт».","De aangemelde toepassing heeft de foto aangeleverd. U kunt de foto wijzigen of verwijderen bij «Account»."],
-      безФото:["Світлину профілю ще не встановлено","Nog geen profielfoto ingesteld","Обліковий запис підключено, але власну чи сервісну світлину не передано. Додати її можна в розділі «Акаунт».","Het account is verbonden, maar er is nog geen profielfoto ingesteld. U kunt er een kiezen bij «Account»."],
+      обліковий:["Світлина отримана з облікового запису","Foto ontvangen uit het account","Зображення надане авторизованим застосунком. Змінити або прибрати світлину можна в розділі «Обліковий запис».","De aangemelde toepassing heeft de foto aangeleverd. U kunt de foto wijzigen of verwijderen bij «Account»."],
+      безФото:["Світлину профілю ще не встановлено","Nog geen profielfoto ingesteld","Обліковий запис підключено, але власну чи сервісну світлину не передано. Додати її можна в розділі «Обліковий запис».","Het account is verbonden, maar er is nog geen profielfoto ingesteld. U kunt er een kiezen bij «Account»."],
       попередній:["Місцева світлина лише для перегляду","Lokale foto alleen als voorbeeld","Файл залишається у вашому браузері. Він не надсилається на сервер і не змінює фото облікового запису. Після оновлення сторінки місцевий перегляд зникне.","Het bestand blijft in je browser. Het wordt niet verstuurd en wijzigt je accountfoto niet. Na het vernieuwen verdwijnt dit voorbeeld."],
       немає:["Дані облікового запису ще не підключено","Accountgegevens zijn nog niet verbonden","Коли нове оформлення працюватиме всередині Mijn Ruimte, воно отримає справжню світлину з облікового запису. Зараз можна тимчасово обрати власний файл.","Binnen Mijn Ruimte krijgt dit ontwerp de echte accountfoto. Nu kun je tijdelijk een eigen bestand kiezen."],
       недоступне:["Світлину облікового запису не вдалося відобразити","De accountfoto kon niet worden getoond","Джерело світлини не відкривається. Замість вигаданого зображення показано нейтральну позначку.","De fotobron is niet bereikbaar. In plaats van een verzonnen foto zie je een neutraal symbool."]
@@ -381,8 +381,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     пояснення.textContent=текст[мова==="nl"?3:2];
     byId("profilePhotoEyebrow").textContent=перекладПрофілю("ОБЛІКОВИЙ ЗАПИС","ACCOUNT");
     byId("profilePhotoTitle").textContent=перекладПрофілю("Справжня світлина профілю","Echte profielfoto");
-    byId("profilePhotoPickLabel").textContent=перекладПрофілю("Змінити світлину — розділ «Акаунт»","Foto wijzigen — onderdeel «Account»"); // САЙТ
-    byId("profilePhotoAccount").textContent=перекладПрофілю("Обліковий запис, інші акаунти, вихід","Account, andere accounts, afmelden");
+    byId("profilePhotoPickLabel").textContent=перекладПрофілю("Змінити світлину — розділ «Обліковий запис»","Foto wijzigen — onderdeel «Account»"); // САЙТ
+    byId("profilePhotoAccount").textContent=перекладПрофілю("Обліковий запис, інші облікові записи, вихід","Account, andere accounts, afmelden");
     root.querySelector("[data-close-profile-photo]")?.setAttribute("aria-label",перекладПрофілю("Закрити","Sluiten"));
   }
 
@@ -393,7 +393,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       if(!діалог.open)діалог.showModal();
     }
     if(подія.target.closest("[data-close-profile-photo]")||подія.target===діалог)діалог.close();
-    // САЙТ: дії діалогу світлини — справжній розділ «Акаунт» або меню облікового запису сайту.
+    // САЙТ: дії діалогу світлини — справжній розділ «Обліковий запис» або меню облікового запису сайту.
     const actie=подія.target.closest("[data-echt-actie]")?.dataset.echtActie;
     if(actie){діалог.close();if(actie==="account-foto")gaNaar("account",true);else if(actie==="account-menu")opties.bijAccountMenu();}
   });
@@ -410,7 +410,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     світлинаПрофілю.місцеваАдреса=URL.createObjectURL(файл);
     світлинаПрофілю.адреса=світлинаПрофілю.місцеваАдреса;
     світлинаПрофілю.джерело="попередній";
-    повідомлення.textContent=перекладПрофілю("Відображено лише в макеті. Справжнє фото акаунта не змінено.","Alleen in het ontwerp getoond. De echte accountfoto blijft ongewijzigd.");
+    повідомлення.textContent=перекладПрофілю("Відображено лише в макеті. Справжнє фото облікового запису не змінено.","Alleen in het ontwerp getoond. De echte accountfoto blijft ongewijzigd.");
     оновитиФотоПрофілю();
     подія.target.value="";
   });
@@ -529,7 +529,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
 
 
   // ───────── реєстр.js ─────────
-  // Повна проєктна карта. Жоден із цих елементів не звертається до справжнього акаунта.
+  // Повна проєктна карта. Жоден із цих елементів не звертається до справжнього облікового запису.
   const рядок=(uk,nl,тип="відомості",варіанти=[],стан=null,перехід=null,пояснення=null)=>({uk,nl,тип,варіанти,стан,перехід,пояснення});
   const група=(id,uk,nl,поясненняUk,поясненняNl,стан,рядки)=>({id,uk,nl,поясненняUk,поясненняNl,стан,рядки});
 
@@ -732,7 +732,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ])
     ],
     sessions:[
-      група("цей-пристрій","Збереження акаунта на пристрої","Account op dit apparaat bewaren","Чинний вибір для наступних входів.","Bestaande keuze voor volgende aanmeldingen.","наявне",[
+      група("цей-пристрій","Збереження облікового запису на пристрої","Account op dit apparaat bewaren","Чинний вибір для наступних входів.","Bestaande keuze voor volgende aanmeldingen.","наявне",[
         рядок("Зберегти обліковий запис","Account bewaren","перемикач"),
         рядок("Наслідки для місцевих даних після виходу","Gevolgen voor lokale gegevens na afmelden","відомості")
       ]),
@@ -1520,7 +1520,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       description:"Прозорі права доступу, чіткі запрошення й повне розуміння того, хто що бачить.",
       accent:"blue", art:"sharing",
       details:[
-        {icon:"♙",label:"Доступ за акаунтом",note:"Запрошення та керовані ролі"},
+        {icon:"♙",label:"Доступ за обліковим записом",note:"Запрошення та керовані ролі"},
         {icon:"↗",label:"Доступ за посиланням",note:"Окремі параметри та обмеження"}
       ]
     },
@@ -1540,7 +1540,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       description:"Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
       accent:"cyan", art:"account",
       details:[
-        {icon:"▧",label:"Профіль",note:"Основні відомості вашого акаунта"},
+        {icon:"▧",label:"Профіль",note:"Основні відомості вашого облікового запису"},
         {icon:"⇩",label:"Дані й експорт",note:"Перегляд та керування вашими даними"},
         {icon:"!",label:"Небезпечні дії",note:"Відокремлена зона з підтвердженням"}
       ]

@@ -243,7 +243,7 @@ function Wachtrij({ ctx }: { ctx: WidgetCtx }) {
   const rijen: Array<{ n: number; uk: string; nl: string; href: string }> = [
     { n: o.wachtrij.toegang, uk: 'Запити на доступ', nl: 'Toegangsaanvragen', href: padVan('access') },
     { n: o.wachtrij.uitrol, uk: 'Оновлення чекають схвалення', nl: 'Updates wachten op goedkeuring', href: padVan('updates') },
-    { n: o.wachtrij.gebruikers, uk: 'Нові акаунти без схвалення', nl: 'Nieuwe accounts zonder goedkeuring', href: padVan('access') },
+    { n: o.wachtrij.gebruikers, uk: 'Нові облікові записи без схвалення', nl: 'Nieuwe accounts zonder goedkeuring', href: padVan('access') },
   ];
   const totaal = rijen.reduce((a, r) => a + r.n, 0);
   if (!totaal) return <Leeg><CheckCircle2 className="ov-ok-ic" aria-hidden="true" /> {tr(lang, 'Нічого не чекає на ваше рішення.', 'Er wacht niets op uw beslissing.')}</Leeg>;

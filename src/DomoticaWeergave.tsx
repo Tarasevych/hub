@@ -95,6 +95,18 @@ function SmartHomeOud({ lang }: { lang: 'uk' | 'nl' }) {
 
   return (
     <div className='mq-schil domotica-maquette-wikkel' data-mq-dienst='huis'>
+      <MaquetteAnkerRail
+        lang={lang}
+        opslagSleutel='domotica-anker'
+        titel={t('Розділи оселі', 'Huisonderdelen')}
+        ondertitel={t('Перетягніть до зручного краю', 'Sleep naar een gewenste rand')}
+        items={ankerItems}
+        actief={actieveSectie}
+        onKies={(id) => {
+          setActieveSectie(id);
+          document.getElementById('domotica-sectie-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+      />
       <MaquetteHeld
         id='domotica-maquette-held'
         dienst='huis'
@@ -173,18 +185,6 @@ function SmartHomeOud({ lang }: { lang: 'uk' | 'nl' }) {
           </div>
         </section>
       </main>
-      <MaquetteAnkerRail
-        lang={lang}
-        opslagSleutel='domotica-anker'
-        titel={t('Розділи оселі', 'Huisonderdelen')}
-        ondertitel={t('Перетягніть до зручного краю', 'Sleep naar een gewenste rand')}
-        items={ankerItems}
-        actief={actieveSectie}
-        onKies={(id) => {
-          setActieveSectie(id);
-          document.getElementById('domotica-sectie-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }}
-      />
     </div>
   );
 }

@@ -17,7 +17,7 @@ import { SERVICE_HOSTS } from '../../backend/deployment-identiteit';
 import { mailNep, mailNepUit, wachtOpLijst, meetLijst, meetMenu, meetPostvakken } from './hulp/stand-mail-nep';
 import { paneelVol, fabBel } from './hulp/stand-meldingen'; // 21.10 агент A: панель сповіщень + FAB/дзвоник
 import { plaatsingDok, plaatsingLagen, plaatsingNa, plaatsingNu } from './hulp/stand-plaatsing'; // 25.10: zwevende knoppen — scrollen, adresbalk, «Вгору», veeg op de bel, knijpzoom, pc → telefoon, herladen
-import { mailAccountsNa, mailAccountsRoutes, type AccCtx } from './hulp/stand-mail-accounts'; // 21.10 агент D: «Поштові акаунти» з підключеними акаунтами
+import { mailAccountsNa, mailAccountsRoutes, type AccCtx } from './hulp/stand-mail-accounts'; // 21.10 агент D: «Поштові облікові записи» з підключеними обліковими записами
 import { opstelStappen } from './hulp/stand-opstellen'; // 21.10 агент B: вікно «Новий лист» (меню, кнопки, шаблони, Cc/Bcc, відновлення)
 import { toegankelijkStappen } from './hulp/stand-toegankelijk'; // 21.10 рецензент доступності: клавіатура + axe WCAG 2.2 AA (a11y-*)
 import { dokStappen } from './hulp/stand-dok'; // 21.10 агент вікон: док згорнутих вікон vs вікно згоди v2 (venster-dok-*)
@@ -163,7 +163,7 @@ export async function main(): Promise<number> {
       // абзац у листі», vertaalstrook en «Порівняти», contextpaneel (punten, «Порівняти версії» met echte PDF's), antwoordregel — en axe
       ...(['volledig', 'rechts'] as const).map((v) => S(`mail-lezer-ai-${v}`, `${H('mail')}/postvak-in`, { voor: (p) => lezerAiNep(p, v), na: lezerAiStap({ uit: UIT, zeg, meting, axe: axeBron }, v) })),
       ...(['rechts', 'boven', 'onder'] as const).map((d) => S(`mail-lezer-dock-${d}`, `${H('mail')}/postvak-in`, { voor: (p) => lezerNep(p, 'volledig'), na: lezerDock({ uit: UIT, zeg, meting }, `${H('identity')}/menu`, `${H('mail')}/postvak-in`, d) })),
-      // 21.10 (агент C): змодельована пошта (18 листів: непрочитані, довгі імена/адреси, мініатюри вкладень, 2 акаунти з фото) — список,
+      // 21.10 (агент C): змодельована пошта (18 листів: непрочитані, довгі імена/адреси, мініатюри вкладень, 2 облікові записи з фото) — список,
       // меню ⋮ першого листа (elementFromPoint у центрі кожного пункту = сам пункт) і «Поштові скриньки» (аватари: ширина = висота).
       S('mail-agc-lijst', `${H('mail')}/postvak-in`, { voor: mailNep, na: async (p) => { await wachtOpLijst(p); const m = await meetLijst(p); const slecht = [...m.filter((x) => x.puntOverMeer).map((_, i) => `punt-onder-meer#${i}`), ...m.filter((x) => x.veeg.some((v) => !v.binnen)).map((x) => `veegtekst-buiten: ${x.veeg.filter((v) => !v.binnen).map((v) => `${v.tekst} ${v.tekstBreed}>${v.knop}`).join(',')}`), ...m.filter((x) => x.adres && x.adres.zichtbaar > 0 && x.adres.zelfdeRegel && x.naam && x.naam.nodig > x.naam.zichtbaar + 1 && x.adres.zichtbaar > 40).map((x) => `naam-afgeknipt-bij-adres: ${x.naam!.tekst} ${x.naam!.zichtbaar}/${x.naam!.nodig}`)]; meting('mail-agc-lijst', p, [...new Set(slecht)].join('; '), JSON.stringify(m)); } }),
       S('mail-agc-lijst-minimum', `${H('mail')}/postvak-in`, { voor: (p) => mailNep(p, { dichtheid: 'minimum' }), na: async (p) => { await wachtOpLijst(p); const m = await meetLijst(p); const slecht = [...m.filter((x) => x.puntOverMeer).map((_, i) => `punt-onder-meer#${i}`), ...m.filter((x) => x.veeg.some((v) => !v.binnen)).map((x) => `veegtekst-buiten: ${x.veeg.filter((v) => !v.binnen).map((v) => `${v.tekst} ${v.tekstBreed}>${v.knop}`).join(',')}`), ...m.filter((x) => x.adres && x.adres.zichtbaar > 0 && x.adres.zelfdeRegel && x.naam && x.naam.nodig > x.naam.zichtbaar + 1 && x.adres.zichtbaar > 40).map((x) => `naam-afgeknipt-bij-adres: ${x.naam!.tekst} ${x.naam!.zichtbaar}/${x.naam!.nodig}`)]; meting('mail-agc-lijst-minimum', p, [...new Set(slecht)].join('; '), JSON.stringify(m)); } }),
@@ -178,8 +178,8 @@ export async function main(): Promise<number> {
       S('id-accountmenu', `${H('identity')}/account`, { na: accountMenu }),
       // mail
       ...['postvak-in', 'met-ster', 'verzonden', 'concepten', 'archief', 'etiketten', 'accounts', 'prive', 'alles', 'spam', 'prullenbak', 'abonnementen', 'gepland', 'instellingen', 'contacten'].map((t) => S(`mail-${t}`, `${H('mail')}/${t}`)),
-      // 21.10 (агент D): «Поштові акаунти» з ПІДКЛЮЧЕНИМИ акаунтами (2× Gmail, Outlook «потрібен повторний вхід», Ukr.net IMAP — справжні рядки в базі):
-      // «Відключити» в кожному рядку, без окремої секції Microsoft; вікно Gmail для ДОДАТКОВОГО акаунта → nep-Google з prompt=…select_account; вікно Outlook.
+      // 21.10 (агент D): «Поштові облікові записи» з ПІДКЛЮЧЕНИМИ обліковими записами (2× Gmail, Outlook «потрібен повторний вхід», Ukr.net IMAP — справжні рядки в базі):
+      // «Відключити» в кожному рядку, без окремої секції Microsoft; вікно Gmail для ДОДАТКОВОГО облікового запису → nep-Google з prompt=…select_account; вікно Outlook.
       S('mail-accounts-gekoppeld', `${H('mail')}/accounts`, { voor: (p) => mailAccountsRoutes(p, accCtx), na: accNa.gekoppeld }),
       S('mail-gmail-additional', `${H('mail')}/accounts`, { voor: (p) => mailAccountsRoutes(p, accCtx), na: accNa.gmailExtra }),
       S('mail-outlook-venster', `${H('mail')}/accounts`, { voor: (p) => mailAccountsRoutes(p, accCtx), na: accNa.outlook }),
@@ -187,7 +187,7 @@ export async function main(): Promise<number> {
       ...[0, 1, 2, 3, 4, 5].map((i) => S(`mail-koppelvenster-${i}`, `${H('mail')}/accounts`, { na: async (p) => { const k = p.locator('[data-mail-provider-knop="ja"]').nth(i); if (!(await k.count())) throw new Error(`SKIP geen aanbieder #${i}`); const id = await k.getAttribute('data-mail-provider'); await k.click({ timeout: 5000 }); await p.waitForTimeout(900); zeg(`   mail-koppelvenster-${i} = ${id}`); } })),
       // mail: вікно «Новий лист» (агент B, 21.10): mail-opstellen-*
       ...opstelStappen({ mailUrl: `${H('mail')}/postvak-in`, uit: UIT, check, zeg }),
-      // 21.10 (рецензент доступності): клавіатурні сценарії + axe (wcag2a/aa, 21a/aa, 22aa) для панелі сповіщень, FAB/дзвоника, «Новий лист», «⋮» рядка, скриньок, «Поштові акаунти»
+      // 21.10 (рецензент доступності): клавіатурні сценарії + axe (wcag2a/aa, 21a/aa, 22aa) для панелі сповіщень, FAB/дзвоника, «Новий лист», «⋮» рядка, скриньок, «Поштові облікові записи»
       ...toegankelijkStappen({ mailUrl: `${H('mail')}/postvak-in`, accountsUrl: `${H('mail')}/accounts`, uid: () => uid, uit: UIT, axe: axeBron, acc: accCtx, zeg, meting }),
       // 21.10 (агент вікон): док згорнутих вікон не лежить над вікном згоди v2 (elementFromPoint кнопок), перетягування/збереження, меню доку
       ...dokStappen({ mailUrl: `${H('mail')}/postvak-in`, consentUrl: () => consentUrl('claude', 'Claude'), uit: UIT, zeg, meting, voorMail: mailNep }),

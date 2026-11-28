@@ -9,7 +9,16 @@ import { abonneerZijbalk, zetZijbalk, zijbalkVoorkeuren } from '../../zijbalk-vo
 import type { PaginaSignaal } from '../../canoniek-meldingen';
 import type { CanonicalServerNotification } from '../../canoniek-meldingen';
 import type { ActivityEvent } from '../../connector-activiteit';
+import { vertaalAanmeldMethode } from '../../../shared/meldingen-ecosysteem/tolk';
 import type { BewaardeRij } from '../lokale-rijen';
+import { vanTellers, type MenuMelding, type Tellers } from '../../../shared/menu-meldingen';
+import {
+  abonneerVerbindingIncidenten,
+  incidentNaarEcosysteemGebeurtenis,
+  leesVerbindingIncidenten,
+  synchroniseerVerbindingBewijzenNaarServer,
+  type VerbindingIncidentBewijs,
+} from '../../platform/verbinding-bewijs-opslag';
 import {
   interneAiAnalyse,
   interpreteerGebeurtenis,
@@ -29,6 +38,8 @@ const PROFIEL_SLEUTEL = (scope: string, ruimte: RuimteType) =>
   `tsv:melding-ecosysteem:profiel:v1:${scope || 'anon'}:${ruimte}`;
 const STATUS_OVERRIDES_SLEUTEL = (scope: string, ruimte: RuimteType) =>
   `tsv:melding-ecosysteem:status:v1:${scope || 'anon'}:${ruimte}`;
+const ONTVANGST_SLEUTEL = (scope: string, ruimte: RuimteType) =>
+  `tsv:melding-ecosysteem:ontvangst:v1:${scope || 'anon'}:${ruimte}`;
 const STAND_SLEUTEL = 'tsv:melding-ecosysteem:stand:v1';
 
 const profielLuisteraars = new Set<(info: { scope: string; ruimte: RuimteType; profiel: MeldingEcosysteemProfiel }) => void>();
@@ -191,6 +202,124 @@ function schrijfLokaleStatusOverride(
   }
 }
 
+export type OntvangstOverrideWaarde = {
+  afgeleverdOp?: number | null;
+  gelezenOp?: number | null;
+  op: number;
+};
+
+export function leesLokaleOntvangstOverrides(scope: string, ruimte: RuimteType): Record<string, OntvangstOverrideWaarde> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ONTVANGST_SLEUTEL(scope, ruimte)) || '{}');
+    return raw && typeof raw === 'object' ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+function schrijfLokaleOntvangstOverrides(
+  scope: string,
+  ruimte: RuimteType,
+  opties: { afgeleverd?: string[]; gelezen?: string[]; wisGelezen?: string[] },
+) {
+  try {
+    const cur = leesLokaleOntvangstOverrides(scope, ruimte);
+    const nu = Date.now();
+    for (const k of opties.afgeleverd || []) {
+      if (!k) continue;
+      const best = cur[k];
+      cur[k] = {
+        ...best,
+        afgeleverdOp: best?.afgeleverdOp || nu,
+        op: nu,
+      };
+    }
+    for (const k of opties.gelezen || []) {
+      if (!k) continue;
+      const best = cur[k];
+      cur[k] = {
+        afgeleverdOp: best?.afgeleverdOp || nu,
+        gelezenOp: best?.gelezenOp || nu,
+        op: nu,
+      };
+    }
+    for (const k of opties.wisGelezen || []) {
+      if (!k) continue;
+      const best = cur[k];
+      cur[k] = {
+        afgeleverdOp: best?.afgeleverdOp || nu,
+        gelezenOp: null,
+        op: nu,
+      };
+    }
+    const entries = Object.entries(cur).sort((a, b) => b[1].op - a[1].op).slice(0, 500);
+    localStorage.setItem(ONTVANGST_SLEUTEL(scope, ruimte), JSON.stringify(Object.fromEntries(entries)));
+  } catch {
+    /* безпечний ігнор */
+  }
+}
+
+export type AfleveringOverzichtData = {
+  samenvatting: {
+    totaal: number;
+    wachtOpAflevering: number;
+    afgeleverdOngelezen: number;
+    gelezen: number;
+    autoGearchiveerdOngelezen: number;
+  };
+  perGebruiker: Array<{
+    userId: string;
+    label: string;
+    totaal: number;
+    wachtOpAflevering: number;
+    afgeleverdOngelezen: number;
+    gelezen: number;
+    autoGearchiveerdOngelezen: number;
+    laatsteAfleveringOp: number | null;
+  }>;
+  items: Array<{
+    id: string;
+    userId: string;
+    gebruikerLabel: string;
+    ruimte: RuimteType;
+    kanaal: string;
+    subdomein: string;
+    status: MeldingGebeurtenisStatus;
+    ontvangstStaat: 'wacht' | 'afgeleverd' | 'gelezen';
+    autoGearchiveerd: boolean;
+    titel: string;
+    aangemaaktOp: number;
+    afgeleverdOp: number | null;
+    gelezenOp: number | null;
+  }>;
+};
+
+export async function haalAfleveringOverzichtVanServer(opties: {
+  ruimte?: RuimteType | 'alle';
+  alleenOngelezen?: boolean;
+}): Promise<AfleveringOverzichtData | null> {
+  try {
+    const r = await api.post(
+      '/api/owner/meldingen/ecosysteem/aflevering-overzicht',
+      meldingLichaam({
+        ...(opties.ruimte && opties.ruimte !== 'alle' ? { ruimte: opties.ruimte } : {}),
+        alleenOngelezen: Boolean(opties.alleenOngelezen),
+        limiet: 40,
+      }),
+    );
+    if (r.data?.ok && r.data.samenvatting) {
+      return {
+        samenvatting: r.data.samenvatting,
+        perGebruiker: Array.isArray(r.data.perGebruiker) ? r.data.perGebruiker : [],
+        items: Array.isArray(r.data.items) ? r.data.items : [],
+      };
+    }
+  } catch {
+    /* доступно лише адміністраторам технічного простору */
+  }
+  return null;
+}
+
 export async function haalProfielVanServer(scope: string, ruimte: RuimteType): Promise<MeldingEcosysteemProfiel> {
   if (!scope || scope === 'anon') return leesLokaalProfiel(scope, ruimte);
   try {
@@ -318,19 +447,29 @@ export type UniformeStroomInvoer = {
   lang: 'uk' | 'nl';
   ruimte: RuimteType;
   subdomeinNu: MeldingSubdomein;
+  profiel?: MeldingEcosysteemProfiel;
   serverGebeurtenissen: MeldingEcosysteemGebeurtenis[];
   paginaSignalen: PaginaSignaal[];
+  verbindingIncidenten?: VerbindingIncidentBewijs[];
   serverItems: CanonicalServerNotification[];
   techItems: CanonicalServerNotification[];
   localRows: BewaardeRij[];
   activityEvents: ActivityEvent[];
   activityRead: Set<string>;
   overrides?: Record<string, { status: MeldingGebeurtenisStatus; op: number; uitgesteldTot?: number | null }>;
+  ontvangstOverrides?: Record<string, OntvangstOverrideWaarde>;
   aiCache?: Record<string, MeldingAiSamenvatting>;
+  tellers?: Tellers;
+  weg?: Record<string, number>;
+  tellerStaat?: { tellers?: Tellers; weg?: Record<string, number>; scope?: string };
+  menuTellers?: MenuMelding[];
   tekstVanServer?: (s: CanonicalServerNotification) => { title: string; message: string };
   titelVanActiviteit?: (ev: ActivityEvent) => string;
   contextVanActiviteit?: (ev: ActivityEvent) => string;
 };
+
+const APPARAAT_LINK_UUID_RE = /[?&]apparaat=([0-9a-f-]{36})/i;
+const ZUIVER_UUID_RE = /^[0-9a-f-]{36}$/i;
 
 const PRIO_RANG: Record<MeldingEcosysteemGebeurtenis['prioriteit'], number> = {
   kritiek: 0,
@@ -347,7 +486,7 @@ const STATUS_RANG: Record<MeldingGebeurtenisStatus, number> = {
   archief: 4,
 };
 
-/** Об’єднує всі 5 джерел подій сайту, сторінок, сервера та агентів в єдиний дедуплікований потік без дублів. */
+/** Об’єднує всі джерела подій сайту, сторінок, доказів зв’язку, сервера та агентів у єдиний узгоджений потік без подвоєння. */
 export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosysteemGebeurtenis[] {
   const nl = invoer.lang === 'nl';
   const result = new Map<string, MeldingEcosysteemGebeurtenis>();
@@ -357,17 +496,35 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     const bestaand = result.get(sleutel);
     const ruwOv = invoer.overrides?.[g.id] || (g.externeSleutel ? invoer.overrides?.[g.externeSleutel] : undefined);
     const ov = ruwOv && g.bijgewerktOp <= ruwOv.op + 1500 ? ruwOv : undefined;
+    const ontOv = invoer.ontvangstOverrides?.[g.id] || (g.externeSleutel ? invoer.ontvangstOverrides?.[g.externeSleutel] : undefined);
     const ai = g.aiSamenvatting || invoer.aiCache?.[g.id] || (g.externeSleutel ? invoer.aiCache?.[g.externeSleutel] : undefined) || null;
-    let status = ov?.status ?? g.status;
+    const kanaalGefilterd = Boolean(
+      invoer.profiel &&
+        g.kanaal !== 'beveiliging' &&
+        g.prioriteit !== 'kritiek' &&
+        invoer.profiel.kanalen[g.kanaal]?.actief === false,
+    );
+    const autoGearchiveerd = Boolean(g.autoGearchiveerd || kanaalGefilterd);
+    let status = ov?.status ?? (autoGearchiveerd && g.status === 'nieuw' ? 'archief' : g.status);
     let uitgesteldTot = ov ? (ov.uitgesteldTot ?? null) : g.uitgesteldTot;
     if (status === 'uitgesteld' && uitgesteldTot && uitgesteldTot <= Date.now()) {
       status = 'nieuw';
       uitgesteldTot = null;
     }
+    const afgeleverdOp = ontOv?.afgeleverdOp ?? g.afgeleverdOp ?? (status === 'gelezen' ? g.aangemaaktOp : null);
+    const gelezenOp =
+      status === 'nieuw' && ov?.status === 'nieuw'
+        ? null
+        : ontOv?.gelezenOp !== undefined
+          ? ontOv.gelezenOp
+          : (g.gelezenOp ?? (status === 'gelezen' ? g.bijgewerktOp : null));
     const verrijkt: MeldingEcosysteemGebeurtenis = {
       ...g,
       status,
       uitgesteldTot,
+      afgeleverdOp,
+      gelezenOp,
+      autoGearchiveerd,
       aiSamenvatting: ai,
     };
     if (!bestaand || verrijkt.bijgewerktOp >= bestaand.bijgewerktOp) {
@@ -375,15 +532,45 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     }
   };
 
-  // 1. Події з серверної таблиці екосистеми (ПК-агент, розширення, ШІ, пошта, сховище, веб)
+  // 1. Події з серверної таблиці екосистеми (ПК-агент, розширення, ШІ, пошта, сховище, синхронізовані докази зв’язку)
   for (const g of invoer.serverGebeurtenissen) {
     if (g.ruimte !== invoer.ruimte) continue;
     voegToe(g);
   }
 
+  // 1б. Тривалий реєстр доказів і хронології перерв зв’язку з сервером (залишається в історії після відновлення)
+  const incidentenLijst = invoer.verbindingIncidenten ?? leesVerbindingIncidenten();
+  const bandVerbindingSig = invoer.paginaSignalen.find((s) => s.actief && s.id === 'band:verbinding');
+  let heeftVerbindingBewijsInStroom = false;
+  for (const inc of incidentenLijst) {
+    const geb = incidentNaarEcosysteemGebeurtenis(inc, invoer.lang);
+    if (inc.ruimte !== invoer.ruimte && geb.subdomein !== invoer.subdomeinNu) continue;
+    heeftVerbindingBewijsInStroom = true;
+    const liveActies =
+      inc.hersteldOp === null && bandVerbindingSig?.acties?.length
+        ? [
+            ...bandVerbindingSig.acties.map((a) => ({
+              id: `ps:${bandVerbindingSig.id}:${a.id}`,
+              labelUk: a.labelUk,
+              labelNl: a.labelNl,
+              soort: (a.href ? 'navigeer' : 'api') as 'navigeer' | 'api',
+              ...(a.href ? { href: a.href } : {}),
+            })),
+            ...geb.acties.filter((a) => a.soort === 'bijlage' || a.soort === 'ai'),
+          ]
+        : geb.acties;
+    voegToe({
+      ...geb,
+      ruimte: invoer.ruimte,
+      afgeleverdOp: geb.afgeleverdOp ?? inc.laatsteTijd,
+      acties: liveActies,
+    });
+  }
+
   // 2. Живі сигнали поточних сторінок та інформаційних смуг (мережа, оновлення сайту/розширення, ключ-сейф, простори)
   for (const sig of invoer.paginaSignalen) {
     if (!sig.actief) continue;
+    if (sig.id === 'band:verbinding' && heeftVerbindingBewijsInStroom) continue;
     const geb = interpreteerGebeurtenis(
       {
         id: sig.id,
@@ -412,7 +599,7 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
       },
       invoer.ruimte,
     );
-    voegToe(geb);
+    voegToe({ ...geb, afgeleverdOp: geb.afgeleverdOp ?? sig.bijgewerktOp });
   }
 
   // 3. Серверні сповіщення (site_notifications + techItems)
@@ -420,9 +607,24 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     ? [...invoer.techItems, ...invoer.serverItems.filter((s) => s.ruimte === 'technisch')]
     : invoer.serverItems.filter((s) => (s.ruimte ?? 'prive') === 'prive');
 
+  const serverNieuwApparaatLijst: Array<{
+    sleutel: string;
+    apparaatId: string;
+    aangemaaktOp: number;
+    tekstLaag: string;
+  }> = [];
+
   for (const s of serverSamengesteld) {
     const sl = `site_notif:${s.id}`;
     const tekst = invoer.tekstVanServer ? invoer.tekstVanServer(s) : { title: s.title, message: s.message };
+    const uitLinkUuid = APPARAAT_LINK_UUID_RE.exec(String(s.link || ''))?.[1] || '';
+    const isNieuwApparaatMelding =
+      Boolean(uitLinkUuid) ||
+      (s.kind === 'security_warning' &&
+        ZUIVER_UUID_RE.test(s.id) &&
+        /(новий вхід|nieuwe aanmelding)/i.test(`${tekst.title} ${tekst.message}`));
+    const apparaatUuid = uitLinkUuid || (isNieuwApparaatMelding && ZUIVER_UUID_RE.test(s.id) ? s.id : '');
+
     const geb = interpreteerGebeurtenis(
       {
         id: `s:${s.id}`,
@@ -435,42 +637,111 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
         link: s.link,
         aangemaaktOp: s.createdAt,
         gelezen: Boolean(s.read),
-        meta: { serverId: s.id },
+        meta: {
+          serverId: s.id,
+          ...(apparaatUuid ? { apparaatId: apparaatUuid } : {}),
+        },
       },
       invoer.ruimte,
     );
-    voegToe(geb);
+    voegToe({ ...geb, afgeleverdOp: geb.afgeleverdOp ?? s.createdAt });
+
+    if (isNieuwApparaatMelding) {
+      serverNieuwApparaatLijst.push({
+        sleutel: sl,
+        apparaatId: apparaatUuid,
+        aangemaaktOp: Number(s.createdAt) || 0,
+        tekstLaag: `${tekst.title} ${tekst.message}`.toLowerCase(),
+      });
+    }
   }
 
   // 4. Активності підключень, агентів і ШІ (activity.events)
   for (const ev of invoer.activityEvents) {
-    if (/^owner\.meldingen\.ecosysteem\.(actie|profiel)$/.test(String(ev.type || ''))) continue;
+    if (/^owner\.meldingen\.ecosysteem\.(actie|profiel|ontvangst|aflevering_overzicht)$/.test(String(ev.type || ''))) continue;
+    const ts = ev.finishedAt || ev.createdAt;
+
+    // MELD-6: якщо вхід із нового пристрою вже представлений розгорнутою карткою site_notifications, об’єднуємо їх без дублювання
+    if (ev.type === 'owner.apparaat.nieuw' && serverNieuwApparaatLijst.length > 0) {
+      const evSub = String(ev.subject || '').trim().toLowerCase();
+      const gekoppeldSrv = serverNieuwApparaatLijst.find((srv) => {
+        if (ev.apparaatId && srv.apparaatId && ev.apparaatId.toLowerCase() === srv.apparaatId.toLowerCase()) {
+          return true;
+        }
+        const binnenVenster = Math.abs(ts - srv.aangemaaktOp) <= 120_000;
+        const toestelPast = !evSub || srv.tekstLaag.includes(evSub);
+        return binnenVenster && toestelPast;
+      });
+      if (gekoppeldSrv) {
+        const bestaandSrv = result.get(gekoppeldSrv.sleutel);
+        if (bestaandSrv) {
+          result.set(gekoppeldSrv.sleutel, {
+            ...bestaandSrv,
+            meta: {
+              ...bestaandSrv.meta,
+              activiteitId: ev.id,
+              actieCode: ev.type,
+              ...(ev.apparaatId && !bestaandSrv.meta?.apparaatId ? { apparaatId: ev.apparaatId } : {}),
+            },
+          });
+          continue;
+        }
+      }
+    }
+
     const titel = invoer.titelVanActiviteit ? invoer.titelVanActiviteit(ev) : (ev.tool || ev.doel || ev.subject || ev.type || ev.kind);
-    const ctx = invoer.contextVanActiviteit ? invoer.contextVanActiviteit(ev) : (ev.subject || '');
+    const vertaalMethodeStukken = (bronTekst: string): string =>
+      bronTekst
+        .split(/\s*·\s*/)
+        .map((stuk) => vertaalAanmeldMethode(stuk, invoer.lang) || stuk.trim())
+        .filter(Boolean)
+        .join(' · ');
+    const methodeLabel = vertaalAanmeldMethode(ev.methode, invoer.lang);
+    const basisSubjOfDoel = vertaalMethodeStukken(ev.doel || ev.subject || '');
+    const fallbackCtx = [methodeLabel, vertaalMethodeStukken(ev.subject || '')]
+      .filter((x, idx, arr) => Boolean(x) && (idx === 0 || x.toLowerCase() !== arr[0].toLowerCase()))
+      .join(' · ');
+    const ctx = invoer.contextVanActiviteit ? vertaalMethodeStukken(invoer.contextVanActiviteit(ev)) : fallbackCtx;
     const sl = `act:${ev.id}`;
-    const details = [ev.reden, ev.eind, ev.code].filter(Boolean).join(' · ') || ev.doel || ev.subject || '';
+    const basisDetails =
+      [ev.reden, ev.eind, ev.code].filter(Boolean).join(' · ') ||
+      [methodeLabel, basisSubjOfDoel]
+        .filter((x, idx, arr) => Boolean(x) && (idx === 0 || !x.toLowerCase().startsWith(arr[0].toLowerCase())))
+        .join(' · ');
+    const details = basisDetails;
+    const autoLink =
+      ev.type === 'owner.apparaat.nieuw'
+        ? ev.apparaatId
+          ? `https://id.tarasevych.com/sessions?apparaat=${ev.apparaatId}`
+          : 'https://id.tarasevych.com/sessions'
+        : undefined;
     const geb = interpreteerGebeurtenis(
       {
         id: `a:${ev.id}`,
         externeSleutel: sl,
         ruimte: invoer.ruimte,
         bron: `${ev.source || 'agent'} ${ev.kind} ${ev.type}`.trim(),
-        soort: ev.status === 'failed' ? 'error' : ev.status,
+        soort: ev.type === 'owner.apparaat.nieuw' ? ev.type : ev.status === 'failed' ? 'error' : ev.status,
         ernst: ev.status === 'failed' ? 'fout' : 'info',
         titel,
         bericht: details,
         contextLabel: ctx,
-        aangemaaktOp: ev.finishedAt || ev.createdAt,
+        link: autoLink,
+        aangemaaktOp: ts,
         gelezen: invoer.activityRead.has(ev.id),
         meta: {
           activiteitId: ev.id,
+          actieCode: ev.type,
+          ...(ev.code ? { foutCode: ev.code } : {}),
+          ...(ev.apparaatId ? { apparaatId: ev.apparaatId } : {}),
+          ...(ev.methode ? { aanmeldMethode: ev.methode } : {}),
           ...(ev.client ? { client: ev.client } : {}),
           ...(ev.platform ? { platform: ev.platform } : {}),
         },
       },
       invoer.ruimte,
     );
-    voegToe(geb);
+    voegToe({ ...geb, afgeleverdOp: geb.afgeleverdOp ?? ts });
   }
 
   // 5. Локальний журнал подій цієї служби (localRows)
@@ -498,7 +769,50 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
     );
     if (row.opgelost) geb.status = 'opgelost';
     if (row.count && row.count > 1) geb.herhalingen = row.count;
-    voegToe(geb);
+    voegToe({ ...geb, afgeleverdOp: geb.afgeleverdOp ?? row.createdAt });
+  }
+
+  // 6. Зведений сигнал непрочитаної пошти (teller:mail) для особистого простору (MELD-3)
+  if (invoer.ruimte === 'prive') {
+    const tellerRijen: MenuMelding[] = invoer.menuTellers?.length
+      ? invoer.menuTellers
+      : invoer.tellers || invoer.tellerStaat?.tellers
+        ? vanTellers(
+            (invoer.tellers ?? invoer.tellerStaat?.tellers) || {},
+            (invoer.weg ?? invoer.tellerStaat?.weg) || {},
+            invoer.lang,
+          )
+        : [];
+    for (const tm of tellerRijen) {
+      if (tm.id !== 'teller:mail' || result.has('teller:mail')) continue;
+      const aantal = Math.max(1, Math.floor(Number(tm.aantal || 1)));
+      const opTs = Number(tm.op) || Date.now();
+      const gebTeller = interpreteerGebeurtenis(
+        {
+          id: 'teller:mail',
+          externeSleutel: 'teller:mail',
+          ruimte: 'prive',
+          bron: 'mail:teller',
+          kanaal: 'mail',
+          subdomein: 'mail',
+          soort: 'mail_ongelezen_teller',
+          ernst: 'info',
+          titel: tm.titel,
+          bericht: tm.tekst,
+          contextLabel: nl ? 'Postvak In' : 'Вхідні',
+          link: tm.link || 'https://mail.tarasevych.com/',
+          aangemaaktOp: opTs,
+          gelezen: false,
+          meta: { tellerId: 'mail', tellerAantal: aantal, bron: 'teller' },
+        },
+        'prive',
+      );
+      voegToe({
+        ...gebTeller,
+        herhalingen: aantal,
+        afgeleverdOp: gebTeller.afgeleverdOp ?? opTs,
+      });
+    }
   }
 
   return Array.from(result.values()).sort((a, b) => {
@@ -526,20 +840,119 @@ export function useMeldingEcosysteem(opties: {
   localRows: BewaardeRij[];
   activityEvents: ActivityEvent[];
   activityRead: Set<string>;
+  tellers?: Tellers;
+  weg?: Record<string, number>;
   tekstVanServer?: (s: CanonicalServerNotification) => { title: string; message: string };
   titelVanActiviteit?: (ev: ActivityEvent) => string;
   contextVanActiviteit?: (ev: ActivityEvent) => string;
 }) {
   const [profiel, setProfiel] = useState<MeldingEcosysteemProfiel>(() => leesLokaalProfiel(opties.scope, opties.ruimte));
   const [serverGebeurtenissen, setServerGebeurtenissen] = useState<MeldingEcosysteemGebeurtenis[]>([]);
+  const [verbindingIncidenten, setVerbindingIncidenten] = useState<VerbindingIncidentBewijs[]>(() => leesVerbindingIncidenten());
   const [overrides, setOverrides] = useState(() => leesLokaleStatusOverrides(opties.scope, opties.ruimte));
+  const [ontvangstOverrides, setOntvangstOverrides] = useState(() => leesLokaleOntvangstOverrides(opties.scope, opties.ruimte));
   const [aiCache, setAiCache] = useState<Record<string, MeldingAiSamenvatting>>({});
   const [laden, setLaden] = useState(false);
   const geoTimerRef = useRef<number | undefined>(undefined);
+  const ontvangstTimerRef = useRef<number | undefined>(undefined);
+  const wachtAfgeleverdRef = useRef<Set<string>>(new Set());
+  const wachtGelezenRef = useRef<Set<string>>(new Set());
+
+  const spoelOntvangstNaarServer = useCallback(async () => {
+    if (!opties.scope || opties.scope === 'anon') {
+      wachtAfgeleverdRef.current.clear();
+      wachtGelezenRef.current.clear();
+      return;
+    }
+    const afgeleverdIds = Array.from(wachtAfgeleverdRef.current).slice(0, 120);
+    const gelezenIds = Array.from(wachtGelezenRef.current).slice(0, 120);
+    wachtAfgeleverdRef.current.clear();
+    wachtGelezenRef.current.clear();
+    if (!afgeleverdIds.length && !gelezenIds.length) return;
+    try {
+      await api.post(
+        '/api/owner/meldingen/ecosysteem/ontvangst',
+        meldingLichaam({
+          ruimte: opties.ruimte,
+          afgeleverdIds,
+          gelezenIds,
+        }),
+      );
+    } catch {
+      /* локальний стан квитанцій уже збережено, повторно узгодиться під час наступного циклу */
+    }
+  }, [opties.scope, opties.ruimte]);
+
+  const planOntvangstSpoeling = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (ontvangstTimerRef.current !== undefined) window.clearTimeout(ontvangstTimerRef.current);
+    ontvangstTimerRef.current = window.setTimeout(() => {
+      ontvangstTimerRef.current = undefined;
+      void spoelOntvangstNaarServer();
+    }, 350);
+  }, [spoelOntvangstNaarServer]);
+
+  const registreerAfgeleverd = useCallback(
+    (gebeurtenissen: ReadonlyArray<Pick<MeldingEcosysteemGebeurtenis, 'id' | 'externeSleutel' | 'afgeleverdOp'>>) => {
+      const nieuwAfgeleverd: string[] = [];
+      for (const g of gebeurtenissen) {
+        if (g.afgeleverdOp && g.afgeleverdOp > 0) continue;
+        if (g.id) nieuwAfgeleverd.push(g.id);
+        if (g.externeSleutel) nieuwAfgeleverd.push(g.externeSleutel);
+      }
+      if (!nieuwAfgeleverd.length) return;
+      const nu = Date.now();
+      schrijfLokaleOntvangstOverrides(opties.scope, opties.ruimte, { afgeleverd: nieuwAfgeleverd });
+      setOntvangstOverrides(leesLokaleOntvangstOverrides(opties.scope, opties.ruimte));
+      setServerGebeurtenissen((lijst) =>
+        lijst.map((item) =>
+          !item.afgeleverdOp && (nieuwAfgeleverd.includes(item.id) || (item.externeSleutel && nieuwAfgeleverd.includes(item.externeSleutel)))
+            ? { ...item, afgeleverdOp: nu }
+            : item,
+        ),
+      );
+      for (const sl of nieuwAfgeleverd) wachtAfgeleverdRef.current.add(sl);
+      planOntvangstSpoeling();
+    },
+    [opties.scope, opties.ruimte, planOntvangstSpoeling],
+  );
+
+  const registreerGelezenBijZicht = useCallback(
+    (g: MeldingEcosysteemGebeurtenis) => {
+      const sleutels = [g.id, g.externeSleutel].filter(Boolean);
+      if (!sleutels.length) return;
+      const alGelezen = Boolean(g.gelezenOp && g.gelezenOp > 0) && g.status !== 'nieuw';
+      if (alGelezen) return;
+      const nu = Date.now();
+      schrijfLokaleOntvangstOverrides(opties.scope, opties.ruimte, { gelezen: sleutels });
+      setOntvangstOverrides(leesLokaleOntvangstOverrides(opties.scope, opties.ruimte));
+      if (g.status === 'nieuw') {
+        schrijfLokaleStatusOverride(opties.scope, opties.ruimte, sleutels, 'gelezen', null);
+        setOverrides(leesLokaleStatusOverrides(opties.scope, opties.ruimte));
+      }
+      setServerGebeurtenissen((lijst) =>
+        lijst.map((item) =>
+          item.id === g.id || (g.externeSleutel && item.externeSleutel === g.externeSleutel)
+            ? {
+                ...item,
+                status: item.status === 'nieuw' ? 'gelezen' : item.status,
+                afgeleverdOp: item.afgeleverdOp || nu,
+                gelezenOp: item.gelezenOp || nu,
+                bijgewerktOp: nu,
+              }
+            : item,
+        ),
+      );
+      for (const sl of sleutels) wachtGelezenRef.current.add(sl);
+      planOntvangstSpoeling();
+    },
+    [opties.scope, opties.ruimte, planOntvangstSpoeling],
+  );
 
   useEffect(() => {
     setProfiel(leesLokaalProfiel(opties.scope, opties.ruimte));
     setOverrides(leesLokaleStatusOverrides(opties.scope, opties.ruimte));
+    setOntvangstOverrides(leesLokaleOntvangstOverrides(opties.scope, opties.ruimte));
     const luister = (info: { scope: string; ruimte: RuimteType; profiel: MeldingEcosysteemProfiel }) => {
       if (info.scope === opties.scope && info.ruimte === opties.ruimte) {
         setProfiel(info.profiel);
@@ -563,14 +976,55 @@ export function useMeldingEcosysteem(opties: {
       if (ruimteRef.current !== doelRuimte) return;
       if (r.data?.ruimte && r.data.ruimte !== doelRuimte) return;
       if (Array.isArray(r.data?.gebeurtenissen)) {
-        setServerGebeurtenissen(r.data.gebeurtenissen.map((x: Record<string, unknown>) => normaliseerGebeurtenis(x)));
+        const lijst = r.data.gebeurtenissen.map((x: Record<string, unknown>) => normaliseerGebeurtenis(x));
+        setServerGebeurtenissen(lijst);
+        // Події реально доставлені по мережі у клієнтську шину сповіщень цього користувача (✓):
+        const ongeregistreerd = lijst.filter((g: MeldingEcosysteemGebeurtenis) => !g.afgeleverdOp);
+        if (ongeregistreerd.length > 0) {
+          registreerAfgeleverd(ongeregistreerd);
+        }
       }
     } catch {
       /* працюємо з локальним сховищем та іншими джерелами */
     } finally {
       setLaden(false);
     }
-  }, [opties.scope, opties.ruimte]);
+  }, [opties.scope, opties.ruimte, registreerAfgeleverd]);
+
+  const syncVerbindingBewijzen = useCallback(async () => {
+    if (!opties.scope || opties.scope === 'anon') return;
+    const aantal = await synchroniseerVerbindingBewijzenNaarServer(
+      opties.scope,
+      (url, data) => api.post(url, data),
+      opties.lang,
+    );
+    if (aantal > 0) {
+      void verversStroom();
+    }
+  }, [opties.scope, opties.lang, verversStroom]);
+
+  useEffect(() => {
+    const wegIncidenten = abonneerVerbindingIncidenten((lijst) => {
+      setVerbindingIncidenten(lijst);
+      if (lijst.some((x) => x.hersteldOp !== null && x.gesynchroniseerdOp === null)) {
+        void syncVerbindingBewijzen();
+      }
+    });
+    const bijOnline = () => {
+      void syncVerbindingBewijzen();
+      void verversStroom();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', bijOnline);
+    }
+    void syncVerbindingBewijzen();
+    return () => {
+      wegIncidenten();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', bijOnline);
+      }
+    };
+  }, [syncVerbindingBewijzen, verversStroom]);
 
   useEffect(() => {
     let levend = true;
@@ -628,17 +1082,39 @@ export function useMeldingEcosysteem(opties: {
 
   useEffect(() => () => {
     if (geoTimerRef.current !== undefined) window.clearTimeout(geoTimerRef.current);
+    if (ontvangstTimerRef.current !== undefined) window.clearTimeout(ontvangstTimerRef.current);
   }, []);
 
   const wijzigGebeurtenisStatus = useCallback(
     async (g: MeldingEcosysteemGebeurtenis, status: MeldingGebeurtenisStatus, uitstelMinuten?: number) => {
-      const uitgesteldTot = status === 'uitgesteld' ? Date.now() + (uitstelMinuten || 30) * 60_000 : null;
+      const nu = Date.now();
+      const uitgesteldTot = status === 'uitgesteld' ? nu + (uitstelMinuten || 30) * 60_000 : null;
       const sleutels = [g.id, g.externeSleutel].filter(Boolean);
       schrijfLokaleStatusOverride(opties.scope, opties.ruimte, sleutels, status, uitgesteldTot);
       setOverrides(leesLokaleStatusOverrides(opties.scope, opties.ruimte));
+      if (status === 'gelezen' || status === 'opgelost') {
+        schrijfLokaleOntvangstOverrides(opties.scope, opties.ruimte, { gelezen: sleutels });
+      } else if (status === 'nieuw') {
+        schrijfLokaleOntvangstOverrides(opties.scope, opties.ruimte, { wisGelezen: sleutels });
+      } else {
+        schrijfLokaleOntvangstOverrides(opties.scope, opties.ruimte, { afgeleverd: sleutels });
+      }
+      setOntvangstOverrides(leesLokaleOntvangstOverrides(opties.scope, opties.ruimte));
       setServerGebeurtenissen((lijst) =>
         lijst.map((item) => (item.id === g.id || (g.externeSleutel && item.externeSleutel === g.externeSleutel)
-          ? { ...item, status, uitgesteldTot, bijgewerktOp: Date.now() }
+          ? {
+              ...item,
+              status,
+              uitgesteldTot,
+              afgeleverdOp: item.afgeleverdOp || nu,
+              gelezenOp:
+                status === 'gelezen' || status === 'opgelost'
+                  ? item.gelezenOp || nu
+                  : status === 'nieuw'
+                    ? null
+                    : item.gelezenOp,
+              bijgewerktOp: nu,
+            }
           : item)),
       );
       await voerEcosysteemActieUit({
@@ -677,15 +1153,20 @@ export function useMeldingEcosysteem(opties: {
         lang: opties.lang,
         ruimte: opties.ruimte,
         subdomeinNu: opties.subdomeinNu,
+        profiel,
         serverGebeurtenissen,
         paginaSignalen: opties.paginaSignalen,
+        verbindingIncidenten,
         serverItems: opties.serverItems,
         techItems: opties.techItems,
         localRows: opties.localRows,
         activityEvents: opties.activityEvents,
         activityRead: opties.activityRead,
         overrides,
+        ontvangstOverrides,
         aiCache,
+        tellers: opties.tellers,
+        weg: opties.weg,
         tekstVanServer: opties.tekstVanServer,
         titelVanActiviteit: opties.titelVanActiviteit,
         contextVanActiviteit: opties.contextVanActiviteit,
@@ -694,15 +1175,20 @@ export function useMeldingEcosysteem(opties: {
       opties.lang,
       opties.ruimte,
       opties.subdomeinNu,
+      profiel,
       serverGebeurtenissen,
       opties.paginaSignalen,
+      verbindingIncidenten,
       opties.serverItems,
       opties.techItems,
       opties.localRows,
       opties.activityEvents,
       opties.activityRead,
       overrides,
+      ontvangstOverrides,
       aiCache,
+      opties.tellers,
+      opties.weg,
       opties.tekstVanServer,
       opties.titelVanActiviteit,
       opties.contextVanActiviteit,
@@ -711,6 +1197,7 @@ export function useMeldingEcosysteem(opties: {
 
   const allesGelezenEcosysteem = useCallback(async () => {
     const sleutels: string[] = [];
+    const nu = Date.now();
     for (const item of stroom) {
       if (item.status === 'nieuw') {
         if (item.id) sleutels.push(item.id);
@@ -719,10 +1206,16 @@ export function useMeldingEcosysteem(opties: {
     }
     if (sleutels.length) {
       schrijfLokaleStatusOverride(opties.scope, opties.ruimte, sleutels, 'gelezen', null);
+      schrijfLokaleOntvangstOverrides(opties.scope, opties.ruimte, { gelezen: sleutels });
       setOverrides(leesLokaleStatusOverrides(opties.scope, opties.ruimte));
+      setOntvangstOverrides(leesLokaleOntvangstOverrides(opties.scope, opties.ruimte));
     }
     setServerGebeurtenissen((lijst) =>
-      lijst.map((item) => (item.status === 'nieuw' ? { ...item, status: 'gelezen', bijgewerktOp: Date.now() } : item)),
+      lijst.map((item) =>
+        item.status === 'nieuw'
+          ? { ...item, status: 'gelezen', afgeleverdOp: item.afgeleverdOp || nu, gelezenOp: item.gelezenOp || nu, bijgewerktOp: nu }
+          : item,
+      ),
     );
     if (!opties.scope || opties.scope === 'anon') return;
     try {
@@ -740,6 +1233,8 @@ export function useMeldingEcosysteem(opties: {
     werkProfielBij,
     slaGeometrieOp,
     wijzigGebeurtenisStatus,
+    registreerAfgeleverd,
+    registreerGelezenBijZicht,
     allesGelezenEcosysteem,
     ontledenMetAi,
   };

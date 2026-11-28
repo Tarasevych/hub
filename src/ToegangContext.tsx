@@ -37,7 +37,7 @@ export const ACTIE_TEKST:Record<string,[string,string]>={
   beheer:['Адміністрування','Beheer'],
   agenten:['Агенти й токени','Agents en tokens'],
   export:['Експорт даних','Gegevens exporteren'],
-  'account-verwijderen':['Видалення акаунта','Account verwijderen'],
+  'account-verwijderen':['Видалення облікового запису','Account verwijderen'],
   'deel-beheerder':['Надання ролі адміністратора простору','Beheerdersrol voor een werkruimte geven'],
   'werkruimte-overdragen':['Передача простору іншому учасникові','Werkruimte overdragen aan een ander lid'], // IDENTITEIT-015
   'apparaat-melding-uit':['Вимкнення попередження про новий пристрій','Waarschuwing voor een nieuw apparaat uitzetten'], // IDENTITEIT-015
@@ -140,7 +140,7 @@ export const methodeTekst=(lang:Lang,m:string)=>METHODE[m]?tr(lang,METHODE[m][0]
 /** Regel voor één wijziging (wie, waarvandaan, waarom). */
 export function WijzigingDetails({lang,w}:{lang:Lang;w:Wijziging}){
   return <dl className='toegang-wijziging-details'>
-    <dt>{tr(lang,'Хто','Wie')}</dt><dd>{w.actorEmail||w.actorId}{w.doorZelf?` (${tr(lang,'ваш акаунт','uw account')})`:''}</dd>
+    <dt>{tr(lang,'Хто','Wie')}</dt><dd>{w.actorEmail||w.actorId}{w.doorZelf?` (${tr(lang,'ваш обліковий запис','uw account')})`:''}</dd>
     <dt>{tr(lang,'Коли','Wanneer')}</dt><dd><time dateTime={w.op}>{tijdTekst(lang,w.op)}</time></dd>
     {w.reden&&<><dt>{tr(lang,'Причина','Reden')}</dt><dd data-reden>{w.reden}</dd></>}
     {w.label&&<><dt>{tr(lang,'Ключ','Sleutel')}</dt><dd>«{w.label}»{w.vingerafdruk?<span className='access-plane-mono'> {w.vingerafdruk.slice(0,16).replace(/(.{4})/g,'$1 ').trim()}</span>:null}</dd></>}

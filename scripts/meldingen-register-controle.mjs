@@ -11,7 +11,7 @@ import { ACTIE_LABELS, categorieVan, isRuis } from '../shared/beheer-journaal.ts
 const stil = process.argv.includes('--stil');
 const wortel = process.cwd();
 
-const STILLE_SITE_CODES = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.ecosysteem\.(actie|profiel)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh)|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
+const STILLE_SITE_CODES = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.(ecosysteem\.(actie|profiel|ontvangst|aflevering_overzicht)|bijlage\.telegram)$|owner\.mcp\.tools\.list$|owner\.extensie\.beheer\.bekeken$|owner\.terminal\.opdrachten\.bekeken$|klimop_(overzicht|dubbel_logboek|quorum_logboek|spiegel_logboek)$|owner\.notifications\.|owner\.session\.(rotated|refresh|migrated\.to-ecosystem|restored\.remembered)|telegram\.venster\.geopend$|owner\.ui\.|owner\.tab\.|owner\.mail\.(item\.|send\.prepared)|owner\.admin\.(audit\.viewed|diagnostics)|owner\.redirect\.|owner\.auth\.transaction\.(created|started)|owner\.browser\.grant\.(used|cookie))/;
 const VERBODEN_LETTERS = /[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/;
 
 function verzamelBestanden(mapPad) {
@@ -26,18 +26,175 @@ function verzamelBestanden(mapPad) {
   return uit;
 }
 
+function uitgebalanceerd(tekst, openPos, openTeken, sluitTeken) {
+  let diepte = 0;
+  let citaat = '';
+  for (let i = openPos; i < tekst.length; i += 1) {
+    const ch = tekst[i];
+    if (citaat) {
+      if (ch === '\\') {
+        i += 1;
+        continue;
+      }
+      if (ch === citaat) citaat = '';
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      citaat = ch;
+      continue;
+    }
+    if (ch === openTeken) diepte += 1;
+    else if (ch === sluitTeken) {
+      diepte -= 1;
+      if (diepte === 0) return tekst.slice(openPos + 1, i);
+    }
+  }
+  return '';
+}
+
+function topDelen(inhoud, scheiding = ',') {
+  const delen = [];
+  let start = 0;
+  let rond = 0;
+  let krul = 0;
+  let blok = 0;
+  let citaat = '';
+  for (let i = 0; i < inhoud.length; i += 1) {
+    const ch = inhoud[i];
+    if (citaat) {
+      if (ch === '\\') {
+        i += 1;
+        continue;
+      }
+      if (ch === citaat) citaat = '';
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      citaat = ch;
+      continue;
+    }
+    if (ch === '(') rond += 1;
+    else if (ch === ')') rond = Math.max(0, rond - 1);
+    else if (ch === '{') krul += 1;
+    else if (ch === '}') krul = Math.max(0, krul - 1);
+    else if (ch === '[') blok += 1;
+    else if (ch === ']') blok = Math.max(0, blok - 1);
+    else if (ch === scheiding && rond === 0 && krul === 0 && blok === 0) {
+      delen.push(inhoud.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  const rest = inhoud.slice(start).trim();
+  if (rest) delen.push(rest);
+  return delen;
+}
+
+function haalLetterlijkeCodesUitExpressie(expr) {
+  if (!expr) return [];
+  const zonderVergelijking = expr.replace(/[!=]==?\s*['"][^'"]*['"]/g, ' ');
+  const uit = [];
+  for (const m of zonderVergelijking.matchAll(/['"]([a-zA-Z0-9_.:-]{2,90})['"]/g)) {
+    uit.push(m[1]);
+  }
+  return uit;
+}
+
 const gevondenCodes = new Map();
+function registreerCode(code, relPad, eisScheiding = true) {
+  if (!code || code.length < 4 || code.length > 90) return;
+  if (eisScheiding && !/[._:-]/.test(code) && code !== 'sign_in') return;
+  if (!gevondenCodes.has(code)) gevondenCodes.set(code, relPad);
+}
+
 for (const hoofdMap of ['backend', 'server']) {
   for (const relPad of verzamelBestanden(hoofdMap)) {
+    const genormPad = relPad.replace(/\\/g, '/');
     const inhoud = fs.readFileSync(path.join(wortel, relPad), 'utf8');
-    for (const m of inhoud.matchAll(/\b(?:auditToevoegen|journaalSchrijf)\s*\(\s*\{[\s\S]{0,220}?\b(?:action|actie)\s*:\s*['"]([a-zA-Z0-9_.:-]{4,80})['"]/g)) {
-      if (!gevondenCodes.has(m[1])) gevondenCodes.set(m[1], relPad);
+
+    // 1. Об'єктні виклики журналювання (auditToevoegen, journaalSchrijf, schrijfBeheerAudit, agentAudit, auditStil, auditLog)
+    for (const m of inhoud.matchAll(/\b(?:auditToevoegen|journaalSchrijf|schrijfBeheerAudit|agentAudit|auditStil|auditLog)\s*\(/g)) {
+      const haakOpen = m.index + m[0].length - 1;
+      const argsTekst = uitgebalanceerd(inhoud, haakOpen, '(', ')');
+      const eersteArg = topDelen(argsTekst, ',')[0] || '';
+      const krulPos = eersteArg.indexOf('{');
+      if (krulPos < 0) continue;
+      const objInhoud = uitgebalanceerd(eersteArg, krulPos, '{', '}');
+      for (const veld of topDelen(objInhoud, ',')) {
+        const vm = /^(?:action|actie)\s*:\s*([\s\S]+)$/.exec(veld);
+        if (!vm) continue;
+        for (const c of haalLetterlijkeCodesUitExpressie(vm[1])) {
+          registreerCode(c, genormPad, true);
+        }
+      }
     }
-    for (const m of inhoud.matchAll(/\b(?:writeAudit|schrijfBeheerAudit|audit)\s*\(\s*[^,()]+,\s*['"]([a-zA-Z0-9_.:-]{4,80})['"]/g)) {
-      if (/[._-]/.test(m[1]) && !gevondenCodes.has(m[1])) gevondenCodes.set(m[1], relPad);
+
+    // 2. Префіксні обгортки входу й підтвердження через Telegram та пристрій
+    const isTelegramMap = genormPad.startsWith('backend/telegram-aanmelden/') && !genormPad.endsWith('/plaatsing.ts');
+    const isApparaatMap = genormPad.startsWith('backend/apparaat-bevestiging/');
+
+    if (isTelegramMap || isApparaatMap) {
+      const voorvoegsel = isTelegramMap ? 'telegram.' : 'apparaat.';
+      for (const m of inhoud.matchAll(/(?<!function\s)\b(audit|beheerAlarm|auditBeheer)\s*\(/g)) {
+        const naam = m[1];
+        const args = topDelen(uitgebalanceerd(inhoud, m.index + m[0].length - 1, '(', ')'), ',');
+        const idx = naam === 'beheerAlarm' ? 0 : 1;
+        const subVoorvoegsel =
+          naam === 'beheerAlarm'
+            ? `${voorvoegsel}alarm.`
+            : naam === 'auditBeheer'
+              ? 'telegram.beheer.'
+              : voorvoegsel;
+        for (const c of haalLetterlijkeCodesUitExpressie(args[idx] || '')) {
+          if (c.length >= 2) registreerCode(`${subVoorvoegsel}${c}`, genormPad, true);
+        }
+      }
+      continue;
     }
-    for (const m of inhoud.matchAll(/\bauditLog\s*\(\s*\{[\s\S]{0,220}?\baction\s*:\s*['"]([a-zA-Z0-9_.:-]{4,80})['"]/g)) {
-      if (!gevondenCodes.has(m[1])) gevondenCodes.set(m[1], relPad);
+
+    // 3. Спеціальні префіксні обгортки черги листів у mail-opstel.ts та підтверджень ШІ у ai-bevestiging.ts
+    if (genormPad === 'backend/mail-opstel.ts') {
+      for (const m of inhoud.matchAll(/(?<!function\s)\bwachtrijSpoor\s*\(/g)) {
+        const args = topDelen(uitgebalanceerd(inhoud, m.index + m[0].length - 1, '(', ')'), ',');
+        for (const c of haalLetterlijkeCodesUitExpressie(args[1] || '')) {
+          registreerCode(`owner.mail.queue.${c}`, genormPad, true);
+        }
+      }
+    }
+    if (genormPad === 'backend/ai-bevestiging.ts') {
+      for (const m of inhoud.matchAll(/(?<!function\s)\bjournaal\s*\(/g)) {
+        const args = topDelen(uitgebalanceerd(inhoud, m.index + m[0].length - 1, '(', ')'), ',');
+        for (const c of haalLetterlijkeCodesUitExpressie(args[1] || '')) {
+          if (c.length >= 2) registreerCode(`owner.ai.bevestiging.${c}`, genormPad, true);
+        }
+      }
+      continue;
+    }
+
+    // 4. Позиційні обгортки з кодом дії у 2-му аргументі (ownerAudit, writeAudit, logboek, journaal, auditeer, audit)
+    const drieArgBestanden = new Set([
+      'backend/uitrol-goedkeuring.ts',
+      'backend/ondersteuning.ts',
+      'backend/tech-profiel.ts',
+      'backend/impersonatie.ts',
+    ]);
+    const overslaanGeneriekAudit = new Set([
+      'backend/index.ts',
+      'backend/db.ts',
+      'backend/cloud-platform.ts',
+      'backend/google-suite-inrichting.ts',
+    ]);
+
+    for (const m of inhoud.matchAll(/(?<!function\s)\b(ownerAudit|writeAudit|logboek|journaal|auditeer|huisAudit|audit)\s*\(/g)) {
+      const fn = m[1];
+      if (fn === 'audit' && overslaanGeneriekAudit.has(genormPad)) continue;
+      const args = topDelen(uitgebalanceerd(inhoud, m.index + m[0].length - 1, '(', ')'), ',');
+      const argIdx =
+        fn === 'huisAudit' || (drieArgBestanden.has(genormPad) && (fn === 'auditeer' || fn === 'audit'))
+          ? 2
+          : 1;
+      for (const c of haalLetterlijkeCodesUitExpressie(args[argIdx] || '')) {
+        registreerCode(c, genormPad, true);
+      }
     }
   }
 }

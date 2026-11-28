@@ -125,7 +125,10 @@ export function bouwMeldingRegisterOverzicht(): {
     const catObj = catMap.get(cat) || catMap.get('beheer')!;
     const ruimte: RuimteType = m.type.startsWith('tech.') ? 'technisch' : 'prive';
     const subdomein = herkenSubdomein(`${m.bestand} ${m.soort}`, '', ruimte === 'technisch' ? 'admin' : 'hub');
-    const kanaal = herkenKanaal(`${m.bestand} ${m.soort}`, m.soort, subdomein);
+    const herkendKanaal = herkenKanaal(`${m.bestand} ${m.soort}`, m.soort, subdomein);
+    const kanaal = m.kanaal === 'pagina' && (herkendKanaal === 'app' || herkendKanaal === 'systeem')
+      ? 'pagina'
+      : herkendKanaal;
 
     if (m.kanaal === 'activiteit') gezieneActieCodes.add(m.soort);
 
@@ -153,7 +156,7 @@ export function bouwMeldingRegisterOverzicht(): {
   }
 
   // 2. Усі серверні коди дій з ACTIE_LABELS (shared/beheer-journaal.ts)
-  const stilleExtraRe = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.ecosysteem\.(actie|profiel)$)/;
+  const stilleExtraRe = /^(owner\.ruimte\.geweigerd$|owner\.extensie\.zijpaneel\.chat$|owner\.meldingen\.ecosysteem\.(actie|profiel|ontvangst|aflevering_overzicht)$)/;
   let onbekendOverig = 0;
 
   for (const [code, [titelUk, titelNl]] of Object.entries(ACTIE_LABELS)) {

@@ -98,13 +98,47 @@ export const techBandGereserveerd = (t: TechStatus = toestand, nu = Date.now()):
 
 export const techBody = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 let statussen = 0;
+let techVolgnummer = 0;
+let techMoetVers = false;
+let laatsteTechSync = 0;
 const neem = (data: any) => {
   const scheef = data?.nu ? Number(data.nu) - Date.now() : 0;
   const activatie = (data?.activatie ?? null) as TechActivatie | null;
   bewaarBandHint(activatie, scheef);
   statussen += 1;
+  laatsteTechSync = Date.now();
   return zet({ geladen: true, profiel: data?.profiel ?? null, activatie, catalogus: data?.catalogus ?? toestand.catalogus, scheef, fout: null });
 };
+
+/** Синхронізує стан технічної оболонки (верхня смуга й меню) миттєво під час перемикання між звичайним і технічним простором (v2). */
+export function techSynchroniseerRuimte(
+  naar: 'prive' | 'technisch',
+  sessie?: { id: string; rollen?: TechRol[]; mogelijkheden?: TechMogelijkheid[]; reden?: string; gestartOp: number | null; eindTijd: number | null; grensTijd?: number | null; modus: 'tijd' | 'tot-site-uitloggen' | 'tot-technisch-einde' } | null,
+): void {
+  techVolgnummer += 1;
+  techMoetVers = true;
+  if (naar === 'prive') {
+    wisBandHint();
+    if (toestand.activatie !== null) zet({ activatie: null, fout: null });
+    return;
+  }
+  if (naar === 'technisch' && sessie && !toestand.activatie) {
+    const eind = sessie.eindTijd ?? sessie.grensTijd ?? (Date.now() + 3600_000);
+    const activatie: TechActivatie = {
+      id: sessie.id,
+      profielId: toestand.profiel?.profielId || 'v2',
+      rollen: sessie.rollen ?? toestand.profiel?.rollen ?? [],
+      mogelijkheden: sessie.mogelijkheden ?? [],
+      reden: sessie.reden ?? '',
+      begin: sessie.gestartOp ?? Date.now(),
+      eind,
+      modus: sessie.modus === 'tijd' ? 'tijd' : sessie.modus === 'tot-site-uitloggen' ? 'tot-uitloggen' : 'tot-verlaten',
+      herkomst: 'eigen',
+    };
+    bewaarBandHint(activatie, toestand.scheef);
+    zet({ geladen: true, activatie, fout: null });
+  }
+}
 
 /** HUB-01: alleen een DUIDELIJK antwoord van de server (401/403/404: geen sessie of geen recht) wist het profiel; netwerk/5xx houdt de vorige staat. */
 export const techFoutReset = (e: unknown): boolean => { const st = Number((e as { status?: number } | null)?.status || 0); return st === 401 || st === 403 || st === 404; };
@@ -118,9 +152,17 @@ function herkansPlannen(): void {
   herkansTimer = setTimeout(() => { herkansTimer = null; if (sleutel && toestand.fout === 'netwerk') void techVernieuwen(); }, herkansMs);
   (herkansTimer as unknown as { unref?: () => void }).unref?.(); // Node (tests): een wachtende herkansing houdt het proces niet open
 }
-export async function techVernieuwen(): Promise<void> {
-  try { neem((await api.post('/api/owner/tech/status', techBody())).data); herkansMs = 0; }
-  catch (e) {
+export async function techVernieuwen(vers = false): Promise<void> {
+  const v = ++techVolgnummer;
+  const gebruikVers = vers || techMoetVers;
+  techMoetVers = false;
+  try {
+    const data = (await api.post('/api/owner/tech/status', gebruikVers ? { ...techBody(), vers: v } : techBody())).data;
+    if (v !== techVolgnummer) return;
+    neem(data);
+    herkansMs = 0;
+  } catch (e) {
+    if (v !== techVolgnummer) return;
     if (techFoutReset(e)) { wisBandHint(); zet({ geladen: true, profiel: null, activatie: null, fout: null }); herkansMs = 0; }
     else { zet({ geladen: true, fout: 'netwerk' }); herkansPlannen(); }
   }
@@ -257,6 +299,6 @@ export function startTech(): void {
     const wasActief = Boolean(toestand.activatie);
     void techVernieuwen().then(() => { if (wasActief && !toestand.activatie) meld({ t: 'uit' }); });
   });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && sleutel) void techVernieuwen(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && sleutel && (!toestand.geladen || toestand.fout !== null || techMoetVers || Date.now() - laatsteTechSync >= 60_000)) void techVernieuwen(); });
   window.setInterval(() => { if (!document.hidden && sleutel && toestand.activatie) void techVernieuwen(); }, 60_000);
 }

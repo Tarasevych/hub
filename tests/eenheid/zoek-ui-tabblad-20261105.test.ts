@@ -40,16 +40,16 @@ export async function main(): Promise<number> {
 
   // 1. lange keten
   const keten = `export function V(p){let body;if(p.tab==='menu')body=<div>${knop('Зберегти меню','Menu opslaan')}</div>;` +
-    `else if(p.tab==='account')body=<div>${opvulling}<section><h3>{tr('Видалити поточний акаунт','Huidig account verwijderen')}</h3>${opvulling}${knop('Підтвердити видалення','Verwijderen bevestigen')}</section></div>;` +
+    `else if(p.tab==='account')body=<div>${opvulling}<section><h3>{tr('Видалити поточний обліковий запис','Huidig account verwijderen')}</h3>${opvulling}${knop('Підтвердити видалення','Verwijderen bevestigen')}</section></div>;` +
     `else body=<div>${knop('Загальна дія','Algemene actie')}</div>;return body;}`;
   check('1a lange tak: knop 6000+ tekens na p.tab===\'account\' → account', hint(keten, 'Підтвердити видалення') === 'account', hint(keten, 'Підтвердити видалення'));
-  check('1b kop in dezelfde lange tak → account', hint(keten, 'Видалити поточний акаунт', 'sectie') === 'account');
+  check('1b kop in dezelfde lange tak → account', hint(keten, 'Видалити поточний обліковий запис', 'sectie') === 'account');
   check('1c eerste tak → menu; else-tak → geen tabblad', hint(keten, 'Зберегти меню') === 'menu' && hint(keten, 'Загальна дія') === '');
 
   // 2. vroege return
-  const vroeg = `export function G({tab}){if(tab==='accounts')return <div>${knop('Акаунт дія','Accountactie')}</div>;` +
+  const vroeg = `export function G({tab}){if(tab==='accounts')return <div>${knop('Обліковий запис дія','Accountactie')}</div>;` +
     `if(!ok)return <div><h2>{tr('Підключіть сервіс','Koppel de dienst')}</h2>${knop('Повторити спробу','Opnieuw proberen')}</div>;return <div/>;}`;
-  check('2a binnen `if (tab===\'accounts\') return …` → accounts', hint(vroeg, 'Акаунт дія') === 'accounts');
+  check('2a binnen `if (tab===\'accounts\') return …` → accounts', hint(vroeg, 'Обліковий запис дія') === 'accounts');
   check('2b NA die return (gewone weergave) → geen tabblad (was: accounts)', hint(vroeg, 'Повторити спробу') === '' && hint(vroeg, 'Підключіть сервіс', 'sectie') === '');
 
   // 3. ternair, &&, switch, ontkenning
@@ -88,11 +88,11 @@ export async function main(): Promise<number> {
   const rest = `export function L({tab}){if(tab!=='local')return <div/>;return <div>${knop('Лише локально','Alleen lokaal')}</div>;}` +
     `export function M({tab,cur,focus}){const std=tab!=='accounts'&&tab!=='local'&&tab!=='overview';` +
     `const fv=cur?(<div>${knop('Фокус листа','Focus op bericht')}</div>):null;let body;` +
-    `if(tab==='accounts')body=<div>${knop('Акаунти тут','Accounts hier')}</div>;else if(tab==='overview')body=<div/>;else if(std)body=<div>${knop('Звичайна поверхня','Gewoon oppervlak')}</div>;` +
+    `if(tab==='accounts')body=<div>${knop('Облікові записи тут','Accounts hier')}</div>;else if(tab==='overview')body=<div/>;else if(std)body=<div>${knop('Звичайна поверхня','Gewoon oppervlak')}</div>;` +
     `else if(focus)body=fv;else body=<div>${knop('Що лишилось','Wat overblijft')}</div>;return body;}` +
     `export function N({tab}){switch(tab){case 'menu':case 'widgets':return ${knop('Два випадки','Twee gevallen')};case 'vault':return ${knop('Сховище випадок','Kluisgeval')};default:return null;}}`;
   check('7a `if (tab !== \'local\') return …;` — wat volgt → local', hint(rest, 'Лише локально') === 'local', hint(rest, 'Лише локально'));
-  check('7b else-if-keten met const-voorwaarde (std = tab!==… && …): laatste else → local; std-tak → geen', hint(rest, 'Що лишилось') === 'local' && hint(rest, 'Звичайна поверхня') === '' && hint(rest, 'Акаунти тут') === 'accounts', `${hint(rest, 'Що лишилось')}|${hint(rest, 'Звичайна поверхня')}`);
+  check('7b else-if-keten met const-voorwaarde (std = tab!==… && …): laatste else → local; std-tak → geen', hint(rest, 'Що лишилось') === 'local' && hint(rest, 'Звичайна поверхня') === '' && hint(rest, 'Облікові записи тут') === 'accounts', `${hint(rest, 'Що лишилось')}|${hint(rest, 'Звичайна поверхня')}`);
   check('7c `const fv = cur ? <…/> : null`, gebruikt in die keten → local', hint(rest, 'Фокус листа') === 'local', hint(rest, 'Фокус листа'));
   check('7d switch: doorvallende lege case (menu → widgets) → geen; case \'vault\' → vault', hint(rest, 'Два випадки') === '' && hint(rest, 'Сховище випадок') === 'vault');
 
@@ -136,12 +136,12 @@ export async function main(): Promise<number> {
 
   // 8f. waarde-aliassen van het tabblad (zoals cloud: effectiveTab, MCP: section)
   const aliassen = `export function CF({tab}){const effectiveTab=['google','onedrive'].includes(tab)?'accounts':tab;` +
-    `return <div>{effectiveTab==='vault'&&<div>${knop('Знайти у сховищі','Zoeken in kluis')}</div>}{effectiveTab==='accounts'&&<div>${knop('Акаунти хмари','Cloudaccounts')}</div>}</div>;}` +
+    `return <div>{effectiveTab==='vault'&&<div>${knop('Знайти у сховищі','Zoeken in kluis')}</div>}{effectiveTab==='accounts'&&<div>${knop('Облікові записи хмари','Cloudaccounts')}</div>}</div>;}` +
     `export function MS({tab}){const section=['overview','menu','sharing'].includes(tab)?tab:'overview';` +
     `switch(section){case 'menu':return <div>${knop('Секція меню','Menusectie')}</div>;default:return <div>${knop('Секція типово','Standaardsectie')}</div>;}}`;
   check('8f `const effectiveTab = [...].includes(tab) ? \'accounts\' : tab` → vault / accounts; `switch (section)` → menu; default → geen',
-    hint(aliassen, 'Знайти у сховищі') === 'vault' && hint(aliassen, 'Акаунти хмари') === 'accounts' && hint(aliassen, 'Секція меню') === 'menu' && hint(aliassen, 'Секція типово') === '',
-    ['Знайти у сховищі', 'Акаунти хмари', 'Секція меню', 'Секція типово'].map((u) => hint(aliassen, u)).join('|'));
+    hint(aliassen, 'Знайти у сховищі') === 'vault' && hint(aliassen, 'Облікові записи хмари') === 'accounts' && hint(aliassen, 'Секція меню') === 'menu' && hint(aliassen, 'Секція типово') === '',
+    ['Знайти у сховищі', 'Облікові записи хмари', 'Секція меню', 'Секція типово'].map((u) => hint(aliassen, u)).join('|'));
 
   // 8g. pages[tab] (zoals de beheerconsole)
   const paginas = `export function AC({tab}){const sso=<section><h2>{tr('Система входу','Aanmeldsysteem')}</h2>${knop('Зберегти вхід','Aanmelding opslaan')}</section>;` +
@@ -223,8 +223,8 @@ export async function main(): Promise<number> {
   // 6. de echte catalogus
   const echt = (uk: string) => UI_ELEMENTEN.filter((e) => e.uk === uk).map((e) => `${e.dienst}/${e.tab}`);
   const in_ = (uk: string, bestand: string, soort = '') => UI_ELEMENTEN.filter((e) => e.uk === uk && e.bestand === bestand && (!soort || e.soort === soort)).map((e) => `${e.dienst}/${e.tab}`);
-  check('6e mail: «Звичайна пошта» en «Відкласти без провини» (lokale mail) → mail/local; «Поштові акаунти» → mail/accounts',
-    JSON.stringify(in_('Звичайна пошта', 'src/MailFunctioneelWeergave.tsx')) === '["mail/local"]' && in_('Відкласти без провини', 'src/MailFunctioneelWeergave.tsx').includes('mail/local') && in_('Поштові акаунти', 'src/MailFunctioneelWeergave.tsx').includes('mail/accounts'));
+  check('6e mail: «Звичайна пошта» en «Відкласти без провини» (lokale mail) → mail/local; «Поштові облікові записи» → mail/accounts',
+    JSON.stringify(in_('Звичайна пошта', 'src/MailFunctioneelWeergave.tsx')) === '["mail/local"]' && in_('Відкласти без провини', 'src/MailFunctioneelWeergave.tsx').includes('mail/local') && in_('Поштові облікові записи', 'src/MailFunctioneelWeergave.tsx').includes('mail/accounts'));
   check('6f GitHub: «Шукати» → research, «Проєкти GitHub» → projects, «Повторити» (na de accounts-return) niet op accounts',
     in_('Шукати', 'src/GitHubWeergave.tsx').includes('github/research') && in_('Проєкти GitHub', 'src/GitHubWeergave.tsx').includes('github/projects') && !in_('Повторити', 'src/GitHubWeergave.tsx').includes('github/accounts'));
   check('6a «Підтвердити видалення» (Instellingen) → identity/account, niet personalization', JSON.stringify(in_('Підтвердити видалення', 'src/InstellingencentrumWeergave.tsx')) === '["identity/account"]' && !echt('Підтвердити видалення').includes('identity/personalization'), echt('Підтвердити видалення').join(','));

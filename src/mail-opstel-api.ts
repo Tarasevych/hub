@@ -13,16 +13,36 @@ export type Compose = {
 
 /** Foutcodes van de server -> uitleg in de taal van de site (nooit de ruwe code of Engelse tekst). */
 export function composeErrorText(error: unknown, t: (uk: string, nl: string) => string): string {
-  const code = error instanceof ApiError ? String(error.response?.data?.error || error.message) : String((error as Error)?.message || '');
+  const code = error instanceof ApiError
+    ? String(error.response?.data?.error || error.message)
+    : typeof error === 'string'
+      ? error
+      : String((error as Error)?.message || '');
   const map: Record<string, [string, string]> = {
     MAIL_RECIPIENT_INVALID: ['Одна з адрес одержувачів недійсна.', 'Een van de ontvangeradressen is ongeldig.'],
+    GOOGLE_MAIL_REPLY_RECIPIENT_INVALID: ['Не вдалося визначити адресу одержувача у цій гілці листування.', 'Het ontvangeradres in dit gesprek kon niet worden bepaald.'],
     MAIL_RECIPIENT_REQUIRED: ['Вкажіть хоча б одного одержувача.', 'Geef minstens één ontvanger op.'],
     MAIL_BODY_REQUIRED: ['Лист порожній.', 'Het bericht is leeg.'],
+    GOOGLE_MAIL_REPLY_INVALID: ['Текст відповіді порожній або ідентифікатор гілки недійсний.', 'De antwoordtekst is leeg of de gespreks-id is ongeldig.'],
     MAIL_TOO_MANY_RECIPIENTS: ['Забагато одержувачів (максимум 50).', 'Te veel ontvangers (maximaal 50).'],
     MAIL_SCHEDULE_TIME_INVALID: ['Час має бути щонайменше за 10 секунд у майбутньому.', 'De tijd moet minstens 10 seconden in de toekomst liggen.'],
     MAIL_SCHEDULE_TOO_FAR: ['Заплановувати можна не далі ніж на рік уперед.', 'Plannen kan maximaal een jaar vooruit.'],
-    MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий акаунт Google не підключений або потребує нового входу.', 'Het Google-mailaccount is niet gekoppeld of moet opnieuw worden aangemeld.'],
+    MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий обліковий запис Google не підключений або потребує нового входу.', 'Het Google-mailaccount is niet gekoppeld of moet opnieuw worden aangemeld.'],
+    GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий обліковий запис Google не підключений або потребує нового входу.', 'Het Google-mailaccount is niet gekoppeld of moet opnieuw worden aangemeld.'],
+    GOOGLE_MAIL_REPLY_REAUTH_REQUIRED: ['Потрібно повторно підтвердити доступ до поштової скриньки Google.', 'Toegang tot het Google-postvak moet opnieuw worden bevestigd.'],
+    GOOGLE_MAIL_REPLY_PERMISSION_REQUIRED: ['Бракує дозволу Google на надсилання листів. Перепідключіть поштову скриньку.', 'Toestemming van Google om berichten te verzenden ontbreekt. Koppel het postvak opnieuw.'],
+    GMAIL_SEND_401: ['Сеанс доступу до Gmail завершився. Перепідключіть поштову скриньку.', 'De toegangssessie voor Gmail is verlopen. Koppel het postvak opnieuw.'],
+    GMAIL_SEND_403: ['Google відхилив надсилання через брак дозволу. Перепідключіть поштову скриньку з правом надсилання.', 'Google weigerde het verzenden wegens ontbrekende rechten. Koppel het postvak opnieuw met verzendrechten.'],
+    GMAIL_SEND_400: ['Сервер Gmail не прийняв формат листа або адресу одержувача.', 'De Gmail-server weigerde de berichtopmaak of het ontvangeradres.'],
+    GOOGLE_MAIL_REPLY_REJECTED: ['Сервер Gmail не прийняв відповідь. Перевірте адресу одержувача або вкладення.', 'De Gmail-server heeft het antwoord geweigerd. Controleer het ontvangeradres of de bijlagen.'],
+    GOOGLE_MAIL_REPLY_UNCERTAIN: ['Сервер Gmail тимчасово не відповів. Спробуйте повторити надсилання.', 'De Gmail-server reageerde tijdelijk niet. Probeer het opnieuw te verzenden.'],
+    GOOGLE_MAIL_THREAD_FAILED: ['Не вдалося завантажити гілку листування з Gmail для формування відповіді.', 'Het gesprek kon niet uit Gmail worden geladen om het antwoord op te bouwen.'],
+    GOOGLE_MAIL_REPLY_TOO_LARGE: ['Сумарний розмір вкладень перевищує безпечний ліміт (22 МБ).', 'De totale grootte van de bijlagen overschrijdt de veilige limiet (22 MB).'],
+    MAIL_ATTACHMENTS_TOO_LARGE: ['Сумарний розмір вкладень перевищує безпечний ліміт.', 'De totale grootte van de bijlagen overschrijdt de veilige limiet.'],
+    SIZE: ['Сумарний розмір нових вкладень перевищує безпечний ліміт відповіді.', 'De totale grootte van de nieuwe bijlagen overschrijdt de veilige limiet voor antwoorden.'],
     RATE_LIMITED: ['Забагато запитів. Зачекайте кілька хвилин.', 'Te veel verzoeken. Wacht enkele minuten.'],
+    NETWORK_ERROR: ['Тимчасовий обрив мережевого з’єднання під час надсилання.', 'Tijdelijke netwerkonderbreking tijdens het verzenden.'],
+    OWNER_MAIL_SESSION_REQUIRED: ['Сеанс пошти потребує оновлення сторінки або повторного входу.', 'De mailsessie vereist het vernieuwen van de pagina of opnieuw aanmelden.'],
     AI_KEY_MISSING: ['Додайте власний ключ Anthropic: Кабінет → API-платформа → Сховище ключів (призначення «anthropic»).', 'Voeg uw eigen Anthropic-sleutel toe: Kabinet → API-platform → Sleutelkluis (doel "anthropic").'],
     AI_PROVIDER_ERROR: ['Постачальник ШІ не відповів або відхилив запит (перевірте ключ і ліміт).', 'De AI-aanbieder antwoordde niet of weigerde het verzoek (controleer sleutel en limiet).'],
     AI_INVALID: ['Немає що обробляти: перевірте текст.', 'Er is niets te verwerken: controleer de tekst.'],
@@ -53,15 +73,16 @@ export function wachtrijFoutTekst(code: string, t: (uk: string, nl: string) => s
   return hit ? t(hit[0], hit[1]) : t('помилка', 'fout');
 }
 
-const post = async (path: string, context: Context, body: Record<string, unknown>) => (await api.post(path, { ...context, ...body })).data;
+const post = async (path: string, context: Context, body: Record<string, unknown>, keepalive = false) =>
+  (await api.post(path, { ...context, ...body }, keepalive ? { keepalive: true, achtergrond: true } : undefined)).data;
 const base = '/api/owner/mail/compose';
 
-export const saveDraftRemote = (ctx: Context, c: Compose) => post(`${base}/draft/save`, ctx, { ...c });
+export const saveDraftRemote = (ctx: Context, c: Compose) => post(`${base}/draft/save`, ctx, { ...c }, true);
 export const listDraftsRemote = (ctx: Context): Promise<{ drafts: DraftSummary[] }> => post(`${base}/draft/list`, ctx, {});
-export const getDraftRemote = (ctx: Context, localId: string): Promise<{ draft: Compose & { syncStatus: string } }> => post(`${base}/draft/get`, ctx, { localId });
-export const deleteDraftRemote = (ctx: Context, localId: string) => post(`${base}/draft/delete`, ctx, { localId });
-export const sendRemote = (ctx: Context, c: Compose, requestId: string) => post(`${base}/send`, ctx, { ...c, requestId });
-export const scheduleRemote = (ctx: Context, c: Compose, sendAt: number, requestId: string): Promise<{ item: ScheduledItem }> => post(`${base}/schedule`, ctx, { ...c, sendAt, requestId });
+export const getDraftRemote = (ctx: Context, localId: string): Promise<{ draft: Compose & { syncStatus: string; threadId?: string } }> => post(`${base}/draft/get`, ctx, { localId });
+export const deleteDraftRemote = (ctx: Context, localId: string) => post(`${base}/draft/delete`, ctx, { localId }, true);
+export const sendRemote = (ctx: Context, c: Compose, requestId: string) => post(`${base}/send`, ctx, { ...c, requestId }, true);
+export const scheduleRemote = (ctx: Context, c: Compose, sendAt: number, requestId: string): Promise<{ item: ScheduledItem }> => post(`${base}/schedule`, ctx, { ...c, sendAt, requestId }, true);
 export const listScheduledRemote = (ctx: Context): Promise<{ items: ScheduledItem[] }> => post(`${base}/scheduled/list`, ctx, {});
 export const cancelScheduledRemote = (ctx: Context, id: string) => post(`${base}/scheduled/cancel`, ctx, { id });
 

@@ -329,7 +329,7 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
       {fout ? (
         <p className='agenda-fout' role='alert'>
           {/^OWNER_AGENDA_SESSIE_VEREIST$/.test(fout) || /401|403/.test(fout)
-            ? tr(lang, 'Календар доступний лише після входу у ваш акаунт.', 'De agenda is alleen beschikbaar na aanmelden in uw account.')
+            ? tr(lang, 'Календар доступний лише після входу у ваш обліковий запис.', 'De agenda is alleen beschikbaar na aanmelden in uw account.')
             : tr(lang, `Не вдалося завантажити календар (${fout}).`, `De agenda laden is mislukt (${fout}).`)}
         </p>
       ) : null}

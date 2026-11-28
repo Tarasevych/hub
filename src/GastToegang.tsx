@@ -2,7 +2,7 @@
 // opent de deellink …/toegang#code=…; het fragment gaat nooit naar de server en wordt meteen uit de adresbalk gehaald). De server geeft
 // een APARTE gastsessie (cookie alleen voor /api/gast, HttpOnly) — nooit het account van de eigenaar. Bovenaan altijd de banner
 // «Гостьовий доступ від … до …»; alleen de onderdelen die de code toestaat (alleen lezen). Alleen UA + NL.
-import {useEffect,useState,type ReactElement} from 'react';
+import {useEffect,useRef,useState,type ReactElement} from 'react';
 import {Clock,Cpu,History,KeyRound,LogOut,ShieldCheck,User} from 'lucide-react';
 import './gast.css';
 import MoviPrapor, { MOVA_NAAM } from './MoviPrapor';
@@ -10,6 +10,7 @@ import { aanmeldPauzeBericht, useAftelPauze } from './aanmeld-pauze';
 import { weigeringZin } from '../shared/weigering-tekst';
 import { readSharedPreferences, watchSharedPreferences } from './gedeelde-voorkeuren';
 import { resolveer } from './thema/kern';
+import { GAST_CODE_LENGTE, gastCodeStatus, schoonGastCode } from './gast-code';
 
 type Lang='uk'|'nl';
 type PresentatieHint={uiterlijk?:{modus?:unknown;palet?:unknown;auto?:unknown};theme?:string};
@@ -59,8 +60,9 @@ export default function GastToegang(){
   const[weg,setWeg]=useState(false);
   const[fotoStuk,setFotoStuk]=useState(false);
   const pauze=useAftelPauze();
+  const codeVeld=useRef<HTMLInputElement>(null);
   const pauzeTekst=pauze.actief||pauze.zojuistVrij?aanmeldPauzeBericht(Math.max(1,pauze.resterend),lang,'gast',pauze.limiet):null;
-  useEffect(()=>{document.documentElement.lang=lang==='uk'?'uk':'nl';document.title=tr(lang,'Гостьовий доступ — Mijn Ruimte','Gasttoegang — Mijn Ruimte');},[lang]);
+  useEffect(()=>{document.documentElement.lang=lang==='uk'?'uk':'nl';document.title=tr(lang,'Гостьовий доступ — Мій простір','Gasttoegang — Mijn Ruimte');},[lang]);
   useEffect(()=>{
     // На /toegang немає кореневої оболонки застосунку: синхронізуємо тему й палітру зі стартовим станом __TSV_PRESENTATION__ та спільними налаштуваннями.
     const pasToe=()=>{
@@ -103,7 +105,7 @@ export default function GastToegang(){
   useEffect(()=>{
     // Deellink: #code=… invullen en meteen uit de adresbalk (en geschiedenis) halen.
     const m=/^#code=([0-9A-Za-z-]{16,24})$/.exec(location.hash||'');
-    if(m){setCode(m[1].toUpperCase());history.replaceState(null,'',location.pathname+location.search);}
+    if(m){setCode(schoonGastCode(m[1]));history.replaceState(null,'',location.pathname+location.search);}
     void(async()=>{const r=await post('/api/gast/sessie').catch(()=>({status:0,data:{}}));if(r.status===200)setSessie(r.data as Sessie);setLaden(false);})();
   },[]);
   useEffect(()=>{if(sessie&&!actief&&sessie.scopes.length)setActief(sessie.scopes[0]);},[sessie,actief]);
@@ -122,10 +124,14 @@ export default function GastToegang(){
     else{
       const p=pauze.vangPauze({status:r.status,data:r.data,headers:r.headers});
       if(!p.isPauze)setFout(foutTekst(String((r.data as Record<string,unknown>).error||(r.status===429?'RATE_LIMITED':''))));
+      // SITE-001 (пункт 17): після відмови фокус повертається в поле, щоб виправити код без пошуку. nl: focus terug in het veld.
+      window.setTimeout(()=>{codeVeld.current?.focus();codeVeld.current?.select();},0);
     }
   };
+  const codeStatus=gastCodeStatus(code);
   const uitloggen=async()=>{await post('/api/gast/uitloggen').catch(()=>undefined);setSessie(null);setInhoud({});setActief('');};
-  const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(lang==='uk'?'nl':'uk')} aria-label={tr(lang,'Мова: українська. Перемкнути на нідерландську','Taal: Nederlands. Wissel naar Oekraïens')}><MoviPrapor taal={lang==='uk'?'nl':'uk'}/><span>{MOVA_NAAM[lang==='uk'?'nl':'uk']}</span></button>;
+  const volgendeTaal=lang==='uk'?'nl':'uk';
+  const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(volgendeTaal)} aria-label={`${MOVA_NAAM[volgendeTaal]} — ${tr(lang,'перемкнути мову на нідерландську','taal wisselen naar Oekraïens')}`}><MoviPrapor taal={volgendeTaal}/><span>{MOVA_NAAM[volgendeTaal]}</span></button>;
   const gastSfeer=isMaquette?<div className='mq-gast-sfeer' aria-hidden='true'>
     <span className='mq-gast-halo'/>
     <span className='mq-gast-orb'/>
@@ -138,15 +144,20 @@ export default function GastToegang(){
     <section className='gast-kaart' data-gast-inwisselen>
       {isMaquette&&<div className='mq-gast-bovenregel'><span className='mq-gast-lijn' aria-hidden='true'/><span>{tr(lang,'МІЙ ПРОСТІР · ГОСТЬОВИЙ ДОСТУП','MIJN RUIMTE · GASTTOEGANG')}</span></div>}
       <header><KeyRound aria-hidden='true'/><h1>{tr(lang,'Гостьовий доступ','Gasttoegang')}</h1>{taalKnop}</header>
-      <p>{tr(lang,'Введіть код доступу, який вам дав власник. Ви отримаєте окрему гостьову сесію лише для перегляду — це не вхід у чужий акаунт.','Voer de toegangscode in die u van de eigenaar kreeg. U krijgt een aparte gastsessie, alleen om te bekijken — u logt niet in op iemands account.')}</p>
+      <p>{tr(lang,'Введіть код доступу, який вам дав власник. Ви отримаєте окрему гостьову сесію лише для перегляду — це не вхід у чужий обліковий запис.','Voer de toegangscode in die u van de eigenaar kreeg. U krijgt een aparte gastsessie, alleen om te bekijken — u logt niet in op iemands account.')}</p>
       {weg&&<p className='gast-melding' role='status'>{tr(lang,'Гостьову сесію завершено: код відкликано або строк дії минув.','De gastsessie is beëindigd: de code is ingetrokken of verlopen.')}</p>}
-      <form onSubmit={e=>{e.preventDefault();void inwisselen();}}>
+      <form onSubmit={e=>{e.preventDefault();if(codeStatus.volledig)void inwisselen();}} noValidate>
         <label htmlFor='gast-code'>{tr(lang,'Код доступу','Toegangscode')}</label>
-        <input id='gast-code' autoFocus autoComplete='off' autoCapitalize='characters' spellCheck={false} inputMode='text' maxLength={24} placeholder='XXXX-XXXX-XXXX-XXXX' value={code} onChange={e=>setCode(e.target.value.toUpperCase())}/>
-        <button type='submit' disabled={bezig||pauze.actief||code.replace(/[\s-]/g,'').length<16}>{bezig?tr(lang,'Перевірка…','Controleren…'):pauze.actief&&pauzeTekst?pauzeTekst.knop:tr(lang,'Увійти як гість','Doorgaan als gast')}</button>
+        {/* SITE-001 (пункт 17): підказка про довжину, миттєва перевірка знаків і зв'язок поля з повідомленнями (aria-describedby).
+            Кириличні двійники латинських літер перетворюються самі (src/gast-code.ts). nl: directe controle en gekoppelde meldingen. */}
+        <input id='gast-code' ref={codeVeld} autoFocus autoComplete='off' autoCapitalize='characters' spellCheck={false} inputMode='text' maxLength={24} placeholder='XXXX-XXXX-XXXX-XXXX' value={code} onChange={e=>{setCode(schoonGastCode(e.target.value));if(fout)setFout('');}}
+          aria-invalid={codeStatus.ongeldig.length>0||!!fout?true:undefined} aria-describedby={['gast-code-hint',codeStatus.ongeldig.length?'gast-code-teken':'',fout&&!pauze.actief?'gast-code-fout':''].filter(Boolean).join(' ')}/>
+        <small id='gast-code-hint' className='gast-hint'>{tr(lang,`${GAST_CODE_LENGTE} латинських літер і цифр, дефіси необов’язкові · введено ${Math.min(codeStatus.tekens,GAST_CODE_LENGTE)} із ${GAST_CODE_LENGTE}`,`${GAST_CODE_LENGTE} Latijnse letters en cijfers, streepjes zijn optioneel · ${Math.min(codeStatus.tekens,GAST_CODE_LENGTE)} van ${GAST_CODE_LENGTE} ingevoerd`)}</small>
+        {codeStatus.ongeldig.length>0&&<p id='gast-code-teken' className='gast-fout' role='alert'>{tr(lang,`Недопустимі знаки: ${codeStatus.ongeldig.map(z=>`«${z}»`).join(', ')}. Код складається лише з латинських літер (крім U) і цифр.`,`Ongeldige tekens: ${codeStatus.ongeldig.map(z=>`«${z}»`).join(', ')}. De code bestaat alleen uit Latijnse letters (behalve U) en cijfers.`)}</p>}
+        <button type='submit' disabled={bezig||pauze.actief||!codeStatus.volledig}>{bezig?tr(lang,'Перевірка…','Controleren…'):pauze.actief&&pauzeTekst?pauzeTekst.knop:tr(lang,'Увійти як гість','Doorgaan als gast')}</button>
       </form>
       {pauzeTekst&&<p className={pauze.actief?'gast-fout':'gast-melding'} role='status' aria-live='polite'>{pauze.actief?`${pauzeTekst.kop}. ${pauzeTekst.uitleg}`:pauzeTekst.vrij}</p>}
-      {fout&&!pauze.actief&&<p className='gast-fout' role='alert'>{fout}</p>}
+      {fout&&!pauze.actief&&<p id='gast-code-fout' className='gast-fout' role='alert'>{fout}</p>}
       <small>{tr(lang,'Кількість спроб обмежено. Код показують лише один раз — попросіть новий, якщо цей не працює.','Het aantal pogingen is beperkt. Een code wordt maar één keer getoond — vraag een nieuwe als deze niet werkt.')}</small>
     </section>
   </main>;

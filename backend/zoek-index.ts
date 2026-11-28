@@ -418,7 +418,7 @@ export async function zoekInLaden(groepen: ReadonlyArray<LadeGroep>, vraag: Zoek
     // 1. strikt: ≥ ½ van de woordgroepen
     let r = await paginaLezen(run, kernSql(userId, laden, zin, vraag, MIN_DEKKING), sorteer, perPagina, pagina, metFacets);
     let verzwakt = false;
-    // 2. (bijna) niets? dan elke groep (gedeeltelijk) — de vraag «де подивитися хто входив у мій акаунт» mag niet leeg blijven;
+    // 2. (bijna) niets? dan elke groep (gedeeltelijk) — de vraag «де подивитися хто входив у мій обліковий запис» mag niet leeg blijven;
     //    de strikte treffers zitten daar ook in (hogere dekking → hogere score), dus niets gaat verloren.
     if (r.totaal < 3 && zin.groepTs.length >= 2) { const r2 = await paginaLezen(run, kernSql(userId, laden, zin, vraag, 0), sorteer, perPagina, pagina, metFacets); if (r2.totaal > r.totaal) { r = r2; verzwakt = true; } }
     // 3. mager? dan het typefout-kanaal (trigram op de titel, drempel 0,45) als aparte kleine query — alleen op pagina 1

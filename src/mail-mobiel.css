@@ -2,17 +2,28 @@
    тема й уривок нижче, три крапки з діями праворуч унизу, свайп вліво відкриває кнопки дій. Правила навмисно специфічні й з !important там, де
    старіші файли (mail-thread-editor, google-mail-workspace, mail-reader-enhancements) задають власну розкладку. Наприкінці: повна ширина й зручні для пальця розміри. */
 .mail-row-swipe-actions{display:none}
+.mail-top-command-bar .mail-top-search-area[data-zoek-compact='veld'] .mail-top-search-shell input{padding-right:16px;text-overflow:ellipsis}
+.mail-top-command-bar .mail-top-search-area[data-zoek-compact='veld'] .mail-top-search-tune{margin-left:4px}
+.mail-top-command-bar .mail-top-search-area[data-zoek-compact='icoon']:not([data-zoek-actief='ja']){display:flex;align-items:center;justify-content:flex-start}
+.mail-top-command-bar .mail-top-search-area[data-zoek-compact='icoon']:not([data-zoek-actief='ja'])>.mail-top-search-shell{display:inline-grid;grid-template-columns:1fr;place-items:center;width:42px;min-width:42px;max-width:42px;height:42px;min-height:42px;padding:0;cursor:pointer}
+.mail-top-command-bar .mail-top-search-area[data-zoek-compact='icoon']:not([data-zoek-actief='ja'])>.mail-top-search-shell>input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;opacity:0;pointer-events:none;overflow:hidden;clip-path:inset(50%)}
+.mail-top-command-bar .mail-top-search-area[data-zoek-compact='icoon']:not([data-zoek-actief='ja'])>.mail-top-search-shell>:is(.mail-search-clear,.mail-top-search-tune){display:none}
 
 @media (max-width:720px){
   html body .canonical-chrome.sidebar-drawer-mode:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:0!important}
   html body .google-mail-workspace{width:100%;max-width:100%;margin:0}
+  html body .google-mail-workspace.mq-schil>.mail-list-viewport:not(:has(>.google-mail-orbit[data-mail-account-resolution-empty='true'])){overflow:hidden}
+  html body .google-mail-workspace.mq-schil>.mail-list-viewport>.google-mail-list{overflow:hidden;border-radius:inherit;background:transparent}
 
   html body .google-mail-workspace .google-mail-row.mail-row-semantic-order{position:relative;display:block;overflow:hidden;touch-action:pan-y;min-height:76px;border-bottom:1px solid var(--line,#e3e7eb);-webkit-tap-highlight-color:transparent}
+  html body .google-mail-workspace .google-mail-row.unread::before{z-index:2}
   html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream{
+    position:relative;z-index:1;
     display:grid!important;grid-template-columns:48px minmax(0,1fr) auto!important;
     grid-template-areas:"avatar sender date" "avatar subject subject" "avatar snippet snippet" "avatar attach attach"!important;
     column-gap:12px!important;row-gap:2px!important;align-items:center!important;flex-wrap:nowrap!important;
-    padding:10px 46px 10px 12px!important;background:inherit;transform:translateX(var(--swipe-x,0px));transition:transform .18s ease;will-change:transform}
+    padding:10px 46px 10px 12px!important;border-radius:inherit;background:transparent;transform:translateX(var(--swipe-x,0px));transition:transform .18s ease;will-change:transform}
+  html body .google-mail-workspace .google-mail-row:is(.mail-row-swiping,.mail-row-swipe-open) .mail-row-block-stream{background:inherit}
   html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-block-stream{transition:none}
   html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream>.mail-row-block{min-width:0;margin:0!important;flex:none!important}
 
@@ -77,12 +88,14 @@
 
   /* верхня панель: безпечний відступ від правої верхньої зони оболонки, пошук займає вільний простір, шестерня швидких налаштувань завжди доступна */
   html body .mail-top-command-bar{right:max(calc(var(--plaats-boven-reserve,0px) + 6px),var(--canonical-account-inline-reserve,64px));min-height:52px;top:4px}
-  html body .mail-top-command-bar>:first-child{flex:1 1 0!important;min-width:0!important}
+  html body .mail-top-command-bar>.mail-top-search-area{flex:1 1 0!important;min-width:0!important}
   html body .mail-top-search-shell{width:100%;min-width:0}
   html body .mail-top-interface-actions{flex:none;margin-left:auto}
   html body .mail-top-search-shell{min-height:46px;grid-template-columns:44px minmax(0,1fr) auto auto}
   html body .mail-top-search-shell input{font-size:16px}
-  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{min-width:44px;min-height:44px;width:44px;height:44px}
+  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{flex:0 0 auto;aspect-ratio:1/1;border-radius:50%;min-width:44px;min-height:44px;width:44px;height:44px}
+  html body .mail-top-command-bar .mail-top-search-area[data-zoek-compact='icoon']:not([data-zoek-actief='ja'])>.mail-top-search-shell{width:44px;min-width:44px;max-width:44px;height:46px;min-height:46px}
+  html body .mail-top-command-bar:has(>.mail-top-search-area[data-zoek-smal='ja'][data-zoek-actief='ja'])>.mq-anker-onderbalk{display:none}
   html body .mail-top-interface-actions{gap:0}
   html body .mail-quick-settings{max-width:100vw;box-sizing:border-box}
   html body .google-mail-workspace .mail-category-pager button{min-width:44px;min-height:40px}
@@ -93,13 +106,24 @@
 }
 
 @media (max-width:440px){
-  /* вузький екран 360–390px: кнопки 36×44 px вміщують пошук (≥ 100 px), фільтр, оновлення та шестерню налаштувань поруч без зникнення */
+  /* вузький екран 360–390px: круглі кнопки 40×40 px вміщують пошук, фільтр, оновлення та шестерню налаштувань поруч без овального стискання */
   html body .mail-top-command-bar{gap:4px}
-  html body .mail-top-search-shell{grid-template-columns:36px minmax(0,1fr) auto auto}
-  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:36px;height:44px}
-  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{min-width:36px;min-height:44px}
+  html body .mail-top-search-shell{grid-template-columns:40px minmax(0,1fr) auto auto}
+  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{flex:0 0 40px;aspect-ratio:1/1;border-radius:50%;width:40px;height:40px;min-width:40px;min-height:40px}
+  html body .mail-top-command-bar .mail-top-search-area[data-zoek-compact='icoon']:not([data-zoek-actief='ja'])>.mail-top-search-shell{width:42px;min-width:42px;max-width:42px;height:42px;min-height:42px}
 }
 
 @media (prefers-reduced-motion:reduce){
   html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream{transition:none}
 }
+
+@keyframes mail-ververs-draai{to{transform:rotate(360deg)}}
+.google-mail-workspace svg.spin,.mail-top-refresh svg.spin,.mail-top-refresh[aria-busy='true'] svg{animation:mail-ververs-draai .88s linear infinite}
+.mail-top-refresh[aria-busy='true']{color:var(--mq-accent,var(--accent));cursor:progress}
+.mail-ververs-kapsel{position:fixed;top:calc(56px + env(safe-area-inset-top,0px));bottom:auto;left:50%;transform:translateX(-50%);z-index:235;display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:min(290px,calc(100vw - 32px));min-height:26px;padding:3.5px 10px 3.5px 8px;border-radius:999px;background:color-mix(in srgb,var(--panel,var(--boot-panel,#fff)) 90%,var(--bg,var(--boot-bg,#f7f8fa)));border:1px solid color-mix(in srgb,var(--accent,var(--boot-accent,#1a5fd6)) 28%,var(--line,var(--boot-line,#dce1e6)));box-shadow:0 6px 18px rgba(0,0,0,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:color-mix(in srgb,var(--text,var(--boot-text,#17212b)) 92%,var(--muted,var(--boot-muted,#6a7580)));font-size:11px;font-weight:560;line-height:1.2;letter-spacing:.01em;pointer-events:none;user-select:none;box-sizing:border-box;transition:background-color .18s ease,border-color .18s ease,color .18s ease,opacity .18s ease,transform .18s ease}
+.mail-ververs-kapsel[data-fase='klaar']{background:var(--ok-vlak,#15803d);border-color:color-mix(in srgb,#ffffff 22%,var(--ok-vlak,#15803d));color:#ffffff}
+.mail-ververs-kapsel[data-fase='fout']{background:var(--fout-vlak,#b42318);border-color:color-mix(in srgb,#ffffff 22%,var(--fout-vlak,#b42318));color:#ffffff}
+.mail-ververs-kapsel-spin{display:block;flex:none;width:11px;height:11px;border:1.6px solid color-mix(in srgb,var(--accent,var(--boot-accent,#1a5fd6)) 26%,transparent);border-top-color:var(--accent,var(--boot-accent,#1a5fd6));border-radius:50%;animation:mail-ververs-draai .78s linear infinite}
+.mail-ververs-kapsel>svg{display:block;flex:none;width:12px;height:12px;color:currentColor;stroke-width:2.5}
+.mail-ververs-kapsel-tekst{min-width:0;font-size:11px;font-weight:560;line-height:1.2;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body:has(.canonical-chrome.sidebar-drawer) .mail-ververs-kapsel,html body:has(.canonical-notification-panel) .mail-ververs-kapsel,html body:has(.am3-mobiel-laag) .mail-ververs-kapsel{opacity:0;visibility:hidden}

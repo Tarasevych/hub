@@ -41,6 +41,20 @@ export async function plaatsVerplichtZetten(userId: string, aan: boolean, method
   await plaatsEisZetten(userId, [...nu]);
 }
 
+/** HERSTEL-001 (TG-2): mag deze gebruiker een actief aanmeldverzoek rechtstreeks in de bot oproepen zonder sitelink? Standaard UIT (false). */
+export async function rechtstreeksBevestigenVoor(userId: string): Promise<boolean> {
+  const [r] = await sql<{ aan: boolean }>('SELECT rechtstreeks_bevestigen AS aan FROM app.tg_matrix WHERE user_id = $1', [userId]);
+  return r?.aan === true;
+}
+export async function rechtstreeksBevestigenZetten(userId: string, aan: boolean): Promise<boolean> {
+  const waarde = aan === true;
+  await sql(
+    "INSERT INTO app.tg_matrix (user_id, keuzes, rechtstreeks_bevestigen) VALUES ($1,'{}'::jsonb,$2) ON CONFLICT (user_id) DO UPDATE SET rechtstreeks_bevestigen = EXCLUDED.rechtstreeks_bevestigen, gewijzigd_op = now()",
+    [userId, waarde],
+  );
+  return waarde;
+}
+
 export async function keuzesVan(userId: string): Promise<Record<string, KeuzeId>> {
   const [r] = await sql<{ keuzes: Record<string, KeuzeId> }>('SELECT keuzes FROM app.tg_matrix WHERE user_id = $1', [userId]);
   return r?.keuzes && typeof r.keuzes === 'object' ? r.keuzes : {};

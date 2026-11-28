@@ -19,7 +19,7 @@ export function stapOpUitKaart(nu = Date.now(), env: Record<string, string | und
   const s = stapOpUitStand(nu, env);
   const totIso = s.tot > 0 ? new Date(s.tot).toISOString() : '';
   if (s.uit && s.bron === 'STAP_OP_UIT') return { ...s, ernst: 'rood', totIso, tekst: [
-    '! Повторне підтвердження ВИМКНЕНО (STAP_OP_UIT=1) без кінцевого терміну: секрети, ролі, SSH-сертифікати, видалення акаунта й розблокування розширення виконуються з самим лише сеансом. Приберіть рядок із /etc/mijn-ruimte/geheimen.env і перезапустіть сервіс; на майбутнє — STAP_OP_UIT_TOT=<час> (не довше 24 год).',
+    '! Повторне підтвердження ВИМКНЕНО (STAP_OP_UIT=1) без кінцевого терміну: секрети, ролі, SSH-сертифікати, видалення облікового запису й розблокування розширення виконуються з самим лише сеансом. Приберіть рядок із /etc/mijn-ruimte/geheimen.env і перезапустіть сервіс; на майбутнє — STAP_OP_UIT_TOT=<час> (не довше 24 год).',
     '! Herbevestiging staat UIT (STAP_OP_UIT=1) zonder einde: geheimen, rollen, SSH-certificaten, account verwijderen en de extensie ontgrendelen gaan met alleen een sessie. Haal de regel uit /etc/mijn-ruimte/geheimen.env en herstart de dienst; voortaan STAP_OP_UIT_TOT=<tijdstip> (hoogstens 24 uur).',
   ] };
   if (s.uit) return { ...s, ernst: 'rood', totIso, tekst: [

@@ -88,9 +88,9 @@ const HUB_CONNECTORS: MiddelPlaats = { dienst: 'mcp', tab: 'agents', hash: 'conn
 const HUB_APPARATEN: MiddelPlaats = { dienst: 'mcp', tab: 'agents', hash: 'apparaten', label: ['Підключення ШІ → Пристрої', 'AI-koppelingen → Apparaten'] };
 const HUB_EXTENSIE: MiddelPlaats = { dienst: 'mcp', tab: 'agents', hash: 'extensie', label: ['Підключення ШІ → Розширення браузера', 'AI-koppelingen → Browserextensie'] };
 const HUB_HULPMIDDELEN: MiddelPlaats = { dienst: 'mcp', tab: 'tools', label: ['Інструменти ШІ', 'AI-hulpmiddelen'] };
-const POST: MiddelPlaats = { dienst: 'mail', tab: 'accounts', label: ['Пошта → Акаунти', 'E-mail → Accounts'] };
-const AGENDA: MiddelPlaats = { dienst: 'cloud', tab: 'accounts', label: ['Хмара → Акаунти', 'Cloud → Accounts'] };
-const GITHUB: MiddelPlaats = { dienst: 'github', tab: 'accounts', label: ['GitHub → Акаунти', 'GitHub → Accounts'] };
+const POST: MiddelPlaats = { dienst: 'mail', tab: 'accounts', label: ['Пошта → Облікові записи', 'E-mail → Accounts'] };
+const AGENDA: MiddelPlaats = { dienst: 'cloud', tab: 'accounts', label: ['Хмара → Облікові записи', 'Cloud → Accounts'] };
+const GITHUB: MiddelPlaats = { dienst: 'github', tab: 'accounts', label: ['GitHub → Облікові записи', 'GitHub → Accounts'] };
 
 const telDetail = (a: number, b: number, uk: string, nl: string): Tweetalig => [`${uk}: ${a} / ${b}`, `${nl}: ${a} / ${b}`];
 /** Heeft de chat ten minste één van deze hulpmiddelen? */
@@ -147,7 +147,7 @@ export function middelen(f: Feiten): Middel[] {
       wat: ['Шукати й читати листи, готувати відповідь (надсилання — завжди ваш клік).', 'Mail zoeken en lezen, een antwoord voorbereiden (versturen is altijd uw klik).'],
       staat: staat(heeftTool(f, ['mail_search_messages', 'mail_read_message', 'mail_list_accounts']), f.google.bekend && f.google.post),
       detail: !f.google.bekend ? ['Стан підключення не вдалося прочитати', 'De stand van de koppeling kon niet gelezen worden']
-        : f.google.post ? ['Акаунт пошти підключено', 'Mailaccount is gekoppeld'] : ['Акаунт пошти не підключено', 'Geen mailaccount gekoppeld'],
+        : f.google.post ? ['Обліковий запис пошти підключено', 'Mailaccount is gekoppeld'] : ['Обліковий запис пошти не підключено', 'Geen mailaccount gekoppeld'],
       waar: POST,
     },
     {

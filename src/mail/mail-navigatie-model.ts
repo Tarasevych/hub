@@ -28,7 +28,7 @@ export const MAIL_NAV_DEFINITIES: ReadonlyArray<MailNavDefinitie> = [
   { id: 'scheduled', uk: 'Заплановано', nl: 'Gepland', zone: 'more', order: 40 },
   { id: 'subscriptions', uk: 'Керування підписками', nl: 'Abonnementen beheren', zone: 'more', order: 50 },
   { id: 'archive', uk: 'Архів', nl: 'Archief', zone: 'more', order: 60 },
-  { id: 'accounts', uk: 'Акаунти', nl: 'Accounts', zone: 'more', order: 70 },
+  { id: 'accounts', uk: 'Облікові записи', nl: 'Accounts', zone: 'more', order: 70 },
 ];
 
 /** Яка системна мітка Gmail дає лічильник непрочитаних для пункту меню. / Welk Gmail-systeemlabel de teller levert. */

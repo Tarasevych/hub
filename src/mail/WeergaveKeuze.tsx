@@ -20,7 +20,7 @@
 // op één regel — het blok groeit niet meer zodra de server een wachtrij meldt); «Докладніше» schuift in het blad «Ще» de legenda en de
 // regel van de voorraad in beeld (niet de kop van de zone); in een smal venster met muis staat de knopinfo van de wisknop en van
 // «У черзі» ónder het anker, niet meer over de zin «wat gebeurt er nu».
-import { ALargeSmall, Check, ChevronDown, CloudOff, Database, Eye, EyeOff, Hourglass, Image, ImageOff, Languages, ShieldCheck, Trash2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { ALargeSmall, Check, ChevronDown, CloudOff, Database, Eye, EyeOff, Hourglass, Image, ImageOff, Languages, ShieldCheck, Trash2, TriangleAlert, X, type LucideIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { TEKST_STAPPEN, type LezerBeelden, type LezerDichtheid, type LezerTaal } from './lees-modus';
 import { useLeesVenster } from './LeesVenster';
@@ -470,6 +470,12 @@ export function WeergaveKnop({ lang }: { lang: 'uk' | 'nl' }) {
         <BeeldTekstIcoon />
       </summary>
       <div className='lz-weergave-paneel' role='group' aria-label={t('Вигляд листа', 'Weergave van het bericht')}>
+        <header className='lz-paneel-kop'>
+          <strong>{t('Вигляд листа', 'Weergave van het bericht')}</strong>
+          <button type='button' className='lz-paneel-sluit' aria-label={t('Закрити вигляд листа', 'Weergave sluiten')} onClick={() => ref.current?.removeAttribute('open')}>
+            <X aria-hidden='true' />
+          </button>
+        </header>
         <Keuzes lang={lang} />
       </div>
     </details>

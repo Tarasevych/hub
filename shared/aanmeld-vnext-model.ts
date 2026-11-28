@@ -64,7 +64,7 @@ export type AanmeldAanbieder = {
 };
 export const AANMELD_AANBIEDERS: readonly AanmeldAanbieder[] = Object.freeze([
   { id: 'microsoft', naam: 'Microsoft', monogram: 'M', site: 'https://login.microsoftonline.com', stand: 'sleutels-nodig',
-    uitleg: ['Повний OAuth-контур (code flow, state+PKCE, перевірка id_token, прив’язка до ВАШОГО акаунта) вже в коді; вмикається ключами власника.', 'Volledige OAuth-contour (code flow, state+PKCE, id_token-controle, koppeling aan UW account) staat in de code; de sleutels van de eigenaar zetten hem aan.'],
+    uitleg: ['Повний OAuth-контур (code flow, state+PKCE, перевірка id_token, прив’язка до ВАШОГО облікового запису) вже в коді; вмикається ключами власника.', 'Volledige OAuth-contour (code flow, state+PKCE, id_token-controle, koppeling aan UW account) staat in de code; de sleutels van de eigenaar zetten hem aan.'],
     vereist: ['AANMELD_MICROSOFT_CLIENT_ID', 'AANMELD_MICROSOFT_CLIENT_SECRET'] },
   { id: 'discord', naam: 'Discord', monogram: 'D', site: 'https://discord.com/developers', stand: 'sleutels-nodig',
     uitleg: ['Повний OAuth2-контур (identify+email, state+PKCE, прив’язка) в коді; потрібні ключі застосунку власника.', 'Volledige OAuth2-contour (identify+email, state+PKCE, koppeling) in de code; de app-sleutels van de eigenaar zijn nodig.'],

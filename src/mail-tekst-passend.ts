@@ -45,6 +45,38 @@ export function tekstSchaal(natuur: number, breedte: number, beschikbaar: number
 }
 
 /**
+ * Voorkomt dat een tekstkolom in een meerkoloms-tabel (bv. een handtekening met logo links en adressen rechts) door vaste
+ * breedtes van buurkolommen tot een smalle verticale strook (< 76 px, tekst letter voor letter onder elkaar) wordt geperst.
+ */
+export function herstelKnellendeTabelKolommen(doc: Document): void {
+  if (typeof doc.querySelectorAll !== 'function') return;
+  for (const tr of Array.from(doc.querySelectorAll('tr'))) {
+    const cells = Array.from(tr.children || []).filter((el): el is HTMLTableCellElement => el.tagName === 'TD' || el.tagName === 'TH');
+    if (cells.length < 2) continue;
+    const gekneld = cells.some((cell) => {
+      if ((cell.colSpan || 1) > 1) return false;
+      const w = cell.offsetWidth || 0, h = cell.offsetHeight || 0;
+      const txt = (cell.textContent || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+      return txt.length >= 10 && w > 0 && w < 76 && h > 160;
+    });
+    if (!gekneld) continue;
+    const minW = Math.min(92, Math.floor(264 / Math.min(cells.length, 4)));
+    for (const cell of cells) {
+      if ((cell.colSpan || 1) > 1) continue;
+      const txt = (cell.textContent || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+      const heeftBeeld = typeof cell.querySelector === 'function' && Boolean(cell.querySelector('img,svg,[data-mail-beeld-tegel]'));
+      if (txt.length >= 6 || heeftBeeld) {
+        if (typeof cell.removeAttribute === 'function') cell.removeAttribute('width');
+        cell.style.width = '';
+        cell.style.minWidth = `${minW}px`;
+        cell.style.overflowWrap = 'break-word';
+        cell.style.wordBreak = 'normal';
+      }
+    }
+  }
+}
+
+/**
  * Past het document in het iframe aan het kader aan en geeft de benodigde iframe-hoogte terug.
  * Eerst alles terugzetten en de natuurlijke breedte meten (geen paint ertussen), dan pas schalen of horizontaal scrollen.
  * `tekst` = tekstgrootte (1 = 100 %); in «Оригінальний розмір» telt die niet (ware grootte is ware grootte).
@@ -57,6 +89,7 @@ export function pasMailDocumentAan(doc: Document, beschikbaar: number, origineel
   // Hoogte mag nooit van de iframe-viewport afhangen (html/body height:100% of min-height uit de mail), anders meet elke
   // vergroting van het kader zichzelf terug (F8: groeilus 906→1034→…→8400 px).
   html.style.height = 'auto'; html.style.minHeight = '0'; body.style.height = 'auto'; body.style.minHeight = '0';
+  herstelKnellendeTabelKolommen(doc);
   const hoogteNu = () => mailDocumentHoogte(doc);
   const k = Number.isFinite(tekst) && tekst > 0 ? tekst : 1;
   if (k !== 1 && !origineel && beschikbaar > 0) {

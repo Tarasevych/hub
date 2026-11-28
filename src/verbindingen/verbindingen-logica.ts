@@ -49,10 +49,10 @@ export function wanneer(lang: Lang, ms: number, nu = Date.now()): string {
 /** Begrijpelijke uitleg van een probleem + de passende actie. Interne code blijft in de technische details. */
 export function probleemUitleg(lang: Lang, a: GAccount): { tekst: string; actie: 'opnieuw' | 'wachten' } | null {
   if (a.status === 'reauth_required') return { tekst: tr(lang, 'Google просить увійти ще раз (доступ закінчився або пароль змінено).', 'Google vraagt opnieuw aan te melden (toegang verlopen of wachtwoord gewijzigd).'), actie: 'opnieuw' };
-  if (a.status === 'revoked') return { tekst: tr(lang, 'Доступ відкликано в налаштуваннях Google. Підключіть акаунт ще раз.', 'De toegang is ingetrokken in de Google-instellingen. Koppel het account opnieuw.'), actie: 'opnieuw' };
-  if (a.status === 'connected' && a.sync?.herstelNodig) return { tekst: tr(lang, 'Синхронізація зупинилась і почнеться з початку автоматично. Якщо це триває довго — підключіть акаунт повторно.', 'De synchronisatie is gestopt en begint vanzelf opnieuw. Duurt dat lang, koppel het account dan opnieuw.'), actie: 'opnieuw' };
+  if (a.status === 'revoked') return { tekst: tr(lang, 'Доступ відкликано в налаштуваннях Google. Підключіть обліковий запис ще раз.', 'De toegang is ingetrokken in de Google-instellingen. Koppel het account opnieuw.'), actie: 'opnieuw' };
+  if (a.status === 'connected' && a.sync?.herstelNodig) return { tekst: tr(lang, 'Синхронізація зупинилась і почнеться з початку автоматично. Якщо це триває довго — підключіть обліковий запис повторно.', 'De synchronisatie is gestopt en begint vanzelf opnieuw. Duurt dat lang, koppel het account dan opnieuw.'), actie: 'opnieuw' };
   if (a.status === 'connected' && a.sync?.foutCode) return /TOKEN|AUTH|401|403|GRANT/i.test(a.sync.foutCode)
-    ? { tekst: tr(lang, 'Остання синхронізація не вдалася через доступ. Підключіть акаунт повторно.', 'De laatste synchronisatie mislukte door de toegang. Koppel het account opnieuw.'), actie: 'opnieuw' }
+    ? { tekst: tr(lang, 'Остання синхронізація не вдалася через доступ. Підключіть обліковий запис повторно.', 'De laatste synchronisatie mislukte door de toegang. Koppel het account opnieuw.'), actie: 'opnieuw' }
     : { tekst: tr(lang, 'Остання синхронізація не вдалася. Наступна спроба буде автоматично протягом 5 хвилин.', 'De laatste synchronisatie mislukte. Binnen 5 minuten volgt vanzelf een nieuwe poging.'), actie: 'wachten' };
   return null;
 }

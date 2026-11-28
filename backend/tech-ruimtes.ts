@@ -13,8 +13,8 @@ const bodyOf = (b: unknown) => (b && typeof b === 'object' ? b as Record<string,
 const P = '/api/owner/hub/tech/ruimtes';
 
 const UITLEG: Record<string, { uk: string; nl: string }> = {
-  SITE_SESSIE_WEG: { uk: 'Основний акаунт не активний: увійдіть на сайті знову.', nl: 'Het hoofdaccount is niet actief: meld u opnieuw aan op de site.' },
-  ACCOUNT_NIET_ACTIEF: { uk: 'Акаунт не активний.', nl: 'Het account is niet actief.' },
+  SITE_SESSIE_WEG: { uk: 'Основний обліковий запис не активний: увійдіть на сайті знову.', nl: 'Het hoofdaccount is niet actief: meld u opnieuw aan op de site.' },
+  ACCOUNT_NIET_ACTIEF: { uk: 'Обліковий запис не активний.', nl: 'Het account is niet actief.' },
   BINDING_ONGELDIG: { uk: 'Технічний простір не належить цьому входу. Почніть його заново.', nl: 'De technische ruimte hoort niet bij deze aanmelding. Start haar opnieuw.' },
 };
 const STANDAARD_UITLEG = { uk: 'Технічний простір зараз недоступний.', nl: 'De technische ruimte is nu niet beschikbaar.' };
@@ -56,10 +56,10 @@ export function techRuimtesRoutes(requireSession: RequireSession, deps: TechRuim
     [`POST ${P}/beeindigen`]: [gate({ schrijven: true }, async (_b, a, tab) => { await k.beeindigen(a.user, sessie(a)); return st(a, tab); })],
     // Ruimtes-scheiding (0123): directe link/bladwijzer naar een technische pagina of API. 401 zonder sessie (gate),
     // 403 met code + tweetalige uitleg als de technische ruimte voor DEZE aanmelding niet geldt, 200 als ze geldt.
-    [`POST ${P}/controle`]: [gate({}, async (_b, a) => {
+    [`POST ${P}/controle`]: [gate({}, async (_b, a, tab) => {
       const s = sessie(a);
       if (!s) return weigering('SITE_SESSIE_WEG');
-      const b = await k.besluit(a.user.id, { bron: 'site', sessieId: s.id });
+      const b = await k.besluit(a.user.id, { bron: 'site', sessieId: s.id, tab });
       return b.toegestaan && b.ruimte === 'technisch' ? json({ ruimte: 'technisch', eindTijd: b.eind ? new Date(b.eind).toISOString() : null }) : weigering(b.code);
     })],
     [`POST ${P}/toegang`]: [gate({}, async (_b, a, tab) => json(await k.toegang(a.user, sessie(a), tab)))],

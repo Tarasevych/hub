@@ -248,8 +248,129 @@
 .tga-bot-knop-voorbeeld.is-nee{background:var(--fout-zacht,rgba(220,38,38,.12));color:var(--fout,#b91c1c)}
 .tga-verdacht-waarschuwing{display:flex;align-items:flex-start;gap:8px;margin:0;padding:8px 10px;border-radius:10px;background:var(--warn-zacht,rgba(217,119,6,.12));color:var(--text,inherit);font-size:12px;line-height:1.4}
 .tga-verdacht-waarschuwing svg{width:16px;height:16px;flex:none;color:var(--staat-let,#d97706);margin-top:1px}
+
+/* HERSTEL-001 (Етап 2, K2-1..K2-3): векторна стрілка кнопки входу, чистий одноекранний режим підтвердження Telegram та вікно підказки за кнопкою (i). */
+.tga-aanmeld-eind svg{display:block;width:18px;height:18px;stroke-width:2;flex:none}
+.tga-aanmeld-open .tga-open-boven{flex-wrap:nowrap;min-width:0}
+.canonical-chrome .tga-aanmeld-open .tga-open-boven h2.tga-kop,
+.tga-aanmeld-open .tga-open-boven h2.tga-kop{font-size:15px;font-weight:650;line-height:1.25;margin:0;min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:7px}
+.tga-tijd-pil{flex:0 0 auto;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,currentColor 8%,transparent);color:var(--mr-login-muted,var(--muted,#5a6672));font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+.tga-tijd-pil .tga-draai{width:11px;height:11px;border-width:1.7px}
+.tga-aanmeld-open .tga-voortgang{height:4px}
+
+.tg2-wacht[data-tg-schone-kaart='1']{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;justify-items:stretch;min-width:0}
+.tg2-wacht[data-tg-schone-kaart='1'] .tg2-held{width:min(144px,42vw);margin:6px auto 2px}
+.tg2-wacht[data-tg-schone-kaart='1'] .tg2-held::before{inset:-8px;border-radius:36px}
+.tg2-vraag-rij{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;max-width:100%;padding:0 2px}
+.tg2-vraag-rij .tg2-vraag{flex:0 1 auto;min-width:0;font-size:15px;font-weight:650;line-height:1.34;text-align:center;text-wrap:balance;overflow-wrap:break-word;margin:0;color:var(--mr-login-ink,var(--text,#17212b))}
+
+.tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon{
+  --tg2-info-rand:rgba(68,82,102,.62);
+  --tg2-info-inkt:#3d4a5d;
+  position:relative;flex:0 0 28px;width:28px;height:28px;min-width:28px;min-height:28px;max-width:28px;max-height:28px;aspect-ratio:1 / 1;
+  padding:0;margin:0;box-sizing:border-box;border-radius:50%;border:1.5px solid var(--tg2-info-rand);background:transparent;color:var(--tg2-info-inkt);
+  display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-sans,system-ui,-apple-system,sans-serif);font-size:13.5px;font-weight:650;line-height:1;
+  cursor:pointer;transition:border-color .15s ease,color .15s ease,background-color .15s ease
+}
+.tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon::after{content:'';position:absolute;inset:-8px;border-radius:50%}
+:is(.canonical-chrome.theme-dark,html.theme-dark) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon{--tg2-info-rand:rgba(172,184,204,.58);--tg2-info-inkt:#d0dae8}
+:is(.canonical-chrome.theme-plum-light,html.theme-plum-light) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon{--tg2-info-rand:rgba(92,72,99,.62);--tg2-info-inkt:#4a3652}
+:is(.canonical-chrome.theme-plum-dark,html.theme-plum-dark) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon{--tg2-info-rand:rgba(208,185,201,.58);--tg2-info-inkt:#e5d7e3}
+html.palet-puur :is(.canonical-chrome.theme-light,.theme-light) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon{--tg2-info-rand:#404040;--tg2-info-inkt:#000000}
+html.palet-puur :is(.canonical-chrome.theme-dark,.theme-dark) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon{--tg2-info-rand:#c2c2c2;--tg2-info-inkt:#ffffff}
+.tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon:hover,
+.tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon:focus-visible{border-color:#229ED9;color:#1b7fb0;background:rgba(34,158,217,.1);outline:2px solid var(--focus,#229ED9);outline-offset:2px}
+:is(.canonical-chrome:is(.theme-dark,.theme-plum-dark),html:is(.theme-dark,.theme-plum-dark)) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon:hover,
+:is(.canonical-chrome:is(.theme-dark,.theme-plum-dark),html:is(.theme-dark,.theme-plum-dark)) .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon:focus-visible{border-color:#5ec2f0;color:#7dd3fc;background:rgba(94,194,240,.14)}
+
+.tga-aanmeld-open .tg2-plaats-eis{display:grid;gap:8px;min-width:0}
+.canonical-signed-out.mr-sign-in .tga-aanmeld-open .tga-plaats-knop .tga-aanmeld-logo svg,.tga-aanmeld-open .tga-plaats-knop .tga-aanmeld-logo svg{width:18px;height:18px;border-radius:0}
+.tga-aanmeld-open .tg2-annuleer-knop{width:100%;min-height:42px;border-radius:999px}
+
+.tg2-info-sluier{
+  position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;z-index:1400;
+  background:var(--overlay,rgba(12,24,27,.52));backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  display:flex;align-items:flex-end;justify-content:center;padding:0;margin:0;box-sizing:border-box;
+  animation:tg2-sluier-in .16s ease-out
+}
+main.canonical-chrome:has(.tga-aanmeld-open .tg2-info-sluier) .canonical-workspace{z-index:auto;view-transition-name:none}
+html.palet-maquette .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in:has(.tg2-info-sluier){isolation:auto}
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content:has(.tg2-info-sluier){backdrop-filter:none;-webkit-backdrop-filter:none;z-index:auto}
+body:has(.tga-aanmeld-open .tg2-info-sluier) .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account>.canonical-account-menu{pointer-events:none}
+@keyframes tg2-sluier-in{from{opacity:0}to{opacity:1}}
+@keyframes tg2-blad-op{from{transform:translateY(16px);opacity:.72}to{transform:translateY(0);opacity:1}}
+
+.tg2-info-sluier .tg2-info-blad{
+  --tg2-blad-bg:var(--panel,#ffffff);
+  width:100%;max-width:440px;max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px));min-width:0;
+  overflow-x:hidden;overflow-y:auto;box-sizing:border-box;
+  background:var(--tg2-blad-bg);color:var(--mr-login-ink,var(--text,#17212b));
+  border-radius:24px 24px 0 0;border:1px solid var(--mr-login-border,var(--line,#dce1e6));
+  box-shadow:var(--schaduw-3,0 -12px 40px rgba(12,24,27,.22));
+  padding:18px 20px calc(20px + env(safe-area-inset-bottom,0px));
+  display:grid;grid-template-columns:minmax(0,1fr);gap:14px;text-align:left;
+  animation:tg2-blad-op .18s cubic-bezier(.2,.8,.2,1)
+}
+:is(.canonical-chrome.theme-plum-light,html.theme-plum-light) .tg2-info-sluier .tg2-info-blad{--tg2-blad-bg:#fbf9fd;border-color:rgba(118,86,126,.22)}
+:is(.canonical-chrome.theme-dark,html.theme-dark) .tg2-info-sluier .tg2-info-blad{--tg2-blad-bg:#1c2532;border-color:rgba(255,255,255,.14);box-shadow:0 -14px 44px rgba(0,0,0,.48)}
+:is(.canonical-chrome.theme-plum-dark,html.theme-plum-dark) .tg2-info-sluier .tg2-info-blad{--tg2-blad-bg:#261c2b;border-color:rgba(236,206,232,.16);box-shadow:0 -14px 44px rgba(0,0,0,.52)}
+html.palet-puur :is(.canonical-chrome.theme-light,.theme-light) .tg2-info-sluier .tg2-info-blad{--tg2-blad-bg:#ffffff;border-color:rgba(0,0,0,.38)}
+html.palet-puur :is(.canonical-chrome.theme-dark,.theme-dark) .tg2-info-sluier .tg2-info-blad{--tg2-blad-bg:#0d0d0d;border-color:rgba(255,255,255,.42)}
+
+.tg2-info-kop{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding-bottom:12px;border-bottom:1px solid var(--mr-login-border,var(--line,#dce1e6))}
+.tg2-info-blad .tg2-info-kop h3{margin:0;min-width:0;font-size:17px;font-weight:700;line-height:1.28;color:var(--mr-login-ink,var(--text,#17212b));overflow-wrap:break-word}
+.tg2-info-sluier .tg2-info-blad .tg2-info-kop button.tg2-info-sluit.is-icoon{
+  position:relative;flex:0 0 34px;width:34px;height:34px;min-width:34px;min-height:34px;max-width:34px;max-height:34px;aspect-ratio:1 / 1;
+  padding:0;margin:0;box-sizing:border-box;border:0;border-radius:50%;background:transparent;color:var(--mr-login-muted,var(--muted,#5a6672));
+  display:inline-flex;align-items:center;justify-content:center;line-height:1;cursor:pointer;transition:background-color .15s ease,color .15s ease
+}
+.tg2-info-sluier .tg2-info-blad .tg2-info-kop button.tg2-info-sluit.is-icoon::after{content:'';position:absolute;inset:-5px;border-radius:50%}
+.tg2-info-sluier .tg2-info-blad .tg2-info-kop button.tg2-info-sluit.is-icoon:hover,
+.tg2-info-sluier .tg2-info-blad .tg2-info-kop button.tg2-info-sluit.is-icoon:focus-visible{background:color-mix(in srgb,currentColor 12%,transparent);color:var(--mr-login-ink,var(--text,#17212b));outline:2px solid var(--focus,#229ED9);outline-offset:2px}
+
+.tg2-info-stappen{list-style:none;margin:0;padding:2px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
+.tg2-info-stap{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+.tg2-info-visueel{display:flex;align-items:center;justify-content:center;min-height:42px;min-width:0}
+.tg2-info-medaillon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+.tg2-info-medaillon.is-tg{background:rgba(42,171,238,.14)}
+.tg2-info-medaillon.is-tel{background:rgba(22,163,74,.12);color:var(--ok,#15803d)}
+:is(.canonical-chrome:is(.theme-dark,.theme-plum-dark),html:is(.theme-dark,.theme-plum-dark)) .tg2-info-medaillon.is-tel{background:rgba(74,222,128,.16);color:var(--ok,#86efac)}
+html.palet-puur .tg2-info-medaillon{border:1px solid var(--mr-login-border,currentColor)}
+.tg2-info-tekst{min-width:0;font-size:14.5px;font-weight:560;line-height:1.35;color:var(--mr-login-ink,var(--text,#17212b));overflow-wrap:break-word}
+
+.tg2-mini-drie{display:inline-flex;align-items:center;justify-content:center;gap:5px;max-width:100%}
+.tg2-mini-tegel{width:21px;height:21px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;opacity:.38;flex:none}
+.tg2-mini-tegel svg{width:13px;height:13px;display:block}
+.tg2-mini-tegel.is-actief{width:30px;height:30px;border-radius:9px;opacity:1;box-shadow:0 0 0 2px var(--tg2-blad-bg),0 0 0 3.5px #229ED9}
+.tg2-mini-tegel.is-actief svg{width:18px;height:18px}
+
+.tg2-info-extra{border-top:1px solid var(--mr-login-border,var(--line,#dce1e6));padding-top:6px;min-width:0}
+.tg2-info-blad .tg2-info-extra>summary{
+  list-style:none;display:flex;align-items:center;gap:6px;min-height:44px;padding:8px 4px;box-sizing:border-box;border-radius:10px;
+  font-size:13px;font-weight:600;line-height:1.3;color:var(--mr-login-muted,var(--muted,#5a6672));cursor:pointer;user-select:none
+}
+.tg2-info-blad .tg2-info-extra>summary::-webkit-details-marker{display:none}
+.tg2-info-blad .tg2-info-extra>summary::marker{content:''}
+.tg2-info-blad .tg2-info-extra>summary:hover,
+.tg2-info-blad .tg2-info-extra>summary:focus-visible{color:var(--mr-login-ink,var(--text,#17212b));outline:2px solid var(--focus,#229ED9);outline-offset:2px}
+.tg2-info-extra-pijl{flex:none;transition:transform .16s ease}
+.tg2-info-extra[open] .tg2-info-extra-pijl{transform:rotate(180deg)}
+.tg2-info-extra-inhoud{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding-top:6px;min-width:0}
+.tg2-info-extra-inhoud :is(a.tga-link,button.tga-link){display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 2px;color:var(--mr-login-ink,var(--text,#17212b));text-decoration:underline;text-underline-offset:.18em;line-height:1.35;overflow-wrap:anywhere}
+
+@media (min-width:560px){
+  .tg2-wacht[data-tg-schone-kaart='1'] .tg2-held{width:148px;margin:8px auto 4px}
+  .tg2-info-sluier{align-items:center;padding:20px}
+  .tg2-info-sluier .tg2-info-blad{width:min(100%,420px);max-width:420px;max-height:min(640px,calc(100dvh - 40px));border-radius:24px;padding:20px 22px;box-shadow:var(--schaduw-3,0 24px 56px rgba(12,24,27,.28))}
+  .tg2-info-stap{grid-template-columns:88px minmax(0,1fr);gap:14px}
+  .tg2-mini-tegel{width:22px;height:22px}
+  .tg2-mini-tegel.is-actief{width:32px;height:32px}
+}
 @media (max-width:720px){
   .tga-vergelijk{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:700px){
+  .tg2-info-extra-inhoud :is(a.tga-link,button.tga-link){min-height:44px}
 }
 @media (max-width:640px){
   .tga-sectie{max-width:100%}
@@ -291,8 +412,25 @@
 @media (max-width:380px){
   .tga-aanmeld-knop{font-size:14px;gap:8px;padding:10px 12px}
   .tga-aanmeld-logo,.tga-aanmeld-eind{width:24px;height:24px;flex-basis:24px}
+  .canonical-signed-out.mr-sign-in .tga-aanmeld-open{padding:14px}
+  .canonical-chrome .tga-aanmeld-open .tga-open-boven h2.tga-kop,
+  .tga-aanmeld-open .tga-open-boven h2.tga-kop{font-size:14px;gap:6px}
+  .tga-tijd-pil{padding:3px 7px;font-size:12px}
+  .tg2-vraag-rij .tg2-vraag{font-size:14px}
+}
+@media (max-width:359px){
+  .tg2-info-sluier .tg2-info-blad{padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+  .tg2-info-stap{grid-template-columns:78px minmax(0,1fr);gap:10px}
+  .tg2-mini-drie{gap:4px}
+  .tg2-mini-tegel{width:20px;height:20px}
+  .tg2-mini-tegel.is-actief{width:28px;height:28px}
+  .tg2-info-tekst{font-size:13.75px}
 }
 @media (prefers-reduced-motion:reduce){
   .tga-draai{animation:none;border-right-color:currentColor;opacity:.6}
   .tga-voortgang-vulling,.tga-sectie *{transition:none!important}
+  .tg2-info-sluier,.tg2-info-sluier .tg2-info-blad,.tg2-wacht[data-tg-schone-kaart='1'] .tg2-held::before{animation:none}
+  .tga-aanmeld-open .tg2-vraag-rij button.tg2-info-knop.is-icoon,
+  .tg2-info-sluier .tg2-info-blad .tg2-info-kop button.tg2-info-sluit.is-icoon,
+  .tg2-info-extra-pijl{transition:none}
 }

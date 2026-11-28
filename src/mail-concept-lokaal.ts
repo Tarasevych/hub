@@ -115,7 +115,7 @@ export function wisConcept(scope: string, id?: string, opslag: Opslag | null = v
 
 // ---------------------------------------------------------------------------------------------- afmelden (beveiligingsreview 21.10.2026)
 // Het concept staat in PLATTE tekst in localStorage. Zonder deze twee bleef het na «Вийти» op het apparaat staan — ook na een
-// aanmelding zonder «Зберегти цей акаунт» (een gedeelde computer), waar de rest van de privé-post (src/mail-bijlage-cache.ts)
+// aanmelding zonder «Зберегти цей обліковий запис» (een gedeelde computer), waar de rest van de privé-post (src/mail-bijlage-cache.ts)
 // juist wél gewist wordt. Nu volgt het concept dezelfde regel als die cache: wie de privé-post van een account van dit apparaat
 // wist, wist ook zijn concepten (de servercopie in «Чернетки» blijft). Het oude, niet-gescoopte formaat en de 'anon'-lade gaan
 // mee: zij hebben geen eigenaar en zouden anders bij de VOLGENDE aanmelding — misschien iemand anders — terechtkomen.

@@ -33,7 +33,7 @@ try {
     check('g2 (reauth) heeft «Повторно підключити»', await page.locator('[data-vbc-account=g2] [data-vbc-actie=opnieuw]').count() === 1);
     check('g3 (tijdelijke syncfout) heeft geen «Повторно підключити», wel uitleg «wachten»', await page.locator('[data-vbc-account=g3] [data-vbc-actie=opnieuw]').count() === 0 && await page.locator('[data-vbc-account=g3] [data-vbc-probleem=wachten]').count() === 1);
     check('g1 zonder probleemmelding', await page.locator('[data-vbc-account=g1] [data-vbc-probleem]').count() === 0);
-    check('precies één «Додати акаунт»', await page.locator('[data-vbc-actie=extra-account]').count() === 1);
+    check('precies één «Додати обліковий запис»', await page.locator('[data-vbc-actie=extra-account]').count() === 1);
     const t = await tekst(page);
     check('hoofdoppervlak zonder env-namen/staging/interne codes', !/CLOUD_|_CLIENT_|STAGING|staging|GOOGLE_TOKEN|DRIVE_HTTP|AES-256/.test(t));
     check('één «?» per blok (4 blokken, 4 vragen)', await page.locator('[data-vbc-vraag]').count() === 4);

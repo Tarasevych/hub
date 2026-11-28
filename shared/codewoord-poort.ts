@@ -16,8 +16,8 @@ export function poortNodig(heeftCodewoord: boolean, bevestigdOp: number, nu: num
 }
 
 /**
- * Яке id сесії пам’ятає слово: якір, якщо він цього акаунта; інакше вкладка.
- * Чужий якір (другий акаунт у тій самій браузерній сесії) не підтверджує цей акаунт.
+ * Яке id сесії пам’ятає слово: якір, якщо він цього облікового запису; інакше вкладка.
+ * Чужий якір (другий обліковий запис у тій самій браузерній сесії) не підтверджує цей обліковий запис.
  */
 export function codewoordSessieId(input: { userId: string; anchorUserId?: string; anchorId?: string; tabUserId?: string; tabId?: string }): string {
   if (input.anchorId && input.anchorUserId === input.userId) return input.anchorId;

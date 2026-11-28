@@ -136,7 +136,7 @@ export const AGENDA_AANBIEDERS: readonly AgendaAanbieder[] = Object.freeze([
     id: 'samsung-calendar', naam: 'Samsung Calendar', logo: 'samsung', site: 'https://www.samsung.com/us/support/answer/ANS00077634/',
     methode: 'bridge', stand: 'beschikbaar', richting: 'lezen-en-schrijven', doel: { dienst: 'cloud', tab: 'google' }, levend: 'calendar',
     uitleg: [
-      'Телефони Samsung синхронізують календар з Google-акаунтом (Налаштування → Облікові записи → Google → Календар). Підключіть той САМИЙ Google-акаунт — і подія, створена на телефоні, з’явиться в хабі, а створена в хабі — на телефоні.',
+      'Телефони Samsung синхронізують календар з обліковим записом Google (Налаштування → Облікові записи → Google → Календар). Підключіть той САМИЙ обліковий запис Google — і подія, створена на телефоні, з’явиться в хабі, а створена в хабі — на телефоні.',
       'Samsung-telefoons synchroniseren de agenda met het Google-account (Instellingen → Accounts → Google → Agenda). Koppel DATZELFDE Google-account — en een afspraak van de telefoon verschijnt in de hub, en één uit de hub op de telefoon.',
     ],
     beperking: [
@@ -148,11 +148,11 @@ export const AGENDA_AANBIEDERS: readonly AgendaAanbieder[] = Object.freeze([
     id: 'honor-calendar', naam: 'HONOR / Android', logo: 'honor', site: 'https://www.honor.com/global/support/',
     methode: 'bridge', stand: 'beschikbaar', richting: 'lezen-en-schrijven', doel: { dienst: 'cloud', tab: 'google' }, levend: 'calendar',
     uitleg: [
-      'HONOR та будь-який Android із сервісами Google синхронізують календар з Google-акаунтом. Підключіть той САМИЙ акаунт — і міст двосторонній: телефон ↔ хаб ↔ інші підключені пристрої.',
+      'HONOR та будь-який Android із сервісами Google синхронізують календар з обліковим записом Google. Підключіть той САМИЙ обліковий запис — і міст двосторонній: телефон ↔ хаб ↔ інші підключені пристрої.',
       'HONOR en elke Android met Google-diensten synchroniseren de agenda met het Google-account. Koppel DATZELFDE account — en de brug is tweerichting: telefoon ↔ hub ↔ andere gekoppelde toestellen.',
     ],
     beperking: [
-      'Міст працює лише через Google: власного публічного API календар HONOR не має. На телефоні календар має синхронізуватися з Google-акаунтом (Налаштування → Облікові записи → Google → Календар).',
+      'Міст працює лише через Google: власного публічного API календар HONOR не має. На телефоні календар має синхронізуватися з обліковим записом Google (Налаштування → Облікові записи → Google → Календар).',
       'De brug loopt alleen via Google: de HONOR-agenda heeft geen eigen publieke API. Op de telefoon moet de agenda met het Google-account synchroniseren (Instellingen → Accounts → Google → Agenda).',
     ],
   },
@@ -164,7 +164,7 @@ export const AGENDA_AANBIEDERS: readonly AgendaAanbieder[] = Object.freeze([
       'De Huawei-agenda op telefoons zonder Google-diensten synchroniseert alleen met Huawei Cloud.',
     ],
     ontbreekt: [
-      'Huawei Cloud не має публічного API календаря для сторонніх сайтів (Calendar Kit працює лише в застосунках на самому пристрої), тож прямого підключення немає — ні читання, ні запису. Якщо на телефоні все ж додано Google-акаунт або Exchange і календар синхронізується з ним — підключіть ТОЙ акаунт, і міст запрацює через нього.',
+      'Huawei Cloud не має публічного API календаря для сторонніх сайтів (Calendar Kit працює лише в застосунках на самому пристрої), тож прямого підключення немає — ні читання, ні запису. Якщо на телефоні все ж додано обліковий запис Google або Exchange і календар синхронізується з ним — підключіть ТОЙ обліковий запис, і міст запрацює через нього.',
       'Huawei Cloud heeft geen publieke agenda-API voor externe sites (Calendar Kit werkt alleen in apps op het toestel zelf), dus een directe koppeling bestaat niet — lezen noch schrijven. Staat er op de telefoon tóch een Google-account of Exchange en synchroniseert de agenda daarmee — koppel DAT account, dan loopt de brug daarlangs.',
     ],
   },

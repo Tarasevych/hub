@@ -78,7 +78,7 @@ export async function main(): Promise<number> {
     const { foutTekst, isRechtFout, RECHT_UITLEG } = await import('../../src/agenten/fouten');
     const tr = (uk: string) => uk;
     const e = { message: 'API_RECHT_VEREIST', status: 403, response: { status: 403, data: { error: 'API_RECHT_VEREIST' } } };
-    check('fouten.ts: API_RECHT_VEREIST → vriendelijke uitleg (eigenaar geeft «API-платформу»), niet «Сесія закінчилася»', isRechtFout(e) && foutTekst(e, tr).includes('Доступ ШІ для вашого акаунта ще не увімкнено') && foutTekst(e, tr).includes('API-платформу') && !foutTekst(e, tr).includes('Сесія закінчилася') && RECHT_UITLEG[0].includes('Попросіть власника'));
+    check('fouten.ts: API_RECHT_VEREIST → vriendelijke uitleg (eigenaar geeft «API-платформу»), niet «Сесія закінчилася»', isRechtFout(e) && foutTekst(e, tr).includes('Доступ ШІ для вашого облікового запису ще не увімкнено') && foutTekst(e, tr).includes('API-платформу') && !foutTekst(e, tr).includes('Сесія закінчилася') && RECHT_UITLEG[0].includes('Попросіть власника'));
     check('fouten.ts: sessiefout blijft «Сесія закінчилася»', foutTekst({ message: 'OWNER_API_SESSION_REQUIRED', status: 403 }, tr).includes('Сесія закінчилася') && fouten.includes("export const RECHT_CODE = 'API_RECHT_VEREIST'"));
     const data = bron('src/agenten/gegevens.ts');
     check('gegevens.ts: useRustig stopt het herladen na API_RECHT_VEREIST (geen polling meer)', data.includes('if (isRechtFout(e)) geenRecht.current = true') && data.includes('if (!document.hidden && !geenRecht.current) void laad();'));
@@ -172,7 +172,7 @@ export async function main(): Promise<number> {
     const idx = bron('backend/index.ts');
     const i1 = idx.indexOf('techBeeindigenBijUitloggen(vorigeUserId,tab)'), i2 = idx.indexOf('db.add(OWNER_SESSION_TABLE,[sessionRecord])', i1);
     check('R-05 replace-tab-remembered beëindigt via ownerActivateBrowserAccount de activering van het vorige account vóór de nieuwe sessie en meldt techBeeindigd', i1 > 0 && i2 > i1 && idx.includes("const activated=await ownerActivateBrowserAccount(anchor.session,user,service,sourceOrigin,tab,grantId,ctx.event,") && idx.includes("return ownerCookieResponse({ok:true,replaceScope:'browser',techBeeindigd,"));
-    check('R-05 front toont de melding en haalt de technische status opnieuw', bron('src/App.tsx').includes('Технічний профіль попереднього акаунта завершено') && bron('src/VerenigdDienstApp.tsx').includes('Технічний профіль попереднього акаунта завершено') && bron('src/VerenigdDienstApp.tsx').includes('void techVernieuwen()'));
+    check('R-05 front toont de melding en haalt de technische status opnieuw', bron('src/App.tsx').includes('Технічний профіль попереднього облікового запису завершено') && bron('src/VerenigdDienstApp.tsx').includes('Технічний профіль попереднього облікового запису завершено') && bron('src/VerenigdDienstApp.tsx').includes('void techVernieuwen()'));
     if (process.env.DATABASE_URL || process.env.DATABASE_URL_SYSTEM) {
       // de bouwsteen zelf: beëindigen per (gebruiker, tabblad) raakt een ander tabblad en een andere gebruiker niet
       const { getPool } = await import('../../server/platform/pg');
@@ -221,8 +221,8 @@ export async function main(): Promise<number> {
   {
     const hb = bron('src/browser-agent-hartslag.ts'), ext = bron('src/BrowserExtensiePaneel.tsx');
     check('U-04 heartbeat: 403 → bevestigingen gestopt (clearInterval), toestand gemeld; nieuwe hello met andere agent begint opnieuw', hb.includes("if (status === 403) { geweigerd = String((e as { message?: string } | null)?.message || 'HTTP_403'); window.clearInterval(beatTimer); meldHeartbeat(); }") && hb.includes("if (!agentId || geweigerd) return;") && hb.includes("agentId = id; geweigerd = '';"));
-    check('U-04 panel: kaart «Розширення прив’язане до іншого облікового запису» bij PING mismatch of geweigerde heartbeat van een vreemde agent, met knop «Підключити до цього акаунта»',
-      ext.includes("ping.account === 'mismatch' || (!!hb.geweigerd && !!ping.agentId && hb.agentId === ping.agentId && !agents.some((a) => a.id === ping.agentId))") && ext.includes("data-ext-mismatch='1'") && ext.includes('Розширення прив’язане до іншого облікового запису') && ext.includes('Підключити до цього акаунта') && (ext.match(/\{mismatchKaart\}/g) || []).length === 2);
+    check('U-04 panel: kaart «Розширення прив’язане до іншого облікового запису» bij PING mismatch of geweigerde heartbeat van een vreemde agent, met knop «Підключити до цього облікового запису»',
+      ext.includes("ping.account === 'mismatch' || (!!hb.geweigerd && !!ping.agentId && hb.agentId === ping.agentId && !agents.some((a) => a.id === ping.agentId))") && ext.includes("data-ext-mismatch='1'") && ext.includes('Розширення прив’язане до іншого облікового запису') && ext.includes('Підключити до цього облікового запису') && (ext.match(/\{mismatchKaart\}/g) || []).length === 2);
   }
 
   return einde();

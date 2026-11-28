@@ -3,7 +3,7 @@ import{herkomstUitBody,ladeOpen,projectieGesloten,projectieLaden,rijenInLade}fro
 type User={id:string;status:string;email?:string};type AuthSuccess={service:string;user:User};type AuthFailure={errorCode:string};type Authorize=(event:Record<string,unknown>,body:unknown)=>Promise<AuthSuccess|AuthFailure>;type Context={event:Record<string,unknown>;body:unknown;params:Record<string,string>};type Row=Record<string,unknown>&{id:string};const safe=(value:unknown,max=500)=>String(value||'').replace(/\u0000/g,'').trim().slice(0,max),safeUrl=(value:unknown)=>{const raw=safe(value,1600);if(!raw)return'';try{const url=new URL(raw);return url.protocol==='https:'?url.toString():''}catch{return''}},time=(value:unknown)=>{if(typeof value==='number'&&Number.isFinite(value))return Math.max(0,value);const parsed=Date.parse(String(value||''));return Number.isFinite(parsed)?parsed:0},list=async(table:string,ownerUserId:string)=>(await db.list<Record<string,unknown>>(table,{filter:{ownerUserId},limit:500})).items as Row[],newest=(a:{updatedAt:number},b:{updatedAt:number})=>b.updatedAt-a.updatedAt;
 /**
  * GESCHEIDEN GEGEVENSRUIMTES — HET GAT VAN KLACHT 1 ZAT HIER (eigenaar, 20.10.2026):
- *   «У технічному профілі поштові акаунти не підключені, але при цьому я бачу пошту в обох акаунтах.»
+ *   «У технічному профілі поштові облікові записи не підключені, але при цьому я бачу пошту в обох облікових записах.»
  * Deze route staat niet onder /api/owner/mail/ en niet onder /api/owner/cloud/, dus buiten beide bestaande poorten — en zij
  * las de projecties op alleen `ownerUserId`. Dat gaf in de technische ruimte de PERSOONLIJKE post te zien (de klacht) en in
  * de persoonlijke ruimte de TECHNISCHE rijen. Nu gaat elke bron door dezelfde poort als haar eigen dienst

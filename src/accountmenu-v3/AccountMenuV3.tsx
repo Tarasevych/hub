@@ -28,9 +28,11 @@ import {
   Sun,
   UserRound,
   Users,
+  Waves,
   X,
 } from 'lucide-react';
 import { BAND_KLEUREN, isBandKleur, type BandKleur } from '../../shared/tech-rollen';
+import { openAchtergrondPaneel } from '../achtergrond/AchtergrondKnop';
 import { rememberedAccountStatus, type AccountMenuUser, type RememberedAccount } from '../canoniek-account-menu-model';
 import { serviceFromLocation } from '../canoniek-navigatie';
 import { openDiagnose } from '../diagnose/open';
@@ -58,6 +60,7 @@ import {
   type AccountmenuV3PaletKeuze,
   type PaletKeuzeInfo,
 } from './accountmenu-v3-voorkeuren';
+import AanmeldKeuzePaneel from '../aanmelden/AanmeldKeuzePaneel';
 import './accountmenu-v3.css';
 
 const OMTREK_32 = 97.4; // 2 * Math.PI * 15.5
@@ -212,13 +215,17 @@ export function AccountMenuV3({
   const dienst = typeof window !== 'undefined' ? serviceFromLocation() : 'hub';
   const violetToegestaan = dienst === 'ai';
   const paletSync = useAccountmenuV3PaletSync(violetToegestaan);
-  const themaStijl = useThemaStand().stijl;
+  const themaStand = useThemaStand();
+  const themaStijl = themaStand.stijl;
+  const achtergrondStand = themaStand.achtergrond?.stand ?? 'auto';
+  const achtergrondUit = achtergrondStand === 'uit';
   const autoStatus = useAutoStatus(theme);
   const tech = useTech();
   const ruimtes = useRuimtes();
 
   const [paletOpen, setPaletOpen] = useState(false);
   const [toegangOpen, setToegangOpen] = useState(false);
+  const [aanmeldKeuzeOpen, setAanmeldKeuzeOpen] = useState(false);
   // RUIMTE-WEERGAVE-001: «Завершити» з підтвердженням (друге натискання) і коротке повідомлення про наслідок дії.
   const [eindeBevestig, setEindeBevestig] = useState(false);
   const [ruimteMelding, setRuimteMelding] = useState('');
@@ -230,11 +237,16 @@ export function AccountMenuV3({
   const [houdtPaletVast, setHoudtPaletVast] = useState(false);
   const [afgemeldIngeklapt, setAfgemeldIngeklapt] = useState(false);
 
+  const wisselAanmeldKeuze = () => {
+    setAanmeldKeuzeOpen((vorige) => !vorige);
+  };
+
   useEffect(() => {
     if (!displayUser) {
       setToegangOpen(false);
       setAfgemeldIngeklapt(false);
     }
+    setAanmeldKeuzeOpen(false);
   }, [displayUser]);
 
   const holdTimerRef = useRef<number | null>(null);
@@ -650,9 +662,10 @@ export function AccountMenuV3({
                 type='button'
                 className='am3-orbit-node is-add'
                 disabled={busy}
+                aria-expanded={aanmeldKeuzeOpen}
                 title={addKnopTitel}
                 aria-label={addKnopTitel}
-                onClick={onAddAccount}
+                onClick={wisselAanmeldKeuze}
               >
                 <Plus />
               </button>
@@ -732,13 +745,26 @@ export function AccountMenuV3({
             type='button'
             className='am3-manage-pill canonical-menu-action primary add-account'
             disabled={busy}
-            onClick={onAddAccount}
+            aria-expanded={aanmeldKeuzeOpen}
+            onClick={wisselAanmeldKeuze}
           >
             {visibleRows.length > 0 ? <Plus aria-hidden='true' /> : <KeyRound aria-hidden='true' />}
             <span>{addKnopTitel}</span>
           </button>
         )}
       </header>
+
+      {/* Вбудована картка вибору всіх доступних на сайті способів входу (Google, Telegram, без Google та «Інші способи входу») */}
+      {aanmeldKeuzeOpen ? (
+        <AanmeldKeuzePaneel
+          lang={lang}
+          intent={displayUser ? 'replace-tab' : 'login'}
+          titel={addKnopTitel}
+          busy={busy}
+          onGoogle={onAddAccount}
+          onSluit={() => setAanmeldKeuzeOpen(false)}
+        />
+      ) : null}
 
       {/* Повідомлення про помилку перемикання облікового запису */}
       {wisselFout ? (() => {
@@ -964,7 +990,8 @@ export function AccountMenuV3({
                   type='button'
                   className='am3-add-row-btn canonical-menu-action add-account'
                   disabled={busy}
-                  onClick={onAddAccount}
+                  aria-expanded={aanmeldKeuzeOpen}
+                  onClick={wisselAanmeldKeuze}
                 >
                   <Plus />
                   <span>{uk ? 'Увійти в інший обліковий запис' : 'Aanmelden bij een ander account'}</span>
@@ -1036,6 +1063,28 @@ export function AccountMenuV3({
                   <span>{uk ? 'За добою' : 'Dagritme'}</span>
                 </button>
               </div>
+
+              {/* Кругла кнопка «Живий фон» (32x32 px) між перемикачем тем і кнопкою кольорів */}
+              <button
+                type='button'
+                className={`am3-achtergrond-btn${achtergrondUit ? ' is-uit' : ' is-aan'}`}
+                data-achtergrond-knop=''
+                data-am3-achtergrond-knop={achtergrondStand}
+                aria-haspopup='dialog'
+                aria-label={uk ? 'Живий фон: налаштувати анімацію тла' : 'Levende achtergrond: animatie instellen'}
+                title={
+                  uk
+                    ? `Живий фон (${achtergrondUit ? 'вимкнено' : achtergrondStand === 'aan' ? 'повний' : 'авто'}): швидкість, інтенсивність, перелив і рух тла`
+                    : `Levende achtergrond (${achtergrondUit ? 'uit' : achtergrondStand === 'aan' ? 'volledig' : 'auto'}): snelheid, sterkte, kleurverloop en beweging`
+                }
+                onClick={() => {
+                  setPaletOpen(false);
+                  sluitVoorNavigatie();
+                  openAchtergrondPaneel();
+                }}
+              >
+                <Waves className='am3-achtergrond-icon' aria-hidden='true' />
+              </button>
 
               {/* Кругла кнопка Палітри кольорів (32x32 px) — Модель В */}
               <button
@@ -1256,7 +1305,7 @@ export function AccountMenuV3({
               <span className='am3-flag' aria-hidden='true'>
                 <MoviPrapor taal='nl' />
               </span>
-              <span>{uk ? 'нід.' : 'Nederlands'}</span>
+              <span>{uk ? 'Нід.' : 'Nederlands'}</span>
             </button>
           </div>
         </div>

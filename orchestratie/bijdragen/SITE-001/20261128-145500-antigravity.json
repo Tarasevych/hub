@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261128-145500-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-28T14:55:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Виправлено шість дефектів вигляду й поведінки інтерфейсу за знімками власника (src/mail/mail-werkruimte-maquette.css, src/mail/mail-lijst-klassiek.css, src/mail-mobiel.css, src/GoogleMailWerkruimte.tsx, src/tech/ruimtes/RuimteDok.tsx, src/tech/ruimtes/ruimtes.css, src/tech/tech-maquette.css, src/BeheerConsoleWeergave.tsx, src/DomoticaWeergave.tsx, src/ApiPlatformWeergave.tsx, src/maquette-kern/maquette-oppervlakken.css, src/maquette-kern/maquette-klassiek.css, src/aanmeld-herontwerp.css, src/AanmeldAndereOpties.tsx, src/aanmelden/AanmeldKeuzePaneel.tsx, src/aanmelden/aanmeld-keuze-paneel.css, src/aanmelden/AanmeldZonderGoogle.tsx, src/accountmenu-v3/AccountMenuV3.tsx, src/CanoniekAccountMenu.tsx, tests/eenheid/mail-rij-2026-10-18.test.ts, tests/eenheid/stroom-veilig-20261115.test.ts, tests/eenheid/site-001-snelheid.test.ts): 1) у списку листів пошти усунено білі прямокутні кути .google-mail-list та .mail-row-block-stream, які виступали з-під заокругленого першого листа, та розшарування лівої смужки непрочитаного листа; 2) квадратне рожеве сповіщення «Технічний простір зараз недоступний.» у RuimteDok.tsx (.rw-dok-melding) перетворено на охайну компактну капсулу-пігулку (border-radius: 999px, min-height: 26px, font-size: 11px) за розміром капсули завантаження сторінки (#tsv-laad-kapsel) з автоматичним згасанням за 4 с, записом у загальну панель сповіщень (emitCanonicalNotice з retain: true) та шаром під бічним меню (z-index: 230); 3) кнопку-капсулку підменю розділів сторінки (MaquetteAnkerRail / .mq-anker-onderbalk) перенесено з кінця сторінки на її початок у BeheerConsoleWeergave.tsx, DomoticaWeergave.tsx та ApiPlatformWeergave.tsx і на мобільних екранах (<= 700px) закріплено у верхньому рядку (top: 10px; left: 58px; z-index: 215) між кнопкою головного меню та кнопкою пошуку; 4) усунено овальне стискання кнопок оновлення й налаштувань пошти (.mail-top-refresh, .mail-top-settings — рівносторонні круглі кнопки 40×40 px на <= 440 px та 44×44 px на <= 700 px з aspect-ratio: 1/1; border-radius: 50%), додано безперервне обертання кнопки оновлення (@keyframes mail-ververs-draai) та живу верхню капсулу стану перевірки нових листів (.mail-ververs-kapsel) з етапами запиту, зеленою капсулою завершення з галочкою, червоною капсулою збою та захистом від повторних натискань; 5) на сторінці входу усунено блокування прокручування (position: relative; height: 100%; max-height: 100dvh; overflow-y: auto на main.canonical-chrome:has(.mr-sign-in) та нижній запас під смугу згоди .mr-toestemming) і додано автоматичне плавне опускання сторінки до розгорнутого списку при натисканні кнопки «Інші способи входу» у AanmeldAndereOpties.tsx; 6) у меню облікових записів (AccountMenuV3.tsx та CanoniekAccountMenu.tsx) натискання на кружечок «+», «Увійти в обліковий запис» або «Увійти в інший обліковий запис» розгортає вбудовану картку AanmeldKeuzePaneel.tsx з усіма доступними на сайті способами входу (Google, Telegram, активні способи без Google з AanmeldZonderGoogle та розкривний список «Інші способи входу» AanmeldAndereOpties + прапорець збереження на пристрої) замість примусового перенаправлення лише на Google (сторож site-001-snelheid 38/38).",
+    "nl": "Zes weergave- en gedragsgebreken opgelost aan de hand van schermafdrukken van de eigenaar (src/mail/mail-werkruimte-maquette.css, src/mail/mail-lijst-klassiek.css, src/mail-mobiel.css, src/GoogleMailWerkruimte.tsx, src/tech/ruimtes/RuimteDok.tsx, src/tech/ruimtes/ruimtes.css, src/tech/tech-maquette.css, src/BeheerConsoleWeergave.tsx, src/DomoticaWeergave.tsx, src/ApiPlatformWeergave.tsx, src/maquette-kern/maquette-oppervlakken.css, src/maquette-kern/maquette-klassiek.css, src/aanmeld-herontwerp.css, src/AanmeldAndereOpties.tsx, src/aanmelden/AanmeldKeuzePaneel.tsx, src/aanmelden/aanmeld-keuze-paneel.css, src/aanmelden/AanmeldZonderGoogle.tsx, src/accountmenu-v3/AccountMenuV3.tsx, src/CanoniekAccountMenu.tsx, tests/eenheid/mail-rij-2026-10-18.test.ts, tests/eenheid/stroom-veilig-20261115.test.ts, tests/eenheid/site-001-snelheid.test.ts): 1) in de berichtenlijst zijn de witte rechthoekige hoeken van .google-mail-list en .mail-row-block-stream achter de afgeronde bovenste rij en de dubbele linkerstreep op ongelezen rijen verholpen; 2) de vierkante melding «De technische ruimte is nu niet beschikbaar.» in RuimteDok.tsx (.rw-dok-melding) is omgevormd tot een compacte pil-capsule (border-radius: 999px, min-height: 26px, font-size: 11px) op het formaat van de laadkapsel (#tsv-laad-kapsel), verdwijnt automatisch na 4 s, wordt historisch bewaard in het algemene meldingenpaneel (emitCanonicalNotice met retain: true) en ligt onder het zijmenu (z-index: 230); 3) de capsuleknop voor pagina-onderdelen (MaquetteAnkerRail / .mq-anker-onderbalk) is van onderaan naar bovenaan de pagina verplaatst in BeheerConsoleWeergave.tsx, DomoticaWeergave.tsx en ApiPlatformWeergave.tsx en op mobiele schermen (<= 700px) rechtstreeks in de bovenbalk (top: 10px; left: 58px; z-index: 215) tussen de menuknop en de zoekknop geplaatst; 4) de ovale vervorming van de ververs- en instellingenknoppen is verholpen (.mail-top-refresh, .mail-top-settings — zuiver ronde knoppen 40×40 px op <= 440 px en 44×44 px op <= 700 px met aspect-ratio: 1/1; border-radius: 50%), de verversknop draait doorlopend (@keyframes mail-ververs-draai) en een live bovenste statuscapsule (.mail-ververs-kapsel) toont de fasen van het verzoek; 5) op het aanmeldscherm is de scrollblokkering opgeheven (position: relative; height: 100%; max-height: 100dvh; overflow-y: auto op main.canonical-chrome:has(.mr-sign-in) en extra onderruimte bij de toestemmingsband .mr-toestemming) en scrolt de pagina automatisch vloeiend omlaag naar de uitgeklapte lijst bij het indrukken van «Andere aanmeldmethoden» in AanmeldAndereOpties.tsx; 6) in het accountmenu (AccountMenuV3.tsx en CanoniekAccountMenu.tsx) klapt het indrukken van «+», «Aanmelden bij uw account» of «Aanmelden bij een ander account» nu de ingebouwde kaart AanmeldKeuzePaneel.tsx open met alle op de site beschikbare aanmeldmethoden (Google, Telegram, actieve methoden zonder Google uit AanmeldZonderGoogle en de uitklapbare lijst «Andere aanmeldmethoden» AanmeldAndereOpties + het onthoudvakje) in plaats van dwangmatig alleen naar Google door te sturen (bewaker site-001-snelheid 38/38)."
+  },
+  "waarom": {
+    "uk": "Власник надіслав знімки шести дефектів: 1) у верхніх кутах першого заокругленого листа в списку пошти стирчали білі прямокутні трикутники внутрішніх контейнерів і розшаровувалася ліва смужка непрочитаного листа; 2) сповіщення «Технічний простір зараз недоступний.» мало вигляд квадратної коробки, висіло постійно без автоматичного згасання, не записувалося в історію загальної панелі сповіщень і перекривало кнопки відкритого бічного меню; 3) кнопка-капсулка підменю розділів («☰ Огляд ▾») знаходилася внизу сторінки після всього вмісту замість того, щоб стояти вгорі між кнопкою меню та пошуком; 4) кнопки оновлення й налаштувань пошти обводилися вертикальним овалом (36×44 px) замість кола, піктограма оновлення не крутилася до завершення перевірки і була відсутня верхня капсула зі стадіями запиту, зеленим результатом та захистом від повторних натискань; 5) при натисканні кнопки «Інші способи входу» на сторінці входу список розгортався за смугою згоди на реп’яшки, а сторінка не опускалася нижче й не могла прокручуватися через нефіксовану висоту main.canonical-chrome в темній темі всередині #root з overflow: hidden; 6) у меню облікових записів (як до входу, так і за входом) натискання на кружечок «+», «Увійти в обліковий запис» або «Увійти в інший обліковий запис» одразу закривало меню й переадресовувало виключно на Google, не пропонуючи інших доступних на сайті альтернативних способів входу.",
+    "nl": "De eigenaar stuurde schermafdrukken van zes gebreken: 1) in de bovenhoeken van het eerste afgeronde bericht in de postlijst staken witte rechthoekige hoeken van binnenste containers uit en splitste de linkerstreep van het ongelezen bericht; 2) de melding «De technische ruimte is nu niet beschikbaar.» was een vierkant blok dat bleef hangen zonder automatisch te verdwijnen, niet in de geschiedenis van het meldingenpaneel werd opgeslagen en het geopende zijmenu overlapte; 3) de capsuleknop voor pagina-onderdelen («☰ Overzicht ▾») stond helemaal onderaan de pagina in plaats van bovenaan tussen de menuknop en de zoekknop; 4) de ververs- en instellingenknoppen in de e-mailkop hadden een ovale omlijning (36×44 px) in plaats van een cirkel, het ververspictogram draaide niet door tot het einde van het bijwerken en er ontbrak een bovenste statuscapsule met de verzoekfasen, groene voltooiingsstatus en bescherming tegen herhaald klikken; 5) bij het indrukken van «Andere aanmeldmethoden» op het aanmeldscherm klapte de lijst achter de toestemmingsband open zonder dat de pagina omlaag zakte of kon scrollen doordat main.canonical-chrome in het donkere thema meegroeide met de inhoud binnen #root met overflow: hidden; 6) in het accountmenu (zowel afgemeld als aangemeld) sloot het indrukken van het plusje «+», «Aanmelden bij uw account» of «Aanmelden bij een ander account» het menu onmiddellijk en stuurde alleen naar Google door zonder de andere op de site beschikbare aanmeldmethoden aan te bieden."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261128-114000-antigravity",
+    "SITE-001/20261128-092500-antigravity",
+    "SITE-001/20261127-221500-antigravity",
+    "SITE-001/20261127-212800-antigravity",
+    "SITE-001/20261127-205000-antigravity",
+    "SITE-001/20261127-200800-antigravity",
+    "SITE-001/20261127-192200-antigravity",
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "83cb80e0143bf719c5895216c9788740a3a16894",
+    "e1277b93e3da0ee8ece4e8a6cd8fa54a05710337",
+    "fe3ad6c7502c9420b077ac30f27bb0d6965abb61",
+    "e6bbcd9e3e5a8910cb07cb8c56e29b1c20fbb759",
+    "5bb634d5a8455079430aa1de661099e7d63386ef",
+    "e9314fdc1575cca43312b98f87212e3c6b352a01",
+    "ead2a6b5df08c6f3331b0e14358fa34987615693",
+    "377f53ce8b8a2aa50c2310f30dc5e658b30cf3a8",
+    "85634133e494f63087cd74ab4f9a82b57ac3509e",
+    "adc5c8821626f66a95e7eb96c04a96596265712a",
+    "6d19669d4864b4250275fd6a868b29b4528bb997"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring"
+  ]
+}

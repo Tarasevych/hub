@@ -18,7 +18,7 @@ const initialsOf = (a?: Account) => ((a?.displayName || a?.email || '?').trim().
 /**
  * 21.10: клас «small» на фото в меню перейменовано на «is-klein» — глобальний модифікатор кнопки .small (index.css: padding .4rem .7rem,
  * min-height 44px) стискав фото до 17,6×40 (овал замість кола). Ініціали — у власному span, щоб логотип не ставав «першою дитиною».
- * Круглий аватар ПОШТОВОГО акаунта (не всього сервісу) у правому куті, з логотипом сервісу (Google/Microsoft) на краю: одразу видно, яка пошта
+ * Круглий аватар ПОШТОВОГО облікового запису (не всього сервісу) у правому куті, з логотипом сервісу (Google/Microsoft) на краю: одразу видно, яка пошта
  * зараз відкрита. Дотик відкриває список підключених скриньок для швидкого перемикання. Показується лише на вузьких екранах (на широких є перемикач у контекстній панелі).
  */
 export default function MailAccountBadge({ lang, accounts, activeAccountId, connectors, imap = [], onSelect, onManage, onAdd, onOpen, activeImapId = '', onSelectImap }: Props) {
@@ -67,7 +67,7 @@ export default function MailAccountBadge({ lang, accounts, activeAccountId, conn
   return (
     <div ref={root} className="mail-account-badge">
       <button ref={trigger} type="button" className="mail-account-badge-trigger" aria-haspopup="menu" aria-expanded={open}
-        aria-label={`${t('Поштовий акаунт', 'Mailaccount')}: ${actiefImap?.email || active.email}. ${t('Змінити', 'Wijzigen')}`} onClick={() => setOpen((v) => { if (!v) onOpen?.(); return !v; })}>
+        aria-label={`${t('Поштовий обліковий запис', 'Mailaccount')}: ${actiefImap?.email || active.email}. ${t('Змінити', 'Wijzigen')}`} onClick={() => setOpen((v) => { if (!v) onOpen?.(); return !v; })}>
         {actiefImap ? <>
           <span className="mail-account-badge-photo"><span className="mail-account-badge-initial">{(actiefImap.email[0] || '?').toUpperCase()}</span></span>
           <span className="mail-account-badge-logo is-merk" aria-hidden="true"><MerkLogo id={actiefImap.id} naam={actiefImap.dienst} logo={actiefImap.merk} maat={16} /></span>
@@ -98,7 +98,7 @@ export default function MailAccountBadge({ lang, accounts, activeAccountId, conn
               </button>
             ))}
           </div>
-          <footer role="none"><button type="button" role="menuitem" onClick={() => { setOpen(false); onAdd(); }}><Plus size={18} /><span>{t('Додати акаунт', 'Account toevoegen')}</span></button></footer>
+          <footer role="none"><button type="button" role="menuitem" onClick={() => { setOpen(false); onAdd(); }}><Plus size={18} /><span>{t('Додати обліковий запис', 'Account toevoegen')}</span></button></footer>
         </div>
       )}
     </div>

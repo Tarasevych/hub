@@ -23,7 +23,7 @@ export function WerkruimteOverdragen({ lang, post, onMelding }: { lang: 'uk' | '
   const [fout, setFout] = useState('');
 
   /* IDENTITEIT-015 (приймання blokken-profiel): `post` (delenPost) створюється наново при кожному рендері застосунку, і перелік
-     кандидатів завантажувався знову щоразу (у прогоні e2e — 13–64 запити за хвилину з однієї сторінки «Акаунт»). Тепер — з ref:
+     кандидатів завантажувався знову щоразу (у прогоні e2e — 13–64 запити за хвилину з однієї сторінки «Обліковий запис»). Тепер — з ref:
      перелік завантажується при відкритті й після передачі. Laatste `post` via ref: laden niet bij elke render opnieuw. */
   const postRef = useRef(post);
   postRef.current = post;

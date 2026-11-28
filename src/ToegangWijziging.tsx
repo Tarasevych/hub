@@ -1,6 +1,6 @@
 // Pagina-paneel bij de melding «Це були ви? / Was u dit?» (link https://id.tarasevych.com/methods?wijziging=<id>), zoals Google
 // «Was this you?»: wat er veranderd is (welk recht, welke sleutel), wie, wanneer, waarom, vanaf welk apparaat/IP-hash, en de knop
-// «Це був не я — скасувати та захистити акаунт». Die vraagt een sterke bevestiging, draait terug wat technisch kan (intrekverzoek
+// «Це був не я — скасувати та захистити обліковий запис». Die vraagt een sterke bevestiging, draait terug wat technisch kan (intrekverzoek
 // dat root nog niet verwerkte weghalen; verwijderde passkey terugzetten) en beëindigt de sessie die de wijziging deed. Eerlijk:
 // heeft root het recht al weggehaald, dan kan alleen root het teruggeven (SSH-opdracht hieronder). RUNBOOK §13.10.
 import {useEffect,useState} from 'react';
@@ -16,7 +16,7 @@ type Stand={recht:'kan-goedkeuren'|'wordt-ingetrokken'|'ingetrokken';passkeyAanw
 type Antwoord={wijziging:Wijziging;stand:Stand;kanTerugdraaien:boolean};
 type Uitkomst={recht?:'behouden'|'ssh-nodig'|'niet-hersteld';sshOpdracht?:string;passkeyTerug?:boolean;sessie?:'ingetrokken'|'huidige-sessie'|'al-beeindigd'};
 const FOUT:Record<string,[string,string]>={
-  NIET_GEVONDEN:['Цю зміну не знайдено у вашому акаунті.','Deze wijziging is niet gevonden in uw account.'],
+  NIET_GEVONDEN:['Цю зміну не знайдено у вашому обліковому записі.','Deze wijziging is niet gevonden in uw account.'],
   AL_TERUGGEDRAAID:['Цю зміну вже скасовано.','Deze wijziging is al teruggedraaid.'],
   ALLEEN_EIGENAAR_KAN_HERSTELLEN:['Повернути це право може лише власник. Зверніться до нього.','Alleen de eigenaar kan dit recht teruggeven. Neem contact met hem op.'],
   NIET_TERUG_TE_DRAAIEN:['Цю зміну не потрібно скасовувати.','Deze wijziging hoeft niet teruggedraaid te worden.'],
@@ -77,7 +77,7 @@ export function ToegangWijziging({lang,context,id,onChange}:{lang:Lang;context:R
       {a?.kanTerugdraaien&&!uitkomst&&<div className='access-plane-subrow toegang-niet-ik'>
         <p className='access-plane-hint-line'><TriangleAlert aria-hidden='true'/>{tr(lang,'Якщо це зробили не ви: ми скасуємо зміну, де це технічно можливо, і завершимо сесію, з якої її зробили. Якщо сервер уже відкликав право, повернути його можна лише SSH-командою (ми її покажемо). Потрібне підтвердження ключем доступу, кодом із застосунку або кодом відновлення.','Was u dit niet: we draaien de wijziging terug waar dat technisch kan en beëindigen de sessie waarmee ze gedaan is. Heeft de server het recht al ingetrokken, dan kan alleen een SSH-opdracht het teruggeven (we tonen die). Bevestiging met passkey, app-code of herstelcode is nodig.')}</p>
         <div className='access-plane-actions'>
-          <button type='button' className='danger' data-niet-ik disabled={bezig} onClick={()=>void terugdraaien()}><ShieldAlert/>{tr(lang,'Це був не я — скасувати та захистити акаунт','Dit was ik niet — terugdraaien en mijn account beveiligen')}</button>
+          <button type='button' className='danger' data-niet-ik disabled={bezig} onClick={()=>void terugdraaien()}><ShieldAlert/>{tr(lang,'Це був не я — скасувати та захистити обліковий запис','Dit was ik niet — terugdraaien en mijn account beveiligen')}</button>
           <button type='button' className='secondary' disabled={bezig} onClick={sluiten}>{tr(lang,'Так, це був я','Ja, dit was ik')}</button>
         </div>
       </div>}

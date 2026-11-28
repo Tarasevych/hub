@@ -1,0 +1,840 @@
+// HERSTEL-001 — Перевірочні випробування 10 вад системи сповіщень (віконця бічного меню .menu-bellen та «Пульта уваги» MeldingenPortaal)
+// за дев’ятьма знімками екрана власника:
+//   - Screenshot_20261125_132441_com.android.chrome.jpg
+//   - Screenshot_20261125_132544_com.android.chrome.jpg
+//   - Screenshot_20261125_132707_com.android.chrome.jpg
+//   - Screenshot_20261125_132713_com.android.chrome.jpg
+//   - Screenshot_20261125_132721_com.android.chrome.jpg
+//   - Screenshot_20261125_132725_com.android.chrome.jpg
+//   - Screenshot_20261125_132742_com.android.chrome.jpg
+//   - Screenshot_20261125_132749_com.android.chrome.jpg
+//   - Screenshot_20261125_132803_com.android.chrome.jpg
+//
+// Цей тестовий набір зберігає точні вимоги та перевіряє як наявність цільових точок у коді,
+// так і функцію автоматичної оцінки виправлення кожного з 10 пунктів (MELD-1..MELD-10).
+
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+export interface MeldingGebrekContract {
+  readonly id:
+    | 'MELD-1'
+    | 'MELD-2'
+    | 'MELD-3'
+    | 'MELD-4'
+    | 'MELD-5'
+    | 'MELD-6'
+    | 'MELD-7'
+    | 'MELD-8'
+    | 'MELD-9'
+    | 'MELD-10';
+  readonly schermafdrukken: readonly string[];
+  readonly titelUk: string;
+  readonly titelNl: string;
+  readonly doelBestanden: readonly string[];
+  readonly oorzaakUk: string;
+  readonly oorzaakNl: string;
+  readonly herstelEisUk: string;
+  readonly herstelEisNl: string;
+}
+
+export const TIEN_MELDINGSGEBREKEN_CONTRACTEN: readonly MeldingGebrekContract[] = [
+  {
+    id: 'MELD-1',
+    schermafdrukken: [
+      'Screenshot_20261125_132707_com.android.chrome.jpg',
+      'Screenshot_20261125_132713_com.android.chrome.jpg',
+      'Screenshot_20261125_132721_com.android.chrome.jpg',
+      'Screenshot_20261125_132725_com.android.chrome.jpg',
+      'Screenshot_20261125_132742_com.android.chrome.jpg',
+      'Screenshot_20261125_132749_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Гігантський порожній білий стовп на весь екран (min-height: 100svh через клас .theme-light на .puls-icoon-tip) замість спливної підказки та блокування першого дотику на смартфоні',
+    titelNl:
+      'Reusachtige lege witte kolom over het hele scherm (min-height: 100svh door .theme-light op .puls-icoon-tip) in plaats van een tooltip en blokkering van de eerste aanraking op smartphone',
+    doelBestanden: [
+      'src/meldingen/IcoonActieKnop.tsx',
+      'src/meldingen/ecosysteem/meldingen-ecosysteem.css',
+      'src/index.css',
+    ],
+    oorzaakUk:
+      'У IcoonActieKnop.tsx функція leesActieveThemaKlassen() навішує клас .theme-light або .theme-dark прямо на <div class="puls-icoon-tip">, а в src/index.css для .theme-dark, .theme-light задано min-height: 100svh; крім того, modus="actie" блокує перший дотик без пояснення.',
+    oorzaakNl:
+      'In IcoonActieKnop.tsx zet leesActieveThemaKlassen() de klasse .theme-light of .theme-dark rechtstreeks op <div class="puls-icoon-tip">, terwijl src/index.css op .theme-dark, .theme-light min-height: 100svh zet; bovendien blokkeert modus="actie" de eerste aanraking zonder uitleg.',
+    herstelEisUk:
+      'Задати для .puls-icoon-tip явні min-height: 0; height: max-content; width: max-content і не застосовувати кореневий min-height: 100svh до підказок, а на сенсорних екранах не блокувати прямі кнопки керування шапки двотапною затримкою.',
+    herstelEisNl:
+      'Geef .puls-icoon-tip expliciet min-height: 0; height: max-content; width: max-content zonder de pagina-min-height: 100svh, en blokkeer directe bedieningsknoppen in de kop op aanraakschermen niet met een dubbeltik-vertraging.',
+  },
+  {
+    id: 'MELD-2',
+    schermafdrukken: ['Screenshot_20261125_132707_com.android.chrome.jpg'],
+    titelUk:
+      'Заблоковане перемикання «Компактна панель / Вікно» на смартфоні (<= 768 px) при збереженому modus === "volledig" (за збереження канонічного розміщення дзвіночка в меню для простору екрана)',
+    titelNl:
+      'Niet-werkende omschakeling «Compact paneel / Venster» op smartphone (<= 768 px) bij opgeslagen modus === "volledig" (met behoud van de canonieke plaats van de bel in het menu voor schermruimte)',
+    doelBestanden: ['src/meldingen/ecosysteem/MeldingenPortaal.tsx', 'src/CanoniekMeldingencentrum.tsx'],
+    oorzaakUk:
+      'Розміщення дзвіночка в мобільному меню є свідомим задумом власника для збереження робочого простору екрана, але в MeldingenPortaal.tsx isMobielLangscroll залишається true, якщо geo.modus === "volledig" або profiel.geometrie.modus === "volledig", навіть коли compactBijBel === true, тому натискання кнопки «Компактна панель» не перемикає вигляд вікна.',
+    oorzaakNl:
+      'De plaatsing van de bel in het mobiele menu is een bewust ontwerpbesluit van de eigenaar voor meer werkruimte, maar in MeldingenPortaal.tsx blijft isMobielLangscroll true wanneer geo.modus === "volledig" of profiel.geometrie.modus === "volledig", zelfs als compactBijBel === true, waardoor tikken op «Compact paneel» de weergave niet wijzigt.',
+    herstelEisUk:
+      'Зберігаючи дзвіночок у мобільному меню без зайвих кнопок на робочому просторі, узгодити перемикання між компактним та розгорнутим режимами так, щоб натискання кнопки «Компактна панель» справді перемикало режим і показувало кнопку повернення «Вікно».',
+    herstelEisNl:
+      'Behoud de bel in het mobiele menu zonder extra knoppen op het werkblad en stem het schakelen tussen compacte en uitgebreide modus af zodat tikken op «Compact paneel» daadwerkelijk omschakelt en de terugkeerknop «Venster» toont.',
+  },
+  {
+    id: 'MELD-3',
+    schermafdrukken: ['Screenshot_20261125_132544_com.android.chrome.jpg'],
+    titelUk:
+      'Оманливий підпис «Показано 1 із 14» для єдиної картки-лічильника «Непрочитані листи: 14» у віконці меню «Пошта» та відсутність цих сповіщень у центрі сповіщень',
+    titelNl:
+      'Misleidend onderschrift «1 van 14 getoond» voor de ene tellerkaart «Ongelezen e-mails: 14» in het menuvenster «E-mail» en ontbreken ervan in het meldingencentrum',
+    doelBestanden: ['src/MenuMeldingen.tsx', 'shared/menu-meldingen.ts'],
+    oorzaakUk:
+      'vanTellers створює один елемент MenuMelding із bron="teller" та aantal=14, а MeldingBellen у MenuMeldingen.tsx порівнює badge.aantal > badge.meldingen.length і пише «Показано 1 із 14», хоча решти 13 карток не існує.',
+    oorzaakNl:
+      'vanTellers maakt één MenuMelding met bron="teller" en aantal=14, en MeldingBellen in MenuMeldingen.tsx vergelijkt badge.aantal > badge.meldingen.length en toont «1 van 14 getoond» terwijl er geen 13 andere kaarten bestaan.',
+    herstelEisUk:
+      'Не виводити «Показано 1 із N» для зведеної картки-лічильника (bron === "teller"), а чесно пояснювати, що це зведений лічильник непрочитаних листів у «Вхідних», та передавати сигнал непрочитаної пошти в загальний центр сповіщень.',
+    herstelEisNl:
+      'Toon geen «1 van N getoond» voor een samengevoegde tellerkaart (bron === "teller"), maar vermeld duidelijk dat het om de teller van ongelezen e-mails in Inbox gaat en geef het signaal door aan het meldingencentrum.',
+  },
+  {
+    id: 'MELD-4',
+    schermafdrukken: ['Screenshot_20261125_132441_com.android.chrome.jpg'],
+    titelUk:
+      'Неофіційний одноколірний дубль-логотип Gmail (просто червона літера M із merk-logos.ts замість офіційного багатоколірного знака з єдиного реєстру src/merk/officieel/) та хибний підпис «Gmail · Вхід і пристрій» через спрацювання /\\bgmail\\b/i на @gmail.com',
+    titelNl:
+      'Onofficieel eenkleurig duplicaat-logo van Gmail (enkel rode letter M uit merk-logos.ts in plaats van het officiële meerkleurige teken uit src/merk/officieel/) en foutief opschrift «Gmail · Aanmelding en apparaat» door match op @gmail.com',
+    doelBestanden: [
+      'src/MenuMeldingen.tsx',
+      'src/merk/merk-logos.ts',
+      'scripts/merk-officieel-maken.mjs',
+      'src/merk/officieel-sleutels.ts',
+    ],
+    oorzaakUk:
+      'По-перше, за правилом REESTR-LOGO-001 усі логотипи мають походити з одного офіційного джерела (src/merk/officieel/), але gmail забули додати до KEUZE у scripts/merk-officieel-maken.mjs і залишили одноколірний червоний контур-літеру M у src/merk/merk-logos.ts. По-друге, zoekMerkInTekst у src/MenuMeldingen.tsx спрацьовує на домен @gmail.com у поштовій адресі olesia.koval@gmail.com раніше за /\\bgoogle\\b/i.',
+    oorzaakNl:
+      'Ten eerste moeten volgens REESTR-LOGO-001 alle logo’s uit één officiële bron (src/merk/officieel/) komen, maar gmail ontbreekt in KEUZE van scripts/merk-officieel-maken.mjs en staat nog als eenkleurige rode letter M in src/merk/merk-logos.ts. Ten tweede matcht zoekMerkInTekst in src/MenuMeldingen.tsx op het domein @gmail.com in olesia.koval@gmail.com vóór /\\bgoogle\\b/i.',
+    herstelEisUk:
+      'Додати офіційний чотириколірний логотип gmail (google-gmail-2020 із @iconify-json/logos) до єдиного реєстру src/merk/officieel/ через scripts/merk-officieel-maken.mjs, прибрати одноколірний дубль із src/merk/merk-logos.ts та не зіставляти домен поштової адреси @gmail.com як службу Gmail у сповіщеннях безпеки входу.',
+    herstelEisNl:
+      'Voeg het officiële vierkleurige gmail-logo (google-gmail-2020 uit @iconify-json/logos) toe aan src/merk/officieel/ via scripts/merk-officieel-maken.mjs, verwijder het eenkleurige duplicaat uit src/merk/merk-logos.ts en herken het e-maildomein @gmail.com niet als de dienst Gmail in aanmeldbeveiligingsmeldingen.',
+  },
+  {
+    id: 'MELD-5',
+    schermafdrukken: ['Screenshot_20261125_132441_com.android.chrome.jpg'],
+    titelUk:
+      'Обрізаний текст без способу й часу входу та відсутність кнопок «Це був я» / «Це не я» у віконці меню «Налаштування 3 сповіщення»',
+    titelNl:
+      'Afgekorte tekst zonder aanmeldmethode en tijdstip en ontbreken van knoppen «Dit was ik» / «Dit was ik niet» in het menuvenster «Instellingen 3 meldingen»',
+    doelBestanden: ['src/MenuMeldingen.tsx', 'backend/nieuw-apparaat.ts'],
+    oorzaakUk:
+      'У MeldingBellen текст сповіщення обрізається у 2 рядки на поштовій адресі та регіоні перед часом і способом входу, а кнопки «Це був я» (/api/meldingen/apparaat-bekend) та «Це не я» відсутні, попри пряму вимогу в тексті сповіщення.',
+    oorzaakNl:
+      'In MeldingBellen wordt de meldingstekst na 2 regels afgekapt op het e-mailadres en de regio vóór het tijdstip en de aanmeldmethode, en ontbreken de knoppen «Dit was ik» (/api/meldingen/apparaat-bekend) en «Dit was ik niet» ondanks de tekst.',
+    herstelEisUk:
+      'Показувати спосіб і час входу на початку або в підзаголовку картки та додати прямі кнопки дії «Це був я» (з викликом POST /api/meldingen/apparaat-bekend) і «Це не я» для сповіщень про новий пристрій.',
+    herstelEisNl:
+      'Toon aanmeldmethode en tijdstip vooraan of in de subtitel van de kaart en voeg directe actieknoppen «Dit was ik» (met aanroep van POST /api/meldingen/apparaat-bekend) en «Dit was ik niet» toe voor meldingen over een nieuw apparaat.',
+  },
+  {
+    id: 'MELD-6',
+    schermafdrukken: [
+      'Screenshot_20261125_132441_com.android.chrome.jpg',
+      'Screenshot_20261125_132707_com.android.chrome.jpg',
+      'Screenshot_20261125_132749_com.android.chrome.jpg',
+      'Screenshot_20261125_132803_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Втрата кнопок «Це не я» / «Це я» під картками «Виявлено вхід із нового незнайомого пристрою» (owner.apparaat.nieuw), відсутність виклику POST /api/meldingen/apparaat-bekend при натисканні «Це я» та дублювання сповіщень',
+    titelNl:
+      'Verlies van knoppen «Dit was ik niet» / «Dit was ik» onder kaarten «Aanmelding vanaf nieuw onbekend apparaat gedetecteerd» (owner.apparaat.nieuw), ontbreken van POST /api/meldingen/apparaat-bekend bij «Dit was ik» en duplicatie',
+    doelBestanden: [
+      'shared/meldingen-ecosysteem/tolk.ts',
+      'shared/meldingen-puls/kern.ts',
+      'src/meldingen/ecosysteem/MeldingVeegKaart.tsx',
+      'backend/nieuw-apparaat.ts',
+    ],
+    oorzaakUk:
+      'У tolk.ts подія owner.apparaat.nieuw через слово apparaat потрапляє в subdomein="mcp", kanaal="mcp", prioriteit="laag" і отримує niveau="gewoon" без кнопок підтвердження, а в MeldingVeegKaart.tsx кнопка «Це я» викликає лише onStatus("opgelost") без POST /api/meldingen/apparaat-bekend.',
+    oorzaakNl:
+      'In tolk.ts valt owner.apparaat.nieuw door het woord apparaat onder subdomein="mcp", kanaal="mcp", prioriteit="laag" en krijgt niveau="gewoon" zonder bevestigingsknoppen, terwijl in MeldingVeegKaart.tsx de knop «Dit was ik» alleen onStatus("opgelost") aanroept zonder POST /api/meldingen/apparaat-bekend.',
+    herstelEisUk:
+      'Класифікувати owner.apparaat.nieuw як kanaal="beveiliging", subdomein="id", niveau="gevaar", об’єднувати парні записи з site_notifications та при натисканні «Це я» в MeldingVeegKaart викликати POST /api/meldingen/apparaat-bekend.',
+    herstelEisNl:
+      'Classificeer owner.apparaat.nieuw als kanaal="beveiliging", subdomein="id", niveau="gevaar", ontdubbel gekoppelde rijen met site_notifications en roep bij «Dit was ik» in MeldingVeegKaart POST /api/meldingen/apparaat-bekend aan.',
+  },
+  {
+    id: 'MELD-7',
+    schermafdrukken: [
+      'Screenshot_20261125_132441_com.android.chrome.jpg',
+      'Screenshot_20261125_132544_com.android.chrome.jpg',
+      'Screenshot_20261125_132742_com.android.chrome.jpg',
+      'Screenshot_20261125_132803_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Розбіжність лічильників (99+ на дзвіночку, 18 нових, Подій: 212) та засмічення вкладки «Увага · Потребують дії» вже прочитаними інформаційними подіями (status === "gelezen")',
+    titelNl:
+      'Verschil tussen tellers (99+ op de bel, 18 nieuw, Gebeurtenissen: 212) en vervuiling van tabblad «Actief · Vragen aandacht» met reeds gelezen informatieve gebeurtenissen (status === "gelezen")',
+    doelBestanden: ['src/meldingen/ecosysteem/MeldingenPortaal.tsx', 'src/CanoniekMeldingencentrum.tsx'],
+    oorzaakUk:
+      'У MeldingenPortaal.tsx фільтр statusFilter === "actief" відкидає лише archief та opgelost, залишаючи всі 212 прочитаних інформаційних подій (status === "gelezen"), які не потребують жодної дії і не зникають навіть після натискання «Позначити всі прочитаними».',
+    oorzaakNl:
+      'In MeldingenPortaal.tsx sluit statusFilter === "actief" alleen archief en opgelost uit, waardoor alle 212 gelezen informatieve gebeurtenissen (status === "gelezen") blijven staan en zelfs na «Alles als gelezen markeren» niet verdwijnen.',
+    herstelEisUk:
+      'У вкладці «Увага · Потребують дії» залишати лише непрочитані події (status === "nieuw") та події, що справді потребують рішення або підтвердження безпеки (vereistBevestiging), а прочитані фонові події переносити до журналу/усіх та синхронізувати лічильник дзвіночка.',
+    herstelEisNl:
+      'Toon op het tabblad «Actief · Vragen aandacht» alleen ongelezen gebeurtenissen (status === "nieuw") en gebeurtenissen die daadwerkelijk een besluit of beveiligingsbevestiging vereisen, en synchroniseer de belteller.',
+  },
+  {
+    id: 'MELD-8',
+    schermafdrukken: [
+      'Screenshot_20261125_132742_com.android.chrome.jpg',
+      'Screenshot_20261125_132749_com.android.chrome.jpg',
+      'Screenshot_20261125_132803_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Заглушка «...: подія без опису (код — у „Технічних подробицях“)» на 10 нових сповіщеннях за відсутності блоку «Технічні подробиці» та обрізання заголовків капсул на півслові',
+    titelNl:
+      'Terugvaltekst «...: gebeurtenis zonder omschrijving (code onder „Technische details“)» op 10 nieuwe meldingen terwijl het blok «Technische details» ontbreekt en afkapping van capsuletitels',
+    doelBestanden: [
+      'src/melding-stijl.tsx',
+      'src/connector-activiteit.ts',
+      'src/meldingen/ecosysteem/ecosysteem-opslag.ts',
+      'src/meldingen/ecosysteem/MeldingVeegKaart.tsx',
+    ],
+    oorzaakUk:
+      'siteActieTekst у src/melding-stijl.tsx повертає заглушку з відсиланням до відсутнього в MeldingVeegKaart блоку «Технічні подробиці», а заголовки капсул у мобільному списку обрізаються в один рядок без показу ключового об’єкта дії.',
+    oorzaakNl:
+      'siteActieTekst in src/melding-stijl.tsx geeft een terugvaltekst die verwijst naar een in MeldingVeegKaart onbestaand blok «Technische details», en capsuletitels worden op mobiel op één regel afgekapt zonder het doelobject te tonen.',
+    herstelEisUk:
+      'Забезпечити повноцінні людські назви для всіх дій сайту в SITE_LABELS / SITE_WAT / SITE_GEBEURDE без заглушки «подія без опису» та відображати ключовий контекст у капсулі сповіщення без втрати змісту.',
+    herstelEisNl:
+      'Voorzie alle site-acties van volwaardige menselijke titels in SITE_LABELS / SITE_WAT / SITE_GEBEURDE zonder de terugvaltekst «gebeurtenis zonder omschrijving» en toon de kerncontext zichtbaar in de capsule.',
+  },
+  {
+    id: 'MELD-9',
+    schermafdrukken: [
+      'Screenshot_20261125_132441_com.android.chrome.jpg',
+      'Screenshot_20261125_132544_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Перекриття пунктів бічного меню віконцем .menu-bellen без візуальної прив’язки до обраного пункту та блокування першого натиску на кнопки «Відкрити» / «Очистити» на смартфоні',
+    titelNl:
+      'Overlapping van zijbalkitems door .menu-bellen zonder visuele koppeling aan het gekozen item en blokkering van de eerste tik op «Openen» / «Opruimen» op smartphone',
+    doelBestanden: ['src/MenuMeldingen.tsx'],
+    oorzaakUk:
+      'У MenuMeldingen.tsx віконце .menu-bellen перекриває сам обраний пункт меню без стрілки-вказівника, а icoonKnopHandlers на кнопках «Відкрити» та «Очистити» блокує перший дотик користувача на смартфоні.',
+    oorzaakNl:
+      'In MenuMeldingen.tsx bedekt .menu-bellen het gekozen menu-item zelf zonder aanwijspijl, en icoonKnopHandlers op «Openen» en «Opruimen» blokkeert de eerste aanraking op een smartphone.',
+    herstelEisUk:
+      'Позиціонувати .menu-bellen над або під обраним пунктом меню так, щоб пункт залишався видимим, і виконувати дію кнопок «Відкрити» та «Очистити» з першого натиску на смартфоні.',
+    herstelEisNl:
+      'Plaats .menu-bellen boven of onder het gekozen menu-item zodat het item zichtbaar blijft en voer «Openen» en «Opruimen» op een smartphone direct bij de eerste aanraking uit.',
+  },
+  {
+    id: 'MELD-10',
+    schermafdrukken: [
+      'Screenshot_20261125_132725_com.android.chrome.jpg',
+      'Screenshot_20261125_132742_com.android.chrome.jpg',
+      'Screenshot_20261125_132749_com.android.chrome.jpg',
+      'Screenshot_20261125_132803_com.android.chrome.jpg',
+    ],
+    titelUk:
+      'Відсутність видимої назви активної вкладки у смузі 6 піктограмних вкладок вікна «Сповіщення» та комп’ютерні клавіатурні підказки (клавіша /) на смартфоні',
+    titelNl:
+      'Ontbreken van zichtbare naam van het actieve tabblad in de balk met 6 pictogramtabbladen en desktop-toetsaanwijzingen (toets /) op smartphone',
+    doelBestanden: ['src/meldingen/ecosysteem/MeldingenPortaal.tsx'],
+    oorzaakUk:
+      'У MeldingenPortaal.tsx смуга .puls-tabs відмальовує 6 вкладок лише як іконки 34×34 px без текстової назви активної вкладки, а кнопка пошуку на сенсорному екрані показує підказку «(клавіша /)».',
+    oorzaakNl:
+      'In MeldingenPortaal.tsx tekent .puls-tabs 6 tabbladen enkel als pictogrammen van 34×34 px zonder tekstlabel van het actieve tabblad, en de zoekknop toont op aanraakschermen «(toets /)».',
+    herstelEisUk:
+      'Відображати назву активної вкладки (та зрозумілий підпис поточного фільтра) прямо у смузі вкладок і прибирати клавіатурні підказки («клавіша /», «Ctrl+Z») на сенсорних мобільних пристроях.',
+    herstelEisNl:
+      'Toon de naam van het actieve tabblad zichtbaar in de tabbladenbalk en verberg toetsenbordaanwijzingen («toets /», «Ctrl+Z») op mobiele aanraakapparaten.',
+  },
+] as const;
+
+export interface MeldingHerstelStatus {
+  readonly id: MeldingGebrekContract['id'];
+  readonly hersteld: boolean;
+  readonly detail: string;
+}
+
+export function evalueerTienMeldingsGebrekenHerstel(rootDir = process.cwd()): readonly MeldingHerstelStatus[] {
+  const icoonKnopPad = join(rootDir, 'src/meldingen/IcoonActieKnop.tsx');
+  const ecoCssPad = join(rootDir, 'src/meldingen/ecosysteem/meldingen-ecosysteem.css');
+  const portaalPad = join(rootDir, 'src/meldingen/ecosysteem/MeldingenPortaal.tsx');
+  const menuMeldingenPad = join(rootDir, 'src/MenuMeldingen.tsx');
+  const tolkPad = join(rootDir, 'shared/meldingen-ecosysteem/tolk.ts');
+  const veegKaartPad = join(rootDir, 'src/meldingen/ecosysteem/MeldingVeegKaart.tsx');
+  const stijlPad = join(rootDir, 'src/melding-stijl.tsx');
+
+  const icoonKnopTekst = existsSync(icoonKnopPad) ? readFileSync(icoonKnopPad, 'utf8') : '';
+  const ecoCssTekst = existsSync(ecoCssPad) ? readFileSync(ecoCssPad, 'utf8') : '';
+  const portaalTekst = existsSync(portaalPad) ? readFileSync(portaalPad, 'utf8') : '';
+  const menuMeldingenTekst = existsSync(menuMeldingenPad) ? readFileSync(menuMeldingenPad, 'utf8') : '';
+  const tolkTekst = existsSync(tolkPad) ? readFileSync(tolkPad, 'utf8') : '';
+  const veegKaartTekst = existsSync(veegKaartPad) ? readFileSync(veegKaartPad, 'utf8') : '';
+  const stijlTekst = existsSync(stijlPad) ? readFileSync(stijlPad, 'utf8') : '';
+
+  const meld1Hersteld =
+    !icoonKnopTekst.includes('className={`puls-icoon-tip${themaKlassen') ||
+    /\.puls-icoon-tip\s*\{[^}]*min-height:\s*0/.test(ecoCssTekst);
+
+  const meld2Hersteld =
+    !portaalTekst.includes("(!compactBijBel || geo.modus === 'volledig' || profiel.geometrie.modus === 'volledig')");
+
+  const meld3Hersteld =
+    menuMeldingenTekst.includes("bron === 'teller'") &&
+    menuMeldingenTekst.includes('voetStatus');
+
+  const officieelSleutelsPad = join(rootDir, 'src/merk/officieel-sleutels.ts');
+  const merkLogosPad = join(rootDir, 'src/merk/merk-logos.ts');
+  const officieelSleutelsTekst = existsSync(officieelSleutelsPad) ? readFileSync(officieelSleutelsPad, 'utf8') : '';
+  const merkLogosTekst = existsSync(merkLogosPad) ? readFileSync(merkLogosPad, 'utf8') : '';
+
+  const meld4Hersteld =
+    /['"]gmail['"]/.test(officieelSleutelsTekst) &&
+    !merkLogosTekst.includes('"gmail":') &&
+    (menuMeldingenTekst.includes('@gmail.com') || menuMeldingenTekst.includes('zonderEmail'));
+
+  const meld5Hersteld =
+    menuMeldingenTekst.includes('apparaat-bekend');
+
+  const meld6Hersteld =
+    veegKaartTekst.includes('apparaat-bekend') &&
+    tolkTekst.includes('apparaat.nieuw');
+
+  const meld7Hersteld =
+    portaalTekst.includes("statusFilter === 'actief'") &&
+    portaalTekst.includes('vereistBevestiging');
+
+  const meld8Hersteld =
+    !stijlTekst.includes('подія без опису (код — у «Технічних подробицях»)');
+
+  const meld9Hersteld =
+    menuMeldingenTekst.includes('data-menu-bellen-anker');
+
+  const meld10Hersteld =
+    portaalTekst.includes('puls-actieve-tab-naam');
+
+  return [
+    {
+      id: 'MELD-1',
+      hersteld: meld1Hersteld,
+      detail: meld1Hersteld
+        ? 'Спливна підказка .puls-icoon-tip більше не успадковує min-height: 100svh від .theme-light'
+        : 'Очікує на виправлення: .puls-icoon-tip отримує клас .theme-light з min-height: 100svh і стає білим стовпом на весь екран',
+    },
+    {
+      id: 'MELD-2',
+      hersteld: meld2Hersteld,
+      detail: meld2Hersteld
+        ? 'Перемикання «Компактна панель / Вікно» працює коректно на мобільних екранах'
+        : 'Очікує на виправлення: isMobielLangscroll блокує перехід у компактну панель при modus === "volledig"',
+    },
+    {
+      id: 'MELD-3',
+      hersteld: meld3Hersteld,
+      detail: meld3Hersteld
+        ? 'Зведена картка-лічильник пошти не виводить оманливий підпис «Показано 1 із 14»'
+        : 'Очікує на виправлення: для teller:mail виводиться «Показано 1 із 14»',
+    },
+    {
+      id: 'MELD-4',
+      hersteld: meld4Hersteld,
+      detail: meld4Hersteld
+        ? 'Поштова адреса @gmail.com не викликає хибного бренду Gmail у сповіщеннях безпеки'
+        : 'Очікує на виправлення: /\\bgmail\\b/i спрацьовує на @gmail.com у тексті сповіщення безпеки',
+    },
+    {
+      id: 'MELD-5',
+      hersteld: meld5Hersteld,
+      detail: meld5Hersteld
+        ? 'Картка нового входу в меню показує спосіб/час входу і підтримує підтвердження «Це був я»'
+        : 'Очікує на виправлення: у MeldingBellen обрізано спосіб/час входу і відсутня кнопка «Це був я»',
+    },
+    {
+      id: 'MELD-6',
+      hersteld: meld6Hersteld,
+      detail: meld6Hersteld
+        ? 'Подія owner.apparaat.nieuw має кнопки «Це не я / Це я», а «Це я» викликає POST /api/meldingen/apparaat-bekend'
+        : 'Очікує на виправлення: owner.apparaat.nieuw класифікується як mcp/gewoon без кнопок, а «Це я» в MeldingVeegKaart не викликає /api/meldingen/apparaat-bekend',
+    },
+    {
+      id: 'MELD-7',
+      hersteld: meld7Hersteld,
+      detail: meld7Hersteld
+        ? 'Вкладка «Увага · Потребують дії» не засмічується прочитаними інформаційними подіями'
+        : 'Очікує на виправлення: усі 212 прочитаних подій висять у вкладці «Увага · Потребують дії»',
+    },
+    {
+      id: 'MELD-8',
+      hersteld: meld8Hersteld,
+      detail: meld8Hersteld
+        ? 'Усі дії сайту мають зрозумілі заголовки без заглушки «подія без опису»'
+        : 'Очікує на виправлення: siteActieTekst повертає «подія без опису (код — у „Технічних подробицях“)»',
+    },
+    {
+      id: 'MELD-9',
+      hersteld: meld9Hersteld,
+      detail: meld9Hersteld
+        ? 'Віконце .menu-bellen не перекриває активний пункт меню і кнопки карток спрацьовують з першого дотику'
+        : 'Очікує на виправлення: .menu-bellen перекриває пункти меню, а кнопки вимагають подвійного дотику',
+    },
+    {
+      id: 'MELD-10',
+      hersteld: meld10Hersteld,
+      detail: meld10Hersteld
+        ? 'Назва активної вкладки видима у смузі фільтрів, а клавіатурні підказки приховані на смартфоні'
+        : 'Очікує на виправлення: 6 піктограмних вкладок не показують назву активної вкладки',
+    },
+  ];
+}
+
+export async function main(): Promise<number> {
+  const rootDir = process.cwd();
+  let geslaagd = 0;
+  let gefaald = 0;
+
+  const controleer = (naam: string, voorwaarde: boolean, detail = '') => {
+    if (voorwaarde) {
+      geslaagd++;
+      console.log(`OK   ${naam}`);
+    } else {
+      gefaald++;
+      console.error(`FOUT ${naam}${detail ? ` — ${detail}` : ''}`);
+    }
+  };
+
+  const VERBODEN_RE = /[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/;
+
+  controleer(
+    'реєстр містить рівно 10 перевірочних контрактів системи сповіщень (MELD-1..MELD-10)',
+    TIEN_MELDINGSGEBREKEN_CONTRACTEN.length === 10 &&
+      TIEN_MELDINGSGEBREKEN_CONTRACTEN.map((c) => c.id).join(',') ===
+        'MELD-1,MELD-2,MELD-3,MELD-4,MELD-5,MELD-6,MELD-7,MELD-8,MELD-9,MELD-10',
+  );
+
+  for (const contract of TIEN_MELDINGSGEBREKEN_CONTRACTEN) {
+    const alleBestandenAanwezig = contract.doelBestanden.every((rel) => existsSync(join(rootDir, rel)));
+    controleer(
+      `${contract.id}: усі цільові файли існують у сховищі (${contract.doelBestanden.join(', ')})`,
+      alleBestandenAanwezig,
+    );
+    controleer(
+      `${contract.id}: двомовні описи (uk / nl) та прив’язка до знімків екрана заповнені без заборонених символів`,
+      contract.titelUk.length > 10 &&
+        contract.titelNl.length > 10 &&
+        contract.schermafdrukken.length >= 1 &&
+        !VERBODEN_RE.test(contract.titelUk + contract.oorzaakUk + contract.herstelEisUk),
+    );
+  }
+
+  const statussen = evalueerTienMeldingsGebrekenHerstel(rootDir);
+  controleer(
+    'функція оцінювання стану виправлення evalueerTienMeldingsGebrekenHerstel повертає звіти для всіх 10 пунктів',
+    statussen.length === 10 && statussen.every((s) => typeof s.hersteld === 'boolean' && s.detail.length > 0),
+  );
+  for (const st of statussen) {
+    controleer(`${st.id}: підтверджено виправлення в коді (${st.detail})`, st.hersteld === true, st.detail);
+  }
+
+  // Живі функціональні перевірки поведінки всіх 10 пунктів (uk + nl)
+  const { nepBrowser } = await import('./hulp/nep-browser');
+  nepBrowser('https://hub.tarasevych.com', 'uk');
+  const React = await import('react');
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { vanTellers, vanServer, badgesBouwen, standaardMeldingen } = await import('../../shared/menu-meldingen');
+  const { MeldingBellen, verrijkMenuMelding } = await import('../../src/MenuMeldingen');
+  const { nieuwApparaatTekst } = await import('../../backend/nieuw-apparaat');
+  const { siteEventsFromAudit } = await import('../../backend/site-activiteit');
+  const { interpreteerGebeurtenis } = await import('../../shared/meldingen-ecosysteem/tolk');
+  const { bepaalOorzaakSleutel, bundelOorzaakKetens, herkenMerkEnAnker, verrijkGebeurtenisVoorPuls } = await import(
+    '../../shared/meldingen-puls/kern'
+  );
+  const { bouwUniformeStroom, leesLokaalProfiel } = await import('../../src/meldingen/ecosysteem/ecosysteem-opslag');
+  const { default: MeldingVeegKaart } = await import('../../src/meldingen/ecosysteem/MeldingVeegKaart');
+  const { default: MeldingenPortaal } = await import('../../src/meldingen/ecosysteem/MeldingenPortaal');
+  const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
+  const { LOGOS } = await import('../../src/merk/merk-logos');
+
+  // Жива перевірка MELD-3: vanTellers + чесний підпис у MeldingBellen + передача teller:mail у bouwUniformeStroom
+  const nu = 1_764_070_000_000;
+  const mailTellersUk = vanTellers({ mail: { ongelezen: 14, op: nu } }, {}, 'uk');
+  const bellenTellerHtml = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'uk',
+      label: 'Пошта',
+      badge: { item: 'svc:mail', aantal: 14, categorieen: ['post'], meldingen: mailTellersUk, nieuwste: nu },
+      anker: { left: 10, top: 80, right: 210, bottom: 120, width: 200, height: 40, x: 10, y: 80, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  const stroomMetTeller = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: [],
+    activityRead: new Set(),
+    tellers: { mail: { ongelezen: 14, op: nu } },
+    weg: {},
+  });
+  controleer(
+    'жива перевірка MELD-3: відсутність оманливого «Показано 1 із 14» у MeldingBellen та наявність teller:mail у потоці сповіщень',
+    !bellenTellerHtml.includes('Показано 1 із 14') &&
+      bellenTellerHtml.includes('У «Вхідних»: 14 непрочитаних листів') &&
+      stroomMetTeller.some((g) => g.id === 'teller:mail' && g.herhalingen === 14),
+  );
+
+  // Жива перевірка MELD-4 + MELD-5: чотириколірний знак gmail, відсутність хибного gmail на @gmail.com, спосіб/час на початку та кнопки підтвердження
+  const tekstApp = nieuwApparaatTekst({
+    email: 'olesia.koval@gmail.com',
+    label: 'Chrome/Android',
+    methode: 'google',
+    locatie: { city: 'Gent', country: 'BE' },
+    tijd: nu,
+  });
+  const uuid = '12345678-1234-4123-8123-123456789abc';
+  const menuAppMelding = {
+    id: uuid,
+    bron: 'server' as const,
+    item: 'svc:identity',
+    categorie: 'beveiliging' as const,
+    titel: tekstApp.titel,
+    tekst: tekstApp.tekst,
+    op: nu,
+    link: `https://id.tarasevych.com/sessions?apparaat=${uuid}`,
+  };
+  const verrijktMenu = verrijkMenuMelding(menuAppMelding, 'svc:identity', 'Налаштування', 'uk');
+  const bellenAppHtml = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'uk',
+      label: 'Налаштування',
+      badge: { item: 'svc:identity', aantal: 1, categorieen: ['beveiliging'], meldingen: [menuAppMelding], nieuwste: nu },
+      anker: { left: 10, top: 680, right: 210, bottom: 724, width: 200, height: 44, x: 10, y: 680, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  controleer(
+    'жива перевірка MELD-4 і MELD-5: офіційний знак gmail без дубля, марка google для @gmail.com, спосіб на початку та кнопки «Це не я / Це був я»',
+    OFFICIEEL_SLEUTELS.has('gmail') &&
+      !('gmail' in LOGOS) &&
+      verrijktMenu.merk === 'google' &&
+      tekstApp.tekst.indexOf('спосіб: Google') < tekstApp.tekst.indexOf('olesia.koval@gmail.com') &&
+      bellenAppHtml.includes('Це був я') &&
+      bellenAppHtml.includes('Це не я') &&
+      bellenAppHtml.includes('menu-bellen-anker-pijl'),
+  );
+
+  // Жива перевірка MELD-6: класифікація owner.apparaat.nieuw як id/beveiliging/gevaar та усунення дублів із site_notifications
+  const gebAuditApp = interpreteerGebeurtenis({
+    id: 'audit:77',
+    bron: 'identity site owner.apparaat.nieuw',
+    soort: 'owner.apparaat.nieuw',
+    titel: 'Виявлено вхід із нового незнайомого пристрою',
+    bericht: 'Chrome/Android · Гент',
+    aangemaaktOp: nu,
+  });
+  const pulsAuditApp = verrijkGebeurtenisVoorPuls(gebAuditApp, 'uk');
+  const gededupStroom = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [{ id: uuid, kind: 'security_warning', title: tekstApp.titel, message: tekstApp.tekst, createdAt: nu, link: `https://id.tarasevych.com/sessions?apparaat=${uuid}` }],
+    techItems: [],
+    localRows: [],
+    activityEvents: [{ id: 'audit:77', source: 'identity', platform: '', kind: 'site', type: 'owner.apparaat.nieuw', subject: 'Chrome/Android', status: 'succeeded', createdAt: nu + 350, finishedAt: nu + 350 }],
+    activityRead: new Set(),
+  });
+  const cloudGeb = interpreteerGebeurtenis({
+    id: 'cl-1',
+    bron: 'cloud:google',
+    soort: 'owner.cloud.sync',
+    titel: 'Синхронізація файлів',
+    aangemaaktOp: nu,
+  });
+  controleer(
+    'жива перевірка MELD-6: owner.apparaat.nieuw отримує id/beveiliging/gevaar і не дублюється з site_notifications, а хмара Google дає googledrive',
+    gebAuditApp.subdomein === 'id' &&
+      gebAuditApp.kanaal === 'beveiliging' &&
+      pulsAuditApp.niveau === 'gevaar' &&
+      gededupStroom.length === 1 &&
+      herkenMerkEnAnker(cloudGeb, 'uk').merkSleutel === 'googledrive',
+  );
+
+  // Жива перевірка MELD-2, MELD-7, MELD-10: MeldingenPortaal на смартфоні 360 px (компактний режим + Вікно, фільтр Увага, назва вкладки)
+  const profiel = leesLokaalProfiel('meld-tien-test', 'prive');
+  profiel.geometrie.modus = 'volledig';
+  const win = globalThis.window as unknown as { innerWidth: number };
+  const doc = globalThis.document as unknown as { body: unknown };
+  const oudB = win.innerWidth;
+  const oudBody = doc.body;
+  win.innerWidth = 360;
+  doc.body = null;
+  let compactHtmlUk = '';
+  let vensterHtmlNl = '';
+  try {
+    const gelezenRuis = interpreteerGebeurtenis({
+      id: 'ruis-gelezen-1',
+      bron: 'mcp',
+      soort: 'info',
+      titel: 'Прочитане фонове сповіщення без потреби дії',
+      gelezen: true,
+      aangemaaktOp: nu - 50_000,
+    });
+    gelezenRuis.status = 'gelezen';
+    const basisPortaal = {
+      open: true,
+      ruimte: 'prive' as const,
+      subdomeinNu: 'hub' as const,
+      profiel,
+      stroom: [gebAuditApp, gelezenRuis],
+      laden: false,
+      sound: false,
+      onSluiten: () => undefined,
+      onOpenen: () => undefined,
+      onToggleSound: () => undefined,
+      onVervers: () => undefined,
+      onSlaGeometrieOp: () => undefined,
+      onStatusWijzigen: async () => undefined,
+      onOntleden: async () => ({ samenvatting: '', acties: [], bron: 'intern' as const }) as never,
+      onMarkAll: () => undefined,
+      onSwitchToClassic: () => undefined,
+      onOpenVensterModus: () => undefined,
+    };
+    compactHtmlUk = renderToStaticMarkup(React.createElement(MeldingenPortaal, { ...basisPortaal, lang: 'uk', compactBijBel: true }));
+    vensterHtmlNl = renderToStaticMarkup(React.createElement(MeldingenPortaal, { ...basisPortaal, lang: 'nl', compactBijBel: false }));
+  } finally {
+    win.innerWidth = oudB;
+    doc.body = oudBody;
+  }
+  controleer(
+    'жива перевірка MELD-2, MELD-7, MELD-10: компактний режим із видимою кнопкою «Вікно», очищена вкладка «Увага» та назва активної вкладки uk/nl',
+    compactHtmlUk.includes('data-puls-vorm="compact"') &&
+      !compactHtmlUk.includes('is-mobiel-langscroll') &&
+      compactHtmlUk.includes('puls-vorm-tekst') &&
+      compactHtmlUk.includes('Вікно') &&
+      !compactHtmlUk.includes('Прочитане фонове сповіщення без потреби дії') &&
+      compactHtmlUk.includes('puls-actieve-tab-naam') &&
+      vensterHtmlNl.includes('puls-actieve-tab-naam') &&
+      !compactHtmlUk.includes('(клавіша /)') &&
+      !vensterHtmlNl.includes('(toets /)'),
+  );
+
+  // Додаткова регресійна перевірка: поштові події *-oauth.completed (Gmail / Outlook), переклад passkey, .puls-kapsel-sub та kaartTotaal у змішаному списку пошти
+  const auditOauthEnPasskey = siteEventsFromAudit([
+    { id: '501', action: 'owner.mail.google-oauth.completed', result: 'success', createdAt: nu - 10_000, details: { email: 'olesia.koval@gmail.com' } },
+    { id: '502', action: 'owner.mail.microsoft-oauth.completed', result: 'success', createdAt: nu - 20_000, details: { email: 'olesia.koval@outlook.com' } },
+    { id: '503', action: 'owner.apparaat.nieuw', result: 'success', createdAt: nu - 30_000, details: { id: '44444444-5555-4666-8777-888888888888', apparaat: 'iPad Air · Safari', methode: 'passkey' } },
+  ]);
+  const stroomOauthUk = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'mail',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: auditOauthEnPasskey,
+    activityRead: new Set(),
+  });
+  const gmailOauthGeb = stroomOauthUk.find((g) => g.meta?.actieCode === 'owner.mail.google-oauth.completed')!;
+  const outlookOauthGeb = stroomOauthUk.find((g) => g.meta?.actieCode === 'owner.mail.microsoft-oauth.completed')!;
+  const passkeyAppGeb = stroomOauthUk.find((g) => g.meta?.actieCode === 'owner.apparaat.nieuw')!;
+  const gmailPuls = verrijkGebeurtenisVoorPuls(gmailOauthGeb, 'uk');
+  const outlookPuls = verrijkGebeurtenisVoorPuls(outlookOauthGeb, 'uk');
+  const passkeyPuls = verrijkGebeurtenisVoorPuls(passkeyAppGeb, 'uk');
+  controleer(
+    'регресія V-M3-1: поштові події *-oauth.completed мають kanaal=mail, niveau=gewoon і знаки gmail / microsoftoutlook, а passkey отримує знак passkey і переклад «Ключ доступу»',
+    Boolean(gmailOauthGeb && outlookOauthGeb && passkeyAppGeb) &&
+      gmailOauthGeb.kanaal === 'mail' &&
+      gmailPuls.niveau === 'gewoon' &&
+      gmailPuls.anker.merkSleutel === 'gmail' &&
+      outlookOauthGeb.kanaal === 'mail' &&
+      outlookPuls.niveau === 'gewoon' &&
+      outlookPuls.anker.merkSleutel === 'microsoftoutlook' &&
+      passkeyPuls.anker.merkSleutel === 'passkey' &&
+      passkeyAppGeb.contextLabel.includes('Ключ доступу') &&
+      !/\bpasskey\b/i.test(passkeyAppGeb.contextLabel),
+  );
+
+  // Регресія V-M3-2: непорожній .puls-kapsel-sub при службовому contextLabel = 'id · beveiliging'
+  const srvGebMetTechCtx = interpreteerGebeurtenis({
+    id: `s:${uuid}`,
+    externeSleutel: `site_notif:${uuid}`,
+    bron: 'security_warning',
+    soort: 'security_warning',
+    titel: 'Новий вхід на новому пристрої',
+    bericht: tekstApp.tekst,
+    link: `https://id.tarasevych.com/sessions?apparaat=${uuid}`,
+    aangemaaktOp: nu,
+  });
+  const veegKaartHtmlUk = renderToStaticMarkup(
+    React.createElement(MeldingVeegKaart, {
+      lang: 'uk',
+      gebeurtenis: srvGebMetTechCtx,
+      profiel,
+      bijlageVoorkeur: profiel.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => ({ samenvatting: '', acties: [], bron: 'intern' as const }) as never,
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+  controleer(
+    'регресія V-M3-2: MeldingVeegKaart виводить змістовний підрядок .puls-kapsel-sub навіть при службовому contextLabel = "id · beveiliging"',
+    srvGebMetTechCtx.contextLabel === 'id · beveiliging' &&
+      veegKaartHtmlUk.includes('class="puls-kapsel-sub"') &&
+      veegKaartHtmlUk.includes('Google · Chrome/Android · Gent, BE') &&
+      !veegKaartHtmlUk.includes('>id · beveiliging<'),
+  );
+
+  // Регресія V-M3-4 (U1-3): чесний підпис voetStatus для змішаного списку пошти (6 серверних карток + 1 teller:mail(14))
+  const zesServerMail = vanServer(
+    Array.from({ length: 6 }, (_, idx) => ({
+      id: `mail-srv-${idx + 1}`,
+      kind: 'mail_alert',
+      title: `Лист безпеки #${idx + 1}`,
+      message: 'Повідомлення поштової служби',
+      createdAt: nu - idx * 1_000,
+      link: 'https://mail.tarasevych.com/inbox',
+    })),
+  );
+  const oudereTellerMail = vanTellers({ mail: { ongelezen: 14, op: nu - 500_000 } }, {}, 'uk');
+  const gemengdeBadges = badgesBouwen([...zesServerMail, ...oudereTellerMail], standaardMeldingen());
+  const gemengdMailBadge = gemengdeBadges['svc:mail'];
+  const gemengdHtmlUk = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'uk',
+      label: 'Пошта',
+      badge: gemengdMailBadge,
+      anker: { left: 10, top: 80, right: 210, bottom: 120, width: 200, height: 40, x: 10, y: 80, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  const gemengdHtmlNl = renderToStaticMarkup(
+    React.createElement(MeldingBellen, {
+      lang: 'nl',
+      label: 'E-mail',
+      badge: gemengdMailBadge,
+      anker: { left: 10, top: 80, right: 210, bottom: 120, width: 200, height: 40, x: 10, y: 80, toJSON: () => ({}) } as DOMRect,
+      onSluit: () => undefined,
+      onOpen: () => undefined,
+      onAllesWeg: () => undefined,
+      onBinnen: () => undefined,
+      onEsc: () => undefined,
+      paneelRef: () => undefined,
+    }),
+  );
+  controleer(
+    'регресія V-M3-4 (U1-3): змішаний список пошти (6 серверних + 1 teller:mail(14)) виводить «Показано 5 із 7» / «5 van 7 getoond» замість «5 із 20»',
+    gemengdMailBadge.kaartTotaal === 7 &&
+      gemengdHtmlUk.includes('Показано 5 із 7') &&
+      !gemengdHtmlUk.includes('Показано 5 із 20') &&
+      gemengdHtmlNl.includes('5 van 7 getoond') &&
+      !gemengdHtmlNl.includes('5 van 20 getoond'),
+  );
+
+  // Регресія V-M3-5 (Ітерація 3 · Вада А): українське «Gmail підключено» не вважається аварією ключа і не склеюється з новим входом Google у «Першопричину»
+  const auditGoogleOauthEnApp = siteEventsFromAudit([
+    { id: '601', action: 'owner.mail.google-oauth.completed', result: 'success', createdAt: nu - 5_000, details: { email: 'olesia.koval@gmail.com' } },
+    { id: '602', action: 'owner.apparaat.nieuw', result: 'success', createdAt: nu - 8_000, details: { id: '55555555-6666-4777-8888-999999999999', apparaat: 'Chrome/Android', methode: 'google' } },
+  ]);
+  const stroomGoogleUk = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: auditGoogleOauthEnApp,
+    activityRead: new Set(),
+    titelVanActiviteit: (ev) =>
+      ev.type === 'owner.mail.google-oauth.completed'
+        ? 'Gmail підключено'
+        : 'Виявлено вхід із нового незнайомого пристрою',
+  });
+  const stroomGoogleNl = bouwUniformeStroom({
+    lang: 'nl',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: auditGoogleOauthEnApp,
+    activityRead: new Set(),
+    titelVanActiviteit: (ev) =>
+      ev.type === 'owner.mail.google-oauth.completed'
+        ? 'Gmail gekoppeld'
+        : 'Nieuwe aanmelding op een nieuw apparaat',
+  });
+  const gmailUkItem = stroomGoogleUk.find((g) => g.meta?.actieCode === 'owner.mail.google-oauth.completed')!;
+  const bundelGoogleUk = bundelOorzaakKetens(stroomGoogleUk, 'uk');
+  const bundelGoogleNl = bundelOorzaakKetens(stroomGoogleNl, 'nl');
+  controleer(
+    'регресія V-M3-5: «Gmail підключено» в uk дає bepaalOorzaakSleutel === null і bundelOorzaakKetens залишає 2 окремі картки без фальшивої «Першопричини» (як і в nl)',
+    Boolean(gmailUkItem) &&
+      bepaalOorzaakSleutel(gmailUkItem, 'uk') === null &&
+      bundelGoogleUk.length === 2 &&
+      bundelGoogleUk.every((e) => e.soort === 'los') &&
+      bundelGoogleNl.length === 2 &&
+      bundelGoogleNl.every((e) => e.soort === 'los'),
+  );
+
+  // Регресія V-M3-6 (Ітерація 3 · Вада Б): ущільнення смуги 6 вкладок .puls-tabs через container-type: inline-size та @container для вузької панелі 310 px на ПК
+  const ecoCssInhoud = readFileSync(join(rootDir, 'src/meldingen/ecosysteem/meldingen-ecosysteem.css'), 'utf8');
+  controleer(
+    'регресія V-M3-6: meldingen-ecosysteem.css містить container-type: inline-size та правила @container для адаптивного ущільнення .puls-tabs без !important',
+    /\.mel-filters\.puls-filters-slank\s*\{[^}]*container-type:\s*inline-size/s.test(ecoCssInhoud) &&
+      ecoCssInhoud.includes('@container (max-width: 424px)') &&
+      ecoCssInhoud.includes('@container (max-width: 368px)') &&
+      !/!important/i.test(ecoCssInhoud),
+  );
+
+  const ukDocPad = join(rootDir, 'docs/meldingen/ВИПРОБУВАННЯ-10-ВАД-СПОВІЩЕНЬ-HERSTEL-001.uk.md');
+  const nlDocPad = join(rootDir, 'docs/meldingen/PROEVEN-10-MELDINGSGEBREKEN-HERSTEL-001.nl.md');
+  controleer(
+    'парні статті 10 випробувань системи сповіщень (uk / nl) існують у docs/meldingen/, посилаються одна на одну і не містять заборонених символів',
+    existsSync(ukDocPad) &&
+      existsSync(nlDocPad) &&
+      readFileSync(ukDocPad, 'utf8').includes('PROEVEN-10-MELDINGSGEBREKEN-HERSTEL-001.nl.md') &&
+      readFileSync(nlDocPad, 'utf8').includes('ВИПРОБУВАННЯ-10-ВАД-СПОВІЩЕНЬ-HERSTEL-001.uk.md') &&
+      !VERBODEN_RE.test(readFileSync(ukDocPad, 'utf8') + readFileSync(nlDocPad, 'utf8')),
+  );
+
+  console.log(`\n${geslaagd}/${geslaagd + gefaald} geslaagd (herstel-001-meldingen-tien-gebreken)`);
+  return gefaald === 0 ? 0 : 1;
+}
+

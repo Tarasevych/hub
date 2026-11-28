@@ -109,7 +109,7 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
     <div className='aiw-knoppen'><button type='button' className='aiw-tweede' data-aiw-herlaad='1' onClick={herlaad}>{tr(label[0], label[1])}</button></div>
   );
 
-  if (laden.fase === 'laden') return <>{band}<p className='aiw-nog-niet' aria-busy='true'>{tr('Читаємо стан вашого акаунта…', 'De stand van uw account wordt gelezen…')}</p></>;
+  if (laden.fase === 'laden') return <>{band}<p className='aiw-nog-niet' aria-busy='true'>{tr('Читаємо стан вашого облікового запису…', 'De stand van uw account wordt gelezen…')}</p></>;
 
   // Punt 5: geldige sessie, maar het account mist het recht «API-платформа». Eerlijk zeggen wat er uit staat en wie het aanzet.
   if (laden.fase === 'fout' && laden.rechtFout) {
@@ -118,10 +118,10 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
         <section className='aiw' data-aiw-geen-recht='1'>
           <ProductEmptyState
             icon={ShieldAlert}
-            title={tr('Розділ «ШІ для вас» для цього акаунта ще не ввімкнено', 'Het onderdeel «AI voor u» staat voor dit account nog niet aan')}
+            title={tr('Розділ «ШІ для вас» для цього облікового запису ще не ввімкнено', 'Het onderdeel «AI voor u» staat voor dit account nog niet aan')}
             description={eigenaar
               ? tr(
-                'Сервер не бачить у цього акаунта права «API-платформа». Ви входите як власник, тому перевірте, що адреса акаунта збігається з OWNER_EMAIL на сервері, або видайте собі це право в Адміністрування → Користувачі та запити доступу.',
+                'Сервер не бачить у цього облікового запису права «API-платформа». Ви входите як власник, тому перевірте, що адреса облікового запису збігається з OWNER_EMAIL на сервері, або видайте собі це право в Адміністрування → Користувачі та запити доступу.',
                 'De server ziet voor dit account het recht «API-platform» niet. U bent als eigenaar aangemeld: controleer of het e-mailadres van dit account gelijk is aan OWNER_EMAIL op de server, of geef uzelf dit recht in Beheer → Gebruikers en toegangsverzoeken.',
               )
               : tr(RECHT_UITLEG[0], RECHT_UITLEG[1])}
@@ -152,7 +152,7 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
   const vragen = vragenMetStand(feiten);
   const samenvatting = stand.kanChatten
     ? tr(
-      `Це ваш власний ШІ-помічник на цьому сервері: ви питаєте тут, а він працює з тим, що ви йому відкрили. Зараз доступно інструментів: ${stand.aantalTools}; модель: ${stand.model}. Нічого з того, що тут видно, не вигадано — усе зчитано з вашого акаунта.`,
+      `Це ваш власний ШІ-помічник на цьому сервері: ви питаєте тут, а він працює з тим, що ви йому відкрили. Зараз доступно інструментів: ${stand.aantalTools}; модель: ${stand.model}. Нічого з того, що тут видно, не вигадано — усе зчитано з вашого облікового запису.`,
       `Dit is uw eigen AI-assistent op deze server: u vraagt het hier en hij werkt met wat u hem hebt opengezet. Nu beschikbaar: ${stand.aantalTools} hulpmiddelen; model: ${stand.model}. Niets op dit scherm is verzonnen — alles komt uit uw account.`,
     )
     : tr(

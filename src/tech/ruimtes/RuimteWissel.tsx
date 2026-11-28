@@ -13,7 +13,7 @@
 import { useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { Home, Lock, Pause, Play, Power, ShieldCheck } from 'lucide-react';
 import { canonicalNavigationUrl, sessieDienst } from '../../canoniek-navigatie';
-import { openTechVenster } from '../tech-opslag';
+import { openTechVenster, techActief } from '../tech-opslag';
 import type { RuimtesStatus } from '../ruimtes-contract';
 import { RUIMTE_NAAM, standTekst, wisselFoutTekst, type Taal } from './teksten';
 import { beeindigen, pauzeer, ruimtesToestand, useRuimtes, wissel } from './ruimtes-opslag';
@@ -22,7 +22,7 @@ import Vraag from '../Vraag';
 import './ruimtes.css';
 
 const HELP = {
-  wat: ['Тумблер технічного простору цього акаунта. Технічний простір — це той самий звичайний простір (ті самі дані й розкладки) плюс технічні сторінки.', 'Schakelaar voor de technische ruimte van dit account. De technische ruimte is dezelfde gewone ruimte (zelfde gegevens en indeling) plus technische pagina’s.'],
+  wat: ['Тумблер технічного простору цього облікового запису. Технічний простір — це той самий звичайний простір (ті самі дані й розкладки) плюс технічні сторінки.', 'Schakelaar voor de technische ruimte van dit account. De technische ruimte is dezelfde gewone ruimte (zelfde gegevens en indeling) plus technische pagina’s.'],
   gevolg: ['Перемикач змінює лише те, що показує ця вкладка: технічний сеанс, підключення ШІ та інші вкладки працюють далі. Зупинити їх можна окремими кнопками «Пауза» (повернення — «Продовжити», без нового входу) і «Завершити» (далі потрібен новий вхід із ключем доступу). Швидкі клавіші: Ctrl+Alt+1 — звичайний, Ctrl+Alt+2 — технічний; набраний текст і відкриті вікна лишаються.', 'De schakelaar verandert alleen wat dit tabblad toont: de technische sessie, AI-verbindingen en andere tabbladen lopen door. Stoppen doet u met de eigen knoppen «Pauze» (terug met «Doorgaan», zonder opnieuw aan te melden) en «Beëindigen» (daarna opnieuw aanmelden met Passkey). Sneltoetsen: Ctrl+Alt+1 — gewone, Ctrl+Alt+2 — technische; getypte tekst en open vensters blijven.'],
 } as const;
 const GEEN_RECHT = { uk: 'Немає дозволу на технічний простір. Його дає власник сервера.', nl: 'Geen toestemming voor de technische ruimte. De servereigenaar geeft die.' } as const;
@@ -30,7 +30,8 @@ const GEEN_RECHT = { uk: 'Немає дозволу на технічний пр
 /** Eén plek voor klik én sneltoets (Ctrl+Alt+1/2). Geeft de uitkomst als tekst, of null als er niets te doen was. */
 export async function kiesRuimte(naar: 'prive' | 'technisch', taal: Taal): Promise<{ ok: boolean; tekst: string } | null> {
   const r = ruimtesToestand(); const s = r.status; const uk = taal === 'uk';
-  if (!s || !s.aan || naar === s.actief || r.bezig) return null;
+  const techKomtOvereen = techActief() === (naar === 'technisch');
+  if (!s || !s.aan || (naar === s.actief && techKomtOvereen) || r.bezig) return null;
   if (naar === 'technisch' && !s.technischToegestaan) return { ok: false, tekst: GEEN_RECHT[taal] };
   if (naar === 'technisch' && !s.sessie) { openTechVenster('activeren'); return null; }
   try {

@@ -87,7 +87,7 @@ export async function main(): Promise<number> {
     const blok = kader(createElement(WatNodigBlok, blokProps(JAN)));
     check('A blok zonder model: data-opbouw="eenvoudig", open, merk «Авто» (geen «ШІ»), kop «Що від вас потрібно?»',
       /<section class="ai-blok" data-ai-blok="true" data-opbouw="eenvoudig" data-open="ja"/.test(blok) && blok.includes('>Авто<') && blok.includes('Що від вас потрібно?') && !/data-opbouw="model"/.test(blok));
-    check('A herkomst eerlijk: «не частина листа · простий розбір у браузері, без моделі»', blok.includes('не частина листа · простий розбір у браузері, без моделі'));
+    check('A herkomst eerlijk: «не частина листа · простий розбір у переглядачі, без моделі»', blok.includes('не частина листа · простий розбір у переглядачі, без моделі'));
     check('A het punt: vraag, letterlijk, bronchip «лист 1 · §2» (met «Звідки це?» voor de schermlezer), termijnchip «до …»',
       /data-soort="vraag" data-status="letterlijk"/.test(blok) && /class="ai-bron-chip" data-bron-chip="true" aria-label="Звідки це\? Джерело: лист 1 · §2" title="Звідки це\?">лист 1 · §2<\/button>/.test(blok)
       && termijn.startsWith('до ') && termijn.includes('26') && blok.includes(`class="ai-termijn-chip" title="vóór maandag 26 oktober"`) && blok.includes(termijn), termijn);
@@ -95,8 +95,8 @@ export async function main(): Promise<number> {
     check('A voet: «Кожен пункт знайдено дослівно в оригіналі (4 з 4)» en «Склав: простий розбір без моделі»',
       blok.includes('Кожен пункт знайдено дослівно в оригіналі (4 з 4)') && blok.includes('Склав: простий розбір без моделі'));
     check('A samenvatting in de kop: «1 пункт · до …»', blok.includes(`1 пункт · ${termijn}`));
-    check('A acties: Чернетка відповіді · До завдань · В Агенду; ZONDER agent geen «Уточнити з ШІ» (er gaat niets weg)',
-      blok.includes('Чернетка відповіді') && blok.includes('До завдань') && blok.includes('В Агенду') && !blok.includes('Уточнити з ШІ') && !/data-actie="model"/.test(blok));
+    check('A acties: Чернетка відповіді · До завдань · У Календар; ZONDER agent geen «Уточнити з ШІ» (er gaat niets weg)',
+      blok.includes('Чернетка відповіді') && blok.includes('До завдань') && blok.includes('У Календар') && !blok.includes('Уточнити з ШІ') && !/data-actie="model"/.test(blok));
     const blokNl = kader(createElement(WatNodigBlok, blokProps(JAN, 'nl')), 'nl');
     check('A nl: «Wat wordt er van u verwacht?», «bericht 1 · §2», «Elk punt staat letterlijk in het origineel (4 van 4)», geen Oekraïens',
       blokNl.includes('Wat wordt er van u verwacht?') && blokNl.includes('bericht 1 · §2') && blokNl.includes('Elk punt staat letterlijk in het origineel (4 van 4)') && !/[А-Яа-яІіЇїЄєҐґ]/.test(blokNl.replace(/title="[^"]*"/g, '')));
@@ -107,7 +107,7 @@ export async function main(): Promise<number> {
     const d = (ms: number) => { const x = new Date(ms); return `${x.getMonth() + 1}-${x.getDate()} ${x.getHours()}:${String(x.getMinutes()).padStart(2, '0')}`; };
     check('A voorstel «До завдань»: titel = het punt, begin = de termijn (hele dag), bron in de beschrijving',
       taak.titel.startsWith('Kunt u de huurovereenkomst') && d(taak.start) === '10-26 0:00' && taak.einde - taak.start === 864e5 && taak.beschrijving.includes('— лист 1 · §2') && taak.beschrijving.includes('(vóór maandag 26 oktober)'), `${d(taak.start)} | ${taak.beschrijving}`);
-    check('A voorstel «В Агенду»: de zin MET tijd (28.10 10:00, een uur), titel = onderwerp, het citaat in de beschrijving',
+    check('A voorstel «У Календар»: de zin MET tijd (28.10 10:00, een uur), titel = onderwerp, het citaat in de beschrijving',
       agenda.titel === 'Huurcontract' && d(agenda.start) === '10-28 10:00' && agenda.einde - agenda.start === 3600e3 && agenda.beschrijving.startsWith('De sleuteloverdracht is op woensdag 28 oktober om 10:00.'), `${d(agenda.start)} | ${agenda.beschrijving}`);
     check('A gebeurtenissen voor de rest van de lezer: «mail:ai-bron» (contextpaneel → «Звідки це?») en «mail:ai-punt-weg»', BRON_GEBEURTENIS === 'mail:ai-bron' && WEG_GEBEURTENIS === 'mail:ai-punt-weg');
 
@@ -270,7 +270,7 @@ export async function main(): Promise<number> {
     const nepOpslag = (keys: string[]) => { const m = new Map(keys.map((k) => [k, 'x'])); return { m, o: { get length() { return m.size; }, key: (i: number) => [...m.keys()][i] ?? null, removeItem: (k: string) => { m.delete(k); }, getItem: (k: string) => m.get(k) ?? null } }; };
     const eenAccount = nepOpslag([sporen.WEERGAVE_ZONE_SLEUTEL, 'mail-lezer-weergave-v1']), alles = nepOpslag([sporen.WEERGAVE_ZONE_SLEUTEL, 'mail-lezer-weergave-v1']);
     sporen.wisLokaleSporen('user-a', eenAccount.o); sporen.wisAlleLokaleSporen(alles.o);
-    check('D зони: ключ один, з src/lokale-sporen.ts (назва зони, без облікового запису) — вихід одного акаунта його лишає, «вийти всюди» стирає',
+    check('D зони: ключ один, з src/lokale-sporen.ts (назва зони, без облікового запису) — вихід одного облікового запису його лишає, «вийти всюди» стирає',
       sporen.WEERGAVE_ZONE_SLEUTEL === 'mail-lezer-weergave-zone-v1' && lees('src/mail/WeergaveKeuze.tsx').includes("import { WEERGAVE_ZONE_SLEUTEL } from '../lokale-sporen';") && !lees('src/mail/WeergaveKeuze.tsx').includes("'mail-lezer-weergave-zone")
       && eenAccount.m.has(sporen.WEERGAVE_ZONE_SLEUTEL) && !alles.m.has(sporen.WEERGAVE_ZONE_SLEUTEL) && alles.m.has('mail-lezer-weergave-v1'));
     const bv = lees('src/mail/beelden-voorraad.css'), bvMedia = bv.indexOf('\n@media');
@@ -380,11 +380,12 @@ export async function main(): Promise<number> {
   const blokCss = zc(lees('src/mail/ai-blok.css')), ctxCss = zc(lees('src/mail/context-paneel.css')), balkCss = zc(lees('src/mail/ai-vertaling-balk.css'));
   const nieuwCtx = ctxCss.slice(ctxCss.indexOf('.ctx-versies-kop'));
   check('F alleen tokens: geen hex-kleuren in ai-blok.css en in het nieuwe deel van context-paneel.css', !HEX.test(blokCss) && nieuwCtx.length > 100 && !HEX.test(nieuwCtx));
-  check('F aanraken: knoppen 44 px (blok, blad, antwoordregel, «Порівняти»), chips 32 px',
-    /@media \(pointer:coarse\)\{html body \.ai-blok-knop\{min-height:44px\}/.test(blokCss) && /\.bron-blad-sluit\{width:44px;height:44px\}/.test(blokCss) && /\.mail-reply-extra>button\{min-height:44px\}/.test(blokCss) && /\.ctx-vergelijk\{min-height:44px\}/.test(nieuwCtx) && /\.ai-bron-chip,\.ai-termijn-chip\{min-height:32px\}/.test(blokCss));
+  check('F aanraken: knoppen 44 px (blok, blad, hints, «Порівняти»), chips 32 px',
+    /@media \(pointer:coarse\)\{html body \.ai-blok-knop\{min-height:44px\}/.test(blokCss) && /\.bron-blad-sluit\{width:44px;height:44px\}/.test(blokCss) && /\.mail-reply-hints>button\{min-height:40px\}/.test(blokCss) && /\.ctx-vergelijk\{min-height:44px\}/.test(nieuwCtx) && /\.ai-bron-chip,\.ai-termijn-chip\{min-height:32px\}/.test(blokCss));
   const z = (re: RegExp, css: string) => Number((re.exec(css) || [])[1] || 0);
-  check('F «Звідки це?» ligt boven het contextblad (z 41 > 31) in het raster van de lezer; op smal van onderen over de volle breedte',
-    z(/\.google-mail-reader>\.bron-blad\{grid-area:2\/1\/-1\/-1;z-index:(\d+)/, blokCss) > z(/\[data-context='blad'\]>\.ctx-paneel\{grid-area:2\/1\/-1\/-1;z-index:(\d+)/, ctxCss) && z(/\[data-context='blad'\]>\.ctx-paneel\{grid-area:2\/1\/-1\/-1;z-index:(\d+)/, ctxCss) === 31
+  check('F «Звідки це?» ligt boven het contextblad (z 708 > 706 / 31) in het volledige raster 1/1/-1/-1 van de lezer; op smal van onderen over de volle breedte',
+    z(/\.google-mail-reader>\.bron-blad\{grid-area:1\s*\/\s*1\s*\/\s*-1\s*\/\s*-1;z-index:(\d+)/, blokCss) > z(/\[data-context='blad'\]\[data-lees-breedte='smal'\]>\.ctx-paneel\{[^}]*z-index:(\d+)/, ctxCss)
+    && z(/\[data-context='blad'\]>\.ctx-paneel\{grid-area:2\/1\/-1\/-1;z-index:(\d+)/, ctxCss) === 31
     && /\[data-lees-breedte='smal'\]>\.bron-blad\{justify-self:stretch;align-self:end/.test(blokCss));
   check('F tabel: op smal onder elkaar (geen kolommen op de telefoon); de brief verdwijnt alleen achter een tabel die er IS (:has)',
     /\[data-lees-breedte='smal'\] \.vergelijk table,[^{]*\{display:block\}/.test(blokCss) && blokCss.includes(".mail-thread-message[data-vergelijk='ja'] .mail-thread-message-body:has(>[data-vergelijk-tabel])>:is(.mail-message-html-body,.mail-message-text-body,.mail-vertaal-naast,.mail-vertaal-plaat,.mail-beelden-strook){display:none}"));

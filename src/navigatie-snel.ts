@@ -37,18 +37,99 @@ export function voortgangKleur(dienst: string): string {
   return ACCENT_KLEUREN[a][donker() ? 'donker' : 'licht'].hoofd;
 }
 
-// ------------------------------------------------------------------------------------------------ voortgangsbalk
+/** Двомовні назви розділів для спливної капсули активного завантаження сторінки (`uk` / `nl`). */
+export const DIENST_LAAD_NAAM: Readonly<Record<string, { readonly uk: string; readonly nl: string }>> = {
+  hub: { uk: 'Мій простір', nl: 'Mijn ruimte' },
+  ai: { uk: 'ШІ', nl: 'AI' },
+  mail: { uk: 'Пошта', nl: 'E-mail' },
+  cloud: { uk: 'Хмарне сховище', nl: 'Cloudopslag' },
+  github: { uk: 'GitHub', nl: 'GitHub' },
+  crm: { uk: 'Клієнтські взаємини', nl: 'Klantrelatiebeheer' },
+  huis: { uk: 'Розумний будинок', nl: 'Slim huis' },
+  mcp: { uk: 'Міст ШІ → сайт', nl: 'Brug AI → site' },
+  tasks: { uk: 'Завдання', nl: 'Taken' },
+  calendar: { uk: 'Календар', nl: 'Agenda' },
+  notes: { uk: 'Нотатки', nl: 'Notities' },
+  identity: { uk: 'Налаштування', nl: 'Instellingen' },
+  api: { uk: 'API та інтеграції', nl: 'API en integraties' },
+  admin: { uk: 'Адміністрування', nl: 'Beheer' },
+  social: { uk: 'Соціальні мережі', nl: 'Sociale netwerken' },
+};
+
+/** Короткий лаконічний напис видимої мініатюрної капсули завантаження (`Завантаження…` / `Laden…`). */
+export function laadKapselKorteTekst(lang?: string): string {
+  const docTaal = typeof document !== 'undefined' ? document.documentElement?.lang : 'uk';
+  const taal = (lang || docTaal) === 'nl' ? 'nl' : 'uk';
+  return taal === 'nl' ? 'Laden…' : 'Завантаження…';
+}
+
+/** Повний опис стану завантаження мовою сайту (`uk` або `nl`) для доступності (`aria-label`). */
+export function laadKapselTekst(dienst: string, lang?: string): string {
+  const docTaal = typeof document !== 'undefined' ? document.documentElement?.lang : 'uk';
+  const taal = (lang || docTaal) === 'nl' ? 'nl' : 'uk';
+  const item = dienst ? DIENST_LAAD_NAAM[dienst] : undefined;
+  if (!item) return taal === 'nl' ? 'Pagina laden…' : 'Завантаження сторінки…';
+  return taal === 'nl' ? `Laden: ${item.nl}…` : `Завантаження: ${item.uk}…`;
+}
+
+const WACHT_SELECTORS = [
+  ':scope > .canonical-signed-out.checking',
+  ':scope > .session-bootstrap-silent',
+  ':scope > .service-lazy-loading',
+  '.hub-maquette-inhoud > .service-lazy-loading',
+  ':scope > .ia-wacht',
+  ':scope > .tech-poort[data-tech-poort="wacht"]',
+  ':scope > .werkblad[data-werkblad="laden"]:empty',
+  '.hub-maquette-inhoud > .werkblad[data-werkblad="laden"]:empty',
+].join(', ');
+
+/** Перевіряє, чи робоча область сторінки вже містить відмальований видимий вміст (не порожня і не на скелеті початкового завантаження). */
+export function paginaHeeftZichtbareInhoud(doc: Document | undefined = typeof document !== 'undefined' ? document : undefined): boolean {
+  if (!doc || !doc.documentElement) return false;
+  if (doc.documentElement.classList?.contains('boot-active')) return false;
+  const boot = doc.getElementById?.('boot-shell') as HTMLElement | null;
+  if (boot && !boot.hidden && boot.childElementCount > 0) return false;
+  const root = doc.getElementById?.('root');
+  if (!root || root.childElementCount === 0) return false;
+  const inhoud = root.querySelector?.('.canonical-content');
+  if (!inhoud) {
+    return Array.from(root.children || []).some(
+      (el) => !(el as HTMLElement).hidden && (el.childElementCount > 0 || (el.textContent || '').trim().length > 0),
+    );
+  }
+  const kinderen = Array.from(inhoud.children || []).filter((el) => !el.classList?.contains('menu-start'));
+  if (kinderen.length === 0) return false;
+  if (inhoud.querySelector?.(WACHT_SELECTORS)) return false;
+  if (inhoud.querySelector?.('[data-mail-list-pending="true"]') && !inhoud.querySelector?.('.google-mail-row')) {
+    return false;
+  }
+  return true;
+}
+
+// ------------------------------------------------------------------------------------------------ voortgangsbalk + laadkapsel
+type KapselReden = 'geen' | 'leeg' | 'navigatie';
 let balk: HTMLDivElement | null = null;
+let kapsel: HTMLDivElement | null = null;
 let staat: {
   extern: boolean;
   achtergrond: boolean;
   verzoekGestart: boolean;
+  kapselReden: KapselReden;
   start: number;
   breedte: number;
   zichtbaar: boolean;
   generatie: number;
 } | null = null;
-let generatie = 0, trickle: number | undefined, toon: number | undefined, stilSinds = 0, uitApi: (() => void) | undefined, maxTimer: number | undefined;
+let generatie = 0;
+let kapselGeneratie = 0;
+let trickle: number | undefined;
+let toon: number | undefined;
+let stilSinds = 0;
+let uitApi: (() => void) | undefined;
+let maxTimer: number | undefined;
+let kapselMaxTimer: number | undefined;
+let inhoudWaarnemer: MutationObserver | null = null;
+let inhoudRaf = 0;
 
 function zorgBalk() {
   if (balk && balk.isConnected) return balk;
@@ -60,6 +141,144 @@ function zorgBalk() {
   document.body.appendChild(balk);
   return balk;
 }
+
+function zorgKapsel() {
+  if (kapsel && kapsel.isConnected) return kapsel;
+  const bestaand = document.getElementById('tsv-laad-kapsel');
+  if (bestaand instanceof HTMLDivElement) {
+    kapsel = bestaand;
+    if (!kapsel.querySelector('i')) {
+      const icoon = document.createElement('i');
+      icoon.setAttribute('aria-hidden', 'true');
+      kapsel.prepend(icoon);
+    }
+    if (!kapsel.querySelector('span')) {
+      kapsel.appendChild(document.createElement('span'));
+    }
+    return kapsel;
+  }
+  kapsel = document.createElement('div');
+  kapsel.id = 'tsv-laad-kapsel';
+  kapsel.setAttribute('role', 'status');
+  kapsel.setAttribute('aria-live', 'polite');
+  kapsel.setAttribute('aria-atomic', 'true');
+  kapsel.dataset.staat = 'uit';
+  const icoon = document.createElement('i');
+  icoon.setAttribute('aria-hidden', 'true');
+  const tekst = document.createElement('span');
+  kapsel.appendChild(icoon);
+  kapsel.appendChild(tekst);
+  document.body.appendChild(kapsel);
+  return kapsel;
+}
+
+function werkKapselBij(dienst: string, kleur: string) {
+  const k = zorgKapsel();
+  if (kleur) k.style.setProperty('--tsv-voortgang-kleur', kleur);
+  else k.style.removeProperty('--tsv-voortgang-kleur');
+  k.dataset.dienst = dienst || '';
+  k.setAttribute('aria-label', laadKapselTekst(dienst));
+  const tekst = k.querySelector('span');
+  if (tekst) tekst.textContent = laadKapselKorteTekst();
+  return k;
+}
+
+function stopInhoudWaarnemer() {
+  inhoudWaarnemer?.disconnect();
+  inhoudWaarnemer = null;
+  if (inhoudRaf && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(inhoudRaf);
+  }
+  inhoudRaf = 0;
+  window.clearTimeout(kapselMaxTimer);
+  kapselMaxTimer = undefined;
+}
+
+function rondKapselAf(direct = false) {
+  stopInhoudWaarnemer();
+  const el = kapsel && kapsel.isConnected ? kapsel : document.getElementById('tsv-laad-kapsel');
+  if (!(el instanceof HTMLDivElement)) return;
+  kapsel = el;
+  delete el.dataset.opstart;
+  const kg = ++kapselGeneratie;
+  if (direct || el.dataset.staat !== 'bezig') {
+    el.dataset.staat = 'uit';
+    return;
+  }
+  el.dataset.staat = 'klaar';
+  window.setTimeout(() => {
+    if (kapselGeneratie === kg && el.dataset.staat === 'klaar') {
+      el.dataset.staat = 'uit';
+    }
+  }, 260);
+}
+
+function rondOpstartBalkAf() {
+  const el = balk && balk.isConnected ? balk : document.getElementById('tsv-voortgang');
+  if (el instanceof HTMLDivElement && el.dataset.opstart === '1') {
+    delete el.dataset.opstart;
+    if (!staat && el.dataset.staat === 'opstart') {
+      el.dataset.staat = 'uit';
+    }
+  }
+}
+
+function startInhoudWaarnemer() {
+  if (typeof document === 'undefined') return;
+  if (paginaHeeftZichtbareInhoud()) {
+    rondOpstartBalkAf();
+    if (!(staat && (staat.extern || staat.kapselReden === 'navigatie'))) {
+      rondKapselAf();
+    }
+    return;
+  }
+  if (!inhoudWaarnemer && typeof MutationObserver === 'function') {
+    const controleer = () => {
+      inhoudRaf = 0;
+      const el = kapsel && kapsel.isConnected ? kapsel : document.getElementById('tsv-laad-kapsel');
+      if (el instanceof HTMLDivElement && el.dataset.staat === 'bezig') {
+        const span = el.querySelector('span');
+        const kort = laadKapselKorteTekst();
+        if (span && span.textContent !== kort) span.textContent = kort;
+        el.setAttribute('aria-label', laadKapselTekst(el.dataset.dienst || ''));
+      }
+      if (paginaHeeftZichtbareInhoud()) {
+        rondOpstartBalkAf();
+        if (staat && staat.kapselReden === 'leeg') {
+          staat.kapselReden = 'geen';
+        }
+        if (!(staat && (staat.extern || staat.kapselReden === 'navigatie'))) {
+          rondKapselAf();
+        } else {
+          stopInhoudWaarnemer();
+        }
+      }
+    };
+    const plan = () => {
+      if (inhoudRaf) return;
+      if (typeof requestAnimationFrame === 'function') {
+        inhoudRaf = requestAnimationFrame(controleer);
+      } else {
+        inhoudRaf = window.setTimeout(controleer, 16);
+      }
+    };
+    inhoudWaarnemer = new MutationObserver(plan);
+    inhoudWaarnemer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'hidden', 'lang', 'data-werkblad', 'data-mail-list-pending'],
+    });
+  }
+  window.clearTimeout(kapselMaxTimer);
+  kapselMaxTimer = window.setTimeout(() => {
+    rondOpstartBalkAf();
+    if (!(staat && staat.extern)) {
+      rondKapselAf();
+    }
+  }, 12000);
+}
+
 function zetBreedte(w: number) { if (!staat) return; staat.breedte = w; if (balk) balk.style.setProperty('--tsv-voortgang', `${w.toFixed(1)}%`); }
 function zetAchtergrondStand(aan: boolean) {
   if (!balk) return;
@@ -74,12 +293,17 @@ function werkelijkeBreedteUitStand(stand: LaadStand, huidig: number): number {
 }
 function opruimen() { window.clearInterval(trickle); window.clearTimeout(toon); window.clearTimeout(maxTimer); uitApi?.(); uitApi = undefined; trickle = toon = maxTimer = undefined; }
 
-/** Start (of herstart) de balk. `dienst` bepaalt de kleur; `extern` = de pagina gaat weg (andere host). */
+/** Start (of herstart) de balk en zo nodig de laadkapsel. `dienst` bepaalt kleur en tekst; `extern` = naar een andere host. */
 export function voortgangStart(
   dienst: string,
-  opties: { extern?: boolean; vanaf?: number; direct?: boolean; achtergrond?: boolean; verzoekGestart?: boolean } = {},
+  opties: { extern?: boolean; vanaf?: number; direct?: boolean; achtergrond?: boolean; verzoekGestart?: boolean; opstartOvergenomen?: boolean } = {},
 ) {
-  if (typeof document === 'undefined' || !instellingen().voortgang) return;
+  if (typeof document === 'undefined') return;
+  if (!instellingen().voortgang) {
+    rondOpstartBalkAf();
+    rondKapselAf(true);
+    return;
+  }
   // Wissel naar een ander onderdeel loopt eerst via de sessie-overdracht (API) en daarna via navigate: niet opnieuw starten.
   if (staat?.extern && opties.extern && balk?.dataset.dienst === (dienst || '')) return;
   if (!opties.achtergrond && !opties.verzoekGestart) {
@@ -88,20 +312,51 @@ export function voortgangStart(
   opruimen();
   const g = ++generatie;
   const b = zorgBalk();
+  delete b.dataset.opstart;
   const kleur = voortgangKleur(dienst);
   if (kleur) b.style.setProperty('--tsv-voortgang-kleur', kleur); else b.style.removeProperty('--tsv-voortgang-kleur');
   b.dataset.dienst = dienst || '';
   const isAchtergrond = Boolean(opties.achtergrond && !opties.extern);
+  const leegWerkgebied = !paginaHeeftZichtbareInhoud();
+  const isNavigatie = !opties.achtergrond && !opties.verzoekGestart;
+  const kapselReden: KapselReden = opties.extern
+    ? 'navigatie'
+    : opties.opstartOvergenomen
+      ? (leegWerkgebied ? 'leeg' : 'geen')
+      : isNavigatie
+        ? (leegWerkgebied ? 'leeg' : 'navigatie')
+        : (!isAchtergrond && leegWerkgebied)
+          ? 'leeg'
+          : 'geen';
   staat = {
     extern: !!opties.extern,
     achtergrond: isAchtergrond,
     verzoekGestart: !!opties.verzoekGestart,
+    kapselReden,
     start: Date.now(),
     breedte: 0,
     zichtbaar: false,
     generatie: g,
   };
   zetAchtergrondStand(isAchtergrond);
+  if (kapselReden !== 'geen') {
+    ++kapselGeneratie;
+    const k = werkKapselBij(dienst, kleur);
+    delete k.dataset.opstart;
+    if (opties.direct || k.dataset.staat === 'bezig') {
+      k.dataset.staat = 'bezig';
+    } else {
+      k.dataset.staat = 'wacht';
+    }
+    if (kapselReden === 'leeg') {
+      startInhoudWaarnemer();
+    }
+  } else if (!leegWerkgebied) {
+    const bestaandKapsel = kapsel && kapsel.isConnected ? kapsel : document.getElementById('tsv-laad-kapsel');
+    if (bestaandKapsel instanceof HTMLDivElement && bestaandKapsel.dataset.staat !== 'uit') {
+      rondKapselAf();
+    }
+  }
   if (opties.direct) { staat.zichtbaar = true; b.dataset.staat = 'bezig'; } else b.dataset.staat = 'wacht';
   const beginStand = huidigeLaadStand();
   zetBreedte(werkelijkeBreedteUitStand(beginStand, opties.vanaf ?? (isAchtergrond ? 10 : 12)));
@@ -111,6 +366,15 @@ export function voortgangStart(
       if (staat?.generatie !== g) return;
       staat.zichtbaar = true;
       b.dataset.staat = 'bezig';
+      if (staat.kapselReden !== 'geen') {
+        if (staat.kapselReden === 'leeg' && paginaHeeftZichtbareInhoud()) {
+          staat.kapselReden = 'geen';
+          rondKapselAf(true);
+        } else {
+          const k = zorgKapsel();
+          k.dataset.staat = 'bezig';
+        }
+      }
     }, TOON_VERTRAGING_MS);
   }
   trickle = window.setInterval(() => {
@@ -143,26 +407,54 @@ export function voortgangStart(
     };
     window.setTimeout(kijk, 50);
   }
-  maxTimer = window.setTimeout(() => { if (staat?.generatie === g) voortgangKlaar(); }, 12000);
+  maxTimer = window.setTimeout(() => {
+    if (staat?.generatie === g) {
+      voortgangKlaar();
+      rondKapselAf(true);
+    }
+  }, 12000);
 }
 /** Klaar: naar 100 % en vervagen (alleen als hij zichtbaar was; anders stil weg). */
 export function voortgangKlaar() {
-  if (!staat || !balk) return;
-  const b = balk, wasZichtbaar = staat.zichtbaar, g = staat.generatie;
+  if (!staat || !balk) {
+    if (paginaHeeftZichtbareInhoud()) rondKapselAf();
+    return;
+  }
+  const b = balk, wasZichtbaar = staat.zichtbaar, g = staat.generatie, reden = staat.kapselReden;
   opruimen(); staat = null;
   delete b.dataset.achtergrond;
+  delete b.dataset.opstart;
+  if (reden !== 'geen') {
+    if (!paginaHeeftZichtbareInhoud()) {
+      startInhoudWaarnemer();
+    } else {
+      rondKapselAf(!wasZichtbaar);
+    }
+  } else if (paginaHeeftZichtbareInhoud()) {
+    const bestaandKapsel = kapsel && kapsel.isConnected ? kapsel : document.getElementById('tsv-laad-kapsel');
+    if (bestaandKapsel instanceof HTMLDivElement && bestaandKapsel.dataset.staat !== 'uit') {
+      rondKapselAf(!wasZichtbaar);
+    }
+  }
   if (!wasZichtbaar) { b.dataset.staat = 'uit'; return; }
   b.style.setProperty('--tsv-voortgang', '100%'); b.dataset.staat = 'klaar';
   window.setTimeout(() => { if (generatie === g) b.dataset.staat = 'uit'; }, 420);
 }
-export const voortgangStaat = () => (balk?.dataset.staat || 'uit');
+export const voortgangStaat = () => (balk?.dataset.staat || (typeof document !== 'undefined' ? document.getElementById('tsv-voortgang')?.dataset.staat : '') || 'uit');
+export const laadKapselStaat = () => (kapsel?.dataset.staat || (typeof document !== 'undefined' ? document.getElementById('tsv-laad-kapsel')?.dataset.staat : '') || 'uit');
 
 function verwerkLaadStand(stand: LaadStand) {
-  if (typeof document === 'undefined' || !instellingen().voortgang) return;
+  if (typeof document === 'undefined') return;
+  if (!instellingen().voortgang) {
+    rondOpstartBalkAf();
+    rondKapselAf(true);
+    return;
+  }
   const totaalActief = stand.actief + stand.achtergrondActief;
   if (totaalActief > 0) {
     stilSinds = 0;
     if (!staat) {
+      if (stand.alleenAchtergrond && paginaHeeftZichtbareInhoud()) return;
       voortgangStart(dienstVanUrl(location.href), {
         extern: false,
         achtergrond: stand.alleenAchtergrond,
@@ -174,6 +466,13 @@ function verwerkLaadStand(stand: LaadStand) {
       if (stand.actief > 0 && staat.achtergrond) {
         staat.achtergrond = false;
         zetAchtergrondStand(false);
+        if (staat.kapselReden === 'geen' && !paginaHeeftZichtbareInhoud()) {
+          staat.kapselReden = 'leeg';
+          const dienst = balk?.dataset.dienst || dienstVanUrl(location.href);
+          const k = werkKapselBij(dienst, voortgangKleur(dienst));
+          k.dataset.staat = staat.zichtbaar ? 'bezig' : 'wacht';
+          startInhoudWaarnemer();
+        }
       } else if (stand.alleenAchtergrond && staat.verzoekGestart && !staat.achtergrond) {
         staat.achtergrond = true;
         zetAchtergrondStand(true);
@@ -203,9 +502,10 @@ export function voortgangOvernemen() {
   const el = document.getElementById('tsv-voortgang');
   if (!(el instanceof HTMLDivElement) || el.dataset.overdracht !== '1') return false;
   delete el.dataset.overdracht;
+  delete el.dataset.opstart;
   el.dataset.overgenomen = '1';
   balk = el;
-  voortgangStart(el.dataset.dienst || '', { vanaf: 70, direct: true });
+  voortgangStart(el.dataset.dienst || '', { vanaf: 70, direct: true, opstartOvergenomen: true });
   return true;
 }
 
@@ -271,16 +571,34 @@ export function installeerNavigatieSnel() {
     voortgangStart(dienst, { extern });
   });
   abonneerLaadStand(verwerkLaadStand);
-  voortgangOvernemen();
-  // Terug via bfcache of een geannuleerde navigatie: balk weg.
-  window.addEventListener('pageshow', () => {
+  const overgenomen = voortgangOvernemen();
+  if (!overgenomen) {
+    if (!instellingen().voortgang) {
+      rondOpstartBalkAf();
+      rondKapselAf(true);
+    } else {
+      const bestaandKapsel = document.getElementById('tsv-laad-kapsel');
+      if (bestaandKapsel instanceof HTMLDivElement) {
+        kapsel = bestaandKapsel;
+        const d = bestaandKapsel.dataset.dienst || dienstVanUrl(location.href);
+        werkKapselBij(d, voortgangKleur(d));
+      }
+      startInhoudWaarnemer();
+    }
+  }
+  // Terug via bfcache: balk en laadkapsel weg. (Een gewone eerste pageshow met persisted=false mag een nog lege pagina niet sluiten.)
+  window.addEventListener('pageshow', (ev) => {
+    if (!(ev as PageTransitionEvent).persisted) return;
     if (staat) {
       opruimen();
       staat = null;
       if (balk) {
         delete balk.dataset.achtergrond;
+        delete balk.dataset.opstart;
         balk.dataset.staat = 'uit';
       }
     }
+    rondOpstartBalkAf();
+    rondKapselAf(true);
   });
 }

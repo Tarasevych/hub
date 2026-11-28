@@ -148,9 +148,7 @@ html body .mra-veld{min-width:0;max-width:100%}
   html body .mra-result{padding:9px 10px}
 }
 @media (max-width:430px){
-  /* Alleen de iconen (elke knop heeft er een); de naam blijft via title/aria-label bereikbaar. «ШІ» houdt zijn tekst. */
-  html body .mra-bar > button:not(.mra-toggle) > span{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-  html body .mra-bar > button:not(.mra-toggle){width:44px;padding:0;border-radius:50%;justify-content:center}
+  html body .mra-bar > button{padding:0 11px}
   html body .mra-veld{flex:1 1 100%}
 }
 

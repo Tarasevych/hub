@@ -21,6 +21,7 @@ import { checker, nepGoogle } from './hulp/nep-google';
 import { nieuwePasskey, registreer } from './hulp/nep-toegangssleutel';
 import { laatsteWegFout } from '../../backend/aanmeld-wegen';
 import { OVERDRACHT_HERSTEL_MS, overdrachtHerstelNodig } from '../../backend/werkruimte-overdracht';
+import { wisVlagGeheugen } from '../../backend/vlaggen-geheugen';
 import { WACHTWOORD_PER_ADRES } from '../../backend/aanmelden-methoden';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
@@ -68,7 +69,11 @@ export async function main(): Promise<number> {
   const G = await nepGoogle({ ownerEmail: `i015h-eig-${T}@example.test` });
   const pool = getPool();
   const vlagVooraf = (await pool.query('SELECT sleutel, aan, standaard, percentage, gebruikers FROM app.feature_flags WHERE sleutel = ANY($1)', [VLAGGEN])).rows;
-  const vlagZet = (sleutel: string, aan: boolean, gebruikers: string[]) => pool.query('UPDATE app.feature_flags SET aan = $2, standaard = false, percentage = 0, gebruikers = $3 WHERE sleutel = $1', [sleutel, aan, gebruikers]);
+  const vlagZet = async (sleutel: string, aan: boolean, gebruikers: string[]) => {
+    const r = await pool.query('UPDATE app.feature_flags SET aan = $2, standaard = false, percentage = 0, gebruikers = $3 WHERE sleutel = $1', [sleutel, aan, gebruikers]);
+    wisVlagGeheugen();
+    return r;
+  };
   const oud = Math.floor(Date.now() / 1000) - 3600;
   type Browser = ReturnType<typeof G.browser>;
   type P = { b: Browser; sub: string; email: string; id: string };
@@ -278,6 +283,7 @@ export async function main(): Promise<number> {
   } finally {
     G.herstel();
     for (const r of vlagVooraf) await pool.query('UPDATE app.feature_flags SET aan=$2, standaard=$3, percentage=$4, gebruikers=$5 WHERE sleutel=$1', [r.sleutel, r.aan, r.standaard, r.percentage, r.gebruikers]).catch(() => undefined);
+    wisVlagGeheugen();
     const ids = (await pool.query("select id from app.records where tbl='users' and data->>'email' like $1", [`i015h-%-${T}@example.test`])).rows.map((r: { id: string }) => r.id);
     if (ids.length) {
       await pool.query('delete from app.passkeys where user_id = any($1)', [ids]).catch(() => undefined);

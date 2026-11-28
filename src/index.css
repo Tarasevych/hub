@@ -15,7 +15,7 @@ h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; }
 .google-mail-attachment-preview[data-workbench-layout='page'] .mail-viewer-preview-cache { background:var(--surface); }
 svg { width: 1rem; height: 1rem; stroke-width: 1.9; }
 /* Змінні теми (--bg … --shadow) живуть у src/ontwerp/tokens.css (одна система для html, оболонки й вікон). */
-.theme-dark, .theme-light { min-height:100svh; background:var(--bg); color:var(--text); }
+.theme-dark, .theme-light { min-height:100svh; background:var(--bg); color:var(--text); } :is(.theme-dark, .theme-light):is([role='tooltip'], .puls-icoon-tip) { min-height:0; }
 .ambient { pointer-events:none; position:fixed; inset:0; background:radial-gradient(circle at 86% 15%,rgba(6,182,212,.10),transparent 32%),radial-gradient(circle at 15% 90%,rgba(37,99,235,.08),transparent 34%); }
 .loading { display:grid; place-items:center; text-align:center; gap:1rem; }
 .loading p { color:var(--muted); font-size:.9rem; }

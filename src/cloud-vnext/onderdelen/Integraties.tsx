@@ -188,12 +188,12 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
                 </li>
               ))}
             </ul>
-          ) : <p className='cvn-hint'>{tr(lang, 'Жодного Google-акаунта ще не підключено.', 'Er is nog geen Google-account gekoppeld.')}</p>}
+          ) : <p className='cvn-hint'>{tr(lang, 'Жодного облікового запису Google ще не підключено.', 'Er is nog geen Google-account gekoppeld.')}</p>}
           <div className='cvi-acties'>
             {data?.google.gekoppeld ? (
               <>
                 <button type='button' className='cvn-knop' onClick={() => naarTab('google')} data-cvi-actie='beheren'><Settings2 aria-hidden='true' />{tr(lang, 'Керувати', 'Beheren')}</button>
-                <button type='button' className='cvn-knop' disabled={bezig} onClick={() => void googleKoppelen('additional')} data-cvi-actie='extra-account'><Plus aria-hidden='true' />{tr(lang, 'Ще акаунт', 'Nog een account')}</button>
+                <button type='button' className='cvn-knop' disabled={bezig} onClick={() => void googleKoppelen('additional')} data-cvi-actie='extra-account'><Plus aria-hidden='true' />{tr(lang, 'Ще обліковий запис', 'Nog een account')}</button>
               </>
             ) : (
               <button type='button' className='cvn-knop is-hoofd' disabled={bezig} onClick={() => void googleKoppelen('primary')} data-cvi-actie='koppelen'><Link2 aria-hidden='true' />{tr(lang, 'Підключити Google Drive', 'Google Drive koppelen')}</button>

@@ -5,10 +5,10 @@ import { ruimteToegang, type Ruimte, type RuimteCtx, type Tweetalig } from '../s
 
 export type Antwoord = { status: 200 | 401 | 403; code: string; ontkoppelen: boolean; uitleg: Tweetalig | null };
 
-const NIET_ACTIEF: Tweetalig = { uk: 'Основний акаунт не активний: увійдіть на сайті знову.', nl: 'Het hoofdaccount is niet actief: meld u opnieuw aan op de site.' };
+const NIET_ACTIEF: Tweetalig = { uk: 'Основний обліковий запис не активний: увійдіть на сайті знову.', nl: 'Het hoofdaccount is niet actief: meld u opnieuw aan op de site.' };
 const TECH_WEG: Tweetalig = { uk: 'Технічний простір зараз недоступний. Приватний простір працює як звичайно.', nl: 'De technische ruimte is nu niet beschikbaar. De privéruimte werkt gewoon.' };
 const UITLEG: Record<string, Tweetalig> = {
-  ACCOUNT_NIET_ACTIEF: { uk: 'Акаунт не активний. Розширення від\'єднано.', nl: 'Het account is niet actief. De extensie is ontkoppeld.' },
+  ACCOUNT_NIET_ACTIEF: { uk: 'Обліковий запис не активний. Розширення від\'єднано.', nl: 'Het account is niet actief. De extensie is ontkoppeld.' },
   SITE_SESSIE_WEG: NIET_ACTIEF,
   PAUZE: { uk: 'Технічний доступ на паузі. Натисніть «Продовжити» на сайті.', nl: 'De technische toegang staat op pauze. Klik op de site op «Doorgaan».' },
   WEERGAVE_PRIVE: { uk: 'Ця вкладка показує звичайний простір. Перемкніть її на технічний — сеанс уже відкритий, новий вхід не потрібен.', nl: 'Dit tabblad toont de gewone ruimte. Schakel het naar technisch — de sessie loopt al, opnieuw aanmelden is niet nodig.' },

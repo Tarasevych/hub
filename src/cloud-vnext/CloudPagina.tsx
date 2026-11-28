@@ -327,7 +327,7 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
           kiesbaar: false,
           icoon: Link2,
           kinderen: [
-            { id: 'cvi-gekoppeld-kop', label: trLabel('Підключені акаунти', 'Gekoppelde accounts'), icoon: Link2 },
+            { id: 'cvi-gekoppeld-kop', label: trLabel('Підключені облікові записи', 'Gekoppelde accounts'), icoon: Link2 },
             { id: 'cvi-beschikbaar-kop', label: trLabel('Доступні провайдери', 'Beschikbare aanbieders'), icoon: Cloud },
             { id: 'cvi-sync-kop', label: trLabel('Стан синхронізації', 'Synchronisatiestatus'), icoon: RefreshCw },
           ],

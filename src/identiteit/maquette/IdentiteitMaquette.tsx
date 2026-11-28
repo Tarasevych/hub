@@ -92,7 +92,7 @@ type Props = {
   secties: readonly Sectie[];
   /** Перехід до розділу користувачем: застосунок змінює адресу. */
   onKies: (id: string) => void;
-  /** Ім'я та світлина облікового запису — для аватарів макета (файл тут не обирають; це робить розділ «Акаунт»). */
+  /** Ім'я та світлина облікового запису — для аватарів макета (файл тут не обирають; це робить розділ «Обліковий запис»). */
   gebruiker?: MaquetteGebruiker;
   /** IDENTITEIT-015: справжня зміна мови сайту (changeLanguage: cookie, <html lang>, обліковий запис). Echte taalwissel. */
   onTaal?: (lang: 'uk' | 'nl') => void;
@@ -129,7 +129,7 @@ const helder = () => typeof document !== 'undefined' &&
 const profiel = (g: MaquetteGebruiker | undefined): MaquetteOpties['profiel'] =>
   g && (g.naam || g.foto) ? { bevestigd: true, naam: g.naam || '', foto: g.foto || '' } : null;
 
-/** Меню облікового запису сайту (інші акаунти, вихід) живе в схованій оболонці: на ПК у верхній смузі, на телефоні — у шухляді бічного
+/** Меню облікового запису сайту (інші облікові записи, вихід) живе в схованій оболонці: на ПК у верхній смузі, на телефоні — у шухляді бічного
  *  меню. Відкриваємо його кнопкою-аватаром сайту; на телефоні спершу відчиняємо шухляду (її показує правило в maquette-omlijsting.css). */
 const openAccountMenu = () => {
   const druk = (knop: HTMLButtonElement | null) => { if (knop && knop.getAttribute('aria-expanded') !== 'true') knop.click(); };
@@ -318,7 +318,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
       api.post('/api/owner/aanmeld/vnext/aanbieders', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
       api.post('/api/owner/sleutelkluis/stand', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
       api.post('/api/owner/access/gast-sessies/lijst', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
-      api.post('/api/owner/workspaces/list', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
+      api.post('/api/owner/session/bootstrap', ctx).then((r) => r.data as Record<string, unknown>).catch(() => null),
     ]).then(([snap, aanb, kluis, gasten, ruimtes]) => {
       if (!actiefEffect) return;
       if (!snap && !aanb && !kluis && !gasten && !ruimtes) return;

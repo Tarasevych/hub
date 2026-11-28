@@ -187,7 +187,7 @@ export type KaartKnoop = { id: BronId | 'root' | 'installer' | 'app' | 'ui' | 'm
 export type KaartRand = { van: KaartKnoop['id']; naar: KaartKnoop['id']; uk: string; nl: string };
 export type StandKort = { versie: string; release: string; commit: string; staat: string; methode: string; tijd: string; hoofdbron: Hoofdbron; gebruikteBron: BronId; afwijkingen: Afwijking[] };
 export type Stand = StandKort & { intervalSec: number; bronnen: BronStand[]; kaart: { knopen: KaartKnoop[]; randen: KaartRand[] }; bijgewerkt: string };
-export const SOORT: Record<GrantSoort, [string, string]> = { account: ['Акаунт', 'Account'], agenttoken: ['Токен агента', 'Agenttoken'], 'mcp-koppeling': ['MCP-підключення', 'MCP-koppeling'], agent: ['Агент (усі його підключення)', 'Agent (al zijn koppelingen)'] };
+export const SOORT: Record<GrantSoort, [string, string]> = { account: ['Обліковий запис', 'Account'], agenttoken: ['Токен агента', 'Agenttoken'], 'mcp-koppeling': ['MCP-підключення', 'MCP-koppeling'], agent: ['Агент (усі його підключення)', 'Agent (al zijn koppelingen)'] };
 export const VOORSTEL_STATUS: Record<string, [string, string]> = {
   uploaden: ['Завантажується', 'Wordt geüpload'], 'wacht-op-goedkeuring': ['Чекає схвалення', 'Wacht op goedkeuring'], goedgekeurd: ['Схвалено, чекає на сервер', 'Goedgekeurd, wacht op de server'],
   geinstalleerd: ['Встановлено', 'Geïnstalleerd'], ingehaald: ['Включено в новіше', 'Opgenomen in nieuwere'], mislukt: ['Не вдалося', 'Mislukt'], geweigerd: ['Сервер відмовив', 'Geweigerd door de server'],

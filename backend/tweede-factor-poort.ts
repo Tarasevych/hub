@@ -5,7 +5,7 @@
 //   • після Google сеанс існує, але, поки на ЦЬОМУ вході не підтверджено другий чинник (код із застосунку, ключ доступу або
 //     код відновлення як запасний шлях), ownerRequireSession відмовляє всім маршрутам, крім вільних (вхід, вихід, вікно
 //     «Підтвердіть доступ»); bootstrap віддає лише ознаку `tweedeFactorPoort: true` без даних;
-//   • підтвердження записує stap-op.ts (totpStapOpVastleggen / passkeyStapOpVastleggen) — на сесію (вкладку і якір свого акаунта);
+//   • підтвердження записує stap-op.ts (totpStapOpVastleggen / passkeyStapOpVastleggen) — на сесію (вкладку і якір свого облікового запису);
 //   • СУМІСНІСТЬ: правило стосується лише людей, які МАЮТЬ другий чинник (TOTP або ключ доступу). Без нього ворота не зачиняються —
 //     інакше власник без TOTP заблокував би себе; збереження правила без власного другого чинника сервер відхиляє
 //     (ACCESS_MFA_EIGEN_FACTOR_VEREIST). Аварійний вимикач STAP_OP_UIT_TOT (backend/stap-op.ts) відчиняє й ці ворота.
@@ -81,7 +81,7 @@ export async function tweedeFactorBevestigdOp(userId: string, sessieId: string, 
 
 /**
  * Після коду із застосунку, ключа доступу або коду відновлення на цьому вході. Записує всі передані id (вкладку і якір свого
- * акаунта), щоб нова вкладка того ж браузера не питала знову. Повторний виклик лише оновлює час — ідемпотентно.
+ * облікового запису), щоб нова вкладка того ж браузера не питала знову. Повторний виклик лише оновлює час — ідемпотентно.
  */
 export async function tweedeFactorVastleggen(userId: string, sessieIds: Array<string | null | undefined>): Promise<void> {
   const ids = [...new Set(sessieIds.filter((x): x is string => typeof x === 'string' && x.length >= 8 && x.length <= 200 && !x.startsWith('mcp-gedelegeerd:')))];

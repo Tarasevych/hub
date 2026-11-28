@@ -1,5 +1,5 @@
 // Eenheidstest 21.10.2026 (agent C) — mail op de telefoon (390 px, mail.tarasevych.com/postvak-in), klachten van de eigenaar:
-//  1. «У панелі акаунтів пошти фото приплюснуте»: in «Поштові скриньки» was het Google-foto 17,6×40 px (ovaal). Oorzaak: de wrapper
+//  1. «У панелі облікових записів пошти фото приплюснуте»: in «Поштові скриньки» was het Google-foto 17,6×40 px (ovaal). Oorzaak: de wrapper
 //     droeg de klasse «small» — het globale knop-modificatieklasje uit index.css (`.small{padding:.4rem .7rem}` + mobiel
 //     `:is(…,.small){min-height:44px}`): padding 2×11,2 px binnen 40 px breed liet 17,6 px over, en 44 px hoog.
 //  2. Snelle acties in de rij: het menu «Інші дії» (⋮) hing ín de rij → de «⋮» van de volgende rijen (z-index 6–9) lagen erboven;

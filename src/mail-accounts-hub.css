@@ -1,4 +1,4 @@
-/* Mail → «Поштові акаунти» (MailAccountsHub.tsx). Mobiel 21.10.2026: het raster stond inline als
+/* Mail → «Поштові облікові записи» (MailAccountsHub.tsx). Mobiel 21.10.2026: het raster stond inline als
    `minmax(0,1fr) 320px` — op 390 px bleef er voor de hoofdkolom 0 px over; de begroeting liep letter voor letter verticaal en
    de rechterkolom (aside) lag over de tegels, die daardoor niet aanklikbaar waren. Nu: twee kolommen alleen als er ruimte is,
    anders één kolom met de uitleg ónder de tegels. Alleen tokens; geen vaste breedtes > 360 px. */
@@ -31,7 +31,7 @@ button.mail-provider-tegel:hover{border-color:color-mix(in srgb,var(--accent) 45
   .mail-provider-onder{display:none}
 }
 
-/* «Підключені акаунти»: per dienst een groep, per account stand + «Перепідключити» + «Відключити». */
+/* «Підключені облікові записи»: per dienst een groep, per account stand + «Перепідключити» + «Відключити». */
 .mail-koppeling-groep{display:grid;gap:var(--ruimte-2);padding:var(--ruimte-3) 0;border-top:1px solid var(--line)}
 .mail-koppeling-groep:first-of-type{border-top:0}
 .mail-koppeling-groep-kop{display:flex;align-items:center;justify-content:space-between;gap:var(--ruimte-3);flex-wrap:wrap}

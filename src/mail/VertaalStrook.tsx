@@ -33,6 +33,22 @@ const KEUZES: Array<{ id: VertaalModus; uk: string; nl: string }> = [
   { id: 'vergelijk', uk: 'Порівняти', nl: 'Vergelijken' },
 ];
 
+const EIGEN_TAAL_NAMEN: Record<string, { uk: string; nl: string }> = {
+  uk: { uk: 'Українська', nl: 'Oekraïens' },
+  nl: { uk: 'Нідерландська', nl: 'Nederlands' },
+  en: { uk: 'Англійська', nl: 'Engels' },
+  de: { uk: 'Німецька', nl: 'Duits' },
+  fr: { uk: 'Французька', nl: 'Frans' },
+  pl: { uk: 'Польська', nl: 'Pools' },
+  es: { uk: 'Іспанська', nl: 'Spaans' },
+  it: { uk: 'Італійська', nl: 'Italiaans' },
+  pt: { uk: 'Португальська', nl: 'Portugees' },
+};
+const weergaveTaalNaam = (lang: 'uk' | 'nl', code: string) => {
+  const k = String(code || '').trim().toLowerCase();
+  return EIGEN_TAAL_NAMEN[k]?.[lang] || taalLabel(lang, k) || k.toUpperCase();
+};
+
 export default function VertaalStrook({ lang, modus, bronTaal, doelTaal, kan, bezig, onModus, onSluit, regelHint, kopHost }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const id = useId();
@@ -42,7 +58,7 @@ export default function VertaalStrook({ lang, modus, bronTaal, doelTaal, kan, be
     <div className='vertaal-strook' data-vertaal-strook data-in-kop={inKop ? 'ja' : undefined} data-modus={modus} role='group' aria-labelledby={`${id}-kop`} data-mail-translation-skip='true'>
       <span className='vertaal-strook-talen' id={`${id}-kop`}>
         <Languages aria-hidden='true' />
-        <span><span className='vertaal-strook-voorvoegsel'>{t('Мова листа', 'Taal van het bericht')}: </span>{taalLabel(lang, bronTaal) || bronTaal.toUpperCase()} → {taalLabel(lang, doelTaal)}</span>
+        <span><span className='vertaal-strook-voorvoegsel'>{t('Мова листа', 'Taal van het bericht')}: </span>{weergaveTaalNaam(lang, bronTaal)} → {weergaveTaalNaam(lang, doelTaal)}</span>
       </span>
       <span className='lz-segment vertaal-strook-keuze'>
         {KEUZES.map((k) => (

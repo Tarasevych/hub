@@ -1,5 +1,5 @@
 // De globale zoekknop IN HET MENU op de post (24.10.2026, één update). Draaien: node scripts/eenheidstests.mjs zoek-in-menu-20261024
-// Wens van de eigenaar: «кнопка пошуку по всьому сайту з відділу пошти замість того щоб бути поверх меню акаунтів пошти, буде
+// Wens van de eigenaar: «кнопка пошуку по всьому сайту з відділу пошти замість того щоб бути поверх меню облікових записів пошти, буде
 // відображено натомість в меню між фото профілю та кнопкою редагування меню».
 //  A. bron (src/CanoniekOmlijsting.tsx): op de post (current==='mail') geen veld-knop in .canonical-account-anchor en geen ronde knop
 //     (.zk-trigger-mobiel) in de bovenbalk, wél één ZoekGlobaal zonderKnop (palet + ⌘K, ook met de lade dicht); lade-kop in de volgorde
@@ -47,10 +47,10 @@ export async function main(): Promise<number> {
   const kop = chrome.slice(chrome.indexOf("<header className='canonical-topbar'>"), chrome.indexOf('<CanonicalNotificationCenter', chrome.indexOf("<header className='canonical-topbar'>")));
   // 25.10.2026: het anker is de ZONE «bovenbalk» (shared/plaatsing.ts): zoeken · foto · gniezda (bel rechts van de foto). Op de post blijft
   // daar geen zoekveld; op de telefoon staat de ronde zoekknop IN dezelfde zone (bewoner vooraan), alleen buiten de post.
-  // 15.11.2026 (ACHTERGROND-001): vóór het zoeken staat voor aangemelde gebruikers de knop «Живий фон» — кнопка швидкого налаштування тла.
-  check('A bovenbalk computer: op de post geen veld-knop naast de profielfoto (anker = {account} + gniezda van de zone)', kop.includes("<div className='canonical-account-anchor' {...zoneBoven}>{!signedOut&&<AchtergrondKnop lang={lang}/>}{!zoekInMenu&&<ZoekGlobaal lang={lang} dienst={current}/>}{account}<Gniezda zone='bovenbalk' ind={plaatsInd}/></div>"), kop);
+  // 24.11.2026 (HERSTEL-001): кнопку «Живий фон» перенесено з верхньої смуги в меню акаунтів (між перемикачем тем і кнопкою кольорів).
+  check('A bovenbalk computer: op de post geen veld-knop naast de profielfoto (anker = {account} + gniezda van de zone)', kop.includes("<div className='canonical-account-anchor' {...zoneBoven}>{!zoekInMenu&&<ZoekGlobaal lang={lang} dienst={current}/>}{account}<Gniezda zone='bovenbalk' ind={plaatsInd}/></div>"), kop);
   check('A bovenbalk telefoon: op de post geen ronde knop rechtsboven (die lag op het Gmail-avatar) — de ronde knop staat alleen buiten de post in de zone',
-    kop.includes("{touchMode&&bovenTelefoon&&<div className='canonical-account-anchor plaats-boven-telefoon' {...zoneBoven}>{!signedOut&&<AchtergrondKnop lang={lang}/>}{!zoekInMenu&&<ZoekGlobaal lang={lang} mobiel dienst={current}/>}") && chrome.includes('bovenTelefoon=!zoekInMenu||bovenN>0||plaatsS.sleep!==null'));
+    kop.includes("{touchMode&&bovenTelefoon&&<div className='canonical-account-anchor plaats-boven-telefoon' {...zoneBoven}>{!zoekInMenu&&<ZoekGlobaal lang={lang} mobiel dienst={current}/>}") && chrome.includes('bovenTelefoon=!zoekInMenu||bovenN>0||plaatsS.sleep!==null'));
   check('A palet + ⌘K blijven op de post: één ZoekGlobaal zonderKnop direct in de bovenbalk (niet in de lade, die gaat dicht)', kop.includes('{zoekInMenu&&<ZoekGlobaal lang={lang} dienst={current} zonderKnop/>}') && tel(chrome, '<ZoekGlobaal ') === 3 && tel(chrome, 'zonderKnop/>') === 1);
   const lade = chrome.slice(chrome.indexOf("{drawer?<div className='canonical-drawer-header'>"), chrome.indexOf("data-sidebar-action='close-drawer'"));
   check('A lade-kop: profielfoto (· gniezda van de zone, bel) → zoekknop → «Редагувати меню», lade sluit vóór het palet', volgorde(lade, "className='canonical-drawer-account'>{account}</div><Gniezda zone='lade-kop' ind={plaatsInd}/></div>", "<ZoekMenuKnop lang={lang} className='zk-menu-knop zk-menu-knop-lade' voorOpenen={closeDrawer}/>", 'menu-lade-bewerken'), lade.slice(0, 400));

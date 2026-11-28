@@ -78,7 +78,7 @@ function termijnTekst(v: VerzoekKern): [string, string] {
     case 'tot-technisch-einde': return ['до кінця технічного сеансу', 'tot het einde van de technische sessie'];
     case 'tot-site-uitloggen': return ['до виходу з цього входу на сайт', 'tot u zich afmeldt van deze aanmelding'];
     case 'onbepaald': return ['безстроково, доки ви не знімете дозвіл', 'zonder einddatum, tot u de toestemming intrekt'];
-    default: return ['до виходу з акаунта', 'tot u zich afmeldt van het account'];
+    default: return ['до виходу з облікового запису', 'tot u zich afmeldt van het account'];
   }
 }
 
@@ -89,9 +89,9 @@ const PER_PAD: readonly Regel[] = [
   [/\/mcp-connector\/approvals\/[^/]+\/approve$/, 'Дозволити виклик інструмента, про який просить ШІ', 'Een aanroep van een hulpmiddel toestaan waar een AI om vraagt',
     'Інструмент виконається від вашого імені з показаними параметрами (лист, подія, коментар тощо).', 'Het hulpmiddel wordt namens u uitgevoerd met de getoonde parameters (bericht, afspraak, reactie enz.).', true],
   [/\/mcp-connector\/consent$/, 'Видати доступ клієнту ШІ (OAuth)', 'Een AI-klant toegang geven (OAuth)',
-    'Клієнт отримає токени до вашого акаунта на обраний строк.', 'De klant krijgt tokens voor uw account voor de gekozen termijn.', true],
+    'Клієнт отримає токени до вашого облікового запису на обраний строк.', 'De klant krijgt tokens voor uw account voor de gekozen termijn.', true],
   [/\/agents\/pairing-code$/, 'Отримати код для підключення нового пристрою або браузера', 'Een code ophalen om een nieuw apparaat of een browser te koppelen',
-    'Хто першим уведе цей код протягом 5 хвилин, отримає пристрій у вашому акаунті.', 'Wie deze code binnen 5 minuten als eerste invoert, krijgt een apparaat in uw account.', true],
+    'Хто першим уведе цей код протягом 5 хвилин, отримає пристрій у вашому обліковому записі.', 'Wie deze code binnen 5 minuten als eerste invoert, krijgt een apparaat in uw account.', true],
   [/\/agents\/[^/]+\/browser-enabled$/, 'Дозволити ШІ працювати у вашому браузері', 'De AI in uw browser laten werken',
     'ШІ зможе читати й (за дозволом) натискати на сторінках, відкритих для розширення.', 'De AI kan pagina’s lezen en (met toestemming) bedienen die voor de extensie open staan.', true],
   [/\/agents\/[^/]+\/policy$/, 'Змінити, що пристрій робить без вашого кліку', 'Wijzigen wat het apparaat zonder uw klik doet',
@@ -119,7 +119,7 @@ const PER_PAD: readonly Regel[] = [
     'Нове підключення ШІ більше не проситиме окремого кроку безпеки; захист стане слабшим. Увімкнути знову можна будь-коли без підтвердження.', 'Een nieuwe AI-koppeling vraagt geen aparte veiligheidsstap meer; de bescherming wordt zwakker. Weer aanzetten kan altijd, zonder bevestiging.', true],
   [/\/ai\/grants\/(add|preset)$/, 'Дати ШІ нові права на вашому пристрої або в браузері', 'Een AI nieuwe rechten geven op uw apparaat of in de browser',
     'ШІ зможе читати або діяти на пристрої чи в браузері в межах вибраних прав і строку.', 'De AI kan binnen de gekozen rechten en termijn lezen of handelen op het apparaat of in de browser.', true],
-  [/\/ai\/settings$/, 'Розширити межу можливостей ШІ для акаунта', 'De grens van AI-mogelijkheden voor het account verruimen',
+  [/\/ai\/settings$/, 'Розширити межу можливостей ШІ для облікового запису', 'De grens van AI-mogelijkheden voor het account verruimen',
     'Увімкнені можливості стануть доступними для видачі будь-якому ШІ (самі права видаються окремо).', 'De aangezette mogelijkheden kunnen aan elke AI worden gegeven (de rechten zelf worden apart gegeven).', true],
   [/\/ai\/block$/, (v) => v.unblock
     ? ['Розблокувати доступ ШІ для користувача', 'AI-toegang van een gebruiker deblokkeren', 'Цей користувач знову зможе підключати ШІ; старі токени не повертаються.', 'Deze gebruiker kan weer AI koppelen; oude tokens komen niet terug.', true]
@@ -138,15 +138,15 @@ const PER_PAD: readonly Regel[] = [
     'Введене значення (пароль, ключ) буде надіслано на пристрій, що його запитав.', 'De ingevoerde waarde (wachtwoord, sleutel) gaat naar het apparaat dat erom vroeg.', true],
   [/\/agents\/extensie-beheer\/intrekken$/, 'Відкликати доступ розширення браузера', 'Toegang van de browserextensie intrekken',
     'Розширення втратить вибраний доступ; щоб повернути, його доведеться видати знову.', 'De extensie verliest de gekozen toegang; terugkrijgen kan alleen door die opnieuw te geven.'],
-  // Вхід і безпека акаунта (id.*).
-  [/\/aanmeld\/vnext\/start$/, 'Прив’язати новий спосіб входу до акаунта', 'Een nieuwe aanmeldmethode aan het account koppelen',
-    'Після прив’язки через цей сервіс (Apple, Telegram тощо) можна буде входити у ваш акаунт.', 'Na het koppelen kan men via deze dienst (Apple, Telegram enz.) in uw account inloggen.', true],
+  // Вхід і безпека облікового запису (id.*).
+  [/\/aanmeld\/vnext\/start$/, 'Прив’язати новий спосіб входу до облікового запису', 'Een nieuwe aanmeldmethode aan het account koppelen',
+    'Після прив’язки через цей сервіс (Apple, Telegram тощо) можна буде входити у ваш обліковий запис.', 'Na het koppelen kan men via deze dienst (Apple, Telegram enz.) in uw account inloggen.', true],
   [/\/aanmeld\/vnext\/ontkoppel$/, 'Від’єднати спосіб входу', 'Een aanmeldmethode loskoppelen',
     'Через цей сервіс більше не можна буде увійти. Останній спосіб входу від’єднати не можна.', 'Via deze dienst kan men niet meer inloggen. De laatste aanmeldmethode kan niet losgekoppeld worden.', true],
   [/\/access\/(method|binding)\/unbind$/, 'Від’єднати спосіб входу', 'Een aanmeldmethode loskoppelen',
     'Цим способом більше не можна буде увійти. Останній спосіб входу від’єднати не можна.', 'Met deze methode kan men niet meer inloggen. De laatste aanmeldmethode kan niet losgekoppeld worden.', true],
   [/\/access\/method\/herstel$/, 'Повернути від’єднаний спосіб входу', 'Een losgekoppelde aanmeldmethode terugzetten',
-    'Цим способом знову можна буде входити у ваш акаунт.', 'Met deze methode kan men weer in uw account inloggen.', true],
+    'Цим способом знову можна буде входити у ваш обліковий запис.', 'Met deze methode kan men weer in uw account inloggen.', true],
   [/\/access\/phone\/save$/, 'Змінити номер телефону для входу', 'Het telefoonnummer voor het inloggen wijzigen',
     'Коди входу надходитимуть на новий номер.', 'Inlogcodes gaan naar het nieuwe nummer.', true],
   [/\/access\/policy\/save$/, 'Змінити правила входу на сайт для всіх', 'De aanmeldregels van de site voor iedereen wijzigen',
@@ -207,7 +207,7 @@ const PER_PAD: readonly Regel[] = [
     'Адміністратор бачитиме те, що бачите ви, на вказаний строк (з правом дій — і зможе діяти). Завершити можна будь-коли.', 'De beheerder ziet voor de aangegeven termijn wat u ziet (met recht op acties: kan ook handelen). Beëindigen kan altijd.', true],
   [/\/ondersteuning\/aanvragen$/, 'Попросити дозволу на підтримку користувача', 'Vragen om een gebruiker te ondersteunen',
     'Користувач отримає запит; після згоди ви бачитимете лише огляд його налаштувань, без вмісту листів і ключів.', 'De gebruiker krijgt het verzoek; na toestemming ziet u alleen een overzicht van de instellingen, zonder inhoud van mail of sleutels.', true],
-  [/\/ondersteuning\/toestaan$/, 'Дозволити підтримку вашого акаунта', 'Ondersteuning van uw account toestaan',
+  [/\/ondersteuning\/toestaan$/, 'Дозволити підтримку вашого облікового запису', 'Ondersteuning van uw account toestaan',
     'Підтримка бачитиме огляд ваших налаштувань, пристроїв і підключень (без вмісту листів і ключів) на вказаний строк.', 'De ondersteuning ziet voor de aangegeven termijn een overzicht van uw instellingen, apparaten en koppelingen (zonder inhoud van mail of sleutels).', true],
   // Дім.
   [/\/huis\/vertrouwde-toestellen$/, 'Змінити довірені пристрої дому', 'Vertrouwde apparaten van het huis wijzigen',
@@ -231,7 +231,7 @@ const PER_PAD: readonly Regel[] = [
 
 /** Per code van actieVoorPad (dezelfde lijst als de server). */
 const PER_ACTIE: Record<string, readonly [string, string, string, string, boolean?]> = {
-  'passkey-toevoegen': ['Додати passkey', 'Een passkey toevoegen', 'Новим ключем можна буде входити у ваш акаунт.', 'Met de nieuwe sleutel kan men in uw account inloggen.', true],
+  'passkey-toevoegen': ['Додати passkey', 'Een passkey toevoegen', 'Новим ключем можна буде входити у ваш обліковий запис.', 'Met de nieuwe sleutel kan men in uw account inloggen.', true],
   'passkey-verwijderen': ['Видалити passkey', 'Een passkey verwijderen', 'Цим ключем більше не можна буде увійти.', 'Met deze sleutel kan men niet meer inloggen.', true],
   'passkey-vertrouwen': ['Змінити довіру до ключа доступу', 'Vertrouwen in een toegangssleutel wijzigen', 'Позначка «Довірений» з’явиться або зникне біля ключа; нових прав ключ не отримає.', 'Het label «Vertrouwd» verschijnt of verdwijnt bij de sleutel; de sleutel krijgt geen nieuwe rechten.', true],
   'goedkeur-recht-intrekken': ['Відкликати право схвалювати', 'Het recht om goed te keuren intrekken', 'Пристрій більше не зможе підтверджувати дії.', 'Het apparaat kan geen acties meer bevestigen.'],

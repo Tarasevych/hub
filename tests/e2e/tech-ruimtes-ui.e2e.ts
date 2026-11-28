@@ -141,7 +141,7 @@ export async function main(): Promise<number> {
       check('startvenster: «На час (до HH:MM)» exact', namen.some((x) => /^На час \(до \d\d:\d\d\)$/.test(x)), namen.join(' | '));
       check('tijdkeuzes «15 хв|30 хв|1 год|2 год|4 год|8 год»', (await page.locator('.rs-chip').allTextContents()).join('|') === '15 хв|30 хв|1 год|2 год|4 год|8 год');
       check('startvenster: «До завершення технічного сеансу» exact', namen.includes('До завершення технічного сеансу'));
-      check('startvenster: «До виходу з акаунта на сайті» exact', namen.includes('До виходу з акаунта на сайті'));
+      check('startvenster: «До виходу з облікового запису на сайті» exact', namen.includes('До виходу з облікового запису на сайті'));
       const uit = page.locator('[data-termijn][data-beschikbaar="0"]');
       check(`niet beschikbare keuzes zichtbaar en uitgegrijsd (${await uit.count()})`, await uit.count() === 5 && await uit.first().locator('input').isDisabled());
       check('reden bij uitgegrijsde keuze', ((await page.locator('.rs-kaart[data-termijn="tot-site-uitloggen"] [data-termijn-reden]').textContent()) || '').includes('Недоступно: роль «Адміністратор» дозволяє не більше 1 год.'));
@@ -211,7 +211,7 @@ export async function main(): Promise<number> {
       await page.focus('.rt-tabs [aria-selected=true]');
       await page.keyboard.press('ArrowRight');
       check('tabs: → naar «Вхід і підтвердження»', await page.locator('.rt-tabs [aria-selected=true]').textContent() === 'Вхід і підтвердження');
-      check('extensie-ontgrendeling in «Вхід і підтвердження» met «До виходу з акаунта на сайті»', ((await page.textContent('[data-rt-regel="extensie"]')) || '').includes('До виходу з акаунта на сайті'));
+      check('extensie-ontgrendeling in «Вхід і підтвердження» met «До виходу з облікового запису на сайті»', ((await page.textContent('[data-rt-regel="extensie"]')) || '').includes('До виходу з облікового запису на сайті'));
       await page.keyboard.press('ArrowRight');
       // AI-TERMIJN-001: kaart per AI (geen <select> meer). Buiten de technische weergave: knop uit + reden.
       await page.waitForSelector('[data-ait-kaart]');
@@ -224,7 +224,7 @@ export async function main(): Promise<number> {
       await page.click('[data-rt-knop="uitloggen"]');
       await page.waitForSelector('[data-tech-venster="uitloggen"]');
       const keuzes = await page.locator('[data-uitlog-knop]').allTextContents();
-      check('drie uitlogkeuzes exact', keuzes.join('|') === 'Вийти з технічного сеансу|Вийти з акаунта на сайті|Вийти всюди', keuzes.join('|'));
+      check('drie uitlogkeuzes exact', keuzes.join('|') === 'Вийти з технічного сеансу|Вийти з облікового запису на сайті|Вийти всюди', keuzes.join('|'));
       check('gevolg technisch: «Довгі дозволи розширення не змінюються»', ((await page.textContent('#ru-technisch')) || '').includes('Довгі дозволи розширення не змінюються'));
       check('gevolg site: «…знімаються»', ((await page.textContent('#ru-site')) || '').includes('знімаються'));
       check('regel «Закриття однієї вкладки не знімає…»', ((await page.textContent('[data-ru-vkladka]')) || '').startsWith('Закриття однієї вкладки не знімає'));
@@ -273,10 +273,10 @@ export async function main(): Promise<number> {
       check('open termijnen beschikbaar als de rol het toelaat', await page.locator('[data-termijn][data-beschikbaar="0"]').count() === 0);
       await page.click('.rs-kaart[data-termijn="tot-site-uitloggen"]');
       await page.fill('[data-rs-reden]', 'test reden');
-      check('knop «Підтвердити й увійти · До виходу з акаунта на сайті»', (await page.textContent('[data-tech-knop="ruimte-start"]')) === 'Підтвердити й увійти · До виходу з акаунта на сайті');
+      check('knop «Підтвердити й увійти · До виходу з облікового запису на сайті»', (await page.textContent('[data-tech-knop="ruimte-start"]')) === 'Підтвердити й увійти · До виходу з облікового запису на сайті');
       await page.click('[data-tech-knop="ruimte-start"]');
       await page.waitForSelector('.tech-band');
-      check('band: «до виходу з акаунта на сайті»', ((await page.textContent('.tech-band-tijd')) || '').includes('до виходу з акаунта на сайті'));
+      check('band: «до виходу з облікового запису на сайті»', ((await page.textContent('.tech-band-tijd')) || '').includes('до виходу з облікового запису на сайті'));
       await page.click('[data-stand="toegang"]');
       await page.waitForSelector('[data-tech-venster="toegang"]');
       await page.click('[data-rt-tab="ai"]');

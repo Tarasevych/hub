@@ -7,7 +7,6 @@ import { join } from 'node:path';
 import { closePool } from '../../server/platform/pg';
 import { PUBLIEKE_ROUTES } from '../../server/platform/auth-poort';
 import { checker } from './hulp/nep-google';
-import { EIGENAAR_NAAM } from '../../backend/juridisch';
 
 type Antw = { status: number; body: string; headers: http.IncomingHttpHeaders };
 function haal(poort: number, pad: string, host = 'hub.tarasevych.com', methode = 'GET'): Promise<Antw> {
@@ -40,12 +39,24 @@ export async function main(): Promise<number> {
     check('echte HTML zonder script en zonder noindex (geen meta robots, geen X-Robots-Tag); app-CSP met frame-ancestors none',
       [p, t].every((a) => !/<script/i.test(a.body) && !/noindex/i.test(a.body) && !a.headers['x-robots-tag'] && String(a.headers['content-security-policy'] || '').includes("frame-ancestors 'none'") && !String(a.headers['content-security-policy'] || '').includes("'unsafe-inline' 'self'")));
     const ukEerst = p.body.indexOf('id="uk"') > 0 && p.body.indexOf('id="uk"') < p.body.indexOf('id="nl"') && t.body.indexOf('id="uk"') < t.body.indexOf('id="nl"');
-    check('talen: Oekraïens eerst, dan Nederlands, met ankers; geen Engelse versie', ukEerst && pt.includes('Політика конфіденційності') && pt.includes('Privacybeleid') && tt.includes('Умови користування') && tt.includes('Gebruiksvoorwaarden') && !/\bPrivacy Policy\b|\bTerms of Service\b/.test(pt + tt));
+    check('talen: Oekraïens eerst, dan Nederlands, met ankers; geen Engelse versie', ukEerst && pt.includes('Політика конфіденційності') && pt.includes('Privacybeleid') && tt.includes('Умови використання') && tt.includes('Gebruiksvoorwaarden') && !/\bPrivacy Policy\b|\bTerms of Service\b/.test(pt + tt));
     check('privacy: verantwoordelijke + contact, Google-gegevens (sub/e-mail/naam/foto/auth_time), scopes, Limited Use + beleidslink, geen AI, Cloudflare, back-ups, 30 dagen, GBA/APD, cookies',
-      [EIGENAAR_NAAM, 'sub', 'auth_time', 'openid', 'gmail.readonly', 'gmail.send', 'calendar.readonly', 'calendar.events', 'photospicker.mediaitems.readonly', 'Limited Use', 'api-services-user-data-policy', 'штучного інтелекту', 'AI-model', 'Cloudflare', 'age', '30 днів', '30 dagen', 'Gegevensbeschermingsautoriteit', 'cookie', '2026-10-20']
+      ['sub', 'auth_time', 'openid', 'gmail.readonly', 'gmail.send', 'calendar.readonly', 'calendar.events', 'photospicker.mediaitems.readonly', 'Limited Use', 'api-services-user-data-policy', 'штучного інтелекту', 'AI-model', 'Cloudflare', 'age', '30 днів', '30 dagen', 'Gegevensbeschermingsautoriteit', 'cookie', '2026-11-26']
         .every((w) => p.body.includes(w)));
     check('terms: goedkeuring, aanvaardbaar gebruik, geen garantie, beëindiging, Belgisch recht', ['схвалення', 'Допустиме', '«як є»', 'Припинення', 'право Бельгії', 'goedkeuring', 'Aanvaardbaar gebruik', 'zoals hij is', 'Beëindiging', 'Belgisch recht'].every((w) => t.body.includes(w)));
+    check('SITE-001: meta description, canonical, favicon en de clausule over wijziging van de voorwaarden (uk + nl)',
+      [p, t].every((a) => /<meta name="description" content="[^"]{40,}">/.test(a.body) && a.body.includes('rel="canonical"') && a.body.includes('href="/favicon.svg"'))
+        && tt.includes('Зміни умов') && tt.includes('Wijziging van de voorwaarden'));
+    check('SITE-001: Oekraïense tekst zonder Engelse vaktermen (браузер, токен, кеш, хостинг, трафік, онлайн, e-mail) en zonder Russische letters',
+      [p, t].every((a) => { const uk = tekst(a.body.slice(a.body.indexOf('id="uk"'), a.body.indexOf('id="nl"'))); return uk.length > 1500 && !/браузер|[Тт]окен|кеш|хостинг|трафік|онлайн|e-mail|[\u0401\u0451\u042A\u044A\u042B\u044B\u042D\u044D]/.test(uk); }));
     check('links naar elkaar en naar de start', p.body.includes('href="/terms"') && t.body.includes('href="/privacy"') && p.body.includes('href="/"') && t.body.includes('href="/"'));
+    // SITE-001 (пункт 16): одна назва «Умови використання» на сторінці й у застосунку; ім'я власника без двомовної заглушки в одномовному реченні.
+    const omlijsting = await readFile(join(process.cwd(), 'src/CanoniekOmlijsting.tsx'), 'utf8');
+    const ukDeel = (a: Antw) => tekst(a.body.slice(a.body.indexOf('id="uk"'), a.body.indexOf('id="nl"')));
+    const nlDeel = (a: Antw) => tekst(a.body.slice(a.body.indexOf('id="nl"'), a.body.indexOf('<footer')));
+    check('SITE-001: één naam «Умови використання» (pagina + app), geen «Умови користування»; geen tweetalige vervanging in een eentalige zin',
+      omlijsting.includes('Умови використання') && !(p.body + t.body + omlijsting).includes('Умови користування')
+        && [p, t].every((a) => !ukDeel(a).includes('eigenaar') && !nlDeel(a).includes('власник') && !nlDeel(a).includes('особа') && !ukDeel(a).includes('aanvraag') && !nlDeel(a).includes('запит') && !/на на /.test(ukDeel(a))));
     const head = await haal(poort, '/privacy', 'hub.tarasevych.com', 'HEAD'), post = await haal(poort, '/privacy', 'hub.tarasevych.com', 'POST');
     const prefix = await haal(poort, '/privacy/extra'), slash = await haal(poort, '/privacyx'), spa = await haal(poort, '/inbox');
     check('exact pad: HEAD 200 zonder body, POST 405, /privacy/extra en /privacyx niet de privacypagina; SPA elders ongewijzigd (noindex)',

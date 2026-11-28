@@ -3,7 +3,7 @@
 // Сторінка входу ще не знає, чий це обліковий запис, тому правило одне для всіх:
 //   — якщо людина ВЖЕ дозволила цьому сайту доступ до місця, воно додається до запиту на вхід без жодного нового запитання;
 //   — якщо не дозволяла, нічого не питаємо; сервер відмовить лише тоді, коли обліковий запис цього вимагає (PLAATS_NODIG),
-//     і тоді людина бачить пояснення та кнопку «Надати місце пристрою» — запит дозволу показує сам браузер.
+//     і тоді людина бачить пояснення та кнопку «Надати місце пристрою» — запит дозволу показує сам оглядач.
 // Сервер округлює точку до ≈ 1 км і зберігає її лише в самій спробі входу.
 export type AanmeldPlaats = { lat: number; lon: number; nauwkeurig: number };
 export type PlaatsUitkomst = AanmeldPlaats | 'geweigerd' | 'mislukt';
@@ -14,7 +14,7 @@ let laatste: { p: AanmeldPlaats; op: number } | null = null;
 const gemerkt = (): boolean => { try { return localStorage.getItem(SLEUTEL) === '1'; } catch { return false; } };
 const merk = (aan: boolean) => { try { if (aan) localStorage.setItem(SLEUTEL, '1'); else localStorage.removeItem(SLEUTEL); } catch { /* zonder opslag */ } };
 
-/** Стан дозволу без запитання людині: 'granted' | 'denied' | 'prompt' | '' (браузер не каже). */
+/** Стан дозволу без запитання людині: 'granted' | 'denied' | 'prompt' | '' (оглядач не повідомляє). */
 export async function plaatsToestemming(): Promise<string> {
   try {
     const p = (navigator as Navigator & { permissions?: { query: (d: { name: string }) => Promise<{ state: string }> } }).permissions;
@@ -33,7 +33,7 @@ const vraag = (timeout: number): Promise<PlaatsUitkomst> => new Promise((klaar) 
   } catch { klaar('mislukt'); }
 });
 
-/** Свідома дія людини (кнопка): браузер за потреби покаже власний запит дозволу. */
+/** Свідома дія людини (кнопка): оглядач за потреби покаже власний запит дозволу. */
 export async function plaatsVragen(): Promise<PlaatsUitkomst> {
   const u = await vraag(15000);
   merk(typeof u === 'object');

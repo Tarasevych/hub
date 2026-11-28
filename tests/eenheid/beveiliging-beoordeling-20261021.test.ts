@@ -217,7 +217,7 @@ export async function main(): Promise<number> {
     lokaal.schrijfConcept(sA, c('conceptA0001', 'geheim van A'), ls); lokaal.schrijfConcept(sAt, c('conceptA0002', 'technisch van A'), ls); lokaal.schrijfConcept(sB, c('conceptB0001', 'van B'), ls);
     ls.setItem('mail-draft-active-id', 'oud12345'); ls.setItem('mail-draft-oud12345', JSON.stringify({ to: 'y@example.test', body: 'oud concept', savedAt: Date.now() }));
     check('voorbereiding: drie concepten (A privé, A technisch, B) en één oud niet-gescoopt concept', !!lokaal.leesConcept(sA, ls) && !!lokaal.leesConcept(sAt, ls) && !!lokaal.leesConcept(sB, ls) && ls.getItem('mail-draft-oud12345') !== null);
-    // «Вийти» zonder «Зберегти цей акаунт» (UnifiedServiceApp → endMailPrivateCacheSession) en «account verwijderd» (forgetMailPrivateCacheOwner)
+    // «Вийти» zonder «Зберегти цей обліковий запис» (UnifiedServiceApp → endMailPrivateCacheSession) en «account verwijderd» (forgetMailPrivateCacheOwner)
     await cache.endMailPrivateCacheSession(A);
     check('afmelden van A (niet onthouden): A\'s concepten (beide ruimtes) en het eigenaarloze oude concept zijn van het apparaat; B blijft',
       !lokaal.leesConcept(sA, ls) && !lokaal.leesConcept(sAt, ls) && !!lokaal.leesConcept(sB, ls) && ls.getItem('mail-draft-oud12345') === null && ls.getItem('mail-draft-active-id') === null,
@@ -358,8 +358,8 @@ export async function main(): Promise<number> {
       await pool.query('DELETE FROM app.sleutelkluis WHERE user_id = $1', [dId]).catch(() => undefined);
       sk.standCacheLeeg(dLade);
     };
-    await kluisTest('/api/owner/session/logout-account-browser', '«вийти з цього акаунта в усьому браузері»');
-    await kluisTest('/api/owner/session/logout-browser-all', '«вийти з усіх акаунтів у цьому браузері»');
+    await kluisTest('/api/owner/session/logout-account-browser', '«вийти з цього облікового запису в усьому браузері»');
+    await kluisTest('/api/owner/session/logout-browser-all', '«вийти з усіх облікових записів у цьому браузері»');
     await kluisTest('/api/owner/session/logout-current', '«вийти» uit DIT tabblad (bestaande haak, geen regressie)', true);
   } finally {
     globalThis.fetch = nepFetch;

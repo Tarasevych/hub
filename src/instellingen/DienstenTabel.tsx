@@ -1,5 +1,5 @@
-// Tabel «Сервер (для всіх) / Цей акаунт» (shared/diagnostiek-account.ts). Openbaar onderdeel: gebruikt door «Стан моїх служб» in de
-// instellingen (alleen kolom «Мій акаунт») en door Діагностика (beide kolommen). Alleen standen en korte codes — nooit inhoud.
+// Tabel «Сервер (для всіх) / Цей обліковий запис» (shared/diagnostiek-account.ts). Openbaar onderdeel: gebruikt door «Стан моїх служб» in de
+// instellingen (alleen kolom «Мій обліковий запис») en door Діагностика (beide kolommen). Alleen standen en korte codes — nooit inhoud.
 import { AlertTriangle, Check, CircleHelp, Minus, XCircle } from 'lucide-react';
 import type { Stand, Tekst } from '../../shared/beheer-diagnostiek';
 import { CONCLUSIE_TEKST, adviesVoor, schoonAccountUitslag, isAccountDienst, type Conclusie, type TabelRij } from '../../shared/diagnostiek-account';
@@ -33,7 +33,7 @@ export function rijenUit(raw: unknown): TabelRij[] {
 }
 
 export default function DienstenTabel({ lang, rijen, metServer }: { lang: Lang; rijen: TabelRij[]; metServer: boolean }) {
-  const kolom = metServer ? (lang === 'uk' ? 'Цей акаунт' : 'Dit account') : (lang === 'uk' ? 'Мій акаунт' : 'Mijn account');
+  const kolom = metServer ? (lang === 'uk' ? 'Цей обліковий запис' : 'Dit account') : (lang === 'uk' ? 'Мій обліковий запис' : 'Mijn account');
   return (
     <div className='mdt-wrap'>
       <table className={`mdt${metServer ? ' mdt-twee' : ''}`}>

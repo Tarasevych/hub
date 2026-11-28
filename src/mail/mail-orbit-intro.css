@@ -47,11 +47,15 @@
 .mail-orbit-diensten{position:absolute;inset:0;list-style:none;margin:0;padding:0}
 .mail-orbit-positie{position:absolute;left:var(--orbit-x);top:var(--orbit-y);width:146px;transform:translate(-50%,-50%);z-index:2;list-style:none;min-width:0}
 .mail-orbit-positie[data-mail-orbit-provider='gmail']{--orbit-x:16%;--orbit-y:28%;--orbit-brand:#ed5a57}
-.mail-orbit-positie[data-mail-orbit-provider='outlook']{--orbit-x:49%;--orbit-y:13%;--orbit-brand:#248acb}
+.mail-orbit-positie[data-mail-orbit-provider='outlook']{--orbit-x:37%;--orbit-y:13%;--orbit-brand:#248acb}
 .mail-orbit-positie[data-mail-orbit-provider='icloud']{--orbit-x:83%;--orbit-y:29%;--orbit-brand:#5da6ef}
 .mail-orbit-positie[data-mail-orbit-provider='ukrnet']{--orbit-x:17%;--orbit-y:75%;--orbit-brand:#e38c31}
 .mail-orbit-positie[data-mail-orbit-provider='yahoo']{--orbit-x:82%;--orbit-y:74%;--orbit-brand:#8043d2}
 .mail-orbit-positie[data-mail-orbit-provider='iua']{--orbit-x:50%;--orbit-y:83%;--orbit-brand:#458edc}
+/* SITE-001 (пункт 14): Fastmail отримав справжню кнопку (IMAP), але не мав місця на орбіті — стояв у лівому верхньому куті
+   й обрізався краєм. Тепер сім конвертів: угорі два (Outlook і Fastmail), по два ліворуч і праворуч, один унизу.
+   nl: Fastmail had geen plek op de baan; nu boven naast Outlook. */
+.mail-orbit-positie[data-mail-orbit-provider='fastmail']{--orbit-x:63%;--orbit-y:13%;--orbit-brand:#2d6ee0}
 .mail-orbit-positie[data-mail-orbit-gekozen='ja']{z-index:7}
 .mail-orbit-dienst{display:grid;justify-items:center;gap:8px;width:100%;padding:8px 4px;border:1px solid transparent;background:transparent;color:var(--text);border-radius:18px;cursor:pointer;font:inherit;transition:transform .28s cubic-bezier(.18,.9,.27,1.2),filter .2s}
 .mail-orbit-dienst:hover,.mail-orbit-dienst:focus-visible,.mail-orbit-positie[data-mail-orbit-gekozen='ja'] .mail-orbit-dienst{transform:translateY(-8px) scale(1.16)}
@@ -169,11 +173,13 @@
   .mail-orbit-diensten{display:block;position:absolute;inset:0;grid-template-columns:none;gap:0;padding:0}
   .mail-orbit-positie{position:absolute;left:var(--orbit-x);top:var(--orbit-y);width:80px;transform:translate(-50%,-50%);min-width:0}
   .mail-orbit-positie[data-mail-orbit-provider='gmail']{--orbit-x:77%;--orbit-y:16%}
-  .mail-orbit-positie[data-mail-orbit-provider='outlook']{--orbit-x:19%;--orbit-y:27%}
+  .mail-orbit-positie[data-mail-orbit-provider='outlook']{--orbit-x:22%;--orbit-y:16%}
   .mail-orbit-positie[data-mail-orbit-provider='icloud']{--orbit-x:82%;--orbit-y:43%}
-  .mail-orbit-positie[data-mail-orbit-provider='ukrnet']{--orbit-x:18%;--orbit-y:67%}
+  .mail-orbit-positie[data-mail-orbit-provider='ukrnet']{--orbit-x:22%;--orbit-y:76%}
   .mail-orbit-positie[data-mail-orbit-provider='yahoo']{--orbit-x:78%;--orbit-y:76%}
-  .mail-orbit-positie[data-mail-orbit-provider='iua']{--orbit-x:48%;--orbit-y:91%}
+  .mail-orbit-positie[data-mail-orbit-provider='iua']{--orbit-x:50%;--orbit-y:87%}
+  /* SITE-001 (пункт 14): по три конверти з кожного боку, як праворуч (Gmail, iCloud, Yahoo). nl: drie aan elke kant. */
+  .mail-orbit-positie[data-mail-orbit-provider='fastmail']{--orbit-x:18%;--orbit-y:45%}
   .mail-orbit-dienst{min-height:66px;justify-content:center;gap:4px;padding:3px 1px;border-color:transparent;background:transparent}
   .mail-orbit-dienst:hover,.mail-orbit-dienst:focus-visible,.mail-orbit-positie[data-mail-orbit-gekozen='ja'] .mail-orbit-dienst{
     transform:translateY(-4px) scale(1.10);border-color:transparent

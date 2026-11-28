@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "id": "HERSTEL-001/20261124-201000-antigravity",
+  "taakId": "HERSTEL-001",
+  "tijd": "2026-11-24T20:10:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Зведено всі невстановлені напрацювання поверх живої версії сервера 20261122-171856 (усі зміни CONSOL-001, перенесено решту змін UITROLBOT-001 із публікацією двомовного пояснення випуску в Telegram, виправлено помилку типізації ecosysteem-opslag.ts, упроваджено пропорційні капсули кількості сповіщень 18px, перенесено кнопку живого фону до меню облікових записів та втілено напрям «Живий простір» на сторінці Огляд) для оприлюднення єдиного випуску.",
+    "nl": "Alle nog niet geïnstalleerde verbeteringen boven op de actieve serverversie 20261122-171856 samengebracht (volledige CONSOL-001, resterende wijzigingen uit UITROLBOT-001 met Telegram-publicatie van de tweetalige uitgave-uitleg, typeherstel in ecosysteem-opslag.ts, proportionele 18px-aantalcapsules in meldingen, verplaatsing van de levende-achtergrondknop naar het accountmenu en de richting «Levende ruimte» op Overzicht) voor één gezamenlijke uitgave."
+  },
+  "waarom": {
+    "uk": "Доставити власнику одним перевіреним випуском усі невстановлені оновлення CONSOL-001, решту напрацювань UITROLBOT-001 та всі останні покращення інтерфейсу й надійності HERSTEL-001 без жодних втрат і без обходу ключа доступу.",
+    "nl": "Alle niet-geïnstalleerde vernieuwingen van CONSOL-001, de resterende delen van UITROLBOT-001 en alle recente verbeteringen van HERSTEL-001 gebundeld in één geverifieerde uitgave leveren zonder verlies van functies en zonder omzeiling van de toegangssleutel."
+  },
+  "bouwtVoortOp": [
+    "CONSOL-001/20261123-131300-m6-antigravity"
+  ],
+  "tak": "fix/herstel-001-consol-nazorg-20261123-172600",
+  "pr": null,
+  "commits": [
+    "5edd48a5b717e69a363776478b33cdc5830e234f",
+    "ff63bf92f84b61321a171ed58abd3f66b60f1e95",
+    "07e567c2cb9278219820db376b9c5e50dd2f4b95",
+    "c6ab0f414f70da78d1c04a2a0d3e4c3c7d1d4148",
+    "b1fe11e71564a2c90b22e1a34f4b1398b25c7c39",
+    "3977eb1915e7df5b351a4aa015494b9d1ba58b6d",
+    "656a47e8b132d85f7118ed639ab0c2cfc9a36e13",
+    "bb8cdf8f53997cb8539768e940a943bee56fa0d3",
+    "aef5ad05b61492d084147e3d490046844e4a739b",
+    "dc3746122c86cfe919e1e4290a0c1e570378c98f",
+    "d70ff7b60eaf2f0828f7ba5cb260e91d18662093",
+    "33c4af2d3a675c411cf1b782b6d76cb927ae1341",
+    "8f13bf0078f9b3c85c8e6206a658878761b16854",
+    "50bbf44d1c354ea9252c2c41c4b3e4f92545879c",
+    "5987ed78783b0b074a44f3a86e0341ea0c66496b"
+  ],
+  "onderwerpen": [
+    "meldingen",
+    "prestatie-en-gebruikservaring",
+    "vertaling-en-integraties"
+  ]
+}

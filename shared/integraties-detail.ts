@@ -89,7 +89,7 @@ export const CODE_TEKST: Readonly<Record<string, Tekst>> = {
   VAULT_INGETROKKEN: ['Відкликано; значення ще може лежати в сховищі.', 'Ingetrokken; de waarde kan nog in de kluis staan.'],
   VAULT_SLEUTEL: ['Ключ є у сховищі. Сайт не перевіряє його в зовнішньому сервісі.', 'Sleutel staat in de kluis. De site controleert niet bij de externe dienst.'],
   IMAP_ACTIEF: ['Підключених скриньок: {n}; вхід перевірено сервером.', 'Gekoppelde mailboxen: {n}; aanmelding door de server gecontroleerd.'],
-  IMAP_FOUT: ['Скринька повідомила про помилку входу — відкрийте «Пошта → Акаунти».', 'Een mailbox meldde een aanmeldfout — open «E-mail → Accounts».'],
+  IMAP_FOUT: ['Скринька повідомила про помилку входу — відкрийте «Пошта → Облікові записи».', 'Een mailbox meldde een aanmeldfout — open «E-mail → Accounts».'],
   VAULT_GEEN: ['У сховищі ще немає ключа.', 'Nog geen sleutel in de kluis.'],
   NIET_GEBOUWD: ['Це підключення ще не існує на сайті.', 'Deze koppeling bestaat nog niet op de site.'],
   GEEN_LEVENDE_STATUS: ['Сайт не може сам прочитати стан цього підключення; перевірте його на власній сторінці.', 'De site kan de toestand van deze koppeling niet zelf lezen; controleer haar op de eigen pagina.'],

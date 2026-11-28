@@ -9,7 +9,7 @@
 //                      індикатор чернетки (скільки разів змінюється live-регіон), Escape → фокус назад на FAB.
 //   a11y-mail-rij    — «⋮» рядка листа: назва рядка в імені кнопки/меню, стрілки/Home/End/Escape, фокус після дії.
 //   a11y-postvakken  — перемикач скриньок: меню з клавіатури, вибраний пункт (aria-checked), alt фото, Escape → кнопка.
-//   a11y-accounts    — «Поштові акаунти»: імена кнопок з адресою, підтвердження «Відключити» (alertdialog, фокус на «Скасувати»,
+//   a11y-accounts    — «Поштові облікові записи»: імена кнопок з адресою, підтвердження «Відключити» (alertdialog, фокус на «Скасувати»,
 //                      Escape), <details> «Чому недоступно?», логотипи декоративні.
 // Після кожної дії записується document.activeElement (роль, ім'я, контейнер). Результат: meting-<крок>-<ширина>.json + toegankelijk-*.json.
 import { writeFileSync } from 'node:fs';
@@ -403,7 +403,7 @@ export function toegankelijkStappen(c: ToegCtx): Stap[] {
       await p.locator(sel).first().focus(); await p.keyboard.press('Enter'); await p.waitForTimeout(400);
     }),
 
-    // ---------------------------------------------------------------------------------------------- F. «Поштові акаунти»
+    // ---------------------------------------------------------------------------------------------- F. «Поштові облікові записи»
     S('a11y-accounts', c.accountsUrl, async (p, log, slecht, extra) => {
       await p.locator('[data-mail-ontkoppel]').first().waitFor({ timeout: 20000 });
       await p.waitForTimeout(600);

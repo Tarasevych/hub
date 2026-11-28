@@ -80,6 +80,7 @@
   "src/mail-ux-beoordeling-20261021.css :: html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before",
   "src/mail-zijbalk-navigatie.css :: .mail-label-editor",
   "src/mail-zijbalk-navigatie.css :: .mail-label-editor-backdrop",
+  "src/mail-mobiel.css :: .mail-ververs-kapsel",
   "src/mail/versie-vergelijk.css :: .vv-laag",
   "src/mcp-hub.css :: @media(max-width:560px) .hub-help-pop",
   "src/mcp-toestemming-venster.css :: .mcp-consent-backdrop",
@@ -421,6 +422,26 @@
   {
    "sleutel": "src/bijlage-weergave/weergave.css :: .weergave-dialoog-laag",
    "reden": "SPIL-WEERGAVE (22.11.2026): затемнений шар під модальним вікном дій спільного переглядача вкладень (переслати, зберегти, ШІ); вікно, не плаваюча кнопка; відкривається лише за прапорцем bijlage-weergave-gedeeld-v1 і зникає після закриття."
+  },
+  {
+   "sleutel": "src/toestemming/toestemming.css :: .mr-toestemming",
+   "reden": "SITE-001: toestemmingsband voor analyse onderaan het scherm, alleen tot de keuze is gemaakt. Geen zwevende knop maar een balk met twee gelijkwaardige keuzes en een koppeling naar /privacy; verdwijnt na de keuze."
+  },
+  {
+   "sleutel": "src/google-terugkeer-kaart.css :: .mr-google-terug-sluier",
+   "reden": "HERSTEL-001 (GOOG-1..GOOG-4): затемнена завіса діалогового вікна під нижнім аркушем / вікном пояснення «Чому так сталося» за натисканням кнопки (i) на сторінці повернення входу Google (id.tarasevych.com); закривається натисканням на завісу, кнопкою закриття або клавішею Escape; вікно діалогу, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/telegram-aanmelden/telegram.css :: .tg2-info-sluier",
+   "reden": "HERSTEL-001 (Етап 2, K2-1): затемнена завіса діалогового вікна під нижнім аркушем / вікном «Як підтвердити вхід» за натисканням кнопки (i) на картці підтвердження входу через Telegram; закривається натисканням на завісу, кнопкою закриття або клавішею Escape; вікно діалогу, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-compact-sluier",
+   "reden": "HERSTEL-001 (Етап 4, MELD-2): м’яка напівпрозора завіса затемнення фону поза компактною мобільною панеллю сповіщень на екранах до 768 px; дотик по завісі або клавіша Escape закриває компактну панель; тло діалогового вікна, не плавальна кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: @media (max-width: 700px) .canonical-chrome:not([data-active-service=\"mail\"]) .canonical-workspace .mq-anker-onderbalk",
+   "reden": "SITE-001: на мобільних екранах (<= 700px) верхня підсмуга-капсулка розділів сторінки MaquetteAnkerRail (.mq-anker-onderbalk) фіксується у верхній смузі навігації (top: 10px; left: 58px) безпосередньо між кнопкою меню та кнопкою пошуку (на місці .canonical-mobile-crumb, за тим самим принципом, що й у пошті); верхня панель розділів сторінки, не плаваюча кнопка."
   }
  ],
  "kopReserves": [

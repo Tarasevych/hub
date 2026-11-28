@@ -1,12 +1,12 @@
-// Zuivere regels van de snelle mailbox-wisselaar (avatar rechtsboven in de lijst en de knop «Змінити акаунт»). Geen React, geen DOM.
+// Zuivere regels van de snelle mailbox-wisselaar (avatar rechtsboven in de lijst en de knop «Змінити обліковий запис»). Geen React, geen DOM.
 //
-// WAAROM (klacht van de eigenaar, 15.11.2026, telefoon, mail.…/postvak-in): «хоч ми підключили ще один акаунт іншого сервісу,
+// WAAROM (klacht van de eigenaar, 15.11.2026, telefoon, mail.…/postvak-in): «хоч ми підключили ще один обліковий запис іншого сервісу,
 // в цьому списку чомусь лише відображається перший … і список не поновлюється».
 // BEWEZEN OORZAAK (tests/eenheid/mail-wisselaar-20261115.test.ts, deel «ДО»):
 //   • De wisselaar kreeg alleen de Google-snapshot (/google-suite/accounts) en /accounts/list (alleen Microsoft-rijen). IMAP-
 //     koppelingen (Ukr.net, I.ua, iCloud, Yahoo, Proton …) staan in een DERDE bron (/imap/aanbieders) die de mailpagina nooit
 //     vroeg — die hadden dus geen enkele kans om in het menu te verschijnen.
-//   • De lijst werd één keer geladen. «Додати акаунт» opent /accounts met een volle navigatie; terug (Android Chrome) haalt de
+//   • De lijst werd één keer geladen. «Додати обліковий запис» opent /accounts met een volle navigatie; terug (Android Chrome) haalt de
 //     pagina uit de bfcache met de OUDE lijst. Nu: verversen bij openen van het menu, bij terugkeer naar het tabblad en bij
 //     een bericht van het koppelvenster/de accountpagina (BroadcastChannel + storage-gebeurtenis).
 // Українською: перемикач тепер бачить усі три джерела (Google, Microsoft, IMAP) і оновлюється без перезавантаження сторінки.
@@ -93,10 +93,10 @@ export function wisselRijen(o: { taal: Taal; google: readonly WisselGoogle[]; co
 
 /** Uitleg (tooltip) bij een rij die hier nog niet geopend kan worden: wat er gebeurt bij een klik. */
 export function wisselUitleg(r: WisselRij, taal: Taal): string {
-  if (r.kiesbaar && r.aandacht) return t(taal, `Показати листи ${r.email}. Підключення потребує дії: якщо сервіс відмовить, кнопка «Керувати підключенням» відкриє сторінку акаунтів`, `De berichten van ${r.email} tonen. De koppeling vraagt een handeling: weigert de dienst, dan opent de knop «Koppeling beheren» de accountpagina`);
+  if (r.kiesbaar && r.aandacht) return t(taal, `Показати листи ${r.email}. Підключення потребує дії: якщо сервіс відмовить, кнопка «Керувати підключенням» відкриє сторінку облікових записів`, `De berichten van ${r.email} tonen. De koppeling vraagt een handeling: weigert de dienst, dan opent de knop «Koppeling beheren» de accountpagina`);
   if (r.kiesbaar) return t(taal, `Показати листи ${r.email} у цьому списку`, `De berichten van ${r.email} in deze lijst tonen`);
-  if (r.aandacht) return t(taal, `${r.dienst}: підключення потребує дії — відкриється сторінка акаунтів`, `${r.dienst}: de koppeling vraagt een handeling — de accountpagina opent`);
-  return t(taal, `${r.dienst}: листи цієї скриньки поки не показуються в цьому списку — відкриється сторінка акаунтів`, `${r.dienst}: berichten van deze mailbox worden nog niet in deze lijst getoond — de accountpagina opent`);
+  if (r.aandacht) return t(taal, `${r.dienst}: підключення потребує дії — відкриється сторінка облікових записів`, `${r.dienst}: de koppeling vraagt een handeling — de accountpagina opent`);
+  return t(taal, `${r.dienst}: листи цієї скриньки поки не показуються в цьому списку — відкриється сторінка облікових записів`, `${r.dienst}: berichten van deze mailbox worden nog niet in deze lijst getoond — de accountpagina opent`);
 }
 
 // ------------------------------------------------------------------------------------------------ verversen zonder herladen
@@ -112,14 +112,16 @@ export function meldMailAccountsGewijzigd(): void {
   try { localStorage.setItem(OPSLAG_SLEUTEL, stempel); } catch { /* privé-venster */ }
 }
 
+export type MailAccountsVerversReden = 'signaal' | 'bfcache' | 'zichtbaar';
+
 /** Luisteren naar elke reden om de lijst te verversen. Geeft een opruimfunctie terug. */
-export function luisterMailAccounts(ververs: () => void): () => void {
+export function luisterMailAccounts(ververs: (reden?: MailAccountsVerversReden) => void): () => void {
   let kanaal: BroadcastChannel | null = null;
-  try { kanaal = new BroadcastChannel(MAIL_ACCOUNTS_KANAAL); kanaal.onmessage = () => ververs(); } catch { kanaal = null; }
-  const opslag = (e: StorageEvent) => { if (e.key === OPSLAG_SLEUTEL) ververs(); };
+  try { kanaal = new BroadcastChannel(MAIL_ACCOUNTS_KANAAL); kanaal.onmessage = () => ververs('signaal'); } catch { kanaal = null; }
+  const opslag = (e: StorageEvent) => { if (e.key === OPSLAG_SLEUTEL) ververs('signaal'); };
   // Terug uit de bfcache (Android Chrome «terug» na /accounts) of terug naar het tabblad.
-  const toon = (e: PageTransitionEvent) => { if (e.persisted) ververs(); };
-  const zicht = () => { if (document.visibilityState === 'visible') ververs(); };
+  const toon = (e: PageTransitionEvent) => { if (e.persisted) ververs('bfcache'); };
+  const zicht = () => { if (document.visibilityState === 'visible') ververs('zichtbaar'); };
   window.addEventListener('storage', opslag);
   window.addEventListener('pageshow', toon);
   document.addEventListener('visibilitychange', zicht);

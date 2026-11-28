@@ -78,20 +78,28 @@ export async function main(): Promise<number> {
   check('рівень «Спокійно» не зберігає зайвого (лише відхилення від типового)', normaliseerAchtergrond({ ...ACHTERGROND_STANDAARD, ...ACHTERGROND_NIVEAU_WAARDEN.rustig }) === undefined);
   check('рівень «Ледь помітно» зберігається й відновлюється', achtergrondNiveau(achtergrondVolledig(normaliseerAchtergrond({ ...ACHTERGROND_STANDAARD, ...ACHTERGROND_NIVEAU_WAARDEN.subtiel }))) === 'subtiel');
   const knop = lees('src/achtergrond/AchtergrondKnop.tsx'), schil = lees('src/CanoniekOmlijsting.tsx');
-  check('кнопка у верхній смузі оболонки на ПК і телефоні', (schil.match(/\{!signedOut&&<AchtergrondKnop lang=\{lang\}\/>\}/g) || []).length === 2);
-  check('кнопка в шапці «Макета» (перед пошуком)', /<AchtergrondKnopMaquette lang=\{lang\}\/>/.test(schil) && /\.mr-mq \.top-actions/.test(knop) && /search-action/.test(knop));
+  const am3 = lees('src/accountmenu-v3/AccountMenuV3.tsx'), am3Css = zonderCommentaar(lees('src/accountmenu-v3/accountmenu-v3.css'));
+  const idxSeg = am3.indexOf("className='am3-seg theme-switch'");
+  const idxAchtergrond = am3.indexOf('am3-achtergrond-btn');
+  const idxPalet = am3.indexOf('am3-palette-btn');
+  check('кнопку прибрано з верхньої смуги оболонки й перенесено в меню облікових записів між перемикачем тем і палітрою кольорів',
+    !schil.includes('<AchtergrondKnop') && !schil.includes('<AchtergrondKnopMaquette') && !schil.includes('<AchtergrondLadeKnop')
+    && idxSeg > 0 && idxAchtergrond > idxSeg && idxPalet > idxAchtergrond);
+  check('кнопка в меню облікових записів має однаковий круглий розмір із кнопкою кольорів (32×32 ПК / 34×34 мобільний)',
+    /\.am3-achtergrond-btn\{[^}]*width:32px;height:32px|am3-achtergrond-btn\s*\{[\s\S]*?width:\s*32px;[\s\S]*?height:\s*32px;[\s\S]*?border-radius:\s*50%/.test(am3Css)
+    && am3Css.includes('.am3-achtergrond-btn,') && am3Css.includes('.am3-palette-btn,'));
   check('панель пише ті самі налаштування, що й «Теми»', /zetAchtergrond\(/.test(knop) && /useThemaStand\(\)/.test(knop));
   check('панель: швидкість, інтенсивність, перелив, кількість, форма, розмір', ['tempo', 'sterkte', 'kleurwissel', 'aantal', 'vervorming', 'grootte'].every((v) => knop.includes(`schuif('${v}'`)));
   check('панель закривається Esc і клацанням поза нею', /e\.key === 'Escape'/.test(knop) && /pointerdown/.test(knop));
 
-  // 6. ACHTERGROND-002: компактна панель і кнопка в шапці бічного меню там, де на телефоні немає верхньої смуги (пошта).
-  const knop2 = lees('src/achtergrond/AchtergrondKnop.tsx'), schil2 = lees('src/CanoniekOmlijsting.tsx'), knopCss = zonderCommentaar(lees('src/achtergrond/achtergrond-knop.css'));
+  // 6. ACHTERGROND-002: компактна панель відкривається після закриття меню облікових записів (щоб зміни було видно на тлі).
+  const knop2 = lees('src/achtergrond/AchtergrondKnop.tsx'), schil2 = lees('src/CanoniekOmlijsting.tsx');
   const voorMeer = knop2.slice(0, knop2.indexOf("className='la-snel-meer'")), inMeer = knop2.slice(knop2.indexOf("className='la-snel-meer'"), knop2.indexOf('</details>'));
   check('панель компактна: режим, рівень, швидкість та інтенсивність одразу', ["data-achtergrond-snel-stand", "data-achtergrond-niveau", "schuif('tempo'", "schuif('sterkte'"].every((v) => voorMeer.includes(v)));
   check('решта параметрів — у згорнутому блоці «Тонке налаштування»', ["schuif('kleurwissel'", "schuif('aantal'", "schuif('vervorming'", "schuif('grootte'", 'data-achtergrond-snel-overgang', 'data-achtergrond-snel-kleuren', 'data-achtergrond-snel-kader'].every((v) => inMeer.includes(v)) && !/<details className='la-snel-meer'[^>]*\sopen/.test(knop2));
-  check('шапка бічного меню: кнопка фону лише там, де на телефоні немає верхньої смуги', schil2.includes("voorOpenen={closeDrawer}/>{touchMode&&!bovenTelefoon&&!signedOut&&<AchtergrondLadeKnop lang={lang} voorOpenen={closeDrawer}/>}"));
-  check('кнопка в меню спершу закриває меню, тоді відкриває панель (зміни видно на тлі)', /voorOpenen\?\.\(\); window\.dispatchEvent\(new Event\(PANEEL_GEBEURTENIS\)\)/.test(knop2) && schil2.includes('<AchtergrondPaneelLos lang={lang}/>'));
-  check('кнопка в меню маленька й без власного position:fixed', /\.la-lade-knop\{[^}]*width:40px;height:40px/.test(knopCss) && !/\.la-lade-knop[^{]*\{[^}]*position:fixed/.test(knopCss));
+  check('кнопка в меню облікових записів спершу закриває меню, тоді відкриває панель (зміни видно на тлі)',
+    am3.includes('sluitVoorNavigatie();') && am3.includes('openAchtergrondPaneel();')
+    && knop2.includes('export function openAchtergrondPaneel()') && schil2.includes('<AchtergrondPaneelLos lang={lang}/>'));
 
   return einde();
 }

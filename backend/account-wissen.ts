@@ -1,10 +1,11 @@
-// Остаточне стирання акаунта: усі таблиці з колонкою акаунта + записи + файли.
+// Остаточне стирання облікового запису: усі таблиці з колонкою облікового запису + записи + файли.
 // INTEG-001 (03.11): маршрути видалення дають 30 днів на відновлення (deleteRecoverably); після цього строку
 // це стирання викликає завдання прибирання (backend/privacy.ts → verlopenVerwijderingenAfronden; SEC-002 privacy-logboek-01).
 import { isOwnerEmail, storage } from '../server/platform';
 import { getPool } from '../server/platform/pg';
 import { EXTRA_WIS, ONTKOPPELEN, STANDAARD_KOLOM, wisOpdrachten, type WisTabel } from '../shared/account-wissen';
 import { wisRecordsVanAccount } from './privacy';
+import { wisVlagGeheugen } from './vlaggen-geheugen';
 
 // SEC-002 (slot-z, продовження): також колонка `veld` з ONTKOPPELEN — так у план потрапляють таблиці без колонки облікового запису
 // (app.huis_gebeurtenissen, app.feature_flags), де треба лише відв’язати id. Ook de `veld` van ONTKOPPELEN: tabellen zonder accountkolom.
@@ -15,7 +16,7 @@ const extraSql = [
 ].filter((x) => [x.schema, x.tabel, x.kolom].every((n) => VEILIG_SQL_NAAM.test(n)))
   .map((x) => `(table_schema = '${x.schema}' AND table_name = '${x.tabel}' AND column_name = '${x.kolom}')`).join(' OR ');
 
-/** План стирання реляційних таблиць одного акаунта (ті самі DELETE, що виконує accountMeteenWissen). */
+/** План стирання реляційних таблиць одного облікового запису (ті самі DELETE, що виконує accountMeteenWissen). */
 async function wisPlanVoor(userId: string) {
   const pool = getPool();
   const kolommen = await pool.query(
@@ -112,6 +113,7 @@ export async function accountMeteenWissen(userId: string, email: string, nu = Da
   } finally {
     client.release();
   }
+  wisVlagGeheugen();
   const records = await wisRecordsVanAccount(userId, email, nu);
   for (let i = 0; i < paden.length; i += 100) await storage.delete(paden.slice(i, i + 100), { eigenaar: userId });
   return { opdrachten: opdrachten.length, rijen: rijen + records.rijen, bestanden: Math.max(paden.length, records.bestanden) };

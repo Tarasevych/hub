@@ -15,6 +15,7 @@ import {
 } from '../../shared/beheer-diagnostiek';
 import { STAND_KLEUR, filterControles, foutTekst, normaliseer, tekstUit, type Lang, type Overzicht, type StandFilter } from './hulp';
 import GebruikerTab from './GebruikerTab';
+import BezoekTab from './BezoekTab'; // SITE-001 (пункт 19): знеособлені лічильники відвідувань
 import AccountTabel from './AccountTabel';
 import Beveiliging from '../beveiliging/Beveiliging';
 import TrendBlok from './Trend';
@@ -53,7 +54,7 @@ function Pil({ stand, lang }: { stand: Stand | 'nooit' | 'hersteld'; lang: Lang 
   return <span className='adg-pil' data-stand={stand}><StandIcoon stand={stand} />{tekstUit(lang, STAND_TEKST[stand])}</span>;
 }
 
-type TabId = 'alle' | CategorieId | 'historie' | 'gebruiker' | 'account' | 'tech' | 'zekering';
+type TabId = 'alle' | CategorieId | 'historie' | 'gebruiker' | 'account' | 'tech' | 'zekering' | 'bezoek';
 
 export default function Diagnostiek({ lang, sourceOrigin, tabContext, techniek }: { lang: Lang; sourceOrigin: string; tabContext: string; techniek?: ReactNode }) {
   const [data, setData] = useState<Overzicht | null>(null);
@@ -198,9 +199,10 @@ export default function Diagnostiek({ lang, sourceOrigin, tabContext, techniek }
     { id: 'alle', naam: tr(lang, 'Усе', 'Alles'), icoon: Layers, stand: som.stand, teller: `${totaalN - som.nooit}/${totaalN}` },
     ...CATEGORIEEN.map((c) => { const t = totaal(toestanden, controlesVan(c.id).map((d) => d.id)); return { id: c.id as TabId, naam: tekstUit(lang, c.naam), icoon: ICONEN[c.icoon] || Activity, stand: t.stand, teller: `${t.totaal - t.nooit}/${t.totaal}` }; }),
     { id: 'historie', naam: tr(lang, 'Історія збоїв', 'Storingsgeschiedenis'), icoon: History },
-    { id: 'account', naam: tr(lang, 'Для всіх / цей акаунт', 'Iedereen / dit account'), icoon: Users },
+    { id: 'account', naam: tr(lang, 'Для всіх / цей обліковий запис', 'Iedereen / dit account'), icoon: Users },
     { id: 'gebruiker', naam: tr(lang, 'Скарга користувача', 'Klacht van gebruiker'), icoon: UserRound },
     { id: 'zekering', naam: tr(lang, 'Захист', 'Bescherming'), icoon: Lock },
+    { id: 'bezoek', naam: tr(lang, 'Відвідування', 'Bezoeken'), icoon: Users },
     ...(techniek ? [{ id: 'tech' as TabId, naam: tr(lang, 'Технічні дані', 'Technische gegevens'), icoon: Wrench }] : []),
   ];
 
@@ -250,12 +252,13 @@ export default function Diagnostiek({ lang, sourceOrigin, tabContext, techniek }
 
       {tab === 'tech' && techniek}
       {tab === 'zekering' && <Beveiliging lang={lang} ctx={ctx} />}
+      {tab === 'bezoek' && <BezoekTab lang={lang} ctx={ctx} />}
       {tab === 'account' && <AccountTabel lang={lang} ctx={ctx} />}
       {tab === 'historie' && data && <TrendBlok lang={lang} trend={data.trend} />}
       {tab === 'historie' && <HistorieTab lang={lang} ctx={ctx} filter={histFilter} setFilter={setHistFilter} startRijen={data?.historie ?? []} nu={nu} />}
       {tab === 'gebruiker' && <GebruikerTab lang={lang} ctx={ctx} openCategorie={(dienst) => { setTab('diensten'); setOpen(`dienst-${dienst}`); window.setTimeout(() => document.querySelector(`[data-adg-check="dienst-${dienst}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80); }} />}
 
-      {tab !== 'tech' && tab !== 'historie' && tab !== 'gebruiker' && tab !== 'account' && tab !== 'zekering' && (
+      {tab !== 'tech' && tab !== 'historie' && tab !== 'gebruiker' && tab !== 'account' && tab !== 'zekering' && tab !== 'bezoek' && (
         <>
           <div className='adg-gereedschap'>
             <label className='adg-zoek'>

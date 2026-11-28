@@ -1,4 +1,4 @@
-/* Аватар поштового акаунта з логотипом сервісу: лише на вузьких екранах.
+/* Аватар поштового облікового запису з логотипом сервісу: лише на вузьких екранах.
    21.10.2026: лише токени (src/ontwerp/tokens.css), без hex; фото в меню — «.is-klein» (не «.small»: це глобальний модифікатор кнопки,
    його padding стискав фото до 17,6×40). Обгортка фото — коло з рівними сторонами, яке не стискається (flex:none, aspect-ratio:1);
    саме фото — img.avatar-img (src/ontwerp/primitieven.css: object-fit:cover). */
@@ -23,7 +23,7 @@
   .mail-account-badge-menu button strong,.mail-account-badge-menu button small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mail-account-badge-menu button small{color:var(--muted);font-size:var(--tekst-mini)}
   .mail-account-badge-menu button>svg{flex:none}
-  /* (0,2,1): загальне правило footer (padding 1.15rem, 12 px) робило «Додати акаунт» дрібним і з порожнечею над ним */
+  /* (0,2,1): загальне правило footer (padding 1.15rem, 12 px) робило «Додати обліковий запис» дрібним і з порожнечею над ним */
   .mail-account-badge .mail-account-badge-menu>footer{margin:0;padding:0;border-top:1px solid var(--line);font-size:var(--tekst-basis)}
   .mail-account-badge .mail-account-badge-menu>footer button{min-height:52px;padding:14px;color:var(--accent);font-size:var(--tekst-basis);font-weight:600}
 }

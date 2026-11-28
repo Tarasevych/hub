@@ -49,13 +49,13 @@ export async function main(): Promise<number> {
   const menu = lees('src/CanoniekAccountMenu.tsx'), gast = lees('src/GastToegang.tsx'), invoer = lees('src/MailInvoerHulpmiddelen.tsx'), instel = lees('src/InstellingencentrumWeergave.tsx');
   const kaartLabels = (t: string) => zonderCommentaar(t).match(/>\s*UA\s*<|'UA'|"UA"|>Укр\.<|'Укр\.'/g) || [];
   check('nergens het label «UA» of «Укр.» meer in accountmenu, gastpagina, invoerhulp en instellingen', [menu, gast, invoer, instel].every((t) => kaartLabels(t).length === 0), [menu, gast, invoer, instel].map((t) => kaartLabels(t).length).join(','));
-  check('accountmenu: oude menu, v2 en afgemeld menu gebruiken MoviPrapor + MOVA_NAAM (geen LanguageFlag meer)',
-    (menu.match(/<MoviPrapor taal=/g) || []).length === 5 && (menu.match(/\{MOVA_NAAM[.[]/g) || []).length >= 5 && !/LanguageFlag/.test(menu));
+  check('accountmenu: oude menu, v2 en afgemeld menu gebruiken MoviPrapor + MOVA_NAAM / MOVA_VOLLEDIG (geen LanguageFlag meer)',
+    (menu.match(/<MoviPrapor taal=/g) || []).length >= 5 && (menu.match(/\{MOVA_NAAM[.[]/g) || []).length >= 4 && menu.includes('MOVA_VOLLEDIG.uk') && menu.includes('MOVA_VOLLEDIG.nl') && !/LanguageFlag/.test(menu));
   check('gastpagina en invoerhulp tonen «укр.» uit dezelfde bron', gast.includes('<MoviPrapor taal=') && gast.includes('MOVA_NAAM[') && invoer.includes('{MOVA_NAAM.uk}'));
   check('instellingencentrum gebruikt MoviPrapor voor de taalkeuze', (instel.match(/<MoviPrapor taal='(uk|nl)'\/>/g) || []).length === 2 && !/LanguageFlag/.test(instel));
   check('geen emoji-vlag meer in src', !/[\u{1F1E6}-\u{1F1FF}]{2}/u.test(['src/CanoniekAccountMenu.tsx', 'src/GastToegang.tsx', 'src/MailInvoerHulpmiddelen.tsx', 'src/InstellingencentrumWeergave.tsx', 'src/CanoniekOmlijsting.tsx', 'src/MoviPrapor.tsx'].map(lees).join('\n')));
 
-  // ═══ C. het menu echt gerenderd (afgemeld: de snelknoppen op het aanmeldscherm) ═══
+  // ═══ C. het menu echt gerenderd (afgemeld: compacte taalpil en ronde thema-/profielknoppen op 38 px) ═══
   // De menu-modules lezen bij het laden window/document/opslag; tijdelijke nepversies, na afloop precies teruggezet (andere tests delen het proces).
   const g = globalThis as unknown as Record<string, unknown>;
   const opslag = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: (i: number) => [...m.keys()][i] ?? null, get length() { return m.size; } }; };
@@ -73,10 +73,10 @@ export async function main(): Promise<number> {
     const noop = () => undefined;
     const props = (lang: 'uk' | 'nl') => ({ lang, theme: 'light' as const, user: null, onAddAccount: noop, onLanguage: noop, onTheme: noop });
     const uk = renderToStaticMarkup(createElement(Menu, props('uk') as never)), nl = renderToStaticMarkup(createElement(Menu, props('nl') as never));
-    check('afgemeld menu uk: taalknop met echte vlag (<img>), «укр.», themaknop erbij, geen UA', /class="mr-sign-in-taal"[^>]*>[\s\S]*?<img [^>]*oekraine\.svg[^>]*><b>укр\.<\/b>/.test(uk) && !/>UA</.test(uk) && /Перемкнути тему/.test(uk), uk.slice(0, 200));
-    check('afgemeld menu nl: België-vlag en «NL», aria-label noemt «укр.» niet', /<img [^>]*belgie\.svg[^>]*><b>NL<\/b>/.test(nl) && !nl.includes('укр.'));
+    check('afgemeld menu uk: compacte taalpil met echte vlag (<img>) en «укр.», themaknop erbij, geen UA', /class="mr-sign-in-taal"[^>]*aria-haspopup="menu"[^>]*>[\s\S]*?<img [^>]*oekraine\.svg[^>]*><b>укр\.<\/b><\/button>/.test(uk) && !/>UA</.test(uk) && /Перемкнути тему/.test(uk), uk.slice(0, 220));
+    check('afgemeld menu nl: compacte taalpil met België-vlag en «NL», aria-label noemt Nederlands', /class="mr-sign-in-taal"[^>]*>[\s\S]*?<img [^>]*belgie\.svg[^>]*><b>NL<\/b><\/button>/.test(nl) && nl.includes('Nederlands') && !nl.includes('укр.'));
     check('afgemeld menu: geen emoji-vlag in de uitvoer', !/[\u{1F1E6}-\u{1F1FF}]/u.test(uk + nl));
-    check('afgemeld menu: de taalknop staat vóór de themaknop (twee losse knoppen, geen samengestelde)', uk.indexOf('mr-sign-in-taal') > 0 && uk.indexOf('mr-sign-in-taal') < uk.indexOf('Перемкнути тему'));
+    check('afgemeld menu: de taalpil staat vóór de themaknop (twee losse knoppen op gelijke hoogte, geen samengestelde)', uk.indexOf('mr-sign-in-taal') > 0 && uk.indexOf('mr-sign-in-taal') < uk.indexOf('Перемкнути тему'));
   } catch (e) {
     check('afgemeld menu: rendert met react-dom/server', false, String((e as Error)?.stack || e).slice(0, 300));
   } finally {
@@ -115,7 +115,7 @@ export async function main(): Promise<number> {
   const sheetL = '#eff2f8', inktL = '#222b39', sheetD = '#1b222d', inktD = '#f1f4f8';
   check('aanmeldscherm: inkt op blad licht ≥ 7 en donker ≥ 7 (waarden uit aanmeld-herontwerp.css)', loginCss.includes(`--mr-login-sheet:${sheetL}`) && loginCss.includes(`--mr-login-ink:${inktL}`) && loginCss.includes(`--mr-login-sheet:${sheetD}`) && loginCss.includes(`--mr-login-ink:${inktD}`) && contrast(inktL, sheetL) >= 7 && contrast(inktD, sheetD) >= 7);
 
-  // ═══ E. lijst, kop, «по центру», taalknop ═══
+  // ═══ E. lijst, kop, «по центру», taalpil en ronde thema-/profielknoppen op gelijke hoogte (38 px) ═══
   check('accountlijst: hover/focus kleurt de HELE rij (geen aparte tint voor het linkerdeel; kruisje blijft in dezelfde tint)',
     /\.canonical-account-row:hover[^{]*,\.canonical-account-row:focus-within\{background:var\(--canonical-surface\)\}/.test(menuCss) && !/\.canonical-account-select:hover:not\(:disabled\)\{background/.test(menuCss));
   check('accountlijst: tekst blijft bij hover in tekst-/dempkleur van het thema', /\.canonical-account-row:hover \.canonical-account-copy strong[^{]*\{color:var\(--canonical-text\)\}/.test(menuCss) && /\.canonical-account-row:hover \.canonical-account-copy small[^{]*\{color:var\(--canonical-muted\)\}/.test(menuCss));
@@ -123,14 +123,14 @@ export async function main(): Promise<number> {
   check('uitgeklapte lijst: de kop erft het lettertype van het menu (geen schreefletter van de globale h3-regel)', /\.canonical-expanded-accounts h3\{[^}]*font-family:inherit/.test(menuCss));
   check('v2-menu: taalkeuze compact (naar inhoud) met meer lucht tussen taal- en themarij; tikhoogte blijft 44 px', /\.am2-seg\.language-switch\{flex:0 1 auto/.test(v2Css) && /\.am2-seg\.language-switch button\{flex:0 0 auto;padding:0 16px\}/.test(v2Css) && /\.am2-weergave\{gap:10px/.test(v2Css) && /\.am2-seg button\{height:44px/.test(v2Css));
   check('v2-menu: vlag-wikkel zonder emoji-lettertype, zonder filter', !/Noto Color Emoji|Apple Color Emoji|Segoe UI Emoji/.test(v2Css) && /\.am2-vlag\{[^}]*filter:none!important/.test(v2Css));
-  check('aanmeldscherm: taalknop is een kleine pil (≤ 34 px) en staat ≥ 12 px van de themaknop (38 px)',
-    /\.mr-sign-in-quick-controls\{display:none;align-items:center;gap:12px\}/.test(loginCss) && /\.mr-sign-in-taal\{[^}]*height:32px/.test(loginCss) && /\.mr-sign-in-quick-controls button\{width:38px;height:38px/.test(loginCss));
+  check('aanmeldscherm: taalpil (38 px hoog) en ronde thema-/profielknoppen (38×38 px, afstand 10 px) met compact keuzemenu',
+    /\.mr-sign-in-quick-controls\{display:none;align-items:center;gap:10px\}/.test(loginCss) && /\.mr-sign-in-quick-controls button\.mr-sign-in-taal\{[^}]*height:38px;min-height:38px;max-height:38px/.test(loginCss) && /\.mr-sign-in-quick-controls button\.mr-sign-in-thema\{[^}]*width:38px;height:38px/.test(loginCss) && /\.mr-sign-in-taal-menu\{/.test(loginCss));
   check('aanmeldtekst schuift niet meer naar links als het menu opent (de oude translateX-regel is weg)', !/translateX\(-min\(7vw,105px\)\)/.test(loginCss) && /\.mr-sign-in-content\{[^}]*transition:opacity/.test(loginCss));
   check('telefoon: menu op het aanmeldscherm staat in het midden (anker zo breed als het scherm, paneel left:50% + translateX(-50%))',
     /@media\(max-width:700px\)\{/.test(middenCss) && /\.mr-guest-mobile-account\{left:0;right:0;[^}]*padding:0 24px/.test(middenCss)
     && /\.canonical-account-panel\{left:50%;right:auto;transform:translateX\(-50%\);width:min\(370px,calc\(100% - 24px\)\)\}/.test(middenCss));
-  check('telefoon: taalknop blijft een kleine pil (32 px, niet de 44 px van de globale tikregel) met tikvlak van 44 px via ::after (30 + 7 + 7 binnen de rand = 44)',
-    /\.canonical-chrome \.mr-sign-in-quick-controls button\.mr-sign-in-taal\{min-height:32px;height:32px;position:relative\}/.test(middenCss) && /button\.mr-sign-in-taal::after\{content:'';position:absolute;left:-4px;right:-4px;top:-7px;bottom:-7px\}/.test(middenCss));
+  check('telefoon: taalpil en ronde thema-/profielknoppen blijven exact 38 px hoog met een tikvlak van 44 px via ::after (inset -3px)',
+    /height:38px;min-height:38px;max-height:38px/.test(middenCss) && /width:38px;height:38px;min-width:38px;min-height:38px/.test(middenCss) && /inset:-3px;border-radius:999px/.test(middenCss) && /inset:-3px;border-radius:50%/.test(middenCss));
   check('telefoon: geen nieuw position:fixed-element (plaatsing-controle) in de nieuwe CSS', !/position\s*:\s*fixed/.test(zonderCommentaar(middenCss)));
   check('telefoon: de menu-CSS importeert het midden-bestand', menu.includes("import './account-afgemeld-menu.css'"));
   check('aanmeldscherm: boven 700 px blijft het paneel onder de avatar (right:0), alleen smalle schermen centreren', /@media\(max-width:700px\)/.test(middenCss) && /canonical-account-panel\{\s*right:0;top:50px/.test(loginCss.replace(/\s+/g, ' ').replace('{ right', '{ right')));

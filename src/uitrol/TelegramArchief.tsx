@@ -173,6 +173,31 @@ export default function TelegramArchief({
     });
   };
 
+  const publiceerUitleg = async () => {
+    setBezig('publiceer');
+    setMelding(null);
+    try {
+      const r = (await api.post('/api/owner/uitrol/telegram/publiceren', context)).data as {
+        versie?: string;
+        messageId?: number;
+        tekens?: number;
+      };
+      setMelding({
+        soort: 'ok',
+        tekst: tr(
+          lang,
+          `Пояснення випуску ${r.versie || ''} опубліковано в погодженій темі (${r.tekens || 0} символів).`,
+          `De uitleg van uitgave ${r.versie || ''} is in het ingestelde topic gepubliceerd (${r.tekens || 0} tekens).`,
+        ),
+      });
+      await laden();
+    } catch (e) {
+      setMelding({ soort: 'fout', tekst: foutTekst(lang, foutCode(e)) });
+    } finally {
+      setBezig('');
+    }
+  };
+
   const testen = async () => {
     setBezig('test');
     setMelding(null);
@@ -712,6 +737,27 @@ export default function TelegramArchief({
               </div>
             </div>
           )}
+
+          <div className='ut-gh-blok' data-ut-tg-publiceren>
+            <h3><Send aria-hidden='true' /> {tr(lang, 'Пояснення випуску для учасників', 'Uitleg van de uitgave voor de leden')}</h3>
+            <p className='ut-hint'>
+              {tr(
+                lang,
+                'Надсилає в погоджену тему двомовний опис поточного встановленого випуску з UITROL-MANIFEST.json: назва, підсумок, зміни, виправлення, обмеження та настанови. Нічого не змінює на сервері.',
+                'Stuurt naar het ingestelde topic een tweetalige beschrijving van de huidige geïnstalleerde uitgave uit UITROL-MANIFEST.json: titel, samenvatting, wijzigingen, verbeteringen, beperkingen en instructies. Wijzigt niets op de server.',
+              )}
+            </p>
+            <button
+              type='button'
+              className='ut-knop ut-knop-primair'
+              disabled={Boolean(bezig) || !stand.klaar}
+              onClick={() => void publiceerUitleg()}
+              data-ut-tg-publiceer
+            >
+              {bezig === 'publiceer' ? <Loader2 className='ut-draai' aria-hidden='true' /> : <Send aria-hidden='true' />}
+              {tr(lang, 'Опублікувати пояснення поточного випуску', 'Uitleg van de huidige uitgave publiceren')}
+            </button>
+          </div>
 
           {melding && (
             <p className={melding.soort === 'ok' ? 'ut-ok-tekst' : 'ut-fout'} role={melding.soort === 'ok' ? 'status' : 'alert'}>

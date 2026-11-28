@@ -460,7 +460,7 @@ export function bouwActieKaartPng(invoer: ActieKaartInvoer): Buffer {
   return d.naarPng();
 }
 
-/** Асинхронна обгортка: підтягує фото конкретного акаунта (data-URI або Google URL) і будує PNG-картку. */
+/** Асинхронна обгортка: підтягує фото конкретного облікового запису (data-URI або Google URL) і будує PNG-картку. */
 export async function bouwActieKaartMetFoto(invoer: ActieKaartInvoer): Promise<Buffer> {
   const bytes = invoer.accountFotoBytes ?? (await haalFotoBytes(invoer.accountFoto).catch(() => null));
   return bouwActieKaartPng({ ...invoer, accountFotoBytes: bytes });

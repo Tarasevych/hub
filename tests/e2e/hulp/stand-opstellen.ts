@@ -1,6 +1,6 @@
 // Stand (21.10.2026, агент B): вікно «Новий лист» на телефоні — меню редактора поверх усього, квадратні кнопки, підказка
 // прокрутки балки, шаблони на телефоні, Cc/Bcc згорнуто/розгорнуто, чернетка переживає перезавантаження вкладки.
-// Лише loopback: Gmail-акаунт підставлено в браузері (page.route на /accounts — у стенді немає Google); чернетки йдуть на
+// Лише loopback: обліковий запис Gmail підставлено в браузері (page.route на /accounts — у стенді немає Google); чернетки йдуть на
 // СПРАВЖНІЙ сервер стенду (POST /api/owner/mail/compose/draft/save → app.mail_drafts у базі стенду).
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';

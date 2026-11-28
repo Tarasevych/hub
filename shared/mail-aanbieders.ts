@@ -1,4 +1,4 @@
-// DE ENE lijst van maildiensten die op de pagina «Підключіть свої поштові акаунти» staan (src/MailAccountsHub.tsx) — met per
+// DE ENE lijst van maildiensten die op de pagina «Підключіть свої поштові облікові записи» staan (src/MailAccountsHub.tsx) — met per
 // dienst de ECHTE manier om te koppelen, of eerlijk: wat er precies nog ontbreekt.
 //
 // WAAROM DIT BESTAAND MOET (opdracht van de eigenaar, 20.10.2026): «Немає опцій підключення пошти — лише всевдо-блоки без
@@ -79,7 +79,7 @@ export const MAIL_AANBIEDERS: readonly MailAanbieder[] = Object.freeze([
     smtp: { host: 'smtp.mail.yahoo.com', poort: 465, versleuteling: 'tls' },
     hulpAdres: 'https://login.yahoo.com/account/security',
     hulp: [
-      'Yahoo вимагає «App Password»: «Account Security → Generate app password». Пароль від акаунта зовнішні програми не приймають.',
+      'Yahoo вимагає «App Password»: «Account Security → Generate app password». Пароль від облікового запису зовнішні програми не приймають.',
       'Yahoo vereist een «App Password»: «Account Security → Generate app password». Het accountwachtwoord wordt door externe programma\'s niet geaccepteerd.',
     ],
   },
