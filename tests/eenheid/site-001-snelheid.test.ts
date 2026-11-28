@@ -287,6 +287,16 @@ export async function main(): Promise<number> {
       && werk.includes("t('Зачекайте, обробляється попередній запит…','Even geduld, het vorige verzoek wordt verwerkt…')")
       && werk.includes("t('Оновлено: нових листів немає','Bijgewerkt: geen nieuwe berichten')")
       && werk.includes("className='mail-ververs-kapsel'"));
+
+    const aanmeldHerCss = await readFile(join(root, 'src/aanmeld-herontwerp.css'), 'utf8');
+    const aanmeldAndereTsx = await readFile(join(root, 'src/AanmeldAndereOpties.tsx'), 'utf8');
+    check('Сторінка входу (aanmeld-herontwerp.css / AanmeldAndereOpties.tsx): прокручуваний контейнер вікна (height: 100%; max-height: 100dvh; overflow-y: auto), нижній запас під смугу згоди .mr-toestemming та автоматичне плавне опускання до розгорнутого списку «Інші способи входу»',
+      aanmeldHerCss.includes('html body main.canonical-chrome:has(.mr-sign-in){position:relative;height:100%;max-height:100dvh;overflow-x:hidden;overflow-y:auto;')
+      && aanmeldHerCss.includes("body:has(.mr-toestemming) .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in")
+      && aanmeldHerCss.includes('padding-bottom:calc(310px + env(safe-area-inset-bottom,0px));')
+      && aanmeldAndereTsx.includes('doorKlikOpenRef')
+      && aanmeldAndereTsx.includes("document.querySelector<HTMLElement>('.mr-toestemming')")
+      && aanmeldAndereTsx.includes('houder.scrollBy({ top: delta,'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

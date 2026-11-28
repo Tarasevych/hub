@@ -17,7 +17,7 @@
 // aanmelding. Gaat een weg later echt werken, dan zet men `beschikbaar` op true en geeft men `onKies` mee — de weergave is klaar.
 // Logo's: GitHub en Apple uit het merkregister (simple-icons, CC0), Microsoft het officiële bestand (src/merk/officieel); voor
 // passkey bestaat in de open pakketten van de site geen merklogo — dan een neutraal pictogram (vingerafdruk), niets nagetekend.
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, Fingerprint } from 'lucide-react';
 import Merk from './merk/Merk';
 
@@ -70,19 +70,72 @@ export const AANMELD_INGANGEN: readonly AanmeldIngang[] = Object.freeze([
  */
 export default function AanmeldAndereOpties({ lang, onKies, standaardOpen = false, ids, extra = {} }: { lang: Lang; onKies?: (id: AanmeldIngang['id']) => void; standaardOpen?: boolean; ids?: readonly string[]; extra?: Record<string, ReactNode> }) {
   const [open, setOpen] = useState(standaardOpen);
+  const doorKlikOpenRef = useRef(false);
+  const lijstRef = useRef<HTMLUListElement | null>(null);
+  const knopRef = useRef<HTMLButtonElement | null>(null);
   const volgorde: readonly string[] = ids ?? AANMELD_INGANGEN.map((o) => o.id);
   const items = volgorde.filter((id) => extra[id] || AANMELD_INGANGEN.some((o) => o.id === id));
   const basis = `mr-andere-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const t = (p: T2) => (lang === 'uk' ? p[0] : p[1]);
+  useEffect(() => {
+    if (!open || !doorKlikOpenRef.current || typeof window === 'undefined' || typeof document === 'undefined') return;
+    doorKlikOpenRef.current = false;
+    const raf = window.requestAnimationFrame(() => {
+      const lijst = lijstRef.current;
+      if (!lijst) return;
+      const houder =
+        (lijst.closest('main.canonical-chrome') as HTMLElement | null) ??
+        (lijst.closest('.canonical-workspace') as HTMLElement | null) ??
+        (document.scrollingElement as HTMLElement | null);
+      if (!houder) return;
+      const band = document.querySelector<HTMLElement>('.mr-toestemming');
+      const bandRect = band?.getBoundingClientRect();
+      const vensterHoogte = window.innerHeight || houder.clientHeight || 0;
+      const zichtbareOnderkant =
+        bandRect && bandRect.height > 0 && bandRect.top > 80 && bandRect.top < vensterHoogte
+          ? bandRect.top - 12
+          : vensterHoogte - 16;
+      const lijstRect = lijst.getBoundingClientRect();
+      const knopRect = knopRef.current?.getBoundingClientRect();
+      const bovenGrens = Math.max(16, (knopRect ? knopRect.top : lijstRect.top) - 16);
+      if (lijstRect.bottom > zichtbareOnderkant) {
+        const nodig = lijstRect.bottom - zichtbareOnderkant;
+        const delta = Math.max(0, Math.min(bovenGrens, nodig));
+        if (delta > 4) {
+          const minderBeweging =
+            typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (typeof houder.scrollBy === 'function') {
+            houder.scrollBy({ top: delta, behavior: minderBeweging ? 'auto' : 'smooth' });
+          } else {
+            houder.scrollTop += delta;
+          }
+        }
+      }
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [open]);
   if (!items.length) return null;
   return (
     <div className='mr-sign-in-andere'>
-      <button type='button' className='mr-sign-in-alternative' aria-expanded={open} aria-controls={`${basis}-lijst`} onClick={() => setOpen((v) => !v)}>
+      <button
+        ref={knopRef}
+        type='button'
+        className='mr-sign-in-alternative'
+        aria-expanded={open}
+        aria-controls={`${basis}-lijst`}
+        onClick={() =>
+          setOpen((v) => {
+            const volgende = !v;
+            doorKlikOpenRef.current = volgende;
+            return volgende;
+          })
+        }
+      >
         <span>{lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}</span>
         <ChevronDown className='mr-sign-in-alt-pijl' aria-hidden='true' />
       </button>
       {open && (
-        <ul id={`${basis}-lijst`} className='mr-sign-in-opties' aria-label={lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}>
+        <ul ref={lijstRef} id={`${basis}-lijst`} className='mr-sign-in-opties' aria-label={lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}>
           {items.map((id) => {
             if (extra[id]) return <li key={id} data-aanmeld-ingang={id}>{extra[id]}</li>;
             const o = AANMELD_INGANGEN.find((x) => x.id === id) as AanmeldIngang;

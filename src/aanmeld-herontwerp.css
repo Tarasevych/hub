@@ -66,7 +66,7 @@ html.palet-puur .canonical-chrome.theme-dark:has(.mr-sign-in){
 .canonical-chrome:has(.mr-sign-in) .canonical-scroll-top{display:none!important}
 
 /* Volledige vensterbreedte en -hoogte: main.canonical-chrome scrollt zelf zodat de bovenhoek niet over de tekst zweeft (TG-4). */
-html body main.canonical-chrome:has(.mr-sign-in){overflow-x:hidden;overflow-y:auto}
+html body main.canonical-chrome:has(.mr-sign-in){position:relative;height:100%;max-height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 html body main.canonical-chrome:has(.mr-sign-in) .canonical-workspace,
 html body main.canonical-chrome:has(.mr-sign-in):is(.sidebar-drawer-mode,.sidebar-pinned,.sidebar-hover,[data-dock]) .canonical-workspace{
  position:relative;inset:auto!important;padding:0!important;margin:0!important;background:var(--mr-login-sheet)!important;
@@ -107,6 +107,9 @@ html body main.canonical-chrome:has(.mr-sign-in) .canonical-account-anchor:not(.
   radial-gradient(ellipse 70% 55% at 88% 10%,rgba(162,178,212,.12),transparent 70%),
   linear-gradient(180deg,#f5f7fc 0%,var(--mr-login-sheet) 100%);
  text-align:center;color:var(--mr-login-ink);
+}
+body:has(.mr-toestemming) .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{
+ padding-bottom:calc(168px + env(safe-area-inset-bottom,0px));
 }
 .canonical-chrome[data-surface-model='flat-content'].theme-plum-light .canonical-content .canonical-signed-out.mr-sign-in{
  background:
@@ -581,6 +584,9 @@ body:has([role='dialog'][aria-modal='true']:not(.canonical-account-panel)) .cano
    calc(20px + env(safe-area-inset-bottom,0px))
    max(20px,calc(16px + env(safe-area-inset-left,0px)));
   border-radius:0!important;
+ }
+ body:has(.mr-toestemming) .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{
+  padding-bottom:calc(310px + env(safe-area-inset-bottom,0px));
  }
  .mr-sign-in h1{font-size:clamp(1.62rem,7vw,2.1rem)!important}
  .mr-sign-in-subtitle{margin:12px 0 24px!important;font-size:.93rem}
