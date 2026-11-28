@@ -437,6 +437,10 @@
   {
    "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-compact-sluier",
    "reden": "HERSTEL-001 (Етап 4, MELD-2): м’яка напівпрозора завіса затемнення фону поза компактною мобільною панеллю сповіщень на екранах до 768 px; дотик по завісі або клавіша Escape закриває компактну панель; тло діалогового вікна, не плавальна кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: @media (max-width: 700px) .canonical-chrome:not([data-active-service=\"mail\"]) .canonical-workspace .mq-anker-onderbalk",
+   "reden": "SITE-001: на мобільних екранах (<= 700px) верхня підсмуга-капсулка розділів сторінки MaquetteAnkerRail (.mq-anker-onderbalk) фіксується у верхній смузі навігації (top: 10px; left: 58px) безпосередньо між кнопкою меню та кнопкою пошуку (на місці .canonical-mobile-crumb, за тим самим принципом, що й у пошті); верхня панель розділів сторінки, не плаваюча кнопка."
   }
  ],
  "kopReserves": [

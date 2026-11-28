@@ -1031,9 +1031,9 @@ html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassi
   }
 
   html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassiek"]) .mq-anker-onderbalk {
-    margin: 0 0 10px;
-    padding: 6px 10px;
-    border-radius: var(--mq-straal-rail);
+    margin: 0 0 8px;
+    padding: 0;
+    border-radius: 999px;
   }
 }
 

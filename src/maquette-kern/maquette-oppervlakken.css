@@ -2694,6 +2694,34 @@ html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .can
 }
 
 @media (max-width: 700px) {
+  .canonical-chrome:not([data-active-service="mail"]) .canonical-workspace .mq-anker-onderbalk {
+    position: fixed;
+    top: 10px;
+    left: 58px;
+    right: auto;
+    max-width: calc(100vw - 58px - max(64px, calc(var(--plaats-boven-reserve, 64px) + 10px)));
+    margin: 0;
+    padding: 0;
+    z-index: 215;
+  }
+
+  .canonical-chrome:not([data-active-service="mail"]) .canonical-workspace .mq-anker-onderbalk > .mq-onderbalk-trekker {
+    min-height: 40px;
+    max-width: 100%;
+    padding: 0 12px;
+    border-radius: 999px;
+  }
+
+  .canonical-chrome:not([data-active-service="mail"]):has(.canonical-workspace .mq-anker-onderbalk) .canonical-mobile-crumb {
+    display: none;
+  }
+
+  .canonical-chrome:is(.sidebar-drawer, [data-account-menu-open="1"], :has(.canonical-notification-panel), :has(.am3-mobiel-laag)) .canonical-workspace .mq-anker-onderbalk {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   html.palet-maquette .canonical-chrome:not(#_mq) .mq-overzicht-wikkel {
     padding: 8px 6px 64px;
     gap: 18px;

@@ -268,6 +268,17 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const heading=tab==='vault'?tr('Сховище секретів','Geheimenkluis'):tab==='verbindingen'?tr('Реєстр підключень','Koppelingenregister'):tab==='access'?tr('API-доступ','API-toegang'):tr('API та інтеграції','API en integraties');
   const railTitel=actieveTab==='vault'?tr('Розділи сховища','Kluisonderdelen'):actieveTab==='verbindingen'?tr('Навігація підключень','Koppelingennavigatie'):tr('Розділи доступу','Toegangsonderdelen');
   return <section className={isMaquette?'api-platform mq-schil':'api-platform'} data-mq-dienst={isMaquette?'api':undefined} data-api-platform={API_PLATFORM_VERSION} data-api-tab={tab} data-api-token-count={String(liveCount)} data-api-create-token='enabled' data-api-vault={vaultReady?'ready':'blocked'} data-api-connections={String(connections.length)}>
+    {isMaquette&&!laagOpen?(
+      <MaquetteAnkerRail
+        lang={lang}
+        titel={railTitel}
+        ondertitel='api.tarasevych.com'
+        items={ankerItems}
+        actief={actiefAnker}
+        onKies={springNaarSectie}
+        opslagSleutel={`api-${actieveTab}`}
+      />
+    ):null}
     {isMaquette?(
       <MaquetteHeld
         key={`api-held-${actieveTab}`}
@@ -402,16 +413,5 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
       <strong>{tr('Заборонені scope','Verboden scopes')}</strong>
       <ul>{forbidden.map(id=><li key={id}><code>{id}</code></li>)}</ul>
     </article>:null}
-    {isMaquette&&!laagOpen?(
-      <MaquetteAnkerRail
-        lang={lang}
-        titel={railTitel}
-        ondertitel='api.tarasevych.com'
-        items={ankerItems}
-        actief={actiefAnker}
-        onKies={springNaarSectie}
-        opslagSleutel={`api-${actieveTab}`}
-      />
-    ):null}
   </section>;
 }

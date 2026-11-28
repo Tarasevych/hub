@@ -261,6 +261,17 @@ export async function main(): Promise<number> {
       && ruimtesCss.includes('html body:has(.canonical-chrome.sidebar-drawer) .rw-dok-melding,')
       && techMaqCss.includes('html.palet-maquette .rw-dok-melding {\n  border-radius: 999px;')
       && techMaqCss.includes('html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {\n  border-radius: 999px;'));
+
+    const beheerConsoleTsx = await readFile(join(root, 'src/BeheerConsoleWeergave.tsx'), 'utf8');
+    const domoticaTsx = await readFile(join(root, 'src/DomoticaWeergave.tsx'), 'utf8');
+    const apiPlatformTsx = await readFile(join(root, 'src/ApiPlatformWeergave.tsx'), 'utf8');
+    const maqOppCss = await readFile(join(root, 'src/maquette-kern/maquette-oppervlakken.css'), 'utf8');
+    check('Кнопка-капсулка підменю розділів сторінки (MaquetteAnkerRail / .mq-anker-onderbalk): розташована на початку сторінки, а на мобільних екранах (<= 700px) — безпосередньо у верхній смузі між кнопкою меню (☰) та пошуком (🔍) замість низу сторінки',
+      beheerConsoleTsx.indexOf('<MaquetteAnkerRail') < beheerConsoleTsx.indexOf("<header className='admin-title'>")
+      && domoticaTsx.indexOf('<MaquetteAnkerRail') < domoticaTsx.indexOf("id='domotica-maquette-held'")
+      && apiPlatformTsx.indexOf('<MaquetteAnkerRail') < apiPlatformTsx.indexOf('<h1>{heading}</h1>')
+      && maqOppCss.includes('.canonical-chrome:not([data-active-service="mail"]) .canonical-workspace .mq-anker-onderbalk {\n    position: fixed;\n    top: 10px;\n    left: 58px;')
+      && maqOppCss.includes('.canonical-chrome:not([data-active-service="mail"]):has(.canonical-workspace .mq-anker-onderbalk) .canonical-mobile-crumb {\n    display: none;\n  }'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }
