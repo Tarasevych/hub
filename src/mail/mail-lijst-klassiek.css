@@ -87,7 +87,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] :is(
   .mail-top-refresh,
   .mail-top-settings
 ) {
-  border-radius: 9px;
+  border-radius: 50%;
   color: var(--mq-gedempt);
 }
 

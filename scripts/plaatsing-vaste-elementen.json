@@ -80,6 +80,7 @@
   "src/mail-ux-beoordeling-20261021.css :: html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before",
   "src/mail-zijbalk-navigatie.css :: .mail-label-editor",
   "src/mail-zijbalk-navigatie.css :: .mail-label-editor-backdrop",
+  "src/mail-mobiel.css :: .mail-ververs-kapsel",
   "src/mail/versie-vergelijk.css :: .vv-laag",
   "src/mcp-hub.css :: @media(max-width:560px) .hub-help-pop",
   "src/mcp-toestemming-venster.css :: .mcp-consent-backdrop",

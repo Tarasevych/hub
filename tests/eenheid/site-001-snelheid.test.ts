@@ -272,6 +272,21 @@ export async function main(): Promise<number> {
       && apiPlatformTsx.indexOf('<MaquetteAnkerRail') < apiPlatformTsx.indexOf('<h1>{heading}</h1>')
       && maqOppCss.includes('.canonical-chrome:not([data-active-service="mail"]) .canonical-workspace .mq-anker-onderbalk {\n    position: fixed;\n    top: 10px;\n    left: 58px;')
       && maqOppCss.includes('.canonical-chrome:not([data-active-service="mail"]):has(.canonical-workspace .mq-anker-onderbalk) .canonical-mobile-crumb {\n    display: none;\n  }'));
+
+    check('Круглі кнопки оновлення й налаштувань пошти (.mail-top-refresh, .mail-top-settings), безперервне обертання кнопки оновлення та жива верхня капсула стану оновлення (.mail-ververs-kapsel) з етапами, зеленим статусом завершення, червоним статусом збою та захистом від повторних натискань',
+      mobielCss.includes('html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{flex:0 0 40px;aspect-ratio:1/1;border-radius:50%;width:40px;height:40px;min-width:40px;min-height:40px}')
+      && !mobielCss.includes('width:36px;height:44px')
+      && mobielCss.includes('@keyframes mail-ververs-draai')
+      && mobielCss.includes('.mail-top-refresh svg.spin,')
+      && mobielCss.includes('.mail-ververs-kapsel{')
+      && mobielCss.includes(".mail-ververs-kapsel[data-fase='klaar']{background:var(--ok-vlak,#15803d);")
+      && mobielCss.includes(".mail-ververs-kapsel[data-fase='fout']{background:var(--fout-vlak,#b42318);")
+      && werk.includes("tekst:t('Відправлено запит…','Verzoek verzonden…')")
+      && werk.includes("tekst:t('Відбувається перевірка нових листів…','Nieuwe berichten controleren…')")
+      && werk.includes("tekst:t('Отримання відповіді…','Antwoord ontvangen…')")
+      && werk.includes("t('Зачекайте, обробляється попередній запит…','Even geduld, het vorige verzoek wordt verwerkt…')")
+      && werk.includes("t('Оновлено: нових листів немає','Bijgewerkt: geen nieuwe berichten')")
+      && werk.includes("className='mail-ververs-kapsel'"));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

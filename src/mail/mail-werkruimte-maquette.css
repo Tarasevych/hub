@@ -208,6 +208,9 @@ html.palet-maquette :is(
   .mail-top-refresh,
   .mail-top-settings
 ) {
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
   color: var(--mq-gedempt);
   transition: background-color 0.18s ease, color 0.18s ease;
 }
@@ -250,6 +253,7 @@ html.palet-maquette :is(.mail-top-refresh, .mail-top-settings)[data-tooltip]::af
   box-shadow: var(--mq-schaduw-zacht);
   font-size: 12px;
 }
+
 
 /* Живі підказки пошуку, панель умов та стан пошуку */
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
