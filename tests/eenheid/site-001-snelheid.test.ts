@@ -208,6 +208,17 @@ export async function main(): Promise<number> {
       && isAlgemeneAfzenderNaam('Support')
       && isAlgemeneAfzenderNaam('Підтримка')
       && classificeer({ naam: 'Support', adres: 'support@nieuwe-dienst.be', domein: 'nieuwe-dienst.be', contacten: contactenSupport }).status !== 'verdacht');
+
+    const berichtTekstTsx = await readFile(join(root, 'src/MailBerichtTekst.tsx'), 'utf8');
+    const tekstPassendTs = await readFile(join(root, 'src/mail-tekst-passend.ts'), 'utf8');
+    check('HTML-листи з багатоколонковими таблицями: комірки td/th використовують overflow-wrap: break-word і word-break: normal замість anywhere, нормалізують knellende breedtes (normaliseerMailTabellen) і захищені herstelKnellendeTabelKolommen',
+      berichtTekstTsx.includes('const normaliseerMailTabellen=(doc:Document)=>')
+      && berichtTekstTsx.includes('normaliseerMailTabellen(doc);')
+      && berichtTekstTsx.includes("if(node instanceof HTMLTableCellElement){node.style.overflowWrap='break-word';node.style.wordBreak='normal'}")
+      && berichtTekstTsx.includes("body.style.overflowWrap='break-word'")
+      && !berichtTekstTsx.includes("if(node instanceof HTMLTableCellElement)node.style.overflowWrap='anywhere'")
+      && tekstPassendTs.includes('export function herstelKnellendeTabelKolommen(doc: Document): void')
+      && tekstPassendTs.includes('herstelKnellendeTabelKolommen(doc);'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

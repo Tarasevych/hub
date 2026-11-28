@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261128-092500-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-28T09:25:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Усунено розлом багатоколонкових таблиць і табличних підписів у HTML-листах на мобільному екрані (src/MailBerichtTekst.tsx, src/mail-tekst-passend.ts, tests/eenheid/site-001-snelheid.test.ts): 1) у prepareHtml (src/MailBerichtTekst.tsx) для body та комірок таблиці td/th замінено примусовий overflow-wrap: anywhere на overflow-wrap: break-word і word-break: normal (щоб алгоритм таблиці не обнуляв min-content текстових стовпців до ширини однієї літери і не розбивав звичайні слова на кшталт Centrale Administratie вертикально по 1–2 літери на висоту 876 px), а для посилань <a> overflow-wrap: anywhere застосовується лише за наявності безпробільного рядка >= 20 символів; 2) додано normaliseerMailTabellen(doc) у src/MailBerichtTekst.tsx, яка переводить table-layout: fixed в auto, визначає змістовні стовпці багатоколонкових таблиць (з текстом >= 6 символів або широким зображенням > 64 px, не чіпаючи вузькі стовпці-піктограми <= 64 px), скидає конфліктні фіксовані ширини в px/pt/in/cm, коли вони затискають сусідній стовпець, призначає кожному змістовному стовпцю захищений min-width (88–92 px) і обмежує надмірні бічні відступи з Word/Outlook; 3) у src/mail-tekst-passend.ts додано живий захист herstelKnellendeTabelKolommen(doc) перед вимірюванням висоти листа (site-001-snelheid 31/31).",
+    "nl": "De opmaakbreuk van meerkoloms-tabellen en tabelhandtekeningen in HTML-berichten op mobiele schermen verholpen (src/MailBerichtTekst.tsx, src/mail-tekst-passend.ts, tests/eenheid/site-001-snelheid.test.ts): 1) in prepareHtml (src/MailBerichtTekst.tsx) is voor body en tabelcellen td/th de geforceerde overflow-wrap: anywhere vervangen door overflow-wrap: break-word en word-break: normal (zodat het tabelalgoritme de min-content van tekstkolommen niet terugbrengt tot een enkele letter en gewone woorden zoals Centrale Administratie niet letter voor letter verticaal over 876 px afbreekt), terwijl overflow-wrap: anywhere op koppelingen <a> alleen geldt bij een ononderbroken tekenreeks >= 20 tekens; 2) normaliseerMailTabellen(doc) toegevoegd in src/MailBerichtTekst.tsx, die table-layout: fixed omzet naar auto, inhoudelijke kolommen van meerkoloms-tabellen herkent (met tekst >= 6 tekens of een breed beeld > 64 px, met behoud van smalle pictogramkolommen <= 64 px), knellende vaste breedtes in px/pt/in/cm verwijdert, elke inhoudelijke kolom een beschermde min-width (88–92 px) geeft en bovenmatige zijmarges uit Word/Outlook begrenst; 3) herstelKnellendeTabelKolommen(doc) toegevoegd in src/mail-tekst-passend.ts als live bewaking voorafgaand aan de hoogtemeting (site-001-snelheid 31/31)."
+  },
+  "waarom": {
+    "uk": "Власник повідомив і надав знімок екрана мобільної версії, де в листі з триколонковим табличним підписом середня колонка затискалася сусідніми колонками з фіксованою шириною до 24 px і розбивала текст по одній літері у вертикальний стовпчик.",
+    "nl": "De eigenaar meldde met een mobiele schermafdruk dat in een bericht met een driekoloms-tabelhandtekening de middelste kolom door aangrenzende kolommen met vaste breedte tot 24 px werd samengedrukt en de tekst letter voor letter verticaal afbrak."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261127-221500-antigravity",
+    "SITE-001/20261127-212800-antigravity",
+    "SITE-001/20261127-205000-antigravity",
+    "SITE-001/20261127-200800-antigravity",
+    "SITE-001/20261127-192200-antigravity",
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "b3e037a050f9782c4580ee3adf193a343f730046",
+    "fdcd024473d2c49dbf55e43914ab19a2d266d168",
+    "60bd23ba65be5c848fb0de75fce6c9ba556c0bc2"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring"
+  ]
+}
