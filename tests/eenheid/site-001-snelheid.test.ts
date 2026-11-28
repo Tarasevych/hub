@@ -234,6 +234,33 @@ export async function main(): Promise<number> {
       && bevestigTsx.includes("className='bevestig-toegang-uitleg bevestig-toegang-kroniek-tekst'")
       && bevestigCss.includes('html body .venster.bevestig-toegang-venster .bevestig-toegang details.bevestig-toegang-extra>summary')
       && bevestigCss.includes('html body .venster.bevestig-toegang-venster .bevestig-toegang .bevestig-toegang-alt button'));
+
+    const maqWerkCss = await readFile(join(root, 'src/mail/mail-werkruimte-maquette.css'), 'utf8');
+    const mobielCss = await readFile(join(root, 'src/mail-mobiel.css'), 'utf8');
+    check('Кути списку листів (mail-list-viewport / google-mail-list): прозорий фон та успадкований радіус на .google-mail-list і .mail-row-block-stream без білих трикутників у кутах і без подвійного накладання inset box-shadow на ::before',
+      maqWerkCss.includes('html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list {\n  border-radius: calc(var(--mq-straal-kaart) - 1px);\n  background: transparent;\n}')
+      && klLijstCss.includes('html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list {\n  border-radius: 15px;\n  background: transparent;\n}')
+      && maqWerkCss.includes('html.palet-maquette .google-mail-workspace.mq-schil .google-mail-row > .mail-row-block-stream {\n  position: relative;\n  z-index: 1;\n  border-radius: inherit;\n}')
+      && klLijstCss.includes('html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil .google-mail-row > .mail-row-block-stream {\n  border-radius: inherit;\n}')
+      && mobielCss.includes("html body .google-mail-workspace.mq-schil>.mail-list-viewport:not(:has(>.google-mail-orbit[data-mail-account-resolution-empty='true'])){overflow:hidden}")
+      && mobielCss.includes('html body .google-mail-workspace.mq-schil>.mail-list-viewport>.google-mail-list{overflow:hidden;border-radius:inherit;background:transparent}')
+      && mobielCss.includes('padding:10px 46px 10px 12px!important;border-radius:inherit;background:transparent;'));
+
+    const ruimteDokTsx = await readFile(join(root, 'src/tech/ruimtes/RuimteDok.tsx'), 'utf8');
+    const ruimtesCss = await readFile(join(root, 'src/tech/ruimtes/ruimtes.css'), 'utf8');
+    const techMaqCss = await readFile(join(root, 'src/tech/tech-maquette.css'), 'utf8');
+    check('Сповіщення стану простору (RuimteDok / .rw-dok-melding): компактна капсула-пігулка (border-radius: 999px) розміром як капсула завантаження, з автоматичним згасанням за 4 с, записом в історію загальної панелі сповіщень (emitCanonicalNotice + retain: true) і шаром під бічним меню (z-index: 230)',
+      ruimteDokTsx.includes("import { emitCanonicalNotice } from '../../canoniek-meldingen';")
+      && ruimteDokTsx.includes('const UITLEG_DUUR_MS = 4000;')
+      && ruimteDokTsx.includes('retain: true,')
+      && ruimteDokTsx.includes('alleenPaneel: true,')
+      && ruimteDokTsx.includes('const timer = window.setTimeout(() => uitlegWeg(), UITLEG_DUUR_MS);')
+      && ruimteDokTsx.includes("<i className='rw-dok-stip' aria-hidden='true' />")
+      && ruimteDokTsx.includes("<span className='rw-dok-tekst'>{r.uitleg}</span>")
+      && ruimtesCss.includes('html body .rw-dok-melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px));z-index:230;display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:min(280px,calc(100vw - 28px));min-height:26px;padding:3.5px 9px 3.5px 9px;border-radius:999px;')
+      && ruimtesCss.includes('html body:has(.canonical-chrome.sidebar-drawer) .rw-dok-melding,')
+      && techMaqCss.includes('html.palet-maquette .rw-dok-melding {\n  border-radius: 999px;')
+      && techMaqCss.includes('html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {\n  border-radius: 999px;'));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }

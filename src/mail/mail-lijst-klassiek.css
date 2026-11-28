@@ -325,6 +325,11 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-sc
   box-shadow: var(--mq-schaduw-zacht);
 }
 
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list {
+  border-radius: 15px;
+  background: transparent;
+}
+
 html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-chrome[data-oppervlak="technisch"] .google-mail-workspace.mq-schil > .mail-list-viewport:not(:has(> .google-mail-orbit[data-mail-account-resolution-empty="true"])) {
   border-color: var(--mq-rand-sterk);
   box-shadow: var(--mq-schaduw-zacht);
@@ -335,14 +340,21 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-sc
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :first-child,
-html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-layered-inbox:first-child > .mail-layered-controls {
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-layered-inbox:first-child > .mail-layered-controls,
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-inbox-group:first-child > header:first-child {
   border-start-start-radius: 15px;
   border-start-end-radius: 15px;
 }
 
-html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :last-child {
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :last-child,
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :is(.mail-layered-inbox, .mail-inbox-group):last-child > .mail-layered-items:last-child > .google-mail-row:last-child,
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-inbox-group:last-child > .google-mail-row:last-child {
   border-end-start-radius: 15px;
   border-end-end-radius: 15px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil .google-mail-row > .mail-row-block-stream {
+  border-radius: inherit;
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .mail-layered-controls {
@@ -517,7 +529,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace 
 html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace :is(.google-mail-row, .mail-message-row).unread:not([data-mail-custom-tone="true"]):not(.selected) {
   background: var(--mail-unread-surface, var(--mq-oppervlak-2));
   background-image: none;
-  box-shadow: inset 3px 0 0 var(--mq-accent);
+  box-shadow: none;
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace .google-mail-row.unread::before {
@@ -568,7 +580,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace:
 html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace:not([data-mail-unread-custom="true"]) :is(.google-mail-row, .mail-message-row).unread:hover:not(.selected) {
   background: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 6%);
   background-image: none;
-  box-shadow: inset 3px 0 0 var(--mq-accent);
+  box-shadow: none;
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-workspace :is(.google-mail-row, .mail-message-row)[data-mail-custom-tone="true"]:hover:not(.selected) {

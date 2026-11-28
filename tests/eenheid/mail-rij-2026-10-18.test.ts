@@ -52,7 +52,7 @@ export async function main(): Promise<number> {
     { naam: 'puur licht', w: PUUR.licht, donker: false }, { naam: 'puur donker', w: PUUR.donker, donker: true },
     ...SECTIES.flatMap((s) => [{ naam: `kleur ${s} licht`, w: kleurWaarden(s).licht, donker: false, getint: true }, { naam: `kleur ${s} donker`, w: kleurWaarden(s).donker, donker: true }]),
   ];
-  check('paletten: 26 combinaties ingelezen (grifel, violet uit canoniek-omlijsting.css; puur en kleur uit paletten.ts)', paletten.length === 26 && paletten.every((p) => /^#/.test(p.w.panel) && /^#/.test(p.w.accent) && /^#/.test(p.w.muted)), paletten.filter((p) => !/^#/.test(p.w.panel)).map((p) => p.naam).join());
+  check(`paletten: ${6 + SECTIES.length * 2} combinaties ingelezen (grifel, violet uit canoniek-omlijsting.css; puur en kleur uit paletten.ts)`, paletten.length === 6 + SECTIES.length * 2 && paletten.every((p) => /^#/.test(p.w.panel) && /^#/.test(p.w.accent) && /^#/.test(p.w.muted)), paletten.filter((p) => !/^#/.test(p.w.panel)).map((p) => p.naam).join());
 
   // achtergrond van gelezen rijen (ongewijzigd): licht surface2 72 % op panel, donker panel 62 % op zwart
   check('fon прочитаних: formules in google-mail-werkruimte.css ongewijzigd', ws.includes('--mail-read-surface:color-mix(in srgb,var(--surface2) 72%,var(--panel) 28%)') && ws.includes('--mail-read-surface:color-mix(in srgb,var(--panel) 62%,#000 38%)'));

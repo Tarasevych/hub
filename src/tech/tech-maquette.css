@@ -331,7 +331,7 @@ html.palet-maquette[data-ruimte="technisch"][data-tech="aan"] body::after {
 }
 
 html.palet-maquette .rw-dok-melding {
-  border-radius: var(--mq-straal-knop);
+  border-radius: 999px;
   border: 1px solid var(--mq-rand-sterk);
   background: var(--mq-popover-glas);
   backdrop-filter: blur(18px) saturate(145%);
@@ -1415,9 +1415,9 @@ html.palet-maquette[data-maquette-stijl="klassiek"][data-ruimte="technisch"][dat
   border-top-width: 0;
 }
 
-/* Спливні позаоболонкові панелі: 16px, матові поверхні без розмиття та градієнтів */
+/* Спливні позаоболонкові панелі: 16px, матові поверхні без розмиття та градієнтів; капсула стану простору — пігулка 999px */
 html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {
-  border-radius: 16px;
+  border-radius: 999px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak);
   background-image: none;
@@ -1428,13 +1428,13 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding.is-fout {
-  border-color: var(--fout);
+  border-color: color-mix(in srgb, var(--fout) 45%, var(--mq-rand));
   background: var(--mq-oppervlak);
   color: var(--fout);
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding .rw-dok-sluit {
-  border-radius: 11px;
+  border-radius: 999px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak-2);
   color: var(--mq-tekst);

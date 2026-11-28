@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "id": "SITE-001/20261128-145500-antigravity",
+  "taakId": "SITE-001",
+  "tijd": "2026-11-28T14:55:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "tool": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Argon High",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Виправлено два дефекти вигляду й поведінки інтерфейсу за знімками власника (src/mail/mail-werkruimte-maquette.css, src/mail/mail-lijst-klassiek.css, src/mail-mobiel.css, src/tech/ruimtes/RuimteDok.tsx, src/tech/ruimtes/ruimtes.css, src/tech/tech-maquette.css, tests/eenheid/mail-rij-2026-10-18.test.ts, tests/eenheid/site-001-snelheid.test.ts): 1) у списку листів пошти усунено білі прямокутні кути .google-mail-list та .mail-row-block-stream, які виступали з-під заокругленого першого листа, та розшарування лівої смужки непрочитаного листа (для .google-mail-list задано background: transparent і узгоджений радіус calc(var(--mq-straal-kaart) - 1px) / 15px, для .mail-row-block-stream додано border-radius: inherit і прозорий фон без активного свайпу, на мобільному встановлено overflow: hidden на .mail-list-viewport і .google-mail-list, а зі звичайних непрочитаних рядків прибрано дублювальний box-shadow: inset 3px 0 0 на користь єдиного маркера .google-mail-row.unread::before з z-index: 2); 2) квадратне рожеве сповіщення «Технічний простір зараз недоступний.» у RuimteDok.tsx (.rw-dok-melding) перетворено на охайну компактну капсулу-пігулку (border-radius: 999px, min-height: 26px, font-size: 11px) за розміром капсули завантаження сторінки (#tsv-laad-kapsel), додано автоматичне згасання за 4 с (UITLEG_DUUR_MS = 4000), інтегровано запис у загальну панель сповіщень з історичним збереженням (emitCanonicalNotice з retain: true, alleenPaneel: true) та розміщено на шарі під бічним меню (z-index: 230 + приховування при відкритій шухляді .sidebar-drawer, панелі сповіщень або мобільній картці профілю; сторож site-001-snelheid 34/34).",
+    "nl": "Twee weergave- en gedragsgebreken opgelost aan de hand van schermafdrukken van de eigenaar (src/mail/mail-werkruimte-maquette.css, src/mail/mail-lijst-klassiek.css, src/mail-mobiel.css, src/tech/ruimtes/RuimteDok.tsx, src/tech/ruimtes/ruimtes.css, src/tech/tech-maquette.css, tests/eenheid/mail-rij-2026-10-18.test.ts, tests/eenheid/site-001-snelheid.test.ts): 1) in de berichtenlijst zijn de witte rechthoekige hoeken van .google-mail-list en .mail-row-block-stream achter de afgeronde bovenste rij en de dubbele linkerstreep op ongelezen rijen verholpen (.google-mail-list krijgt background: transparent en afgestemde straal, .mail-row-block-stream erft border-radius: inherit met transparante achtergrond buiten veegbewegingen, mobiel krijgt overflow: hidden op .mail-list-viewport en .google-mail-list, en de dubbele box-shadow: inset 3px 0 0 op gewone ongelezen rijen is verwijderd ten gunste van één .google-mail-row.unread::before met z-index: 2); 2) de vierkante melding «De technische ruimte is nu niet beschikbaar.» in RuimteDok.tsx (.rw-dok-melding) is omgevormd tot een compacte pil-capsule (border-radius: 999px, min-height: 26px, font-size: 11px) op het formaat van de laadkapsel (#tsv-laad-kapsel), verdwijnt automatisch na 4 s (UITLEG_DUUR_MS = 4000), wordt historisch bewaard in het algemene meldingenpaneel (emitCanonicalNotice met retain: true, alleenPaneel: true) en ligt onder het zijmenu (z-index: 230 en verborgen bij geopende menulade .sidebar-drawer; bewaker site-001-snelheid 34/34)."
+  },
+  "waarom": {
+    "uk": "Власник надіслав знімки двох дефектів для об’єднання в один спільний випуск: 1) у верхніх кутах першого заокругленого листа в списку пошти стирчали білі прямокутні трикутники внутрішніх контейнерів і розшаровувалася ліва смужка непрочитаного листа; 2) сповіщення «Технічний простір зараз недоступний.» мало вигляд квадратної коробки, висіло постійно без автоматичного згасання, не записувалося в історію загальної панелі сповіщень і перекривало кнопки відкритого бічного меню.",
+    "nl": "De eigenaar stuurde schermafdrukken van twee gebreken voor één gezamenlijke uitgave: 1) in de bovenhoeken van het eerste afgeronde bericht in de postlijst staken witte rechthoekige hoeken van binnenste containers uit en splitste de linkerstreep van het ongelezen bericht; 2) de melding «De technische ruimte is nu niet beschikbaar.» was een vierkant blok dat bleef hangen zonder automatisch te verdwijnen, niet in de geschiedenis van het meldingenpaneel werd opgeslagen en het geopende zijmenu overlapte."
+  },
+  "bouwtVoortOp": [
+    "SITE-001/20261128-114000-antigravity",
+    "SITE-001/20261128-092500-antigravity",
+    "SITE-001/20261127-221500-antigravity",
+    "SITE-001/20261127-212800-antigravity",
+    "SITE-001/20261127-205000-antigravity",
+    "SITE-001/20261127-200800-antigravity",
+    "SITE-001/20261127-192200-antigravity",
+    "SITE-001/20261127-171500-antigravity",
+    "SITE-001/20261127-132334-antigravity",
+    "SITE-001/20261126-155700-antigravity",
+    "SITE-001/20261127-064541-antigravity",
+    "SITE-001/20261127-100415-antigravity"
+  ],
+  "tak": "feature/site-001-20261125-232500",
+  "pr": 214,
+  "commits": [
+    "83cb80e0143bf719c5895216c9788740a3a16894",
+    "e1277b93e3da0ee8ece4e8a6cd8fa54a05710337"
+  ],
+  "onderwerpen": [
+    "prestatie-en-gebruikservaring"
+  ]
+}

@@ -12,13 +12,18 @@
 @media (max-width:720px){
   html body .canonical-chrome.sidebar-drawer-mode:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:0!important}
   html body .google-mail-workspace{width:100%;max-width:100%;margin:0}
+  html body .google-mail-workspace.mq-schil>.mail-list-viewport:not(:has(>.google-mail-orbit[data-mail-account-resolution-empty='true'])){overflow:hidden}
+  html body .google-mail-workspace.mq-schil>.mail-list-viewport>.google-mail-list{overflow:hidden;border-radius:inherit;background:transparent}
 
   html body .google-mail-workspace .google-mail-row.mail-row-semantic-order{position:relative;display:block;overflow:hidden;touch-action:pan-y;min-height:76px;border-bottom:1px solid var(--line,#e3e7eb);-webkit-tap-highlight-color:transparent}
+  html body .google-mail-workspace .google-mail-row.unread::before{z-index:2}
   html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream{
+    position:relative;z-index:1;
     display:grid!important;grid-template-columns:48px minmax(0,1fr) auto!important;
     grid-template-areas:"avatar sender date" "avatar subject subject" "avatar snippet snippet" "avatar attach attach"!important;
     column-gap:12px!important;row-gap:2px!important;align-items:center!important;flex-wrap:nowrap!important;
-    padding:10px 46px 10px 12px!important;background:inherit;transform:translateX(var(--swipe-x,0px));transition:transform .18s ease;will-change:transform}
+    padding:10px 46px 10px 12px!important;border-radius:inherit;background:transparent;transform:translateX(var(--swipe-x,0px));transition:transform .18s ease;will-change:transform}
+  html body .google-mail-workspace .google-mail-row:is(.mail-row-swiping,.mail-row-swipe-open) .mail-row-block-stream{background:inherit}
   html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-block-stream{transition:none}
   html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream>.mail-row-block{min-width:0;margin:0!important;flex:none!important}
 

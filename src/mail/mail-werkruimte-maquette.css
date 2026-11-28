@@ -559,6 +559,11 @@ html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport:not(:h
   transition: border-color 0.22s ease, box-shadow 0.24s ease;
 }
 
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list {
+  border-radius: calc(var(--mq-straal-kaart) - 1px);
+  background: transparent;
+}
+
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-oppervlak="technisch"] .google-mail-workspace.mq-schil > .mail-list-viewport:not(:has(> .google-mail-orbit[data-mail-account-resolution-empty="true"])) {
   border-color: var(--mq-tech-lijn);
   box-shadow:
@@ -572,14 +577,27 @@ html.palet-maquette .google-mail-workspace.mq-schil[data-mail-canvas-custom="tru
 
 /* Узгодження радіусів верхнього та нижнього країв усередині картки списку без обрізання спливних меню */
 html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :first-child,
-html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-layered-inbox:first-child > .mail-layered-controls {
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-layered-inbox:first-child > .mail-layered-controls,
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-inbox-group:first-child > header:first-child {
   border-start-start-radius: calc(var(--mq-straal-kaart) - 1px);
   border-start-end-radius: calc(var(--mq-straal-kaart) - 1px);
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :last-child {
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :last-child,
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > :is(.mail-layered-inbox, .mail-inbox-group):last-child > .mail-layered-items:last-child > .google-mail-row:last-child,
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport > .google-mail-list > .mail-inbox-group:last-child > .google-mail-row:last-child {
   border-end-start-radius: calc(var(--mq-straal-kaart) - 1px);
   border-end-end-radius: calc(var(--mq-straal-kaart) - 1px);
+}
+
+html.palet-maquette .google-mail-workspace.mq-schil .google-mail-row > .mail-row-block-stream {
+  position: relative;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+html.palet-maquette .google-mail-workspace.mq-schil .google-mail-row.unread::before {
+  z-index: 2;
 }
 
 /* Рядки листів у межах студійного полотна */
@@ -592,8 +610,8 @@ html.palet-maquette .google-mail-workspace.mq-schil:not([data-mail-read-custom="
   background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
 }
 
-html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected) {
-  box-shadow: inset 3px 0 0 rgba(var(--mq-accent-rgb), 0.72);
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .google-mail-row.unread:not(.selected) {
+  box-shadow: none;
 }
 
 html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected):hover {
