@@ -83,21 +83,30 @@ export default function AanmeldAndereOpties({ lang, onKies, standaardOpen = fals
     const raf = window.requestAnimationFrame(() => {
       const lijst = lijstRef.current;
       if (!lijst) return;
+      const paneelHouder = lijst.closest('.canonical-account-panel') as HTMLElement | null;
       const houder =
+        paneelHouder ??
         (lijst.closest('main.canonical-chrome') as HTMLElement | null) ??
         (lijst.closest('.canonical-workspace') as HTMLElement | null) ??
         (document.scrollingElement as HTMLElement | null);
       if (!houder) return;
-      const band = document.querySelector<HTMLElement>('.mr-toestemming');
-      const bandRect = band?.getBoundingClientRect();
       const vensterHoogte = window.innerHeight || houder.clientHeight || 0;
-      const zichtbareOnderkant =
-        bandRect && bandRect.height > 0 && bandRect.top > 80 && bandRect.top < vensterHoogte
-          ? bandRect.top - 12
-          : vensterHoogte - 16;
+      let zichtbareOnderkant: number;
+      if (paneelHouder) {
+        const paneelRect = paneelHouder.getBoundingClientRect();
+        zichtbareOnderkant = Math.min(vensterHoogte - 12, paneelRect.bottom - 12);
+      } else {
+        const band = document.querySelector<HTMLElement>('.mr-toestemming');
+        const bandRect = band?.getBoundingClientRect();
+        zichtbareOnderkant =
+          bandRect && bandRect.height > 0 && bandRect.top > 80 && bandRect.top < vensterHoogte
+            ? bandRect.top - 12
+            : vensterHoogte - 16;
+      }
       const lijstRect = lijst.getBoundingClientRect();
       const knopRect = knopRef.current?.getBoundingClientRect();
-      const bovenGrens = Math.max(16, (knopRect ? knopRect.top : lijstRect.top) - 16);
+      const houderBoven = paneelHouder ? Math.max(0, paneelHouder.getBoundingClientRect().top) : 0;
+      const bovenGrens = Math.max(16, (knopRect ? knopRect.top : lijstRect.top) - houderBoven - 16);
       if (lijstRect.bottom > zichtbareOnderkant) {
         const nodig = lijstRect.bottom - zichtbareOnderkant;
         const delta = Math.max(0, Math.min(bovenGrens, nodig));

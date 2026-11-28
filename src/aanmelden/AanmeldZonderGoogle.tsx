@@ -44,9 +44,9 @@ export type ZonderGoogleId = 'passkey' | 'wachtwoord' | 'microsoft' | 'discord' 
 export const ZONDER_GOOGLE: readonly ZonderGoogleId[] = ['passkey', 'wachtwoord', 'microsoft', 'discord', 'apple'];
 
 /** Дані запиту «почати вхід»; місце пристрою додається лише якщо браузер уже має дозвіл (TELEGRAM-004, без нового запитання). */
-const ctx = async (lang: Lang, remember: boolean) => {
+const ctx = async (lang: Lang, remember: boolean, intent: 'login' | 'replace-tab' = 'login') => {
   const tab = ecosystemTabContext();
-  return { ...(await plaatsVoorStart()), service: sessieDienst(), tab, tabContext: tab, sourceOrigin: location.origin, returnTo: cleanRedirectReturnTo(), locale: lang, remember, intent: 'login' };
+  return { ...(await plaatsVoorStart()), service: sessieDienst(), tab, tabContext: tab, sourceOrigin: location.origin, returnTo: cleanRedirectReturnTo(), locale: lang, remember, intent };
 };
 /** Лише власні адреси *.tarasevych.com через https — інакше на головну. Alleen eigen adressen. */
 const veiligTerug = (waarde: unknown): string => {
@@ -127,7 +127,7 @@ const KNOP: Record<Exclude<ZonderGoogleId, 'wachtwoord'>, { uk: string; nl: stri
 };
 
 /** Одна кнопка входу без Google. `soort` — вигляд: «optie» (у списку «Інші способи входу») або головна кнопка. */
-export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd = false }: { id: ZonderGoogleId; lang: Lang; remember?: boolean; hoofd?: boolean }) {
+export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd = false, intent = 'login' }: { id: ZonderGoogleId; lang: Lang; remember?: boolean; hoofd?: boolean; intent?: 'login' | 'replace-tab' }) {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState('');
   const [open, setOpen] = useState(false);
@@ -155,7 +155,7 @@ export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd =
 
   const passkey = () => { opnieuw.current = () => void passkey(); return doe(async () => {
     if (!kanPasskey()) throw alsFout('NotAllowedError');
-    const o = (await api.post('/api/aanmelden/passkey/opties', await ctx(lang, remember))).data as { uitdagingId: string; publicKey: PrfAssertieOpties };
+    const o = (await api.post('/api/aanmelden/passkey/opties', await ctx(lang, remember, intent))).data as { uitdagingId: string; publicKey: PrfAssertieOpties };
     let a;
     try { a = await passkeyAanmeldenMetPrf(o.publicKey); } catch (e) { throw alsFout(foutCode(e) || 'NotAllowedError'); }
     const { prf, prf2: _p2, ...assertie } = a;
@@ -165,12 +165,12 @@ export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd =
     naSessie(r);
   }); };
   const extern = (aanbieder: 'microsoft' | 'discord' | 'apple') => doe(async () => {
-    const r = (await api.post('/api/aanmelden/extern/start', { ...(await ctx(lang, remember)), id: aanbieder })).data as { url?: string };
+    const r = (await api.post('/api/aanmelden/extern/start', { ...(await ctx(lang, remember, intent)), id: aanbieder })).data as { url?: string };
     if (!r?.url) throw alsFout('METHODE_UIT');
     location.assign(r.url);
   });
   const wachtwoordInloggen = (ev?: FormEvent) => { ev?.preventDefault(); opnieuw.current = () => wachtwoordInloggen(); void doe(async () => {
-    const s = (await api.post('/api/aanmelden/wachtwoord/start', await ctx(lang, remember))).data as { pogingId: string };
+    const s = (await api.post('/api/aanmelden/wachtwoord/start', await ctx(lang, remember, intent))).data as { pogingId: string };
     const r = (await api.post('/api/aanmelden/wachtwoord/voltooien', { pogingId: s.pogingId, email: email.trim(), password: wachtwoord, code: code.trim() })).data as Voltooid;
     if (r?.ok === false || r?.sessionCreated === false) throw alsFout(String(r?.reasonCode || 'AANMELDEN_MISLUKT'));
     setWachtwoord(''); setCode('');

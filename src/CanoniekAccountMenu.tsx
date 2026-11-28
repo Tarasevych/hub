@@ -74,6 +74,7 @@ import './accountmenu-v2/accountmenu-v2.css';
 import { useAccountmenuV3Voorkeuren } from './accountmenu-v3/accountmenu-v3-voorkeuren';
 import { useAccountmenuV3 } from './accountmenu-v3/vlag';
 import { AccountMenuV3 } from './accountmenu-v3/AccountMenuV3';
+import AanmeldKeuzePaneel from './aanmelden/AanmeldKeuzePaneel';
 import Vraag from './tech/Vraag';
 import { isLeesfout } from '../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../shared/foutuitleg';
@@ -179,7 +180,7 @@ const copy = {
     firstLoginHint: 'Увійдіть, щоб відкрити свій простір',
     none: 'Відомих облікових записів немає.',
     add: 'Додати інший обліковий запис',
-    firstLogin: 'Увійти в обліковий запис через Google',
+    firstLogin: 'Увійти в обліковий запис',
     manage: 'Керування обліковим записом',
     show: 'Показати інші облікові записи',
     hide: 'Сховати інші облікові записи',
@@ -233,7 +234,7 @@ const copy = {
     firstLoginHint: 'Meld u aan om uw ruimte te openen',
     none: 'Er zijn geen bekende accounts.',
     add: 'Ander account toevoegen',
-    firstLogin: 'Aanmelden bij een account via Google',
+    firstLogin: 'Aanmelden bij uw account',
     manage: 'Account beheren',
     show: 'Andere accounts tonen',
     hide: 'Andere accounts verbergen',
@@ -476,11 +477,13 @@ export default function CanonicalAccountMenu({
    */
   const [gewisseld, setGewisseld] = useState<{ naam: string; email: string; techBeeindigd: boolean } | null>(null);
   const [wisselFout, setWisselFout] = useState<WisselFout | null>(null);
+  const [aanmeldKeuzeOpen, setAanmeldKeuzeOpen] = useState(false);
 
   const close = () => {
     setOpen(false);
     setTaalMenuOpen(false);
     setExpanded(false);
+    setAanmeldKeuzeOpen(false);
     setGewisseld(null);
     setWisselFout(null);
   };
@@ -1388,11 +1391,27 @@ export default function CanonicalAccountMenu({
                 <section className='canonical-expanded-accounts'>
                   <h3>{t.chooseExpanded}</h3>
                   <div className='canonical-add-account-control' data-add-account-control='composite'>
-                    <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>
+                    <button
+                      type='button'
+                      className='canonical-menu-action add-account'
+                      aria-expanded={aanmeldKeuzeOpen}
+                      onClick={() => setAanmeldKeuzeOpen((v) => !v)}
+                      disabled={busy}
+                    >
                       <Plus /><span>{t.add}</span>
                       <IllustrativePreviews items={model.expandedAddPreviewAccounts} mode='stacked' />
                     </button>
                   </div>
+                  {aanmeldKeuzeOpen ? (
+                    <AanmeldKeuzePaneel
+                      lang={lang}
+                      intent='replace-tab'
+                      titel={t.add}
+                      busy={busy}
+                      onGoogle={add}
+                      onSluit={() => setAanmeldKeuzeOpen(false)}
+                    />
+                  ) : null}
                   {loading && <p className='canonical-account-state'>{t.loading}</p>}
                   {loadFailed && <p className='canonical-account-state error'>{t.loadFailed}</p>}
                   {list}
@@ -1428,13 +1447,23 @@ export default function CanonicalAccountMenu({
                   <div className={`am2-blok am2-sessie canonical-session-actions ${expanded ? 'expanded' : 'collapsed'}`} data-am2-blok='sessie' data-account-add-placement={expanded ? 'expanded-list' : 'session-row'}>
                     <div className='am2-sessie-rij'>
                       {!expanded && (
-                        <IconAction icon={<Plus />} label={lang === 'uk' ? 'Додати обліковий запис' : 'Account toevoegen'} onClick={add} className='canonical-menu-action add-account session-add-account' disabled={busy} />
+                        <IconAction icon={<Plus />} label={lang === 'uk' ? 'Додати обліковий запис' : 'Account toevoegen'} onClick={() => setAanmeldKeuzeOpen((v) => !v)} className='canonical-menu-action add-account session-add-account' disabled={busy} />
                       )}
                       {onLogout && (
                         <IconAction icon={<LogOut />} label={lang === 'uk' ? 'Вийти' : 'Afmelden'} onClick={() => { close(); onLogout(); }} className='canonical-menu-action logout-current' disabled={busy} />
                       )}
                       <Vraag help={V2_HULP.sessie} uk={lang === 'uk'} label={t.logout} />
                     </div>
+                    {!expanded && aanmeldKeuzeOpen ? (
+                      <AanmeldKeuzePaneel
+                        lang={lang}
+                        intent='replace-tab'
+                        titel={lang === 'uk' ? 'Додати обліковий запис' : 'Account toevoegen'}
+                        busy={busy}
+                        onGoogle={add}
+                        onSluit={() => setAanmeldKeuzeOpen(false)}
+                      />
+                    ) : null}
                     {!expanded && showLogoutAll && (
                       <IconAction icon={<Users />} label={t.logoutAll} onClick={() => { close(); onLogoutAll?.(); }} className='canonical-menu-action logout-all' disabled={busy} />
                     )}
@@ -1496,11 +1525,21 @@ export default function CanonicalAccountMenu({
                   <IconAction
                     icon={<Plus />}
                     label={t.add}
-                    onClick={add}
+                    onClick={() => setAanmeldKeuzeOpen((v) => !v)}
                     className='canonical-menu-action add-account session-add-account'
                     disabled={busy}
                   />
                 )}
+                {!expanded && aanmeldKeuzeOpen ? (
+                  <AanmeldKeuzePaneel
+                    lang={lang}
+                    intent='replace-tab'
+                    titel={t.add}
+                    busy={busy}
+                    onGoogle={add}
+                    onSluit={() => setAanmeldKeuzeOpen(false)}
+                  />
+                ) : null}
                 {!expanded && showLogoutAll && (
                   <IconAction
                     icon={<Users />}
@@ -1537,11 +1576,27 @@ export default function CanonicalAccountMenu({
               )}
               {!model.isFirstLogin && list}
               <div className='canonical-add-account-control' data-add-account-control='composite'>
-                <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>
+                <button
+                  type='button'
+                  className='canonical-menu-action add-account'
+                  aria-expanded={aanmeldKeuzeOpen}
+                  onClick={() => setAanmeldKeuzeOpen((v) => !v)}
+                  disabled={busy}
+                >
                   {model.isFirstLogin ? <KeyRound /> : <Plus />}
                   <span>{model.isFirstLogin ? t.firstLogin : t.add}</span>
                 </button>
               </div>
+              {aanmeldKeuzeOpen ? (
+                <AanmeldKeuzePaneel
+                  lang={lang}
+                  intent='login'
+                  titel={model.isFirstLogin ? t.firstLogin : t.add}
+                  busy={busy}
+                  onGoogle={add}
+                  onSluit={() => setAanmeldKeuzeOpen(false)}
+                />
+              ) : null}
             </>
           )}
           {am2 ? controlsV2 : controls}

@@ -60,6 +60,7 @@ import {
   type AccountmenuV3PaletKeuze,
   type PaletKeuzeInfo,
 } from './accountmenu-v3-voorkeuren';
+import AanmeldKeuzePaneel from '../aanmelden/AanmeldKeuzePaneel';
 import './accountmenu-v3.css';
 
 const OMTREK_32 = 97.4; // 2 * Math.PI * 15.5
@@ -224,6 +225,7 @@ export function AccountMenuV3({
 
   const [paletOpen, setPaletOpen] = useState(false);
   const [toegangOpen, setToegangOpen] = useState(false);
+  const [aanmeldKeuzeOpen, setAanmeldKeuzeOpen] = useState(false);
   // RUIMTE-WEERGAVE-001: «Завершити» з підтвердженням (друге натискання) і коротке повідомлення про наслідок дії.
   const [eindeBevestig, setEindeBevestig] = useState(false);
   const [ruimteMelding, setRuimteMelding] = useState('');
@@ -235,11 +237,16 @@ export function AccountMenuV3({
   const [houdtPaletVast, setHoudtPaletVast] = useState(false);
   const [afgemeldIngeklapt, setAfgemeldIngeklapt] = useState(false);
 
+  const wisselAanmeldKeuze = () => {
+    setAanmeldKeuzeOpen((vorige) => !vorige);
+  };
+
   useEffect(() => {
     if (!displayUser) {
       setToegangOpen(false);
       setAfgemeldIngeklapt(false);
     }
+    setAanmeldKeuzeOpen(false);
   }, [displayUser]);
 
   const holdTimerRef = useRef<number | null>(null);
@@ -655,9 +662,10 @@ export function AccountMenuV3({
                 type='button'
                 className='am3-orbit-node is-add'
                 disabled={busy}
+                aria-expanded={aanmeldKeuzeOpen}
                 title={addKnopTitel}
                 aria-label={addKnopTitel}
-                onClick={onAddAccount}
+                onClick={wisselAanmeldKeuze}
               >
                 <Plus />
               </button>
@@ -737,13 +745,26 @@ export function AccountMenuV3({
             type='button'
             className='am3-manage-pill canonical-menu-action primary add-account'
             disabled={busy}
-            onClick={onAddAccount}
+            aria-expanded={aanmeldKeuzeOpen}
+            onClick={wisselAanmeldKeuze}
           >
             {visibleRows.length > 0 ? <Plus aria-hidden='true' /> : <KeyRound aria-hidden='true' />}
             <span>{addKnopTitel}</span>
           </button>
         )}
       </header>
+
+      {/* Вбудована картка вибору всіх доступних на сайті способів входу (Google, Telegram, без Google та «Інші способи входу») */}
+      {aanmeldKeuzeOpen ? (
+        <AanmeldKeuzePaneel
+          lang={lang}
+          intent={displayUser ? 'replace-tab' : 'login'}
+          titel={addKnopTitel}
+          busy={busy}
+          onGoogle={onAddAccount}
+          onSluit={() => setAanmeldKeuzeOpen(false)}
+        />
+      ) : null}
 
       {/* Повідомлення про помилку перемикання облікового запису */}
       {wisselFout ? (() => {
@@ -969,7 +990,8 @@ export function AccountMenuV3({
                   type='button'
                   className='am3-add-row-btn canonical-menu-action add-account'
                   disabled={busy}
-                  onClick={onAddAccount}
+                  aria-expanded={aanmeldKeuzeOpen}
+                  onClick={wisselAanmeldKeuze}
                 >
                   <Plus />
                   <span>{uk ? 'Увійти в інший обліковий запис' : 'Aanmelden bij een ander account'}</span>

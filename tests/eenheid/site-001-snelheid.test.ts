@@ -297,6 +297,23 @@ export async function main(): Promise<number> {
       && aanmeldAndereTsx.includes('doorKlikOpenRef')
       && aanmeldAndereTsx.includes("document.querySelector<HTMLElement>('.mr-toestemming')")
       && aanmeldAndereTsx.includes('houder.scrollBy({ top: delta,'));
+
+    const aanmeldKeuzeTsx = await readFile(join(root, 'src/aanmelden/AanmeldKeuzePaneel.tsx'), 'utf8');
+    const aanmeldKeuzeCss = await readFile(join(root, 'src/aanmelden/aanmeld-keuze-paneel.css'), 'utf8');
+    const am3Tsx = await readFile(join(root, 'src/accountmenu-v3/AccountMenuV3.tsx'), 'utf8');
+    const canMenuTsx = await readFile(join(root, 'src/CanoniekAccountMenu.tsx'), 'utf8');
+    const zonderGoogleTsx = await readFile(join(root, 'src/aanmelden/AanmeldZonderGoogle.tsx'), 'utf8');
+    check('Меню облікових записів (AccountMenuV3 / CanoniekAccountMenu / AanmeldKeuzePaneel): натискання кружечка «+», «Увійти в обліковий запис» або «Увійти в інший обліковий запис» відкриває всі доступні способи входу (Google, Telegram, активні способи без Google та «Інші способи входу») аналогічно до головної сторінки входу',
+      aanmeldKeuzeTsx.includes("data-account-aanmeld-keuze='open'")
+      && aanmeldKeuzeTsx.includes('<AanmeldTelegram')
+      && aanmeldKeuzeTsx.includes('<AanmeldZonderGoogle')
+      && aanmeldKeuzeTsx.includes('<AanmeldAndereOpties')
+      && aanmeldKeuzeCss.includes('section.am3-aanmeld-keuze.canonical-signed-out.mr-sign-in')
+      && am3Tsx.includes('<AanmeldKeuzePaneel')
+      && am3Tsx.includes('onClick={wisselAanmeldKeuze}')
+      && canMenuTsx.includes('<AanmeldKeuzePaneel')
+      && zonderGoogleTsx.includes("intent: 'login' | 'replace-tab' = 'login'")
+      && aanmeldAndereTsx.includes("lijst.closest('.canonical-account-panel')"));
   } catch (e) {
     check('сторож виконано без винятків', false, String(e));
   }
