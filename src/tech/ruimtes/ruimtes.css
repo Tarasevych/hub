@@ -109,16 +109,11 @@ html.theme-dark .ru-knop.is-gevaar{border-color:var(--fout);color:var(--fout)}
 .rs-sjablonen{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .rs-sjabloon{min-height:32px;padding:0 10px;border:1px solid var(--rw-rand);border-radius:999px;background:transparent;color:inherit;font:13px inherit;cursor:pointer}
 /* ── Wissel altijd zichtbaar, inklappen, afbakening van de ruimte (vlag tech-ruimtes-v2, 28.10.2026) ── */
-.rw-dok-melding,
-html body .rw-dok-melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px));z-index:230;display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:min(280px,calc(100vw - 28px));min-height:26px;padding:3.5px 9px 3.5px 9px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent,#2f6f73) 26%,var(--line,#dce1e6));background:color-mix(in srgb,var(--panel,#fff) 92%,var(--bg,#f7f8fa));color:var(--text,#17212b);font-size:11px;font-weight:560;line-height:1.2;letter-spacing:.01em;box-shadow:0 6px 18px rgba(0,0,0,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-sizing:border-box}
-.rw-dok-melding.is-fout,
-html body .rw-dok-melding.is-fout{border-color:color-mix(in srgb,var(--fout,#c0392b) 36%,var(--line,#dce1e6));background:color-mix(in srgb,var(--panel,#fff) 92%,var(--fout-vlak,#fdecea));color:var(--fout,#b42318)}
-.rw-dok-stip,
-html body .rw-dok-melding .rw-dok-stip{display:block;flex:none;width:6.5px;height:6.5px;border-radius:50%;background:var(--accent,#2f6f73)}
-.rw-dok-melding.is-fout .rw-dok-stip,
-html body .rw-dok-melding.is-fout .rw-dok-stip{background:var(--fout,#c0392b)}
-.rw-dok-tekst,
-html body .rw-dok-melding .rw-dok-tekst{min-width:0;font-size:11px;font-weight:560;line-height:1.2;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rw-dok-melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px));z-index:230;display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:min(280px,calc(100vw - 28px));min-height:26px;padding:3.5px 9px 3.5px 9px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent,#2f6f73) 26%,var(--line,#dce1e6));background:color-mix(in srgb,var(--panel,#fff) 92%,var(--bg,#f7f8fa));color:var(--text,#17212b);font-size:11px;font-weight:560;line-height:1.2;letter-spacing:.01em;box-shadow:0 6px 18px rgba(0,0,0,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-sizing:border-box}
+.rw-dok-melding.is-fout{border-color:color-mix(in srgb,var(--fout,#c0392b) 36%,var(--line,#dce1e6));background:color-mix(in srgb,var(--panel,#fff) 92%,var(--fout-vlak,#fdecea));color:var(--fout,#b42318)}
+.rw-dok-stip{display:block;flex:none;width:6.5px;height:6.5px;border-radius:50%;background:var(--accent,#2f6f73)}
+.rw-dok-melding.is-fout .rw-dok-stip{background:var(--fout,#c0392b)}
+.rw-dok-tekst{min-width:0;font-size:11px;font-weight:560;line-height:1.2;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body:has(.canonical-chrome.sidebar-drawer) .rw-dok-melding,
 html body:has(.canonical-notification-panel) .rw-dok-melding,
 html body:has(.am3-mobiel-laag) .rw-dok-melding{opacity:0;visibility:hidden;pointer-events:none}

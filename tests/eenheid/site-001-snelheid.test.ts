@@ -257,7 +257,7 @@ export async function main(): Promise<number> {
       && ruimteDokTsx.includes('const timer = window.setTimeout(() => uitlegWeg(), UITLEG_DUUR_MS);')
       && ruimteDokTsx.includes("<i className='rw-dok-stip' aria-hidden='true' />")
       && ruimteDokTsx.includes("<span className='rw-dok-tekst'>{r.uitleg}</span>")
-      && ruimtesCss.includes('html body .rw-dok-melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px));z-index:230;display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:min(280px,calc(100vw - 28px));min-height:26px;padding:3.5px 9px 3.5px 9px;border-radius:999px;')
+      && ruimtesCss.includes('.rw-dok-melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px));z-index:230;display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:min(280px,calc(100vw - 28px));min-height:26px;padding:3.5px 9px 3.5px 9px;border-radius:999px;')
       && ruimtesCss.includes('html body:has(.canonical-chrome.sidebar-drawer) .rw-dok-melding,')
       && techMaqCss.includes('html.palet-maquette .rw-dok-melding {\n  border-radius: 999px;')
       && techMaqCss.includes('html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {\n  border-radius: 999px;'));
